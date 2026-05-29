@@ -43,13 +43,14 @@ function AdminLayout() {
   }
 
   if (access.status === "unauthorized") return <NoAccessScreen email={email} />;
-
-  return (
     <AdminShell
       email={email}
       role={access.primaryRole}
       agencyName={agency.selected?.name ?? null}
       agencyRole={agency.selected?.role ?? null}
+      ambiguousAgency={agency.ambiguousSelection}
+      isPlatformAdmin={access.isPlatformAdmin}
+    >
       ambiguousAgency={agency.ambiguousSelection}
     >
       {agency.status === "no-agency" ? (
