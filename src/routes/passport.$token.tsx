@@ -309,6 +309,14 @@ function PassportView({
           </div>
         </section>
 
+        {/* Rewards */}
+        <RewardsSection
+          stampedCount={stampedCount}
+          totalVenues={totalVenues}
+          labelSingular={labelSingular}
+          labelPlural={labelPlural}
+        />
+
         {/* Visitor details */}
         <section className="mt-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm">
           <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
