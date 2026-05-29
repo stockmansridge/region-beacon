@@ -461,6 +461,7 @@ function EventDetail() {
     setIsEditingBranding(false);
     setBrandForm(null);
     setReloadKey((k) => k + 1);
+  }
 
   function startEditCheckin() {
     if (!bundle) return;
