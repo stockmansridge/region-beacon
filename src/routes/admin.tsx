@@ -22,6 +22,12 @@ function AdminLayout() {
     }
   }, [authStatus, navigate]);
 
+  // /admin/login is a CHILD route of /admin (file-based routing nests by dots).
+  // When unauthenticated, render the Outlet so /admin/login can mount; the
+  // useEffect above redirects unauthenticated users away from any protected
+  // /admin/* child. Returning null here would leave /admin/login blank.
+  if (authStatus === "unauthenticated") return <Outlet />;
+
   if (authStatus === "loading" || access.status === "loading" || agency.status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-sidebar">
@@ -30,7 +36,6 @@ function AdminLayout() {
     );
   }
 
-  if (authStatus === "unauthenticated") return null;
   if (access.status === "unauthorized") return <NoAccessScreen email={email} />;
 
   return (
