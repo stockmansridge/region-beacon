@@ -45,10 +45,6 @@ function Venues() {
             <p className="text-xs text-muted-foreground">
               Future: reusable venue library, bulk import, cross-event search, QR poster exports.
             </p>
-              <strong className="text-foreground">Events</strong>, choose an event, then scroll to{" "}
-              <strong className="text-foreground">Venues for this event</strong> to add or edit
-              venues, QR codes, and offers.
-            </p>
             <Button asChild>
               <Link to="/admin/events">
                 Go to Events <ArrowRight className="h-4 w-4" />
