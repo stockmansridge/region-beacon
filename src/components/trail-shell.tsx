@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ReactNode } from "react";
 import { Stamp, Map as MapIcon, Wine, Gift, MoreHorizontal } from "lucide-react";
+import { DEFAULT_VENUE_LABEL_PLURAL } from "@/lib/venue-labels";
 
 type NavKey = "passport" | "map" | "wineries" | "rewards" | "more";
 
@@ -15,6 +16,7 @@ export function TrailShell({
   topRight,
   topLeft,
   contentClassName = "",
+  venueLabelPlural = DEFAULT_VENUE_LABEL_PLURAL,
 }: {
   children: ReactNode;
   eventName?: string;
@@ -26,6 +28,7 @@ export function TrailShell({
   topRight?: ReactNode;
   topLeft?: ReactNode;
   contentClassName?: string;
+  venueLabelPlural?: string;
 }) {
   const initials = (monogram ?? eventName ?? "EP")
     .split(/\s+/)
@@ -61,7 +64,12 @@ export function TrailShell({
         {children}
       </main>
       {showBottomNav && (
-        <BottomNav primaryColor={primaryColor} accentColor={accentColor} active={activeNav ?? "passport"} />
+        <BottomNav
+          primaryColor={primaryColor}
+          accentColor={accentColor}
+          active={activeNav ?? "passport"}
+          venueLabelPlural={venueLabelPlural}
+        />
       )}
     </div>
   );
@@ -71,15 +79,17 @@ function BottomNav({
   primaryColor,
   accentColor,
   active,
+  venueLabelPlural,
 }: {
   primaryColor: string;
   accentColor: string;
   active: NavKey;
+  venueLabelPlural: string;
 }) {
   const items: { key: NavKey; label: string; icon: typeof Stamp; to: string }[] = [
     { key: "passport", label: "Passport", icon: Stamp, to: "/demo/passport" },
     { key: "map", label: "Trail Map", icon: MapIcon, to: "/demo/trail-map" },
-    { key: "wineries", label: "Wineries", icon: Wine, to: "/demo/wineries" },
+    { key: "wineries", label: venueLabelPlural, icon: Wine, to: "/demo/wineries" },
     { key: "rewards", label: "Rewards", icon: Gift, to: "/demo/rewards" },
     { key: "more", label: "More", icon: MoreHorizontal, to: "/demo/more" },
   ];

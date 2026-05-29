@@ -139,6 +139,7 @@ function DemoVenueDetail() {
       accentColor={ACCENT}
       showBottomNav
       activeNav="wineries"
+      venueLabelPlural="Wineries"
       topLeft={
         <Link
           to="/demo/wineries"
