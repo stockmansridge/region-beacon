@@ -1351,7 +1351,7 @@ function EventDetail() {
                                       </div>
                                       <QrPreview
                                         value={built.url}
-                                        downloadName={`qr-${v.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || v.id}`}
+                                        downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
                                       />
                                     </div>
                                   )}
