@@ -51,7 +51,7 @@ function DemoTrailMap() {
 
         <div className="mx-auto mt-6 flex h-48 w-full items-center justify-center rounded-2xl border border-dashed border-[#C9A24A]/40 bg-[#F6EFE2]">
           <div className="flex flex-col items-center gap-2 text-[#8A7E66]">
-            <Route className="h-8 w-8" />
+            <RouteIcon className="h-8 w-8" />
             <span className="text-sm font-medium">Map preview</span>
             <span className="text-[11px]">Coming soon</span>
           </div>
