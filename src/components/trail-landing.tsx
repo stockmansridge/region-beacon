@@ -15,6 +15,7 @@ export type TrailLandingProps = {
   goldColor?: string;
   fontFamily?: string;
   heroImageUrl?: string | null;
+  logoUrl?: string | null;
   venueCount?: number;
   venueNames?: string[];
   venueLabelPlural?: string;
@@ -37,6 +38,7 @@ export function TrailLanding({
   goldColor = "#C9A24A",
   fontFamily,
   heroImageUrl,
+  logoUrl,
   venueCount,
   venueNames,
   venueLabelPlural = DEFAULT_VENUE_LABEL_PLURAL,
@@ -89,16 +91,32 @@ export function TrailLanding({
           )}
 
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-7 text-center text-[#F6EFE2]">
-            <div
-              className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border text-sm font-semibold tracking-[0.2em]"
-              style={{
-                borderColor: `${goldColor}80`,
-                backgroundColor: `${primaryColor}AA`,
-                color: goldColor,
-              }}
-            >
-              {initials}
-            </div>
+            {logoUrl ? (
+              <div
+                className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border bg-white/95"
+                style={{ borderColor: `${goldColor}80` }}
+              >
+                <img
+                  src={logoUrl}
+                  alt=""
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border text-sm font-semibold tracking-[0.2em]"
+                style={{
+                  borderColor: `${goldColor}80`,
+                  backgroundColor: `${primaryColor}AA`,
+                  color: goldColor,
+                }}
+              >
+                {initials}
+              </div>
+            )}
             <div className="text-[10px] font-medium uppercase tracking-[0.32em]" style={{ color: goldColor }}>
               {subtitle}
             </div>
