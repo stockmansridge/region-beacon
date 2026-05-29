@@ -46,15 +46,30 @@ language sql
 immutable
 as $$
   with parts as (
-    select string_to_array(_name, '/') as p
+    select string_to_array(coalesce(_name, ''), '/') as p
+  ),
+  shaped as (
+    select
+      p,
+      array_length(p, 1)               as n,
+      case when array_length(p, 1) >= 4 then (p)[1] else null end as s1,
+      case when array_length(p, 1) >= 4 then (p)[2] else null end as s2,
+      case when array_length(p, 1) >= 4 then (p)[3] else null end as s3,
+      case when array_length(p, 1) >= 4 then (p)[4] else null end as s4
+    from parts
   )
   select
-    nullif((p)[1], '')::uuid                                       as agency_id,
-    nullif((p)[2], '')::uuid                                       as event_id,
-    (p)[3]                                                         as kind
-  from parts
-  where array_length(p, 1) >= 4
-    and (p)[3] in ('logo', 'cover')
+    (s1)::uuid as agency_id,
+    (s2)::uuid as event_id,
+    s3         as kind
+  from shaped
+  where n >= 4
+    and s3 in ('logo', 'cover')
+    and s4 is not null
+    and length(s4) > 0
+    -- Strict UUID v1-5 shape; prevents 22P02 cast errors at runtime.
+    and s1 ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    and s2 ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 $$;
 
 grant execute on function public.event_assets_path_parts(text) to authenticated, anon;
