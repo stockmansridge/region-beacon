@@ -2,16 +2,37 @@ import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut } from "lucide-react";
 import { ReactNode } from "react";
 
-const nav: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
+/**
+ * Sidebar nav items.
+ *
+ * Each entry uses an explicit literal `to` typed via `as const` so that
+ * TanStack Router's typed <Link> still validates the path. We render the
+ * items individually below (instead of mapping into <Link to={item.to} />)
+ * because TanStack's `LinkProps['to']` is a discriminated union of route
+ * literals and cannot be satisfied by a generic `string` without unsafe
+ * casts. Listing the links keeps full type-safety with no `as any` /
+ * `as never` hacks.
+ */
+const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/admin/events", label: "Events", icon: Calendar },
-  { to: "/admin/venues", label: "Venues", icon: MapPin },
-  { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-];
-
+  { to: "/admin/events", label: "Events", icon: Calendar, exact: false },
+  { to: "/admin/venues", label: "Venues", icon: MapPin, exact: false },
+  { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
+] as const;
 
 export function AdminShell({ children }: { children?: ReactNode }) {
   const location = useLocation();
+
+  const isActive = (to: string, exact: boolean) =>
+    exact ? location.pathname === to : location.pathname.startsWith(to);
+
+  const linkClass = (active: boolean) =>
+    `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+      active
+        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+    }`;
+
   return (
     <div className="flex min-h-screen bg-sidebar">
       <aside className="hidden w-60 shrink-0 border-r bg-sidebar lg:flex lg:flex-col">
@@ -23,31 +44,42 @@ export function AdminShell({ children }: { children?: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {nav.map((item) => {
-            const active = item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to);
-            const Icon = item.icon;
+          {/* Rendered individually so each <Link to=...> stays type-safe. */}
+          {(() => {
+            const [dash, events, venues, analytics] = navItems;
             return (
-              <Link
-                key={item.to}
-                to={item.to as string as never}
-
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
+              <>
+                <Link to={dash.to} className={linkClass(isActive(dash.to, dash.exact))}>
+                  <dash.icon className="h-4 w-4" />
+                  {dash.label}
+                </Link>
+                <Link to={events.to} className={linkClass(isActive(events.to, events.exact))}>
+                  <events.icon className="h-4 w-4" />
+                  {events.label}
+                </Link>
+                <Link to={venues.to} className={linkClass(isActive(venues.to, venues.exact))}>
+                  <venues.icon className="h-4 w-4" />
+                  {venues.label}
+                </Link>
+                <Link to={analytics.to} className={linkClass(isActive(analytics.to, analytics.exact))}>
+                  <analytics.icon className="h-4 w-4" />
+                  {analytics.label}
+                </Link>
+              </>
             );
-          })}
+          })()}
         </nav>
         <div className="border-t p-3">
-          <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent">
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
+          >
             <Settings className="h-4 w-4" /> Settings
           </button>
-          <Link to="/admin/login" className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent">
+          <Link
+            to="/admin/login"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
+          >
             <LogOut className="h-4 w-4" /> Sign out
           </Link>
         </div>
@@ -59,7 +91,9 @@ export function AdminShell({ children }: { children?: ReactNode }) {
             <div className="text-sm font-semibold">Acme Tourism</div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">Placeholder data</span>
+            <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+              Placeholder data
+            </span>
             <div className="h-8 w-8 rounded-full bg-hero-gradient" />
           </div>
         </header>

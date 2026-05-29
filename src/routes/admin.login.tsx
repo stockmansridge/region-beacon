@@ -32,9 +32,12 @@ function Login() {
             Sign in
           </Link>
         </form>
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          Authentication will be wired up once the data model is approved.
+        {/* NOTE: This is a UI placeholder only — no real authentication runs yet.
+            Sign-in does not validate credentials; the button simply navigates to the dashboard. */}
+        <p className="mt-6 rounded-md border border-dashed bg-muted/50 px-3 py-2 text-center text-xs text-muted-foreground">
+          Placeholder · not real authentication yet.
         </p>
+
       </div>
     </div>
   );
