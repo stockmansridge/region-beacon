@@ -165,6 +165,12 @@ function EventDetail() {
   const [brandSaveError, setBrandSaveError] = useState<string | null>(null);
   const [brandValidationError, setBrandValidationError] = useState<string | null>(null);
 
+  const [isEditingCheckin, setIsEditingCheckin] = useState(false);
+  const [checkinForm, setCheckinForm] = useState<CheckinEditForm | null>(null);
+  const [checkinSaving, setCheckinSaving] = useState(false);
+  const [checkinSaveError, setCheckinSaveError] = useState<string | null>(null);
+  const [checkinValidationError, setCheckinValidationError] = useState<string | null>(null);
+
   useEffect(() => {
 
     if (!agencyId || eventId === "new") {
