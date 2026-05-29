@@ -16,6 +16,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as LiveSubdomainRouteImport } from './routes/live.$subdomain'
 import { Route as DemoPassportRouteImport } from './routes/demo.passport'
 import { Route as DemoJoinRouteImport } from './routes/demo.join'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
@@ -64,6 +65,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const LiveSubdomainRoute = LiveSubdomainRouteImport.update({
+  id: '/live/$subdomain',
+  path: '/live/$subdomain',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DemoPassportRoute = DemoPassportRouteImport.update({
   id: '/demo/passport',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/passport': typeof DemoPassportRoute
+  '/live/$subdomain': typeof LiveSubdomainRoute
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/passport': typeof DemoPassportRoute
+  '/live/$subdomain': typeof LiveSubdomainRoute
   '/admin': typeof AdminIndexRoute
   '/demo': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/passport': typeof DemoPassportRoute
+  '/live/$subdomain': typeof LiveSubdomainRoute
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '/admin/venues'
     | '/demo/join'
     | '/demo/passport'
+    | '/live/$subdomain'
     | '/admin/'
     | '/demo/'
     | '/admin/events/$eventId'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/admin/venues'
     | '/demo/join'
     | '/demo/passport'
+    | '/live/$subdomain'
     | '/admin'
     | '/demo'
     | '/admin/events/$eventId'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/admin/venues'
     | '/demo/join'
     | '/demo/passport'
+    | '/live/$subdomain'
     | '/admin/'
     | '/demo/'
     | '/admin/events/$eventId'
@@ -275,6 +287,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   DemoJoinRoute: typeof DemoJoinRoute
   DemoPassportRoute: typeof DemoPassportRoute
+  LiveSubdomainRoute: typeof LiveSubdomainRoute
   DemoIndexRoute: typeof DemoIndexRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
@@ -330,6 +343,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/live/$subdomain': {
+      id: '/live/$subdomain'
+      path: '/live/$subdomain'
+      fullPath: '/live/$subdomain'
+      preLoaderRoute: typeof LiveSubdomainRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/demo/passport': {
       id: '/demo/passport'
@@ -461,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   DemoJoinRoute: DemoJoinRoute,
   DemoPassportRoute: DemoPassportRoute,
+  LiveSubdomainRoute: LiveSubdomainRoute,
   DemoIndexRoute: DemoIndexRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
