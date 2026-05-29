@@ -218,6 +218,13 @@ function EventDetail() {
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
 
+  // QR controls — token is fetched only on explicit reveal/rotate and held in
+  // memory only. Map: venue_id -> revealed token.
+  const [revealedQrByVenue, setRevealedQrByVenue] = useState<Map<string, string>>(new Map());
+  const [qrActionVenueId, setQrActionVenueId] = useState<string | null>(null);
+  const [qrActionError, setQrActionError] = useState<string | null>(null);
+  const [qrCopiedVenueId, setQrCopiedVenueId] = useState<string | null>(null);
+
   useEffect(() => {
 
     if (!agencyId || eventId === "new") {
@@ -824,6 +831,122 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  /**
+   * Build the check-in URL for a QR token.
+   * Prefers the event's active public_subdomain domain. Falls back to the
+   * in-app /demo/checkin/$venueId route in staging/preview.
+   */
+  function buildCheckinUrl(token: string): { url: string; isFallback: boolean } {
+    const sub = (bundle?.domains ?? []).find(
+      (d) =>
+        d.domain_type === "event_subdomain" &&
+        d.status === "active" &&
+        !!d.public_subdomain,
+    );
+    if (sub?.public_subdomain) {
+      return {
+        url: `https://${sub.public_subdomain}.easypassport.com.au/checkin/${token}`,
+        isFallback: false,
+      };
+    }
+    return { url: `/demo/checkin/${token}`, isFallback: true };
+  }
+
+  async function revealQr(venueId: string) {
+    if (!agencyId || !canEdit) return;
+    setQrActionError(null);
+    setQrActionVenueId(venueId);
+    const { data, error } = await supabase
+      .from("venue_qr_codes")
+      .select("token")
+      .eq("venue_id", venueId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId)
+      .eq("status", "active")
+      .maybeSingle();
+    setQrActionVenueId(null);
+    if (error || !data?.token) {
+      setQrActionError("Could not load QR token. Please try again.");
+      return;
+    }
+    setRevealedQrByVenue((m) => {
+      const next = new Map(m);
+      next.set(venueId, data.token as string);
+      return next;
+    });
+  }
+
+  function hideQr(venueId: string) {
+    setRevealedQrByVenue((m) => {
+      const next = new Map(m);
+      next.delete(venueId);
+      return next;
+    });
+  }
+
+  async function copyQrLink(venueId: string) {
+    if (!canEdit) return;
+    let token = revealedQrByVenue.get(venueId);
+    if (!token) {
+      setQrActionError(null);
+      setQrActionVenueId(venueId);
+      const { data, error } = await supabase
+        .from("venue_qr_codes")
+        .select("token")
+        .eq("venue_id", venueId)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId!)
+        .eq("status", "active")
+        .maybeSingle();
+      setQrActionVenueId(null);
+      if (error || !data?.token) {
+        setQrActionError("Could not load QR token. Please try again.");
+        return;
+      }
+      token = data.token as string;
+    }
+    const { url } = buildCheckinUrl(token);
+    try {
+      await navigator.clipboard.writeText(url);
+      setQrCopiedVenueId(venueId);
+      setTimeout(() => {
+        setQrCopiedVenueId((id) => (id === venueId ? null : id));
+      }, 1500);
+    } catch {
+      setQrActionError("Could not copy to clipboard.");
+    }
+  }
+
+  async function generateOrRotateQr(venueId: string, isRotate: boolean) {
+    if (!agencyId || !canEdit) return;
+    if (isRotate) {
+      const ok = window.confirm(
+        "Rotate this venue's QR? The previous QR code will stop working immediately and any printed posters using it must be replaced.",
+      );
+      if (!ok) return;
+    }
+    setQrActionError(null);
+    setQrActionVenueId(venueId);
+    const { error } = await supabase.rpc("rotate_venue_qr", { _venue_id: venueId });
+    setQrActionVenueId(null);
+    if (error) {
+      // Do not leak raw Supabase errors to the UI.
+      setQrActionError(
+        isRotate
+          ? "Could not rotate QR. Please try again."
+          : "Could not generate QR. Please try again.",
+      );
+      return;
+    }
+    // Token stays hidden after generate/rotate; admin must explicitly reveal.
+    setRevealedQrByVenue((m) => {
+      const next = new Map(m);
+      next.delete(venueId);
+      return next;
+    });
+    setReloadKey((k) => k + 1);
+  }
+
 
   if (eventId === "new") {
     return (
@@ -1289,14 +1412,19 @@ function EventDetail() {
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="px-3 py-2 font-medium">Active QR</th>
                       <th className="px-3 py-2 font-medium">Issued</th>
+                      {canEdit && <th className="px-3 py-2 font-medium">QR controls</th>}
                       {canEdit && <th className="px-3 py-2 font-medium">Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {venues.map((v) => {
                       const qr = qrByVenue.get(v.id);
+                      const hasActiveQr = !!qr;
+                      const revealed = revealedQrByVenue.get(v.id);
+                      const isBusy = qrActionVenueId === v.id;
+                      const built = revealed ? buildCheckinUrl(revealed) : null;
                       return (
-                        <tr key={v.id} className="border-t">
+                        <tr key={v.id} className="border-t align-top">
                           <td className="px-3 py-2 text-muted-foreground">{v.order_index}</td>
                           <td className="px-3 py-2 font-medium">{v.name}</td>
                           <td className="px-3 py-2 text-muted-foreground">{v.address ?? "—"}</td>
@@ -1304,11 +1432,78 @@ function EventDetail() {
                             <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{v.status}</span>
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">
-                            {qr ? qr.status : (
-                              <span className="text-muted-foreground/70">QR generation coming next</span>
+                            {hasActiveQr ? (
+                              <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs text-success">
+                                {qr!.status}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/70">none</span>
                             )}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
+                          {canEdit && (
+                            <td className="px-3 py-2">
+                              {hasActiveQr ? (
+                                <div className="flex flex-col gap-1.5">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    {revealed ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => hideQr(v.id)}
+                                        className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+                                      >
+                                        Hide
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => revealQr(v.id)}
+                                        disabled={isBusy}
+                                        className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                      >
+                                        {isBusy ? "Loading…" : "Reveal QR link"}
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => copyQrLink(v.id)}
+                                      disabled={isBusy}
+                                      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                    >
+                                      {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => generateOrRotateQr(v.id, true)}
+                                      disabled={isBusy}
+                                      className="inline-flex h-7 items-center rounded-md border border-amber-500/40 bg-background px-2 text-xs font-medium text-amber-700 hover:bg-amber-500/5 disabled:opacity-50 dark:text-amber-400"
+                                    >
+                                      {isBusy ? "Working…" : "Rotate QR"}
+                                    </button>
+                                  </div>
+                                  {revealed && built && (
+                                    <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono break-all text-foreground">
+                                      {built.url}
+                                      {built.isFallback && (
+                                        <span className="ml-2 rounded bg-amber-500/15 px-1 py-0.5 text-[10px] font-sans font-medium text-amber-700 dark:text-amber-400">
+                                          demo/fallback URL — no active public subdomain
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => generateOrRotateQr(v.id, false)}
+                                  disabled={isBusy}
+                                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                >
+                                  {isBusy ? "Generating…" : "Generate QR"}
+                                </button>
+                              )}
+                            </td>
+                          )}
                           {canEdit && (
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-2">
@@ -1336,9 +1531,15 @@ function EventDetail() {
                     })}
                   </tbody>
                 </table>
+                {qrActionError && canEdit && (
+                  <p className="border-t bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                    {qrActionError}
+                  </p>
+                )}
                 <p className="border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  QR tokens are hidden. Reveal/copy and poster download will be added behind an
-                  admin-only control later.
+                  {canEdit
+                    ? "Rotating a QR invalidates the previous code immediately. Visitor redemption and poster downloads are not wired yet."
+                    : "QR controls are restricted to agency owners and admins."}
                 </p>
               </div>
             )}
