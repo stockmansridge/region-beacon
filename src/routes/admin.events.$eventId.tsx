@@ -119,6 +119,13 @@ type BrandEditForm = {
   terms_url: string;
 };
 
+type CheckinEditForm = {
+  one_checkin_per_venue: boolean;
+  minimum_seconds_between_checkins: string;
+  allow_manual_admin_checkins: boolean;
+  max_checkins_per_passport_per_day: string;
+};
+
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
