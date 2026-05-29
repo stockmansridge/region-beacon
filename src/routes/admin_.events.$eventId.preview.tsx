@@ -213,6 +213,7 @@ function EventPreview() {
           badge="Preview"
           venueNames={venues.map((v) => v.name)}
           venueCount={venues.length}
+          venueLabelPlural={resolveVenueLabels(branding).plural}
           termsUrl={termsUrl ?? null}
           primaryCta={
             <button
