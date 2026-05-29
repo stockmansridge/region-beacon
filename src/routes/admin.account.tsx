@@ -347,7 +347,29 @@ function AccountPage() {
                       )}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <DisabledButton label="Activate event" small />
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <DisabledButton label="Activate event" small />
+                        {isPlatformAdmin && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={busyEventId === e.id}
+                              onClick={() => runManualActivation(e.id, "comp", "comp")}
+                              className="inline-flex h-8 items-center rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-300"
+                            >
+                              {busyEventId === e.id ? "Working…" : "Comp activate"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyEventId === e.id}
+                              onClick={() => runManualActivation(e.id, "unpaid", "one_time")}
+                              className="inline-flex h-8 items-center rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-300"
+                            >
+                              Set unpaid
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
