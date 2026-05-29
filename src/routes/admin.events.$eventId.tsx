@@ -192,6 +192,12 @@ function EventDetail() {
   const [checkinSaveError, setCheckinSaveError] = useState<string | null>(null);
   const [checkinValidationError, setCheckinValidationError] = useState<string | null>(null);
 
+  const [isEditingLeaderboard, setIsEditingLeaderboard] = useState(false);
+  const [lbForm, setLbForm] = useState<LeaderboardEditForm | null>(null);
+  const [lbSaving, setLbSaving] = useState(false);
+  const [lbSaveError, setLbSaveError] = useState<string | null>(null);
+  const [lbValidationError, setLbValidationError] = useState<string | null>(null);
+
   useEffect(() => {
 
     if (!agencyId || eventId === "new") {
