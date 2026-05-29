@@ -152,6 +152,35 @@ function AccountPage() {
     }
   }
 
+  const activationByEvent = new Map<string, ActivationRow>();
+  for (const a of activations) {
+    activationByEvent.set(a.event_id, a);
+  }
+
+  const planLabel = subscription?.plan_code ?? (subscription ? "—" : "No plan");
+  const subStatus = subscription?.status ?? "none";
+  const periodEnd = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString()
+    : null;
+
+  const formatActivation = (a: ActivationRow | undefined) => {
+    if (!a) return "Not activated";
+    switch (a.status) {
+      case "active":
+        return "Active";
+      case "comp":
+        return "Comp";
+      case "past_due":
+        return "Past due";
+      case "cancelled":
+        return "Cancelled";
+      case "unpaid":
+      default:
+        return "Unpaid";
+    }
+  };
+
+
   return (
     <>
       <PageHeader
