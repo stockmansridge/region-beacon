@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,18 +12,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  deleteVenueAssetSafely,
+  getVenueAssetPublicUrl,
+  uploadVenueAsset,
+  VENUE_ASSET_ALLOWED_MIME,
+  VENUE_ASSET_MAX_BYTES,
+  type VenueAssetKind,
+} from "@/lib/venue-assets";
 
 /**
- * Admin editor for a venue's public profile (text fields only).
+ * Admin editor for a venue's public profile.
  *
- * Image uploads (logo / cover) are intentionally NOT wired here yet — the
- * current `event-assets` storage RLS only permits
- *   {agency}/{event}/{logo|cover}/{file}
- * paths and rejects the venue-level
- *   {agency}/{event}/venues/{venue}/{logo|cover}/{file}
- * path. A draft policy update is in
- *   supabase/migrations-draft-venue-public-pages-storage/
- * and must be applied to staging before the upload UI is enabled.
+ * Image uploads now write to:
+ *   event-assets/{agency_id}/{event_id}/venues/{venue_id}/{logo|cover}/{uuid}.{ext}
+ * Allowed: PNG / JPG / WebP. Logo ≤ 1 MB, cover ≤ 5 MB.
+ * Writer gate (platform_admin | agency_owner | agency_admin) is enforced
+ * server-side by storage RLS; the UI hides controls for other roles.
  */
 export type VenuePublicProfile = {
   id: string;
@@ -37,6 +42,7 @@ export type VenuePublicProfile = {
 
 const DESCRIPTION_MAX = 1200;
 const PHONE_MAX = 40;
+const ACCEPT_ATTR = VENUE_ASSET_ALLOWED_MIME.join(",");
 
 export function VenuePublicProfileDialog({
   open,
@@ -58,17 +64,23 @@ export function VenuePublicProfileDialog({
   const [description, setDescription] = useState(venue?.description ?? "");
   const [website, setWebsite] = useState(venue?.website_url ?? "");
   const [phone, setPhone] = useState(venue?.phone ?? "");
+  const [logoPath, setLogoPath] = useState<string | null>(venue?.logo_path ?? null);
+  const [coverPath, setCoverPath] = useState<string | null>(venue?.cover_path ?? null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [busyKind, setBusyKind] = useState<VenueAssetKind | null>(null);
 
-  // Reset form state when the target venue changes.
+  // Reset on venue change.
   const venueId = venue?.id ?? null;
-  useResetOnVenueChange(venueId, () => {
+  useEffect(() => {
     setDescription(venue?.description ?? "");
     setWebsite(venue?.website_url ?? "");
     setPhone(venue?.phone ?? "");
+    setLogoPath(venue?.logo_path ?? null);
+    setCoverPath(venue?.cover_path ?? null);
     setError(null);
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venueId]);
 
   function validate(): string | null {
     if (description.length > DESCRIPTION_MAX) {
@@ -116,18 +128,120 @@ export function VenuePublicProfileDialog({
     onOpenChange(false);
   }
 
+  async function handleUpload(kind: VenueAssetKind, file: File) {
+    if (!venue || !agencyId) return;
+    setError(null);
+    setBusyKind(kind);
+    const previous = kind === "logo" ? logoPath : coverPath;
+
+    const result = await uploadVenueAsset({
+      agencyId,
+      eventId,
+      venueId: venue.id,
+      kind,
+      file,
+    });
+    if (!result.ok) {
+      setBusyKind(null);
+      setError(result.error);
+      return;
+    }
+
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const { error: dbErr } = await supabase
+      .from("venues")
+      .update({ [column]: result.path })
+      .eq("id", venue.id)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+
+    if (dbErr) {
+      // Roll back the just-uploaded object so we don't leak.
+      await deleteVenueAssetSafely(result.path);
+      setBusyKind(null);
+      setError(`Could not update venue: ${dbErr.message}`);
+      return;
+    }
+
+    if (kind === "logo") setLogoPath(result.path);
+    else setCoverPath(result.path);
+
+    // Best-effort cleanup of the prior object.
+    if (previous && previous !== result.path) {
+      await deleteVenueAssetSafely(previous);
+    }
+    setBusyKind(null);
+    onSaved();
+  }
+
+  async function handleRemove(kind: VenueAssetKind) {
+    if (!venue || !agencyId) return;
+    const previous = kind === "logo" ? logoPath : coverPath;
+    if (!previous) return;
+    setError(null);
+    setBusyKind(kind);
+
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const { error: dbErr } = await supabase
+      .from("venues")
+      .update({ [column]: null })
+      .eq("id", venue.id)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+
+    if (dbErr) {
+      setBusyKind(null);
+      setError(`Could not remove image: ${dbErr.message}`);
+      return;
+    }
+
+    if (kind === "logo") setLogoPath(null);
+    else setCoverPath(null);
+    await deleteVenueAssetSafely(previous);
+    setBusyKind(null);
+    onSaved();
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit public page</DialogTitle>
           <DialogDescription>
-            {venue?.name ? <>Public profile for <strong>{venue.name}</strong>.</> : "Public profile."}{" "}
+            {venue?.name ? (
+              <>
+                Public profile for <strong>{venue.name}</strong>.
+              </>
+            ) : (
+              "Public profile."
+            )}{" "}
             These fields will appear on the visitor-facing venue page.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          <AssetField
+            kind="logo"
+            label="Logo"
+            helpText={`Square works best. PNG / JPG / WebP, up to ${mb(VENUE_ASSET_MAX_BYTES.logo)}.`}
+            path={logoPath}
+            canEdit={canEdit}
+            busy={busyKind === "logo"}
+            onUpload={(f) => handleUpload("logo", f)}
+            onRemove={() => handleRemove("logo")}
+          />
+
+          <AssetField
+            kind="cover"
+            label="Cover image"
+            helpText={`Wide hero image. PNG / JPG / WebP, up to ${mb(VENUE_ASSET_MAX_BYTES.cover)}.`}
+            path={coverPath}
+            canEdit={canEdit}
+            busy={busyKind === "cover"}
+            onUpload={(f) => handleUpload("cover", f)}
+            onRemove={() => handleRemove("cover")}
+          />
+
           <div className="space-y-1.5">
             <Label htmlFor="venue-description">Description</Label>
             <Textarea
@@ -172,18 +286,6 @@ export function VenuePublicProfileDialog({
             />
           </div>
 
-          <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">Logo & cover image upload</p>
-            <p className="mt-1">
-              Coming soon. Storage policy update for venue-level paths is drafted in
-              {" "}
-              <code className="rounded bg-muted px-1 py-0.5 text-[10px]">
-                supabase/migrations-draft-venue-public-pages-storage/
-              </code>
-              {" "}and must be applied to staging before uploads are enabled.
-            </p>
-          </div>
-
           {error && (
             <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
               {error}
@@ -204,11 +306,98 @@ export function VenuePublicProfileDialog({
   );
 }
 
-// Small helper so the dialog re-syncs local state when switching venues.
-import { useEffect } from "react";
-function useResetOnVenueChange(venueId: string | null, reset: () => void) {
-  useEffect(() => {
-    reset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [venueId]);
+function mb(bytes: number): string {
+  return `${Math.round(bytes / (1024 * 1024))} MB`;
+}
+
+function AssetField({
+  kind,
+  label,
+  helpText,
+  path,
+  canEdit,
+  busy,
+  onUpload,
+  onRemove,
+}: {
+  kind: VenueAssetKind;
+  label: string;
+  helpText: string;
+  path: string | null;
+  canEdit: boolean;
+  busy: boolean;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const previewUrl = getVenueAssetPublicUrl(path);
+  const isCover = kind === "cover";
+
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <div className="rounded-md border bg-muted/20 p-3">
+        {previewUrl ? (
+          <div
+            className={
+              isCover
+                ? "mb-3 aspect-[3/1] w-full overflow-hidden rounded bg-background"
+                : "mb-3 h-24 w-24 overflow-hidden rounded bg-background"
+            }
+          >
+            <img
+              src={previewUrl}
+              alt={`${label} preview`}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <p className="mb-3 text-xs text-muted-foreground">No image uploaded.</p>
+        )}
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT_ATTR}
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onUpload(f);
+            // allow re-selecting the same file
+            e.target.value = "";
+          }}
+        />
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!canEdit || busy}
+            onClick={() => inputRef.current?.click()}
+          >
+            {busy ? "Uploading…" : path ? "Replace" : "Upload"}
+          </Button>
+          {path && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={!canEdit || busy}
+              onClick={onRemove}
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+
+        <p className="mt-2 text-xs text-muted-foreground">{helpText}</p>
+        {!canEdit && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Only agency owners and admins can change images.
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
