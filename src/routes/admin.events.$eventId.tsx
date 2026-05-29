@@ -1466,19 +1466,91 @@ function EventDetail() {
         <aside className="space-y-4">
           <Section title="Terms & privacy" id="section-terms">
             {terms ? (
-              <DefList
-                rows={[
-                  ["Terms version", terms.terms_version],
-                  ["Terms URL", terms.terms_url],
-                  ["Privacy version", terms.privacy_version],
-                  ["Privacy URL", terms.privacy_url],
-                  ["Effective at", fmt(terms.effective_at)],
-                ]}
-              />
+              <>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Active
+                  </span>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => setTermsDialogOpen(true)}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Update terms & privacy
+                    </button>
+                  )}
+                </div>
+                <DefList
+                  rows={[
+                    ["Terms version", terms.terms_version],
+                    [
+                      "Terms URL",
+                      <a
+                        key="t"
+                        href={terms.terms_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline-offset-2 hover:underline break-all"
+                      >
+                        {terms.terms_url}
+                      </a>,
+                    ],
+                    ["Privacy version", terms.privacy_version],
+                    [
+                      "Privacy URL",
+                      <a
+                        key="p"
+                        href={terms.privacy_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline-offset-2 hover:underline break-all"
+                      >
+                        {terms.privacy_url}
+                      </a>,
+                    ],
+                    ["Effective at", fmt(terms.effective_at)],
+                  ]}
+                />
+              </>
             ) : (
-              <EmptyNotice>No terms version linked.</EmptyNotice>
+              <div className="rounded-md border border-amber-300/60 bg-amber-50 px-3 py-3 text-sm text-amber-900">
+                <div className="font-medium">Terms & privacy not configured</div>
+                <p className="mt-1 text-xs text-amber-800">
+                  Visitor registration on the public join page is blocked until an active
+                  terms version is set for this event.
+                </p>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => setTermsDialogOpen(true)}
+                    className="mt-2 inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+                  >
+                    Configure terms & privacy
+                  </button>
+                ) : (
+                  <p className="mt-2 text-xs text-amber-800">
+                    Ask an agency admin or owner to configure terms.
+                  </p>
+                )}
+              </div>
+            )}
+            {agencyId && (
+              <EventTermsDialog
+                open={termsDialogOpen}
+                onOpenChange={setTermsDialogOpen}
+                agencyId={agencyId}
+                eventId={bundle.event.id}
+                initialVersionLabel={terms?.terms_version ?? null}
+                onSaved={() => {
+                  toast.success("Terms & privacy updated");
+                  setReloadKey((k) => k + 1);
+                }}
+              />
             )}
           </Section>
+
 
           <Section title="Check-in settings">
             {isEditingCheckin && checkinForm ? (
