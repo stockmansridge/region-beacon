@@ -1,6 +1,8 @@
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut } from "lucide-react";
 import { ReactNode } from "react";
+import { signOut } from "@/hooks/use-auth";
 
 /**
  * Sidebar nav items.
