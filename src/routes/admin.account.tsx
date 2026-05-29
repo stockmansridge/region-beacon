@@ -31,6 +31,34 @@ type DomainRow = {
   is_primary: boolean;
 };
 
+type BillingAccountRow = {
+  id: string;
+  billing_email: string | null;
+  billing_name: string | null;
+  country: string | null;
+  stripe_customer_id: string | null;
+};
+
+type SubscriptionRow = {
+  id: string;
+  plan_code: string | null;
+  status: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  trial_ends_at: string | null;
+  updated_at: string;
+};
+
+type ActivationRow = {
+  event_id: string;
+  status: string;
+  activation_kind: string | null;
+  activated_at: string | null;
+  expires_at: string | null;
+};
+
+
 function AccountPage() {
   const auth = useAuth();
   const access = useAdminAccess();
@@ -43,6 +71,9 @@ function AccountPage() {
 
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [domains, setDomains] = useState<DomainRow[]>([]);
+  const [billingAccount, setBillingAccount] = useState<BillingAccountRow | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [activations, setActivations] = useState<ActivationRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +83,7 @@ function AccountPage() {
     setLoading(true);
     setError(null);
     (async () => {
-      const [evRes, domRes] = await Promise.all([
+      const [evRes, domRes, baRes, subRes] = await Promise.all([
         supabase
           .from("events")
           .select("id, name, status")
@@ -63,6 +94,20 @@ function AccountPage() {
           .from("event_domains")
           .select("event_id, public_subdomain, custom_domain, status, is_primary")
           .eq("agency_id", agencyId),
+        supabase
+          .from("agency_billing_accounts")
+          .select("id, billing_email, billing_name, country, stripe_customer_id")
+          .eq("agency_id", agencyId)
+          .maybeSingle(),
+        supabase
+          .from("agency_subscriptions")
+          .select(
+            "id, plan_code, status, current_period_start, current_period_end, cancel_at_period_end, trial_ends_at, updated_at",
+          )
+          .eq("agency_id", agencyId)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
       if (cancelled) return;
       if (evRes.error) {
@@ -70,8 +115,24 @@ function AccountPage() {
         setLoading(false);
         return;
       }
-      setEvents((evRes.data ?? []) as EventRow[]);
+      const eventRows = (evRes.data ?? []) as EventRow[];
+      setEvents(eventRows);
       setDomains(domRes.error ? [] : ((domRes.data ?? []) as DomainRow[]));
+      setBillingAccount(baRes.error ? null : ((baRes.data ?? null) as BillingAccountRow | null));
+      setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
+
+      const eventIds = eventRows.map((e) => e.id);
+      if (eventIds.length > 0) {
+        const actRes = await supabase
+          .from("event_activations")
+          .select("event_id, status, activation_kind, activated_at, expires_at")
+          .in("event_id", eventIds);
+        if (!cancelled) {
+          setActivations(actRes.error ? [] : ((actRes.data ?? []) as ActivationRow[]));
+        }
+      } else {
+        setActivations([]);
+      }
       setLoading(false);
     })();
     return () => {
@@ -90,6 +151,35 @@ function AccountPage() {
       domainByEvent.set(d.event_id, d);
     }
   }
+
+  const activationByEvent = new Map<string, ActivationRow>();
+  for (const a of activations) {
+    activationByEvent.set(a.event_id, a);
+  }
+
+  const planLabel = subscription?.plan_code ?? (subscription ? "—" : "No plan");
+  const subStatus = subscription?.status ?? "none";
+  const periodEnd = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString()
+    : null;
+
+  const formatActivation = (a: ActivationRow | undefined) => {
+    if (!a) return "Not activated";
+    switch (a.status) {
+      case "active":
+        return "Active";
+      case "comp":
+        return "Comp";
+      case "past_due":
+        return "Past due";
+      case "cancelled":
+        return "Cancelled";
+      case "unpaid":
+      default:
+        return "Unpaid";
+    }
+  };
+
 
   return (
     <>
@@ -121,8 +211,21 @@ function AccountPage() {
         </Card>
 
         <Card title="Plan">
-          <Row label="Current plan" value="Not active (Trial placeholder)" />
-          <Row label="Status" value="Setup mode" />
+          <Row label="Current plan" value={planLabel} />
+          <Row label="Subscription status" value={subStatus} />
+          {periodEnd && <Row label="Current period ends" value={periodEnd} />}
+          {subscription?.cancel_at_period_end && (
+            <Row label="Cancels at period end" value="Yes" />
+          )}
+          <Row
+            label="Billing email"
+            value={billingAccount?.billing_email ?? "—"}
+          />
+          <Row
+            label="Stripe customer"
+            value={billingAccount?.stripe_customer_id ?? "Not linked"}
+            mono
+          />
           <p className="mt-3 text-sm text-muted-foreground">
             Billing is not connected yet.
           </p>
@@ -132,6 +235,7 @@ function AccountPage() {
           </div>
           <p className="mt-2 text-xs text-muted-foreground">{COMING_SOON_HELP}</p>
         </Card>
+
       </div>
 
       <div className="mt-6 rounded-xl border bg-card">
@@ -177,12 +281,12 @@ function AccountPage() {
                       : "—")
                   : "Not reserved";
                 const addrStatus = d ? d.status : "none";
-                const activation =
-                  d && d.status === "active"
-                    ? "Pending billing"
-                    : d && d.status === "pending"
-                      ? "Pending billing"
-                      : "Not activated";
+                const act = activationByEvent.get(e.id);
+                const activation = formatActivation(act);
+                const activeLike = act?.status === "active" || act?.status === "comp";
+                const activationClass = activeLike
+                  ? "rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
+                  : "rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400";
                 return (
                   <tr key={e.id} className="border-t">
                     <td className="px-5 py-3 font-medium">{e.name}</td>
@@ -198,9 +302,12 @@ function AccountPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                        {activation}
-                      </span>
+                      <span className={activationClass}>{activation}</span>
+                      {act?.activation_kind && (
+                        <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {act.activation_kind}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <DisabledButton label="Activate event" small />
