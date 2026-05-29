@@ -53,6 +53,7 @@ function DemoMore() {
       accentColor={ACCENT}
       showBottomNav
       activeNav="more"
+      venueLabelPlural="Wineries"
     >
       <div className="mb-3 rounded-full border border-dashed border-[#C9A24A]/60 bg-[#FBF5E8] px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-[#8A7E66]">
         Demo · sample menu
