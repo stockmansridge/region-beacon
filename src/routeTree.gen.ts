@@ -27,6 +27,7 @@ import { Route as DemoOffersRouteImport } from './routes/demo.offers'
 import { Route as DemoMoreRouteImport } from './routes/demo.more'
 import { Route as DemoJoinRouteImport } from './routes/demo.join'
 import { Route as DemoInviteRouteImport } from './routes/demo.invite'
+import { Route as CheckinQrTokenRouteImport } from './routes/checkin.$qrToken'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
 import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
@@ -131,6 +132,11 @@ const DemoInviteRoute = DemoInviteRouteImport.update({
   path: '/demo/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckinQrTokenRoute = CheckinQrTokenRouteImport.update({
+  id: '/checkin/$qrToken',
+  path: '/checkin/$qrToken',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminVenuesRoute = AdminVenuesRouteImport.update({
   id: '/venues',
   path: '/venues',
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
+  '/checkin/$qrToken': typeof CheckinQrTokenRoute
   '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/more': typeof DemoMoreRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
+  '/checkin/$qrToken': typeof CheckinQrTokenRoute
   '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/more': typeof DemoMoreRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
+  '/checkin/$qrToken': typeof CheckinQrTokenRoute
   '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/more': typeof DemoMoreRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
+    | '/checkin/$qrToken'
     | '/demo/invite'
     | '/demo/join'
     | '/demo/more'
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
+    | '/checkin/$qrToken'
     | '/demo/invite'
     | '/demo/join'
     | '/demo/more'
@@ -377,6 +388,7 @@ export interface FileRouteTypes {
     | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
+    | '/checkin/$qrToken'
     | '/demo/invite'
     | '/demo/join'
     | '/demo/more'
@@ -405,6 +417,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
+  CheckinQrTokenRoute: typeof CheckinQrTokenRoute
   DemoInviteRoute: typeof DemoInviteRoute
   DemoJoinRoute: typeof DemoJoinRoute
   DemoMoreRoute: typeof DemoMoreRoute
@@ -547,6 +560,13 @@ declare module '@tanstack/react-router' {
       path: '/demo/invite'
       fullPath: '/demo/invite'
       preLoaderRoute: typeof DemoInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkin/$qrToken': {
+      id: '/checkin/$qrToken'
+      path: '/checkin/$qrToken'
+      fullPath: '/checkin/$qrToken'
+      preLoaderRoute: typeof CheckinQrTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/venues': {
@@ -701,6 +721,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
+  CheckinQrTokenRoute: CheckinQrTokenRoute,
   DemoInviteRoute: DemoInviteRoute,
   DemoJoinRoute: DemoJoinRoute,
   DemoMoreRoute: DemoMoreRoute,
