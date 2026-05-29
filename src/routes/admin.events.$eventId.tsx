@@ -1777,10 +1777,14 @@ function EventSetupWarnings({
   status,
   domains,
   hasTerms,
+  hasVenues,
+  eventId,
 }: {
   status: string;
   domains: Domain[];
   hasTerms: boolean;
+  hasVenues: boolean;
+  eventId: string;
 }) {
   const hasActiveSubdomain = domains.some(
     (d) => d.domain_type === "event_subdomain" && d.status === "active",
@@ -1789,13 +1793,23 @@ function EventSetupWarnings({
     (d) => d.domain_type === "event_subdomain" && d.status === "pending",
   );
 
-  const items: { tone: "warn" | "info"; title: string; body: string }[] = [];
+  type Action =
+    | { kind: "anchor"; href: string; label: string }
+    | { kind: "link"; to: string; params?: Record<string, string>; label: string };
+
+  const items: {
+    tone: "warn" | "info";
+    title: string;
+    body: string;
+    action?: Action;
+  }[] = [];
 
   if (status === "draft") {
     items.push({
       tone: "info",
       title: "Event is a draft",
       body: "Drafts are previewable inside admin only. Visitors can't reach this event yet.",
+      action: { kind: "anchor", href: "#section-go-live", label: "Review go-live status" },
     });
   }
 
@@ -1804,6 +1818,7 @@ function EventSetupWarnings({
       tone: "info",
       title: "Public address active",
       body: "This event's subdomain is active.",
+      action: { kind: "anchor", href: "#section-public-address", label: "View address" },
     });
   } else {
     items.push({
@@ -1814,15 +1829,29 @@ function EventSetupWarnings({
       body: hasPendingSubdomain
         ? "A subdomain has been reserved but is not active. It will go live once billing/activation is complete."
         : "Choose and reserve a subdomain so visitors can find this event after activation.",
+      action: {
+        kind: "anchor",
+        href: "#section-public-address",
+        label: hasPendingSubdomain ? "View activation status" : "Choose public address",
+      },
     });
   }
-
 
   if (!hasTerms) {
     items.push({
       tone: "warn",
       title: "Terms & privacy not configured",
       body: "Add a terms version before publishing — visitors will need to accept it on first sign-up.",
+      action: { kind: "anchor", href: "#section-terms", label: "Configure terms" },
+    });
+  }
+
+  if (!hasVenues) {
+    items.push({
+      tone: "warn",
+      title: "No venues added yet",
+      body: "Visitors need at least one venue/stop to collect stamps.",
+      action: { kind: "anchor", href: "#section-venues", label: "Add venues" },
     });
   }
 
@@ -1830,6 +1859,7 @@ function EventSetupWarnings({
     tone: "info",
     title: "Billing activation not configured",
     body: "Per-event billing/activation will be wired in a later step. This event won't go live publicly until it's activated.",
+    action: { kind: "link", to: "/admin/account", label: "Go to Account & Billing" },
   });
 
   if (items.length === 0) return null;
@@ -1840,13 +1870,35 @@ function EventSetupWarnings({
         <div
           key={i}
           className={
-            it.tone === "warn"
+            (it.tone === "warn"
               ? "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
-              : "rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              : "rounded-md border bg-muted/40 px-3 py-2 text-sm") +
+            " flex flex-wrap items-start justify-between gap-3"
           }
         >
-          <div className="font-medium">{it.title}</div>
-          <div className="text-muted-foreground">{it.body}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium">{it.title}</div>
+            <div className="text-muted-foreground">{it.body}</div>
+          </div>
+          {it.action && (
+            <div className="shrink-0">
+              {it.action.kind === "anchor" ? (
+                <a
+                  href={it.action.href}
+                  className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                >
+                  {it.action.label}
+                </a>
+              ) : (
+                <Link
+                  to={it.action.to}
+                  className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                >
+                  {it.action.label}
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
