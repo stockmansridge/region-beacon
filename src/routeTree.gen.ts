@@ -17,6 +17,7 @@ import { Route as DemoPassportRouteImport } from './routes/demo.passport'
 import { Route as DemoJoinRouteImport } from './routes/demo.join'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
 import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
+import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
@@ -63,6 +64,11 @@ const AdminUpdatePasswordRoute = AdminUpdatePasswordRouteImport.update({
   path: '/update-password',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSystemRoute = AdminSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/analytics'
     | '/admin/login'
+    | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
     | '/demo/join'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin/analytics'
     | '/admin/login'
+    | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
     | '/demo/join'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/analytics'
     | '/admin/login'
+    | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
     | '/demo/join'
@@ -248,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUpdatePasswordRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/system': {
+      id: '/admin/system'
+      path: '/system'
+      fullPath: '/admin/system'
+      preLoaderRoute: typeof AdminSystemRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/login'
@@ -289,6 +308,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminSystemRoute: typeof AdminSystemRoute
   AdminUpdatePasswordRoute: typeof AdminUpdatePasswordRoute
   AdminVenuesRoute: typeof AdminVenuesRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -299,6 +319,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminSystemRoute: AdminSystemRoute,
   AdminUpdatePasswordRoute: AdminUpdatePasswordRoute,
   AdminVenuesRoute: AdminVenuesRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -319,3 +340,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
