@@ -230,7 +230,7 @@ function EventDetail() {
             .maybeSingle(),
           supabase
             .from("leaderboard_settings")
-            .select("is_enabled, display_mode, show_visit_count, hide_below_checkins, allow_visitor_opt_out")
+            .select("is_enabled, display_mode, show_first_name, show_last_initial, show_visit_count, hide_below_checkins, allow_visitor_opt_out")
             .eq("event_id", event.id)
             .eq("agency_id", agencyId)
             .maybeSingle(),
