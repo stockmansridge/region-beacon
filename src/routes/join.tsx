@@ -12,6 +12,13 @@ function Join() {
       <h1 className="text-2xl font-semibold">Join the passport</h1>
       <p className="mt-1 text-sm text-muted-foreground">Enter your details to start collecting check-ins.</p>
 
+      {/* NOTE: Placeholder form — submitting does not create a real passport yet.
+          The CTA simply navigates to the passport preview page. */}
+      <div className="mt-4 rounded-md border border-dashed bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+        Placeholder · no passport is created yet.
+      </div>
+
+
       <form
         className="mt-6 space-y-4"
         onSubmit={(e) => e.preventDefault()}
