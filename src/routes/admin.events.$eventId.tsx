@@ -1746,3 +1746,316 @@ function EventSetupWarnings({
   );
 }
 
+const SUBDOMAIN_RE = /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/;
+
+type AvailabilityState =
+  | { kind: "idle" }
+  | { kind: "checking" }
+  | { kind: "available" }
+  | { kind: "invalid"; message: string }
+  | { kind: "reserved" }
+  | { kind: "taken" }
+  | { kind: "error"; message: string };
+
+function PublicAddressCard({
+  agencyId,
+  eventId,
+  publicSlug,
+  domains,
+  canEdit,
+  isPlatformAdmin,
+  onChanged,
+}: {
+  agencyId: string | null;
+  eventId: string;
+  publicSlug: string | null;
+  domains: Domain[];
+  canEdit: boolean;
+  isPlatformAdmin: boolean;
+  onChanged: () => void;
+}) {
+  const subdomainRow = domains.find((d) => d.domain_type === "event_subdomain") ?? null;
+  const otherDomains = domains.filter((d) => d.domain_type !== "event_subdomain");
+
+  const [input, setInput] = useState("");
+  const [availability, setAvailability] = useState<AvailabilityState>({ kind: "idle" });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [releasing, setReleasing] = useState(false);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
+
+  const normalized = input.trim().toLowerCase();
+
+  // Debounced availability check via RPC.
+  useEffect(() => {
+    setSubmitError(null);
+    if (!normalized) {
+      setAvailability({ kind: "idle" });
+      return;
+    }
+    if (normalized.length < 3 || normalized.length > 63) {
+      setAvailability({ kind: "invalid", message: "Must be 3–63 characters." });
+      return;
+    }
+    if (!SUBDOMAIN_RE.test(normalized)) {
+      setAvailability({
+        kind: "invalid",
+        message:
+          "Use lowercase letters, numbers, and hyphens. Cannot start or end with a hyphen.",
+      });
+      return;
+    }
+
+    setAvailability({ kind: "checking" });
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc("validate_public_subdomain", {
+        _candidate: normalized,
+      });
+      if (cancelled) return;
+      if (error) {
+        setAvailability({ kind: "error", message: "Could not check availability." });
+        return;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row?.ok) {
+        setAvailability({ kind: "available" });
+        return;
+      }
+      switch (row?.reason) {
+        case "length":
+          setAvailability({ kind: "invalid", message: "Must be 3–63 characters." });
+          break;
+        case "format":
+          setAvailability({ kind: "invalid", message: "Invalid format." });
+          break;
+        case "reserved":
+          setAvailability({ kind: "reserved" });
+          break;
+        case "taken":
+          setAvailability({ kind: "taken" });
+          break;
+        default:
+          setAvailability({ kind: "error", message: "Not available." });
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [normalized]);
+
+  async function handleClaim() {
+    if (!agencyId || availability.kind !== "available") return;
+    setSubmitting(true);
+    setSubmitError(null);
+    const { error } = await supabase.from("event_domains").insert({
+      agency_id: agencyId,
+      event_id: eventId,
+      public_subdomain: normalized,
+      domain_type: "event_subdomain",
+      status: "pending",
+      is_primary: true,
+      verified_at: null,
+    });
+    setSubmitting(false);
+    if (error) {
+      const msg = error.message ?? "Could not reserve subdomain.";
+      if (/duplicate|unique/i.test(msg)) {
+        setSubmitError("That subdomain was just taken. Please choose another.");
+        setAvailability({ kind: "taken" });
+      } else {
+        setSubmitError(`Could not reserve subdomain: ${msg}`);
+      }
+      return;
+    }
+    setInput("");
+    setAvailability({ kind: "idle" });
+    onChanged();
+  }
+
+  async function handleRelease() {
+    if (!subdomainRow || !agencyId) return;
+    if (subdomainRow.status !== "pending") return; // safety
+    if (!window.confirm("Release this pending subdomain? It will become available to others.")) {
+      return;
+    }
+    setReleasing(true);
+    setReleaseError(null);
+    const { error } = await supabase
+      .from("event_domains")
+      .delete()
+      .eq("id", subdomainRow.id)
+      .eq("agency_id", agencyId)
+      .eq("event_id", eventId)
+      .eq("status", "pending");
+    setReleasing(false);
+    if (error) {
+      setReleaseError(`Could not release subdomain: ${error.message}`);
+      return;
+    }
+    onChanged();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border bg-muted/30 p-3 text-sm">
+        <div className="grid gap-1 sm:grid-cols-[160px_1fr]">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Public slug</span>
+          <span className="font-mono">{publicSlug ?? "—"}</span>
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Claimed subdomain</span>
+          <span className="font-mono">
+            {subdomainRow?.public_subdomain
+              ? `${subdomainRow.public_subdomain}.easypassport.com.au`
+              : "—"}
+          </span>
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Status</span>
+          <span>
+            <StatusPill status={subdomainRow?.status ?? "not_claimed"} />
+          </span>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          You can reserve a public subdomain now. It will only become active after billing/activation.
+        </p>
+      </div>
+
+      {!subdomainRow && canEdit && (
+        <div className="space-y-3 rounded-md border p-3">
+          <div className="text-sm font-medium">Reserve a subdomain</div>
+          <div className="flex items-stretch gap-0">
+            <span className="inline-flex items-center rounded-l-md border border-r-0 bg-muted px-2 text-xs text-muted-foreground">
+              https://
+            </span>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value.toLowerCase())}
+              maxLength={63}
+              placeholder="my-event"
+              className="h-9 w-full border bg-background px-2 text-sm font-mono"
+            />
+            <span className="inline-flex items-center rounded-r-md border border-l-0 bg-muted px-2 text-xs text-muted-foreground">
+              .easypassport.com.au
+            </span>
+          </div>
+
+          <AvailabilityMessage state={availability} />
+
+          {submitError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {submitError}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleClaim}
+              disabled={submitting || availability.kind !== "available"}
+              className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              {submitting ? "Reserving…" : "Reserve subdomain"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!subdomainRow && !canEdit && (
+        <EmptyNotice>No public address claimed yet.</EmptyNotice>
+      )}
+
+      {subdomainRow && subdomainRow.status === "pending" && canEdit && (
+        <div className="space-y-2 rounded-md border p-3">
+          <div className="text-sm">
+            Pending reservation — will activate once billing/activation is complete.
+          </div>
+          {releaseError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {releaseError}
+            </div>
+          )}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleRelease}
+              disabled={releasing}
+              className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+            >
+              {releasing ? "Releasing…" : "Release subdomain"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {subdomainRow && subdomainRow.status === "active" && (
+        <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+          Active subdomains are read-only here.
+          {isPlatformAdmin && " Platform admins can change active domains via system admin."}
+        </div>
+      )}
+
+      {otherDomains.length > 0 && (
+        <div className="overflow-hidden rounded-lg border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 font-medium">Subdomain</th>
+                <th className="px-3 py-2 font-medium">Custom</th>
+                <th className="px-3 py-2 font-medium">Type</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Primary</th>
+                <th className="px-3 py-2 font-medium">Verified</th>
+              </tr>
+            </thead>
+            <tbody>
+              {otherDomains.map((d) => (
+                <tr key={d.id} className="border-t">
+                  <td className="px-3 py-2">{d.public_subdomain ?? "—"}</td>
+                  <td className="px-3 py-2">{d.custom_domain ?? "—"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{d.domain_type}</td>
+                  <td className="px-3 py-2">
+                    <StatusPill status={d.status} />
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">{d.is_primary ? "yes" : "no"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{fmt(d.verified_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const label =
+    status === "not_claimed"
+      ? "not claimed"
+      : status;
+  const cls =
+    status === "active"
+      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+      : status === "pending"
+        ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+        : status === "revoked" || status === "disabled"
+          ? "bg-destructive/15 text-destructive"
+          : "bg-muted text-muted-foreground";
+  return <span className={`rounded-full px-2 py-0.5 text-xs ${cls}`}>{label}</span>;
+}
+
+function AvailabilityMessage({ state }: { state: AvailabilityState }) {
+  if (state.kind === "idle") return null;
+  const map = {
+    checking: { cls: "text-muted-foreground", text: "Checking…" },
+    available: { cls: "text-emerald-600 dark:text-emerald-400", text: "Available — will be reserved as pending." },
+    invalid: { cls: "text-destructive", text: state.kind === "invalid" ? state.message : "" },
+    reserved: { cls: "text-destructive", text: "Reserved word — please choose another." },
+    taken: { cls: "text-destructive", text: "Already taken — please choose another." },
+    error: { cls: "text-destructive", text: state.kind === "error" ? state.message : "" },
+  } as const;
+  const m = map[state.kind];
+  return <div className={`text-xs ${m.cls}`}>{m.text}</div>;
+}
+
