@@ -18,30 +18,58 @@ set search_path = public
 as $$
 declare
   v_host citext := lower(_hostname);
+  v_root constant citext := 'easypassport.com.au';
+  v_suffix constant text := '.easypassport.com.au';
+  v_label citext;
   v_evt uuid;
   v_slug citext;
 begin
-  if v_host = 'easypassport.com.au' then
+  -- Strip an optional :port (defensive — Host headers can include one).
+  v_host := split_part(v_host::text, ':', 1)::citext;
+
+  -- Apex marketing site.
+  if v_host = v_root then
     return query select 'marketing'::text, null::uuid, null::citext, false;
     return;
   end if;
 
-  if v_host = 'app.easypassport.com.au' then
+  -- Admin host.
+  if v_host = ('app' || v_suffix)::citext then
     return query select 'admin'::text, null::uuid, null::citext, true;
     return;
   end if;
 
-  select e.id, e.public_slug
-    into v_evt, v_slug
-  from public.event_domains d
-  join public.events e on e.id = d.event_id
-  where d.status = 'active'
-    and e.status = 'published'
-    and (
-      d.custom_domain = v_host
-      or d.public_subdomain = split_part(v_host, '.', 1)
-    )
-  limit 1;
+  -- Event subdomain: ONLY when host ends with .easypassport.com.au and the
+  -- first label is not a reserved name.
+  if right(v_host::text, length(v_suffix)) = v_suffix then
+    v_label := split_part(v_host::text, '.', 1)::citext;
+
+    if public.is_reserved_public_slug(v_label::text) then
+      return query select 'not_found'::text, null::uuid, null::citext, false;
+      return;
+    end if;
+
+    select e.id, e.public_slug
+      into v_evt, v_slug
+    from public.event_domains d
+    join public.events e on e.id = d.event_id
+    where d.status = 'active'
+      and e.status = 'published'
+      and d.domain_type = 'event_subdomain'
+      and d.public_subdomain = v_label
+    limit 1;
+  else
+    -- Custom domain: exact host match only. No first-label fallback.
+    select e.id, e.public_slug
+      into v_evt, v_slug
+    from public.event_domains d
+    join public.events e on e.id = d.event_id
+    where d.status = 'active'
+      and e.status = 'published'
+      and d.domain_type = 'event_custom'
+      and d.custom_domain = v_host
+    limit 1;
+  end if;
 
   if v_evt is null then
     return query select 'not_found'::text, null::uuid, null::citext, false;
