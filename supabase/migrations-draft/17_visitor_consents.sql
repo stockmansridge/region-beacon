@@ -20,7 +20,7 @@ create table if not exists public.visitor_consents (
   constraint visitor_consents_visitor_fk
     foreign key (agency_id, event_id, visitor_id) references public.visitors(agency_id, event_id, id) on delete cascade,
   constraint visitor_consents_passport_fk
-    foreign key (agency_id, event_id, passport_id) references public.passports(agency_id, event_id, id) on delete set null,
+    foreign key (agency_id, event_id, passport_id) references public.passports(agency_id, event_id, id) on delete restrict,
   constraint visitor_consents_terms_version_fk
     foreign key (agency_id, event_id, terms_version_id) references public.event_terms_versions(agency_id, event_id, id) on delete restrict,
 
