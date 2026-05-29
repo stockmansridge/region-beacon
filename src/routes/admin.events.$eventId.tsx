@@ -1105,7 +1105,10 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Venues">
+          <Section
+            title="Venues for this event"
+            description="Add and manage the venues/stops that visitors can collect stamps from for this event."
+          >
             {canEdit && venueEditingId === null && (
               <div className="mb-4 flex justify-end">
                 <button
