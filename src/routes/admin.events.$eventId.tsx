@@ -103,15 +103,49 @@ function fmt(d: string | null | undefined) {
   }
 }
 
+type EditForm = {
+  name: string;
+  description: string;
+  timezone: string;
+  starts_at: string; // datetime-local
+  ends_at: string;   // datetime-local
+};
+
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(s: string): string | null {
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 function EventDetail() {
   const { eventId } = Route.useParams();
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
+  const canEdit =
+    agency.isPlatformAdmin ||
+    agency.selected?.role === "agency_owner" ||
+    agency.selected?.role === "agency_admin";
 
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState<EditForm | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
+
     if (!agencyId || eventId === "new") {
       if (eventId === "new") setState("not-found");
       return;
