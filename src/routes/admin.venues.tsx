@@ -33,12 +33,18 @@ function Venues() {
             </div>
             <CardTitle className="text-lg">Coming soon</CardTitle>
             <CardDescription className="text-sm">
-              This page will become a cross-event view of every venue across all your events.
+              A cross-event venue manager is coming soon.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              For now, venues are managed inside the event they belong to — open{" "}
+              For now, add and manage venues inside each event. Open{" "}
+              <strong className="text-foreground">Events</strong>, choose an event, then scroll to{" "}
+              <strong className="text-foreground">Venues for this event</strong>.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Future: reusable venue library, bulk import, cross-event search, QR poster exports.
+            </p>
               <strong className="text-foreground">Events</strong>, choose an event, then scroll to{" "}
               <strong className="text-foreground">Venues for this event</strong> to add or edit
               venues, QR codes, and offers.
