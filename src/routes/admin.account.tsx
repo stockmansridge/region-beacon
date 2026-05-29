@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -76,13 +77,15 @@ function AccountPage() {
   const [activations, setActivations] = useState<ActivationRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busyEventId, setBusyEventId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!canView || !agencyId) return;
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    (async () => {
+  const isPlatformAdmin = access.isPlatformAdmin;
+
+  const loadAll = useCallback(
+    async (signal?: { cancelled: boolean }) => {
+      if (!agencyId) return;
+      setLoading(true);
+      setError(null);
       const [evRes, domRes, baRes, subRes] = await Promise.all([
         supabase
           .from("events")
@@ -109,7 +112,7 @@ function AccountPage() {
           .limit(1)
           .maybeSingle(),
       ]);
-      if (cancelled) return;
+      if (signal?.cancelled) return;
       if (evRes.error) {
         setError("Could not load events.");
         setLoading(false);
@@ -127,18 +130,52 @@ function AccountPage() {
           .from("event_activations")
           .select("event_id, status, activation_kind, activated_at, expires_at")
           .in("event_id", eventIds);
-        if (!cancelled) {
+        if (!signal?.cancelled) {
           setActivations(actRes.error ? [] : ((actRes.data ?? []) as ActivationRow[]));
         }
       } else {
         setActivations([]);
       }
       setLoading(false);
-    })();
+    },
+    [agencyId],
+  );
+
+  useEffect(() => {
+    if (!canView || !agencyId) return;
+    const signal = { cancelled: false };
+    void loadAll(signal);
     return () => {
-      cancelled = true;
+      signal.cancelled = true;
     };
-  }, [canView, agencyId]);
+  }, [canView, agencyId, loadAll]);
+
+  const runManualActivation = useCallback(
+    async (
+      eventId: string,
+      status: "comp" | "unpaid" | "active" | "past_due" | "cancelled",
+      activationKind: "comp" | "one_time" | "included_in_plan",
+    ) => {
+      if (!isPlatformAdmin) return;
+      setBusyEventId(eventId);
+      const { error: rpcError } = await supabase.rpc("platform_set_event_activation", {
+        _event_id: eventId,
+        _status: status,
+        _activation_kind: activationKind,
+        _expires_at: null,
+      });
+      if (rpcError) {
+        toast.error("Could not update activation. Please try again.");
+        setBusyEventId(null);
+        return;
+      }
+      toast.success("Activation updated.");
+      await loadAll();
+      setBusyEventId(null);
+    },
+    [isPlatformAdmin, loadAll],
+  );
+
 
   if (!canView) {
     return <NoAccessScreen email={auth.email ?? null} />;
@@ -310,7 +347,29 @@ function AccountPage() {
                       )}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <DisabledButton label="Activate event" small />
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <DisabledButton label="Activate event" small />
+                        {isPlatformAdmin && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={busyEventId === e.id}
+                              onClick={() => runManualActivation(e.id, "comp", "comp")}
+                              className="inline-flex h-8 items-center rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-300"
+                            >
+                              {busyEventId === e.id ? "Working…" : "Comp activate"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyEventId === e.id}
+                              onClick={() => runManualActivation(e.id, "unpaid", "one_time")}
+                              className="inline-flex h-8 items-center rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-300"
+                            >
+                              Set unpaid
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -320,6 +379,11 @@ function AccountPage() {
         )}
         <div className="border-t px-5 py-3 text-xs text-muted-foreground">
           {COMING_SOON_HELP}
+          {isPlatformAdmin && (
+            <div className="mt-1 text-amber-700 dark:text-amber-400">
+              Manual activation is for platform testing only. Stripe billing will replace this later.
+            </div>
+          )}
         </div>
       </div>
     </>
