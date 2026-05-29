@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { TrailLanding } from "@/components/trail-landing";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
@@ -419,9 +420,9 @@ function BrandingEditor() {
           </div>
           <LandingPreview
             eventName={event.name}
-            primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#7A1F2B"}
-            accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#E8C547"}
-            fontFamily={form.font_family.trim() || "system-ui, sans-serif"}
+            primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B"}
+            accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A"}
+            fontFamily={form.font_family.trim() || undefined}
             welcomeCopy={form.welcome_copy.trim()}
             termsUrl={form.terms_url.trim()}
             venueCount={venueCount}
@@ -462,82 +463,30 @@ function LandingPreview({
   eventName: string;
   primaryColor: string;
   accentColor: string;
-  fontFamily: string;
+  fontFamily: string | undefined;
   welcomeCopy: string;
   termsUrl: string;
   venueCount: number;
 }) {
   return (
-    <div
-      className="overflow-hidden rounded-xl border bg-background shadow-sm"
-      style={{ fontFamily }}
-    >
-      {/* Hero / cover */}
-      <div
-        className="relative h-44 w-full"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`,
-        }}
-      >
-        <div className="absolute inset-0 flex items-center justify-center text-xs uppercase tracking-widest text-white/80">
-          Cover image placeholder
-        </div>
-        <div className="absolute left-4 top-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white/90 text-[10px] font-semibold uppercase text-neutral-500 shadow">
-          Logo
-        </div>
+    <div className="rounded-2xl border border-[#E6DCC7] bg-trail-cream p-4">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+        <span>Customer landing — live preview</span>
+        <span>Mobile</span>
       </div>
-
-      <div className="space-y-5 p-6">
-        <div>
-          <h2 className="text-2xl font-bold" style={{ color: primaryColor }}>
-            {eventName}
-          </h2>
-          <p className="mt-1 text-xs text-neutral-500">No app required · Web-based passport</p>
-        </div>
-
-        <p className="text-sm leading-relaxed text-neutral-700">
-          {welcomeCopy || "Welcome! Collect stamps at participating venues and unlock rewards."}
-        </p>
-
-        <button
-          type="button"
-          className="inline-flex h-10 items-center rounded-lg px-5 text-sm font-semibold text-white shadow"
-          style={{ backgroundColor: primaryColor }}
-        >
-          Start passport
-        </button>
-
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="rounded-lg border bg-muted/30 p-3">
-            <div className="text-xs uppercase tracking-wider text-neutral-500">Venues</div>
-            <div className="mt-1 text-2xl font-semibold" style={{ color: primaryColor }}>
-              {venueCount}
-            </div>
-          </div>
-          <div className="rounded-lg border bg-muted/30 p-3">
-            <div className="text-xs uppercase tracking-wider text-neutral-500">Progress</div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full"
-                style={{ width: "40%", backgroundColor: accentColor }}
-              />
-            </div>
-            <div className="mt-1 text-xs text-neutral-500">Sample reward: unlock at 5 stamps</div>
-          </div>
-        </div>
-
-        <div className="border-t pt-3 text-xs text-neutral-500">
-          By starting, you accept the{" "}
-          {termsUrl ? (
-            <span className="underline" style={{ color: accentColor }}>
-              terms and privacy policy
-            </span>
-          ) : (
-            <span>terms and privacy policy (link not set)</span>
-          )}
-          .
-        </div>
-      </div>
+      <TrailLanding
+        eventName={eventName}
+        welcomeCopy={
+          welcomeCopy ||
+          "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."
+        }
+        primaryColor={primaryColor}
+        accentColor={accentColor}
+        fontFamily={fontFamily}
+        venueCount={venueCount}
+        badge="Preview"
+        termsUrl={termsUrl || null}
+      />
     </div>
   );
 }

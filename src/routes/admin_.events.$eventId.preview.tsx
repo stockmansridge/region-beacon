@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { TrailLanding } from "@/components/trail-landing";
 
 export const Route = createFileRoute("/admin_/events/$eventId/preview")({
   head: () => ({ meta: [{ title: "Event preview" }] }),
@@ -166,18 +167,18 @@ function EventPreview() {
     );
   }
 
-  const { event, branding, venues, termsUrl, privacyUrl } = bundle;
+  const { event, branding, venues, termsUrl } = bundle;
   const primaryColor =
-    branding?.primary_color && HEX_RE.test(branding.primary_color) ? branding.primary_color : "#7A1F2B";
+    branding?.primary_color && HEX_RE.test(branding.primary_color) ? branding.primary_color : "#1F3D2B";
   const accentColor =
-    branding?.accent_color && HEX_RE.test(branding.accent_color) ? branding.accent_color : "#E8C547";
-  const fontFamily = branding?.font_family?.trim() || "system-ui, sans-serif";
+    branding?.accent_color && HEX_RE.test(branding.accent_color) ? branding.accent_color : "#B5572A";
+  const fontFamily = branding?.font_family?.trim() || undefined;
   const welcomeCopy =
     branding?.welcome_copy?.trim() ||
-    "Welcome! Collect stamps at participating venues and unlock rewards along the way.";
+    "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail.";
 
   return (
-    <div className="min-h-screen bg-neutral-100" style={{ fontFamily }}>
+    <div className="min-h-screen bg-trail-cream" style={fontFamily ? { fontFamily } : undefined}>
       {/* Floating admin controls */}
       <div className="fixed left-4 top-4 z-50">
         <Link
@@ -198,124 +199,43 @@ function EventPreview() {
         </div>
       </div>
 
-      {/* Landing page */}
-      <div className="mx-auto max-w-2xl px-4 py-10 sm:py-16">
-        <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-          {/* Hero */}
-          <div
-            className="relative h-56 w-full"
-            style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}
-          >
-            <div className="absolute inset-0 flex items-center justify-center text-xs uppercase tracking-widest text-white/80">
-              Cover image placeholder
-            </div>
-            <div className="absolute left-5 top-5 flex h-16 w-16 items-center justify-center rounded-xl bg-white/90 text-[10px] font-semibold uppercase text-neutral-500 shadow">
-              Logo
-            </div>
-          </div>
+      <div className="mx-auto max-w-md px-4 py-16">
+        <TrailLanding
+          eventName={event.name}
+          pitch={event.description ?? undefined}
+          welcomeCopy={welcomeCopy}
+          primaryColor={primaryColor}
+          accentColor={accentColor}
+          fontFamily={fontFamily}
+          badge="Preview"
+          venueNames={venues.map((v) => v.name)}
+          venueCount={venues.length}
+          termsUrl={termsUrl ?? null}
+          primaryCta={
+            <button
+              type="button"
+              disabled
+              title="Preview only — the live event is not active"
+              className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
+              style={{ backgroundColor: primaryColor }}
+            >
+              Start passport · Preview only
+            </button>
+          }
+          secondaryCta={
+            <button
+              type="button"
+              disabled
+              className="flex h-11 w-full cursor-not-allowed items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide opacity-70"
+              style={{ borderColor: `${primaryColor}40`, color: primaryColor }}
+            >
+              I already have a passport
+            </button>
+          }
+        />
 
-          <div className="space-y-6 p-6 sm:p-8">
-            <div>
-              <h1 className="text-3xl font-bold leading-tight" style={{ color: primaryColor }}>
-                {event.name}
-              </h1>
-              <p className="mt-2 text-xs uppercase tracking-wider text-neutral-500">
-                No app required · Web-based passport
-              </p>
-            </div>
-
-            {event.description && (
-              <p className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
-                {event.description}
-              </p>
-            )}
-
-            <p className="text-sm leading-relaxed text-neutral-700">{welcomeCopy}</p>
-
-            <div>
-              <button
-                type="button"
-                disabled
-                title="Preview only — the live event is not active"
-                className="inline-flex h-11 cursor-not-allowed items-center rounded-lg px-6 text-sm font-semibold text-white opacity-60 shadow"
-                style={{ backgroundColor: primaryColor }}
-              >
-                Start passport (Preview only)
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div className="rounded-lg border bg-neutral-50 p-3">
-                <div className="text-xs uppercase tracking-wider text-neutral-500">Venues</div>
-                <div className="mt-1 text-2xl font-semibold" style={{ color: primaryColor }}>
-                  {venues.length}
-                </div>
-              </div>
-              <div className="rounded-lg border bg-neutral-50 p-3">
-                <div className="text-xs uppercase tracking-wider text-neutral-500">Progress</div>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-neutral-200">
-                  <div className="h-full" style={{ width: "40%", backgroundColor: accentColor }} />
-                </div>
-                <div className="mt-1 text-xs text-neutral-500">Sample reward: unlock at 5 stamps</div>
-              </div>
-            </div>
-
-            {venues.length > 0 && (
-              <div className="border-t pt-4">
-                <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Participating venues
-                </div>
-                <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  {venues.map((v) => (
-                    <li
-                      key={v.id}
-                      className="rounded-md border bg-neutral-50 px-3 py-2 text-sm text-neutral-700"
-                    >
-                      {v.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="border-t pt-4 text-xs text-neutral-500">
-              By starting, you accept the{" "}
-              {termsUrl ? (
-                <a
-                  href={termsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                  style={{ color: accentColor }}
-                  onClick={(e) => e.preventDefault()}
-                >
-                  terms
-                </a>
-              ) : (
-                <span>terms (not configured)</span>
-              )}
-              {" "}and{" "}
-              {privacyUrl ? (
-                <a
-                  href={privacyUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                  style={{ color: accentColor }}
-                  onClick={(e) => e.preventDefault()}
-                >
-                  privacy policy
-                </a>
-              ) : (
-                <span>privacy policy (not configured)</span>
-              )}
-              .
-            </div>
-          </div>
-        </div>
-
-        <p className="mt-4 text-center text-xs text-neutral-500">
-          This is an admin-only preview. No visitors, passports, or check-ins are created.
+        <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
+          Admin preview · no visitors, passports, or check-ins are created
         </p>
       </div>
     </div>
