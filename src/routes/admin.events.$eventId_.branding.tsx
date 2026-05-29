@@ -538,6 +538,7 @@ function LandingPreview({
   welcomeCopy,
   termsUrl,
   venueCount,
+  venueLabelPlural,
 }: {
   eventName: string;
   primaryColor: string;
@@ -546,6 +547,7 @@ function LandingPreview({
   welcomeCopy: string;
   termsUrl: string;
   venueCount: number;
+  venueLabelPlural: string;
 }) {
   return (
     <div className="rounded-2xl border border-[#E6DCC7] bg-trail-cream p-4">
@@ -563,9 +565,11 @@ function LandingPreview({
         accentColor={accentColor}
         fontFamily={fontFamily}
         venueCount={venueCount}
+        venueLabelPlural={venueLabelPlural}
         badge="Preview"
         termsUrl={termsUrl || null}
       />
     </div>
   );
 }
+
