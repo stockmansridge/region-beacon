@@ -24,12 +24,16 @@ create table if not exists public.event_terms_versions (
 create index if not exists idx_event_terms_versions_event on public.event_terms_versions (event_id, effective_at desc);
 
 -- Wire events.current_terms_version_id FK now that target table exists.
+-- Wire events.current_terms_version_id FK now that target table exists.
+-- Tenant-safe composite FK: forces the referenced terms_version to belong to
+-- the SAME (agency_id, event_id). Prevents an event from pointing at another
+-- agency's or another event's terms row at the database level.
 alter table public.events
   drop constraint if exists events_current_terms_fk;
 alter table public.events
   add constraint events_current_terms_fk
-  foreign key (current_terms_version_id)
-  references public.event_terms_versions(id)
+  foreign key (agency_id, id, current_terms_version_id)
+  references public.event_terms_versions(agency_id, event_id, id)
   on delete set null;
 
 grant select, insert on public.event_terms_versions to authenticated;
