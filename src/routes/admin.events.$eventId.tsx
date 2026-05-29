@@ -65,6 +65,8 @@ type CheckinSettings = {
 type LeaderboardSettings = {
   is_enabled: boolean;
   display_mode: string;
+  show_first_name: boolean;
+  show_last_initial: boolean;
   show_visit_count: boolean;
   hide_below_checkins: number;
   allow_visitor_opt_out: boolean;
@@ -127,6 +129,24 @@ type CheckinEditForm = {
   max_checkins_per_passport_per_day: string;
 };
 
+const LEADERBOARD_DISPLAY_MODES = [
+  "first_name_last_initial",
+  "first_name_only",
+  "alias_only",
+  "anonymous",
+] as const;
+type LeaderboardDisplayMode = (typeof LEADERBOARD_DISPLAY_MODES)[number];
+
+type LeaderboardEditForm = {
+  is_enabled: boolean;
+  display_mode: LeaderboardDisplayMode;
+  show_first_name: boolean;
+  show_last_initial: boolean;
+  show_visit_count: boolean;
+  hide_below_checkins: string;
+  allow_visitor_opt_out: boolean;
+};
+
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -171,6 +191,12 @@ function EventDetail() {
   const [checkinSaving, setCheckinSaving] = useState(false);
   const [checkinSaveError, setCheckinSaveError] = useState<string | null>(null);
   const [checkinValidationError, setCheckinValidationError] = useState<string | null>(null);
+
+  const [isEditingLeaderboard, setIsEditingLeaderboard] = useState(false);
+  const [lbForm, setLbForm] = useState<LeaderboardEditForm | null>(null);
+  const [lbSaving, setLbSaving] = useState(false);
+  const [lbSaveError, setLbSaveError] = useState<string | null>(null);
+  const [lbValidationError, setLbValidationError] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -228,7 +254,7 @@ function EventDetail() {
             .maybeSingle(),
           supabase
             .from("leaderboard_settings")
-            .select("is_enabled, display_mode, show_visit_count, hide_below_checkins, allow_visitor_opt_out")
+            .select("is_enabled, display_mode, show_first_name, show_last_initial, show_visit_count, hide_below_checkins, allow_visitor_opt_out")
             .eq("event_id", event.id)
             .eq("agency_id", agencyId)
             .maybeSingle(),
@@ -549,6 +575,87 @@ function EventDetail() {
     setCheckinForm(null);
     setReloadKey((k) => k + 1);
   }
+
+  function startEditLeaderboard() {
+    if (!bundle) return;
+    const lb = bundle.leaderboard;
+    const mode = (lb?.display_mode ?? "first_name_last_initial") as LeaderboardDisplayMode;
+    setLbForm({
+      is_enabled: lb?.is_enabled ?? false,
+      display_mode: (LEADERBOARD_DISPLAY_MODES as readonly string[]).includes(mode)
+        ? mode
+        : "first_name_last_initial",
+      show_first_name: lb?.show_first_name ?? true,
+      show_last_initial: lb?.show_last_initial ?? true,
+      show_visit_count: lb?.show_visit_count ?? false,
+      hide_below_checkins: String(lb?.hide_below_checkins ?? 0),
+      allow_visitor_opt_out: lb?.allow_visitor_opt_out ?? true,
+    });
+    setLbValidationError(null);
+    setLbSaveError(null);
+    setIsEditingLeaderboard(true);
+  }
+
+  function cancelEditLeaderboard() {
+    setIsEditingLeaderboard(false);
+    setLbForm(null);
+    setLbValidationError(null);
+    setLbSaveError(null);
+  }
+
+  async function saveEditLeaderboard() {
+    if (!lbForm || !agencyId || !bundle) return;
+
+    if (!(LEADERBOARD_DISPLAY_MODES as readonly string[]).includes(lbForm.display_mode)) {
+      setLbValidationError("Invalid display mode.");
+      return;
+    }
+    const hideBelow = parseInt(lbForm.hide_below_checkins, 10);
+    if (Number.isNaN(hideBelow) || hideBelow < 0 || !Number.isFinite(hideBelow)) {
+      setLbValidationError("Hide below check-ins must be a whole number >= 0.");
+      return;
+    }
+
+    setLbValidationError(null);
+    setLbSaveError(null);
+    setLbSaving(true);
+
+    const payload = {
+      is_enabled: lbForm.is_enabled,
+      display_mode: lbForm.display_mode,
+      show_first_name: lbForm.show_first_name,
+      show_last_initial: lbForm.show_last_initial,
+      show_visit_count: lbForm.show_visit_count,
+      hide_below_checkins: hideBelow,
+      allow_visitor_opt_out: lbForm.allow_visitor_opt_out,
+    };
+
+    let error: { message: string } | null = null;
+    if (bundle.leaderboard) {
+      const { error: upErr } = await supabase
+        .from("leaderboard_settings")
+        .update(payload)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId);
+      error = upErr ?? null;
+    } else {
+      const { error: inErr } = await supabase
+        .from("leaderboard_settings")
+        .insert({ agency_id: agencyId, event_id: eventId, ...payload });
+      error = inErr ?? null;
+    }
+
+    setLbSaving(false);
+    if (error) {
+      setLbSaveError("Could not save leaderboard settings. Please try again.");
+      return;
+    }
+    setIsEditingLeaderboard(false);
+    setLbForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
+
 
 
 
@@ -1049,18 +1156,150 @@ function EventDetail() {
           </Section>
 
           <Section title="Leaderboard">
-            {leaderboard ? (
-              <DefList
-                rows={[
-                  ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
-                  ["Display mode", leaderboard.display_mode],
-                  ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
-                  ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
-                  ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
-                ]}
-              />
+            {isEditingLeaderboard && lbForm ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {lbSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+                <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  Public leaderboard display is privacy-limited. Visitor email, mobile, postcode,
+                  and full name are never shown. Default display is first name + last initial.
+                </p>
+                {(lbValidationError || lbSaveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {lbValidationError ?? lbSaveError}
+                  </div>
+                )}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.is_enabled}
+                    onChange={(e) => setLbForm({ ...lbForm, is_enabled: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Public leaderboard enabled</span>
+                </label>
+                <Field label="Display mode" required>
+                  <select
+                    value={lbForm.display_mode}
+                    onChange={(e) =>
+                      setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
+                    }
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="first_name_last_initial">First name + last initial</option>
+                    <option value="first_name_only">First name only</option>
+                    <option value="alias_only">Alias only</option>
+                    <option value="anonymous">Anonymous</option>
+                  </select>
+                </Field>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_first_name}
+                    onChange={(e) => setLbForm({ ...lbForm, show_first_name: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show first name</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_last_initial}
+                    onChange={(e) => setLbForm({ ...lbForm, show_last_initial: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show last initial</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_visit_count}
+                    onChange={(e) => setLbForm({ ...lbForm, show_visit_count: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show visit count</span>
+                </label>
+                <Field label="Hide below check-ins" required>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={lbForm.hide_below_checkins}
+                    onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Visitors below this number of check-ins are hidden from the public leaderboard.
+                  </p>
+                </Field>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.allow_visitor_opt_out}
+                    onChange={(e) => setLbForm({ ...lbForm, allow_visitor_opt_out: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Allow visitors to opt out</span>
+                </label>
+              </div>
             ) : (
-              <EmptyNotice>No leaderboard settings.</EmptyNotice>
+              <>
+                {canEdit && (
+                  <div className="mb-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={startEditLeaderboard}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Edit leaderboard settings
+                    </button>
+                  </div>
+                )}
+                {leaderboard ? (
+                  <>
+                    {!leaderboard.is_enabled && (
+                      <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                        Public leaderboard is disabled for this event.
+                      </div>
+                    )}
+                    <DefList
+                      rows={[
+                        ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
+                        ["Display mode", leaderboard.display_mode],
+                        ["Show first name", leaderboard.show_first_name ? "yes" : "no"],
+                        ["Show last initial", leaderboard.show_last_initial ? "yes" : "no"],
+                        ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
+                        ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
+                        ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
+                      ]}
+                    />
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Privacy: email, mobile, postcode, and full name are never displayed publicly.
+                      Default display is first name + last initial.
+                    </p>
+                  </>
+                ) : (
+                  <EmptyNotice>
+                    No leaderboard settings. Public leaderboard is disabled by default.
+                  </EmptyNotice>
+                )}
+              </>
             )}
           </Section>
         </aside>
