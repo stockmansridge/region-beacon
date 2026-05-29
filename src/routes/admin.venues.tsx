@@ -22,7 +22,7 @@ function Venues() {
     <>
       <PageHeader
         title="Venues"
-        description="Manage participating venues and their unique QR codes."
+        description="A cross-event venue manager is coming soon."
       />
 
       <div className="mx-auto max-w-xl">
@@ -33,14 +33,15 @@ function Venues() {
             </div>
             <CardTitle className="text-lg">Coming soon</CardTitle>
             <CardDescription className="text-sm">
-              Venue management currently happens inside each event.
+              This page will become a cross-event view of every venue across all your events.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              To manage venues, go to{" "}
-              <strong className="text-foreground">Events</strong>, choose an event, then open the{" "}
-              <strong className="text-foreground">Venues</strong> section.
+              For now, venues are managed inside the event they belong to — open{" "}
+              <strong className="text-foreground">Events</strong>, choose an event, then scroll to{" "}
+              <strong className="text-foreground">Venues for this event</strong> to add or edit
+              venues, QR codes, and offers.
             </p>
             <Button asChild>
               <Link to="/admin/events">
@@ -52,7 +53,7 @@ function Venues() {
 
         <div className="mt-8">
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Planned features
+            Planned for this page
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {comingSoonFeatures.map((f) => (
