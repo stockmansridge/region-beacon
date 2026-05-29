@@ -7,6 +7,7 @@ import {
   DEFAULT_VENUE_LABEL_PLURAL,
   DEFAULT_VENUE_LABEL_SINGULAR,
 } from "@/lib/venue-labels";
+import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
 
 export const Route = createFileRoute("/passport/$token")({
   head: () => ({ meta: [{ title: "My passport" }] }),
