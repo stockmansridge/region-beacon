@@ -49,7 +49,7 @@ export function TrailShell({
                   {initials}
                 </div>
                 <span className="font-trail-serif text-base font-semibold" style={{ color: primaryColor }}>
-                  {eventName ?? "Easy Passport"}
+                  {eventName ?? "GetStampd"}
                 </span>
               </Link>
             )}

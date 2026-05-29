@@ -4,10 +4,10 @@ import { ArrowLeft, Construction } from "lucide-react";
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Sign up — Easy Passport" },
+      { title: "Sign up — GetStampd" },
       {
         name: "description",
-        content: "Self-service signup for Easy Passport is coming soon.",
+        content: "Self-service signup for GetStampd is coming soon.",
       },
     ],
   }),
@@ -21,7 +21,7 @@ function SignupPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-hero-gradient" />
-            <div className="text-sm font-semibold">Easy Passport</div>
+            <div className="text-sm font-semibold">GetStampd</div>
           </Link>
           <nav className="flex items-center gap-2">
             <Link
@@ -97,7 +97,7 @@ function SignupPage() {
 
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-xs text-muted-foreground sm:flex-row">
-          <div>© {new Date().getFullYear()} Easy Passport. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} GetStampd. All rights reserved.</div>
           <div className="flex gap-4">
             <Link to="/" className="hover:text-foreground">
               Product

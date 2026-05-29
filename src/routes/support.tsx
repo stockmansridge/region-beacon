@@ -15,10 +15,10 @@ import {
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Support — Easy Passport" },
+      { title: "Support — GetStampd" },
       {
         name: "description",
-        content: "Get help with your Easy Passport event. Support for login, event setup, QR codes and billing.",
+        content: "Get help with your GetStampd event. Support for login, event setup, QR codes and billing.",
       },
     ],
   }),
@@ -71,7 +71,7 @@ function SupportPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-hero-gradient" />
-            <div className="text-sm font-semibold">Easy Passport</div>
+            <div className="text-sm font-semibold">GetStampd</div>
           </Link>
           <nav className="flex items-center gap-2">
             <Link
@@ -121,7 +121,7 @@ function SupportPage() {
           Contact Support
         </h1>
         <p className="mt-3 max-w-xl text-muted-foreground">
-          If you manage an event on Easy Passport and need help, start here.
+          If you manage an event on GetStampd and need help, start here.
           For sales or general enquiries, visit{" "}
           <Link to="/contact" className="font-medium text-primary hover:underline">
             Contact Us
@@ -193,7 +193,7 @@ function SupportPage() {
 
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-xs text-muted-foreground sm:flex-row">
-          <div>© {new Date().getFullYear()} Easy Passport. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} GetStampd. All rights reserved.</div>
           <div className="flex gap-4">
             <Link to="/" className="hover:text-foreground">
               Product
