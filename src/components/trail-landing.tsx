@@ -186,7 +186,7 @@ export function TrailLanding({
               ))}
               {venueNames.length > 6 && (
                 <li className="text-center text-[11px] uppercase tracking-[0.18em] text-[#8A7E66]">
-                  + {venueNames.length - 6} more stops
+                  + {venueNames.length - 6} more {venueLabelPlural.toLowerCase()}
                 </li>
               )}
             </ul>
