@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CheckinVenueIdRouteImport } from './routes/checkin.$venueId'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
+import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
@@ -56,6 +57,11 @@ const AdminVenuesRoute = AdminVenuesRouteImport.update({
   path: '/venues',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminUpdatePasswordRoute = AdminUpdatePasswordRouteImport.update({
+  id: '/update-password',
+  path: '/update-password',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/passport': typeof PassportRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/checkin/$venueId': typeof CheckinVenueIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/passport': typeof PassportRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/checkin/$venueId': typeof CheckinVenueIdRoute
   '/admin': typeof AdminIndexRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/passport': typeof PassportRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/checkin/$venueId': typeof CheckinVenueIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/passport'
     | '/admin/analytics'
     | '/admin/login'
+    | '/admin/update-password'
     | '/admin/venues'
     | '/checkin/$venueId'
     | '/admin/'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/passport'
     | '/admin/analytics'
     | '/admin/login'
+    | '/admin/update-password'
     | '/admin/venues'
     | '/checkin/$venueId'
     | '/admin'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/passport'
     | '/admin/analytics'
     | '/admin/login'
+    | '/admin/update-password'
     | '/admin/venues'
     | '/checkin/$venueId'
     | '/admin/'
@@ -216,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVenuesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/update-password': {
+      id: '/admin/update-password'
+      path: '/update-password'
+      fullPath: '/admin/update-password'
+      preLoaderRoute: typeof AdminUpdatePasswordRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/login'
@@ -250,6 +269,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminUpdatePasswordRoute: typeof AdminUpdatePasswordRoute
   AdminVenuesRoute: typeof AdminVenuesRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminEventsEventIdRoute: typeof AdminEventsEventIdRoute
@@ -259,6 +279,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminUpdatePasswordRoute: AdminUpdatePasswordRoute,
   AdminVenuesRoute: AdminVenuesRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminEventsEventIdRoute: AdminEventsEventIdRoute,
