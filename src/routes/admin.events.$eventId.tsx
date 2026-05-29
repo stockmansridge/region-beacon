@@ -1115,6 +1115,7 @@ function EventDetail() {
               eventId={event.id}
               publicSlug={event.public_slug}
               internalSlug={event.slug}
+              eventName={event.name}
               domains={domains}
               canEdit={canEdit}
               isPlatformAdmin={agency.isPlatformAdmin}
@@ -1926,11 +1927,21 @@ type AvailabilityState =
   | { kind: "taken" }
   | { kind: "error"; message: string };
 
+function slugifyName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 63);
+}
+
 function PublicAddressCard({
   agencyId,
   eventId,
   publicSlug,
   internalSlug,
+  eventName,
   domains,
   canEdit,
   isPlatformAdmin,
@@ -1940,6 +1951,7 @@ function PublicAddressCard({
   eventId: string;
   publicSlug: string | null;
   internalSlug: string | null;
+  eventName: string;
   domains: Domain[];
   canEdit: boolean;
   isPlatformAdmin: boolean;
@@ -1948,9 +1960,13 @@ function PublicAddressCard({
   const subdomainRow = domains.find((d) => d.domain_type === "event_subdomain") ?? null;
   const otherDomains = domains.filter((d) => d.domain_type !== "event_subdomain");
 
-  // Prefill with publicSlug or internal slug (lowercased) when nothing is claimed.
+  // Prefill from internal slug (lowercased). If blank, fall back to a
+  // slugified event name. Never use public_slug — it may be a generated
+  // placeholder like evt-xxxx and is not customer-friendly.
   const initialSuggestion = !subdomainRow
-    ? ((publicSlug ?? internalSlug ?? "").toLowerCase())
+    ? (internalSlug && internalSlug.trim().length > 0
+        ? internalSlug.toLowerCase()
+        : slugifyName(eventName))
     : "";
   const [input, setInput] = useState(initialSuggestion);
   const [availability, setAvailability] = useState<AvailabilityState>({ kind: "idle" });

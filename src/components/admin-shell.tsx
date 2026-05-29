@@ -17,7 +17,7 @@ import { signOut } from "@/hooks/use-auth";
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/events", label: "Events", icon: Calendar, exact: false },
-  { to: "/admin/venues", label: "Venues", icon: MapPin, exact: false },
+  { to: "/admin/venues", label: "Venue Library", icon: MapPin, exact: false },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
 ] as const;
 
