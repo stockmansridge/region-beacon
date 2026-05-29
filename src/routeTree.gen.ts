@@ -23,8 +23,10 @@ import { Route as DemoWineriesRouteImport } from './routes/demo.wineries'
 import { Route as DemoTrailMapRouteImport } from './routes/demo.trail-map'
 import { Route as DemoRewardsRouteImport } from './routes/demo.rewards'
 import { Route as DemoPassportRouteImport } from './routes/demo.passport'
+import { Route as DemoOffersRouteImport } from './routes/demo.offers'
 import { Route as DemoMoreRouteImport } from './routes/demo.more'
 import { Route as DemoJoinRouteImport } from './routes/demo.join'
+import { Route as DemoInviteRouteImport } from './routes/demo.invite'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
 import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
@@ -109,6 +111,11 @@ const DemoPassportRoute = DemoPassportRouteImport.update({
   path: '/demo/passport',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoOffersRoute = DemoOffersRouteImport.update({
+  id: '/demo/offers',
+  path: '/demo/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoMoreRoute = DemoMoreRouteImport.update({
   id: '/demo/more',
   path: '/demo/more',
@@ -117,6 +124,11 @@ const DemoMoreRoute = DemoMoreRouteImport.update({
 const DemoJoinRoute = DemoJoinRouteImport.update({
   id: '/demo/join',
   path: '/demo/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoInviteRoute = DemoInviteRouteImport.update({
+  id: '/demo/invite',
+  path: '/demo/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVenuesRoute = AdminVenuesRouteImport.update({
@@ -199,8 +211,10 @@ export interface FileRoutesByFullPath {
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
+  '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/more': typeof DemoMoreRoute
+  '/demo/offers': typeof DemoOffersRoute
   '/demo/passport': typeof DemoPassportRoute
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
@@ -229,8 +243,10 @@ export interface FileRoutesByTo {
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
+  '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/more': typeof DemoMoreRoute
+  '/demo/offers': typeof DemoOffersRoute
   '/demo/passport': typeof DemoPassportRoute
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
@@ -261,8 +277,10 @@ export interface FileRoutesById {
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
+  '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/more': typeof DemoMoreRoute
+  '/demo/offers': typeof DemoOffersRoute
   '/demo/passport': typeof DemoPassportRoute
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
@@ -294,8 +312,10 @@ export interface FileRouteTypes {
     | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
+    | '/demo/invite'
     | '/demo/join'
     | '/demo/more'
+    | '/demo/offers'
     | '/demo/passport'
     | '/demo/rewards'
     | '/demo/trail-map'
@@ -324,8 +344,10 @@ export interface FileRouteTypes {
     | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
+    | '/demo/invite'
     | '/demo/join'
     | '/demo/more'
+    | '/demo/offers'
     | '/demo/passport'
     | '/demo/rewards'
     | '/demo/trail-map'
@@ -355,8 +377,10 @@ export interface FileRouteTypes {
     | '/admin/system'
     | '/admin/update-password'
     | '/admin/venues'
+    | '/demo/invite'
     | '/demo/join'
     | '/demo/more'
+    | '/demo/offers'
     | '/demo/passport'
     | '/demo/rewards'
     | '/demo/trail-map'
@@ -381,8 +405,10 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
+  DemoInviteRoute: typeof DemoInviteRoute
   DemoJoinRoute: typeof DemoJoinRoute
   DemoMoreRoute: typeof DemoMoreRoute
+  DemoOffersRoute: typeof DemoOffersRoute
   DemoPassportRoute: typeof DemoPassportRoute
   DemoRewardsRoute: typeof DemoRewardsRoute
   DemoTrailMapRoute: typeof DemoTrailMapRoute
@@ -495,6 +521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoPassportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/offers': {
+      id: '/demo/offers'
+      path: '/demo/offers'
+      fullPath: '/demo/offers'
+      preLoaderRoute: typeof DemoOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/more': {
       id: '/demo/more'
       path: '/demo/more'
@@ -507,6 +540,13 @@ declare module '@tanstack/react-router' {
       path: '/demo/join'
       fullPath: '/demo/join'
       preLoaderRoute: typeof DemoJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/invite': {
+      id: '/demo/invite'
+      path: '/demo/invite'
+      fullPath: '/demo/invite'
+      preLoaderRoute: typeof DemoInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/venues': {
@@ -661,8 +701,10 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
+  DemoInviteRoute: DemoInviteRoute,
   DemoJoinRoute: DemoJoinRoute,
   DemoMoreRoute: DemoMoreRoute,
+  DemoOffersRoute: DemoOffersRoute,
   DemoPassportRoute: DemoPassportRoute,
   DemoRewardsRoute: DemoRewardsRoute,
   DemoTrailMapRoute: DemoTrailMapRoute,
@@ -677,13 +719,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
