@@ -24,6 +24,11 @@ begin;
 -- 1) Path parser: recognise both 4-segment and 6-segment shapes.
 --    Returns (agency_id, event_id, kind, venue_id) where venue_id is
 --    NULL for event-level paths.
+--
+-- Must DROP first: the prior version returned (agency_id, event_id, kind)
+-- and Postgres refuses to change an existing function's OUT-parameter row
+-- type via CREATE OR REPLACE (error 42P13).
+drop function if exists public.event_assets_path_parts(text);
 create or replace function public.event_assets_path_parts(_name text)
 returns table (
   agency_id uuid,
