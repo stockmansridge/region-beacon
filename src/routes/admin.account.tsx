@@ -379,6 +379,11 @@ function AccountPage() {
         )}
         <div className="border-t px-5 py-3 text-xs text-muted-foreground">
           {COMING_SOON_HELP}
+          {isPlatformAdmin && (
+            <div className="mt-1 text-amber-700 dark:text-amber-400">
+              Manual activation is for platform testing only. Stripe billing will replace this later.
+            </div>
+          )}
         </div>
       </div>
     </>
