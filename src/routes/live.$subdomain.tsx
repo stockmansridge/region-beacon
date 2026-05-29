@@ -1,0 +1,155 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { TrailLanding } from "@/components/trail-landing";
+
+export const Route = createFileRoute("/live/$subdomain")({
+  component: LivePublicPage,
+});
+
+type ResolveRow = {
+  kind: "marketing" | "admin" | "event" | "not_found";
+  event_id: string | null;
+  public_slug: string | null;
+  requires_auth: boolean;
+};
+
+type PublicEvent = {
+  event_id: string;
+  name: string;
+  public_slug: string;
+  description: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  timezone: string | null;
+  logo_path: string | null;
+  cover_path: string | null;
+  primary_color: string | null;
+  accent_color: string | null;
+  font_family: string | null;
+  welcome_copy: string | null;
+  terms_url: string | null;
+  current_terms_version_id: string | null;
+};
+
+type PublicVenue = {
+  venue_id: string;
+  name: string;
+  address: string | null;
+  order_index: number | null;
+};
+
+type State =
+  | { kind: "loading" }
+  | { kind: "not_found" }
+  | { kind: "event"; event: PublicEvent; venues: PublicVenue[] };
+
+function LivePublicPage() {
+  const { subdomain } = Route.useParams();
+  const [state, setState] = useState<State>({ kind: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setState({ kind: "loading" });
+      const host = `${subdomain}.getstamped.com.au`;
+
+      const { data: resolveData, error: resolveErr } = await supabase.rpc(
+        "resolve_event_by_host",
+        { _hostname: host },
+      );
+      if (cancelled) return;
+      const row = (resolveData?.[0] ?? null) as ResolveRow | null;
+
+      if (resolveErr || !row || row.kind !== "event" || !row.event_id) {
+        setState({ kind: "not_found" });
+        return;
+      }
+
+      const { data: evtData, error: evtErr } = await supabase.rpc(
+        "get_public_event_by_domain",
+        { _hostname: host },
+      );
+      if (cancelled) return;
+      const evt = (evtData?.[0] ?? null) as PublicEvent | null;
+      if (evtErr || !evt) {
+        setState({ kind: "not_found" });
+        return;
+      }
+
+      const { data: venueData } = await supabase.rpc(
+        "get_public_event_venues",
+        { _event_id: evt.event_id },
+      );
+      if (cancelled) return;
+      const venues = (venueData ?? []) as PublicVenue[];
+
+      setState({ kind: "event", event: evt, venues });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [subdomain]);
+
+  if (state.kind === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+        Loading…
+      </div>
+    );
+  }
+
+  if (state.kind === "not_found") {
+    return <NotLiveYet />;
+  }
+
+  const { event, venues } = state;
+  return (
+    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+      <TrailLanding
+        eventName={event.name}
+        pitch={event.description ?? undefined}
+        welcomeCopy={event.welcome_copy ?? undefined}
+        primaryColor={event.primary_color ?? undefined}
+        accentColor={event.accent_color ?? undefined}
+        fontFamily={event.font_family ?? undefined}
+        heroImageUrl={null}
+        venueCount={venues.length}
+        venueNames={venues.map((v) => v.name)}
+        termsUrl={event.terms_url}
+        primaryCta={
+          <button
+            type="button"
+            disabled
+            className="h-12 w-full cursor-not-allowed rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
+            style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
+            title="Coming soon"
+          >
+            Start passport — coming soon
+          </button>
+        }
+        secondaryCta={<span />}
+      />
+    </div>
+  );
+}
+
+function NotLiveYet() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6">
+      <div className="mx-auto max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#1F3D2B]/10" />
+        <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+          Event not live yet
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
+          This passport experience isn't available right now. Please check back
+          closer to the event, or contact the organiser for details.
+        </p>
+        <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
+          Powered by GetStampd
+        </p>
+      </div>
+    </div>
+  );
+}
