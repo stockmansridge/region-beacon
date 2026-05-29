@@ -26,7 +26,7 @@ function fmt(d: string | null) {
   if (!d) return "—";
   try {
     return new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-  } catch {
+  } catch (_e) {
     return "—";
   }
 }
