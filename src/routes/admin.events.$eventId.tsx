@@ -1156,18 +1156,150 @@ function EventDetail() {
           </Section>
 
           <Section title="Leaderboard">
-            {leaderboard ? (
-              <DefList
-                rows={[
-                  ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
-                  ["Display mode", leaderboard.display_mode],
-                  ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
-                  ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
-                  ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
-                ]}
-              />
+            {isEditingLeaderboard && lbForm ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {lbSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+                <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  Public leaderboard display is privacy-limited. Visitor email, mobile, postcode,
+                  and full name are never shown. Default display is first name + last initial.
+                </p>
+                {(lbValidationError || lbSaveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {lbValidationError ?? lbSaveError}
+                  </div>
+                )}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.is_enabled}
+                    onChange={(e) => setLbForm({ ...lbForm, is_enabled: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Public leaderboard enabled</span>
+                </label>
+                <Field label="Display mode" required>
+                  <select
+                    value={lbForm.display_mode}
+                    onChange={(e) =>
+                      setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
+                    }
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="first_name_last_initial">First name + last initial</option>
+                    <option value="first_name_only">First name only</option>
+                    <option value="alias_only">Alias only</option>
+                    <option value="anonymous">Anonymous</option>
+                  </select>
+                </Field>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_first_name}
+                    onChange={(e) => setLbForm({ ...lbForm, show_first_name: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show first name</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_last_initial}
+                    onChange={(e) => setLbForm({ ...lbForm, show_last_initial: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show last initial</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_visit_count}
+                    onChange={(e) => setLbForm({ ...lbForm, show_visit_count: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show visit count</span>
+                </label>
+                <Field label="Hide below check-ins" required>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={lbForm.hide_below_checkins}
+                    onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Visitors below this number of check-ins are hidden from the public leaderboard.
+                  </p>
+                </Field>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.allow_visitor_opt_out}
+                    onChange={(e) => setLbForm({ ...lbForm, allow_visitor_opt_out: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Allow visitors to opt out</span>
+                </label>
+              </div>
             ) : (
-              <EmptyNotice>No leaderboard settings.</EmptyNotice>
+              <>
+                {canEdit && (
+                  <div className="mb-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={startEditLeaderboard}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Edit leaderboard settings
+                    </button>
+                  </div>
+                )}
+                {leaderboard ? (
+                  <>
+                    {!leaderboard.is_enabled && (
+                      <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                        Public leaderboard is disabled for this event.
+                      </div>
+                    )}
+                    <DefList
+                      rows={[
+                        ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
+                        ["Display mode", leaderboard.display_mode],
+                        ["Show first name", leaderboard.show_first_name ? "yes" : "no"],
+                        ["Show last initial", leaderboard.show_last_initial ? "yes" : "no"],
+                        ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
+                        ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
+                        ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
+                      ]}
+                    />
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Privacy: email, mobile, postcode, and full name are never displayed publicly.
+                      Default display is first name + last initial.
+                    </p>
+                  </>
+                ) : (
+                  <EmptyNotice>
+                    No leaderboard settings. Public leaderboard is disabled by default.
+                  </EmptyNotice>
+                )}
+              </>
             )}
           </Section>
         </aside>
