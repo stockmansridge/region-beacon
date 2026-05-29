@@ -906,7 +906,7 @@ function EventDetail() {
     );
   }
 
-  const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue } = bundle;
+  const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue, activation } = bundle;
 
   return (
     <>
