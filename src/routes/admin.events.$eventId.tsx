@@ -921,16 +921,29 @@ function EventDetail() {
                 {saving ? "Saving…" : "Save"}
               </button>
             </div>
-          ) : canEdit ? (
-            <button
-              type="button"
-              onClick={startEdit}
-              className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
-            >
-              Edit basics
-            </button>
-          ) : null
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/admin/events/$eventId/preview"
+                params={{ eventId: bundle.event.id }}
+                target="_blank"
+                className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+              >
+                Preview customer page
+              </Link>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+                >
+                  Edit basics
+                </button>
+              )}
+            </div>
+          )
         }
+
       />
 
       <EventSetupWarnings
