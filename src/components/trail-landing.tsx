@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { DEFAULT_VENUE_LABEL_PLURAL } from "@/lib/venue-labels";
 
 const DEFAULT_HERO =
   "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=1200&q=70";
@@ -16,6 +17,7 @@ export type TrailLandingProps = {
   heroImageUrl?: string | null;
   venueCount?: number;
   venueNames?: string[];
+  venueLabelPlural?: string;
   termsUrl?: string | null;
   primaryCta?: ReactNode;
   secondaryCta?: ReactNode;
@@ -37,6 +39,7 @@ export function TrailLanding({
   heroImageUrl,
   venueCount,
   venueNames,
+  venueLabelPlural = DEFAULT_VENUE_LABEL_PLURAL,
   termsUrl,
   primaryCta,
   secondaryCta,
