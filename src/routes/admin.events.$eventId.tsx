@@ -1114,137 +1114,40 @@ function EventDetail() {
 
 
           <Section title="Branding">
-            {isEditingBranding && brandForm ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={cancelEditBranding}
-                    disabled={brandSaving}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveEditBranding}
-                    disabled={brandSaving}
-                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                  >
-                    {brandSaving ? "Saving…" : "Save"}
-                  </button>
-                </div>
-                {(brandValidationError || brandSaveError) && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                    {brandValidationError ?? brandSaveError}
-                  </div>
-                )}
-                <Field label="Logo path">
-                  <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 text-sm text-muted-foreground">
-                    {branding?.logo_path ?? "—"}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Logo upload is not enabled yet.</p>
-                </Field>
-                <Field label="Cover path">
-                  <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 text-sm text-muted-foreground">
-                    {branding?.cover_path ?? "—"}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Cover upload is not enabled yet.</p>
-                </Field>
-                <Field label="Primary colour">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={brandForm.primary_color || "#000000"}
-                      onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
-                      className="h-9 w-12 rounded-md border bg-background"
-                    />
-                    <input
-                      type="text"
-                      value={brandForm.primary_color}
-                      onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
-                      placeholder="#7A1F2B"
-                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono"
-                      maxLength={7}
-                    />
-                  </div>
-                </Field>
-                <Field label="Accent colour">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={brandForm.accent_color || "#000000"}
-                      onChange={(e) => setBrandForm({ ...brandForm, accent_color: e.target.value })}
-                      className="h-9 w-12 rounded-md border bg-background"
-                    />
-                    <input
-                      type="text"
-                      value={brandForm.accent_color}
-                      onChange={(e) => setBrandForm({ ...brandForm, accent_color: e.target.value })}
-                      placeholder="#E8C547"
-                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono"
-                      maxLength={7}
-                    />
-                  </div>
-                </Field>
-                <Field label="Font family">
-                  <input
-                    type="text"
-                    value={brandForm.font_family}
-                    onChange={(e) => setBrandForm({ ...brandForm, font_family: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                    maxLength={100}
-                  />
-                </Field>
-                <Field label="Welcome copy">
-                  <textarea
-                    value={brandForm.welcome_copy}
-                    onChange={(e) => setBrandForm({ ...brandForm, welcome_copy: e.target.value })}
-                    className="min-h-24 w-full rounded-md border bg-background p-2 text-sm"
-                    maxLength={1000}
-                  />
-                </Field>
-                <Field label="Terms URL (branding)">
-                  <input
-                    type="text"
-                    value={brandForm.terms_url}
-                    onChange={(e) => setBrandForm({ ...brandForm, terms_url: e.target.value })}
-                    placeholder="https://…"
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                </Field>
-              </div>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Branding is now edited side-by-side with a live preview of the customer landing page.
+            </p>
+            <div className="mb-4 flex justify-end">
+              <Link
+                to="/admin/events/$eventId/branding"
+                params={{ eventId: bundle.event.id }}
+                className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+              >
+                Edit customer landing page
+              </Link>
+            </div>
+            {branding ? (
+              <DefList
+                rows={[
+                  ["Primary colour", <ColorSwatch key="p" value={branding.primary_color} />],
+                  ["Accent colour", <ColorSwatch key="a" value={branding.accent_color} />],
+                  ["Font family", branding.font_family ?? "—"],
+                  [
+                    "Welcome copy",
+                    branding.welcome_copy
+                      ? branding.welcome_copy.length > 140
+                        ? `${branding.welcome_copy.slice(0, 140)}…`
+                        : branding.welcome_copy
+                      : "—",
+                  ],
+                  ["Terms URL", branding.terms_url ?? "—"],
+                ]}
+              />
             ) : (
-              <>
-                {canEdit && (
-                  <div className="mb-4 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={startEditBranding}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                    >
-                      Edit branding
-                    </button>
-                  </div>
-                )}
-                {branding ? (
-                  <DefList
-                    rows={[
-                      ["Logo path", branding.logo_path ?? "—"],
-                      ["Cover path", branding.cover_path ?? "—"],
-                      ["Primary colour", <ColorSwatch key="p" value={branding.primary_color} />],
-                      ["Accent colour", <ColorSwatch key="a" value={branding.accent_color} />],
-                      ["Font family", branding.font_family ?? "—"],
-                      ["Welcome copy", branding.welcome_copy ?? "—"],
-                      ["Terms URL (branding)", branding.terms_url ?? "—"],
-                    ]}
-                  />
-                ) : (
-                  <EmptyNotice>No branding configured yet.</EmptyNotice>
-                )}
-              </>
+              <EmptyNotice>No branding configured yet.</EmptyNotice>
             )}
           </Section>
+
 
           <Section title="Domains">
             {domains.length === 0 ? (
