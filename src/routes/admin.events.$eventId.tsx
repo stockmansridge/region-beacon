@@ -979,6 +979,8 @@ function EventDetail() {
         status={event.status}
         domains={domains}
         hasTerms={!!terms}
+        hasVenues={venues.length > 0}
+        eventId={event.id}
       />
 
       <div id="section-go-live">
