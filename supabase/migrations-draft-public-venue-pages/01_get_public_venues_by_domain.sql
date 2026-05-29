@@ -97,6 +97,7 @@ returns table (
   venue_id      uuid,
   name          text,
   description   text,
+  offer_summary text,
   address       text,
   website_url   text,
   phone         text,
@@ -127,7 +128,7 @@ begin
 
   return query
     select
-      v.id, v.name, v.description, v.address,
+      v.id, v.name, v.description, v.offer_summary, v.address,
       v.website_url, v.phone, v.logo_path, v.cover_path,
       v.lat, v.lng, v.order_index
     from public.venues v
