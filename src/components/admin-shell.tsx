@@ -1,0 +1,68 @@
+import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut } from "lucide-react";
+import { ReactNode } from "react";
+
+const nav = [
+  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/admin/events", label: "Events", icon: Calendar },
+  { to: "/admin/venues", label: "Venues", icon: MapPin },
+  { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+] as const;
+
+export function AdminShell({ children }: { children?: ReactNode }) {
+  const location = useLocation();
+  return (
+    <div className="flex min-h-screen bg-sidebar">
+      <aside className="hidden w-60 shrink-0 border-r bg-sidebar lg:flex lg:flex-col">
+        <div className="flex h-16 items-center gap-2 border-b px-5">
+          <div className="h-8 w-8 rounded-lg bg-hero-gradient" />
+          <div className="leading-tight">
+            <div className="text-sm font-semibold">Passport</div>
+            <div className="text-xs text-muted-foreground">Admin</div>
+          </div>
+        </div>
+        <nav className="flex-1 space-y-1 p-3">
+          {nav.map((item) => {
+            const active = item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="border-t p-3">
+          <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent">
+            <Settings className="h-4 w-4" /> Settings
+          </button>
+          <Link to="/admin/login" className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent">
+            <LogOut className="h-4 w-4" /> Sign out
+          </Link>
+        </div>
+      </aside>
+      <div className="flex flex-1 flex-col bg-background">
+        <header className="flex h-16 items-center justify-between border-b bg-background px-6">
+          <div>
+            <div className="text-xs text-muted-foreground">Agency workspace</div>
+            <div className="text-sm font-semibold">Acme Tourism</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">Placeholder data</span>
+            <div className="h-8 w-8 rounded-full bg-hero-gradient" />
+          </div>
+        </header>
+        <div className="flex-1 p-6 lg:p-8">{children ?? <Outlet />}</div>
+      </div>
+    </div>
+  );
+}
