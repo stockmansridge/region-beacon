@@ -75,10 +75,12 @@ function Login() {
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-hero-gradient" />
           <div>
-            <div className="text-sm font-semibold">Regional Passport</div>
-            <div className="text-xs text-muted-foreground">Admin sign in</div>
+            <div className="text-sm font-semibold">Easy Passport</div>
+            <div className="text-xs text-muted-foreground">Event admin sign in</div>
           </div>
         </div>
+
+
 
         <p className="mt-4 text-xs text-muted-foreground">
           Restricted to authorised event and agency administrators. Visitor accounts cannot
