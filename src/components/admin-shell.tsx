@@ -94,8 +94,8 @@ export function AdminShell({ children, email }: { children?: ReactNode; email?: 
       <div className="flex flex-1 flex-col bg-background">
         <header className="flex h-16 items-center justify-between border-b bg-background px-6">
           <div>
-            <div className="text-xs text-muted-foreground">Agency workspace</div>
-            <div className="text-sm font-semibold">Acme Tourism</div>
+            <div className="text-xs text-muted-foreground">Signed in as</div>
+            <div className="text-sm font-semibold">{email ?? "—"}</div>
           </div>
           <div className="flex items-center gap-3">
             <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
