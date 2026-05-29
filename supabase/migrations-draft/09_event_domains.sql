@@ -38,7 +38,19 @@ create table if not exists public.event_domains (
 
   constraint event_domains_subdomain_format check (
     public_subdomain is null
-    or public.is_valid_public_slug(public_subdomain)
+    or (
+      public.is_valid_public_slug(public_subdomain)
+      and not public.is_reserved_public_slug(public_subdomain)
+    )
+  ),
+  -- Reserved seed rows are stored as custom_domain (e.g. 'app' as a label),
+  -- so the CHECK above never blocks them. domain_type='platform_reserved'
+  -- rows that need to hold a reserved label MUST set public_subdomain = null
+  -- and use a sentinel custom_domain or rely on is_reserved_public_slug()
+  -- in resolve_event_by_host.
+  constraint event_domains_reserved_shape check (
+    domain_type <> 'platform_reserved'
+    or public_subdomain is null
   )
 );
 
