@@ -116,7 +116,6 @@ function LivePublicPage() {
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
       <TrailLanding
         eventName={event.name}
-        venueLabelSingular={venueLabels.singular}
         venueLabelPlural={venueLabels.plural}
         pitch={event.description ?? undefined}
         welcomeCopy={event.welcome_copy ?? undefined}
