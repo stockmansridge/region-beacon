@@ -60,6 +60,8 @@ type Form = {
   font_family: string;
   welcome_copy: string;
   terms_url: string;
+  venue_label_singular: string;
+  venue_label_plural: string;
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
