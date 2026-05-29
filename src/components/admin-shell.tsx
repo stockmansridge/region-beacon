@@ -1,6 +1,7 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut } from "lucide-react";
 import { ReactNode } from "react";
+import { signOut } from "@/hooks/use-auth";
 
 /**
  * Sidebar nav items.
@@ -20,7 +21,12 @@ const navItems = [
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
 ] as const;
 
-export function AdminShell({ children }: { children?: ReactNode }) {
+export function AdminShell({ children, email }: { children?: ReactNode; email?: string | null }) {
+  const navigate = useNavigate();
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/admin/login", replace: true });
+  };
   const location = useLocation();
 
   const isActive = (to: string, exact: boolean) =>
@@ -76,19 +82,20 @@ export function AdminShell({ children }: { children?: ReactNode }) {
           >
             <Settings className="h-4 w-4" /> Settings
           </button>
-          <Link
-            to="/admin/login"
+          <button
+            type="button"
+            onClick={handleSignOut}
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
           >
             <LogOut className="h-4 w-4" /> Sign out
-          </Link>
+          </button>
         </div>
       </aside>
       <div className="flex flex-1 flex-col bg-background">
         <header className="flex h-16 items-center justify-between border-b bg-background px-6">
           <div>
-            <div className="text-xs text-muted-foreground">Agency workspace</div>
-            <div className="text-sm font-semibold">Acme Tourism</div>
+            <div className="text-xs text-muted-foreground">Signed in as</div>
+            <div className="text-sm font-semibold">{email ?? "—"}</div>
           </div>
           <div className="flex items-center gap-3">
             <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
