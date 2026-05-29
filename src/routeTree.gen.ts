@@ -33,6 +33,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
+import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
 import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
@@ -158,6 +159,11 @@ const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
   path: '/join',
   getParentRoute: () => LiveSubdomainRoute,
 } as any)
+const DemoWineriesVenueIdRoute = DemoWineriesVenueIdRouteImport.update({
+  id: '/$venueId',
+  path: '/$venueId',
+  getParentRoute: () => DemoWineriesRoute,
+} as any)
 const DemoCheckinVenueIdRoute = DemoCheckinVenueIdRouteImport.update({
   id: '/demo/checkin/$venueId',
   path: '/demo/checkin/$venueId',
@@ -198,7 +204,7 @@ export interface FileRoutesByFullPath {
   '/demo/passport': typeof DemoPassportRoute
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
-  '/demo/wineries': typeof DemoWineriesRoute
+  '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/admin/': typeof AdminIndexRoute
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/passport/': typeof PassportIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
+  '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -227,7 +234,7 @@ export interface FileRoutesByTo {
   '/demo/passport': typeof DemoPassportRoute
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
-  '/demo/wineries': typeof DemoWineriesRoute
+  '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/admin': typeof AdminIndexRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/passport': typeof PassportIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
+  '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -258,7 +266,7 @@ export interface FileRoutesById {
   '/demo/passport': typeof DemoPassportRoute
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
-  '/demo/wineries': typeof DemoWineriesRoute
+  '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/admin/': typeof AdminIndexRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/passport/': typeof PassportIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
+  '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
@@ -298,6 +307,7 @@ export interface FileRouteTypes {
     | '/passport/'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
+    | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/admin/events/'
     | '/admin/events/$eventId/branding'
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/passport'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
+    | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/admin/events'
     | '/admin/events/$eventId/branding'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '/passport/'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
+    | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/admin/events/'
     | '/admin/events/$eventId_/branding'
@@ -374,7 +386,7 @@ export interface RootRouteChildren {
   DemoPassportRoute: typeof DemoPassportRoute
   DemoRewardsRoute: typeof DemoRewardsRoute
   DemoTrailMapRoute: typeof DemoTrailMapRoute
-  DemoWineriesRoute: typeof DemoWineriesRoute
+  DemoWineriesRoute: typeof DemoWineriesRouteWithChildren
   LiveSubdomainRoute: typeof LiveSubdomainRouteWithChildren
   PassportTokenRoute: typeof PassportTokenRoute
   DemoIndexRoute: typeof DemoIndexRoute
@@ -553,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainJoinRouteImport
       parentRoute: typeof LiveSubdomainRoute
     }
+    '/demo/wineries/$venueId': {
+      id: '/demo/wineries/$venueId'
+      path: '/$venueId'
+      fullPath: '/demo/wineries/$venueId'
+      preLoaderRoute: typeof DemoWineriesVenueIdRouteImport
+      parentRoute: typeof DemoWineriesRoute
+    }
     '/demo/checkin/$venueId': {
       id: '/demo/checkin/$venueId'
       path: '/demo/checkin/$venueId'
@@ -612,6 +631,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface DemoWineriesRouteChildren {
+  DemoWineriesVenueIdRoute: typeof DemoWineriesVenueIdRoute
+}
+
+const DemoWineriesRouteChildren: DemoWineriesRouteChildren = {
+  DemoWineriesVenueIdRoute: DemoWineriesVenueIdRoute,
+}
+
+const DemoWineriesRouteWithChildren = DemoWineriesRoute._addFileChildren(
+  DemoWineriesRouteChildren,
+)
+
 interface LiveSubdomainRouteChildren {
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
 }
@@ -635,7 +666,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoPassportRoute: DemoPassportRoute,
   DemoRewardsRoute: DemoRewardsRoute,
   DemoTrailMapRoute: DemoTrailMapRoute,
-  DemoWineriesRoute: DemoWineriesRoute,
+  DemoWineriesRoute: DemoWineriesRouteWithChildren,
   LiveSubdomainRoute: LiveSubdomainRouteWithChildren,
   PassportTokenRoute: PassportTokenRoute,
   DemoIndexRoute: DemoIndexRoute,
@@ -646,3 +677,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
