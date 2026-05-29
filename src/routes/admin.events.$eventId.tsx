@@ -979,17 +979,21 @@ function EventDetail() {
         status={event.status}
         domains={domains}
         hasTerms={!!terms}
+        hasVenues={venues.length > 0}
+        eventId={event.id}
       />
 
-      <GoLivePanel
-        agencyId={agencyId}
-        eventId={event.id}
-        eventStatus={event.status}
-        domains={domains}
-        activation={activation}
-        isPlatformAdmin={agency.isPlatformAdmin}
-        onChanged={() => setReloadKey((k) => k + 1)}
-      />
+      <div id="section-go-live">
+        <GoLivePanel
+          agencyId={agencyId}
+          eventId={event.id}
+          eventStatus={event.status}
+          domains={domains}
+          activation={activation}
+          isPlatformAdmin={agency.isPlatformAdmin}
+          onChanged={() => setReloadKey((k) => k + 1)}
+        />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -1069,7 +1073,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Branding">
+          <Section title="Branding" id="section-branding">
             <p className="mb-4 text-sm text-muted-foreground">
               Branding is now edited side-by-side with a live preview of the customer landing page.
             </p>
@@ -1105,11 +1109,12 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Public address">
+          <Section title="Public address" id="section-public-address">
             <PublicAddressCard
               agencyId={agencyId}
               eventId={event.id}
               publicSlug={event.public_slug}
+              internalSlug={event.slug}
               domains={domains}
               canEdit={canEdit}
               isPlatformAdmin={agency.isPlatformAdmin}
@@ -1119,6 +1124,7 @@ function EventDetail() {
 
 
           <Section
+            id="section-venues"
             title="Venues for this event"
             description="Add and manage the venues/stops that visitors can collect stamps from for this event."
           >
@@ -1423,7 +1429,7 @@ function EventDetail() {
         </div>
 
         <aside className="space-y-4">
-          <Section title="Terms & privacy">
+          <Section title="Terms & privacy" id="section-terms">
             {terms ? (
               <DefList
                 rows={[
@@ -1540,7 +1546,7 @@ function EventDetail() {
             )}
           </Section>
 
-          <Section title="Leaderboard">
+          <Section title="Leaderboard" id="section-leaderboard">
             {isEditingLeaderboard && lbForm ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-end gap-2">
@@ -1645,8 +1651,15 @@ function EventDetail() {
               </div>
             ) : (
               <>
-                {canEdit && (
-                  <div className="mb-4 flex justify-end">
+                <div className="mb-4 flex flex-wrap justify-end gap-2">
+                  <Link
+                    to="/admin/events/$eventId/leaderboard"
+                    params={{ eventId: bundle.event.id }}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                  >
+                    Open leaderboard
+                  </Link>
+                  {canEdit && (
                     <button
                       type="button"
                       onClick={startEditLeaderboard}
@@ -1654,8 +1667,8 @@ function EventDetail() {
                     >
                       Edit leaderboard settings
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
                 {leaderboard ? (
                   <>
                     {!leaderboard.is_enabled && (
@@ -1697,13 +1710,15 @@ function Section({
   title,
   description,
   children,
+  id,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
+  id?: string;
 }) {
   return (
-    <section className="rounded-xl border bg-card p-6">
+    <section id={id} className="scroll-mt-24 rounded-xl border bg-card p-6">
       <h3 className="text-sm font-semibold">{title}</h3>
       {description && (
         <p className="mt-1 text-xs text-muted-foreground">{description}</p>
@@ -1772,10 +1787,14 @@ function EventSetupWarnings({
   status,
   domains,
   hasTerms,
+  hasVenues,
+  eventId,
 }: {
   status: string;
   domains: Domain[];
   hasTerms: boolean;
+  hasVenues: boolean;
+  eventId: string;
 }) {
   const hasActiveSubdomain = domains.some(
     (d) => d.domain_type === "event_subdomain" && d.status === "active",
@@ -1784,13 +1803,23 @@ function EventSetupWarnings({
     (d) => d.domain_type === "event_subdomain" && d.status === "pending",
   );
 
-  const items: { tone: "warn" | "info"; title: string; body: string }[] = [];
+  type Action =
+    | { kind: "anchor"; href: string; label: string }
+    | { kind: "link"; to: string; params?: Record<string, string>; label: string };
+
+  const items: {
+    tone: "warn" | "info";
+    title: string;
+    body: string;
+    action?: Action;
+  }[] = [];
 
   if (status === "draft") {
     items.push({
       tone: "info",
       title: "Event is a draft",
       body: "Drafts are previewable inside admin only. Visitors can't reach this event yet.",
+      action: { kind: "anchor", href: "#section-go-live", label: "Review go-live status" },
     });
   }
 
@@ -1799,6 +1828,7 @@ function EventSetupWarnings({
       tone: "info",
       title: "Public address active",
       body: "This event's subdomain is active.",
+      action: { kind: "anchor", href: "#section-public-address", label: "View address" },
     });
   } else {
     items.push({
@@ -1809,15 +1839,29 @@ function EventSetupWarnings({
       body: hasPendingSubdomain
         ? "A subdomain has been reserved but is not active. It will go live once billing/activation is complete."
         : "Choose and reserve a subdomain so visitors can find this event after activation.",
+      action: {
+        kind: "anchor",
+        href: "#section-public-address",
+        label: hasPendingSubdomain ? "View activation status" : "Choose public address",
+      },
     });
   }
-
 
   if (!hasTerms) {
     items.push({
       tone: "warn",
       title: "Terms & privacy not configured",
       body: "Add a terms version before publishing — visitors will need to accept it on first sign-up.",
+      action: { kind: "anchor", href: "#section-terms", label: "Configure terms" },
+    });
+  }
+
+  if (!hasVenues) {
+    items.push({
+      tone: "warn",
+      title: "No venues added yet",
+      body: "Visitors need at least one venue/stop to collect stamps.",
+      action: { kind: "anchor", href: "#section-venues", label: "Add venues" },
     });
   }
 
@@ -1825,6 +1869,7 @@ function EventSetupWarnings({
     tone: "info",
     title: "Billing activation not configured",
     body: "Per-event billing/activation will be wired in a later step. This event won't go live publicly until it's activated.",
+    action: { kind: "link", to: "/admin/account", label: "Go to Account & Billing" },
   });
 
   if (items.length === 0) return null;
@@ -1835,13 +1880,35 @@ function EventSetupWarnings({
         <div
           key={i}
           className={
-            it.tone === "warn"
+            (it.tone === "warn"
               ? "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
-              : "rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              : "rounded-md border bg-muted/40 px-3 py-2 text-sm") +
+            " flex flex-wrap items-start justify-between gap-3"
           }
         >
-          <div className="font-medium">{it.title}</div>
-          <div className="text-muted-foreground">{it.body}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium">{it.title}</div>
+            <div className="text-muted-foreground">{it.body}</div>
+          </div>
+          {it.action && (
+            <div className="shrink-0">
+              {it.action.kind === "anchor" ? (
+                <a
+                  href={it.action.href}
+                  className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                >
+                  {it.action.label}
+                </a>
+              ) : (
+                <Link
+                  to={it.action.to}
+                  className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                >
+                  {it.action.label}
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -1863,6 +1930,7 @@ function PublicAddressCard({
   agencyId,
   eventId,
   publicSlug,
+  internalSlug,
   domains,
   canEdit,
   isPlatformAdmin,
@@ -1871,6 +1939,7 @@ function PublicAddressCard({
   agencyId: string | null;
   eventId: string;
   publicSlug: string | null;
+  internalSlug: string | null;
   domains: Domain[];
   canEdit: boolean;
   isPlatformAdmin: boolean;
@@ -1879,7 +1948,11 @@ function PublicAddressCard({
   const subdomainRow = domains.find((d) => d.domain_type === "event_subdomain") ?? null;
   const otherDomains = domains.filter((d) => d.domain_type !== "event_subdomain");
 
-  const [input, setInput] = useState("");
+  // Prefill with publicSlug or internal slug (lowercased) when nothing is claimed.
+  const initialSuggestion = !subdomainRow
+    ? ((publicSlug ?? internalSlug ?? "").toLowerCase())
+    : "";
+  const [input, setInput] = useState(initialSuggestion);
   const [availability, setAvailability] = useState<AvailabilityState>({ kind: "idle" });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);

@@ -40,6 +40,7 @@ import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
 import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
+import { Route as AdminEventsEventIdLeaderboardRouteImport } from './routes/admin.events.$eventId_.leaderboard'
 import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId_.branding'
 
 const SupportRoute = SupportRouteImport.update({
@@ -198,6 +199,12 @@ const AdminEventsEventIdPreviewRoute =
     path: '/admin/events/$eventId/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminEventsEventIdLeaderboardRoute =
+  AdminEventsEventIdLeaderboardRouteImport.update({
+    id: '/events/$eventId_/leaderboard',
+    path: '/events/$eventId/leaderboard',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminEventsEventIdBrandingRoute =
   AdminEventsEventIdBrandingRouteImport.update({
     id: '/events/$eventId_/branding',
@@ -237,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
+  '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -270,6 +278,7 @@ export interface FileRoutesByTo {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
+  '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
 }
 export interface FileRoutesById {
@@ -305,6 +314,7 @@ export interface FileRoutesById {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
+  '/admin/events/$eventId_/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
 }
 export interface FileRouteTypes {
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/admin/events/'
     | '/admin/events/$eventId/branding'
+    | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/admin/events'
     | '/admin/events/$eventId/branding'
+    | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/preview'
   id:
     | '__root__'
@@ -408,6 +420,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/admin/events/'
     | '/admin/events/$eventId_/branding'
+    | '/admin/events/$eventId_/leaderboard'
     | '/admin_/events/$eventId/preview'
   fileRoutesById: FileRoutesById
 }
@@ -653,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsEventIdPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/events/$eventId_/leaderboard': {
+      id: '/admin/events/$eventId_/leaderboard'
+      path: '/events/$eventId/leaderboard'
+      fullPath: '/admin/events/$eventId/leaderboard'
+      preLoaderRoute: typeof AdminEventsEventIdLeaderboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events/$eventId_/branding': {
       id: '/admin/events/$eventId_/branding'
       path: '/events/$eventId/branding'
@@ -674,6 +694,7 @@ interface AdminRouteChildren {
   AdminEventsEventIdRoute: typeof AdminEventsEventIdRoute
   AdminEventsIndexRoute: typeof AdminEventsIndexRoute
   AdminEventsEventIdBrandingRoute: typeof AdminEventsEventIdBrandingRoute
+  AdminEventsEventIdLeaderboardRoute: typeof AdminEventsEventIdLeaderboardRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -687,6 +708,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEventsEventIdRoute: AdminEventsEventIdRoute,
   AdminEventsIndexRoute: AdminEventsIndexRoute,
   AdminEventsEventIdBrandingRoute: AdminEventsEventIdBrandingRoute,
+  AdminEventsEventIdLeaderboardRoute: AdminEventsEventIdLeaderboardRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
