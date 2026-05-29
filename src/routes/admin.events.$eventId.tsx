@@ -751,6 +751,18 @@ function EventDetail() {
    * Prefers the event's active public_subdomain domain. Falls back to the
    * in-app /demo/checkin/$venueId route in staging/preview.
    */
+  function qrFilename(eventSlug: string, venueName: string): string {
+    const slug = (s: string) =>
+      s
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60);
+    const e = slug(eventSlug || "event") || "event";
+    const v = slug(venueName || "venue") || "venue";
+    return `getstampd-${e}-${v}-qr`;
+  }
+
   function buildCheckinUrl(token: string): { url: string; isFallback: boolean } {
     const sub = (bundle?.domains ?? []).find(
       (d) =>
@@ -1351,7 +1363,7 @@ function EventDetail() {
                                       </div>
                                       <QrPreview
                                         value={built.url}
-                                        downloadName={`qr-${v.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || v.id}`}
+                                        downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
                                       />
                                     </div>
                                   )}
