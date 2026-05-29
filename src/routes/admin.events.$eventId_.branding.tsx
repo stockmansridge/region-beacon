@@ -86,6 +86,8 @@ function BrandingEditor() {
     font_family: "",
     welcome_copy: "",
     terms_url: "",
+    venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
+    venue_label_plural: DEFAULT_VENUE_LABEL_PLURAL,
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
