@@ -86,9 +86,6 @@ export function AdminShell({
                 <Link to={analytics.to} className={linkClass(isActive(analytics.to, analytics.exact))}>
                   <analytics.icon className="h-4 w-4" />
                   {analytics.label}
-                <Link to={analytics.to} className={linkClass(isActive(analytics.to, analytics.exact))}>
-                  <analytics.icon className="h-4 w-4" />
-                  {analytics.label}
                 </Link>
                 {(isPlatformAdmin ||
                   agencyRole === "agency_owner" ||
@@ -111,8 +108,6 @@ export function AdminShell({
                   </Link>
                 )}
               </>
-            );
-          })()}
             );
           })()}
         </nav>
