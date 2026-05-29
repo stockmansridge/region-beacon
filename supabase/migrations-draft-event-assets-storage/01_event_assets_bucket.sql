@@ -29,8 +29,7 @@ values (
   array[
     'image/png',
     'image/jpeg',
-    'image/webp',
-    'image/svg+xml'                               -- logos only (cover validation is frontend)
+    'image/webp'
   ]
 )
 on conflict (id) do update
