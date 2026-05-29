@@ -36,9 +36,21 @@ create table if not exists public.event_domains (
     public_subdomain is not null or custom_domain is not null
   ),
 
+  -- Format/reserved CHECK: reserved-name block applies only to tenant rows.
+  -- Seed rows with domain_type='platform_reserved' are allowed to hold the
+  -- reserved label in public_subdomain so they occupy the unique index and
+  -- block any tenant from claiming it. Tenant rows (event_subdomain /
+  -- event_custom) cannot use a reserved label — defence in depth alongside
+  -- the validate_public_subdomain RPC and the seed rows themselves.
   constraint event_domains_subdomain_format check (
     public_subdomain is null
-    or public.is_valid_public_slug(public_subdomain)
+    or (
+      public.is_valid_public_slug(public_subdomain)
+      and (
+        domain_type = 'platform_reserved'
+        or not public.is_reserved_public_slug(public_subdomain)
+      )
+    )
   )
 );
 

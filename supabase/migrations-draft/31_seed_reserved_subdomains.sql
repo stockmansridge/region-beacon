@@ -14,12 +14,14 @@ from (values
 ) as r(sub)
 on conflict (public_subdomain) where public_subdomain is not null do nothing;
 
--- Platform marketing + admin host placeholders (not reserved, but tracked).
+-- Platform marketing + admin hosts tracked as full custom_domain rows so
+-- they do NOT collide with the reserved 'app' subdomain seeded above.
+-- resolve_event_by_host() special-cases these hostnames directly.
 insert into public.event_domains (
   agency_id, event_id, public_subdomain, custom_domain,
   domain_type, status, is_primary
 )
 values
-  (null, null, null, 'easypassport.com.au', 'platform_marketing', 'active', false),
-  (null, null, 'app', null,                  'platform_admin',     'active', false)
+  (null, null, null, 'easypassport.com.au',     'platform_marketing', 'active', false),
+  (null, null, null, 'app.easypassport.com.au', 'platform_admin',     'active', false)
 on conflict do nothing;
