@@ -2,12 +2,13 @@ import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut } from "lucide-react";
 import { ReactNode } from "react";
 
-const nav = [
+const nav: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/events", label: "Events", icon: Calendar },
   { to: "/admin/venues", label: "Venues", icon: MapPin },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-] as const;
+];
+
 
 export function AdminShell({ children }: { children?: ReactNode }) {
   const location = useLocation();
