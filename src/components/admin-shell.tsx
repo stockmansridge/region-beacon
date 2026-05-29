@@ -28,6 +28,7 @@ export function AdminShell({
   agencyName,
   agencyRole,
   ambiguousAgency,
+  isPlatformAdmin,
 }: {
   children?: ReactNode;
   email?: string | null;
@@ -35,6 +36,7 @@ export function AdminShell({
   agencyName?: string | null;
   agencyRole?: string | null;
   ambiguousAgency?: boolean;
+  isPlatformAdmin?: boolean;
 }) {
   const navigate = useNavigate();
   const handleSignOut = async () => {
