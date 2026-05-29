@@ -1923,6 +1923,7 @@ function PublicAddressCard({
   agencyId,
   eventId,
   publicSlug,
+  internalSlug,
   domains,
   canEdit,
   isPlatformAdmin,
@@ -1931,6 +1932,7 @@ function PublicAddressCard({
   agencyId: string | null;
   eventId: string;
   publicSlug: string | null;
+  internalSlug: string | null;
   domains: Domain[];
   canEdit: boolean;
   isPlatformAdmin: boolean;
@@ -1939,7 +1941,11 @@ function PublicAddressCard({
   const subdomainRow = domains.find((d) => d.domain_type === "event_subdomain") ?? null;
   const otherDomains = domains.filter((d) => d.domain_type !== "event_subdomain");
 
-  const [input, setInput] = useState("");
+  // Prefill with publicSlug or internal slug (lowercased) when nothing is claimed.
+  const initialSuggestion = !subdomainRow
+    ? ((publicSlug ?? internalSlug ?? "").toLowerCase())
+    : "";
+  const [input, setInput] = useState(initialSuggestion);
   const [availability, setAvailability] = useState<AvailabilityState>({ kind: "idle" });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
