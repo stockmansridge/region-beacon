@@ -947,22 +947,103 @@ function EventDetail() {
           </Section>
 
           <Section title="Check-in settings">
-            {checkin ? (
-              <DefList
-                rows={[
-                  ["One per venue", checkin.one_checkin_per_venue ? "yes" : "no"],
-                  ["Min seconds between", String(checkin.minimum_seconds_between_checkins)],
-                  ["Allow manual admin", checkin.allow_manual_admin_checkins ? "yes" : "no"],
-                  [
-                    "Max per passport/day",
-                    checkin.max_checkins_per_passport_per_day === null
-                      ? "unlimited"
-                      : String(checkin.max_checkins_per_passport_per_day),
-                  ],
-                ]}
-              />
+            {isEditingCheckin && checkinForm ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelEditCheckin}
+                    disabled={checkinSaving}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditCheckin}
+                    disabled={checkinSaving}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {checkinSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+                {(checkinValidationError || checkinSaveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {checkinValidationError ?? checkinSaveError}
+                  </div>
+                )}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={checkinForm.one_checkin_per_venue}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, one_checkin_per_venue: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">One check-in per venue</span>
+                </label>
+                <Field label="Minimum seconds between check-ins" required>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={checkinForm.minimum_seconds_between_checkins}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, minimum_seconds_between_checkins: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                </Field>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={checkinForm.allow_manual_admin_checkins}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, allow_manual_admin_checkins: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Allow manual admin check-ins</span>
+                </label>
+                <Field label="Max check-ins per passport per day">
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={checkinForm.max_checkins_per_passport_per_day}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, max_checkins_per_passport_per_day: e.target.value })}
+                    placeholder="Leave blank for unlimited"
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Leave blank for unlimited.</p>
+                </Field>
+              </div>
             ) : (
-              <EmptyNotice>No check-in settings.</EmptyNotice>
+              <>
+                {canEdit && (
+                  <div className="mb-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={startEditCheckin}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Edit check-in settings
+                    </button>
+                  </div>
+                )}
+                {checkin ? (
+                  <DefList
+                    rows={[
+                      ["One per venue", checkin.one_checkin_per_venue ? "yes" : "no"],
+                      ["Min seconds between", String(checkin.minimum_seconds_between_checkins)],
+                      ["Allow manual admin", checkin.allow_manual_admin_checkins ? "yes" : "no"],
+                      [
+                        "Max per passport/day",
+                        checkin.max_checkins_per_passport_per_day === null
+                          ? "unlimited"
+                          : String(checkin.max_checkins_per_passport_per_day),
+                      ],
+                    ]}
+                  />
+                ) : (
+                  <EmptyNotice>No check-in settings.</EmptyNotice>
+                )}
+              </>
             )}
           </Section>
 
