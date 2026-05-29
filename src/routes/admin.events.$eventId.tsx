@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { QrPreview } from "@/components/qr-preview";
 import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
+import { EventTermsDialog } from "@/components/event-terms-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 
