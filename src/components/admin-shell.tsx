@@ -86,7 +86,21 @@ export function AdminShell({
                 <Link to={analytics.to} className={linkClass(isActive(analytics.to, analytics.exact))}>
                   <analytics.icon className="h-4 w-4" />
                   {analytics.label}
+                <Link to={analytics.to} className={linkClass(isActive(analytics.to, analytics.exact))}>
+                  <analytics.icon className="h-4 w-4" />
+                  {analytics.label}
                 </Link>
+                {(isPlatformAdmin ||
+                  agencyRole === "agency_owner" ||
+                  agencyRole === "agency_admin") && (
+                  <Link
+                    to="/admin/account"
+                    className={linkClass(isActive("/admin/account", false))}
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Account & Billing
+                  </Link>
+                )}
                 {isPlatformAdmin && (
                   <Link
                     to="/admin/system"
@@ -97,6 +111,8 @@ export function AdminShell({
                   </Link>
                 )}
               </>
+            );
+          })()}
             );
           })()}
         </nav>
