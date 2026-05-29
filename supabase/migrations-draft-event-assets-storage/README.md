@@ -58,9 +58,11 @@ Surfaces that render the uploaded images:
 - **`agency_staff` cannot upload/replace/delete.** Enforced in `can_write_event_asset` via the `role in ('agency_owner','agency_admin')` check.
 - **Path traversal is impossible.** Storage object names cannot contain `..` segments meaningfully — the policy parses the name and matches the first two segments to the caller's agency and an existing event, then verifies `events.agency_id = path.agency_id`. Cross-tenant uploads are rejected.
 - **MIME enforcement** happens both client-side (UX) and server-side (`allowed_mime_types` on the bucket).
-- **SVG caveat.** SVG can carry inline scripts. We allow SVG **only for logos**, and only if the agency admin uploads it. Public read serves them via the `*.supabase.co` Storage domain — not the app origin — so any inline `<script>` runs in the Storage origin, not in the GetStampd app origin. If we ever want to be stricter, drop `image/svg+xml` from `allowed_mime_types` and the frontend whitelist.
+- **SVG is NOT allowed in MVP.** SVG was removed from `allowed_mime_types` and the frontend whitelist because inline scripts and sanitisation add unacceptable complexity for the first release. SVG logo support may be revisited later with a strict sanitisation pipeline.
 - **Service role is never exposed.** All uploads go through the browser client under the authenticated user's session.
-- **Public read is intentional.** The bucket is public so anonymous visitors on `/live/$subdomain` can render the logo and cover without an auth call. No PII lives in this bucket.
+- **Public read is intentional for event branding assets.** The bucket is public so anonymous visitors on `/live/$subdomain` can render the logo and cover without an auth call. No PII lives in this bucket.
+- **Uploaded logos/covers must be treated as public content.** In a public bucket, anyone with the object URL can view the file — this includes draft event assets if the URL is known.
+- **Upload / update / delete remains restricted.** Only `platform_admin`, `agency_owner`, and `agency_admin` can write objects. `agency_staff`, `anon`, and visitors cannot upload, replace, or delete.
 - **File size cap** at 5 MB server-side prevents abuse; per-kind limits enforced in the frontend.
 
 ## Rollback notes
