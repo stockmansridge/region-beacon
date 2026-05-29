@@ -3,6 +3,18 @@
 -- Visitor RPCs. SECURITY DEFINER, explicit search_path, no SELECT *.
 -- Returns only fields the passport owner is allowed to see; never returns
 -- another visitor's PII.
+--
+-- DEFERRED SCOPE (intentional, tracked):
+--   * get_passport_by_token returns only owner identity + raw checkin_count.
+--     Reward progress, prize eligibility, and milestone state will be added
+--     in a later migration (alongside reward_rules / prize_rules evaluation
+--     helpers) BEFORE the visitor UI consumes those fields.
+--   * redeem_checkin writes the checkin row only. Passport completion and
+--     reward unlock evaluation (reading reward_rules, flipping
+--     passports.status to 'completed', writing completed_at) will be added
+--     in a later migration BEFORE UI integration. The current RPC is safe
+--     in isolation: it never leaves the passport in an inconsistent state,
+--     it just doesn't yet advance progress.
 
 -- Helper: SHA-256 of a raw access token.
 create or replace function public.passport_token_hash(_raw text)
