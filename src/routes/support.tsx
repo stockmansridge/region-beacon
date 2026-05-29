@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Mail,
   Phone,
+  Smartphone,
   LogIn,
   KeyRound,
   Settings,
