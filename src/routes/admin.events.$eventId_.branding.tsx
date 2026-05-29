@@ -302,6 +302,29 @@ function BrandingEditor() {
     return null;
   }
 
+  async function removeAsset(
+    kind: EventAssetKind,
+    currentPath: string | null,
+  ): Promise<string | null> {
+    if (!bundle || !agencyId || !canEdit) return "You do not have permission to remove this.";
+    if (!currentPath) return null;
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const { error } = await supabase
+      .from("event_branding")
+      .update({ [column]: null })
+      .eq("event_id", bundle.event.id)
+      .eq("agency_id", agencyId);
+    if (error) {
+      return kind === "logo"
+        ? "Could not remove the logo. Please try again."
+        : "Could not remove the cover image. Please try again.";
+    }
+    await deleteEventAssetSafely(currentPath);
+    setReloadKey((k) => k + 1);
+    return null;
+  }
+
+
   function onCancel() {
     navigate({ to: "/admin/events/$eventId", params: { eventId } });
   }
