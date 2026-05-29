@@ -1409,6 +1409,14 @@ function EventDetail() {
                                 </button>
                                 <button
                                   type="button"
+                                  onClick={() => setPublicProfileVenueId(v.id)}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null}
+                                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                >
+                                  Edit public page
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => archiveVenue(v.id)}
                                   disabled={venueEditingId !== null || venueArchivingId !== null}
                                   className="inline-flex h-7 items-center rounded-md border border-destructive/40 bg-background px-2 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
@@ -1435,6 +1443,21 @@ function EventDetail() {
                 </p>
               </div>
             )}
+            <VenuePublicProfileDialog
+              open={publicProfileVenueId !== null}
+              onOpenChange={(next) => {
+                if (!next) setPublicProfileVenueId(null);
+              }}
+              venue={
+                publicProfileVenueId
+                  ? venues.find((vv) => vv.id === publicProfileVenueId) ?? null
+                  : null
+              }
+              eventId={event.id}
+              agencyId={agencyId}
+              canEdit={canEdit}
+              onSaved={() => setReloadKey((k) => k + 1)}
+            />
           </Section>
         </div>
 
