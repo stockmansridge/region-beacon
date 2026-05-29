@@ -4,7 +4,7 @@ Draft only. **Do not execute against production.** Apply to staging only after r
 
 ## What this adds
 
-- New Storage bucket: `event-assets` (public read, 5 MB cap, png/jpeg/webp/svg+xml).
+- New Storage bucket: `event-assets` (public read, 5 MB cap, png/jpeg/webp).
 - Helper SQL functions in `public`:
   - `event_assets_path_parts(name)` — parses `{agency_id}/{event_id}/{logo|cover}/{filename}`.
   - `can_write_event_asset(name)` — returns true only for platform_admin or the agency_owner/agency_admin of the path's agency, and only when the event actually belongs to that agency.
