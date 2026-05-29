@@ -563,11 +563,19 @@ function SuccessScreen({
             </div>
           </div>
 
+          <Link
+            to="/passport/$token"
+            params={{ token }}
+            className="mt-4 flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+            style={{ backgroundColor: primary }}
+          >
+            Open my passport
+          </Link>
           <button
             type="button"
             onClick={copy}
-            className="mt-4 h-11 w-full rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-            style={{ backgroundColor: primary }}
+            className="mt-2 h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
+            style={{ borderColor: `${primary}40`, color: primary, backgroundColor: "transparent" }}
           >
             {copied ? "Copied!" : "Copy passport link"}
           </button>
