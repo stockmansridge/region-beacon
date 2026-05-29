@@ -1113,6 +1113,7 @@ function EventDetail() {
             <PublicAddressCard
               agencyId={agencyId}
               eventId={event.id}
+              publicSlug={event.public_slug}
               internalSlug={event.slug}
               eventName={event.name}
               domains={domains}
@@ -1938,6 +1939,7 @@ function slugifyName(name: string): string {
 function PublicAddressCard({
   agencyId,
   eventId,
+  publicSlug,
   internalSlug,
   eventName,
   domains,
@@ -1947,6 +1949,7 @@ function PublicAddressCard({
 }: {
   agencyId: string | null;
   eventId: string;
+  publicSlug: string | null;
   internalSlug: string | null;
   eventName: string;
   domains: Domain[];
