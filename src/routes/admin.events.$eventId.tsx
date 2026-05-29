@@ -103,15 +103,49 @@ function fmt(d: string | null | undefined) {
   }
 }
 
+type EditForm = {
+  name: string;
+  description: string;
+  timezone: string;
+  starts_at: string; // datetime-local
+  ends_at: string;   // datetime-local
+};
+
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(s: string): string | null {
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 function EventDetail() {
   const { eventId } = Route.useParams();
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
+  const canEdit =
+    agency.isPlatformAdmin ||
+    agency.selected?.role === "agency_owner" ||
+    agency.selected?.role === "agency_admin";
 
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState<EditForm | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
+
     if (!agencyId || eventId === "new") {
       if (eventId === "new") setState("not-found");
       return;
@@ -241,7 +275,72 @@ function EventDetail() {
     return () => {
       cancelled = true;
     };
-  }, [agencyId, eventId]);
+  }, [agencyId, eventId, reloadKey]);
+
+  function startEdit() {
+    if (!bundle) return;
+    const e = bundle.event;
+    setForm({
+      name: e.name ?? "",
+      description: e.description ?? "",
+      timezone: e.timezone ?? "",
+      starts_at: toLocalInput(e.starts_at),
+      ends_at: toLocalInput(e.ends_at),
+    });
+    setValidationError(null);
+    setSaveError(null);
+    setIsEditing(true);
+  }
+
+  function cancelEdit() {
+    setIsEditing(false);
+    setForm(null);
+    setValidationError(null);
+    setSaveError(null);
+  }
+
+  async function saveEdit() {
+    if (!form || !agencyId || !bundle) return;
+    const name = form.name.trim();
+    const timezone = form.timezone.trim();
+    if (!name) {
+      setValidationError("Name is required.");
+      return;
+    }
+    if (!timezone) {
+      setValidationError("Timezone is required.");
+      return;
+    }
+    const startsIso = fromLocalInput(form.starts_at);
+    const endsIso = fromLocalInput(form.ends_at);
+    if (startsIso && endsIso && new Date(endsIso) <= new Date(startsIso)) {
+      setValidationError("End date/time must be after start date/time.");
+      return;
+    }
+    setValidationError(null);
+    setSaveError(null);
+    setSaving(true);
+    const { error } = await supabase
+      .from("events")
+      .update({
+        name,
+        description: form.description.trim() || null,
+        timezone,
+        starts_at: startsIso,
+        ends_at: endsIso,
+      })
+      .eq("id", bundle.event.id)
+      .eq("agency_id", agencyId);
+    setSaving(false);
+    if (error) {
+      setSaveError("Could not save changes. Please try again.");
+      return;
+    }
+    setIsEditing(false);
+    setForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
 
   if (eventId === "new") {
     return (
@@ -293,37 +392,120 @@ function EventDetail() {
     <>
       <PageHeader
         title={event.name}
-        description={`Read-only view · status: ${event.status}`}
+        description={
+          isEditing
+            ? `Editing basics · status: ${event.status}`
+            : `Read-only view · status: ${event.status}`
+        }
         actions={
-          <button
-            type="button"
-            disabled
-            title="Editing coming next"
-            className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium text-muted-foreground opacity-70"
-          >
-            Editing coming next
-          </button>
+          isEditing ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={cancelEdit}
+                disabled={saving}
+                className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveEdit}
+                disabled={saving}
+                className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          ) : canEdit ? (
+            <button
+              type="button"
+              onClick={startEdit}
+              className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+            >
+              Edit basics
+            </button>
+          ) : null
         }
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Section title="Basics">
-            <DefList
-              rows={[
-                ["Name", event.name],
-                ["Internal slug", event.slug],
-                ["Public slug", event.public_slug ?? "—"],
-                ["Status", event.status],
-                ["Timezone", event.timezone],
-                ["Starts at", fmt(event.starts_at)],
-                ["Ends at", fmt(event.ends_at)],
-                ["Description", event.description ?? "—"],
-                ["Created", fmt(event.created_at)],
-                ["Updated", fmt(event.updated_at)],
-              ]}
-            />
+            {isEditing && form ? (
+              <div className="space-y-4">
+                {(validationError || saveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {validationError ?? saveError}
+                  </div>
+                )}
+                <Field label="Name" required>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    maxLength={200}
+                  />
+                </Field>
+                <Field label="Description">
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    className="min-h-24 w-full rounded-md border bg-background p-2 text-sm"
+                    maxLength={2000}
+                  />
+                </Field>
+                <Field label="Timezone (IANA)" required>
+                  <input
+                    type="text"
+                    value={form.timezone}
+                    onChange={(e) => setForm({ ...form, timezone: e.target.value })}
+                    placeholder="e.g. Europe/London"
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    maxLength={64}
+                  />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Starts at">
+                    <input
+                      type="datetime-local"
+                      value={form.starts_at}
+                      onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                  <Field label="Ends at">
+                    <input
+                      type="datetime-local"
+                      value={form.ends_at}
+                      onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Internal slug, public slug, and status remain read-only here.
+                </p>
+              </div>
+            ) : (
+              <DefList
+                rows={[
+                  ["Name", event.name],
+                  ["Internal slug", event.slug],
+                  ["Public slug", event.public_slug ?? "—"],
+                  ["Status", event.status],
+                  ["Timezone", event.timezone],
+                  ["Starts at", fmt(event.starts_at)],
+                  ["Ends at", fmt(event.ends_at)],
+                  ["Description", event.description ?? "—"],
+                  ["Created", fmt(event.created_at)],
+                  ["Updated", fmt(event.updated_at)],
+                ]}
+              />
+            )}
           </Section>
+
 
           <Section title="Branding">
             {branding ? (
@@ -524,3 +706,24 @@ function EmptyNotice({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+        {required ? <span className="ml-1 text-destructive">*</span> : null}
+      </span>
+      {children}
+    </label>
+  );
+}
+
