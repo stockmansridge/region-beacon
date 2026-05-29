@@ -34,8 +34,8 @@ On `/admin/events/$eventId/branding`:
 
 1. Two upload widgets: **Logo** and **Cover image**.
 2. Client-side validation **before** calling Storage:
-   - logo: png/jpeg/webp/svg, ≤ 1 MB recommended (5 MB hard cap server-side).
-   - cover: png/jpeg/webp (no svg), ≤ 5 MB.
+   - logo: png/jpeg/webp, ≤ 1 MB recommended (5 MB hard cap server-side).
+   - cover: png/jpeg/webp, ≤ 5 MB.
    - Reject other MIME types and oversize files with inline error.
 3. Build the path as `${agency_id}/${event_id}/${kind}/${crypto.randomUUID()}.${ext}`.
    - Filenames are random — never trust the user filename for paths.
