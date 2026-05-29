@@ -40,8 +40,11 @@ export function useAgencyContext(): AgencyContext {
   useEffect(() => {
     if (access.status === "loading") return;
     if (access.status !== "authorized") {
+      // Terminal non-loading state — admin route handles unauth/unauthorized
+      // before reading agency context. Critically, do NOT set status back to
+      // "loading" here or the admin shell stays stuck on the loading screen.
       setState({
-        status: "loading",
+        status: "no-agency",
         isPlatformAdmin: false,
         agencies: [],
         selected: null,

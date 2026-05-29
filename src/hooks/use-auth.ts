@@ -17,18 +17,32 @@ export function useAuth(): AuthState {
   const [status, setStatus] = useState<AuthState["status"]>("loading");
 
   useEffect(() => {
+    let cancelled = false;
     // Register listener FIRST so we don't miss an event during the initial getSession call.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
+      if (cancelled) return;
       setSession(next);
       setStatus(next ? "authenticated" : "unauthenticated");
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setStatus(data.session ? "authenticated" : "unauthenticated");
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setSession(data.session);
+        setStatus(data.session ? "authenticated" : "unauthenticated");
+      })
+      .catch(() => {
+        // Never leave the app stuck on "loading" if getSession fails.
+        if (cancelled) return;
+        setSession(null);
+        setStatus("unauthenticated");
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return { status, session, email: session?.user?.email ?? null };
