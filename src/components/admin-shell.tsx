@@ -70,7 +70,7 @@ export function AdminShell({
         <nav className="flex-1 space-y-1 p-3">
           {/* Rendered individually so each <Link to=...> stays type-safe. */}
           {(() => {
-            const [dash, events, venues, analytics] = navItems;
+            const [dash, events, analytics] = navItems;
             return (
               <>
                 <Link to={dash.to} className={linkClass(isActive(dash.to, dash.exact))}>
@@ -80,10 +80,6 @@ export function AdminShell({
                 <Link to={events.to} className={linkClass(isActive(events.to, events.exact))}>
                   <events.icon className="h-4 w-4" />
                   {events.label}
-                </Link>
-                <Link to={venues.to} className={linkClass(isActive(venues.to, venues.exact))}>
-                  <venues.icon className="h-4 w-4" />
-                  {venues.label}
                 </Link>
                 <Link to={analytics.to} className={linkClass(isActive(analytics.to, analytics.exact))}>
                   <analytics.icon className="h-4 w-4" />
