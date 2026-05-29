@@ -76,6 +76,8 @@ type Venue = {
   id: string;
   name: string;
   address: string | null;
+  lat: number | null;
+  lng: number | null;
   status: string;
   order_index: number;
 };
