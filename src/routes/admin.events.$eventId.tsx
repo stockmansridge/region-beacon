@@ -65,6 +65,8 @@ type CheckinSettings = {
 type LeaderboardSettings = {
   is_enabled: boolean;
   display_mode: string;
+  show_first_name: boolean;
+  show_last_initial: boolean;
   show_visit_count: boolean;
   hide_below_checkins: number;
   allow_visitor_opt_out: boolean;
