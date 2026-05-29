@@ -184,11 +184,8 @@ function EventDetail() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const [isEditingBranding, setIsEditingBranding] = useState(false);
-  const [brandForm, setBrandForm] = useState<BrandEditForm | null>(null);
-  const [brandSaving, setBrandSaving] = useState(false);
-  const [brandSaveError, setBrandSaveError] = useState<string | null>(null);
-  const [brandValidationError, setBrandValidationError] = useState<string | null>(null);
+
+
 
   const [isEditingCheckin, setIsEditingCheckin] = useState(false);
   const [checkinForm, setCheckinForm] = useState<CheckinEditForm | null>(null);
