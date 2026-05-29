@@ -149,6 +149,15 @@ type LeaderboardEditForm = {
   allow_visitor_opt_out: boolean;
 };
 
+type VenueEditForm = {
+  name: string;
+  address: string;
+  lat: string;
+  lng: string;
+  order_index: string;
+  status: "active" | "inactive";
+};
+
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
