@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { TrailShell } from "@/components/trail-shell";
-import { MapPin, Route } from "lucide-react";
+import { MapPin, Route as RouteIcon } from "lucide-react";
 
 const PRIMARY = "#1F3D2B";
 const ACCENT = "#B5572A";
