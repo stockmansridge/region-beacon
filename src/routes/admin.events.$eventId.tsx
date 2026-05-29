@@ -256,7 +256,7 @@ function EventDetail() {
       }
 
       // 2. Fetch related rows in parallel, each filtered by both event_id AND agency_id.
-      const [brandingRes, domainsRes, checkinRes, leaderboardRes, venuesRes, termsRes] =
+      const [brandingRes, domainsRes, checkinRes, leaderboardRes, venuesRes, termsRes, activationRes] =
         await Promise.all([
           supabase
             .from("event_branding")
@@ -300,6 +300,12 @@ function EventDetail() {
                 .eq("agency_id", agencyId)
                 .maybeSingle()
             : Promise.resolve({ data: null, error: null }),
+          supabase
+            .from("event_activations")
+            .select("status, activation_kind, activated_at, expires_at")
+            .eq("event_id", event.id)
+            .eq("agency_id", agencyId)
+            .maybeSingle(),
         ]);
 
       if (cancelled) return;
