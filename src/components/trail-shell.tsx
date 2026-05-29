@@ -78,10 +78,10 @@ function BottomNav({
 }) {
   const items: { key: NavKey; label: string; icon: typeof Stamp; to: string }[] = [
     { key: "passport", label: "Passport", icon: Stamp, to: "/demo/passport" },
-    { key: "map", label: "Trail Map", icon: MapIcon, to: "/demo/passport" },
-    { key: "wineries", label: "Wineries", icon: Wine, to: "/demo/passport" },
-    { key: "rewards", label: "Rewards", icon: Gift, to: "/demo/passport" },
-    { key: "more", label: "More", icon: MoreHorizontal, to: "/demo/passport" },
+    { key: "map", label: "Trail Map", icon: MapIcon, to: "/demo/trail-map" },
+    { key: "wineries", label: "Wineries", icon: Wine, to: "/demo/wineries" },
+    { key: "rewards", label: "Rewards", icon: Gift, to: "/demo/rewards" },
+    { key: "more", label: "More", icon: MoreHorizontal, to: "/demo/more" },
   ];
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E6DCC7] bg-[#F6EFE2]/95 backdrop-blur">
