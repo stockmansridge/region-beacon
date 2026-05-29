@@ -831,6 +831,122 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  /**
+   * Build the check-in URL for a QR token.
+   * Prefers the event's active public_subdomain domain. Falls back to the
+   * in-app /demo/checkin/$venueId route in staging/preview.
+   */
+  function buildCheckinUrl(token: string): { url: string; isFallback: boolean } {
+    const sub = (bundle?.domains ?? []).find(
+      (d) =>
+        d.domain_type === "event_subdomain" &&
+        d.status === "active" &&
+        !!d.public_subdomain,
+    );
+    if (sub?.public_subdomain) {
+      return {
+        url: `https://${sub.public_subdomain}.easypassport.com.au/checkin/${token}`,
+        isFallback: false,
+      };
+    }
+    return { url: `/demo/checkin/${token}`, isFallback: true };
+  }
+
+  async function revealQr(venueId: string) {
+    if (!agencyId || !canEdit) return;
+    setQrActionError(null);
+    setQrActionVenueId(venueId);
+    const { data, error } = await supabase
+      .from("venue_qr_codes")
+      .select("token")
+      .eq("venue_id", venueId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId)
+      .eq("status", "active")
+      .maybeSingle();
+    setQrActionVenueId(null);
+    if (error || !data?.token) {
+      setQrActionError("Could not load QR token. Please try again.");
+      return;
+    }
+    setRevealedQrByVenue((m) => {
+      const next = new Map(m);
+      next.set(venueId, data.token as string);
+      return next;
+    });
+  }
+
+  function hideQr(venueId: string) {
+    setRevealedQrByVenue((m) => {
+      const next = new Map(m);
+      next.delete(venueId);
+      return next;
+    });
+  }
+
+  async function copyQrLink(venueId: string) {
+    if (!canEdit) return;
+    let token = revealedQrByVenue.get(venueId);
+    if (!token) {
+      setQrActionError(null);
+      setQrActionVenueId(venueId);
+      const { data, error } = await supabase
+        .from("venue_qr_codes")
+        .select("token")
+        .eq("venue_id", venueId)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId!)
+        .eq("status", "active")
+        .maybeSingle();
+      setQrActionVenueId(null);
+      if (error || !data?.token) {
+        setQrActionError("Could not load QR token. Please try again.");
+        return;
+      }
+      token = data.token as string;
+    }
+    const { url } = buildCheckinUrl(token);
+    try {
+      await navigator.clipboard.writeText(url);
+      setQrCopiedVenueId(venueId);
+      setTimeout(() => {
+        setQrCopiedVenueId((id) => (id === venueId ? null : id));
+      }, 1500);
+    } catch {
+      setQrActionError("Could not copy to clipboard.");
+    }
+  }
+
+  async function generateOrRotateQr(venueId: string, isRotate: boolean) {
+    if (!agencyId || !canEdit) return;
+    if (isRotate) {
+      const ok = window.confirm(
+        "Rotate this venue's QR? The previous QR code will stop working immediately and any printed posters using it must be replaced.",
+      );
+      if (!ok) return;
+    }
+    setQrActionError(null);
+    setQrActionVenueId(venueId);
+    const { error } = await supabase.rpc("rotate_venue_qr", { _venue_id: venueId });
+    setQrActionVenueId(null);
+    if (error) {
+      // Do not leak raw Supabase errors to the UI.
+      setQrActionError(
+        isRotate
+          ? "Could not rotate QR. Please try again."
+          : "Could not generate QR. Please try again.",
+      );
+      return;
+    }
+    // Token stays hidden after generate/rotate; admin must explicitly reveal.
+    setRevealedQrByVenue((m) => {
+      const next = new Map(m);
+      next.delete(venueId);
+      return next;
+    });
+    setReloadKey((k) => k + 1);
+  }
+
 
   if (eventId === "new") {
     return (
