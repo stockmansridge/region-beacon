@@ -262,7 +262,7 @@ function EventDetail() {
             .maybeSingle(),
           supabase
             .from("venues")
-            .select("id, name, address, status, order_index")
+            .select("id, name, address, lat, lng, status, order_index")
             .eq("event_id", event.id)
             .eq("agency_id", agencyId)
             .is("deleted_at", null)
