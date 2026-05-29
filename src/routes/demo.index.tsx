@@ -27,7 +27,7 @@ const SAMPLE = {
 export const Route = createFileRoute("/demo/")({
   head: () => ({
     meta: [
-      { title: "Cargo Road Wine Trail — Easy Passport demo" },
+      { title: "Cargo Road Wine Trail — GetStampd demo" },
       {
         name: "description",
         content:
@@ -50,7 +50,7 @@ function DemoLanding() {
           to="/"
           className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#8A7E66] hover:text-[#1F3D2B]"
         >
-          ← Easy Passport
+          ← GetStampd
         </Link>
       }
     >
@@ -91,7 +91,7 @@ function DemoLanding() {
       />
 
       <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
-        Powered by Easy Passport
+        Powered by GetStampd
       </p>
     </TrailShell>
   );

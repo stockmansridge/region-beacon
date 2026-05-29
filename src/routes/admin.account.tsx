@@ -173,7 +173,7 @@ function AccountPage() {
                 const addrLabel = d
                   ? d.custom_domain ??
                     (d.public_subdomain
-                      ? `${d.public_subdomain}.easypassport.app`
+                      ? `${d.public_subdomain}.getstamped.com.au`
                       : "—")
                   : "Not reserved";
                 const addrStatus = d ? d.status : "none";

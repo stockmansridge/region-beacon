@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/system")({
-  head: () => ({ meta: [{ title: "System Admin — Easy Passport" }] }),
+  head: () => ({ meta: [{ title: "System Admin — GetStampd" }] }),
   component: SystemAdmin,
 });
 
@@ -76,7 +76,7 @@ function SystemAdmin() {
         </div>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">System Admin</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Platform-wide controls reserved for Easy Passport platform administrators.
+          Platform-wide controls reserved for GetStampd platform administrators.
           Tools below are placeholders — functionality will land in later steps.
         </p>
       </header>

@@ -15,13 +15,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Easy Passport — White-label digital event passports" },
+      { title: "GetStampd — White-label digital event passports" },
       {
         name: "description",
         content:
           "Create white-label digital event passports with QR venue check-ins, rewards and analytics. No app download required. Built for tourism organisations, event organisers and destination groups.",
       },
-      { property: "og:title", content: "Easy Passport" },
+      { property: "og:title", content: "GetStampd" },
       {
         property: "og:description",
         content:
@@ -114,7 +114,7 @@ function MarketingHome() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-hero-gradient" />
-            <div className="text-sm font-semibold">Easy Passport</div>
+            <div className="text-sm font-semibold">GetStampd</div>
           </div>
           <nav className="flex items-center gap-2">
             <Link
@@ -162,7 +162,7 @@ function MarketingHome() {
                 Launch digital event passports in minutes.
               </h1>
               <p className="mt-5 max-w-xl text-base text-muted-foreground">
-                Easy Passport lets tourism organisations, event organisers and destination
+                GetStampd lets tourism organisations, event organisers and destination
                 groups create branded digital passports with QR venue check-ins, rewards and
                 real-time analytics — no app download, no friction.
               </p>
@@ -323,7 +323,7 @@ function MarketingHome() {
 
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-xs text-muted-foreground sm:flex-row">
-          <div>© {new Date().getFullYear()} Easy Passport. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} GetStampd. All rights reserved.</div>
           <div className="flex gap-4">
             <Link to="/" className="hover:text-foreground">
               Product
@@ -349,9 +349,9 @@ function MarketingHome() {
 
 /*
  * Future hosting plan (not implemented in Lovable preview):
- *   - easypassport.com.au         → this marketing site (route /)
- *   - demo.easypassport.com.au    → /demo experience
- *   - {event}.easypassport.com.au → tenant-specific event public site
+ *   - getstamped.com.au         → this marketing site (route /)
+ *   - demo.getstamped.com.au    → /demo experience
+ *   - {event}.getstamped.com.au → tenant-specific event public site
  *     (resolved at edge by event_domain / public_slug)
  * For now, /demo is the canonical fallback for the visitor experience.
  */

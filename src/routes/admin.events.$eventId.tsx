@@ -743,7 +743,7 @@ function EventDetail() {
     );
     if (sub?.public_subdomain) {
       return {
-        url: `https://${sub.public_subdomain}.easypassport.com.au/checkin/${token}`,
+        url: `https://${sub.public_subdomain}.getstamped.com.au/checkin/${token}`,
         isFallback: false,
       };
     }
@@ -1920,7 +1920,7 @@ function PublicAddressCard({
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Claimed subdomain</span>
           <span className="font-mono">
             {subdomainRow?.public_subdomain
-              ? `${subdomainRow.public_subdomain}.easypassport.com.au`
+              ? `${subdomainRow.public_subdomain}.getstamped.com.au`
               : "—"}
           </span>
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Status</span>
@@ -1949,7 +1949,7 @@ function PublicAddressCard({
               className="h-9 w-full border bg-background px-2 text-sm font-mono"
             />
             <span className="inline-flex items-center rounded-r-md border border-l-0 bg-muted px-2 text-xs text-muted-foreground">
-              .easypassport.com.au
+              .getstamped.com.au
             </span>
           </div>
 

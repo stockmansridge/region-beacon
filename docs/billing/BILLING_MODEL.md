@@ -1,4 +1,4 @@
-# Easy Passport — Billing model
+# GetStampd — Billing model
 
 This document explains how billing will work once the draft migrations in
 `supabase/migrations-draft-billing/` are approved, applied, and wired to
@@ -6,7 +6,7 @@ Stripe. Nothing here is live yet.
 
 ## Two-level model
 
-Easy Passport bills at **two levels**:
+GetStampd bills at **two levels**:
 
 1. **Agency subscription** — a recurring plan attached to an agency. It
    covers ongoing platform usage (admin seats, hosted dashboards,
