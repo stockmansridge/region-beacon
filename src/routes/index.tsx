@@ -1,5 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { QrCode, MapPin, Trophy, BarChart3, Palette, Smartphone, Mail } from "lucide-react";
+import {
+  QrCode,
+  MapPin,
+  Trophy,
+  BarChart3,
+  Palette,
+  Smartphone,
+  Rocket,
+  Globe,
+  Eye,
+  Zap,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -8,20 +19,18 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "White-label digital event passports with QR venue check-ins, rewards and analytics. No app download required. Built for tourism organisations, event organisers and destination groups.",
+          "Create white-label digital event passports with QR venue check-ins, rewards and analytics. No app download required. Built for tourism organisations, event organisers and destination groups.",
       },
       { property: "og:title", content: "Easy Passport" },
       {
         property: "og:description",
         content:
-          "White-label digital event passports with QR check-ins, rewards and CSV exports. No app required.",
+          "Create white-label digital event passports with QR check-ins, rewards and CSV exports. No app required.",
       },
     ],
   }),
   component: MarketingHome,
 });
-
-const SUPPORT_EMAIL = "jonathan@stockmansridge.com.au";
 
 const features = [
   {
@@ -56,6 +65,39 @@ const features = [
   },
 ];
 
+const steps = [
+  {
+    icon: Rocket,
+    title: "Create your event passport",
+    desc: "Set up your event, branding and terms in minutes.",
+  },
+  {
+    icon: MapPin,
+    title: "Add venues",
+    desc: "Curate stops, descriptions and offers for each location.",
+  },
+  {
+    icon: Globe,
+    title: "Reserve a subdomain",
+    desc: "Claim a custom address so visitors find you instantly.",
+  },
+  {
+    icon: Eye,
+    title: "Preview the landing page",
+    desc: "See exactly what visitors will experience before going live.",
+  },
+  {
+    icon: Zap,
+    title: "Activate when ready",
+    desc: "Launch your campaign and start collecting real-time data.",
+  },
+  {
+    icon: Smartphone,
+    title: "No app download required",
+    desc: "Visitors scan, check in and track progress in their browser.",
+  },
+];
+
 const audiences = [
   "Tourism organisations",
   "Event organisers",
@@ -75,30 +117,36 @@ function MarketingHome() {
             <div className="text-sm font-semibold">Easy Passport</div>
           </div>
           <nav className="flex items-center gap-2">
-            <a
-              href="#features"
-              className="hidden h-9 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:text-foreground sm:inline-flex"
+            <Link
+              to="/"
+              className="hidden h-9 items-center rounded-md px-3 text-sm font-medium text-foreground sm:inline-flex"
             >
-              Features
-            </a>
-            <a
-              href="#demo"
+              Product
+            </Link>
+            <Link
+              to="/demo"
               className="hidden h-9 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:text-foreground sm:inline-flex"
             >
               Demo
-            </a>
+            </Link>
+            <Link
+              to="/contact"
+              className="hidden h-9 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:text-foreground sm:inline-flex"
+            >
+              Contact
+            </Link>
+            <Link
+              to="/support"
+              className="hidden h-9 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:text-foreground sm:inline-flex"
+            >
+              Support
+            </Link>
             <Link
               to="/admin/login"
               className="inline-flex h-9 items-center rounded-md border bg-background px-3 text-sm font-medium hover:bg-muted"
             >
               Admin login
             </Link>
-            <a
-              href="#contact"
-              className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              Request demo
-            </a>
           </nav>
         </div>
       </header>
@@ -111,25 +159,31 @@ function MarketingHome() {
                 White-label · QR check-ins · No app required
               </span>
               <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                Digital event passports your visitors actually use.
+                Launch digital event passports in minutes.
               </h1>
               <p className="mt-5 max-w-xl text-base text-muted-foreground">
-                Easy Passport gives tourism organisations, event organisers and destination
-                groups a branded digital passport with QR venue check-ins, rewards and
+                Easy Passport lets tourism organisations, event organisers and destination
+                groups create branded digital passports with QR venue check-ins, rewards and
                 real-time analytics — no app download, no friction.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a
-                  href="#contact"
+                <Link
+                  to="/signup"
                   className="inline-flex h-11 items-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90"
                 >
-                  Request a demo
-                </a>
+                  Start building
+                </Link>
                 <Link
                   to="/demo"
                   className="inline-flex h-11 items-center rounded-full border bg-card px-6 text-sm font-semibold hover:bg-muted"
                 >
                   See the visitor experience
+                </Link>
+                <Link
+                  to="/admin/login"
+                  className="inline-flex h-11 items-center rounded-full border bg-background px-6 text-sm font-semibold hover:bg-muted"
+                >
+                  Admin login
                 </Link>
               </div>
             </div>
@@ -184,7 +238,27 @@ function MarketingHome() {
 
       <section className="border-t">
         <div className="mx-auto max-w-6xl px-4 py-20">
-          <h2 className="text-3xl font-semibold tracking-tight">Who it's for</h2>
+          <h2 className="text-3xl font-semibold tracking-tight">How it works</h2>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Set up your event passport from start to finish — no technical team required.
+          </p>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {steps.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="rounded-2xl border bg-card p-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-base font-semibold">{title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <h2 className="text-3xl font-semibold tracking-tight">Who it is for</h2>
           <div className="mt-8 flex flex-wrap gap-2">
             {audiences.map((a) => (
               <span
@@ -224,19 +298,26 @@ function MarketingHome() {
         </div>
       </section>
 
-      <section id="contact" className="border-t">
+      <section className="border-t">
         <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">Request a demo</h2>
+          <h2 className="text-3xl font-semibold tracking-tight">Ready to launch your passport?</h2>
           <p className="mt-3 text-muted-foreground">
-            Tell us about your event and we'll set up a tailored walkthrough.
+            Start building today. Self-service signup is opening soon — existing customers can sign in now.
           </p>
-          <a
-            href={`mailto:${SUPPORT_EMAIL}?subject=Easy%20Passport%20demo%20request`}
-            className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90"
-          >
-            <Mail className="h-4 w-4" />
-            {SUPPORT_EMAIL}
-          </a>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              to="/signup"
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90"
+            >
+              Start building
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-flex h-12 items-center gap-2 rounded-full border bg-card px-8 text-sm font-semibold hover:bg-muted"
+            >
+              Contact us
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -244,8 +325,17 @@ function MarketingHome() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-xs text-muted-foreground sm:flex-row">
           <div>© {new Date().getFullYear()} Easy Passport. All rights reserved.</div>
           <div className="flex gap-4">
+            <Link to="/" className="hover:text-foreground">
+              Product
+            </Link>
             <Link to="/demo" className="hover:text-foreground">
-              Visitor demo
+              Demo
+            </Link>
+            <Link to="/contact" className="hover:text-foreground">
+              Contact
+            </Link>
+            <Link to="/support" className="hover:text-foreground">
+              Support
             </Link>
             <Link to="/admin/login" className="hover:text-foreground">
               Admin login
