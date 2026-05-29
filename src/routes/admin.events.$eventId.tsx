@@ -1543,7 +1543,7 @@ function EventDetail() {
             )}
           </Section>
 
-          <Section title="Leaderboard">
+          <Section title="Leaderboard" id="section-leaderboard">
             {isEditingLeaderboard && lbForm ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-end gap-2">
