@@ -98,7 +98,7 @@ function fmt(d: string | null | undefined) {
   if (!d) return "—";
   try {
     return new Date(d).toLocaleString();
-  } catch {
+  } catch (_e) {
     return "—";
   }
 }
