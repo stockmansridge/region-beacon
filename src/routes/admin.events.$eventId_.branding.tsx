@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -11,6 +11,14 @@ import {
   resolveVenueLabels,
   validateVenueLabel,
 } from "@/lib/venue-labels";
+import {
+  EVENT_ASSET_ALLOWED_MIME,
+  EVENT_ASSET_MAX_BYTES,
+  deleteEventAssetSafely,
+  getEventAssetPublicUrl,
+  uploadEventAsset,
+  type EventAssetKind,
+} from "@/lib/event-assets";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
@@ -253,6 +261,47 @@ function BrandingEditor() {
     setReloadKey((k) => k + 1);
   }
 
+  async function persistAssetPath(
+    kind: EventAssetKind,
+    newPath: string,
+    previousPath: string | null,
+  ): Promise<string | null> {
+    if (!bundle || !agencyId) return "Internal error.";
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const payload = { [column]: newPath } as Record<string, string>;
+
+    let error: { message: string } | null = null;
+    if (bundle.hasBranding) {
+      const { error: upErr } = await supabase
+        .from("event_branding")
+        .update(payload)
+        .eq("event_id", bundle.event.id)
+        .eq("agency_id", agencyId);
+      error = upErr ?? null;
+    } else {
+      const { error: inErr } = await supabase
+        .from("event_branding")
+        .insert({
+          agency_id: agencyId,
+          event_id: bundle.event.id,
+          ...payload,
+        });
+      error = inErr ?? null;
+    }
+    if (error) {
+      // Roll back the orphan upload so storage doesn't keep an unreferenced file.
+      await deleteEventAssetSafely(newPath);
+      return "Saved the file but could not update the event record.";
+    }
+    // Best-effort: remove the previous object now that the DB is pointing
+    // at the new one.
+    if (previousPath && previousPath !== newPath) {
+      await deleteEventAssetSafely(previousPath);
+    }
+    setReloadKey((k) => k + 1);
+    return null;
+  }
+
   function onCancel() {
     navigate({ to: "/admin/events/$eventId", params: { eventId } });
   }
@@ -353,14 +402,38 @@ function BrandingEditor() {
             </div>
           )}
 
-          <ReadOnlyField label="Logo">
-            {branding?.logo_path ?? "—"}
-            <p className="mt-1 text-xs text-muted-foreground">Logo upload is not enabled yet.</p>
-          </ReadOnlyField>
-          <ReadOnlyField label="Cover image">
-            {branding?.cover_path ?? "—"}
-            <p className="mt-1 text-xs text-muted-foreground">Cover upload is not enabled yet.</p>
-          </ReadOnlyField>
+          <AssetUploader
+            kind="logo"
+            currentPath={branding?.logo_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an agency before uploading.";
+              const res = await uploadEventAsset({
+                agencyId,
+                eventId: event.id,
+                kind: "logo",
+                file,
+              });
+              if (!res.ok) return res.error;
+              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
+            }}
+          />
+          <AssetUploader
+            kind="cover"
+            currentPath={branding?.cover_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an agency before uploading.";
+              const res = await uploadEventAsset({
+                agencyId,
+                eventId: event.id,
+                kind: "cover",
+                file,
+              });
+              if (!res.ok) return res.error;
+              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
+            }}
+          />
 
           <Field label="Primary colour">
             <div className="flex items-center gap-2">
@@ -499,6 +572,8 @@ function BrandingEditor() {
             welcomeCopy={form.welcome_copy.trim()}
             termsUrl={form.terms_url.trim()}
             venueCount={venueCount}
+            logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+            heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
             venueLabelPlural={
               resolveVenueLabels({
                 venue_label_singular: form.venue_label_singular,
@@ -539,6 +614,8 @@ function LandingPreview({
   termsUrl,
   venueCount,
   venueLabelPlural,
+  logoUrl,
+  heroImageUrl,
 }: {
   eventName: string;
   primaryColor: string;
@@ -548,6 +625,8 @@ function LandingPreview({
   termsUrl: string;
   venueCount: number;
   venueLabelPlural: string;
+  logoUrl: string | null;
+  heroImageUrl: string | null;
 }) {
   return (
     <div className="rounded-2xl border border-[#E6DCC7] bg-trail-cream p-4">
@@ -566,9 +645,100 @@ function LandingPreview({
         fontFamily={fontFamily}
         venueCount={venueCount}
         venueLabelPlural={venueLabelPlural}
+        logoUrl={logoUrl}
+        heroImageUrl={heroImageUrl}
         badge="Preview"
         termsUrl={termsUrl || null}
       />
+    </div>
+  );
+}
+
+// ============================================================================
+// AssetUploader
+// ============================================================================
+
+function AssetUploader({
+  kind,
+  currentPath,
+  canEdit,
+  onUpload,
+}: {
+  kind: EventAssetKind;
+  currentPath: string | null;
+  canEdit: boolean;
+  onUpload: (file: File) => Promise<string | null>;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const url = getEventAssetPublicUrl(currentPath);
+  const label = kind === "logo" ? "Event logo" : "Cover / hero image";
+  const limitMB = Math.round(EVENT_ASSET_MAX_BYTES[kind] / (1024 * 1024));
+  const accept = EVENT_ASSET_ALLOWED_MIME.join(",");
+
+  async function handleFile(file: File | null | undefined) {
+    if (!file) return;
+    setErr(null);
+    setBusy(true);
+    const result = await onUpload(file);
+    setBusy(false);
+    if (result) setErr(result);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3">
+        <div
+          className={`flex h-16 ${
+            kind === "logo" ? "w-16" : "w-24"
+          } shrink-0 items-center justify-center overflow-hidden rounded-md border bg-white`}
+        >
+          {url ? (
+            <img
+              src={url}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
+          ) : (
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              None
+            </span>
+          )}
+        </div>
+        <div className="flex-1 space-y-1">
+          <div className="text-xs text-muted-foreground">
+            PNG, JPG or WebP · max {limitMB} MB · SVG not allowed
+          </div>
+          {currentPath && (
+            <div className="truncate font-mono text-[11px] text-muted-foreground">
+              {currentPath}
+            </div>
+          )}
+          {err && <div className="text-xs text-destructive">{err}</div>}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          className="hidden"
+          disabled={!canEdit || busy}
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={!canEdit || busy}
+          className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+        >
+          {busy ? "Uploading…" : url ? "Replace" : "Upload"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 
 export const Route = createFileRoute("/live/$subdomain")({
@@ -122,7 +123,8 @@ function LivePublicPage() {
         primaryColor={event.primary_color ?? undefined}
         accentColor={event.accent_color ?? undefined}
         fontFamily={event.font_family ?? undefined}
-        heroImageUrl={null}
+        logoUrl={getEventAssetPublicUrl(event.logo_path)}
+        heroImageUrl={getEventAssetPublicUrl(event.cover_path)}
         venueCount={venues.length}
         venueNames={venues.map((v) => v.name)}
         termsUrl={event.terms_url}
