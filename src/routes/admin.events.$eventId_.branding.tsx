@@ -688,19 +688,27 @@ function AssetUploader({
   currentPath,
   canEdit,
   onUpload,
+  onRemove,
 }: {
   kind: EventAssetKind;
   currentPath: string | null;
   canEdit: boolean;
   onUpload: (file: File) => Promise<string | null>;
+  onRemove: () => Promise<string | null>;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const url = getEventAssetPublicUrl(currentPath);
-  const label = kind === "logo" ? "Event logo" : "Cover / hero image";
+  const label = kind === "logo" ? "Event logo" : "Cover image";
+  const helper =
+    kind === "logo"
+      ? "Shown in the header of your event page. Square images look best."
+      : "Wide hero image shown at the top of your event page.";
   const limitMB = Math.round(EVENT_ASSET_MAX_BYTES[kind] / (1024 * 1024));
   const accept = EVENT_ASSET_ALLOWED_MIME.join(",");
+  const disabled = !canEdit || busy || removing;
 
   async function handleFile(file: File | null | undefined) {
     if (!file) return;
@@ -712,58 +720,97 @@ function AssetUploader({
     if (inputRef.current) inputRef.current.value = "";
   }
 
+  async function handleRemove() {
+    if (!url) return;
+    const ok = window.confirm(
+      kind === "logo"
+        ? "Remove the event logo? You can upload a new one any time."
+        : "Remove the cover image? You can upload a new one any time.",
+    );
+    if (!ok) return;
+    setErr(null);
+    setRemoving(true);
+    const result = await onRemove();
+    setRemoving(false);
+    if (result) setErr(result);
+  }
+
+  const previewClass =
+    kind === "logo"
+      ? "h-28 w-28 rounded-lg"
+      : "aspect-[16/9] w-full rounded-lg";
+
   return (
-    <div className="space-y-1.5">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3">
-        <div
-          className={`flex h-16 ${
-            kind === "logo" ? "w-16" : "w-24"
-          } shrink-0 items-center justify-center overflow-hidden rounded-md border bg-white`}
-        >
-          {url ? (
-            <img
-              src={url}
-              alt=""
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
-            />
-          ) : (
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              None
-            </span>
-          )}
+    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+      <div className="flex items-baseline justify-between">
+        <div className="text-sm font-semibold">{label}</div>
+        <div className="text-[11px] text-muted-foreground">
+          PNG, JPG, WebP · max {limitMB} MB
         </div>
-        <div className="flex-1 space-y-1">
-          <div className="text-xs text-muted-foreground">
-            PNG, JPG or WebP · max {limitMB} MB · SVG not allowed
-          </div>
-          {currentPath && (
-            <div className="truncate font-mono text-[11px] text-muted-foreground">
-              {currentPath}
-            </div>
-          )}
-          {err && <div className="text-xs text-destructive">{err}</div>}
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept={accept}
-          className="hidden"
-          disabled={!canEdit || busy}
-          onChange={(e) => handleFile(e.target.files?.[0])}
-        />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={!canEdit || busy}
-          className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-        >
-          {busy ? "Uploading…" : url ? "Replace" : "Upload"}
-        </button>
       </div>
+      <p className="text-xs text-muted-foreground">{helper}</p>
+
+      <div
+        className={`relative flex items-center justify-center overflow-hidden border bg-white ${previewClass}`}
+      >
+        {url ? (
+          <img
+            src={url}
+            alt={kind === "logo" ? "Event logo preview" : "Event cover preview"}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+            <span className="text-[10px] uppercase tracking-wider">
+              No {kind === "logo" ? "logo" : "cover image"} yet
+            </span>
+          </div>
+        )}
+      </div>
+
+      {err && <div className="text-xs text-destructive">{err}</div>}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        disabled={disabled}
+        onChange={(e) => handleFile(e.target.files?.[0])}
+      />
+
+      {canEdit && (
+        <div className="flex flex-wrap gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={disabled}
+            className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {busy
+              ? "Uploading…"
+              : url
+                ? `Replace ${kind === "logo" ? "logo" : "cover"}`
+                : `Upload ${kind === "logo" ? "logo" : "cover"}`}
+          </button>
+          {url && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={disabled}
+              className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+            >
+              {removing ? "Removing…" : `Remove ${kind === "logo" ? "logo" : "cover"}`}
+            </button>
+          )}
+        </div>
+      )}
+      {!canEdit && !url && (
+        <div className="text-xs text-muted-foreground">No image uploaded.</div>
+      )}
     </div>
   );
 }
