@@ -35,11 +35,13 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
+import { Route as LiveSubdomainVenuesRouteImport } from './routes/live.$subdomain.venues'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
+import { Route as LiveSubdomainVenuesVenueIdRouteImport } from './routes/live.$subdomain.venues.$venueId'
 import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
 import { Route as AdminEventsEventIdLeaderboardRouteImport } from './routes/admin.events.$eventId_.leaderboard'
 import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId_.branding'
@@ -174,6 +176,11 @@ const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => AdminRoute,
 } as any)
+const LiveSubdomainVenuesRoute = LiveSubdomainVenuesRouteImport.update({
+  id: '/venues',
+  path: '/venues',
+  getParentRoute: () => LiveSubdomainRoute,
+} as any)
 const LiveSubdomainLeaderboardRoute =
   LiveSubdomainLeaderboardRouteImport.update({
     id: '/leaderboard',
@@ -200,6 +207,12 @@ const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
   path: '/events/$eventId',
   getParentRoute: () => AdminRoute,
 } as any)
+const LiveSubdomainVenuesVenueIdRoute =
+  LiveSubdomainVenuesVenueIdRouteImport.update({
+    id: '/$venueId',
+    path: '/$venueId',
+    getParentRoute: () => LiveSubdomainVenuesRoute,
+  } as any)
 const AdminEventsEventIdPreviewRoute =
   AdminEventsEventIdPreviewRouteImport.update({
     id: '/admin_/events/$eventId/preview',
@@ -250,10 +263,12 @@ export interface FileRoutesByFullPath {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
+  '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -285,10 +300,12 @@ export interface FileRoutesByTo {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
+  '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -322,10 +339,12 @@ export interface FileRoutesById {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId_/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
+  '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -360,10 +379,12 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/venues'
     | '/admin/events/'
     | '/admin/events/$eventId/branding'
     | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/preview'
+    | '/live/$subdomain/venues/$venueId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -395,10 +416,12 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/venues'
     | '/admin/events'
     | '/admin/events/$eventId/branding'
     | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/preview'
+    | '/live/$subdomain/venues/$venueId'
   id:
     | '__root__'
     | '/'
@@ -431,10 +454,12 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/venues'
     | '/admin/events/'
     | '/admin/events/$eventId_/branding'
     | '/admin/events/$eventId_/leaderboard'
     | '/admin_/events/$eventId/preview'
+    | '/live/$subdomain/venues/$venueId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -644,6 +669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/live/$subdomain/venues': {
+      id: '/live/$subdomain/venues'
+      path: '/venues'
+      fullPath: '/live/$subdomain/venues'
+      preLoaderRoute: typeof LiveSubdomainVenuesRouteImport
+      parentRoute: typeof LiveSubdomainRoute
+    }
     '/live/$subdomain/leaderboard': {
       id: '/live/$subdomain/leaderboard'
       path: '/leaderboard'
@@ -678,6 +710,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/events/$eventId'
       preLoaderRoute: typeof AdminEventsEventIdRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/live/$subdomain/venues/$venueId': {
+      id: '/live/$subdomain/venues/$venueId'
+      path: '/$venueId'
+      fullPath: '/live/$subdomain/venues/$venueId'
+      preLoaderRoute: typeof LiveSubdomainVenuesVenueIdRouteImport
+      parentRoute: typeof LiveSubdomainVenuesRoute
     }
     '/admin_/events/$eventId/preview': {
       id: '/admin_/events/$eventId/preview'
@@ -745,14 +784,27 @@ const DemoWineriesRouteWithChildren = DemoWineriesRoute._addFileChildren(
   DemoWineriesRouteChildren,
 )
 
+interface LiveSubdomainVenuesRouteChildren {
+  LiveSubdomainVenuesVenueIdRoute: typeof LiveSubdomainVenuesVenueIdRoute
+}
+
+const LiveSubdomainVenuesRouteChildren: LiveSubdomainVenuesRouteChildren = {
+  LiveSubdomainVenuesVenueIdRoute: LiveSubdomainVenuesVenueIdRoute,
+}
+
+const LiveSubdomainVenuesRouteWithChildren =
+  LiveSubdomainVenuesRoute._addFileChildren(LiveSubdomainVenuesRouteChildren)
+
 interface LiveSubdomainRouteChildren {
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
+  LiveSubdomainVenuesRoute: typeof LiveSubdomainVenuesRouteWithChildren
 }
 
 const LiveSubdomainRouteChildren: LiveSubdomainRouteChildren = {
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
+  LiveSubdomainVenuesRoute: LiveSubdomainVenuesRouteWithChildren,
 }
 
 const LiveSubdomainRouteWithChildren = LiveSubdomainRoute._addFileChildren(
