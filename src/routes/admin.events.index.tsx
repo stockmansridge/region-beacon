@@ -98,7 +98,6 @@ function Events() {
           </thead>
           <tbody>
             {loading && (
-            {loading && (
               <tr>
                 <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   Loading events…
@@ -111,7 +110,6 @@ function Events() {
                   No events yet for this agency.
                 </td>
               </tr>
-            )}
             )}
             {!loading &&
               rows?.map((e) => (
@@ -128,7 +126,6 @@ function Events() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{fmt(e.created_at)}</td>
                   <td className="px-4 py-3 text-muted-foreground">{fmt(e.updated_at)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{fmt(e.updated_at)}</td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       to="/admin/events/$eventId"
@@ -138,7 +135,7 @@ function Events() {
                       View
                     </Link>
                   </td>
-
+                </tr>
               ))}
           </tbody>
         </table>
