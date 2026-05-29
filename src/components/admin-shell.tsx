@@ -17,7 +17,9 @@ import { signOut } from "@/hooks/use-auth";
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/events", label: "Events", icon: Calendar, exact: false },
-  { to: "/admin/venues", label: "Venue Library", icon: MapPin, exact: false },
+  // Venue Library is intentionally hidden from the sidebar for MVP.
+  // The /admin/venues route still renders a "Coming Soon" page if accessed
+  // directly, but agency users manage venues inside each event for now.
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
 ] as const;
 
