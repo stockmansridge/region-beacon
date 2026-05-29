@@ -64,7 +64,12 @@ export function TrailShell({
         {children}
       </main>
       {showBottomNav && (
-        <BottomNav primaryColor={primaryColor} accentColor={accentColor} active={activeNav ?? "passport"} />
+        <BottomNav
+          primaryColor={primaryColor}
+          accentColor={accentColor}
+          active={activeNav ?? "passport"}
+          venueLabelPlural={venueLabelPlural}
+        />
       )}
     </div>
   );
@@ -74,15 +79,17 @@ function BottomNav({
   primaryColor,
   accentColor,
   active,
+  venueLabelPlural,
 }: {
   primaryColor: string;
   accentColor: string;
   active: NavKey;
+  venueLabelPlural: string;
 }) {
   const items: { key: NavKey; label: string; icon: typeof Stamp; to: string }[] = [
     { key: "passport", label: "Passport", icon: Stamp, to: "/demo/passport" },
     { key: "map", label: "Trail Map", icon: MapIcon, to: "/demo/trail-map" },
-    { key: "wineries", label: "Wineries", icon: Wine, to: "/demo/wineries" },
+    { key: "wineries", label: venueLabelPlural, icon: Wine, to: "/demo/wineries" },
     { key: "rewards", label: "Rewards", icon: Gift, to: "/demo/rewards" },
     { key: "more", label: "More", icon: MoreHorizontal, to: "/demo/more" },
   ];
