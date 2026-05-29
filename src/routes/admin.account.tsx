@@ -77,13 +77,15 @@ function AccountPage() {
   const [activations, setActivations] = useState<ActivationRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busyEventId, setBusyEventId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!canView || !agencyId) return;
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    (async () => {
+  const isPlatformAdmin = access.isPlatformAdmin;
+
+  const loadAll = useCallback(
+    async (signal?: { cancelled: boolean }) => {
+      if (!agencyId) return;
+      setLoading(true);
+      setError(null);
       const [evRes, domRes, baRes, subRes] = await Promise.all([
         supabase
           .from("events")
@@ -110,7 +112,7 @@ function AccountPage() {
           .limit(1)
           .maybeSingle(),
       ]);
-      if (cancelled) return;
+      if (signal?.cancelled) return;
       if (evRes.error) {
         setError("Could not load events.");
         setLoading(false);
@@ -128,18 +130,52 @@ function AccountPage() {
           .from("event_activations")
           .select("event_id, status, activation_kind, activated_at, expires_at")
           .in("event_id", eventIds);
-        if (!cancelled) {
+        if (!signal?.cancelled) {
           setActivations(actRes.error ? [] : ((actRes.data ?? []) as ActivationRow[]));
         }
       } else {
         setActivations([]);
       }
       setLoading(false);
-    })();
+    },
+    [agencyId],
+  );
+
+  useEffect(() => {
+    if (!canView || !agencyId) return;
+    const signal = { cancelled: false };
+    void loadAll(signal);
     return () => {
-      cancelled = true;
+      signal.cancelled = true;
     };
-  }, [canView, agencyId]);
+  }, [canView, agencyId, loadAll]);
+
+  const runManualActivation = useCallback(
+    async (
+      eventId: string,
+      status: "comp" | "unpaid" | "active" | "past_due" | "cancelled",
+      activationKind: "comp" | "one_time" | "included_in_plan",
+    ) => {
+      if (!isPlatformAdmin) return;
+      setBusyEventId(eventId);
+      const { error: rpcError } = await supabase.rpc("platform_set_event_activation", {
+        _event_id: eventId,
+        _status: status,
+        _activation_kind: activationKind,
+        _expires_at: null,
+      });
+      if (rpcError) {
+        toast.error("Could not update activation. Please try again.");
+        setBusyEventId(null);
+        return;
+      }
+      toast.success("Activation updated.");
+      await loadAll();
+      setBusyEventId(null);
+    },
+    [isPlatformAdmin, loadAll],
+  );
+
 
   if (!canView) {
     return <NoAccessScreen email={auth.email ?? null} />;
