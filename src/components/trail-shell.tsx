@@ -16,6 +16,7 @@ export function TrailShell({
   topRight,
   topLeft,
   contentClassName = "",
+  venueLabelPlural = DEFAULT_VENUE_LABEL_PLURAL,
 }: {
   children: ReactNode;
   eventName?: string;
@@ -27,6 +28,7 @@ export function TrailShell({
   topRight?: ReactNode;
   topLeft?: ReactNode;
   contentClassName?: string;
+  venueLabelPlural?: string;
 }) {
   const initials = (monogram ?? eventName ?? "EP")
     .split(/\s+/)
