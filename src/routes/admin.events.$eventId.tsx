@@ -194,6 +194,7 @@ function EventDetail() {
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
   const [reloadKey, setReloadKey] = useState(0);
+  const [termsDialogOpen, setTermsDialogOpen] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState<EditForm | null>(null);
