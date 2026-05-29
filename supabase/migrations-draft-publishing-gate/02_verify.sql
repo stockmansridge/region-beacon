@@ -43,8 +43,16 @@ select 'unknown custom' as case, * from public.resolve_event_by_host('notapartne
 -- The event_activations row is what platform_set_event_activation manages
 -- (use the staging admin UI to flip it between unpaid / comp).
 
-\set event_id    '00000000-0000-0000-0000-000000000000'
-\set subdomain   'gate-test'
+-- NOTE: The Supabase SQL editor does NOT support psql meta-commands
+-- (`\set`, `:'var'`). Edit the two literals below before running each
+-- scenario in the editor. If you run this file through `psql` instead,
+-- you can replace these with `\set` variables.
+
+-- >>> EDIT THESE TWO VALUES <<<
+-- Replace with a real staging event id and its event_subdomain label.
+-- e.g.
+--   FIXTURE_EVENT_ID  = '11111111-2222-3333-4444-555555555555'
+--   FIXTURE_SUBDOMAIN = 'gate-test'
 
 -- Sanity: show current state of the fixture before each scenario.
 select e.id, e.status as event_status, d.status as domain_status,
@@ -53,11 +61,12 @@ select e.id, e.status as event_status, d.status as domain_status,
   left join public.event_domains d
     on d.event_id = e.id and d.domain_type = 'event_subdomain'
   left join public.event_activations a on a.event_id = e.id
- where e.id = :'event_id';
+ where e.id = '00000000-0000-0000-0000-000000000000'::uuid;  -- FIXTURE_EVENT_ID
 
 -- ---------------------------------------------------------------------------
 -- C. Scenarios — between each scenario, manually set the fixture as noted,
 --    then re-run the SELECT in this section.
+--    Replace 'gate-test' with FIXTURE_SUBDOMAIN in each call below.
 -- ---------------------------------------------------------------------------
 
 -- Scenario 1: active domain + DRAFT event + comp activation -> not_found
@@ -65,7 +74,7 @@ select e.id, e.status as event_status, d.status as domain_status,
 --            event_activations.status='comp'.
 --   (Use platform_set_event_activation to set comp; events.status stays draft.)
 select 'S1 draft+active+comp' as case,
-       * from public.resolve_event_by_host(:'subdomain' || '.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
 -- Expected: kind = 'not_found'
 
 -- Scenario 2: PUBLISHED event + PENDING domain + comp activation -> not_found
@@ -74,28 +83,28 @@ select 'S1 draft+active+comp' as case,
 --   NOTE: publishing/domain activation are NOT in scope of this migration; do
 --   these mutations manually in staging only.
 select 'S2 published+pending+comp' as case,
-       * from public.resolve_event_by_host(:'subdomain' || '.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
 -- Expected: kind = 'not_found'
 
 -- Scenario 3: published + active domain + UNPAID activation -> not_found
 --   Fixture: events.status='published', event_domains.status='active',
 --            event_activations.status='unpaid'  (kind='one_time').
 select 'S3 published+active+unpaid' as case,
-       * from public.resolve_event_by_host(:'subdomain' || '.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
 -- Expected: kind = 'not_found'
 
 -- Scenario 4: published + active domain + COMP activation -> event
 --   Fixture: events.status='published', event_domains.status='active',
 --            event_activations.status='comp'.
 select 'S4 published+active+comp' as case,
-       * from public.resolve_event_by_host(:'subdomain' || '.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
 -- Expected: kind = 'event', event_id matches fixture.
 
 -- Scenario 5: published + active domain + ACTIVE activation -> event
 --   Fixture: events.status='published', event_domains.status='active',
 --            event_activations.status='active'.
 select 'S5 published+active+active' as case,
-       * from public.resolve_event_by_host(:'subdomain' || '.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
 -- Expected: kind = 'event', event_id matches fixture.
 
 -- Scenario 6: pending subdomain (no published event, no active domain).
@@ -108,4 +117,6 @@ select 'S6 pending subdomain' as case,
 -- D. Directly probe event_is_publishable for the fixture
 -- ---------------------------------------------------------------------------
 select 'is_publishable' as case,
+       public.event_is_publishable('00000000-0000-0000-0000-000000000000'::uuid) as publishable;  -- FIXTURE_EVENT_ID
+
        public.event_is_publishable(:'event_id') as publishable;
