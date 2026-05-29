@@ -25,6 +25,8 @@ type Branding = {
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
+  venue_label_singular: string | null;
+  venue_label_plural: string | null;
 };
 
 type Venue = { id: string; name: string };
