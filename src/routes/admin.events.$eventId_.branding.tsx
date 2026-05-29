@@ -417,6 +417,7 @@ function BrandingEditor() {
               if (!res.ok) return res.error;
               return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
             }}
+            onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
           />
           <AssetUploader
             kind="cover"
@@ -433,6 +434,7 @@ function BrandingEditor() {
               if (!res.ok) return res.error;
               return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
             }}
+            onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
           />
 
           <Field label="Primary colour">
