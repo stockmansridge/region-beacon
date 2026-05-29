@@ -23,6 +23,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
+import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
 import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId_.branding'
 
 const AdminRoute = AdminRouteImport.update({
@@ -95,6 +96,12 @@ const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
   path: '/events/$eventId',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEventsEventIdPreviewRoute =
+  AdminEventsEventIdPreviewRouteImport.update({
+    id: '/admin_/events/$eventId/preview',
+    path: '/admin/events/$eventId/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminEventsEventIdBrandingRoute =
   AdminEventsEventIdBrandingRouteImport.update({
     id: '/events/$eventId_/branding',
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
+  '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,6 +142,7 @@ export interface FileRoutesByTo {
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
+  '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,6 +161,7 @@ export interface FileRoutesById {
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
+  '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/demo/checkin/$venueId'
     | '/admin/events/'
     | '/admin/events/$eventId/branding'
+    | '/admin/events/$eventId/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/demo/checkin/$venueId'
     | '/admin/events'
     | '/admin/events/$eventId/branding'
+    | '/admin/events/$eventId/preview'
   id:
     | '__root__'
     | '/'
@@ -204,6 +216,7 @@ export interface FileRouteTypes {
     | '/demo/checkin/$venueId'
     | '/admin/events/'
     | '/admin/events/$eventId_/branding'
+    | '/admin_/events/$eventId/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -213,6 +226,7 @@ export interface RootRouteChildren {
   DemoPassportRoute: typeof DemoPassportRoute
   DemoIndexRoute: typeof DemoIndexRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
+  AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -315,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsEventIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin_/events/$eventId/preview': {
+      id: '/admin_/events/$eventId/preview'
+      path: '/admin/events/$eventId/preview'
+      fullPath: '/admin/events/$eventId/preview'
+      preLoaderRoute: typeof AdminEventsEventIdPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/events/$eventId_/branding': {
       id: '/admin/events/$eventId_/branding'
       path: '/events/$eventId/branding'
@@ -358,7 +379,18 @@ const rootRouteChildren: RootRouteChildren = {
   DemoPassportRoute: DemoPassportRoute,
   DemoIndexRoute: DemoIndexRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
+  AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
