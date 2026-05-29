@@ -37,8 +37,6 @@ import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as LiveSubdomainVenuesRouteImport } from './routes/live.$subdomain.venues'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
-import { Route as LiveSubdomainVenuesRouteImport } from './routes/live.$subdomain.venues'
-import { Route as LiveSubdomainVenuesVenueIdRouteImport } from './routes/live.$subdomain.venues.$venueId'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
@@ -188,6 +186,17 @@ const LiveSubdomainLeaderboardRoute =
     id: '/leaderboard',
     path: '/leaderboard',
     getParentRoute: () => LiveSubdomainRoute,
+  } as any)
+const LiveSubdomainVenuesRoute = LiveSubdomainVenuesRouteImport.update({
+  id: '/venues',
+  path: '/venues',
+  getParentRoute: () => LiveSubdomainRoute,
+} as any)
+const LiveSubdomainVenuesVenueIdRoute =
+  LiveSubdomainVenuesVenueIdRouteImport.update({
+    id: '/$venueId',
+    path: '/$venueId',
+    getParentRoute: () => LiveSubdomainVenuesRoute,
   } as any)
 const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
   id: '/join',
