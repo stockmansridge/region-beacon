@@ -7,6 +7,7 @@ import {
   DEFAULT_VENUE_LABEL_PLURAL,
   DEFAULT_VENUE_LABEL_SINGULAR,
 } from "@/lib/venue-labels";
+import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
 
 export const Route = createFileRoute("/passport/$token")({
   head: () => ({ meta: [{ title: "My passport" }] }),
@@ -308,6 +309,14 @@ function PassportView({
           </div>
         </section>
 
+        {/* Rewards */}
+        <RewardsSection
+          stampedCount={stampedCount}
+          totalVenues={totalVenues}
+          labelSingular={labelSingular}
+          labelPlural={labelPlural}
+        />
+
         {/* Visitor details */}
         <section className="mt-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm">
           <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
@@ -509,3 +518,133 @@ function VenueRow({
     </li>
   );
 }
+
+function RewardsSection({
+  stampedCount,
+  totalVenues,
+  labelSingular,
+  labelPlural,
+}: {
+  stampedCount: number;
+  totalVenues: number;
+  labelSingular: string;
+  labelPlural: string;
+}) {
+  const summary = computeDefaultRewardTiers(stampedCount, totalVenues);
+  const unit = (n: number) =>
+    n === 1 ? labelSingular.toLowerCase() : labelPlural.toLowerCase();
+
+  return (
+    <section className="mt-5">
+      <div className="mb-2 flex items-baseline justify-between">
+        <h2
+          className="font-trail-serif text-lg font-semibold"
+          style={{ color: PRIMARY }}
+        >
+          Rewards
+        </h2>
+        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+          Default tiers
+        </span>
+      </div>
+
+      <ul className="space-y-2">
+        {summary.tiers.map((tier) => (
+          <RewardTierRow
+            key={tier.key}
+            tier={tier}
+            unit={unit(tier.threshold)}
+            stampedCount={stampedCount}
+          />
+        ))}
+
+        {/* Major prize draw placeholder — surfaced once admin reward editor ships */}
+        <li className="rounded-2xl border border-dashed border-[#C9A24A]/50 bg-[#FBF5E8] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div
+                className="font-trail-serif text-sm font-semibold"
+                style={{ color: PRIMARY }}
+              >
+                Major prize draw
+              </div>
+              <div className="mt-0.5 text-[11px] text-[#8A7E66]">
+                Coming soon — eligibility rules will be set by the event organiser.
+              </div>
+            </div>
+            <span
+              className="inline-flex h-7 items-center rounded-full border px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+              style={{ borderColor: `${ACCENT}55`, color: ACCENT }}
+            >
+              TBA
+            </span>
+          </div>
+        </li>
+      </ul>
+
+      <p className="mt-2 text-[11px] text-[#8A7E66]">
+        Default event rewards shown until the organiser publishes custom tiers.
+      </p>
+    </section>
+  );
+}
+
+function RewardTierRow({
+  tier,
+  unit,
+  stampedCount,
+}: {
+  tier: RewardTier;
+  unit: string;
+  stampedCount: number;
+}) {
+  const pct = Math.round(tier.progress * 100);
+  const remaining = Math.max(0, tier.threshold - stampedCount);
+  return (
+    <li
+      className={`rounded-2xl border p-4 shadow-sm ${
+        tier.unlocked
+          ? "border-[#E6DCC7] bg-[#FBF5E8]"
+          : "border-dashed border-[#E6DCC7] bg-[#F6EFE2]/60"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div
+            className="font-trail-serif text-sm font-semibold"
+            style={{ color: tier.unlocked ? PRIMARY : "#8A7E66" }}
+          >
+            {tier.label} · Visit {tier.threshold} {unit}
+          </div>
+          <div className="mt-0.5 text-[11px] text-[#8A7E66]">
+            {tier.unlocked
+              ? "Unlocked"
+              : remaining === 1
+                ? `1 more ${unit.replace(/s$/, "")} to unlock`
+                : `${remaining} more to unlock`}
+          </div>
+        </div>
+        <span
+          className="inline-flex h-7 items-center rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+          style={
+            tier.unlocked
+              ? { backgroundColor: PRIMARY, color: "#F6EFE2" }
+              : { border: `1px solid ${ACCENT}55`, color: ACCENT }
+          }
+        >
+          {tier.unlocked ? "✓ Unlocked" : "Locked"}
+        </span>
+      </div>
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#E6DCC7]">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${pct}%`,
+            backgroundColor: tier.unlocked ? PRIMARY : ACCENT,
+          }}
+        />
+      </div>
+    </li>
+  );
+}
+
