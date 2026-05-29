@@ -89,6 +89,13 @@ type QrSummary = {
   issued_at: string;
 };
 
+type Activation = {
+  status: string;
+  activation_kind: string;
+  activated_at: string | null;
+  expires_at: string | null;
+};
+
 type Bundle = {
   event: EventRow;
   branding: Branding | null;
@@ -98,6 +105,7 @@ type Bundle = {
   leaderboard: LeaderboardSettings | null;
   venues: Venue[];
   qrByVenue: Map<string, QrSummary>;
+  activation: Activation | null;
 };
 
 function fmt(d: string | null | undefined) {
