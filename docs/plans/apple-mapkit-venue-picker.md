@@ -18,6 +18,35 @@ User flow:
 7. Editing an existing venue opens the map centred on its current pin; the
    user can move the pin or pick a new search result to replace coords.
 
+### Confirmed dynamic workflow (for implementation)
+
+1. User searches for a venue / place / address in the picker.
+2. Apple Maps Search returns candidate places.
+3. User selects a result from the suggestion list.
+4. Form auto-fills:
+   - `name`
+   - `address`
+   - `latitude`
+   - `longitude`
+   - `phone` / `website` (when available — Phase 4 via place detail proxy)
+5. If the search result is wrong, the user can drop a new pin by clicking
+   the map, or drag the existing pin to fine-tune. Reverse-geocode then
+   updates `address` and `lat/lng`.
+6. On save, the venue persists `address` + `latitude` + `longitude` in
+   the existing `public.venues` columns. No schema changes.
+7. Existing venues open the picker centred on their saved coords; the
+   admin can move the pin or pick a new search result to replace coords.
+
+Non-negotiables:
+- **No Google Maps**, ever.
+- MapKit JS token is **server-generated** on demand (`getMapkitToken`
+  server function), short-lived (~30 min), scoped by `origin`.
+- The Apple `.p8` private key is **never committed**, never bundled into
+  the client, never returned from any endpoint. It lives only as a
+  Lovable Cloud secret read inside the server function handler.
+- MapKit implementation is blocked until the Apple Developer team
+  provisions the MapKit JS key and the token endpoint is approved.
+
 The `public.venues` table is **not** renamed and its columns
 (`name`, `address`, `latitude`, `longitude`, `website`, `phone`, …) are
 unchanged.
