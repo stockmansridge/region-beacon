@@ -7,6 +7,7 @@ import { useAgencyContext } from "@/hooks/use-agency-context";
 export const Route = createFileRoute("/admin/events/$eventId")({
   head: () => ({ meta: [{ title: "Event detail" }] }),
   component: EventDetail,
+  codeSplitGroupings: [],
 });
 
 type EventRow = {
