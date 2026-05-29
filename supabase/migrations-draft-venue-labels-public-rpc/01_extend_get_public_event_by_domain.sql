@@ -82,7 +82,7 @@ as $$
   from resolved r
   join public.events e on e.id = r.event_id
   left join public.event_branding b on b.event_id = e.id
-  where e.is_published = true;
+  where e.deleted_at is null;
 $$;
 
 -- Preserve grants explicitly (no-op if already granted).
