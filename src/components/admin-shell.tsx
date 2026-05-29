@@ -21,7 +21,7 @@ const navItems = [
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
 ] as const;
 
-export function AdminShell({ children, email }: { children?: ReactNode; email?: string | null }) {
+export function AdminShell({ children, email, role }: { children?: ReactNode; email?: string | null; role?: string | null }) {
   const navigate = useNavigate();
   const handleSignOut = async () => {
     await signOut();
@@ -98,9 +98,11 @@ export function AdminShell({ children, email }: { children?: ReactNode; email?: 
             <div className="text-sm font-semibold">{email ?? "—"}</div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-              Placeholder data
-            </span>
+            {role && (
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                {role}
+              </span>
+            )}
             <div className="h-8 w-8 rounded-full bg-hero-gradient" />
           </div>
         </header>
