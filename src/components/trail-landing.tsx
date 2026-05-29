@@ -157,7 +157,7 @@ export function TrailLanding({
                 style={{ color: primaryColor }}
               >
                 {venueCount ?? venueNames?.length ?? 0}
-                <span className="ml-1 text-sm font-medium text-[#8A7E66]">stops</span>
+                <span className="ml-1 text-sm font-medium text-[#8A7E66]">{venueLabelPlural.toLowerCase()}</span>
               </div>
             </div>
             <div
