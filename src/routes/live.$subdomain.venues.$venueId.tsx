@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
+import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
@@ -12,6 +13,7 @@ type VenueRow = {
   venue_id: string;
   name: string;
   description: string | null;
+  offer_summary: string | null;
   address: string | null;
   website_url: string | null;
   phone: string | null;
