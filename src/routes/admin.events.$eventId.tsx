@@ -706,3 +706,24 @@ function EmptyNotice({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+        {required ? <span className="ml-1 text-destructive">*</span> : null}
+      </span>
+      {children}
+    </label>
+  );
+}
+
