@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut, Shield } from "lucide-react";
 import { ReactNode } from "react";
 import { signOut } from "@/hooks/use-auth";
 
@@ -28,6 +28,7 @@ export function AdminShell({
   agencyName,
   agencyRole,
   ambiguousAgency,
+  isPlatformAdmin,
 }: {
   children?: ReactNode;
   email?: string | null;
@@ -35,6 +36,7 @@ export function AdminShell({
   agencyName?: string | null;
   agencyRole?: string | null;
   ambiguousAgency?: boolean;
+  isPlatformAdmin?: boolean;
 }) {
   const navigate = useNavigate();
   const handleSignOut = async () => {
@@ -85,6 +87,15 @@ export function AdminShell({
                   <analytics.icon className="h-4 w-4" />
                   {analytics.label}
                 </Link>
+                {isPlatformAdmin && (
+                  <Link
+                    to="/admin/system"
+                    className={linkClass(isActive("/admin/system", false))}
+                  >
+                    <Shield className="h-4 w-4" />
+                    System Admin
+                  </Link>
+                )}
               </>
             );
           })()}

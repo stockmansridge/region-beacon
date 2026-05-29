@@ -51,6 +51,7 @@ function AdminLayout() {
       agencyName={agency.selected?.name ?? null}
       agencyRole={agency.selected?.role ?? null}
       ambiguousAgency={agency.ambiguousSelection}
+      isPlatformAdmin={access.isPlatformAdmin}
     >
       {agency.status === "no-agency" ? (
         <NoAgencyState
