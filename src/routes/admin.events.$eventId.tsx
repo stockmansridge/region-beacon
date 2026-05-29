@@ -1426,7 +1426,7 @@ function EventDetail() {
         </div>
 
         <aside className="space-y-4">
-          <Section title="Terms & privacy">
+          <Section title="Terms & privacy" id="section-terms">
             {terms ? (
               <DefList
                 rows={[
