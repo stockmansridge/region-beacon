@@ -163,6 +163,8 @@ function BrandingEditor() {
         font_family: branding?.font_family ?? "",
         welcome_copy: branding?.welcome_copy ?? "",
         terms_url: branding?.terms_url ?? "",
+        venue_label_singular: branding?.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
+        venue_label_plural: branding?.venue_label_plural ?? DEFAULT_VENUE_LABEL_PLURAL,
       });
       setState("ready");
     })();
