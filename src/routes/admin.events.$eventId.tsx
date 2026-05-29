@@ -275,7 +275,72 @@ function EventDetail() {
     return () => {
       cancelled = true;
     };
-  }, [agencyId, eventId]);
+  }, [agencyId, eventId, reloadKey]);
+
+  function startEdit() {
+    if (!bundle) return;
+    const e = bundle.event;
+    setForm({
+      name: e.name ?? "",
+      description: e.description ?? "",
+      timezone: e.timezone ?? "",
+      starts_at: toLocalInput(e.starts_at),
+      ends_at: toLocalInput(e.ends_at),
+    });
+    setValidationError(null);
+    setSaveError(null);
+    setIsEditing(true);
+  }
+
+  function cancelEdit() {
+    setIsEditing(false);
+    setForm(null);
+    setValidationError(null);
+    setSaveError(null);
+  }
+
+  async function saveEdit() {
+    if (!form || !agencyId || !bundle) return;
+    const name = form.name.trim();
+    const timezone = form.timezone.trim();
+    if (!name) {
+      setValidationError("Name is required.");
+      return;
+    }
+    if (!timezone) {
+      setValidationError("Timezone is required.");
+      return;
+    }
+    const startsIso = fromLocalInput(form.starts_at);
+    const endsIso = fromLocalInput(form.ends_at);
+    if (startsIso && endsIso && new Date(endsIso) <= new Date(startsIso)) {
+      setValidationError("End date/time must be after start date/time.");
+      return;
+    }
+    setValidationError(null);
+    setSaveError(null);
+    setSaving(true);
+    const { error } = await supabase
+      .from("events")
+      .update({
+        name,
+        description: form.description.trim() || null,
+        timezone,
+        starts_at: startsIso,
+        ends_at: endsIso,
+      })
+      .eq("id", bundle.event.id)
+      .eq("agency_id", agencyId);
+    setSaving(false);
+    if (error) {
+      setSaveError("Could not save changes. Please try again.");
+      return;
+    }
+    setIsEditing(false);
+    setForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
 
   if (eventId === "new") {
     return (
