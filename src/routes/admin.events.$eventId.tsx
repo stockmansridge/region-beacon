@@ -1641,10 +1641,21 @@ function EventDetail() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-xl border bg-card p-6">
       <h3 className="text-sm font-semibold">{title}</h3>
+      {description && (
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+      )}
       <div className="mt-4">{children}</div>
     </section>
   );
