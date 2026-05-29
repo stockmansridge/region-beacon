@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -11,6 +11,14 @@ import {
   resolveVenueLabels,
   validateVenueLabel,
 } from "@/lib/venue-labels";
+import {
+  EVENT_ASSET_ALLOWED_MIME,
+  EVENT_ASSET_MAX_BYTES,
+  deleteEventAssetSafely,
+  getEventAssetPublicUrl,
+  uploadEventAsset,
+  type EventAssetKind,
+} from "@/lib/event-assets";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
