@@ -203,6 +203,3 @@ function Login() {
     </div>
   );
 }
-
-// Suppress unused import warning — Link reserved for future navigation polish.
-void Link;
