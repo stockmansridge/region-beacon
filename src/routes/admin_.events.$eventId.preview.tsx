@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/admin_/events/$eventId/preview")({
   head: () => ({ meta: [{ title: "Event preview" }] }),
@@ -28,6 +29,8 @@ type Branding = {
   terms_url: string | null;
   venue_label_singular: string | null;
   venue_label_plural: string | null;
+  logo_path: string | null;
+  cover_path: string | null;
 };
 
 type Venue = { id: string; name: string };
@@ -90,7 +93,7 @@ function EventPreview() {
       const [brandingRes, venuesRes, termsRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural")
+          .select("primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, logo_path, cover_path")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -214,6 +217,8 @@ function EventPreview() {
           venueNames={venues.map((v) => v.name)}
           venueCount={venues.length}
           venueLabelPlural={resolveVenueLabels(branding).plural}
+          logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+          heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
           termsUrl={termsUrl ?? null}
           primaryCta={
             <button

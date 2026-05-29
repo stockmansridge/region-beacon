@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 
 export const Route = createFileRoute("/live/$subdomain")({
