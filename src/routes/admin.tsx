@@ -1,23 +1,26 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AdminShell } from "@/components/admin-shell";
+import { NoAccessScreen } from "@/components/no-access-screen";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdminAccess } from "@/hooks/use-admin-access";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
 });
 
 function AdminLayout() {
-  const { status, email } = useAuth();
+  const { status: authStatus, email } = useAuth();
+  const access = useAdminAccess();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (authStatus === "unauthenticated") {
       navigate({ to: "/admin/login", replace: true });
     }
-  }, [status, navigate]);
+  }, [authStatus, navigate]);
 
-  if (status !== "authenticated") {
+  if (authStatus === "loading" || access.status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-sidebar">
         <div className="text-sm text-muted-foreground">Loading…</div>
@@ -25,8 +28,14 @@ function AdminLayout() {
     );
   }
 
+  if (authStatus === "unauthenticated") return null;
+
+  if (access.status === "unauthorized") {
+    return <NoAccessScreen email={email} />;
+  }
+
   return (
-    <AdminShell email={email}>
+    <AdminShell email={email} role={access.primaryRole}>
       <Outlet />
     </AdminShell>
   );
