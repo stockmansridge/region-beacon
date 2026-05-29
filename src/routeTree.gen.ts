@@ -95,11 +95,6 @@ const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
   path: '/events/$eventId',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminEventsEventIdBrandingRoute = AdminEventsEventIdBrandingRouteImport.update({
-  id: '/events/$eventId/branding',
-  path: '/events/$eventId/branding',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminEventsEventIdBrandingRoute =
   AdminEventsEventIdBrandingRouteImport.update({
     id: '/branding',
