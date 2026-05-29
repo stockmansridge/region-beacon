@@ -461,7 +461,93 @@ function EventDetail() {
     setIsEditingBranding(false);
     setBrandForm(null);
     setReloadKey((k) => k + 1);
+
+  function startEditCheckin() {
+    if (!bundle) return;
+    setCheckinForm({
+      one_checkin_per_venue: bundle.checkin?.one_checkin_per_venue ?? true,
+      minimum_seconds_between_checkins: String(bundle.checkin?.minimum_seconds_between_checkins ?? 0),
+      allow_manual_admin_checkins: bundle.checkin?.allow_manual_admin_checkins ?? false,
+      max_checkins_per_passport_per_day:
+        bundle.checkin?.max_checkins_per_passport_per_day === null ||
+        bundle.checkin?.max_checkins_per_passport_per_day === undefined
+          ? ""
+          : String(bundle.checkin.max_checkins_per_passport_per_day),
+    });
+    setCheckinValidationError(null);
+    setCheckinSaveError(null);
+    setIsEditingCheckin(true);
   }
+
+  function cancelEditCheckin() {
+    setIsEditingCheckin(false);
+    setCheckinForm(null);
+    setCheckinValidationError(null);
+    setCheckinSaveError(null);
+  }
+
+  async function saveEditCheckin() {
+    if (!checkinForm || !agencyId || !bundle) return;
+
+    const minSeconds = parseInt(checkinForm.minimum_seconds_between_checkins, 10);
+    if (Number.isNaN(minSeconds) || minSeconds < 0) {
+      setCheckinValidationError("Minimum seconds must be a whole number >= 0.");
+      return;
+    }
+
+    let maxPerDay: number | null = null;
+    if (checkinForm.max_checkins_per_passport_per_day.trim() !== "") {
+      const parsed = parseInt(checkinForm.max_checkins_per_passport_per_day.trim(), 10);
+      if (Number.isNaN(parsed) || parsed < 1) {
+        setCheckinValidationError(
+          "Max check-ins per passport per day must be a whole number >= 1, or left blank."
+        );
+        return;
+      }
+      maxPerDay = parsed;
+    }
+
+    setCheckinValidationError(null);
+    setCheckinSaveError(null);
+    setCheckinSaving(true);
+
+    let error: { message: string } | null = null;
+    if (bundle.checkin) {
+      const { error: upErr } = await supabase
+        .from("event_checkin_settings")
+        .update({
+          one_checkin_per_venue: checkinForm.one_checkin_per_venue,
+          minimum_seconds_between_checkins: minSeconds,
+          allow_manual_admin_checkins: checkinForm.allow_manual_admin_checkins,
+          max_checkins_per_passport_per_day: maxPerDay,
+        })
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId);
+      error = upErr ?? null;
+    } else {
+      const { error: inErr } = await supabase
+        .from("event_checkin_settings")
+        .insert({
+          agency_id: agencyId,
+          event_id: eventId,
+          one_checkin_per_venue: checkinForm.one_checkin_per_venue,
+          minimum_seconds_between_checkins: minSeconds,
+          allow_manual_admin_checkins: checkinForm.allow_manual_admin_checkins,
+          max_checkins_per_passport_per_day: maxPerDay,
+        });
+      error = inErr ?? null;
+    }
+
+    setCheckinSaving(false);
+    if (error) {
+      setCheckinSaveError("Could not save check-in settings. Please try again.");
+      return;
+    }
+    setIsEditingCheckin(false);
+    setCheckinForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
 
 
   if (eventId === "new") {
