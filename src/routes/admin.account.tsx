@@ -43,6 +43,9 @@ function AccountPage() {
 
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [domains, setDomains] = useState<DomainRow[]>([]);
+  const [billingAccount, setBillingAccount] = useState<BillingAccountRow | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [activations, setActivations] = useState<ActivationRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +55,7 @@ function AccountPage() {
     setLoading(true);
     setError(null);
     (async () => {
-      const [evRes, domRes] = await Promise.all([
+      const [evRes, domRes, baRes, subRes] = await Promise.all([
         supabase
           .from("events")
           .select("id, name, status")
@@ -63,6 +66,20 @@ function AccountPage() {
           .from("event_domains")
           .select("event_id, public_subdomain, custom_domain, status, is_primary")
           .eq("agency_id", agencyId),
+        supabase
+          .from("agency_billing_accounts")
+          .select("id, billing_email, billing_name, country, stripe_customer_id")
+          .eq("agency_id", agencyId)
+          .maybeSingle(),
+        supabase
+          .from("agency_subscriptions")
+          .select(
+            "id, plan_code, status, current_period_start, current_period_end, cancel_at_period_end, trial_ends_at, updated_at",
+          )
+          .eq("agency_id", agencyId)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
       if (cancelled) return;
       if (evRes.error) {
@@ -70,8 +87,24 @@ function AccountPage() {
         setLoading(false);
         return;
       }
-      setEvents((evRes.data ?? []) as EventRow[]);
+      const eventRows = (evRes.data ?? []) as EventRow[];
+      setEvents(eventRows);
       setDomains(domRes.error ? [] : ((domRes.data ?? []) as DomainRow[]));
+      setBillingAccount(baRes.error ? null : ((baRes.data ?? null) as BillingAccountRow | null));
+      setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
+
+      const eventIds = eventRows.map((e) => e.id);
+      if (eventIds.length > 0) {
+        const actRes = await supabase
+          .from("event_activations")
+          .select("event_id, status, activation_kind, activated_at, expires_at")
+          .in("event_id", eventIds);
+        if (!cancelled) {
+          setActivations(actRes.error ? [] : ((actRes.data ?? []) as ActivationRow[]));
+        }
+      } else {
+        setActivations([]);
+      }
       setLoading(false);
     })();
     return () => {
