@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut, Shield, CreditCard } from "lucide-react";
+import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard } from "lucide-react";
 import { ReactNode } from "react";
 import { signOut } from "@/hooks/use-auth";
 
@@ -17,7 +17,9 @@ import { signOut } from "@/hooks/use-auth";
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/events", label: "Events", icon: Calendar, exact: false },
-  { to: "/admin/venues", label: "Venue Library", icon: MapPin, exact: false },
+  // Venue Library is intentionally hidden from the sidebar for MVP.
+  // The /admin/venues route still renders a "Coming Soon" page if accessed
+  // directly, but agency users manage venues inside each event for now.
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
 ] as const;
 
@@ -68,7 +70,7 @@ export function AdminShell({
         <nav className="flex-1 space-y-1 p-3">
           {/* Rendered individually so each <Link to=...> stays type-safe. */}
           {(() => {
-            const [dash, events, venues, analytics] = navItems;
+            const [dash, events, analytics] = navItems;
             return (
               <>
                 <Link to={dash.to} className={linkClass(isActive(dash.to, dash.exact))}>
@@ -78,10 +80,6 @@ export function AdminShell({
                 <Link to={events.to} className={linkClass(isActive(events.to, events.exact))}>
                   <events.icon className="h-4 w-4" />
                   {events.label}
-                </Link>
-                <Link to={venues.to} className={linkClass(isActive(venues.to, venues.exact))}>
-                  <venues.icon className="h-4 w-4" />
-                  {venues.label}
                 </Link>
                 <Link to={analytics.to} className={linkClass(isActive(analytics.to, analytics.exact))}>
                   <analytics.icon className="h-4 w-4" />

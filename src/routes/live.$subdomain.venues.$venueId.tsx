@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
+import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
@@ -12,6 +13,7 @@ type VenueRow = {
   venue_id: string;
   name: string;
   description: string | null;
+  offer_summary: string | null;
   address: string | null;
   website_url: string | null;
   phone: string | null;
@@ -144,7 +146,37 @@ function PublicVenueDetailPage() {
             </p>
           )}
 
+          {venue.offer_summary && (
+            <div className="mt-5 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8A7E66]">
+                About their offer
+              </div>
+              <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[#3D372C]">
+                {venue.offer_summary}
+              </p>
+            </div>
+          )}
+
           <div className="mt-6 space-y-2">
+            {(() => {
+              const directionsUrl = buildAppleMapsDirectionsUrl({
+                name: venue.name,
+                address: venue.address,
+                lat: venue.lat,
+                lng: venue.lng,
+              });
+              return directionsUrl ? (
+                <a
+                  href={directionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-sm font-medium text-[#1F3D2B] shadow-sm transition hover:border-[#1F3D2B]/40"
+                >
+                  <span>Get directions (Apple Maps)</span>
+                  <span aria-hidden>↗</span>
+                </a>
+              ) : null;
+            })()}
             {venue.website_url && (
               <a
                 href={venue.website_url}
