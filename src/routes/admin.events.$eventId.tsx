@@ -1053,40 +1053,18 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Domains">
-            {domains.length === 0 ? (
-              <EmptyNotice>No domain configured yet.</EmptyNotice>
-            ) : (
-              <div className="overflow-hidden rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2 font-medium">Subdomain</th>
-                      <th className="px-3 py-2 font-medium">Custom</th>
-                      <th className="px-3 py-2 font-medium">Type</th>
-                      <th className="px-3 py-2 font-medium">Status</th>
-                      <th className="px-3 py-2 font-medium">Primary</th>
-                      <th className="px-3 py-2 font-medium">Verified</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {domains.map((d) => (
-                      <tr key={d.id} className="border-t">
-                        <td className="px-3 py-2">{d.public_subdomain ?? "—"}</td>
-                        <td className="px-3 py-2">{d.custom_domain ?? "—"}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{d.domain_type}</td>
-                        <td className="px-3 py-2">
-                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{d.status}</span>
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground">{d.is_primary ? "yes" : "no"}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{fmt(d.verified_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <Section title="Public address">
+            <PublicAddressCard
+              agencyId={agencyId}
+              eventId={event.id}
+              publicSlug={event.public_slug}
+              domains={domains}
+              canEdit={canEdit}
+              isPlatformAdmin={agency.isPlatformAdmin}
+              onChanged={() => setReloadKey((k) => k + 1)}
+            />
           </Section>
+
 
           <Section title="Venues">
             {canEdit && venueEditingId === null && (
