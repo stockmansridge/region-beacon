@@ -116,13 +116,6 @@ type EditForm = {
   ends_at: string;   // datetime-local
 };
 
-type BrandEditForm = {
-  primary_color: string;
-  accent_color: string;
-  font_family: string;
-  welcome_copy: string;
-  terms_url: string;
-};
 
 type CheckinEditForm = {
   one_checkin_per_venue: boolean;
