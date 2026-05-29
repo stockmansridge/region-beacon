@@ -129,6 +129,24 @@ type CheckinEditForm = {
   max_checkins_per_passport_per_day: string;
 };
 
+const LEADERBOARD_DISPLAY_MODES = [
+  "first_name_last_initial",
+  "first_name_only",
+  "alias_only",
+  "anonymous",
+] as const;
+type LeaderboardDisplayMode = (typeof LEADERBOARD_DISPLAY_MODES)[number];
+
+type LeaderboardEditForm = {
+  is_enabled: boolean;
+  display_mode: LeaderboardDisplayMode;
+  show_first_name: boolean;
+  show_last_initial: boolean;
+  show_visit_count: boolean;
+  hide_below_checkins: string;
+  allow_visitor_opt_out: boolean;
+};
+
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
