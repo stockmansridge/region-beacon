@@ -261,6 +261,47 @@ function BrandingEditor() {
     setReloadKey((k) => k + 1);
   }
 
+  async function persistAssetPath(
+    kind: EventAssetKind,
+    newPath: string,
+    previousPath: string | null,
+  ): Promise<string | null> {
+    if (!bundle || !agencyId) return "Internal error.";
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const payload = { [column]: newPath } as Record<string, string>;
+
+    let error: { message: string } | null = null;
+    if (bundle.hasBranding) {
+      const { error: upErr } = await supabase
+        .from("event_branding")
+        .update(payload)
+        .eq("event_id", bundle.event.id)
+        .eq("agency_id", agencyId);
+      error = upErr ?? null;
+    } else {
+      const { error: inErr } = await supabase
+        .from("event_branding")
+        .insert({
+          agency_id: agencyId,
+          event_id: bundle.event.id,
+          ...payload,
+        });
+      error = inErr ?? null;
+    }
+    if (error) {
+      // Roll back the orphan upload so storage doesn't keep an unreferenced file.
+      await deleteEventAssetSafely(newPath);
+      return "Saved the file but could not update the event record.";
+    }
+    // Best-effort: remove the previous object now that the DB is pointing
+    // at the new one.
+    if (previousPath && previousPath !== newPath) {
+      await deleteEventAssetSafely(previousPath);
+    }
+    setReloadKey((k) => k + 1);
+    return null;
+  }
+
   function onCancel() {
     navigate({ to: "/admin/events/$eventId", params: { eventId } });
   }
