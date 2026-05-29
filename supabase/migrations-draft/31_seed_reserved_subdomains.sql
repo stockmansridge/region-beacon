@@ -14,8 +14,6 @@ from (values
 ) as r(sub)
 on conflict (public_subdomain) where public_subdomain is not null do nothing;
 
--- Platform marketing + admin host placeholders (not reserved, but tracked).
-insert into public.event_domains (
 -- Platform marketing + admin hosts tracked as full custom_domain rows so
 -- they do NOT collide with the reserved 'app' subdomain seeded above.
 -- resolve_event_by_host() special-cases these hostnames directly.
