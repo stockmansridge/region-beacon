@@ -357,13 +357,12 @@ function EventDetail() {
 
   function startEditBranding() {
     if (!bundle) return;
-    const b = bundle.branding ?? {};
     setBrandForm({
-      primary_color: b.primary_color ?? "",
-      accent_color: b.accent_color ?? "",
-      font_family: b.font_family ?? "",
-      welcome_copy: b.welcome_copy ?? "",
-      terms_url: b.terms_url ?? "",
+      primary_color: bundle.branding?.primary_color ?? "",
+      accent_color: bundle.branding?.accent_color ?? "",
+      font_family: bundle.branding?.font_family ?? "",
+      welcome_copy: bundle.branding?.welcome_copy ?? "",
+      terms_url: bundle.branding?.terms_url ?? "",
     });
     setBrandValidationError(null);
     setBrandSaveError(null);
