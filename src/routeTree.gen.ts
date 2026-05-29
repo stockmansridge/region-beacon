@@ -23,6 +23,7 @@ import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-p
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
@@ -99,6 +100,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAccountRoute = AdminAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   id: '/events/',
   path: '/events/',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/system': typeof AdminSystemRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/system': typeof AdminSystemRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/system': typeof AdminSystemRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/signup'
     | '/support'
+    | '/admin/account'
     | '/admin/analytics'
     | '/admin/login'
     | '/admin/system'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/signup'
     | '/support'
+    | '/admin/account'
     | '/admin/analytics'
     | '/admin/login'
     | '/admin/system'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/signup'
     | '/support'
+    | '/admin/account'
     | '/admin/analytics'
     | '/admin/login'
     | '/admin/system'
@@ -368,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/account': {
+      id: '/admin/account'
+      path: '/account'
+      fullPath: '/admin/account'
+      preLoaderRoute: typeof AdminAccountRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events/': {
       id: '/admin/events/'
       path: '/events'
@@ -407,6 +426,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAccountRoute: typeof AdminAccountRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSystemRoute: typeof AdminSystemRoute
@@ -419,6 +439,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAccountRoute: AdminAccountRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSystemRoute: AdminSystemRoute,
@@ -447,13 +468,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

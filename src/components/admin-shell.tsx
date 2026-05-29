@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Calendar, MapPin, BarChart3, Settings, LogOut, Shield, CreditCard } from "lucide-react";
 import { ReactNode } from "react";
 import { signOut } from "@/hooks/use-auth";
 
@@ -87,6 +87,17 @@ export function AdminShell({
                   <analytics.icon className="h-4 w-4" />
                   {analytics.label}
                 </Link>
+                {(isPlatformAdmin ||
+                  agencyRole === "agency_owner" ||
+                  agencyRole === "agency_admin") && (
+                  <Link
+                    to="/admin/account"
+                    className={linkClass(isActive("/admin/account", false))}
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Account & Billing
+                  </Link>
+                )}
                 {isPlatformAdmin && (
                   <Link
                     to="/admin/system"
