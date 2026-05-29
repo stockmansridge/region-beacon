@@ -402,14 +402,38 @@ function BrandingEditor() {
             </div>
           )}
 
-          <ReadOnlyField label="Logo">
-            {branding?.logo_path ?? "—"}
-            <p className="mt-1 text-xs text-muted-foreground">Logo upload is not enabled yet.</p>
-          </ReadOnlyField>
-          <ReadOnlyField label="Cover image">
-            {branding?.cover_path ?? "—"}
-            <p className="mt-1 text-xs text-muted-foreground">Cover upload is not enabled yet.</p>
-          </ReadOnlyField>
+          <AssetUploader
+            kind="logo"
+            currentPath={branding?.logo_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an agency before uploading.";
+              const res = await uploadEventAsset({
+                agencyId,
+                eventId: event.id,
+                kind: "logo",
+                file,
+              });
+              if (!res.ok) return res.error;
+              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
+            }}
+          />
+          <AssetUploader
+            kind="cover"
+            currentPath={branding?.cover_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an agency before uploading.";
+              const res = await uploadEventAsset({
+                agencyId,
+                eventId: event.id,
+                kind: "cover",
+                file,
+              });
+              if (!res.ok) return res.error;
+              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
+            }}
+          />
 
           <Field label="Primary colour">
             <div className="flex items-center gap-2">
