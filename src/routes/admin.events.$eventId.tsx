@@ -1692,17 +1692,24 @@ function EventSetupWarnings({
     });
   }
 
-  if (!hasActiveSubdomain) {
+  if (hasActiveSubdomain) {
+    items.push({
+      tone: "info",
+      title: "Public address active",
+      body: "This event's subdomain is active.",
+    });
+  } else {
     items.push({
       tone: "warn",
       title: hasPendingSubdomain
-        ? "Public address pending activation"
+        ? "Public address reserved — billing activation required"
         : "Public address not claimed",
       body: hasPendingSubdomain
         ? "A subdomain has been reserved but is not active. It will go live once billing/activation is complete."
         : "Choose and reserve a subdomain so visitors can find this event after activation.",
     });
   }
+
 
   if (!hasTerms) {
     items.push({
