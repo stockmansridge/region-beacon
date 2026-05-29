@@ -31,6 +31,34 @@ type DomainRow = {
   is_primary: boolean;
 };
 
+type BillingAccountRow = {
+  id: string;
+  billing_email: string | null;
+  billing_name: string | null;
+  country: string | null;
+  stripe_customer_id: string | null;
+};
+
+type SubscriptionRow = {
+  id: string;
+  plan_code: string | null;
+  status: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  trial_ends_at: string | null;
+  updated_at: string;
+};
+
+type ActivationRow = {
+  event_id: string;
+  status: string;
+  activation_kind: string | null;
+  activated_at: string | null;
+  expires_at: string | null;
+};
+
+
 function AccountPage() {
   const auth = useAuth();
   const access = useAdminAccess();
