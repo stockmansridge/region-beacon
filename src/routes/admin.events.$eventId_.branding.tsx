@@ -440,6 +440,50 @@ function BrandingEditor() {
               className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
             />
           </Field>
+
+          {/* ============== Customer wording ============== */}
+          <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+            <div>
+              <div className="text-sm font-semibold">Customer wording</div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                What do you call the places visitors check in at? Use{" "}
+                <span className="font-medium">Wineries</span> for a wine trail,{" "}
+                <span className="font-medium">Restaurants</span> for a food festival,{" "}
+                <span className="font-medium">Stops</span> for a tourism trail. Defaults to{" "}
+                Venue / Venues.
+              </p>
+            </div>
+
+            <Field label="Singular venue label">
+              <input
+                type="text"
+                value={form.venue_label_singular}
+                onChange={(e) => setForm({ ...form, venue_label_singular: e.target.value })}
+                placeholder="Venue"
+                disabled={!canEdit || saving}
+                maxLength={VENUE_LABEL_MAX}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+              />
+              <div className="mt-1 text-right text-xs text-muted-foreground">
+                {form.venue_label_singular.length}/{VENUE_LABEL_MAX}
+              </div>
+            </Field>
+
+            <Field label="Plural venue label">
+              <input
+                type="text"
+                value={form.venue_label_plural}
+                onChange={(e) => setForm({ ...form, venue_label_plural: e.target.value })}
+                placeholder="Venues"
+                disabled={!canEdit || saving}
+                maxLength={VENUE_LABEL_MAX}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+              />
+              <div className="mt-1 text-right text-xs text-muted-foreground">
+                {form.venue_label_plural.length}/{VENUE_LABEL_MAX}
+              </div>
+            </Field>
+          </div>
         </div>
 
         {/* ============== Preview ============== */}
@@ -455,6 +499,12 @@ function BrandingEditor() {
             welcomeCopy={form.welcome_copy.trim()}
             termsUrl={form.terms_url.trim()}
             venueCount={venueCount}
+            venueLabelPlural={
+              resolveVenueLabels({
+                venue_label_singular: form.venue_label_singular,
+                venue_label_plural: form.venue_label_plural,
+              }).plural
+            }
           />
         </div>
       </div>
