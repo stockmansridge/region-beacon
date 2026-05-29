@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -88,6 +89,13 @@ type QrSummary = {
   issued_at: string;
 };
 
+type Activation = {
+  status: string;
+  activation_kind: string;
+  activated_at: string | null;
+  expires_at: string | null;
+};
+
 type Bundle = {
   event: EventRow;
   branding: Branding | null;
@@ -97,6 +105,7 @@ type Bundle = {
   leaderboard: LeaderboardSettings | null;
   venues: Venue[];
   qrByVenue: Map<string, QrSummary>;
+  activation: Activation | null;
 };
 
 function fmt(d: string | null | undefined) {
@@ -247,7 +256,7 @@ function EventDetail() {
       }
 
       // 2. Fetch related rows in parallel, each filtered by both event_id AND agency_id.
-      const [brandingRes, domainsRes, checkinRes, leaderboardRes, venuesRes, termsRes] =
+      const [brandingRes, domainsRes, checkinRes, leaderboardRes, venuesRes, termsRes, activationRes] =
         await Promise.all([
           supabase
             .from("event_branding")
@@ -291,6 +300,12 @@ function EventDetail() {
                 .eq("agency_id", agencyId)
                 .maybeSingle()
             : Promise.resolve({ data: null, error: null }),
+          supabase
+            .from("event_activations")
+            .select("status, activation_kind, activated_at, expires_at")
+            .eq("event_id", event.id)
+            .eq("agency_id", agencyId)
+            .maybeSingle(),
         ]);
 
       if (cancelled) return;
@@ -339,6 +354,7 @@ function EventDetail() {
         leaderboard: (leaderboardRes.data ?? null) as LeaderboardSettings | null,
         venues,
         qrByVenue,
+        activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
       });
       setState("ready");
     })();
@@ -890,7 +906,7 @@ function EventDetail() {
     );
   }
 
-  const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue } = bundle;
+  const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue, activation } = bundle;
 
   return (
     <>
@@ -950,6 +966,16 @@ function EventDetail() {
         status={event.status}
         domains={domains}
         hasTerms={!!terms}
+      />
+
+      <GoLivePanel
+        agencyId={agencyId}
+        eventId={event.id}
+        eventStatus={event.status}
+        domains={domains}
+        activation={activation}
+        isPlatformAdmin={agency.isPlatformAdmin}
+        onChanged={() => setReloadKey((k) => k + 1)}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -2072,3 +2098,308 @@ function AvailabilityMessage({ state }: { state: AvailabilityState }) {
   return <div className={`text-xs ${m.cls}`}>{m.text}</div>;
 }
 
+
+function GoLivePanel({
+  agencyId,
+  eventId,
+  eventStatus,
+  domains,
+  activation,
+  isPlatformAdmin,
+  onChanged,
+}: {
+  agencyId: string | null;
+  eventId: string;
+  eventStatus: string;
+  domains: Domain[];
+  activation: Activation | null;
+  isPlatformAdmin: boolean;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const primarySubdomain =
+    domains.find((d) => d.domain_type === "event_subdomain" && d.is_primary) ??
+    domains.find((d) => d.domain_type === "event_subdomain") ??
+    null;
+  const primaryCustom =
+    domains.find((d) => d.domain_type === "event_custom" && d.is_primary) ??
+    domains.find((d) => d.domain_type === "event_custom") ??
+    null;
+  const primaryDomain = primarySubdomain ?? primaryCustom;
+
+  const eventPass = eventStatus === "published";
+  const domainPass = !!primaryDomain && primaryDomain.status === "active";
+  const activationStatus = activation?.status ?? "unpaid";
+  const activationPass = activationStatus === "active" || activationStatus === "comp";
+  const allPass = eventPass && domainPass && activationPass;
+
+  const publicUrl = primarySubdomain?.public_subdomain
+    ? `https://${primarySubdomain.public_subdomain}.getstamped.com.au`
+    : primaryCustom?.custom_domain
+      ? `https://${primaryCustom.custom_domain}`
+      : null;
+
+  async function setEventStatus(next: "published" | "draft") {
+    if (!agencyId) return;
+    setBusy(`event:${next}`);
+    const { error } = await supabase
+      .from("events")
+      .update({ status: next })
+      .eq("id", eventId)
+      .eq("agency_id", agencyId);
+    setBusy(null);
+    if (error) {
+      toast.error("Could not update event status.");
+      return;
+    }
+    toast.success(`Event marked ${next}.`);
+    onChanged();
+  }
+
+  async function setDomainStatus(next: "active" | "pending") {
+    if (!agencyId || !primarySubdomain) return;
+    setBusy(`domain:${next}`);
+    const { error } = await supabase
+      .from("event_domains")
+      .update({ status: next })
+      .eq("id", primarySubdomain.id)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+    setBusy(null);
+    if (error) {
+      toast.error("Could not update public address status.");
+      return;
+    }
+    toast.success(`Public address set to ${next}.`);
+    onChanged();
+  }
+
+  async function setActivation(
+    status: "comp" | "unpaid",
+    kind: "comp" | "one_time",
+  ) {
+    setBusy(`act:${status}`);
+    const { error } = await supabase.rpc("platform_set_event_activation", {
+      _event_id: eventId,
+      _status: status,
+      _activation_kind: kind,
+      _expires_at: null,
+    });
+    setBusy(null);
+    if (error) {
+      toast.error("Could not update activation.");
+      return;
+    }
+    toast.success("Activation updated.");
+    onChanged();
+  }
+
+  return (
+    <section className="rounded-xl border bg-card p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">Go live status</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            All three gates must pass before this event is reachable publicly.
+          </p>
+        </div>
+        <div
+          className={
+            allPass
+              ? "rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
+              : "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300"
+          }
+        >
+          {allPass ? "Ready to go live" : "Not live yet"}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <GateCard
+          title="Event"
+          pass={eventPass}
+          value={eventStatus}
+          hint={eventPass ? "Published" : "Must be published"}
+        />
+        <GateCard
+          title="Public address"
+          pass={domainPass}
+          value={
+            primaryDomain
+              ? primaryDomain.status
+              : "not claimed"
+          }
+          hint={
+            !primaryDomain
+              ? "No subdomain claimed"
+              : domainPass
+                ? "Active"
+                : "Must be active"
+          }
+        />
+        <GateCard
+          title="Commercial activation"
+          pass={activationPass}
+          value={activationStatus}
+          hint={activationPass ? "Active or comp" : "Must be active or comp"}
+        />
+      </div>
+
+      <div className="mt-4 rounded-md border bg-muted/30 px-3 py-2 text-xs">
+        <span className="font-medium text-muted-foreground">Public URL: </span>
+        {publicUrl ? (
+          <code className="break-all">{publicUrl}</code>
+        ) : (
+          <span className="text-muted-foreground">Public address not claimed</span>
+        )}
+      </div>
+
+      <p className="mt-2 text-xs text-muted-foreground">
+        When all three gates pass, <code>resolve_event_by_host</code> should return
+        <code> kind = event</code> for the public URL.
+      </p>
+
+      {isPlatformAdmin && (
+        <div className="mt-5 rounded-lg border border-dashed bg-amber-500/5 p-4">
+          <div className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+            Platform testing only
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Stripe billing will control these gates later. Change each gate explicitly.
+          </p>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <div className="text-xs font-medium">Event status</div>
+              <div className="flex flex-wrap gap-2">
+                <AdminBtn
+                  onClick={() => setEventStatus("published")}
+                  disabled={busy !== null || eventStatus === "published"}
+                  busy={busy === "event:published"}
+                >
+                  Mark published
+                </AdminBtn>
+                <AdminBtn
+                  onClick={() => setEventStatus("draft")}
+                  disabled={busy !== null || eventStatus === "draft"}
+                  busy={busy === "event:draft"}
+                >
+                  Set draft
+                </AdminBtn>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-medium">Public address</div>
+              {primarySubdomain ? (
+                <div className="flex flex-wrap gap-2">
+                  <AdminBtn
+                    onClick={() => setDomainStatus("active")}
+                    disabled={busy !== null || primarySubdomain.status === "active"}
+                    busy={busy === "domain:active"}
+                  >
+                    Activate
+                  </AdminBtn>
+                  <AdminBtn
+                    onClick={() => setDomainStatus("pending")}
+                    disabled={busy !== null || primarySubdomain.status === "pending"}
+                    busy={busy === "domain:pending"}
+                  >
+                    Set pending
+                  </AdminBtn>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Claim a subdomain in Public address first.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-medium">Commercial activation</div>
+              <div className="flex flex-wrap gap-2">
+                <AdminBtn
+                  onClick={() => setActivation("comp", "comp")}
+                  disabled={busy !== null}
+                  busy={busy === "act:comp"}
+                >
+                  Comp activate
+                </AdminBtn>
+                <AdminBtn
+                  onClick={() => setActivation("unpaid", "one_time")}
+                  disabled={busy !== null}
+                  busy={busy === "act:unpaid"}
+                >
+                  Set unpaid
+                </AdminBtn>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GateCard({
+  title,
+  pass,
+  value,
+  hint,
+}: {
+  title: string;
+  pass: boolean;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div
+      className={
+        pass
+          ? "rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3"
+          : "rounded-lg border border-amber-500/40 bg-amber-500/5 p-3"
+      }
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {title}
+        </span>
+        <span
+          className={
+            pass
+              ? "text-xs font-semibold text-emerald-700 dark:text-emerald-300"
+              : "text-xs font-semibold text-amber-700 dark:text-amber-300"
+          }
+        >
+          {pass ? "PASS" : "BLOCKED"}
+        </span>
+      </div>
+      <div className="mt-1 text-sm font-medium">{value}</div>
+      <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
+    </div>
+  );
+}
+
+function AdminBtn({
+  onClick,
+  disabled,
+  busy,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {busy ? "Working…" : children}
+    </button>
+  );
+}
