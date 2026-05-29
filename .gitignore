@@ -30,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local env files (never commit — secrets belong in Lovable Cloud / Supabase dashboards)
+.env
+.env.local
+.env.*
+!.env.example

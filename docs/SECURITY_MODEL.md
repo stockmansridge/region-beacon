@@ -37,3 +37,19 @@
 - Admin privilege escalation
 - Data exfiltration via unscoped exports
 - Guessable QR tokens allowing unauthorised check-ins
+
+## Supabase Key Handling
+
+- **Anon / publishable keys are PUBLIC browser keys.** They are designed by
+  Supabase to ship to browsers and may appear in frontend source
+  (e.g. `src/integrations/supabase/client.ts`) and in GitHub. Their safety
+  depends entirely on Row Level Security policies on the database.
+- **Service role keys, `sb_secret_*` keys, and database passwords are
+  SECRETS.** They bypass RLS and grant full database access. They MUST NEVER
+  appear in frontend code, in this repository, in `.env` files committed to
+  GitHub, or in any client-bundled module. Store them only as server-side
+  environment variables / Lovable Cloud secrets, and read them only from
+  server-only modules.
+- The frontend Supabase client in this project is wired to the **staging**
+  project (`region-beacon-staging`). The production project URL and keys
+  must not be wired into the frontend until explicitly approved.
