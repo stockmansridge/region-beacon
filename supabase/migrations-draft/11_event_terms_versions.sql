@@ -34,7 +34,7 @@ alter table public.events
   add constraint events_current_terms_fk
   foreign key (agency_id, id, current_terms_version_id)
   references public.event_terms_versions(agency_id, event_id, id)
-  on delete set null;
+  on delete restrict;
 
 grant select, insert on public.event_terms_versions to authenticated;
 grant all on public.event_terms_versions to service_role;
