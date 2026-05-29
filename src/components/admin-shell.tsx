@@ -21,7 +21,21 @@ const navItems = [
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
 ] as const;
 
-export function AdminShell({ children, email, role }: { children?: ReactNode; email?: string | null; role?: string | null }) {
+export function AdminShell({
+  children,
+  email,
+  role,
+  agencyName,
+  agencyRole,
+  ambiguousAgency,
+}: {
+  children?: ReactNode;
+  email?: string | null;
+  role?: string | null;
+  agencyName?: string | null;
+  agencyRole?: string | null;
+  ambiguousAgency?: boolean;
+}) {
   const navigate = useNavigate();
   const handleSignOut = async () => {
     await signOut();
@@ -94,15 +108,35 @@ export function AdminShell({ children, email, role }: { children?: ReactNode; em
       <div className="flex flex-1 flex-col bg-background">
         <header className="flex h-16 items-center justify-between border-b bg-background px-6">
           <div>
-            <div className="text-xs text-muted-foreground">Signed in as</div>
-            <div className="text-sm font-semibold">{email ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">
+              {agencyName ? "Agency workspace" : "Signed in as"}
+            </div>
+            <div className="text-sm font-semibold">
+              {agencyName ?? email ?? "—"}
+            </div>
           </div>
           <div className="flex items-center gap-3">
+            {ambiguousAgency && (
+              <span
+                title="You belong to multiple agencies. Showing the first one until an agency switcher is added."
+                className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400"
+              >
+                Multi-agency (temp)
+              </span>
+            )}
+            {agencyRole && (
+              <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                {agencyRole}
+              </span>
+            )}
             {role && (
               <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                 {role}
               </span>
             )}
+            <div className="hidden text-right text-xs text-muted-foreground sm:block">
+              {email}
+            </div>
             <div className="h-8 w-8 rounded-full bg-hero-gradient" />
           </div>
         </header>

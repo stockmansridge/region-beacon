@@ -2,8 +2,9 @@ import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AdminShell } from "@/components/admin-shell";
 import { NoAccessScreen } from "@/components/no-access-screen";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, signOut } from "@/hooks/use-auth";
 import { useAdminAccess } from "@/hooks/use-admin-access";
+import { useAgencyContext } from "@/hooks/use-agency-context";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/admin")({
 function AdminLayout() {
   const { status: authStatus, email } = useAuth();
   const access = useAdminAccess();
+  const agency = useAgencyContext();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,7 +22,7 @@ function AdminLayout() {
     }
   }, [authStatus, navigate]);
 
-  if (authStatus === "loading" || access.status === "loading") {
+  if (authStatus === "loading" || access.status === "loading" || agency.status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-sidebar">
         <div className="text-sm text-muted-foreground">Loading…</div>
@@ -29,14 +31,68 @@ function AdminLayout() {
   }
 
   if (authStatus === "unauthenticated") return null;
-
-  if (access.status === "unauthorized") {
-    return <NoAccessScreen email={email} />;
-  }
+  if (access.status === "unauthorized") return <NoAccessScreen email={email} />;
 
   return (
-    <AdminShell email={email} role={access.primaryRole}>
-      <Outlet />
+    <AdminShell
+      email={email}
+      role={access.primaryRole}
+      agencyName={agency.selected?.name ?? null}
+      agencyRole={agency.selected?.role ?? null}
+      ambiguousAgency={agency.ambiguousSelection}
+    >
+      {agency.status === "no-agency" ? (
+        <NoAgencyState
+          isPlatformAdmin={agency.isPlatformAdmin}
+          onSignOut={async () => {
+            await signOut();
+            navigate({ to: "/admin/login", replace: true });
+          }}
+        />
+      ) : agency.status === "error" ? (
+        <ErrorState message={agency.error ?? "Could not load agency information."} />
+      ) : (
+        <Outlet />
+      )}
     </AdminShell>
+  );
+}
+
+function NoAgencyState({
+  isPlatformAdmin,
+  onSignOut,
+}: {
+  isPlatformAdmin: boolean;
+  onSignOut: () => void;
+}) {
+  return (
+    <div className="mx-auto max-w-xl rounded-2xl border bg-card p-8 text-center">
+      <h1 className="text-lg font-semibold">No agency selected</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {isPlatformAdmin ? (
+          <>
+            You're signed in as a platform admin but you don't have an agency membership yet.
+            Create or assign an agency before opening dashboard data.
+          </>
+        ) : (
+          <>You don't have an active agency membership yet.</>
+        )}
+      </p>
+      <button
+        type="button"
+        onClick={onSignOut}
+        className="mt-6 inline-flex h-9 items-center justify-center rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
+function ErrorState({ message }: { message: string }) {
+  return (
+    <div className="mx-auto max-w-xl rounded-2xl border border-destructive/40 bg-destructive/5 p-6 text-sm text-destructive">
+      {message}
+    </div>
   );
 }
