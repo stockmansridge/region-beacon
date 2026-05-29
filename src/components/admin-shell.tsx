@@ -87,6 +87,15 @@ export function AdminShell({
                   <analytics.icon className="h-4 w-4" />
                   {analytics.label}
                 </Link>
+                {isPlatformAdmin && (
+                  <Link
+                    to="/admin/system"
+                    className={linkClass(isActive("/admin/system", false))}
+                  >
+                    <Shield className="h-4 w-4" />
+                    System Admin
+                  </Link>
+                )}
               </>
             );
           })()}
