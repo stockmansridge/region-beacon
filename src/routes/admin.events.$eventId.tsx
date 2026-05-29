@@ -1651,8 +1651,15 @@ function EventDetail() {
               </div>
             ) : (
               <>
-                {canEdit && (
-                  <div className="mb-4 flex justify-end">
+                <div className="mb-4 flex flex-wrap justify-end gap-2">
+                  <Link
+                    to="/admin/events/$eventId/leaderboard"
+                    params={{ eventId: bundle.event.id }}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                  >
+                    Open leaderboard
+                  </Link>
+                  {canEdit && (
                     <button
                       type="button"
                       onClick={startEditLeaderboard}
@@ -1660,8 +1667,8 @@ function EventDetail() {
                     >
                       Edit leaderboard settings
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
                 {leaderboard ? (
                   <>
                     {!leaderboard.is_enabled && (
