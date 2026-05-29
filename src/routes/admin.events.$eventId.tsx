@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { QrPreview } from "@/components/qr-preview";
+import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 
@@ -82,6 +83,11 @@ type Venue = {
   lng: number | null;
   status: string;
   order_index: number;
+  description: string | null;
+  website_url: string | null;
+  phone: string | null;
+  logo_path: string | null;
+  cover_path: string | null;
 };
 
 type QrSummary = {
@@ -217,6 +223,7 @@ function EventDetail() {
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
+  const [publicProfileVenueId, setPublicProfileVenueId] = useState<string | null>(null);
 
   // QR controls — token is fetched only on explicit reveal/rotate and held in
   // memory only. Map: venue_id -> revealed token.
@@ -287,7 +294,9 @@ function EventDetail() {
             .maybeSingle(),
           supabase
             .from("venues")
-            .select("id, name, address, lat, lng, status, order_index")
+            .select(
+              "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path",
+            )
             .eq("event_id", event.id)
             .eq("agency_id", agencyId)
             .is("deleted_at", null)
@@ -1400,6 +1409,14 @@ function EventDetail() {
                                 </button>
                                 <button
                                   type="button"
+                                  onClick={() => setPublicProfileVenueId(v.id)}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null}
+                                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                >
+                                  Edit public page
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => archiveVenue(v.id)}
                                   disabled={venueEditingId !== null || venueArchivingId !== null}
                                   className="inline-flex h-7 items-center rounded-md border border-destructive/40 bg-background px-2 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
@@ -1426,6 +1443,21 @@ function EventDetail() {
                 </p>
               </div>
             )}
+            <VenuePublicProfileDialog
+              open={publicProfileVenueId !== null}
+              onOpenChange={(next) => {
+                if (!next) setPublicProfileVenueId(null);
+              }}
+              venue={
+                publicProfileVenueId
+                  ? venues.find((vv) => vv.id === publicProfileVenueId) ?? null
+                  : null
+              }
+              eventId={event.id}
+              agencyId={agencyId}
+              canEdit={canEdit}
+              onSaved={() => setReloadKey((k) => k + 1)}
+            />
           </Section>
         </div>
 
