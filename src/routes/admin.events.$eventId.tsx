@@ -76,6 +76,8 @@ type Venue = {
   id: string;
   name: string;
   address: string | null;
+  lat: number | null;
+  lng: number | null;
   status: string;
   order_index: number;
 };
@@ -147,6 +149,15 @@ type LeaderboardEditForm = {
   allow_visitor_opt_out: boolean;
 };
 
+type VenueEditForm = {
+  name: string;
+  address: string;
+  lat: string;
+  lng: string;
+  order_index: string;
+  status: "active" | "inactive";
+};
+
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -197,6 +208,15 @@ function EventDetail() {
   const [lbSaving, setLbSaving] = useState(false);
   const [lbSaveError, setLbSaveError] = useState<string | null>(null);
   const [lbValidationError, setLbValidationError] = useState<string | null>(null);
+
+  // Venue editor: "new" = creating, string = editing existing id, null = closed.
+  const [venueEditingId, setVenueEditingId] = useState<string | "new" | null>(null);
+  const [venueForm, setVenueForm] = useState<VenueEditForm | null>(null);
+  const [venueSaving, setVenueSaving] = useState(false);
+  const [venueSaveError, setVenueSaveError] = useState<string | null>(null);
+  const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
+  const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
+  const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -260,7 +280,7 @@ function EventDetail() {
             .maybeSingle(),
           supabase
             .from("venues")
-            .select("id, name, address, status, order_index")
+            .select("id, name, address, lat, lng, status, order_index")
             .eq("event_id", event.id)
             .eq("agency_id", agencyId)
             .is("deleted_at", null)
@@ -655,8 +675,154 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  function startCreateVenue() {
+    if (!bundle) return;
+    const nextOrder = bundle.venues.length
+      ? Math.max(...bundle.venues.map((v) => v.order_index)) + 1
+      : 0;
+    setVenueForm({
+      name: "",
+      address: "",
+      lat: "",
+      lng: "",
+      order_index: String(nextOrder),
+      status: "active",
+    });
+    setVenueValidationError(null);
+    setVenueSaveError(null);
+    setVenueEditingId("new");
+  }
 
+  function startEditVenue(v: Venue) {
+    setVenueForm({
+      name: v.name ?? "",
+      address: v.address ?? "",
+      lat: v.lat === null || v.lat === undefined ? "" : String(v.lat),
+      lng: v.lng === null || v.lng === undefined ? "" : String(v.lng),
+      order_index: String(v.order_index ?? 0),
+      status: v.status === "inactive" ? "inactive" : "active",
+    });
+    setVenueValidationError(null);
+    setVenueSaveError(null);
+    setVenueEditingId(v.id);
+  }
 
+  function cancelVenueEdit() {
+    setVenueEditingId(null);
+    setVenueForm(null);
+    setVenueValidationError(null);
+    setVenueSaveError(null);
+  }
+
+  async function saveVenue() {
+    if (!venueForm || !agencyId || !bundle || !venueEditingId) return;
+
+    const name = venueForm.name.trim();
+    if (!name) {
+      setVenueValidationError("Name is required.");
+      return;
+    }
+    if (name.length > 150) {
+      setVenueValidationError("Name must be 150 characters or fewer.");
+      return;
+    }
+    const addressRaw = venueForm.address.trim();
+    if (addressRaw.length > 300) {
+      setVenueValidationError("Address must be 300 characters or fewer.");
+      return;
+    }
+    const address = addressRaw === "" ? null : addressRaw;
+
+    let lat: number | null = null;
+    if (venueForm.lat.trim() !== "") {
+      const parsed = Number(venueForm.lat.trim());
+      if (!Number.isFinite(parsed) || parsed < -90 || parsed > 90) {
+        setVenueValidationError("Latitude must be a number between -90 and 90.");
+        return;
+      }
+      lat = parsed;
+    }
+    let lng: number | null = null;
+    if (venueForm.lng.trim() !== "") {
+      const parsed = Number(venueForm.lng.trim());
+      if (!Number.isFinite(parsed) || parsed < -180 || parsed > 180) {
+        setVenueValidationError("Longitude must be a number between -180 and 180.");
+        return;
+      }
+      lng = parsed;
+    }
+    const orderIndex = parseInt(venueForm.order_index, 10);
+    if (Number.isNaN(orderIndex) || orderIndex < 0) {
+      setVenueValidationError("Order must be a whole number >= 0.");
+      return;
+    }
+    if (venueForm.status !== "active" && venueForm.status !== "inactive") {
+      setVenueValidationError("Status must be active or inactive.");
+      return;
+    }
+
+    setVenueValidationError(null);
+    setVenueSaveError(null);
+    setVenueSaving(true);
+
+    let error: { message: string } | null = null;
+    if (venueEditingId === "new") {
+      const { error: inErr } = await supabase.from("venues").insert({
+        agency_id: agencyId,
+        event_id: eventId,
+        name,
+        address,
+        lat,
+        lng,
+        order_index: orderIndex,
+        status: venueForm.status,
+      });
+      error = inErr ?? null;
+    } else {
+      const { error: upErr } = await supabase
+        .from("venues")
+        .update({
+          name,
+          address,
+          lat,
+          lng,
+          order_index: orderIndex,
+          status: venueForm.status,
+        })
+        .eq("id", venueEditingId)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId);
+      error = upErr ?? null;
+    }
+
+    setVenueSaving(false);
+    if (error) {
+      setVenueSaveError("Could not save venue. Please try again.");
+      return;
+    }
+    setVenueEditingId(null);
+    setVenueForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
+  async function archiveVenue(venueId: string) {
+    if (!agencyId) return;
+    if (!window.confirm("Archive this venue? It will be hidden from the active list.")) return;
+    setVenueArchivingId(venueId);
+    setVenueArchiveError(null);
+    const { error } = await supabase
+      .from("venues")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", venueId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+    setVenueArchivingId(null);
+    if (error) {
+      setVenueArchiveError("Could not archive venue. Please try again.");
+      return;
+    }
+    setReloadKey((k) => k + 1);
+  }
 
 
   if (eventId === "new") {
@@ -993,6 +1159,123 @@ function EventDetail() {
           </Section>
 
           <Section title="Venues">
+            {canEdit && venueEditingId === null && (
+              <div className="mb-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={startCreateVenue}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                >
+                  Add venue
+                </button>
+              </div>
+            )}
+            {venueArchiveError && (
+              <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {venueArchiveError}
+              </div>
+            )}
+            {venueEditingId !== null && venueForm && (
+              <div className="mb-4 space-y-3 rounded-lg border bg-muted/20 p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">
+                    {venueEditingId === "new" ? "New venue" : "Edit venue"}
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={cancelVenueEdit}
+                      disabled={venueSaving}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveVenue}
+                      disabled={venueSaving}
+                      className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    >
+                      {venueSaving ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                </div>
+                {(venueValidationError || venueSaveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {venueValidationError ?? venueSaveError}
+                  </div>
+                )}
+                <Field label="Name" required>
+                  <input
+                    type="text"
+                    maxLength={150}
+                    value={venueForm.name}
+                    onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                </Field>
+                <Field label="Address">
+                  <input
+                    type="text"
+                    maxLength={300}
+                    value={venueForm.address}
+                    onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Latitude">
+                    <input
+                      type="number"
+                      step="any"
+                      min={-90}
+                      max={90}
+                      value={venueForm.lat}
+                      onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                  <Field label="Longitude">
+                    <input
+                      type="number"
+                      step="any"
+                      min={-180}
+                      max={180}
+                      value={venueForm.lng}
+                      onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Order" required>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={venueForm.order_index}
+                      onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                  <Field label="Status" required>
+                    <select
+                      value={venueForm.status}
+                      onChange={(e) =>
+                        setVenueForm({
+                          ...venueForm,
+                          status: e.target.value === "inactive" ? "inactive" : "active",
+                        })
+                      }
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    >
+                      <option value="active">active</option>
+                      <option value="inactive">inactive</option>
+                    </select>
+                  </Field>
+                </div>
+              </div>
+            )}
             {venues.length === 0 ? (
               <EmptyNotice>No venues yet.</EmptyNotice>
             ) : (
@@ -1006,6 +1289,7 @@ function EventDetail() {
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="px-3 py-2 font-medium">Active QR</th>
                       <th className="px-3 py-2 font-medium">Issued</th>
+                      {canEdit && <th className="px-3 py-2 font-medium">Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -1020,9 +1304,33 @@ function EventDetail() {
                             <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{v.status}</span>
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">
-                            {qr ? qr.status : "none"}
+                            {qr ? qr.status : (
+                              <span className="text-muted-foreground/70">QR generation coming next</span>
+                            )}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
+                          {canEdit && (
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditVenue(v)}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null}
+                                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => archiveVenue(v.id)}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null}
+                                  className="inline-flex h-7 items-center rounded-md border border-destructive/40 bg-background px-2 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
+                                >
+                                  {venueArchivingId === v.id ? "Archiving…" : "Archive"}
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
