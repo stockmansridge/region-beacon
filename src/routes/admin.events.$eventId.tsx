@@ -1121,6 +1121,7 @@ function EventDetail() {
 
 
           <Section
+            id="section-venues"
             title="Venues for this event"
             description="Add and manage the venues/stops that visitors can collect stamps from for this event."
           >
