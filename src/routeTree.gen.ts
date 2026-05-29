@@ -9,29 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PassportRouteImport } from './routes/passport'
-import { Route as JoinRouteImport } from './routes/join'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as CheckinVenueIdRouteImport } from './routes/checkin.$venueId'
+import { Route as DemoPassportRouteImport } from './routes/demo.passport'
+import { Route as DemoJoinRouteImport } from './routes/demo.join'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
 import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
+import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
 
-const PassportRoute = PassportRouteImport.update({
-  id: '/passport',
-  path: '/passport',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const JoinRoute = JoinRouteImport.update({
-  id: '/join',
-  path: '/join',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -42,14 +33,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoIndexRoute = DemoIndexRouteImport.update({
+  id: '/demo/',
+  path: '/demo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const CheckinVenueIdRoute = CheckinVenueIdRouteImport.update({
-  id: '/checkin/$venueId',
-  path: '/checkin/$venueId',
+const DemoPassportRoute = DemoPassportRouteImport.update({
+  id: '/demo/passport',
+  path: '/demo/passport',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoJoinRoute = DemoJoinRouteImport.update({
+  id: '/demo/join',
+  path: '/demo/join',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVenuesRoute = AdminVenuesRouteImport.update({
@@ -77,6 +78,11 @@ const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => AdminRoute,
 } as any)
+const DemoCheckinVenueIdRoute = DemoCheckinVenueIdRouteImport.update({
+  id: '/demo/checkin/$venueId',
+  path: '/demo/checkin/$venueId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
   id: '/events/$eventId',
   path: '/events/$eventId',
@@ -86,43 +92,46 @@ const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/join': typeof JoinRoute
-  '/passport': typeof PassportRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
-  '/checkin/$venueId': typeof CheckinVenueIdRoute
+  '/demo/join': typeof DemoJoinRoute
+  '/demo/passport': typeof DemoPassportRoute
   '/admin/': typeof AdminIndexRoute
+  '/demo/': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events/': typeof AdminEventsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/join': typeof JoinRoute
-  '/passport': typeof PassportRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
-  '/checkin/$venueId': typeof CheckinVenueIdRoute
+  '/demo/join': typeof DemoJoinRoute
+  '/demo/passport': typeof DemoPassportRoute
   '/admin': typeof AdminIndexRoute
+  '/demo': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events': typeof AdminEventsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/join': typeof JoinRoute
-  '/passport': typeof PassportRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
-  '/checkin/$venueId': typeof CheckinVenueIdRoute
+  '/demo/join': typeof DemoJoinRoute
+  '/demo/passport': typeof DemoPassportRoute
   '/admin/': typeof AdminIndexRoute
+  '/demo/': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events/': typeof AdminEventsIndexRoute
 }
 export interface FileRouteTypes {
@@ -130,69 +139,59 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/join'
-    | '/passport'
     | '/admin/analytics'
     | '/admin/login'
     | '/admin/update-password'
     | '/admin/venues'
-    | '/checkin/$venueId'
+    | '/demo/join'
+    | '/demo/passport'
     | '/admin/'
+    | '/demo/'
     | '/admin/events/$eventId'
+    | '/demo/checkin/$venueId'
     | '/admin/events/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/join'
-    | '/passport'
     | '/admin/analytics'
     | '/admin/login'
     | '/admin/update-password'
     | '/admin/venues'
-    | '/checkin/$venueId'
+    | '/demo/join'
+    | '/demo/passport'
     | '/admin'
+    | '/demo'
     | '/admin/events/$eventId'
+    | '/demo/checkin/$venueId'
     | '/admin/events'
   id:
     | '__root__'
     | '/'
     | '/admin'
-    | '/join'
-    | '/passport'
     | '/admin/analytics'
     | '/admin/login'
     | '/admin/update-password'
     | '/admin/venues'
-    | '/checkin/$venueId'
+    | '/demo/join'
+    | '/demo/passport'
     | '/admin/'
+    | '/demo/'
     | '/admin/events/$eventId'
+    | '/demo/checkin/$venueId'
     | '/admin/events/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  JoinRoute: typeof JoinRoute
-  PassportRoute: typeof PassportRoute
-  CheckinVenueIdRoute: typeof CheckinVenueIdRoute
+  DemoJoinRoute: typeof DemoJoinRoute
+  DemoPassportRoute: typeof DemoPassportRoute
+  DemoIndexRoute: typeof DemoIndexRoute
+  DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/passport': {
-      id: '/passport'
-      path: '/passport'
-      fullPath: '/passport'
-      preLoaderRoute: typeof PassportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/join': {
-      id: '/join'
-      path: '/join'
-      fullPath: '/join'
-      preLoaderRoute: typeof JoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -207,6 +206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/': {
+      id: '/demo/'
+      path: '/demo'
+      fullPath: '/demo/'
+      preLoaderRoute: typeof DemoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -214,11 +220,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/checkin/$venueId': {
-      id: '/checkin/$venueId'
-      path: '/checkin/$venueId'
-      fullPath: '/checkin/$venueId'
-      preLoaderRoute: typeof CheckinVenueIdRouteImport
+    '/demo/passport': {
+      id: '/demo/passport'
+      path: '/demo/passport'
+      fullPath: '/demo/passport'
+      preLoaderRoute: typeof DemoPassportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/join': {
+      id: '/demo/join'
+      path: '/demo/join'
+      fullPath: '/demo/join'
+      preLoaderRoute: typeof DemoJoinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/venues': {
@@ -256,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/demo/checkin/$venueId': {
+      id: '/demo/checkin/$venueId'
+      path: '/demo/checkin/$venueId'
+      fullPath: '/demo/checkin/$venueId'
+      preLoaderRoute: typeof DemoCheckinVenueIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/events/$eventId': {
       id: '/admin/events/$eventId'
       path: '/events/$eventId'
@@ -291,10 +311,21 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  JoinRoute: JoinRoute,
-  PassportRoute: PassportRoute,
-  CheckinVenueIdRoute: CheckinVenueIdRoute,
+  DemoJoinRoute: DemoJoinRoute,
+  DemoPassportRoute: DemoPassportRoute,
+  DemoIndexRoute: DemoIndexRoute,
+  DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
