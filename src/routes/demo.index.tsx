@@ -1,14 +1,37 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { VisitorShell } from "@/components/visitor-shell";
-import { QrCode, Trophy, MapPin } from "lucide-react";
+import { TrailShell } from "@/components/trail-shell";
+import { TrailLanding } from "@/components/trail-landing";
+
+const SAMPLE = {
+  eventName: "Cargo Road Wine Trail",
+  monogram: "CR",
+  pitch: "Eight cellar doors, one valley. Collect a stamp at every stop and unlock the trail rewards.",
+  welcomeCopy:
+    "Welcome to Cargo Road. Wander between cool-climate vineyards, taste what the ridge grows best, and let your passport quietly fill up as you go.",
+  badge: "Summer 2026 · Orange NSW",
+  primaryColor: "#1F3D2B",
+  accentColor: "#B5572A",
+  goldColor: "#C9A24A",
+  venueNames: [
+    "Swinging Bridge Wines",
+    "Stockman's Ridge Vineyard",
+    "See Saw Wine",
+    "Cargo Road Wines",
+    "Brangayne of Orange",
+    "Ross Hill Wines",
+    "Philip Shaw Wines",
+    "Angullong Cellar Door",
+  ],
+};
 
 export const Route = createFileRoute("/demo/")({
   head: () => ({
     meta: [
-      { title: "Easy Passport — Visitor demo" },
+      { title: "Cargo Road Wine Trail — Easy Passport demo" },
       {
         name: "description",
-        content: "Walk through the visitor experience: join, collect QR check-ins and earn rewards.",
+        content:
+          "Preview the customer experience of a regional wine trail digital passport — collect stamps at every cellar door and unlock rewards.",
       },
     ],
   }),
@@ -17,60 +40,59 @@ export const Route = createFileRoute("/demo/")({
 
 function DemoLanding() {
   return (
-    <VisitorShell>
-      <div className="mb-4 rounded-md border border-dashed bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-        Demo mode · sample event, no real passport is created.
+    <TrailShell
+      eventName={SAMPLE.eventName}
+      monogram={SAMPLE.monogram}
+      primaryColor={SAMPLE.primaryColor}
+      accentColor={SAMPLE.accentColor}
+      topRight={
+        <Link
+          to="/"
+          className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#8A7E66] hover:text-[#1F3D2B]"
+        >
+          ← Easy Passport
+        </Link>
+      }
+    >
+      <div className="mb-3 rounded-full border border-dashed border-[#C9A24A]/60 bg-[#FBF5E8] px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-[#8A7E66]">
+        Demo mode · no real passport is created
       </div>
 
-      <section className="overflow-hidden rounded-3xl bg-hero-gradient p-6 text-primary-foreground shadow-lg">
-        <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur">
-          Summer 2026 · Wine Trail
-        </span>
-        <h1 className="mt-4 text-3xl font-semibold leading-tight">
-          Discover the region, one scan at a time.
-        </h1>
-        <p className="mt-2 text-sm text-primary-foreground/85">
-          Visit participating venues, scan the QR at each stop, and complete your passport to
-          unlock rewards.
-        </p>
-        <Link
-          to="/demo/join"
-          className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-background px-6 text-sm font-semibold text-foreground shadow-sm transition hover:opacity-90"
-        >
-          Start my passport
-        </Link>
-      </section>
+      <TrailLanding
+        eventName={SAMPLE.eventName}
+        monogram={SAMPLE.monogram}
+        pitch={SAMPLE.pitch}
+        welcomeCopy={SAMPLE.welcomeCopy}
+        badge={SAMPLE.badge}
+        primaryColor={SAMPLE.primaryColor}
+        accentColor={SAMPLE.accentColor}
+        goldColor={SAMPLE.goldColor}
+        venueNames={SAMPLE.venueNames}
+        venueCount={SAMPLE.venueNames.length}
+        primaryCta={
+          <Link
+            to="/demo/join"
+            className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+            style={{ backgroundColor: SAMPLE.primaryColor }}
+          >
+            Join the trail
+          </Link>
+        }
+        secondaryCta={
+          <Link
+            to="/demo/passport"
+            className="flex h-11 w-full items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide"
+            style={{ borderColor: `${SAMPLE.primaryColor}40`, color: SAMPLE.primaryColor }}
+          >
+            I already have a passport
+          </Link>
+        }
+        termsUrl={null}
+      />
 
-      <section className="mt-8 grid gap-3">
-        {[
-          {
-            icon: QrCode,
-            title: "Scan QR codes",
-            desc: "Each venue has a unique QR — scan it to check in.",
-          },
-          { icon: MapPin, title: "Explore venues", desc: "Browse the full trail and find your next stop." },
-          { icon: Trophy, title: "Earn rewards", desc: "Complete the passport and enter the prize draw." },
-        ].map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="flex gap-3 rounded-2xl border bg-card p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-              <Icon className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold">{title}</h3>
-              <p className="text-xs text-muted-foreground">{desc}</p>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      <p className="mt-10 text-center text-xs text-muted-foreground">
-        Powered by <span className="font-medium text-foreground">Easy Passport</span> · No app required
+      <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
+        Powered by Easy Passport
       </p>
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">
-          ← Back to product site
-        </Link>
-      </p>
-    </VisitorShell>
+    </TrailShell>
   );
 }

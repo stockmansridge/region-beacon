@@ -1,11 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { VisitorShell } from "@/components/visitor-shell";
+import { TrailShell } from "@/components/trail-shell";
+
+const PRIMARY = "#1F3D2B";
+const ACCENT = "#B5572A";
+const GOLD = "#C9A24A";
 
 export const Route = createFileRoute("/demo/join")({
   head: () => ({
     meta: [
-      { title: "Join the passport — Demo" },
-      { name: "description", content: "Demo of the visitor join flow." },
+      { title: "Join the trail — Cargo Road Wine Trail" },
+      { name: "description", content: "Sign-up preview for the regional passport demo." },
     ],
   }),
   component: DemoJoin,
@@ -13,50 +17,98 @@ export const Route = createFileRoute("/demo/join")({
 
 function DemoJoin() {
   return (
-    <VisitorShell>
-      <h1 className="text-2xl font-semibold">Join the passport</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Enter your details to start collecting check-ins.
-      </p>
-
-      <div className="mt-4 rounded-md border border-dashed bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-        Demo · no passport is created yet.
+    <TrailShell
+      eventName="Cargo Road Wine Trail"
+      monogram="CR"
+      primaryColor={PRIMARY}
+      accentColor={ACCENT}
+      topRight={
+        <Link
+          to="/demo"
+          className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#8A7E66] hover:text-[#1F3D2B]"
+        >
+          ← Back
+        </Link>
+      }
+    >
+      <div className="mb-3 rounded-full border border-dashed border-[#C9A24A]/60 bg-[#FBF5E8] px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-[#8A7E66]">
+        Demo mode · nothing is saved
       </div>
 
-      <form className="mt-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Full name</label>
-          <input
-            className="h-11 w-full rounded-lg border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-            placeholder="Jane Doe"
-          />
+      <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 shadow-sm">
+        <div className="text-[10px] font-medium uppercase tracking-[0.28em]" style={{ color: GOLD }}>
+          Digital Passport
         </div>
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Email</label>
-          <input
-            type="email"
-            className="h-11 w-full rounded-lg border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-            placeholder="you@example.com"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Postcode (optional)</label>
-          <input
-            className="h-11 w-full rounded-lg border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-            placeholder="A1B 2C3"
-          />
-        </div>
-        <label className="flex items-start gap-2 text-xs text-muted-foreground">
-          <input type="checkbox" className="mt-0.5" />
-          I agree to receive updates about the event and accept the terms.
-        </label>
-        <Link
-          to="/demo/passport"
-          className="mt-2 flex h-12 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-sm"
-        >
-          Start my passport
-        </Link>
-      </form>
-    </VisitorShell>
+        <h1 className="font-trail-serif mt-1 text-3xl font-semibold leading-tight" style={{ color: PRIMARY }}>
+          Start your trail
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-[#3D372C]">
+          A passport takes a moment. We use your details only to send your stamps and trail updates.
+        </p>
+
+        <form className="mt-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <TrailField label="Full name">
+            <input
+              className="h-12 w-full rounded-xl border border-[#E6DCC7] bg-[#F6EFE2] px-4 text-sm outline-none transition focus:border-[#1F3D2B]"
+              placeholder="Jane Doe"
+            />
+          </TrailField>
+          <TrailField label="Email address">
+            <input
+              type="email"
+              className="h-12 w-full rounded-xl border border-[#E6DCC7] bg-[#F6EFE2] px-4 text-sm outline-none transition focus:border-[#1F3D2B]"
+              placeholder="you@example.com"
+            />
+          </TrailField>
+          <TrailField label="Postcode (optional)">
+            <input
+              className="h-12 w-full rounded-xl border border-[#E6DCC7] bg-[#F6EFE2] px-4 text-sm outline-none transition focus:border-[#1F3D2B]"
+              placeholder="2800"
+            />
+          </TrailField>
+
+          <label className="flex items-start gap-2.5 rounded-xl border border-[#E6DCC7] bg-[#F6EFE2] p-3 text-xs leading-relaxed text-[#3D372C]">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-[#C9A24A] accent-[#1F3D2B]"
+            />
+            <span>
+              I accept the trail{" "}
+              <span className="underline" style={{ color: ACCENT }}>
+                terms
+              </span>{" "}
+              and{" "}
+              <span className="underline" style={{ color: ACCENT }}>
+                privacy policy
+              </span>
+              .
+            </span>
+          </label>
+
+          <Link
+            to="/demo/passport"
+            className="mt-2 flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+            style={{ backgroundColor: PRIMARY }}
+          >
+            Start exploring
+          </Link>
+        </form>
+      </div>
+
+      <p className="mt-5 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
+        No app download required
+      </p>
+    </TrailShell>
+  );
+}
+
+function TrailField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8A7E66]">
+        {label}
+      </span>
+      {children}
+    </label>
   );
 }
