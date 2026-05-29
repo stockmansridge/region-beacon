@@ -118,5 +118,3 @@ select 'S6 pending subdomain' as case,
 -- ---------------------------------------------------------------------------
 select 'is_publishable' as case,
        public.event_is_publishable('00000000-0000-0000-0000-000000000000'::uuid) as publishable;  -- FIXTURE_EVENT_ID
-
-       public.event_is_publishable(:'event_id') as publishable;
