@@ -82,12 +82,13 @@ export function AdminShell({ children, email }: { children?: ReactNode; email?: 
           >
             <Settings className="h-4 w-4" /> Settings
           </button>
-          <Link
-            to="/admin/login"
+          <button
+            type="button"
+            onClick={handleSignOut}
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
           >
             <LogOut className="h-4 w-4" /> Sign out
-          </Link>
+          </button>
         </div>
       </aside>
       <div className="flex flex-1 flex-col bg-background">
