@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailLanding } from "@/components/trail-landing";
+import { resolveVenueLabels } from "@/lib/venue-labels";
 
 
 export const Route = createFileRoute("/live/$subdomain")({
@@ -31,6 +32,10 @@ type PublicEvent = {
   welcome_copy: string | null;
   terms_url: string | null;
   current_terms_version_id: string | null;
+  // Added by the public RPC extension; optional so this code stays safe
+  // before the migration is applied.
+  venue_label_singular?: string | null;
+  venue_label_plural?: string | null;
 };
 
 type PublicVenue = {
@@ -106,10 +111,13 @@ function LivePublicPage() {
 
   const { event, venues } = state;
   const canRegister = Boolean(event.current_terms_version_id);
+  const venueLabels = resolveVenueLabels(event);
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
       <TrailLanding
         eventName={event.name}
+        venueLabelSingular={venueLabels.singular}
+        venueLabelPlural={venueLabels.plural}
         pitch={event.description ?? undefined}
         welcomeCopy={event.welcome_copy ?? undefined}
         primaryColor={event.primary_color ?? undefined}
