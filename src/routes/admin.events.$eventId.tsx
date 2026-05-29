@@ -111,6 +111,14 @@ type EditForm = {
   ends_at: string;   // datetime-local
 };
 
+type BrandEditForm = {
+  primary_color: string;
+  accent_color: string;
+  font_family: string;
+  welcome_copy: string;
+  terms_url: string;
+};
+
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -143,6 +151,12 @@ function EventDetail() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  const [isEditingBranding, setIsEditingBranding] = useState(false);
+  const [brandForm, setBrandForm] = useState<BrandEditForm | null>(null);
+  const [brandSaving, setBrandSaving] = useState(false);
+  const [brandSaveError, setBrandSaveError] = useState<string | null>(null);
+  const [brandValidationError, setBrandValidationError] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -341,6 +355,102 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  function startEditBranding() {
+    if (!bundle) return;
+    const b = bundle.branding ?? {};
+    setBrandForm({
+      primary_color: b.primary_color ?? "",
+      accent_color: b.accent_color ?? "",
+      font_family: b.font_family ?? "",
+      welcome_copy: b.welcome_copy ?? "",
+      terms_url: b.terms_url ?? "",
+    });
+    setBrandValidationError(null);
+    setBrandSaveError(null);
+    setIsEditingBranding(true);
+  }
+
+  function cancelEditBranding() {
+    setIsEditingBranding(false);
+    setBrandForm(null);
+    setBrandValidationError(null);
+    setBrandSaveError(null);
+  }
+
+  async function saveEditBranding() {
+    if (!brandForm || !agencyId || !bundle) return;
+
+    const primaryColor = brandForm.primary_color.trim();
+    const accentColor = brandForm.accent_color.trim();
+    const fontFamily = brandForm.font_family.trim();
+    const welcomeCopy = brandForm.welcome_copy.trim();
+    const termsUrl = brandForm.terms_url.trim();
+
+    const hexRe = /^#[0-9A-Fa-f]{6}$/;
+    if (primaryColor && !hexRe.test(primaryColor)) {
+      setBrandValidationError("Primary colour must be a valid 6-digit hex code (e.g. #7A1F2B).");
+      return;
+    }
+    if (accentColor && !hexRe.test(accentColor)) {
+      setBrandValidationError("Accent colour must be a valid 6-digit hex code (e.g. #E8C547).");
+      return;
+    }
+    if (fontFamily.length > 100) {
+      setBrandValidationError("Font family must be 100 characters or fewer.");
+      return;
+    }
+    if (welcomeCopy.length > 1000) {
+      setBrandValidationError("Welcome copy must be 1000 characters or fewer.");
+      return;
+    }
+    if (termsUrl && !termsUrl.startsWith("https://")) {
+      setBrandValidationError("Terms URL must start with https://.");
+      return;
+    }
+
+    setBrandValidationError(null);
+    setBrandSaveError(null);
+    setBrandSaving(true);
+
+    let error: { message: string } | null = null;
+    if (bundle.branding) {
+      const { error: upErr } = await supabase
+        .from("event_branding")
+        .update({
+          primary_color: primaryColor || null,
+          accent_color: accentColor || null,
+          font_family: fontFamily || null,
+          welcome_copy: welcomeCopy || null,
+          terms_url: termsUrl || null,
+        })
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId);
+      error = upErr ?? null;
+    } else {
+      const { error: inErr } = await supabase
+        .from("event_branding")
+        .insert({
+          agency_id: agencyId,
+          event_id: eventId,
+          primary_color: primaryColor || null,
+          accent_color: accentColor || null,
+          font_family: fontFamily || null,
+          welcome_copy: welcomeCopy || null,
+          terms_url: termsUrl || null,
+        });
+      error = inErr ?? null;
+    }
+
+    setBrandSaving(false);
+    if (error) {
+      setBrandSaveError("Could not save branding changes. Please try again.");
+      return;
+    }
+    setIsEditingBranding(false);
+    setBrandForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
 
   if (eventId === "new") {
     return (
@@ -508,20 +618,135 @@ function EventDetail() {
 
 
           <Section title="Branding">
-            {branding ? (
-              <DefList
-                rows={[
-                  ["Logo path", branding.logo_path ?? "—"],
-                  ["Cover path", branding.cover_path ?? "—"],
-                  ["Primary colour", <ColorSwatch key="p" value={branding.primary_color} />],
-                  ["Accent colour", <ColorSwatch key="a" value={branding.accent_color} />],
-                  ["Font family", branding.font_family ?? "—"],
-                  ["Welcome copy", branding.welcome_copy ?? "—"],
-                  ["Terms URL (branding)", branding.terms_url ?? "—"],
-                ]}
-              />
+            {isEditingBranding && brandForm ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelEditBranding}
+                    disabled={brandSaving}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditBranding}
+                    disabled={brandSaving}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {brandSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+                {(brandValidationError || brandSaveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {brandValidationError ?? brandSaveError}
+                  </div>
+                )}
+                <Field label="Logo path">
+                  <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 text-sm text-muted-foreground">
+                    {branding?.logo_path ?? "—"}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Logo upload is not enabled yet.</p>
+                </Field>
+                <Field label="Cover path">
+                  <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 text-sm text-muted-foreground">
+                    {branding?.cover_path ?? "—"}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Cover upload is not enabled yet.</p>
+                </Field>
+                <Field label="Primary colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={brandForm.primary_color || "#000000"}
+                      onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
+                      className="h-9 w-12 rounded-md border bg-background"
+                    />
+                    <input
+                      type="text"
+                      value={brandForm.primary_color}
+                      onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
+                      placeholder="#7A1F2B"
+                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono"
+                      maxLength={7}
+                    />
+                  </div>
+                </Field>
+                <Field label="Accent colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={brandForm.accent_color || "#000000"}
+                      onChange={(e) => setBrandForm({ ...brandForm, accent_color: e.target.value })}
+                      className="h-9 w-12 rounded-md border bg-background"
+                    />
+                    <input
+                      type="text"
+                      value={brandForm.accent_color}
+                      onChange={(e) => setBrandForm({ ...brandForm, accent_color: e.target.value })}
+                      placeholder="#E8C547"
+                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono"
+                      maxLength={7}
+                    />
+                  </div>
+                </Field>
+                <Field label="Font family">
+                  <input
+                    type="text"
+                    value={brandForm.font_family}
+                    onChange={(e) => setBrandForm({ ...brandForm, font_family: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    maxLength={100}
+                  />
+                </Field>
+                <Field label="Welcome copy">
+                  <textarea
+                    value={brandForm.welcome_copy}
+                    onChange={(e) => setBrandForm({ ...brandForm, welcome_copy: e.target.value })}
+                    className="min-h-24 w-full rounded-md border bg-background p-2 text-sm"
+                    maxLength={1000}
+                  />
+                </Field>
+                <Field label="Terms URL (branding)">
+                  <input
+                    type="text"
+                    value={brandForm.terms_url}
+                    onChange={(e) => setBrandForm({ ...brandForm, terms_url: e.target.value })}
+                    placeholder="https://…"
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                </Field>
+              </div>
             ) : (
-              <EmptyNotice>No branding configured yet.</EmptyNotice>
+              <>
+                {canEdit && (
+                  <div className="mb-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={startEditBranding}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Edit branding
+                    </button>
+                  </div>
+                )}
+                {branding ? (
+                  <DefList
+                    rows={[
+                      ["Logo path", branding.logo_path ?? "—"],
+                      ["Cover path", branding.cover_path ?? "—"],
+                      ["Primary colour", <ColorSwatch key="p" value={branding.primary_color} />],
+                      ["Accent colour", <ColorSwatch key="a" value={branding.accent_color} />],
+                      ["Font family", branding.font_family ?? "—"],
+                      ["Welcome copy", branding.welcome_copy ?? "—"],
+                      ["Terms URL (branding)", branding.terms_url ?? "—"],
+                    ]}
+                  />
+                ) : (
+                  <EmptyNotice>No branding configured yet.</EmptyNotice>
+                )}
+              </>
             )}
           </Section>
 
