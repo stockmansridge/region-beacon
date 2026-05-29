@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { TrailLanding } from "@/components/trail-landing";
+import { resolveVenueLabels } from "@/lib/venue-labels";
 
 export const Route = createFileRoute("/admin_/events/$eventId/preview")({
   head: () => ({ meta: [{ title: "Event preview" }] }),
