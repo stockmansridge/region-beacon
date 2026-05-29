@@ -278,6 +278,14 @@ function BrandingEditor() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Link
+            to="/admin/events/$eventId/preview"
+            params={{ eventId }}
+            target="_blank"
+            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+          >
+            Open full preview
+          </Link>
           <button
             type="button"
             onClick={onCancel}
@@ -297,6 +305,7 @@ function BrandingEditor() {
             </button>
           )}
         </div>
+
       </div>
 
       {!canEdit && (
