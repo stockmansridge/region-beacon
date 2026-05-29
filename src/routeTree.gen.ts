@@ -23,7 +23,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
-import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId.branding'
+import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId_.branding'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -97,9 +97,9 @@ const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
 } as any)
 const AdminEventsEventIdBrandingRoute =
   AdminEventsEventIdBrandingRouteImport.update({
-    id: '/branding',
-    path: '/branding',
-    getParentRoute: () => AdminEventsEventIdRoute,
+    id: '/events/$eventId_/branding',
+    path: '/events/$eventId/branding',
+    getParentRoute: () => AdminRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -114,7 +114,7 @@ export interface FileRoutesByFullPath {
   '/demo/passport': typeof DemoPassportRoute
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
-  '/admin/events/$eventId': typeof AdminEventsEventIdRouteWithChildren
+  '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -130,7 +130,7 @@ export interface FileRoutesByTo {
   '/demo/passport': typeof DemoPassportRoute
   '/admin': typeof AdminIndexRoute
   '/demo': typeof DemoIndexRoute
-  '/admin/events/$eventId': typeof AdminEventsEventIdRouteWithChildren
+  '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -148,10 +148,10 @@ export interface FileRoutesById {
   '/demo/passport': typeof DemoPassportRoute
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
-  '/admin/events/$eventId': typeof AdminEventsEventIdRouteWithChildren
+  '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/admin/events/': typeof AdminEventsIndexRoute
-  '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
+  '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -203,7 +203,7 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
     | '/admin/events/'
-    | '/admin/events/$eventId/branding'
+    | '/admin/events/$eventId_/branding'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -315,26 +315,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsEventIdRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/events/$eventId/branding': {
-      id: '/admin/events/$eventId/branding'
-      path: '/branding'
+    '/admin/events/$eventId_/branding': {
+      id: '/admin/events/$eventId_/branding'
+      path: '/events/$eventId/branding'
       fullPath: '/admin/events/$eventId/branding'
       preLoaderRoute: typeof AdminEventsEventIdBrandingRouteImport
-      parentRoute: typeof AdminEventsEventIdRoute
+      parentRoute: typeof AdminRoute
     }
   }
 }
-
-interface AdminEventsEventIdRouteChildren {
-  AdminEventsEventIdBrandingRoute: typeof AdminEventsEventIdBrandingRoute
-}
-
-const AdminEventsEventIdRouteChildren: AdminEventsEventIdRouteChildren = {
-  AdminEventsEventIdBrandingRoute: AdminEventsEventIdBrandingRoute,
-}
-
-const AdminEventsEventIdRouteWithChildren =
-  AdminEventsEventIdRoute._addFileChildren(AdminEventsEventIdRouteChildren)
 
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
@@ -343,8 +332,9 @@ interface AdminRouteChildren {
   AdminUpdatePasswordRoute: typeof AdminUpdatePasswordRoute
   AdminVenuesRoute: typeof AdminVenuesRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  AdminEventsEventIdRoute: typeof AdminEventsEventIdRouteWithChildren
+  AdminEventsEventIdRoute: typeof AdminEventsEventIdRoute
   AdminEventsIndexRoute: typeof AdminEventsIndexRoute
+  AdminEventsEventIdBrandingRoute: typeof AdminEventsEventIdBrandingRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -354,8 +344,9 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUpdatePasswordRoute: AdminUpdatePasswordRoute,
   AdminVenuesRoute: AdminVenuesRoute,
   AdminIndexRoute: AdminIndexRoute,
-  AdminEventsEventIdRoute: AdminEventsEventIdRouteWithChildren,
+  AdminEventsEventIdRoute: AdminEventsEventIdRoute,
   AdminEventsIndexRoute: AdminEventsIndexRoute,
+  AdminEventsEventIdBrandingRoute: AdminEventsEventIdBrandingRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -371,3 +362,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

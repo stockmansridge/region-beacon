@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 
-export const Route = createFileRoute("/admin/events/$eventId/branding")({
+export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
   component: BrandingEditor,
   codeSplitGroupings: [],
