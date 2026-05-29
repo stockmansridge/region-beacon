@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
+import { QrPreview } from "@/components/qr-preview";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 
@@ -1309,13 +1310,19 @@ function EventDetail() {
                                     </button>
                                   </div>
                                   {revealed && built && (
-                                    <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono break-all text-foreground">
-                                      {built.url}
-                                      {built.isFallback && (
-                                        <span className="ml-2 rounded bg-amber-500/15 px-1 py-0.5 text-[10px] font-sans font-medium text-amber-700 dark:text-amber-400">
-                                          demo/fallback URL — no active public subdomain
-                                        </span>
-                                      )}
+                                    <div className="flex flex-col gap-2">
+                                      <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono break-all text-foreground">
+                                        {built.url}
+                                        {built.isFallback && (
+                                          <span className="ml-2 rounded bg-amber-500/15 px-1 py-0.5 text-[10px] font-sans font-medium text-amber-700 dark:text-amber-400">
+                                            demo/fallback URL — no active public subdomain
+                                          </span>
+                                        )}
+                                      </div>
+                                      <QrPreview
+                                        value={built.url}
+                                        downloadName={`qr-${v.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || v.id}`}
+                                      />
                                     </div>
                                   )}
                                 </div>
