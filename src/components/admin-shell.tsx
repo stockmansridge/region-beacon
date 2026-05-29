@@ -21,7 +21,12 @@ const navItems = [
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
 ] as const;
 
-export function AdminShell({ children }: { children?: ReactNode }) {
+export function AdminShell({ children, email }: { children?: ReactNode; email?: string | null }) {
+  const navigate = useNavigate();
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/admin/login", replace: true });
+  };
   const location = useLocation();
 
   const isActive = (to: string, exact: boolean) =>
