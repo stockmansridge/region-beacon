@@ -24,7 +24,6 @@ import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.inde
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
 import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId.branding'
-import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId.branding'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -94,6 +93,11 @@ const DemoCheckinVenueIdRoute = DemoCheckinVenueIdRouteImport.update({
 const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
   id: '/events/$eventId',
   path: '/events/$eventId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEventsEventIdBrandingRoute = AdminEventsEventIdBrandingRouteImport.update({
+  id: '/events/$eventId/branding',
+  path: '/events/$eventId/branding',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminEventsEventIdBrandingRoute =
