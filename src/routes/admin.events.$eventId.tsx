@@ -218,6 +218,13 @@ function EventDetail() {
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
 
+  // QR controls — token is fetched only on explicit reveal/rotate and held in
+  // memory only. Map: venue_id -> revealed token.
+  const [revealedQrByVenue, setRevealedQrByVenue] = useState<Map<string, string>>(new Map());
+  const [qrActionVenueId, setQrActionVenueId] = useState<string | null>(null);
+  const [qrActionError, setQrActionError] = useState<string | null>(null);
+  const [qrCopiedVenueId, setQrCopiedVenueId] = useState<string | null>(null);
+
   useEffect(() => {
 
     if (!agencyId || eventId === "new") {
