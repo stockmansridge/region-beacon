@@ -211,8 +211,21 @@ function AccountPage() {
         </Card>
 
         <Card title="Plan">
-          <Row label="Current plan" value="Not active (Trial placeholder)" />
-          <Row label="Status" value="Setup mode" />
+          <Row label="Current plan" value={planLabel} />
+          <Row label="Subscription status" value={subStatus} />
+          {periodEnd && <Row label="Current period ends" value={periodEnd} />}
+          {subscription?.cancel_at_period_end && (
+            <Row label="Cancels at period end" value="Yes" />
+          )}
+          <Row
+            label="Billing email"
+            value={billingAccount?.billing_email ?? "—"}
+          />
+          <Row
+            label="Stripe customer"
+            value={billingAccount?.stripe_customer_id ?? "Not linked"}
+            mono
+          />
           <p className="mt-3 text-sm text-muted-foreground">
             Billing is not connected yet.
           </p>
@@ -222,6 +235,7 @@ function AccountPage() {
           </div>
           <p className="mt-2 text-xs text-muted-foreground">{COMING_SOON_HELP}</p>
         </Card>
+
       </div>
 
       <div className="mt-6 rounded-xl border bg-card">
