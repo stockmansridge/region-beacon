@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailLanding } from "@/components/trail-landing";
+
 
 export const Route = createFileRoute("/live/$subdomain")({
   component: LivePublicPage,
@@ -104,6 +105,7 @@ function LivePublicPage() {
   }
 
   const { event, venues } = state;
+  const canRegister = Boolean(event.current_terms_version_id);
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
       <TrailLanding
@@ -118,21 +120,33 @@ function LivePublicPage() {
         venueNames={venues.map((v) => v.name)}
         termsUrl={event.terms_url}
         primaryCta={
-          <button
-            type="button"
-            disabled
-            className="h-12 w-full cursor-not-allowed rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
-            style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
-            title="Coming soon"
-          >
-            Start passport — coming soon
-          </button>
+          canRegister ? (
+            <Link
+              to="/live/$subdomain/join"
+              params={{ subdomain }}
+              className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+              style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
+            >
+              Start passport
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="h-12 w-full cursor-not-allowed rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
+              style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
+              title="Terms & privacy not configured yet"
+            >
+              Start passport — coming soon
+            </button>
+          )
         }
         secondaryCta={<span />}
       />
     </div>
   );
 }
+
 
 function NotLiveYet() {
   return (

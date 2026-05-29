@@ -26,6 +26,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
+import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
 import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
@@ -116,6 +117,11 @@ const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => AdminRoute,
 } as any)
+const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => LiveSubdomainRoute,
+} as any)
 const DemoCheckinVenueIdRoute = DemoCheckinVenueIdRouteImport.update({
   id: '/demo/checkin/$venueId',
   path: '/demo/checkin/$venueId',
@@ -153,11 +159,12 @@ export interface FileRoutesByFullPath {
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/passport': typeof DemoPassportRoute
-  '/live/$subdomain': typeof LiveSubdomainRoute
+  '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
+  '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
@@ -175,11 +182,12 @@ export interface FileRoutesByTo {
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/passport': typeof DemoPassportRoute
-  '/live/$subdomain': typeof LiveSubdomainRoute
+  '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/demo': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
+  '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
@@ -199,11 +207,12 @@ export interface FileRoutesById {
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
   '/demo/passport': typeof DemoPassportRoute
-  '/live/$subdomain': typeof LiveSubdomainRoute
+  '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
+  '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/demo/'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
+    | '/live/$subdomain/join'
     | '/admin/events/'
     | '/admin/events/$eventId/branding'
     | '/admin/events/$eventId/preview'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
+    | '/live/$subdomain/join'
     | '/admin/events'
     | '/admin/events/$eventId/branding'
     | '/admin/events/$eventId/preview'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/demo/'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
+    | '/live/$subdomain/join'
     | '/admin/events/'
     | '/admin/events/$eventId_/branding'
     | '/admin_/events/$eventId/preview'
@@ -287,7 +299,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   DemoJoinRoute: typeof DemoJoinRoute
   DemoPassportRoute: typeof DemoPassportRoute
-  LiveSubdomainRoute: typeof LiveSubdomainRoute
+  LiveSubdomainRoute: typeof LiveSubdomainRouteWithChildren
   DemoIndexRoute: typeof DemoIndexRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
@@ -414,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/live/$subdomain/join': {
+      id: '/live/$subdomain/join'
+      path: '/join'
+      fullPath: '/live/$subdomain/join'
+      preLoaderRoute: typeof LiveSubdomainJoinRouteImport
+      parentRoute: typeof LiveSubdomainRoute
+    }
     '/demo/checkin/$venueId': {
       id: '/demo/checkin/$venueId'
       path: '/demo/checkin/$venueId'
@@ -473,6 +492,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface LiveSubdomainRouteChildren {
+  LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
+}
+
+const LiveSubdomainRouteChildren: LiveSubdomainRouteChildren = {
+  LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
+}
+
+const LiveSubdomainRouteWithChildren = LiveSubdomainRoute._addFileChildren(
+  LiveSubdomainRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -481,7 +512,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   DemoJoinRoute: DemoJoinRoute,
   DemoPassportRoute: DemoPassportRoute,
-  LiveSubdomainRoute: LiveSubdomainRoute,
+  LiveSubdomainRoute: LiveSubdomainRouteWithChildren,
   DemoIndexRoute: DemoIndexRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
