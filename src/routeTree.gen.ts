@@ -187,17 +187,6 @@ const LiveSubdomainLeaderboardRoute =
     path: '/leaderboard',
     getParentRoute: () => LiveSubdomainRoute,
   } as any)
-const LiveSubdomainVenuesRoute = LiveSubdomainVenuesRouteImport.update({
-  id: '/venues',
-  path: '/venues',
-  getParentRoute: () => LiveSubdomainRoute,
-} as any)
-const LiveSubdomainVenuesVenueIdRoute =
-  LiveSubdomainVenuesVenueIdRouteImport.update({
-    id: '/$venueId',
-    path: '/$venueId',
-    getParentRoute: () => LiveSubdomainVenuesRoute,
-  } as any)
 const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
   id: '/join',
   path: '/join',
