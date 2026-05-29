@@ -2,37 +2,94 @@
 -- Replaces public.resolve_event_by_host so its hardcoded host constants point
 -- at getstamped.com.au instead of easypassport.com.au.
 --
--- This file is intentionally a CREATE OR REPLACE of the existing function with
--- IDENTICAL signature, return type, language, volatility, security mode and
--- search_path — only the two constants and the admin host literal change.
+-- Identical signature, return type, language, volatility, security mode, and
+-- search_path as the version in supabase/migrations-draft/32_rpcs_public.sql.
+-- The ONLY substantive change is the three host literals (root, suffix, admin
+-- host derived from 'app' || suffix).
 --
--- Source of truth for the surrounding logic: supabase/migrations-draft/32_rpcs_public.sql.
--- When this draft is approved, copy the full body from that file, change ONLY
--- the three literals below, then apply.
+-- Does NOT add billing/activation checks. event_is_publishable will be wired
+-- in a separate controlled step.
 
 begin;
 
--- TODO before applying: paste the current body of public.resolve_event_by_host
--- here verbatim, then change:
---   v_root   := 'easypassport.com.au'    -> 'getstamped.com.au'
---   v_suffix := '.easypassport.com.au'   -> '.getstamped.com.au'
---   any literal 'app.easypassport.com.au' -> 'app.getstamped.com.au'
---
--- Skeleton (do NOT execute as-is — the real body must be pasted in):
---
--- create or replace function public.resolve_event_by_host(p_host text)
--- returns table (...same columns as today...)
--- language plpgsql
--- stable
--- security definer
--- set search_path = public
--- as $$
--- declare
---   v_root   constant citext := 'getstamped.com.au';
---   v_suffix constant text   := '.getstamped.com.au';
--- begin
---   ...existing logic, with 'app.easypassport.com.au' replaced by 'app.getstamped.com.au'...
--- end;
--- $$;
+create or replace function public.resolve_event_by_host(_hostname text)
+returns table (
+  kind text,           -- 'marketing' | 'admin' | 'event' | 'not_found'
+  event_id uuid,
+  public_slug citext,
+  requires_auth boolean
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_host citext := lower(_hostname);
+  v_root constant citext := 'getstamped.com.au';
+  v_suffix constant text := '.getstamped.com.au';
+  v_label citext;
+  v_evt uuid;
+  v_slug citext;
+begin
+  -- Strip an optional :port (defensive — Host headers can include one).
+  v_host := split_part(v_host::text, ':', 1)::citext;
+
+  -- Apex marketing site.
+  if v_host = v_root then
+    return query select 'marketing'::text, null::uuid, null::citext, false;
+    return;
+  end if;
+
+  -- Admin host.
+  if v_host = ('app' || v_suffix)::citext then
+    return query select 'admin'::text, null::uuid, null::citext, true;
+    return;
+  end if;
+
+  -- Event subdomain: ONLY when host ends with .getstamped.com.au and the
+  -- first label is not a reserved name.
+  if right(v_host::text, length(v_suffix)) = v_suffix then
+    v_label := split_part(v_host::text, '.', 1)::citext;
+
+    if public.is_reserved_public_slug(v_label::text) then
+      return query select 'not_found'::text, null::uuid, null::citext, false;
+      return;
+    end if;
+
+    select e.id, e.public_slug
+      into v_evt, v_slug
+    from public.event_domains d
+    join public.events e on e.id = d.event_id
+    where d.status = 'active'
+      and e.status = 'published'
+      and d.domain_type = 'event_subdomain'
+      and d.public_subdomain = v_label
+    limit 1;
+  else
+    -- Custom domain: exact host match only. No first-label fallback for
+    -- arbitrary non-GetStampd hostnames.
+    select e.id, e.public_slug
+      into v_evt, v_slug
+    from public.event_domains d
+    join public.events e on e.id = d.event_id
+    where d.status = 'active'
+      and e.status = 'published'
+      and d.domain_type = 'event_custom'
+      and d.custom_domain = v_host
+    limit 1;
+  end if;
+
+  if v_evt is null then
+    return query select 'not_found'::text, null::uuid, null::citext, false;
+  else
+    return query select 'event'::text, v_evt, v_slug, false;
+  end if;
+end;
+$$;
+
+-- Preserve EXECUTE grants (CREATE OR REPLACE keeps them, but re-stating is
+-- harmless and protects against accidental DROP/CREATE in the future).
+grant execute on function public.resolve_event_by_host(text) to anon, authenticated;
 
 commit;
