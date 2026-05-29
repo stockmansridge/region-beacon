@@ -1114,6 +1114,7 @@ function EventDetail() {
               agencyId={agencyId}
               eventId={event.id}
               publicSlug={event.public_slug}
+              internalSlug={event.slug}
               domains={domains}
               canEdit={canEdit}
               isPlatformAdmin={agency.isPlatformAdmin}
