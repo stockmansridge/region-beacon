@@ -1159,6 +1159,123 @@ function EventDetail() {
           </Section>
 
           <Section title="Venues">
+            {canEdit && venueEditingId === null && (
+              <div className="mb-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={startCreateVenue}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                >
+                  Add venue
+                </button>
+              </div>
+            )}
+            {venueArchiveError && (
+              <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {venueArchiveError}
+              </div>
+            )}
+            {venueEditingId !== null && venueForm && (
+              <div className="mb-4 space-y-3 rounded-lg border bg-muted/20 p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">
+                    {venueEditingId === "new" ? "New venue" : "Edit venue"}
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={cancelVenueEdit}
+                      disabled={venueSaving}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveVenue}
+                      disabled={venueSaving}
+                      className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    >
+                      {venueSaving ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                </div>
+                {(venueValidationError || venueSaveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {venueValidationError ?? venueSaveError}
+                  </div>
+                )}
+                <Field label="Name" required>
+                  <input
+                    type="text"
+                    maxLength={150}
+                    value={venueForm.name}
+                    onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                </Field>
+                <Field label="Address">
+                  <input
+                    type="text"
+                    maxLength={300}
+                    value={venueForm.address}
+                    onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Latitude">
+                    <input
+                      type="number"
+                      step="any"
+                      min={-90}
+                      max={90}
+                      value={venueForm.lat}
+                      onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                  <Field label="Longitude">
+                    <input
+                      type="number"
+                      step="any"
+                      min={-180}
+                      max={180}
+                      value={venueForm.lng}
+                      onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Order" required>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={venueForm.order_index}
+                      onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                  <Field label="Status" required>
+                    <select
+                      value={venueForm.status}
+                      onChange={(e) =>
+                        setVenueForm({
+                          ...venueForm,
+                          status: e.target.value === "inactive" ? "inactive" : "active",
+                        })
+                      }
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    >
+                      <option value="active">active</option>
+                      <option value="inactive">inactive</option>
+                    </select>
+                  </Field>
+                </div>
+              </div>
+            )}
             {venues.length === 0 ? (
               <EmptyNotice>No venues yet.</EmptyNotice>
             ) : (
@@ -1172,6 +1289,7 @@ function EventDetail() {
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="px-3 py-2 font-medium">Active QR</th>
                       <th className="px-3 py-2 font-medium">Issued</th>
+                      {canEdit && <th className="px-3 py-2 font-medium">Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -1186,9 +1304,33 @@ function EventDetail() {
                             <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{v.status}</span>
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">
-                            {qr ? qr.status : "none"}
+                            {qr ? qr.status : (
+                              <span className="text-muted-foreground/70">QR generation coming next</span>
+                            )}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
+                          {canEdit && (
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditVenue(v)}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null}
+                                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => archiveVenue(v.id)}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null}
+                                  className="inline-flex h-7 items-center rounded-md border border-destructive/40 bg-background px-2 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
+                                >
+                                  {venueArchivingId === v.id ? "Archiving…" : "Archive"}
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
