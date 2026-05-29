@@ -82,6 +82,11 @@ type Venue = {
   lng: number | null;
   status: string;
   order_index: number;
+  description: string | null;
+  website_url: string | null;
+  phone: string | null;
+  logo_path: string | null;
+  cover_path: string | null;
 };
 
 type QrSummary = {
@@ -287,7 +292,9 @@ function EventDetail() {
             .maybeSingle(),
           supabase
             .from("venues")
-            .select("id, name, address, lat, lng, status, order_index")
+            .select(
+              "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path",
+            )
             .eq("event_id", event.id)
             .eq("agency_id", agencyId)
             .is("deleted_at", null)
