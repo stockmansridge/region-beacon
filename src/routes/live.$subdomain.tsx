@@ -152,6 +152,15 @@ function LivePublicPage() {
         }
         secondaryCta={<span />}
       />
+      <div className="mx-auto mt-6 max-w-md text-center">
+        <Link
+          to="/live/$subdomain/leaderboard"
+          params={{ subdomain }}
+          className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
+        >
+          View leaderboard →
+        </Link>
+      </div>
     </div>
   );
 }
