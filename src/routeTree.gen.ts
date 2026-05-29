@@ -17,7 +17,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as LiveSubdomainRouteImport } from './routes/live.$subdomain'
+import { Route as DemoWineriesRouteImport } from './routes/demo.wineries'
+import { Route as DemoTrailMapRouteImport } from './routes/demo.trail-map'
+import { Route as DemoRewardsRouteImport } from './routes/demo.rewards'
 import { Route as DemoPassportRouteImport } from './routes/demo.passport'
+import { Route as DemoMoreRouteImport } from './routes/demo.more'
 import { Route as DemoJoinRouteImport } from './routes/demo.join'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
 import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
@@ -72,9 +76,29 @@ const LiveSubdomainRoute = LiveSubdomainRouteImport.update({
   path: '/live/$subdomain',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoWineriesRoute = DemoWineriesRouteImport.update({
+  id: '/demo/wineries',
+  path: '/demo/wineries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoTrailMapRoute = DemoTrailMapRouteImport.update({
+  id: '/demo/trail-map',
+  path: '/demo/trail-map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRewardsRoute = DemoRewardsRouteImport.update({
+  id: '/demo/rewards',
+  path: '/demo/rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoPassportRoute = DemoPassportRouteImport.update({
   id: '/demo/passport',
   path: '/demo/passport',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoMoreRoute = DemoMoreRouteImport.update({
+  id: '/demo/more',
+  path: '/demo/more',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoJoinRoute = DemoJoinRouteImport.update({
@@ -158,7 +182,11 @@ export interface FileRoutesByFullPath {
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
+  '/demo/more': typeof DemoMoreRoute
   '/demo/passport': typeof DemoPassportRoute
+  '/demo/rewards': typeof DemoRewardsRoute
+  '/demo/trail-map': typeof DemoTrailMapRoute
+  '/demo/wineries': typeof DemoWineriesRoute
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
@@ -181,7 +209,11 @@ export interface FileRoutesByTo {
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
+  '/demo/more': typeof DemoMoreRoute
   '/demo/passport': typeof DemoPassportRoute
+  '/demo/rewards': typeof DemoRewardsRoute
+  '/demo/trail-map': typeof DemoTrailMapRoute
+  '/demo/wineries': typeof DemoWineriesRoute
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/demo': typeof DemoIndexRoute
@@ -206,7 +238,11 @@ export interface FileRoutesById {
   '/admin/update-password': typeof AdminUpdatePasswordRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/demo/join': typeof DemoJoinRoute
+  '/demo/more': typeof DemoMoreRoute
   '/demo/passport': typeof DemoPassportRoute
+  '/demo/rewards': typeof DemoRewardsRoute
+  '/demo/trail-map': typeof DemoTrailMapRoute
+  '/demo/wineries': typeof DemoWineriesRoute
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
@@ -232,7 +268,11 @@ export interface FileRouteTypes {
     | '/admin/update-password'
     | '/admin/venues'
     | '/demo/join'
+    | '/demo/more'
     | '/demo/passport'
+    | '/demo/rewards'
+    | '/demo/trail-map'
+    | '/demo/wineries'
     | '/live/$subdomain'
     | '/admin/'
     | '/demo/'
@@ -255,7 +295,11 @@ export interface FileRouteTypes {
     | '/admin/update-password'
     | '/admin/venues'
     | '/demo/join'
+    | '/demo/more'
     | '/demo/passport'
+    | '/demo/rewards'
+    | '/demo/trail-map'
+    | '/demo/wineries'
     | '/live/$subdomain'
     | '/admin'
     | '/demo'
@@ -279,7 +323,11 @@ export interface FileRouteTypes {
     | '/admin/update-password'
     | '/admin/venues'
     | '/demo/join'
+    | '/demo/more'
     | '/demo/passport'
+    | '/demo/rewards'
+    | '/demo/trail-map'
+    | '/demo/wineries'
     | '/live/$subdomain'
     | '/admin/'
     | '/demo/'
@@ -298,7 +346,11 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   DemoJoinRoute: typeof DemoJoinRoute
+  DemoMoreRoute: typeof DemoMoreRoute
   DemoPassportRoute: typeof DemoPassportRoute
+  DemoRewardsRoute: typeof DemoRewardsRoute
+  DemoTrailMapRoute: typeof DemoTrailMapRoute
+  DemoWineriesRoute: typeof DemoWineriesRoute
   LiveSubdomainRoute: typeof LiveSubdomainRouteWithChildren
   DemoIndexRoute: typeof DemoIndexRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
@@ -363,11 +415,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/wineries': {
+      id: '/demo/wineries'
+      path: '/demo/wineries'
+      fullPath: '/demo/wineries'
+      preLoaderRoute: typeof DemoWineriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/trail-map': {
+      id: '/demo/trail-map'
+      path: '/demo/trail-map'
+      fullPath: '/demo/trail-map'
+      preLoaderRoute: typeof DemoTrailMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/rewards': {
+      id: '/demo/rewards'
+      path: '/demo/rewards'
+      fullPath: '/demo/rewards'
+      preLoaderRoute: typeof DemoRewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/passport': {
       id: '/demo/passport'
       path: '/demo/passport'
       fullPath: '/demo/passport'
       preLoaderRoute: typeof DemoPassportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/more': {
+      id: '/demo/more'
+      path: '/demo/more'
+      fullPath: '/demo/more'
+      preLoaderRoute: typeof DemoMoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/join': {
@@ -511,7 +591,11 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   DemoJoinRoute: DemoJoinRoute,
+  DemoMoreRoute: DemoMoreRoute,
   DemoPassportRoute: DemoPassportRoute,
+  DemoRewardsRoute: DemoRewardsRoute,
+  DemoTrailMapRoute: DemoTrailMapRoute,
+  DemoWineriesRoute: DemoWineriesRoute,
   LiveSubdomainRoute: LiveSubdomainRouteWithChildren,
   DemoIndexRoute: DemoIndexRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
@@ -520,3 +604,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
