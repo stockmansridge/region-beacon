@@ -572,6 +572,8 @@ function BrandingEditor() {
             welcomeCopy={form.welcome_copy.trim()}
             termsUrl={form.terms_url.trim()}
             venueCount={venueCount}
+            logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+            heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
             venueLabelPlural={
               resolveVenueLabels({
                 venue_label_singular: form.venue_label_singular,
@@ -612,6 +614,8 @@ function LandingPreview({
   termsUrl,
   venueCount,
   venueLabelPlural,
+  logoUrl,
+  heroImageUrl,
 }: {
   eventName: string;
   primaryColor: string;
@@ -621,6 +625,8 @@ function LandingPreview({
   termsUrl: string;
   venueCount: number;
   venueLabelPlural: string;
+  logoUrl: string | null;
+  heroImageUrl: string | null;
 }) {
   return (
     <div className="rounded-2xl border border-[#E6DCC7] bg-trail-cream p-4">
@@ -639,9 +645,100 @@ function LandingPreview({
         fontFamily={fontFamily}
         venueCount={venueCount}
         venueLabelPlural={venueLabelPlural}
+        logoUrl={logoUrl}
+        heroImageUrl={heroImageUrl}
         badge="Preview"
         termsUrl={termsUrl || null}
       />
+    </div>
+  );
+}
+
+// ============================================================================
+// AssetUploader
+// ============================================================================
+
+function AssetUploader({
+  kind,
+  currentPath,
+  canEdit,
+  onUpload,
+}: {
+  kind: EventAssetKind;
+  currentPath: string | null;
+  canEdit: boolean;
+  onUpload: (file: File) => Promise<string | null>;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const url = getEventAssetPublicUrl(currentPath);
+  const label = kind === "logo" ? "Event logo" : "Cover / hero image";
+  const limitMB = Math.round(EVENT_ASSET_MAX_BYTES[kind] / (1024 * 1024));
+  const accept = EVENT_ASSET_ALLOWED_MIME.join(",");
+
+  async function handleFile(file: File | null | undefined) {
+    if (!file) return;
+    setErr(null);
+    setBusy(true);
+    const result = await onUpload(file);
+    setBusy(false);
+    if (result) setErr(result);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3">
+        <div
+          className={`flex h-16 ${
+            kind === "logo" ? "w-16" : "w-24"
+          } shrink-0 items-center justify-center overflow-hidden rounded-md border bg-white`}
+        >
+          {url ? (
+            <img
+              src={url}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
+          ) : (
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              None
+            </span>
+          )}
+        </div>
+        <div className="flex-1 space-y-1">
+          <div className="text-xs text-muted-foreground">
+            PNG, JPG or WebP · max {limitMB} MB · SVG not allowed
+          </div>
+          {currentPath && (
+            <div className="truncate font-mono text-[11px] text-muted-foreground">
+              {currentPath}
+            </div>
+          )}
+          {err && <div className="text-xs text-destructive">{err}</div>}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          className="hidden"
+          disabled={!canEdit || busy}
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={!canEdit || busy}
+          className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+        >
+          {busy ? "Uploading…" : url ? "Replace" : "Upload"}
+        </button>
+      </div>
     </div>
   );
 }
