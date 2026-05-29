@@ -1171,44 +1171,29 @@ function EventDetail() {
                     maxLength={300}
                     value={venueForm.address}
                     onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
+                    placeholder="e.g. 123 Main St, Sydney NSW 2000"
                     className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                   />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Latitude">
-                    <input
-                      type="number"
-                      step="any"
-                      min={-90}
-                      max={90}
-                      value={venueForm.lat}
-                      onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                    />
-                  </Field>
-                  <Field label="Longitude">
-                    <input
-                      type="number"
-                      step="any"
-                      min={-180}
-                      max={180}
-                      value={venueForm.lng}
-                      onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                    />
-                  </Field>
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    disabled
+                    title="Coming soon"
+                    className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-md border border-dashed bg-muted/30 px-3 text-xs font-medium text-muted-foreground"
+                  >
+                    <span aria-hidden></span>
+                    Select from Apple Maps
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+                      Soon
+                    </span>
+                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    Coming soon — search for a place, choose it on Apple Maps, or drop a pin to
+                    auto-fill the address and coordinates.
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Order" required>
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={venueForm.order_index}
-                      onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                    />
-                  </Field>
                   <Field label="Status" required>
                     <select
                       value={venueForm.status}
@@ -1224,7 +1209,52 @@ function EventDetail() {
                       <option value="inactive">inactive</option>
                     </select>
                   </Field>
+                  <Field label="Order" required>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={venueForm.order_index}
+                      onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
                 </div>
+                <details className="rounded-md border bg-background/50">
+                  <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
+                    Advanced coordinates
+                  </summary>
+                  <div className="space-y-3 border-t px-3 py-3">
+                    <p className="text-xs text-muted-foreground">
+                      Coordinates will normally be filled from Apple Maps. Use these only if you
+                      need to enter them manually.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Latitude">
+                        <input
+                          type="number"
+                          step="any"
+                          min={-90}
+                          max={90}
+                          value={venueForm.lat}
+                          onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
+                          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        />
+                      </Field>
+                      <Field label="Longitude">
+                        <input
+                          type="number"
+                          step="any"
+                          min={-180}
+                          max={180}
+                          value={venueForm.lng}
+                          onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
+                          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                </details>
               </div>
             )}
             {venues.length === 0 ? (
