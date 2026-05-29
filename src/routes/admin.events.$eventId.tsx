@@ -209,6 +209,15 @@ function EventDetail() {
   const [lbSaveError, setLbSaveError] = useState<string | null>(null);
   const [lbValidationError, setLbValidationError] = useState<string | null>(null);
 
+  // Venue editor: "new" = creating, string = editing existing id, null = closed.
+  const [venueEditingId, setVenueEditingId] = useState<string | "new" | null>(null);
+  const [venueForm, setVenueForm] = useState<VenueEditForm | null>(null);
+  const [venueSaving, setVenueSaving] = useState(false);
+  const [venueSaveError, setVenueSaveError] = useState<string | null>(null);
+  const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
+  const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
+  const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
+
   useEffect(() => {
 
     if (!agencyId || eventId === "new") {
