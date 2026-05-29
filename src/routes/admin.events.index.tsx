@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,19 +92,21 @@ function Events() {
               <th className="px-4 py-3 font-medium">Dates</th>
               <th className="px-4 py-3 font-medium">Created</th>
               <th className="px-4 py-3 font-medium">Updated</th>
+              <th className="px-4 py-3" />
+
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   Loading events…
                 </td>
               </tr>
             )}
             {!loading && rows && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No events yet for this agency.
                 </td>
               </tr>
@@ -124,6 +126,15 @@ function Events() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{fmt(e.created_at)}</td>
                   <td className="px-4 py-3 text-muted-foreground">{fmt(e.updated_at)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      to="/admin/events/$eventId"
+                      params={{ eventId: e.id }}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      View
+                    </Link>
+                  </td>
                 </tr>
               ))}
           </tbody>
