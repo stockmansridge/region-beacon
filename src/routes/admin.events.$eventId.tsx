@@ -576,6 +576,87 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  function startEditLeaderboard() {
+    if (!bundle) return;
+    const lb = bundle.leaderboard;
+    const mode = (lb?.display_mode ?? "first_name_last_initial") as LeaderboardDisplayMode;
+    setLbForm({
+      is_enabled: lb?.is_enabled ?? false,
+      display_mode: (LEADERBOARD_DISPLAY_MODES as readonly string[]).includes(mode)
+        ? mode
+        : "first_name_last_initial",
+      show_first_name: lb?.show_first_name ?? true,
+      show_last_initial: lb?.show_last_initial ?? true,
+      show_visit_count: lb?.show_visit_count ?? false,
+      hide_below_checkins: String(lb?.hide_below_checkins ?? 0),
+      allow_visitor_opt_out: lb?.allow_visitor_opt_out ?? true,
+    });
+    setLbValidationError(null);
+    setLbSaveError(null);
+    setIsEditingLeaderboard(true);
+  }
+
+  function cancelEditLeaderboard() {
+    setIsEditingLeaderboard(false);
+    setLbForm(null);
+    setLbValidationError(null);
+    setLbSaveError(null);
+  }
+
+  async function saveEditLeaderboard() {
+    if (!lbForm || !agencyId || !bundle) return;
+
+    if (!(LEADERBOARD_DISPLAY_MODES as readonly string[]).includes(lbForm.display_mode)) {
+      setLbValidationError("Invalid display mode.");
+      return;
+    }
+    const hideBelow = parseInt(lbForm.hide_below_checkins, 10);
+    if (Number.isNaN(hideBelow) || hideBelow < 0 || !Number.isFinite(hideBelow)) {
+      setLbValidationError("Hide below check-ins must be a whole number >= 0.");
+      return;
+    }
+
+    setLbValidationError(null);
+    setLbSaveError(null);
+    setLbSaving(true);
+
+    const payload = {
+      is_enabled: lbForm.is_enabled,
+      display_mode: lbForm.display_mode,
+      show_first_name: lbForm.show_first_name,
+      show_last_initial: lbForm.show_last_initial,
+      show_visit_count: lbForm.show_visit_count,
+      hide_below_checkins: hideBelow,
+      allow_visitor_opt_out: lbForm.allow_visitor_opt_out,
+    };
+
+    let error: { message: string } | null = null;
+    if (bundle.leaderboard) {
+      const { error: upErr } = await supabase
+        .from("leaderboard_settings")
+        .update(payload)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId);
+      error = upErr ?? null;
+    } else {
+      const { error: inErr } = await supabase
+        .from("leaderboard_settings")
+        .insert({ agency_id: agencyId, event_id: eventId, ...payload });
+      error = inErr ?? null;
+    }
+
+    setLbSaving(false);
+    if (error) {
+      setLbSaveError("Could not save leaderboard settings. Please try again.");
+      return;
+    }
+    setIsEditingLeaderboard(false);
+    setLbForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
+
+
 
 
   if (eventId === "new") {
