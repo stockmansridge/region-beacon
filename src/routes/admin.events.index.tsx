@@ -1,8 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/admin/events/")({
   head: () => ({ meta: [{ title: "Events" }] }),
@@ -31,12 +40,56 @@ function fmt(d: string | null) {
   }
 }
 
+function detectBrowserTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && typeof tz === "string") return tz;
+  } catch (_e) {
+    /* noop */
+  }
+  return "Australia/Sydney";
+}
+
+function slugifyName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+function randomShortId(len = 10): string {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const arr = new Uint8Array(len);
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    crypto.getRandomValues(arr);
+  } else {
+    for (let i = 0; i < len; i++) arr[i] = Math.floor(Math.random() * 256);
+  }
+  let out = "";
+  for (let i = 0; i < len; i++) out += alphabet[arr[i] % alphabet.length];
+  return out;
+}
+
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 function Events() {
   const agency = useAgencyContext();
+  const auth = useAuth();
+  const navigate = useNavigate();
   const agencyId = agency.selected?.id ?? null;
+  const role = agency.selected?.role ?? null;
+  const canCreate =
+    agency.isPlatformAdmin || role === "agency_owner" || role === "agency_admin";
+
   const [rows, setRows] = useState<EventRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!agencyId) return;
@@ -67,13 +120,24 @@ function Events() {
     return () => {
       cancelled = true;
     };
-  }, [agencyId]);
+  }, [agencyId, reloadKey]);
 
   return (
     <>
       <PageHeader
         title="Events"
-        description="Read-only view of events for your agency. Create and edit are not enabled yet."
+        description="Events for your agency. Create a draft, then configure branding, venues, and public address."
+        actions={
+          canCreate ? (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+            >
+              Add event
+            </button>
+          ) : null
+        }
       />
       {error && (
         <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -93,7 +157,6 @@ function Events() {
               <th className="px-4 py-3 font-medium">Created</th>
               <th className="px-4 py-3 font-medium">Updated</th>
               <th className="px-4 py-3" />
-
             </tr>
           </thead>
           <tbody>
@@ -140,6 +203,359 @@ function Events() {
           </tbody>
         </table>
       </div>
+
+      {canCreate && (
+        <CreateEventDialog
+          open={open}
+          onOpenChange={setOpen}
+          agencyId={agencyId}
+          userId={auth.session?.user.id ?? null}
+          onCreated={(newId) => {
+            setOpen(false);
+            setReloadKey((k) => k + 1);
+            navigate({ to: "/admin/events/$eventId", params: { eventId: newId } });
+          }}
+        />
+      )}
     </>
+  );
+}
+
+type CreateForm = {
+  name: string;
+  slug: string;
+  slugDirty: boolean;
+  timezone: string;
+  starts_at: string;
+  ends_at: string;
+  description: string;
+};
+
+function CreateEventDialog({
+  open,
+  onOpenChange,
+  agencyId,
+  userId,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  agencyId: string | null;
+  userId: string | null;
+  onCreated: (id: string) => void;
+}) {
+  const defaultTz = useMemo(() => detectBrowserTimezone(), []);
+  const [form, setForm] = useState<CreateForm>(() => ({
+    name: "",
+    slug: "",
+    slugDirty: false,
+    timezone: defaultTz,
+    starts_at: "",
+    ends_at: "",
+    description: "",
+  }));
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [childWarning, setChildWarning] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        name: "",
+        slug: "",
+        slugDirty: false,
+        timezone: defaultTz,
+        starts_at: "",
+        ends_at: "",
+        description: "",
+      });
+      setValidationError(null);
+      setSaveError(null);
+      setChildWarning(null);
+      setSaving(false);
+    }
+  }, [open, defaultTz]);
+
+  function update<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function onNameChange(v: string) {
+    setForm((f) => ({
+      ...f,
+      name: v,
+      slug: f.slugDirty ? f.slug : slugifyName(v),
+    }));
+  }
+
+  async function handleCreate() {
+    if (!agencyId) {
+      setSaveError("No agency selected.");
+      return;
+    }
+    const name = form.name.trim();
+    const slug = form.slug.trim();
+    const timezone = form.timezone.trim();
+    const description = form.description.trim();
+
+    if (!name) return setValidationError("Name is required.");
+    if (name.length > 200) return setValidationError("Name must be 200 characters or fewer.");
+    if (!slug) return setValidationError("Slug is required.");
+    if (slug.length > 80) return setValidationError("Slug must be 80 characters or fewer.");
+    if (!SLUG_RE.test(slug))
+      return setValidationError(
+        "Slug must contain only lowercase letters, numbers, and hyphens (no leading/trailing or doubled hyphens).",
+      );
+    if (!timezone) return setValidationError("Timezone is required.");
+    if (timezone.length > 64) return setValidationError("Timezone must be 64 characters or fewer.");
+    if (description.length > 2000)
+      return setValidationError("Description must be 2000 characters or fewer.");
+
+    let startsIso: string | null = null;
+    let endsIso: string | null = null;
+    if (form.starts_at) {
+      const d = new Date(form.starts_at);
+      if (isNaN(d.getTime())) return setValidationError("Start date/time is invalid.");
+      startsIso = d.toISOString();
+    }
+    if (form.ends_at) {
+      const d = new Date(form.ends_at);
+      if (isNaN(d.getTime())) return setValidationError("End date/time is invalid.");
+      endsIso = d.toISOString();
+    }
+    if (startsIso && endsIso && new Date(endsIso) <= new Date(startsIso))
+      return setValidationError("End date/time must be after start date/time.");
+
+    setValidationError(null);
+    setSaveError(null);
+    setChildWarning(null);
+    setSaving(true);
+
+    const publicSlug = `evt-${randomShortId(10)}`;
+
+    const { data: inserted, error: evErr } = await supabase
+      .from("events")
+      .insert({
+        agency_id: agencyId,
+        name,
+        slug,
+        public_slug: publicSlug,
+        status: "draft",
+        timezone,
+        starts_at: startsIso,
+        ends_at: endsIso,
+        description: description || null,
+        created_by: userId,
+      })
+      .select("id")
+      .single();
+
+    if (evErr || !inserted) {
+      setSaving(false);
+      const msg = evErr?.message ?? "Could not create event.";
+      if (/duplicate|unique/i.test(msg) && /slug/i.test(msg)) {
+        setSaveError("That slug is already used by another event in this agency. Try a different slug.");
+      } else {
+        setSaveError(`Could not create event: ${msg}`);
+      }
+      return;
+    }
+
+    const newId = inserted.id as string;
+
+    // Default child rows — best effort. If any fail, surface a warning but
+    // still navigate to the detail page so the admin can retry from there.
+    const [brandingRes, checkinRes, leaderboardRes] = await Promise.all([
+      supabase.from("event_branding").insert({
+        agency_id: agencyId,
+        event_id: newId,
+        primary_color: "#0F172A",
+        accent_color: "#3B82F6",
+        font_family: "Inter",
+        welcome_copy: null,
+        terms_url: null,
+      }),
+      supabase.from("event_checkin_settings").insert({
+        agency_id: agencyId,
+        event_id: newId,
+        one_checkin_per_venue: true,
+        minimum_seconds_between_checkins: 0,
+        allow_manual_admin_checkins: false,
+        max_checkins_per_passport_per_day: null,
+      }),
+      supabase.from("leaderboard_settings").insert({
+        agency_id: agencyId,
+        event_id: newId,
+        is_enabled: false,
+        display_mode: "first_name_last_initial",
+        show_first_name: true,
+        show_last_initial: true,
+        show_visit_count: true,
+        hide_below_checkins: 1,
+        allow_visitor_opt_out: true,
+      }),
+    ]);
+
+    setSaving(false);
+
+    const childErrors = [
+      brandingRes.error ? "branding" : null,
+      checkinRes.error ? "check-in settings" : null,
+      leaderboardRes.error ? "leaderboard settings" : null,
+    ].filter(Boolean);
+
+    if (childErrors.length > 0) {
+      setChildWarning(
+        `Event created, but default ${childErrors.join(", ")} could not be created. You can configure them from the event detail page.`,
+      );
+      // Brief pause so the user sees the warning, then navigate.
+      setTimeout(() => onCreated(newId), 1200);
+      return;
+    }
+
+    onCreated(newId);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Add event</DialogTitle>
+          <DialogDescription>
+            Creates a draft event. You can edit branding, venues, and the public address afterwards.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <Field label="Name" required>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => onNameChange(e.target.value)}
+              maxLength={200}
+              className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+              placeholder="Summer Food Trail 2026"
+            />
+          </Field>
+
+          <Field
+            label="Internal slug"
+            required
+            hint="Lowercase letters, numbers and hyphens. Used inside the admin only."
+          >
+            <input
+              type="text"
+              value={form.slug}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, slug: e.target.value, slugDirty: true }))
+              }
+              maxLength={80}
+              className="h-9 w-full rounded-md border bg-background px-3 text-sm font-mono"
+              placeholder="summer-food-trail-2026"
+            />
+          </Field>
+
+          <Field label="Timezone" required>
+            <input
+              type="text"
+              value={form.timezone}
+              onChange={(e) => update("timezone", e.target.value)}
+              maxLength={64}
+              className="h-9 w-full rounded-md border bg-background px-3 text-sm font-mono"
+              placeholder="Australia/Sydney"
+            />
+          </Field>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Starts at">
+              <input
+                type="datetime-local"
+                value={form.starts_at}
+                onChange={(e) => update("starts_at", e.target.value)}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+              />
+            </Field>
+            <Field label="Ends at">
+              <input
+                type="datetime-local"
+                value={form.ends_at}
+                onChange={(e) => update("ends_at", e.target.value)}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+              />
+            </Field>
+          </div>
+
+          <Field label="Description" hint="Optional. Max 2000 characters.">
+            <textarea
+              value={form.description}
+              onChange={(e) => update("description", e.target.value)}
+              maxLength={2000}
+              rows={3}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              placeholder="Short summary of the event."
+            />
+          </Field>
+
+          {validationError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {validationError}
+            </div>
+          )}
+          {saveError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {saveError}
+            </div>
+          )}
+          {childWarning && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+              {childWarning}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            disabled={saving}
+            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={saving}
+            className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? "Creating…" : "Create draft event"}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({
+  label,
+  required,
+  hint,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block space-y-1">
+      <span className="text-sm font-medium">
+        {label}
+        {required && <span className="ml-0.5 text-destructive">*</span>}
+      </span>
+      {children}
+      {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
+    </label>
   );
 }

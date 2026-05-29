@@ -933,6 +933,12 @@ function EventDetail() {
         }
       />
 
+      <EventSetupWarnings
+        status={event.status}
+        domains={domains}
+        hasTerms={!!terms}
+      />
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Section title="Basics">
@@ -1679,6 +1685,79 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+
+function EventSetupWarnings({
+  status,
+  domains,
+  hasTerms,
+}: {
+  status: string;
+  domains: Domain[];
+  hasTerms: boolean;
+}) {
+  const hasActiveSubdomain = domains.some(
+    (d) => d.domain_type === "event_subdomain" && d.status === "active",
+  );
+  const hasPendingSubdomain = domains.some(
+    (d) => d.domain_type === "event_subdomain" && d.status === "pending",
+  );
+
+  const items: { tone: "warn" | "info"; title: string; body: string }[] = [];
+
+  if (status === "draft") {
+    items.push({
+      tone: "info",
+      title: "Event is a draft",
+      body: "Drafts are previewable inside admin only. Visitors can't reach this event yet.",
+    });
+  }
+
+  if (!hasActiveSubdomain) {
+    items.push({
+      tone: "warn",
+      title: hasPendingSubdomain
+        ? "Public address pending activation"
+        : "Public address not claimed",
+      body: hasPendingSubdomain
+        ? "A subdomain has been reserved but is not active. It will go live once billing/activation is complete."
+        : "Choose and reserve a subdomain so visitors can find this event after activation.",
+    });
+  }
+
+  if (!hasTerms) {
+    items.push({
+      tone: "warn",
+      title: "Terms & privacy not configured",
+      body: "Add a terms version before publishing — visitors will need to accept it on first sign-up.",
+    });
+  }
+
+  items.push({
+    tone: "info",
+    title: "Billing activation not configured",
+    body: "Per-event billing/activation will be wired in a later step. This event won't go live publicly until it's activated.",
+  });
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="mb-6 space-y-2">
+      {items.map((it, i) => (
+        <div
+          key={i}
+          className={
+            it.tone === "warn"
+              ? "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
+              : "rounded-md border bg-muted/40 px-3 py-2 text-sm"
+          }
+        >
+          <div className="font-medium">{it.title}</div>
+          <div className="text-muted-foreground">{it.body}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
