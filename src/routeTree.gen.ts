@@ -9,38 +9,185 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PassportRouteImport } from './routes/passport'
+import { Route as JoinRouteImport } from './routes/join'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as CheckinVenueIdRouteImport } from './routes/checkin.$venueId'
+import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
+import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
 
+const PassportRoute = PassportRouteImport.update({
+  id: '/passport',
+  path: '/passport',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const CheckinVenueIdRoute = CheckinVenueIdRouteImport.update({
+  id: '/checkin/$venueId',
+  path: '/checkin/$venueId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminVenuesRoute = AdminVenuesRouteImport.update({
+  id: '/venues',
+  path: '/venues',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
+  id: '/events/',
+  path: '/events/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
+  id: '/events/$eventId',
+  path: '/events/$eventId',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/join': typeof JoinRoute
+  '/passport': typeof PassportRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/venues': typeof AdminVenuesRoute
+  '/checkin/$venueId': typeof CheckinVenueIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/admin/events/': typeof AdminEventsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/join': typeof JoinRoute
+  '/passport': typeof PassportRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/venues': typeof AdminVenuesRoute
+  '/checkin/$venueId': typeof CheckinVenueIdRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/admin/events': typeof AdminEventsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/join': typeof JoinRoute
+  '/passport': typeof PassportRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/venues': typeof AdminVenuesRoute
+  '/checkin/$venueId': typeof CheckinVenueIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/admin/events/': typeof AdminEventsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/join'
+    | '/passport'
+    | '/admin/analytics'
+    | '/admin/login'
+    | '/admin/venues'
+    | '/checkin/$venueId'
+    | '/admin/'
+    | '/admin/events/$eventId'
+    | '/admin/events/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/join'
+    | '/passport'
+    | '/admin/analytics'
+    | '/admin/login'
+    | '/admin/venues'
+    | '/checkin/$venueId'
+    | '/admin'
+    | '/admin/events/$eventId'
+    | '/admin/events'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/join'
+    | '/passport'
+    | '/admin/analytics'
+    | '/admin/login'
+    | '/admin/venues'
+    | '/checkin/$venueId'
+    | '/admin/'
+    | '/admin/events/$eventId'
+    | '/admin/events/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  JoinRoute: typeof JoinRoute
+  PassportRoute: typeof PassportRoute
+  CheckinVenueIdRoute: typeof CheckinVenueIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/passport': {
+      id: '/passport'
+      path: '/passport'
+      fullPath: '/passport'
+      preLoaderRoute: typeof PassportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +195,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/checkin/$venueId': {
+      id: '/checkin/$venueId'
+      path: '/checkin/$venueId'
+      fullPath: '/checkin/$venueId'
+      preLoaderRoute: typeof CheckinVenueIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/venues': {
+      id: '/admin/venues'
+      path: '/venues'
+      fullPath: '/admin/venues'
+      preLoaderRoute: typeof AdminVenuesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/events/': {
+      id: '/admin/events/'
+      path: '/events'
+      fullPath: '/admin/events/'
+      preLoaderRoute: typeof AdminEventsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/events/$eventId': {
+      id: '/admin/events/$eventId'
+      path: '/events/$eventId'
+      fullPath: '/admin/events/$eventId'
+      preLoaderRoute: typeof AdminEventsEventIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminVenuesRoute: typeof AdminVenuesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminEventsEventIdRoute: typeof AdminEventsEventIdRoute
+  AdminEventsIndexRoute: typeof AdminEventsIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminVenuesRoute: AdminVenuesRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminEventsEventIdRoute: AdminEventsEventIdRoute,
+  AdminEventsIndexRoute: AdminEventsIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  JoinRoute: JoinRoute,
+  PassportRoute: PassportRoute,
+  CheckinVenueIdRoute: CheckinVenueIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
