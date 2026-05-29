@@ -1937,6 +1937,10 @@ function PublicAddressCard({
     onChanged();
   }
 
+  const previewHost = normalized && availability.kind !== "invalid"
+    ? `${normalized}.getstamped.com.au`
+    : null;
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 text-sm">
@@ -1955,29 +1959,46 @@ function PublicAddressCard({
           </span>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          You can reserve a public subdomain now. It will only become active after billing/activation.
+          Pick a friendly web address for your event on <span className="font-mono">getstamped.com.au</span>.
+          You can reserve it now — it only goes live after billing/activation.
         </p>
       </div>
 
       {!subdomainRow && canEdit && (
         <div className="space-y-3 rounded-md border p-3">
-          <div className="text-sm font-medium">Reserve a subdomain</div>
+          <label htmlFor="gs-subdomain" className="block text-sm font-medium">
+            Choose your GetStampd subdomain
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Lowercase letters, numbers and hyphens. 3–63 characters.
+            Example: <span className="font-mono">orange-food-week</span>.
+          </p>
           <div className="flex items-stretch gap-0">
             <span className="inline-flex items-center rounded-l-md border border-r-0 bg-muted px-2 text-xs text-muted-foreground">
               https://
             </span>
             <input
+              id="gs-subdomain"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value.toLowerCase())}
               maxLength={63}
-              placeholder="my-event"
+              placeholder="orange-food-week"
+              autoComplete="off"
+              spellCheck={false}
               className="h-9 w-full border bg-background px-2 text-sm font-mono"
             />
             <span className="inline-flex items-center rounded-r-md border border-l-0 bg-muted px-2 text-xs text-muted-foreground">
               .getstamped.com.au
             </span>
           </div>
+
+          {previewHost && (
+            <div className="rounded-md border bg-background/50 px-3 py-2 text-xs">
+              <span className="text-muted-foreground">Preview: </span>
+              <span className="font-mono break-all">https://{previewHost}</span>
+            </div>
+          )}
 
           <AvailabilityMessage state={availability} />
 
@@ -1987,7 +2008,11 @@ function PublicAddressCard({
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] text-muted-foreground">
+              Reserving creates a <span className="font-medium">pending</span> address.
+              It activates after billing.
+            </p>
             <button
               type="button"
               onClick={handleClaim}
@@ -2001,7 +2026,7 @@ function PublicAddressCard({
       )}
 
       {!subdomainRow && !canEdit && (
-        <EmptyNotice>No public address claimed yet.</EmptyNotice>
+        <EmptyNotice>No public address claimed yet. Ask an owner or admin to reserve one.</EmptyNotice>
       )}
 
       {subdomainRow && subdomainRow.status === "pending" && canEdit && (
