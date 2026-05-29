@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AdminShell } from "@/components/admin-shell";
 import { NoAccessScreen } from "@/components/no-access-screen";
@@ -10,22 +10,28 @@ export const Route = createFileRoute("/admin")({
   component: AdminLayout,
 });
 
+// Routes under /admin that do NOT require an authenticated admin session.
+// These render via <Outlet /> without going through the auth/agency gates.
+const PUBLIC_ADMIN_PATHS = new Set<string>(["/admin/login", "/admin/update-password"]);
+
 function AdminLayout() {
   const { status: authStatus, email } = useAuth();
   const access = useAdminAccess();
   const agency = useAgencyContext();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isPublicAdminPath = PUBLIC_ADMIN_PATHS.has(location.pathname);
 
   useEffect(() => {
-    if (authStatus === "unauthenticated") {
+    if (authStatus === "unauthenticated" && !isPublicAdminPath) {
       navigate({ to: "/admin/login", replace: true });
     }
-  }, [authStatus, navigate]);
+  }, [authStatus, navigate, isPublicAdminPath]);
 
-  // /admin/login is a CHILD route of /admin (file-based routing nests by dots).
-  // When unauthenticated, render the Outlet so /admin/login can mount; the
-  // useEffect above redirects unauthenticated users away from any protected
-  // /admin/* child. Returning null here would leave /admin/login blank.
+  // Public child routes (login, password reset) must render even when
+  // unauthenticated — they're nested under /admin only for URL grouping.
+  if (isPublicAdminPath) return <Outlet />;
+
   if (authStatus === "unauthenticated") return <Outlet />;
 
   if (authStatus === "loading" || access.status === "loading" || agency.status === "loading") {
