@@ -675,8 +675,154 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  function startCreateVenue() {
+    if (!bundle) return;
+    const nextOrder = bundle.venues.length
+      ? Math.max(...bundle.venues.map((v) => v.order_index)) + 1
+      : 0;
+    setVenueForm({
+      name: "",
+      address: "",
+      lat: "",
+      lng: "",
+      order_index: String(nextOrder),
+      status: "active",
+    });
+    setVenueValidationError(null);
+    setVenueSaveError(null);
+    setVenueEditingId("new");
+  }
 
+  function startEditVenue(v: Venue) {
+    setVenueForm({
+      name: v.name ?? "",
+      address: v.address ?? "",
+      lat: v.lat === null || v.lat === undefined ? "" : String(v.lat),
+      lng: v.lng === null || v.lng === undefined ? "" : String(v.lng),
+      order_index: String(v.order_index ?? 0),
+      status: v.status === "inactive" ? "inactive" : "active",
+    });
+    setVenueValidationError(null);
+    setVenueSaveError(null);
+    setVenueEditingId(v.id);
+  }
 
+  function cancelVenueEdit() {
+    setVenueEditingId(null);
+    setVenueForm(null);
+    setVenueValidationError(null);
+    setVenueSaveError(null);
+  }
+
+  async function saveVenue() {
+    if (!venueForm || !agencyId || !bundle || !venueEditingId) return;
+
+    const name = venueForm.name.trim();
+    if (!name) {
+      setVenueValidationError("Name is required.");
+      return;
+    }
+    if (name.length > 150) {
+      setVenueValidationError("Name must be 150 characters or fewer.");
+      return;
+    }
+    const addressRaw = venueForm.address.trim();
+    if (addressRaw.length > 300) {
+      setVenueValidationError("Address must be 300 characters or fewer.");
+      return;
+    }
+    const address = addressRaw === "" ? null : addressRaw;
+
+    let lat: number | null = null;
+    if (venueForm.lat.trim() !== "") {
+      const parsed = Number(venueForm.lat.trim());
+      if (!Number.isFinite(parsed) || parsed < -90 || parsed > 90) {
+        setVenueValidationError("Latitude must be a number between -90 and 90.");
+        return;
+      }
+      lat = parsed;
+    }
+    let lng: number | null = null;
+    if (venueForm.lng.trim() !== "") {
+      const parsed = Number(venueForm.lng.trim());
+      if (!Number.isFinite(parsed) || parsed < -180 || parsed > 180) {
+        setVenueValidationError("Longitude must be a number between -180 and 180.");
+        return;
+      }
+      lng = parsed;
+    }
+    const orderIndex = parseInt(venueForm.order_index, 10);
+    if (Number.isNaN(orderIndex) || orderIndex < 0) {
+      setVenueValidationError("Order must be a whole number >= 0.");
+      return;
+    }
+    if (venueForm.status !== "active" && venueForm.status !== "inactive") {
+      setVenueValidationError("Status must be active or inactive.");
+      return;
+    }
+
+    setVenueValidationError(null);
+    setVenueSaveError(null);
+    setVenueSaving(true);
+
+    let error: { message: string } | null = null;
+    if (venueEditingId === "new") {
+      const { error: inErr } = await supabase.from("venues").insert({
+        agency_id: agencyId,
+        event_id: eventId,
+        name,
+        address,
+        lat,
+        lng,
+        order_index: orderIndex,
+        status: venueForm.status,
+      });
+      error = inErr ?? null;
+    } else {
+      const { error: upErr } = await supabase
+        .from("venues")
+        .update({
+          name,
+          address,
+          lat,
+          lng,
+          order_index: orderIndex,
+          status: venueForm.status,
+        })
+        .eq("id", venueEditingId)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId);
+      error = upErr ?? null;
+    }
+
+    setVenueSaving(false);
+    if (error) {
+      setVenueSaveError("Could not save venue. Please try again.");
+      return;
+    }
+    setVenueEditingId(null);
+    setVenueForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
+  async function archiveVenue(venueId: string) {
+    if (!agencyId) return;
+    if (!window.confirm("Archive this venue? It will be hidden from the active list.")) return;
+    setVenueArchivingId(venueId);
+    setVenueArchiveError(null);
+    const { error } = await supabase
+      .from("venues")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", venueId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+    setVenueArchivingId(null);
+    if (error) {
+      setVenueArchiveError("Could not archive venue. Please try again.");
+      return;
+    }
+    setReloadKey((k) => k + 1);
+  }
 
 
   if (eventId === "new") {
