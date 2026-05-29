@@ -4,6 +4,13 @@ import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { TrailLanding } from "@/components/trail-landing";
+import {
+  DEFAULT_VENUE_LABEL_PLURAL,
+  DEFAULT_VENUE_LABEL_SINGULAR,
+  VENUE_LABEL_MAX,
+  resolveVenueLabels,
+  validateVenueLabel,
+} from "@/lib/venue-labels";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
