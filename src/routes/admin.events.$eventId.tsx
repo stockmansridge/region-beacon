@@ -968,6 +968,16 @@ function EventDetail() {
         hasTerms={!!terms}
       />
 
+      <GoLivePanel
+        agencyId={agencyId}
+        eventId={event.id}
+        eventStatus={event.status}
+        domains={domains}
+        activation={activation}
+        isPlatformAdmin={agency.isPlatformAdmin}
+        onChanged={() => setReloadKey((k) => k + 1)}
+      />
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Section title="Basics">
