@@ -2255,6 +2255,23 @@ function GoLivePanel({
         )}
       </div>
 
+      {primarySubdomain?.public_subdomain && (
+        <div className="mt-2 rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs">
+          <a
+            href={`/live/${primarySubdomain.public_subdomain}`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Test live public page →
+          </a>
+          <span className="ml-2 text-muted-foreground">
+            Simulates {primarySubdomain.public_subdomain}.getstamped.com.au. Only
+            shows the event when all three go-live gates pass.
+          </span>
+        </div>
+      )}
+
       <p className="mt-2 text-xs text-muted-foreground">
         When all three gates pass, <code>resolve_event_by_host</code> should return
         <code> kind = event</code> for the public URL.
