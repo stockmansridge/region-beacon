@@ -354,6 +354,7 @@ function EventDetail() {
         leaderboard: (leaderboardRes.data ?? null) as LeaderboardSettings | null,
         venues,
         qrByVenue,
+        activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
       });
       setState("ready");
     })();
