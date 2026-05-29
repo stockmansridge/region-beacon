@@ -25,8 +25,8 @@ create table if not exists public.checkins (
   constraint checkins_venue_fk
     foreign key (agency_id, event_id, venue_id) references public.venues(agency_id, event_id, id) on delete restrict,
   constraint checkins_qr_fk
-    foreign key (agency_id, event_id, venue_qr_code_id) references public.venue_qr_codes(agency_id, event_id, id) on delete set null,
-
+  constraint checkins_qr_fk
+    foreign key (agency_id, event_id, venue_qr_code_id) references public.venue_qr_codes(agency_id, event_id, id) on delete restrict,
   constraint checkins_one_per_passport_venue unique (passport_id, venue_id)
 );
 
