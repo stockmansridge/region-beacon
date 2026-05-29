@@ -281,12 +281,12 @@ function AccountPage() {
                       : "—")
                   : "Not reserved";
                 const addrStatus = d ? d.status : "none";
-                const activation =
-                  d && d.status === "active"
-                    ? "Pending billing"
-                    : d && d.status === "pending"
-                      ? "Pending billing"
-                      : "Not activated";
+                const act = activationByEvent.get(e.id);
+                const activation = formatActivation(act);
+                const activeLike = act?.status === "active" || act?.status === "comp";
+                const activationClass = activeLike
+                  ? "rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
+                  : "rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400";
                 return (
                   <tr key={e.id} className="border-t">
                     <td className="px-5 py-3 font-medium">{e.name}</td>
@@ -302,9 +302,12 @@ function AccountPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                        {activation}
-                      </span>
+                      <span className={activationClass}>{activation}</span>
+                      {act?.activation_kind && (
+                        <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {act.activation_kind}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <DisabledButton label="Activate event" small />
