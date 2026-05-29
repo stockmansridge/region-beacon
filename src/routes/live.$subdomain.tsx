@@ -123,7 +123,8 @@ function LivePublicPage() {
         primaryColor={event.primary_color ?? undefined}
         accentColor={event.accent_color ?? undefined}
         fontFamily={event.font_family ?? undefined}
-        heroImageUrl={null}
+        logoUrl={getEventAssetPublicUrl(event.logo_path)}
+        heroImageUrl={getEventAssetPublicUrl(event.cover_path)}
         venueCount={venues.length}
         venueNames={venues.map((v) => v.name)}
         termsUrl={event.terms_url}
