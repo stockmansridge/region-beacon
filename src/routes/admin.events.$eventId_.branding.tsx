@@ -182,6 +182,8 @@ function BrandingEditor() {
     const font_family = form.font_family.trim();
     const welcome_copy = form.welcome_copy.trim();
     const terms_url = form.terms_url.trim();
+    const venue_label_singular = form.venue_label_singular.trim();
+    const venue_label_plural = form.venue_label_plural.trim();
 
     if (primary_color && !HEX_RE.test(primary_color)) {
       setValidationError("Primary colour must be a valid 6-digit hex code (e.g. #7A1F2B).");
@@ -203,6 +205,16 @@ function BrandingEditor() {
       setValidationError("Terms URL must start with https://.");
       return;
     }
+    const singularErr = validateVenueLabel(venue_label_singular, "Singular venue label");
+    if (singularErr) {
+      setValidationError(singularErr);
+      return;
+    }
+    const pluralErr = validateVenueLabel(venue_label_plural, "Plural venue label");
+    if (pluralErr) {
+      setValidationError(pluralErr);
+      return;
+    }
 
     setValidationError(null);
     setSaveError(null);
@@ -214,6 +226,8 @@ function BrandingEditor() {
       font_family: font_family || null,
       welcome_copy: welcome_copy || null,
       terms_url: terms_url || null,
+      venue_label_singular,
+      venue_label_plural,
     };
 
     let error: { message: string } | null = null;
