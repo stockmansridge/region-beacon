@@ -1,9 +1,11 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard } from "lucide-react";
+import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard, Bug } from "lucide-react";
 import { ReactNode } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
 import { TestEnvBanner } from "@/components/test-env-banner";
+import { useDiagnosticsEnabled } from "@/lib/diagnostics";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Sidebar nav items.
