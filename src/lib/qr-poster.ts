@@ -1,5 +1,6 @@
-import { jsPDF } from "jspdf";
-import QRCode from "qrcode";
+// jspdf and qrcode are imported lazily inside generateQrPosterPdf so they
+// never end up in the SSR/Worker bundle. Both pull in `node:fs` indirectly
+// which Cloudflare Workers do not support.
 
 export type PosterInput = {
   eventName: string;
