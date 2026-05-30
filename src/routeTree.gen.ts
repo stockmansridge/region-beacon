@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-found'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
@@ -18,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PassportIndexRouteImport } from './routes/passport.index'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as TAgencySlugRouteImport } from './routes/t.$agencySlug'
 import { Route as PassportTokenRouteImport } from './routes/passport.$token'
 import { Route as LiveSubdomainRouteImport } from './routes/live.$subdomain'
 import { Route as DemoWineriesRouteImport } from './routes/demo.wineries'
@@ -44,11 +46,17 @@ import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
+import { Route as TAgencySlugEEventSlugRouteImport } from './routes/t.$agencySlug.e.$eventSlug'
 import { Route as LiveSubdomainVenuesVenueIdRouteImport } from './routes/live.$subdomain.venues.$venueId'
 import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
 import { Route as AdminEventsEventIdLeaderboardRouteImport } from './routes/admin.events.$eventId_.leaderboard'
 import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId_.branding'
 
+const WorkspaceNotFoundRoute = WorkspaceNotFoundRouteImport.update({
+  id: '/workspace-not-found',
+  path: '/workspace-not-found',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -93,6 +101,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const TAgencySlugRoute = TAgencySlugRouteImport.update({
+  id: '/t/$agencySlug',
+  path: '/t/$agencySlug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PassportTokenRoute = PassportTokenRouteImport.update({
   id: '/passport/$token',
@@ -225,6 +238,11 @@ const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
   path: '/events/$eventId',
   getParentRoute: () => AdminRoute,
 } as any)
+const TAgencySlugEEventSlugRoute = TAgencySlugEEventSlugRouteImport.update({
+  id: '/e/$eventSlug',
+  path: '/e/$eventSlug',
+  getParentRoute: () => TAgencySlugRoute,
+} as any)
 const LiveSubdomainVenuesVenueIdRoute =
   LiveSubdomainVenuesVenueIdRouteImport.update({
     id: '/$venueId',
@@ -257,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/marketing-preview': typeof MarketingPreviewRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
@@ -274,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
+  '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/passport/': typeof PassportIndexRoute
@@ -290,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
+  '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -297,6 +318,7 @@ export interface FileRoutesByTo {
   '/marketing-preview': typeof MarketingPreviewRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
@@ -314,6 +336,7 @@ export interface FileRoutesByTo {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
+  '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/demo': typeof DemoIndexRoute
   '/passport': typeof PassportIndexRoute
@@ -330,6 +353,7 @@ export interface FileRoutesByTo {
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
+  '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -339,6 +363,7 @@ export interface FileRoutesById {
   '/marketing-preview': typeof MarketingPreviewRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/login': typeof AdminLoginRoute
@@ -356,6 +381,7 @@ export interface FileRoutesById {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
+  '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/passport/': typeof PassportIndexRoute
@@ -372,6 +398,7 @@ export interface FileRoutesById {
   '/admin/events/$eventId_/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
+  '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -382,6 +409,7 @@ export interface FileRouteTypes {
     | '/marketing-preview'
     | '/signup'
     | '/support'
+    | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
     | '/admin/login'
@@ -399,6 +427,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/live/$subdomain'
     | '/passport/$token'
+    | '/t/$agencySlug'
     | '/admin/'
     | '/demo/'
     | '/passport/'
@@ -415,6 +444,7 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/preview'
     | '/live/$subdomain/venues/$venueId'
+    | '/t/$agencySlug/e/$eventSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -422,6 +452,7 @@ export interface FileRouteTypes {
     | '/marketing-preview'
     | '/signup'
     | '/support'
+    | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
     | '/admin/login'
@@ -439,6 +470,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/live/$subdomain'
     | '/passport/$token'
+    | '/t/$agencySlug'
     | '/admin'
     | '/demo'
     | '/passport'
@@ -455,6 +487,7 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/preview'
     | '/live/$subdomain/venues/$venueId'
+    | '/t/$agencySlug/e/$eventSlug'
   id:
     | '__root__'
     | '/'
@@ -463,6 +496,7 @@ export interface FileRouteTypes {
     | '/marketing-preview'
     | '/signup'
     | '/support'
+    | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
     | '/admin/login'
@@ -480,6 +514,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/live/$subdomain'
     | '/passport/$token'
+    | '/t/$agencySlug'
     | '/admin/'
     | '/demo/'
     | '/passport/'
@@ -496,6 +531,7 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId_/leaderboard'
     | '/admin_/events/$eventId/preview'
     | '/live/$subdomain/venues/$venueId'
+    | '/t/$agencySlug/e/$eventSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -505,6 +541,7 @@ export interface RootRouteChildren {
   MarketingPreviewRoute: typeof MarketingPreviewRoute
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
+  WorkspaceNotFoundRoute: typeof WorkspaceNotFoundRoute
   CheckinQrTokenRoute: typeof CheckinQrTokenRoute
   DemoInviteRoute: typeof DemoInviteRoute
   DemoJoinRoute: typeof DemoJoinRoute
@@ -516,6 +553,7 @@ export interface RootRouteChildren {
   DemoWineriesRoute: typeof DemoWineriesRouteWithChildren
   LiveSubdomainRoute: typeof LiveSubdomainRouteWithChildren
   PassportTokenRoute: typeof PassportTokenRoute
+  TAgencySlugRoute: typeof TAgencySlugRouteWithChildren
   DemoIndexRoute: typeof DemoIndexRoute
   PassportIndexRoute: typeof PassportIndexRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
@@ -524,6 +562,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workspace-not-found': {
+      id: '/workspace-not-found'
+      path: '/workspace-not-found'
+      fullPath: '/workspace-not-found'
+      preLoaderRoute: typeof WorkspaceNotFoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/support': {
       id: '/support'
       path: '/support'
@@ -586,6 +631,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/t/$agencySlug': {
+      id: '/t/$agencySlug'
+      path: '/t/$agencySlug'
+      fullPath: '/t/$agencySlug'
+      preLoaderRoute: typeof TAgencySlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/passport/$token': {
       id: '/passport/$token'
@@ -769,6 +821,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsEventIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/t/$agencySlug/e/$eventSlug': {
+      id: '/t/$agencySlug/e/$eventSlug'
+      path: '/e/$eventSlug'
+      fullPath: '/t/$agencySlug/e/$eventSlug'
+      preLoaderRoute: typeof TAgencySlugEEventSlugRouteImport
+      parentRoute: typeof TAgencySlugRoute
+    }
     '/live/$subdomain/venues/$venueId': {
       id: '/live/$subdomain/venues/$venueId'
       path: '/$venueId'
@@ -873,6 +932,18 @@ const LiveSubdomainRouteWithChildren = LiveSubdomainRoute._addFileChildren(
   LiveSubdomainRouteChildren,
 )
 
+interface TAgencySlugRouteChildren {
+  TAgencySlugEEventSlugRoute: typeof TAgencySlugEEventSlugRoute
+}
+
+const TAgencySlugRouteChildren: TAgencySlugRouteChildren = {
+  TAgencySlugEEventSlugRoute: TAgencySlugEEventSlugRoute,
+}
+
+const TAgencySlugRouteWithChildren = TAgencySlugRoute._addFileChildren(
+  TAgencySlugRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -880,6 +951,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketingPreviewRoute: MarketingPreviewRoute,
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
+  WorkspaceNotFoundRoute: WorkspaceNotFoundRoute,
   CheckinQrTokenRoute: CheckinQrTokenRoute,
   DemoInviteRoute: DemoInviteRoute,
   DemoJoinRoute: DemoJoinRoute,
@@ -891,6 +963,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoWineriesRoute: DemoWineriesRouteWithChildren,
   LiveSubdomainRoute: LiveSubdomainRouteWithChildren,
   PassportTokenRoute: PassportTokenRoute,
+  TAgencySlugRoute: TAgencySlugRouteWithChildren,
   DemoIndexRoute: DemoIndexRoute,
   PassportIndexRoute: PassportIndexRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
