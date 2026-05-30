@@ -57,9 +57,18 @@ type StampsSummary = {
   venues: StampRow[];
 };
 
+type LookupDiagnostics = {
+  rpc: string;
+  zero_rows: boolean;
+  supabase_error_code: string | null;
+  supabase_error_message: string | null;
+  supabase_error_details: string | null;
+  supabase_error_hint: string | null;
+};
+
 type LoadState =
   | { kind: "loading" }
-  | { kind: "not_found" }
+  | { kind: "not_found"; diagnostics: LookupDiagnostics }
   | {
       kind: "ready";
       passport: PassportRow;
@@ -91,7 +100,20 @@ function PassportPage() {
 
       const row = (passportRes.data?.[0] ?? null) as PassportRow | null;
       if (passportRes.error || !row?.passport_id) {
-        setState({ kind: "not_found" });
+        const err = (passportRes.error ?? null) as
+          | { code?: string | null; message?: string | null; details?: string | null; hint?: string | null }
+          | null;
+        setState({
+          kind: "not_found",
+          diagnostics: {
+            rpc: "get_passport_by_token",
+            zero_rows: !passportRes.error && !row?.passport_id,
+            supabase_error_code: err?.code ?? null,
+            supabase_error_message: err?.message ?? null,
+            supabase_error_details: err?.details ?? null,
+            supabase_error_hint: err?.hint ?? null,
+          },
+        });
         return;
       }
 
@@ -163,26 +185,7 @@ function PassportPage() {
   }
 
   if (state.kind === "not_found") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6">
-        <div className="mx-auto w-full max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#1F3D2B]/10" />
-          <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
-            Passport link not found or replaced
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
-            This passport link is no longer valid. If you re-registered, use
-            the newest link. Otherwise, re-register at the event page.
-          </p>
-          <a
-            href="/"
-            className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] px-6 text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    );
+    return <PassportNotFound token={token} diagnostics={state.diagnostics} />;
   }
 
   return (
@@ -192,6 +195,80 @@ function PassportPage() {
       stamps={state.stamps}
       token={token}
     />
+  );
+}
+
+const URL_SAFE_TOKEN_RE = /^[A-Za-z0-9_-]+$/;
+
+function PassportNotFound({
+  token,
+  diagnostics,
+}: {
+  token: string;
+  diagnostics: LookupDiagnostics;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function copySupport() {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const host = typeof window !== "undefined" ? window.location.hostname : "";
+    const report = {
+      timestamp: new Date().toISOString(),
+      page_url: url,
+      public_subdomain: host,
+      route: "/passport/$token",
+      route_param_present: token.length > 0,
+      token_length: token.length,
+      token_first4: token.slice(0, 4),
+      token_last4: token.slice(-4),
+      token_is_url_safe: URL_SAFE_TOKEN_RE.test(token),
+      rpc: diagnostics.rpc,
+      zero_rows: diagnostics.zero_rows,
+      supabase_error_code: diagnostics.supabase_error_code,
+      supabase_error_message: diagnostics.supabase_error_message,
+      supabase_error_details: diagnostics.supabase_error_details,
+      supabase_error_hint: diagnostics.supabase_error_hint,
+      route_mapping: "tenant_pretty_path",
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6">
+      <div className="mx-auto w-full max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#1F3D2B]/10" />
+        <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+          Passport link not found or replaced
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
+          This passport link is no longer valid. If you re-registered, use the
+          newest link. Otherwise, re-register at the event page.
+        </p>
+        <a
+          href="/"
+          className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] px-6 text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+        >
+          Go home
+        </a>
+        <button
+          type="button"
+          onClick={copySupport}
+          className="mt-3 inline-flex h-9 items-center justify-center rounded-full border border-[#E6DCC7] bg-[#F6EFE2] px-4 text-xs font-medium text-[#3D372C]"
+        >
+          {copied ? "Copied support details" : "Copy support details"}
+        </button>
+        <p className="mt-2 text-[10px] text-[#8A7E66]">
+          Support details do not include your full passport link or any visitor
+          personal information.
+        </p>
+      </div>
+    </div>
   );
 }
 
