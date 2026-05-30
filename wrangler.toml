@@ -12,6 +12,10 @@ compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 # account_id = "<fill-in-before-first-deploy>"
 
+# First deploy: workers.dev only, no zone routes. Safe to deploy without
+# affecting any live getstampd.com.au hostname.
+workers_dev = true
+
 # Serve the built static assets directly from the Worker.
 [assets]
 directory = ".output/public"
