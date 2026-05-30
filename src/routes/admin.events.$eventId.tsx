@@ -236,6 +236,8 @@ function EventDetail() {
   const [qrActionVenueId, setQrActionVenueId] = useState<string | null>(null);
   const [qrActionError, setQrActionError] = useState<string | null>(null);
   const [qrCopiedVenueId, setQrCopiedVenueId] = useState<string | null>(null);
+  const [qrEntryDraft, setQrEntryDraft] = useState<Map<string, string>>(new Map());
+  const [qrEntrySavingId, setQrEntrySavingId] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -887,6 +889,36 @@ function EventDetail() {
     });
     setReloadKey((k) => k + 1);
   }
+
+  async function saveQrEntryValue(venueId: string, raw: string) {
+    if (!agencyId || !canEdit) return;
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > 100) {
+      setQrActionError("Entry value must be a whole number between 1 and 100.");
+      return;
+    }
+    setQrActionError(null);
+    setQrEntrySavingId(venueId);
+    const { error } = await supabase
+      .from("venue_qr_codes")
+      .update({ entry_value: parsed })
+      .eq("venue_id", venueId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId)
+      .eq("status", "active");
+    setQrEntrySavingId(null);
+    if (error) {
+      setQrActionError("Could not save entry value. Please try again.");
+      return;
+    }
+    setQrEntryDraft((m) => {
+      const next = new Map(m);
+      next.delete(venueId);
+      return next;
+    });
+    setReloadKey((k) => k + 1);
+  }
+
 
 
   if (eventId === "new") {
