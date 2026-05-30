@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PoweredByGetStampd } from "@/components/brand";
+import { rpcEventHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
   component: LiveJoinPage,
