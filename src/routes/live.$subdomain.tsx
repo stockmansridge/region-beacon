@@ -6,6 +6,7 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
+import { rpcEventHost } from "@/lib/domains";
 
 
 export const Route = createFileRoute("/live/$subdomain")({
