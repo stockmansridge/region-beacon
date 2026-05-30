@@ -115,6 +115,21 @@ export function AdminShell({
           })()}
         </nav>
         <div className="border-t p-3">
+          {isPlatformAdmin && (
+            <label
+              className="mb-1 flex w-full cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
+              title="Show platform_admin diagnostic panels (HostDiagnostic, PublishGateDiagnostic). Stored locally in this browser only."
+            >
+              <span className="flex items-center gap-3">
+                <Bug className="h-4 w-4" /> Diagnostics
+              </span>
+              <Switch
+                checked={diagnosticsEnabled}
+                onCheckedChange={(v) => setDiagnosticsEnabled(Boolean(v))}
+                aria-label="Toggle platform admin diagnostics"
+              />
+            </label>
+          )}
           <button
             type="button"
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
