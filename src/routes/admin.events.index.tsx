@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
+import { PUBLIC_TENANT_ROOT_DOMAIN } from "@/lib/domains";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAuth } from "@/hooks/use-auth";
 import {
