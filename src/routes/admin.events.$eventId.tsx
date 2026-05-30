@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { AdminEventAnnouncements } from "@/components/admin-event-announcements";
+import { AdminEventRewards } from "@/components/admin-event-rewards";
 import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
 import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
