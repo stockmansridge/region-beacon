@@ -34,6 +34,19 @@ const STAGING_FALLBACK_PUBLISHABLE_KEY =
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const deployTarget = import.meta.env.VITE_DEPLOY_TARGET as string | undefined;
+
+// Build-time guard: any Cloudflare build (test or production) MUST set both
+// Supabase env vars. This prevents a workers.dev test deploy from silently
+// shipping the staging fallback to a non-getstampd hostname where the runtime
+// host-check below cannot catch it.
+if (deployTarget === "cloudflare" && (!envUrl || !envKey)) {
+  throw new Error(
+    "[supabase/client] VITE_DEPLOY_TARGET=cloudflare requires both " +
+      "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to be set at build time. " +
+      "Refusing to bake the staging fallback into a Cloudflare deployment.",
+  );
+}
 
 export const SUPABASE_URL = envUrl ?? STAGING_FALLBACK_URL;
 export const SUPABASE_PUBLISHABLE_KEY = envKey ?? STAGING_FALLBACK_PUBLISHABLE_KEY;
@@ -45,6 +58,7 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       "Set both in the build environment.",
   );
 }
+
 
 // Production safety net: if the page is running on a getstampd.* host but the
 // client is still wired to the staging fallback, refuse to boot. This catches
