@@ -608,8 +608,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
             No app download required
           </p>
-        </form>
-        )}
+        </form>}
         {showDiag && debugInfo && (
           <div className="mt-4">
             <DiagnosticPanel
