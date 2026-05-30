@@ -6,7 +6,15 @@ import { AdminEventAnnouncements } from "@/components/admin-event-announcements"
 import { AdminEventRewards } from "@/components/admin-event-rewards";
 import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
-import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
+import {
+  deleteVenueAssetSafely,
+  getVenueAssetPublicUrl,
+  uploadVenueAsset,
+  VENUE_ASSET_ALLOWED_MIME,
+  VENUE_ASSET_MAX_BYTES,
+  type VenueAssetKind,
+} from "@/lib/venue-assets";
+import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { EventTermsDialog } from "@/components/event-terms-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
