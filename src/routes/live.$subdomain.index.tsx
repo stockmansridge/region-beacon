@@ -9,7 +9,7 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { rpcEventHost } from "@/lib/domains";
 
 
-export const Route = createFileRoute("/live/$subdomain")({
+export const Route = createFileRoute("/live/$subdomain/")({
   component: LivePublicPage,
 });
 
