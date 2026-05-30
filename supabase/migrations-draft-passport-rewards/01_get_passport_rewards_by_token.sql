@@ -65,7 +65,7 @@ begin
   select p.id, p.event_id
     into v_passport_id, v_event_id
   from public.passports p
-  where p.access_token_hash = digest(_raw_token, 'sha256')
+  where p.access_token_hash = public.passport_token_hash(_raw_token)
   limit 1;
 
   if v_passport_id is null then
