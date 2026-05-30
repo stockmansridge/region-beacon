@@ -120,15 +120,17 @@ export function computeHostRewrite(hostname: string, pathname: string): Rewrite 
 
 export function HostRouter() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const rewrite = computeHostRewrite(window.location.hostname, location.pathname);
     if (!rewrite) return;
-    // Use the router so client state stays consistent.
-    navigate({ to: rewrite.to, replace: rewrite.replace });
-  }, [location.pathname, navigate]);
+    if (rewrite.to === location.pathname) return;
+    // Use a full navigation: the rewrite targets cross a different route
+    // subtree (e.g. /live/$subdomain), so a hard replace is the safest
+    // way to remount with the correct route match.
+    window.location.replace(rewrite.to);
+  }, [location.pathname]);
 
   return null;
 }
