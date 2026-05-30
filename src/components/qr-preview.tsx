@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
+// qrcode is loaded lazily inside the effect — it imports `node:fs`
+// transitively, which Cloudflare Workers cannot resolve at SSR time.
 import { generateQrPosterPdf, type PosterInput } from "@/lib/qr-poster";
 
 type Props = {
