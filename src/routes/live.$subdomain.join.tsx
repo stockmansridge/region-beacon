@@ -365,7 +365,19 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
               className="mb-4 rounded-xl border border-[#E8B5A3] bg-[#FBE3D6] px-3 py-2 text-sm"
               style={{ color: "#7A2E13" }}
             >
-              {topError}
+              <div>{topError}</div>
+              {debugInfo && (
+                <CopySupportDetailsButton
+                  build={() =>
+                    buildSupportReport(debugInfo, {
+                      event_id: event.event_id,
+                      subdomain,
+                      accepted_terms: form.accept_terms,
+                      terms_version_id: event.current_terms_version_id,
+                    })
+                  }
+                />
+              )}
             </div>
           )}
 
@@ -745,5 +757,93 @@ function NotLiveYet() {
         <div className="mt-6 flex justify-start"><PoweredByGetStampd variant="trail" /></div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Builds a PII-safe support report. Includes diagnostic shape data only —
+ * never raw name/email/mobile/postcode. Visitors can copy this to share
+ * with support without leaking personal info.
+ */
+function buildSupportReport(
+  debug: Record<string, unknown>,
+  ctx: {
+    event_id: string;
+    subdomain: string;
+    accepted_terms: boolean;
+    terms_version_id: string | null;
+  },
+): string {
+  const safe: Record<string, unknown> = {
+    timestamp: new Date().toISOString(),
+    page_url: typeof window !== "undefined" ? window.location.href : null,
+    public_subdomain: ctx.subdomain,
+    event_id: ctx.event_id,
+    rpc: (debug as { rpc?: string }).rpc ?? "register_visitor",
+    failure_stage: (debug as { stage?: string }).stage ?? "unknown",
+    supabase_error_code: (debug as { error_code?: unknown }).error_code ?? null,
+    supabase_error_message: (debug as { error_message?: unknown }).error_message ?? null,
+    supabase_error_details: (debug as { error_details?: unknown }).error_details ?? null,
+    supabase_error_hint: (debug as { error_hint?: unknown }).error_hint ?? null,
+    terms_accepted: ctx.accepted_terms,
+    terms_version_id: ctx.terms_version_id,
+  };
+
+  // Whitelist payload_shape fields so PII can never leak even if upstream
+  // accidentally extends the diagnostic object.
+  const rawShape = (debug as { payload_shape?: Record<string, unknown> }).payload_shape;
+  if (rawShape && typeof rawShape === "object") {
+    const allow = new Set([
+      "_event_id",
+      "_email_length",
+      "_full_name_length",
+      "_first_name_length",
+      "_last_name_length",
+      "_mobile_present",
+      "_postcode_present",
+      "_marketing_opt_in",
+      "_accepted_terms_version_id",
+      "_locale",
+    ]);
+    const shape: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(rawShape)) if (allow.has(k)) shape[k] = v;
+    safe.payload_shape = shape;
+  }
+
+  return [
+    "# GetStampd passport support report",
+    ...Object.entries(safe).map(([k, v]) =>
+      typeof v === "string" || v === null || typeof v === "number" || typeof v === "boolean"
+        ? `${k}: ${v ?? "—"}`
+        : `${k}: ${JSON.stringify(v)}`,
+    ),
+  ].join("\n");
+}
+
+function CopySupportDetailsButton({ build }: { build: () => string }) {
+  const [copied, setCopied] = useState<"idle" | "ok" | "err">("idle");
+  async function onClick() {
+    try {
+      await navigator.clipboard.writeText(build());
+      setCopied("ok");
+      setTimeout(() => setCopied("idle"), 1800);
+    } catch {
+      setCopied("err");
+      setTimeout(() => setCopied("idle"), 2400);
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-2 inline-flex h-7 items-center gap-1.5 rounded-md border border-[#E8B5A3] bg-white/60 px-2 text-[11px] font-semibold uppercase tracking-[0.14em]"
+      style={{ color: "#7A2E13" }}
+    >
+      {copied === "ok"
+        ? "Copied"
+        : copied === "err"
+          ? "Copy failed"
+          : "Copy support details"}
+    </button>
   );
 }
