@@ -1,68 +1,69 @@
 import { useEffect } from "react";
 import { useLocation } from "@tanstack/react-router";
+import { matchRootDomain, extractSubdomain } from "@/lib/domains";
+import { isAgencyEligibleSubdomain, isReservedSubdomain, RESERVED_SUBDOMAINS } from "@/lib/reserved-subdomains";
 
 /**
  * Host-based routing for the published GetStampd domains.
  *
- * Mapping (only takes effect when running on a *.getstamped.com.au host —
- * Lovable previews and localhost are unaffected and continue to use the
- * normal route tree, including /live/$subdomain for staging simulation):
+ * Recognised roots (see `src/lib/domains.ts`):
+ *   - getstampd.com       (canonical)
+ *   - getstampd.com.au    (transition)
  *
- *   getstamped.com.au          → Coming Soon (the / route already handles this)
- *   www.getstamped.com.au      → Coming Soon
- *   app.getstamped.com.au      → "/" should land in /admin
- *   demo.getstamped.com.au     → "/" should land in /demo
- *   {sub}.getstamped.com.au    → rewrite the public event paths onto
- *                                /live/{sub}/... so existing route handlers
- *                                render unchanged. Existing top-level
- *                                /checkin/$qrToken keeps working as-is.
+ * Classification:
+ *   root                  → apex / www → coming-soon (the / route handles it)
+ *   app                   → app.<root>  → "/" → /admin
+ *   demo                  → demo.<root> → "/" → /demo
+ *   reserved              → admin/api/www/events/support/billing/login/signup/
+ *                            dashboard/system/assets/static/cdn/mail → no rewrite
+ *   tenant                → {sub}.<root>, sub is valid + not reserved
+ *   other                 → not a known root (e.g. lovable preview, localhost) → no rewrite
  *
- * Implementation note: this runs client-side after hydration. SSR is not
- * host-aware here, but the published deployment serves a static HTML shell
- * and TanStack hydrates routes on the client; the redirect happens before
- * the first meaningful paint of the wrong content.
+ * On a tenant host the following path mappings apply (the destination route
+ * is responsible for resolving the agency, falling back to a legacy
+ * `event_domains` row, or rendering a branded not-found):
+ *
+ *   /                       → /t/{sub}
+ *   /e/{slug}               → /t/{sub}/e/{slug}
+ *   /e/{slug}/...           → /t/{sub}/e/{slug}/... (future child routes)
+ *   /join                   → /live/{sub}/join         (legacy event-subdomain)
+ *   /venues, /leaderboard   → /live/{sub}/...          (legacy event-subdomain)
+ *   /terms, /privacy        → /live/{sub}/...          (legacy event-subdomain)
+ *   /checkin/..., /admin,
+ *   /api/..., /_...         → untouched
+ *
+ * SSR is not host-aware; the rewrite happens client-side after hydration,
+ * before first meaningful paint of the wrong content.
  */
 
-const ROOT_DOMAIN = "getstamped.com.au";
+export { RESERVED_SUBDOMAINS };
 
-// Hostnames that should NOT be treated as a public-event subdomain.
-const RESERVED_SUBDOMAINS = new Set<string>([
-  "www",
-  "app",
-  "demo",
-  "admin",
-  "api",
-  "mail",
-  "static",
-  "assets",
-  "cdn",
-]);
-
-type HostKind =
+export type HostKind =
   | { kind: "root" }
   | { kind: "app" }
   | { kind: "demo" }
-  | { kind: "event"; subdomain: string }
+  | { kind: "reserved"; sub: string }
+  | { kind: "tenant"; subdomain: string }
   | { kind: "other" };
 
 export function classifyHost(hostname: string): HostKind {
-  const host = hostname.toLowerCase().split(":")[0];
-  if (host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}`) return { kind: "root" };
-  if (!host.endsWith(`.${ROOT_DOMAIN}`)) return { kind: "other" };
-  const sub = host.slice(0, -1 * (`.${ROOT_DOMAIN}`.length));
+  const extracted = extractSubdomain(hostname);
+  if (!extracted) return { kind: "other" };
+  const { sub } = extracted;
+  if (sub === "" || sub === "www") return { kind: "root" };
   if (sub === "app") return { kind: "app" };
   if (sub === "demo") return { kind: "demo" };
-  if (RESERVED_SUBDOMAINS.has(sub)) return { kind: "other" };
-  // Single-label subdomain only; ignore deep ones like x.y.getstamped.com.au.
-  if (sub.includes(".")) return { kind: "other" };
-  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(sub)) return { kind: "other" };
-  return { kind: "event", subdomain: sub };
+  // Multi-label or invalid → ignore (don't pretend it's a tenant).
+  if (!isAgencyEligibleSubdomain(sub)) {
+    if (isReservedSubdomain(sub)) return { kind: "reserved", sub };
+    return { kind: "other" };
+  }
+  return { kind: "tenant", subdomain: sub };
 }
 
 type Rewrite = { to: string; replace: boolean } | null;
 
 export function computeHostRewrite(hostname: string, pathname: string): Rewrite {
-  const host = classifyHost(hostname);
   // Never rewrite admin or asset paths — they must work on every host.
   if (
     pathname.startsWith("/admin") ||
@@ -72,50 +73,70 @@ export function computeHostRewrite(hostname: string, pathname: string): Rewrite 
     return null;
   }
 
+  const host = classifyHost(hostname);
+
   switch (host.kind) {
     case "app": {
-      if (pathname === "/" || pathname === "") {
-        return { to: "/admin", replace: true };
-      }
+      if (pathname === "/" || pathname === "") return { to: "/admin", replace: true };
       return null;
     }
     case "demo": {
-      if (pathname === "/" || pathname === "") {
-        return { to: "/demo", replace: true };
-      }
+      if (pathname === "/" || pathname === "") return { to: "/demo", replace: true };
       return null;
     }
-    case "event": {
+    case "tenant": {
       const sub = host.subdomain;
-      // /checkin/$qrToken already exists at top level; do not rewrite.
       if (pathname.startsWith("/checkin/")) return null;
-      // Already on /live/... — nothing to do.
-      if (pathname.startsWith("/live/")) return null;
+      if (pathname.startsWith("/live/") || pathname.startsWith("/t/")) return null;
 
-      const mapPrefixes: Array<[string, (rest: string) => string]> = [
+      // New /e/{eventSlug}[/...] mapping → tenant event page.
+      if (pathname === "/e" || pathname.startsWith("/e/")) {
+        const rest = pathname.slice(2); // keep leading "/" of the slug part, drop "/e"
+        return { to: `/t/${sub}/e${rest}`, replace: true };
+      }
+
+      // Legacy event-subdomain paths — keep working during transition.
+      const legacyPrefixes: Array<[string, (rest: string) => string]> = [
         ["/join", () => `/live/${sub}/join`],
         ["/venues", (rest) => `/live/${sub}/venues${rest}`],
         ["/leaderboard", () => `/live/${sub}/leaderboard`],
         ["/terms", () => `/live/${sub}/terms`],
         ["/privacy", () => `/live/${sub}/privacy`],
       ];
-
-      for (const [prefix, build] of mapPrefixes) {
+      for (const [prefix, build] of legacyPrefixes) {
         if (pathname === prefix || pathname.startsWith(prefix + "/")) {
           const rest = pathname.slice(prefix.length);
           return { to: build(rest), replace: true };
         }
       }
+
       if (pathname === "/" || pathname === "") {
-        return { to: `/live/${sub}`, replace: true };
+        return { to: `/t/${sub}`, replace: true };
       }
       return null;
     }
     case "root":
+    case "reserved":
     case "other":
     default:
       return null;
   }
+}
+
+/** Diagnostic snapshot for the platform_admin-only diagnostic panel. */
+export function describeHost(hostname: string, pathname: string) {
+  const host = classifyHost(hostname);
+  const rewrite = computeHostRewrite(hostname, pathname);
+  const root = matchRootDomain(hostname);
+  return {
+    hostname,
+    pathname,
+    rootDomain: root,
+    classification: host.kind,
+    subdomain:
+      host.kind === "tenant" ? host.subdomain : host.kind === "reserved" ? host.sub : null,
+    rewriteTo: rewrite?.to ?? null,
+  };
 }
 
 export function HostRouter() {
@@ -126,9 +147,9 @@ export function HostRouter() {
     const rewrite = computeHostRewrite(window.location.hostname, location.pathname);
     if (!rewrite) return;
     if (rewrite.to === location.pathname) return;
-    // Use a full navigation: the rewrite targets cross a different route
-    // subtree (e.g. /live/$subdomain), so a hard replace is the safest
-    // way to remount with the correct route match.
+    // Full navigation: rewrite targets cross a different route subtree
+    // (e.g. /t/{sub} or /live/{sub}); a hard replace is the safest way to
+    // remount with the correct route match.
     window.location.replace(rewrite.to);
   }, [location.pathname]);
 
