@@ -1173,13 +1173,15 @@ function EventDetail() {
           </Link>
           .
         </div>
-        <LoadDiagnosticPanel
-          diagnostic={diagnostic}
-          eventId={eventId}
-          agencyId={agencyId}
-          userId={auth.session?.user.id ?? null}
-          canCopy={agency.isPlatformAdmin || canEdit}
-        />
+        {agency.isPlatformAdmin && diagnosticsEnabled && (
+          <LoadDiagnosticPanel
+            diagnostic={diagnostic}
+            eventId={eventId}
+            agencyId={agencyId}
+            userId={auth.session?.user.id ?? null}
+            email={auth.email}
+          />
+        )}
       </>
     );
   }
