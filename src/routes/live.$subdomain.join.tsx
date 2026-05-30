@@ -457,11 +457,6 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
           noValidate
         >
-          <form
-            onSubmit={onSubmit}
-            className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
-            noValidate
-          >
           {topError && (
             <div
               role="alert"
