@@ -1,0 +1,56 @@
+# Cloudflare Workers config for GetStampd production.
+#
+# DO NOT `wrangler deploy` from a local machine without coordination.
+# This file is checked in so CI / the production deploy step can use it.
+#
+# Zone: getstampd.com.au (registrar: Crazy Domains, DNS: Cloudflare)
+# Build output is produced by `bun run build` (nitro cloudflare-module).
+
+name = "getstampd-prod"
+main = ".output/server/index.mjs"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+# account_id = "<fill-in-before-first-deploy>"
+
+# Serve the built static assets directly from the Worker.
+[assets]
+directory = ".output/public"
+binding = "ASSETS"
+
+[vars]
+NODE_ENV = "production"
+# VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY are baked in at BUILD time
+# (Vite replaces import.meta.env.* at build). Set them in the CI/build env,
+# not here. Runtime-only secrets (service role, webhook secrets) go in
+# `wrangler secret put NAME` once they exist.
+
+# Wildcard SaaS routing. Workers Custom Domains do NOT support wildcards —
+# we use Worker Routes attached to the zone. Each matching hostname needs a
+# proxied (orange-cloud) DNS record on the zone for the route to fire.
+#
+# Routes intentionally added in two phases:
+#   Phase A (initial cutover): apex + www + app only.
+#   Phase B (tenant routing):  add the *.getstampd.com.au wildcard route AND
+#                              the wildcard DNS record together.
+# Keep the wildcard route commented out until Phase B.
+
+[[routes]]
+pattern = "getstampd.com.au/*"
+zone_name = "getstampd.com.au"
+custom_domain = false
+
+[[routes]]
+pattern = "www.getstampd.com.au/*"
+zone_name = "getstampd.com.au"
+custom_domain = false
+
+[[routes]]
+pattern = "app.getstampd.com.au/*"
+zone_name = "getstampd.com.au"
+custom_domain = false
+
+# Phase B — enable together with the `*` DNS record.
+# [[routes]]
+# pattern = "*.getstampd.com.au/*"
+# zone_name = "getstampd.com.au"
+# custom_domain = false
