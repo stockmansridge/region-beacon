@@ -6,6 +6,8 @@ import { QrPreview } from "@/components/qr-preview";
 import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
 import { EventTermsDialog } from "@/components/event-terms-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { posterFilename } from "@/lib/qr-poster";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 
 export const Route = createFileRoute("/admin/events/$eventId")({
