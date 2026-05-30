@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -56,6 +57,11 @@ const SupportRoute = SupportRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingPreviewRoute = MarketingPreviewRouteImport.update({
+  id: '/marketing-preview',
+  path: '/marketing-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
+  '/marketing-preview': typeof MarketingPreviewRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/admin/account': typeof AdminAccountRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
+  '/marketing-preview': typeof MarketingPreviewRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/admin/account': typeof AdminAccountRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
+  '/marketing-preview': typeof MarketingPreviewRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/admin/account': typeof AdminAccountRoute
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/marketing-preview'
     | '/signup'
     | '/support'
     | '/admin/account'
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/contact'
+    | '/marketing-preview'
     | '/signup'
     | '/support'
     | '/admin/account'
@@ -449,6 +460,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/marketing-preview'
     | '/signup'
     | '/support'
     | '/admin/account'
@@ -490,6 +502,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   ContactRoute: typeof ContactRoute
+  MarketingPreviewRoute: typeof MarketingPreviewRoute
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   CheckinQrTokenRoute: typeof CheckinQrTokenRoute
@@ -523,6 +536,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketing-preview': {
+      id: '/marketing-preview'
+      path: '/marketing-preview'
+      fullPath: '/marketing-preview'
+      preLoaderRoute: typeof MarketingPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -857,6 +877,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   ContactRoute: ContactRoute,
+  MarketingPreviewRoute: MarketingPreviewRoute,
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   CheckinQrTokenRoute: CheckinQrTokenRoute,

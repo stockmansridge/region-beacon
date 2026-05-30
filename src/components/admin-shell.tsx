@@ -3,6 +3,7 @@ import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditC
 import { ReactNode } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
+import { TestEnvBanner } from "@/components/test-env-banner";
 
 /**
  * Sidebar nav items.
@@ -59,8 +60,11 @@ export function AdminShell({
     }`;
 
   return (
-    <div className="flex min-h-screen bg-sidebar">
+    <div className="flex min-h-screen flex-col bg-sidebar">
+      <TestEnvBanner />
+      <div className="flex flex-1">
       <aside className="hidden w-60 shrink-0 border-r bg-sidebar lg:flex lg:flex-col">
+
         <div className="flex h-16 items-center border-b px-5">
           <GetStampdLogo variant="blue" size="md" caption="Event admin" />
         </div>
@@ -159,6 +163,7 @@ export function AdminShell({
           </div>
         </header>
         <div className="flex-1 p-6 lg:p-8">{children ?? <Outlet />}</div>
+      </div>
       </div>
     </div>
   );
