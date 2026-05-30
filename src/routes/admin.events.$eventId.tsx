@@ -15,7 +15,7 @@ import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAuth } from "@/hooks/use-auth";
 import { PUBLIC_TENANT_ROOT_DOMAIN, rpcEventHost, tenantHost, tenantUrl } from "@/lib/domains";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
-import { DiagnosticPanel as SharedDiagnosticPanel, DiagnosticCopyButton } from "@/components/diagnostic-panel";
+import { DiagnosticCopyButton } from "@/components/diagnostic-panel";
 
 type LoadDiagnostic = {
   step: string;
