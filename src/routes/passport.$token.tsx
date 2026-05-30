@@ -288,6 +288,11 @@ function PassportView({
   const [copied, setCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const subdomain = useMemo(() => {
+    const cls = classifyHost(hostname);
+    return cls.kind === "tenant" ? cls.subdomain : null;
+  }, [hostname]);
 
   const labelSingular = stamps?.labelSingular ?? DEFAULT_VENUE_LABEL_SINGULAR;
   const labelPlural = stamps?.labelPlural ?? DEFAULT_VENUE_LABEL_PLURAL;
