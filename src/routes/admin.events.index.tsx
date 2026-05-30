@@ -225,59 +225,113 @@ function Events() {
             <tr>
               <th className="px-4 py-3 font-medium">Event</th>
               <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Internal slug</th>
-              <th className="px-4 py-3 font-medium">Public slug</th>
-              <th className="px-4 py-3 font-medium">Timezone</th>
+              <th className="px-4 py-3 font-medium">Public address</th>
               <th className="px-4 py-3 font-medium">Dates</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 font-medium">Updated</th>
+              <th className="px-4 py-3 font-medium">Venues</th>
+              <th className="px-4 py-3 font-medium">Go-live</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   Loading events…
                 </td>
               </tr>
             )}
             {!loading && rows && rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No events yet for this agency.
                 </td>
               </tr>
             )}
             {!loading &&
-              rows?.map((e) => (
-                <tr key={e.id} className="border-t">
-                  <td className="px-4 py-3 font-medium">{e.name}</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{e.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{e.slug}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{e.public_slug ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{e.timezone}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {fmt(e.starts_at)} → {fmt(e.ends_at)}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{fmt(e.created_at)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{fmt(e.updated_at)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      to="/admin/events/$eventId"
-                      params={{ eventId: e.id }}
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              rows?.map((e) => {
+                const ex = extras[e.id];
+                const domain = ex?.domain ?? null;
+                const hasSubdomain = !!domain?.public_subdomain;
+                const domainStatus = domain?.status ?? null;
+                const activation = ex?.activationStatus ?? null;
+                const liveLabel =
+                  activation === "active" || activation === "comp"
+                    ? "Live"
+                    : activation === "pending"
+                      ? "Pending"
+                      : "Not live";
+                const liveClass =
+                  activation === "active" || activation === "comp"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : activation === "pending"
+                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                      : "bg-muted text-muted-foreground";
+                return (
+                  <tr key={e.id} className="border-t">
+                    <td className="px-4 py-3 font-medium">{e.name}</td>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{e.status}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {hasSubdomain ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs">
+                            {domain!.public_subdomain}.{SUBDOMAIN_ROOT}
+                          </span>
+                          <span
+                            className={
+                              "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide " +
+                              (domainStatus === "active"
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                : "bg-amber-500/10 text-amber-700 dark:text-amber-300")
+                            }
+                          >
+                            {domainStatus}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Not reserved</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {fmt(e.starts_at)} → {fmt(e.ends_at)}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {ex ? ex.venuesCount : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={"rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide " + liveClass}>
+                        {liveLabel}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        {hasSubdomain && domainStatus === "active" && (
+                          <a
+                            href={`https://${domain!.public_subdomain}.${SUBDOMAIN_ROOT}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm text-muted-foreground hover:underline"
+                          >
+                            Preview
+                          </a>
+                        )}
+                        <Link
+                          to="/admin/events/$eventId"
+                          params={{ eventId: e.id }}
+                          className="text-sm font-medium text-primary hover:underline"
+                        >
+                          Setup
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
+
 
       {canCreate && (
         <CreateEventDialog
