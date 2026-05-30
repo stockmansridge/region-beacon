@@ -80,26 +80,29 @@ invocation_logs = true
 # https://getstampd-prod.<account>.workers.dev — production hostnames are
 # untouched.
 
-# --- Phase A (DO NOT uncomment until intentional cutover) ---
-# [[routes]]
-# pattern = "getstampd.com.au/*"
-# zone_name = "getstampd.com.au"
-# custom_domain = false
-#
-# [[routes]]
-# pattern = "www.getstampd.com.au/*"
-# zone_name = "getstampd.com.au"
-# custom_domain = false
-#
-# [[routes]]
-# pattern = "app.getstampd.com.au/*"
-# zone_name = "getstampd.com.au"
-# custom_domain = false
+# --- Phase A (LIVE) ---
+[[routes]]
+pattern = "getstampd.com.au/*"
+zone_name = "getstampd.com.au"
+custom_domain = false
 
-# --- Phase B (enable together with wildcard DNS) ---
-# [[routes]]
-# pattern = "*.getstampd.com.au/*"
-# zone_name = "getstampd.com.au"
-# custom_domain = false
+[[routes]]
+pattern = "www.getstampd.com.au/*"
+zone_name = "getstampd.com.au"
+custom_domain = false
+
+[[routes]]
+pattern = "app.getstampd.com.au/*"
+zone_name = "getstampd.com.au"
+custom_domain = false
+
+# --- Phase B (LIVE) — wildcard tenant routing ---
+# Paired with proxied CNAME `* → getstampd.com.au` in the zone.
+# Cloudflare prefers more specific routes, so the Phase A apex/www/app
+# blocks above still match their hostnames first.
+[[routes]]
+pattern = "*.getstampd.com.au/*"
+zone_name = "getstampd.com.au"
+custom_domain = false
 
 # custom_domain = false
