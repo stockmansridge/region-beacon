@@ -93,13 +93,19 @@ fallback (= live project) is used.
 
 `wrangler.toml` (repo root):
 - `name = "getstampd-prod"`
-- `main = ".output/server/index.mjs"`
+- `main = "dist/server/index.mjs"`
 - `compatibility_date = "2025-05-01"`, `nodejs_compat`
 - `workers_dev = true` — first deploy is isolated to `workers.dev`
-- `[assets] directory = ".output/public"`
+- `[assets] directory = "dist/client"`
 - `[vars] NODE_ENV = "production"`
+- `[observability]` + `[observability.logs]` — `enabled = true`,
+  `invocation_logs = true`, `head_sampling_rate = 1`. Mirrored into the
+  Nitro-generated `dist/server/wrangler.json` by
+  `scripts/patch-wrangler-observability.mjs` (runs as part of `bun run build`),
+  so the settings survive Nitro overriding the root `wrangler.toml`.
 - **ALL zone route blocks remain commented out.** Apex/www/app/wildcard
   routes will only be uncommented intentionally for the Phase A cutover.
+
 
 `account_id` does **not** need to be hardcoded when Cloudflare builds from
 GitHub — the connected account is implicit. Leave the `account_id` line
