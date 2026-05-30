@@ -59,7 +59,7 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const host = `${subdomain}.getstamped.com.au`;
+      const host = `${subdomain}.getstampd.com.au`;
       const { data, error } = await supabase.rpc(
         "get_public_event_announcements_by_domain",
         { _hostname: host },

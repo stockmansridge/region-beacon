@@ -42,7 +42,7 @@ type EventExtras = {
   activationStatus: string | null;
 };
 
-const SUBDOMAIN_ROOT = "getstamped.com.au";
+const SUBDOMAIN_ROOT = "getstampd.com.au";
 
 function fmt(d: string | null) {
   if (!d) return "—";

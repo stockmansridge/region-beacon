@@ -39,7 +39,7 @@ function PublicVenueDetailPage() {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstamped.com.au`;
+      const host = `${subdomain}.getstampd.com.au`;
 
       const { data, error } = await supabase.rpc(
         "get_public_venue_by_domain",

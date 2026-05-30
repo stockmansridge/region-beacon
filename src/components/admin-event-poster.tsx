@@ -43,7 +43,7 @@ export function AdminEventPoster({
 
   const hasActiveSubdomain = !!activePublicSubdomain;
   const publicUrl = hasActiveSubdomain
-    ? `https://${activePublicSubdomain}.getstamped.com.au`
+    ? `https://${activePublicSubdomain}.getstampd.com.au`
     : null;
   const filename = eventPosterFilename(event.public_slug ?? event.slug);
 

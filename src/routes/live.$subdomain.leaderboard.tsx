@@ -34,7 +34,7 @@ function PublicLeaderboardPage() {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstamped.com.au`;
+      const host = `${subdomain}.getstampd.com.au`;
       const { data, error } = await supabase.rpc(
         "get_public_leaderboard_by_domain",
         { _hostname: host },
@@ -126,7 +126,7 @@ function Header({ subdomain }: { subdomain: string }) {
   return (
     <div className="mb-6 text-center">
       <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#B5572A]">
-        {subdomain}.getstamped.com.au
+        {subdomain}.getstampd.com.au
       </p>
       <h1 className="font-trail-serif mt-2 text-3xl font-semibold text-[#1F3D2B] sm:text-4xl">
         Leaderboard

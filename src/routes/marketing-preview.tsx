@@ -443,7 +443,7 @@ function MarketingHome() {
           </div>
           <div className="mt-10 flex flex-col items-start justify-between gap-2 border-t border-slate-200/70 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center">
             <div>© {new Date().getFullYear()} GetStampd. All rights reserved.</div>
-            <div>getstamped.com.au</div>
+            <div>getstampd.com.au</div>
           </div>
         </div>
       </footer>
