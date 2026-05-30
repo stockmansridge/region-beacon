@@ -21,10 +21,10 @@ returns table (
 language plpgsql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
-  sub text := lower(coalesce(_sub, ''));
+  sub text := lower(trim(coalesce(_sub, '')));
 begin
   -- shape check (mirrors src/lib/reserved-subdomains.ts)
   if sub !~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$' then
