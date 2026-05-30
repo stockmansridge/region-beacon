@@ -52,11 +52,11 @@ security definer
 set search_path = public, pg_temp
 as $$
 declare
-  sub  text := lower(trim(coalesce(_sub, '')));
-  slug text := lower(trim(coalesce(_event_slug, '')));
+  sub      text := lower(trim(coalesce(_sub, '')));
+  evt_slug text := lower(trim(coalesce(_event_slug, '')));
 begin
   if sub !~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$' then return; end if;
-  if slug = '' then return; end if;
+  if evt_slug = '' then return; end if;
   if sub = any (array[
     'app','admin','api','www','events','support','billing','login','signup',
     'dashboard','system','assets','static','cdn','demo','mail'
@@ -86,7 +86,7 @@ begin
     left join public.event_branding b on b.event_id = e.id
     where a.slug = sub::citext
       and a.deleted_at is null
-      and e.public_slug = slug::citext
+      and e.public_slug = evt_slug::citext
       and e.status = 'published'
       and e.deleted_at is null
       and public.event_is_publishable(e.id) = true
