@@ -324,12 +324,33 @@ function PassportView({
     "Visitor";
 
   return (
-    <TrailShell
-      eventName={eventName ?? "Your passport"}
-      primaryColor={PRIMARY}
-      accentColor={ACCENT}
-      showBottomNav={false}
-    >
+    <>
+      {subdomain && (
+        <div className="bg-[#F6EFE2] px-4 pt-6">
+          <PublicEventNav
+            subdomain={subdomain}
+            eventName={eventName ?? "Your passport"}
+            primaryColor={PRIMARY}
+            accentColor={ACCENT}
+            activeOverride="join"
+            passportHref={passportUrl}
+          />
+        </div>
+      )}
+      <TrailShell
+        eventName={eventName ?? "Your passport"}
+        primaryColor={PRIMARY}
+        accentColor={ACCENT}
+        showBottomNav={false}
+        topLeft={
+          <span
+            className="font-trail-serif text-base font-semibold"
+            style={{ color: PRIMARY }}
+          >
+            {eventName ?? "Your passport"}
+          </span>
+        }
+      >
       <div className="mx-auto w-full max-w-md">
         <div className="text-center">
           <div
