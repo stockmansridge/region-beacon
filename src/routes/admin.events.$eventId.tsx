@@ -219,6 +219,7 @@ function EventDetail() {
     agency.selected?.role === "agency_owner" ||
     agency.selected?.role === "agency_admin";
 
+  const [diagnosticsEnabled] = useDiagnosticsEnabled();
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
