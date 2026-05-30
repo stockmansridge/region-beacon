@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
+import { PoweredByGetStampd } from "@/components/brand";
 
 export const Route = createFileRoute("/checkin/$qrToken")({
   head: () => ({ meta: [{ title: "Check in — GetStampd" }] }),
@@ -268,9 +269,7 @@ function CheckinView({ outcome }: { outcome: Outcome }) {
           </a>
         </div>
 
-        <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
-          Powered by GetStampd
-        </p>
+        <div className="mt-6 flex justify-start"><PoweredByGetStampd variant="trail" /></div>
       </div>
     </div>
   );

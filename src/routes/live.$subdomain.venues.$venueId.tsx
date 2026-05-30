@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { PoweredByGetStampd } from "@/components/brand";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
@@ -217,9 +218,7 @@ function PublicVenueDetailPage() {
             Scan the venue QR to collect your stamp.
           </div>
 
-          <p className="mt-8 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
-            Powered by GetStampd
-          </p>
+          <div className="mt-8 flex justify-center"><PoweredByGetStampd variant="trail" /></div>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { PoweredByGetStampd } from "@/components/brand";
 
 export const Route = createFileRoute("/live/$subdomain/venues")({
   head: () => ({ meta: [{ title: "Venues" }] }),
@@ -156,9 +157,7 @@ function PublicVenuesListPage() {
           </ul>
         )}
 
-        <p className="mt-8 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
-          Powered by GetStampd
-        </p>
+        <div className="mt-8 flex justify-center"><PoweredByGetStampd variant="trail" /></div>
       </div>
     </div>
   );
@@ -195,9 +194,7 @@ function NotLiveYet() {
           This passport experience isn't available right now. Please check back
           closer to the event, or contact the organiser for details.
         </p>
-        <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
-          Powered by GetStampd
-        </p>
+        <div className="mt-6 flex justify-start"><PoweredByGetStampd variant="trail" /></div>
       </div>
     </div>
   );
