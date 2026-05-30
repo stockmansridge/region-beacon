@@ -1034,6 +1034,12 @@ function EventDetail() {
           </Link>
           .
         </EmptyNotice>
+        <DiagnosticPanel
+          diagnostic={diagnostic}
+          eventId={eventId}
+          agencyId={agencyId}
+          userId={auth.session?.user.id ?? null}
+        />
       </>
     );
   }
@@ -1043,8 +1049,18 @@ function EventDetail() {
       <>
         <PageHeader title="Event detail" description="" />
         <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Could not load event detail.
+          Could not load event detail.{" "}
+          <Link to="/admin/events" className="font-medium underline">
+            Back to events
+          </Link>
+          .
         </div>
+        <DiagnosticPanel
+          diagnostic={diagnostic}
+          eventId={eventId}
+          agencyId={agencyId}
+          userId={auth.session?.user.id ?? null}
+        />
       </>
     );
   }
