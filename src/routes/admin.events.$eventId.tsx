@@ -2285,53 +2285,34 @@ function LoadDiagnosticPanel({
   eventId,
   agencyId,
   userId,
-  canCopy,
+  email,
 }: {
   diagnostic: LoadDiagnostic | null;
   eventId: string;
   agencyId: string | null;
   userId: string | null;
-  canCopy?: boolean;
+  email?: string | null;
 }) {
-  const [copied, setCopied] = useState(false);
-  const payload = {
+  const rows = {
     step: diagnostic?.step ?? "unknown",
-    message: diagnostic?.message ?? "No additional diagnostic captured.",
+    result: diagnostic?.message ?? "No additional diagnostic captured.",
     code: diagnostic?.code ?? null,
     details: diagnostic?.details ?? null,
     hint: diagnostic?.hint ?? null,
-    eventId,
-    agencyId,
-    userId,
-    href: typeof window !== "undefined" ? window.location.href : null,
-    capturedAt: new Date().toISOString(),
+    attempted_event_id: eventId,
+    current_agency_id: agencyId,
+    current_user_id: userId,
   };
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      setCopied(false);
-    }
-  }
+  const getReport = () =>
+    formatDiagnosticReport("Event load diagnostic", rows, { adminEmail: email });
 
   return (
     <details className="mt-4 rounded-md border bg-muted/30 px-4 py-3 text-xs text-muted-foreground" open>
       <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground">
-        <span>Diagnostics (for support)</span>
-        {canCopy && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              copy();
-            }}
-            className="ml-2 inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs hover:bg-muted"
-          >
-            {copied ? "Copied" : "Copy diagnostic"}
-          </button>
-        )}
+        <span>Diagnostics (platform_admin)</span>
+        <span onClick={(e) => e.preventDefault()}>
+          <DiagnosticCopyButton getReport={getReport} />
+        </span>
       </summary>
       <dl className="mt-3 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 font-mono">
         <dt>Attempted event id</dt>
@@ -2341,19 +2322,20 @@ function LoadDiagnosticPanel({
         <dt>Current user id</dt>
         <dd className="break-all">{userId ?? "(not signed in)"}</dd>
         <dt>Failing step</dt>
-        <dd className="break-all">{payload.step}</dd>
+        <dd className="break-all">{rows.step}</dd>
         <dt>Result</dt>
-        <dd className="break-all whitespace-pre-wrap">{payload.message}</dd>
+        <dd className="break-all whitespace-pre-wrap">{rows.result}</dd>
         <dt>Code</dt>
-        <dd className="break-all">{payload.code ?? "—"}</dd>
+        <dd className="break-all">{rows.code ?? "—"}</dd>
         <dt>Details</dt>
-        <dd className="break-all whitespace-pre-wrap">{payload.details ?? "—"}</dd>
+        <dd className="break-all whitespace-pre-wrap">{rows.details ?? "—"}</dd>
         <dt>Hint</dt>
-        <dd className="break-all">{payload.hint ?? "—"}</dd>
+        <dd className="break-all">{rows.hint ?? "—"}</dd>
       </dl>
     </details>
   );
 }
+
 
 type ResolveEventByHostRow = {
   kind: string;
