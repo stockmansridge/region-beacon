@@ -45,6 +45,7 @@ export function AdminShell({
   isPlatformAdmin?: boolean;
 }) {
   const navigate = useNavigate();
+  const [diagnosticsEnabled, setDiagnosticsEnabled] = useDiagnosticsEnabled();
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/admin/login", replace: true });
