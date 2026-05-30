@@ -16,6 +16,18 @@ Supabase project.
 
 ---
 
+## 0. Pre-step — confirm the production Supabase region
+
+Before creating `getstampd-staging`, look up the production Supabase
+project in the Supabase dashboard (Project Settings → General) and
+record its region (e.g. `ap-southeast-2 (Sydney)`). The staging project
+**must** be created in the same region so latency, RLS timing, and any
+region-pinned extensions behave identically. Write the confirmed region
+into this doc before moving to section 1; if it cannot be confirmed,
+stop and ask — do not guess.
+
+---
+
 ## 1. New Supabase staging project requirements
 
 Create a brand-new Supabase project (do **not** clone, do **not** branch
@@ -108,9 +120,17 @@ The Cloudflare Worker is built and deployed from a separate pipeline.
 Its build env (`VITE_SUPABASE_*`, `SUPABASE_*`) is **untouched** in
 Phase C2. Verification after Phase C2 ships:
 
-- Hit `https://getstampd.com.au/debug/worker-health` → `hasSupabaseUrl: true`,
-  `hasSupabaseKey: true`, and the URL fragment in the response should still
-  match the production Supabase project ref.
+- Hit `https://getstampd.com.au/debug/worker-health` → confirm
+  `hasSupabaseUrl: true` and `hasSupabaseKey: true`. Use this **only**
+  to prove the production Worker received its Supabase build env vars.
+  Do **not** rely on this endpoint to assert which Supabase project ref
+  is in use — treat any project-ref field it happens to expose as
+  incidental, not contractual.
+- Verify the production Supabase project ref via the browser **Network**
+  tab on `https://app.getstampd.com.au/admin` (any Supabase request URL
+  will contain the prod project ref), or via an authenticated
+  platform_admin-only diagnostic surface. Never publish project-ref
+  verification through a public debug endpoint.
 - Spot-check `https://app.getstampd.com.au/admin` → existing production
   data (agencies, events) still visible to an existing prod admin.
 - Spot-check `https://ready-marketing.getstampd.com.au/` → still resolves
@@ -121,33 +141,61 @@ phase.
 
 ---
 
-## 5. Seeding staging with synthetic agencies/events/users only
+## 5. Seeding staging — split into SQL data + auth user script
 
-Author one new file: `supabase/staging-seed/01_synthetic.sql`. It runs
-**only against staging** (never linked to production migrations). The
-seed creates:
+Seeding is done in **two passes**. `auth.admin.createUser` is a
+service-role API call, not SQL, and must never appear inside a `.sql`
+file.
+
+### 5a. `scripts/staging/create-synthetic-users.ts` (auth users first)
+
+A standalone Node/Bun script run locally by an operator with the
+**staging** `SUPABASE_SERVICE_ROLE_KEY` exported in their shell. It uses
+`@supabase/supabase-js` `auth.admin.createUser` to create:
+
+- 1 synthetic `platform_admin` (`staging-admin@example.test`)
+- 1 synthetic `agency_owner` per synthetic agency (both `@example.test`)
+- 5 synthetic visitors per event (`@example.test`)
+
+The script:
+- Refuses to run if `SUPABASE_URL` host does not contain the staging
+  project ref (hard guard against accidental prod execution).
+- Generates random passwords, prints the platform_admin password once to
+  stdout for the operator to paste into 1Password, and discards the rest.
+- Writes the resulting `auth.users.id` values to
+  `supabase/staging-seed/.generated-user-ids.json` (gitignored) for the
+  SQL pass to consume, **or** prints an `INSERT … VALUES` block the
+  operator pastes into `01_synthetic_data.sql` before running it.
+- Is idempotent: if a user with that email already exists, it reuses the
+  existing id instead of failing.
+
+### 5b. `supabase/staging-seed/01_synthetic_data.sql` (data only)
+
+Runs **only against staging**. Creates non-auth data and links the
+already-created synthetic `auth.users` ids into membership/admin
+tables. It does **not** call `auth.admin.createUser`, does **not** touch
+`auth.users` directly, and does **not** insert into `auth.*` schemas.
+
+Contents:
 
 - 2 synthetic agencies (`acme-trails`, `demo-vino`) via `agencies` insert
   with fabricated slugs.
-- 1 synthetic platform_admin user (e.g. `staging-admin@example.test`)
-  created via `auth.admin.createUser` with a randomly generated password
-  stored in 1Password.
-- 1 synthetic agency_owner per agency, both `@example.test` addresses.
+- Membership rows linking the synthetic platform_admin / agency_owner
+  user ids (from 5a) into `user_roles`, `agency_members`, etc.
 - 2 events per agency, status `draft`, with synthetic venues,
   `event_branding`, `event_domains` (using `*.staging.invalid` subdomains
   that are never resolvable in DNS).
-- 5 synthetic visitors per event with `@example.test` emails and no real
-  phone numbers / addresses.
-- All visitor display names are obviously fake (`Test Visitor 1`, etc.).
+- 5 visitor rows per event linked to the visitor `auth.users.id` values
+  from 5a, with obviously fake display names (`Test Visitor 1`, etc.).
 
-Hard rules for the seed:
+Hard rules for both passes:
 - Every email address ends in `@example.test`, `@example.com`, or
   `@example.org` (reserved-by-IANA, will never deliver).
 - No phone numbers, no real addresses, no real lat/lng (use the Null
   Island fallback `0,0` plus a `description: "synthetic"`).
-- No copying from `pg_dump` of production. The seed file is hand-written.
-- The seed is idempotent (`ON CONFLICT DO NOTHING`) so it can be re-run
-  during staging reset.
+- No copying from `pg_dump` of production. Both files are hand-written.
+- Both passes are idempotent (`ON CONFLICT DO NOTHING` in SQL; "reuse
+  existing user" branch in the TS script) so staging reset is safe.
 
 ---
 
@@ -203,10 +251,11 @@ Run before declaring C2 complete. Each check is independent.
 6. **Build banner check.** Lovable preview shows the amber `TestEnvBanner`
    strip at the top of `/admin`. `https://app.getstampd.com.au/admin/` does
    **not** show it.
-7. **`/debug/worker-health` parity check.** Both environments still return
-   `runtime: "cloudflare-worker"` (production) or `runtime: "node"` /
-   equivalent (Lovable preview), with the correct project ref baked into
-   the response.
+7. **`/debug/worker-health` env-presence check.** Both environments
+   return `hasSupabaseUrl: true` and `hasSupabaseKey: true`. Use this
+   check only to confirm the Worker received Supabase env vars — not to
+   assert which project ref is in use (see section 4 for the
+   Network-tab / admin-only project-ref check).
 
 A single failed check blocks the rollout; do not "fix forward" by
 patching env vars in production.
