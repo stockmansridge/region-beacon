@@ -2,9 +2,16 @@
 
 Status: **PREP ONLY**. Cloudflare DNS is authoritative for `getstampd.com.au`
 (nameservers cut over at Crazy Domains). No Worker is deployed, no records
-added beyond Cloudflare's import, no production SQL applied.
+added beyond Cloudflare's import, no further SQL pending.
 
 Lovable remains preview/dev. Cloudflare becomes production hosting + routing.
+
+> **Environment model (post-promotion):** the Supabase project currently
+> connected to this repo is the **production / live** database (1 agency,
+> 4 events, tenant-routing SQL already applied). Lovable preview/dev is
+> temporarily pointed at the same project. A separate staging/dev Supabase
+> project will be created **after** Cloudflare production is stable. There
+> is no separate "staging DB" to maintain right now.
 
 ---
 
@@ -31,24 +38,32 @@ Lovable remains preview/dev. Cloudflare becomes production hosting + routing.
 
 All three are replaced by Vite at **build time** (not runtime). Behavior:
 
-| Build context                          | `VITE_DEPLOY_TARGET` | Supabase env vars | Resolves to        |
-| -------------------------------------- | -------------------- | ----------------- | ------------------ |
-| Lovable preview / dev                  | unset                | unset             | Staging fallback   |
-| Cloudflare test deploy (workers.dev)   | `cloudflare`         | **Required**      | Whatever you set (use prod) |
-| Cloudflare production cutover          | `cloudflare`         | **Required**      | Production project |
+| Build context                          | `VITE_DEPLOY_TARGET` | Supabase env vars | Resolves to                              |
+| -------------------------------------- | -------------------- | ----------------- | ---------------------------------------- |
+| Lovable preview / dev                  | unset                | unset             | Hardcoded fallback (= current/live project) |
+| Cloudflare test deploy (workers.dev)   | `cloudflare`         | **Required**      | Whatever you set (use the live project)  |
+| Cloudflare production cutover          | `cloudflare`         | **Required**      | The live project (same values)           |
 
-Three guards make this safe:
-1. **Build-time guard** — if `VITE_DEPLOY_TARGET=cloudflare` and either Supabase env var is missing, the module throws at init. This catches any Cloudflare build — including `workers.dev` — that forgot to bake in the env vars.
-2. If both env vars and the fallback are missing → throws at module init.
-3. **Runtime host guard** — if the page loads on `*.getstampd.com` / `*.getstampd.com.au` and the staging fallback is in use, the module throws at boot.
+Guards:
+1. **Build-time guard** — `VITE_DEPLOY_TARGET=cloudflare` without both Supabase
+   env vars → throws at module init. Cloudflare deploys must be explicit; they
+   never silently inherit the hardcoded fallback.
+2. **Missing-config guard** — neither env vars nor fallback present → throws.
 
 ### Setting the build env
+
+The current/live Supabase project values (use these for both the
+workers.dev test deploy and the eventual production cutover):
+
+- `VITE_SUPABASE_URL`            = `https://kyjwifumacnrpgyextzz.supabase.co`
+- `VITE_SUPABASE_PUBLISHABLE_KEY` = the anon JWT hardcoded in
+  `src/integrations/supabase/client.ts` (`CURRENT_PROJECT_PUBLISHABLE_KEY`)
 
 ```bash
 # Inline (one-off) — REQUIRED form for any Cloudflare build
 VITE_DEPLOY_TARGET=cloudflare \
-VITE_SUPABASE_URL=https://<prod-project>.supabase.co \
-VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt> \
+VITE_SUPABASE_URL=https://kyjwifumacnrpgyextzz.supabase.co \
+VITE_SUPABASE_PUBLISHABLE_KEY=<live-anon-jwt> \
   bun run build
 ```
 
@@ -56,8 +71,8 @@ VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt> \
 # Or a local .env.production.local (gitignored)
 cat > .env.production.local <<'ENV'
 VITE_DEPLOY_TARGET=cloudflare
-VITE_SUPABASE_URL=https://<prod-project>.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt>
+VITE_SUPABASE_URL=https://kyjwifumacnrpgyextzz.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<live-anon-jwt>
 ENV
 bun run build
 ```
@@ -65,14 +80,9 @@ bun run build
 Vite auto-loads `.env.production.local` for `mode=production` (the default for
 `vite build`). Do not commit it.
 
-Lovable preview/dev keeps working with no env wiring — `VITE_DEPLOY_TARGET` is
-unset there, so the cloudflare guard doesn't fire and the staging fallback is
-used.
-
-**Capture before first deploy:**
-- production Supabase project URL
-- production Supabase `anon` / publishable JWT (NOT service role)
-
+Lovable preview/dev keeps working with no env wiring — `VITE_DEPLOY_TARGET`
+is unset there, so the cloudflare guard doesn't fire and the hardcoded
+fallback (= live project) is used.
 
 ### Runtime env (Worker `[vars]` / secrets)
 
@@ -103,18 +113,22 @@ Fill in `account_id` before the first deploy (`wrangler whoami` after `wrangler 
 
 ## 4. First test deploy (workers.dev only — safe, no DNS impact)
 
+> ⚠️ This test deploy hits the **live** Supabase project (the only project
+> that exists right now). Reads are RLS-gated by the anon key, but treat any
+> write actions during smoke testing as production traffic.
+
 ```bash
 # One-time setup
 bun add -d wrangler
 bunx wrangler login
 bunx wrangler whoami         # paste account_id into wrangler.toml
 
-# Build with PROD Supabase env baked in (VITE_DEPLOY_TARGET is REQUIRED
+# Build with the live Supabase env baked in (VITE_DEPLOY_TARGET is REQUIRED
 # for any Cloudflare build — the client's build-time guard refuses to bake
-# the staging fallback when this flag is set).
+# the hardcoded fallback when this flag is set).
 VITE_DEPLOY_TARGET=cloudflare \
-VITE_SUPABASE_URL=https://<prod>.supabase.co \
-VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt> \
+VITE_SUPABASE_URL=https://kyjwifumacnrpgyextzz.supabase.co \
+VITE_SUPABASE_PUBLISHABLE_KEY=<live-anon-jwt> \
   bun run build
 
 # Local smoke against the Worker runtime
@@ -127,8 +141,8 @@ bunx wrangler deploy
 **Smoke the workers.dev URL** before touching zone routes:
 - `https://getstampd-prod.<account>.workers.dev/` → marketing index
 - `/admin` → login screen
-- DevTools → Network: Supabase requests go to the **production** project URL
-- Console: no errors, no "Refusing to use staging fallback" guard fired
+- DevTools → Network: Supabase requests go to `kyjwifumacnrpgyextzz.supabase.co`
+- Console: no errors
 
 Production hostnames (`getstampd.com.au`, `www`, `app`) are unaffected because
 no zone routes are bound.
@@ -185,9 +199,11 @@ change nameservers back at Crazy Domains (propagation: up to 24h).
 L3 — **Revert the Worker**: `bunx wrangler rollback`, or redeploy a known-good
 git SHA.
 
-### Production SQL
-Non-destructive, not yet applied. Rollback never requires touching SQL. Full
-clean (only if ever needed):
+### SQL
+Tenant-routing SQL is already applied to the live database and is considered
+production-ready. Do **not** re-apply `PRODUCTION_BUNDLE.sql` to the same
+database; it is not guaranteed idempotent. Rollback never requires touching
+SQL. Full clean (only if ever needed):
 
 ```sql
 DROP FUNCTION IF EXISTS public.resolve_agency_by_subdomain(text);
@@ -199,7 +215,8 @@ ALTER TABLE public.agencies DROP CONSTRAINT IF EXISTS agencies_slug_public_subdo
 
 ## Outstanding before first **production** cutover
 
-1. Capture production Supabase URL + anon key, set in build env.
-2. `wrangler login`, paste `account_id` into `wrangler.toml`.
-3. Run the workers.dev test deploy and smoke it.
-4. Schedule the Phase A DNS window.
+1. `wrangler login`, paste `account_id` into `wrangler.toml`.
+2. Run the workers.dev test deploy and smoke it (against the live project).
+3. Schedule the Phase A DNS window.
+4. (Later, post-cutover) provision a separate staging/dev Supabase project and
+   re-point Lovable preview/dev at it.

@@ -1,9 +1,14 @@
 # Tenant Routing — Production Cutover Checklist
 
-**Status:** DRAFT. Do NOT execute any step here against production without
-explicit user approval per step. Staging is complete and green
-(01 + 02 patched + 03 applied; 04 verify 1–6 all pass against
-`ready-marketing` / `orange-wine-festival-test` / `evt-metaecph3f`).
+> **STATUS UPDATE (post-promotion):** the database referred to here as
+> "staging" has been promoted to **live / production**. All SQL in this
+> checklist (01 + 02 patched + 03; verify 1–6 green against
+> `ready-marketing` / `orange-wine-festival-test` / `evt-metaecph3f`) is
+> **already applied** to the live database. Do not re-run
+> `PRODUCTION_BUNDLE.sql` against the same project. See `PROMOTION_NOTE.md`.
+
+**Status:** historical reference. Retained for re-use against a future,
+separate staging/dev project.
 
 Scope guardrails (do NOT cross):
 - No changes to production RLS.

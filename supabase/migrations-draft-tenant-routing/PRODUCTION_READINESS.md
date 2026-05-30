@@ -1,7 +1,17 @@
 # Tenant Routing — Production Readiness
 
+> **STATUS UPDATE (post-promotion):** the Supabase project formerly called
+> "staging" in this document is now the **live / production** database. The
+> tenant-routing SQL described below has **already been applied** to it and
+> is considered production-ready. Treat every reference to "staging" or
+> "production database" in the body below as the **current connected
+> project**. Do **NOT** re-apply `PRODUCTION_BUNDLE.sql` to this database
+> (not guaranteed idempotent). See `PROMOTION_NOTE.md` for the canonical
+> statement. This file is retained for historical reference and for re-use
+> against a future, separate staging/dev project.
+
 Companion to `PRODUCTION_BUNDLE.sql` and `PRODUCTION_CUTOVER_CHECKLIST.md`.
-**Nothing in this doc has been applied to production.** DNS unchanged.
+DNS unchanged.
 `NOT VALID` constraint left unvalidated. `event_domains` and `/live/*`
 untouched.
 
