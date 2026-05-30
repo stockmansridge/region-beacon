@@ -133,33 +133,61 @@ phase.
 
 ---
 
-## 5. Seeding staging with synthetic agencies/events/users only
+## 5. Seeding staging — split into SQL data + auth user script
 
-Author one new file: `supabase/staging-seed/01_synthetic.sql`. It runs
-**only against staging** (never linked to production migrations). The
-seed creates:
+Seeding is done in **two passes**. `auth.admin.createUser` is a
+service-role API call, not SQL, and must never appear inside a `.sql`
+file.
+
+### 5a. `scripts/staging/create-synthetic-users.ts` (auth users first)
+
+A standalone Node/Bun script run locally by an operator with the
+**staging** `SUPABASE_SERVICE_ROLE_KEY` exported in their shell. It uses
+`@supabase/supabase-js` `auth.admin.createUser` to create:
+
+- 1 synthetic `platform_admin` (`staging-admin@example.test`)
+- 1 synthetic `agency_owner` per synthetic agency (both `@example.test`)
+- 5 synthetic visitors per event (`@example.test`)
+
+The script:
+- Refuses to run if `SUPABASE_URL` host does not contain the staging
+  project ref (hard guard against accidental prod execution).
+- Generates random passwords, prints the platform_admin password once to
+  stdout for the operator to paste into 1Password, and discards the rest.
+- Writes the resulting `auth.users.id` values to
+  `supabase/staging-seed/.generated-user-ids.json` (gitignored) for the
+  SQL pass to consume, **or** prints an `INSERT … VALUES` block the
+  operator pastes into `01_synthetic_data.sql` before running it.
+- Is idempotent: if a user with that email already exists, it reuses the
+  existing id instead of failing.
+
+### 5b. `supabase/staging-seed/01_synthetic_data.sql` (data only)
+
+Runs **only against staging**. Creates non-auth data and links the
+already-created synthetic `auth.users` ids into membership/admin
+tables. It does **not** call `auth.admin.createUser`, does **not** touch
+`auth.users` directly, and does **not** insert into `auth.*` schemas.
+
+Contents:
 
 - 2 synthetic agencies (`acme-trails`, `demo-vino`) via `agencies` insert
   with fabricated slugs.
-- 1 synthetic platform_admin user (e.g. `staging-admin@example.test`)
-  created via `auth.admin.createUser` with a randomly generated password
-  stored in 1Password.
-- 1 synthetic agency_owner per agency, both `@example.test` addresses.
+- Membership rows linking the synthetic platform_admin / agency_owner
+  user ids (from 5a) into `user_roles`, `agency_members`, etc.
 - 2 events per agency, status `draft`, with synthetic venues,
   `event_branding`, `event_domains` (using `*.staging.invalid` subdomains
   that are never resolvable in DNS).
-- 5 synthetic visitors per event with `@example.test` emails and no real
-  phone numbers / addresses.
-- All visitor display names are obviously fake (`Test Visitor 1`, etc.).
+- 5 visitor rows per event linked to the visitor `auth.users.id` values
+  from 5a, with obviously fake display names (`Test Visitor 1`, etc.).
 
-Hard rules for the seed:
+Hard rules for both passes:
 - Every email address ends in `@example.test`, `@example.com`, or
   `@example.org` (reserved-by-IANA, will never deliver).
 - No phone numbers, no real addresses, no real lat/lng (use the Null
   Island fallback `0,0` plus a `description: "synthetic"`).
-- No copying from `pg_dump` of production. The seed file is hand-written.
-- The seed is idempotent (`ON CONFLICT DO NOTHING`) so it can be re-run
-  during staging reset.
+- No copying from `pg_dump` of production. Both files are hand-written.
+- Both passes are idempotent (`ON CONFLICT DO NOTHING` in SQL; "reuse
+  existing user" branch in the TS script) so staging reset is safe.
 
 ---
 
