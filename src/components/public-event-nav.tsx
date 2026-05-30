@@ -68,8 +68,17 @@ export function PublicEventNav({
     ...(canRegister
       ? [{
           key: "join",
-          label: "Start passport",
-          node: (
+          label: passportHref ? "Passport" : "Start passport",
+          node: passportHref ? (
+            <a
+              href={passportHref}
+              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+              style={{ color: primary }}
+              aria-current={isActive("join") ? "page" : undefined}
+            >
+              Passport
+            </a>
+          ) : (
             <Link
               to="/live/$subdomain/join"
               params={{ subdomain }}
