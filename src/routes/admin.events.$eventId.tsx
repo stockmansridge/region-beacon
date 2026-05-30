@@ -2473,20 +2473,69 @@ function PublishGateDiagnostic({
     </div>
   );
 
+  const getReport = () =>
+    formatDiagnosticReport(
+      "Publish gate diagnostic",
+      {
+        event_id: event.id,
+        agency_id: event.agency_id,
+        event_status: event.status,
+        public_slug: event.public_slug,
+        public_url: publicUrl,
+        public_host: publicHostDisplay,
+        rpc_host_sent: rpcHost,
+        rpc_host_note:
+          "Legacy *.getstamped.com.au host used because DB resolve_event_by_host suffix migration is pending; customer-facing URL still uses " +
+          PUBLIC_TENANT_ROOT_DOMAIN,
+        starts_at: event.starts_at,
+        ends_at: event.ends_at,
+        date_window_valid: dateWindowValid,
+        terms_version_id: event.current_terms_version_id,
+        terms_version: terms?.terms_version ?? null,
+        terms_legal_source: terms?.legal_source ?? null,
+        checkin_settings_present: Boolean(checkin),
+        checkin_one_per_venue: checkin?.one_checkin_per_venue ?? null,
+        checkin_min_gap_seconds: checkin?.minimum_seconds_between_checkins ?? null,
+        venue_count: venues.length,
+        domains: domains.map((d) => ({
+          id: d.id,
+          domain_type: d.domain_type,
+          public_subdomain: d.public_subdomain,
+          custom_domain: d.custom_domain,
+          is_primary: d.is_primary,
+          status: d.status,
+        })),
+        activation: activation
+          ? { activation_kind: activation.activation_kind, status: activation.status }
+          : null,
+        event_is_publishable_rpc: isPublishable,
+        event_is_publishable_error: publishableError,
+        resolve_event_by_host_rpc: resolveRow,
+        resolve_event_by_host_error: resolveError,
+      },
+    );
+
   return (
     <section className="rounded-xl border border-amber-300/60 bg-amber-50/40 p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Publish gate diagnostic (platform_admin)</h3>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          read-only · live RPC
-        </span>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">Publish gate diagnostic (platform_admin)</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Live view of every condition the public <code>resolve_event_by_host</code> gate
+            evaluates. Shown only to platform admins with the diagnostics toggle on. Uses the
+            legacy RPC host (<code>{rpcHost ?? "—"}</code>) while the DB suffix migration is
+            pending; the customer-facing URL below uses{" "}
+            <code>{PUBLIC_TENANT_ROOT_DOMAIN}</code>.
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <DiagnosticCopyButton getReport={getReport} />
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            read-only · live RPC
+          </span>
+        </div>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Live view of every condition the public <code>resolve_event_by_host</code> gate
-        evaluates. Shown only to platform admins. Uses the legacy RPC host
-        (<code>{rpcHost ?? "—"}</code>) while the DB suffix migration is pending; the
-        customer-facing URL below uses <code>{PUBLIC_TENANT_ROOT_DOMAIN}</code>.
-      </p>
+
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="rounded-lg border bg-background p-4">
