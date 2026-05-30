@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Force nitro on for Cloudflare builds outside the Lovable sandbox (e.g.
+  // Cloudflare's GitHub-based build pipeline). Without this the plugin
+  // auto-detects "no Lovable context" and skips the nitro deploy bundle,
+  // leaving only `dist/` (plain Vite output) and no Worker entry for wrangler.
+  // With `nitro: true`, the build emits `dist/server/server.js` (Worker entry)
+  // and `dist/client/` (static assets) — wrangler.toml points at those.
+  nitro: true,
 });

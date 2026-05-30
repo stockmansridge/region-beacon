@@ -7,7 +7,12 @@
 # Build output is produced by `bun run build` (nitro cloudflare-module).
 
 name = "getstampd-prod"
-main = ".output/server/index.mjs"
+# Build output layout (from @lovable.dev/vite-tanstack-config with `nitro: true`):
+#   - Worker entry: dist/server/server.js
+#       (filename is `server.js` because vite.config.ts sets
+#        tanstackStart.server.entry = "server", which maps to src/server.ts)
+#   - Static assets: dist/client/
+main = "dist/server/server.js"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 # account_id = "<fill-in-before-first-deploy>"
@@ -18,7 +23,7 @@ workers_dev = true
 
 # Serve the built static assets directly from the Worker.
 [assets]
-directory = ".output/public"
+directory = "dist/client"
 binding = "ASSETS"
 
 [vars]
