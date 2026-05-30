@@ -164,6 +164,7 @@ export function AdminShell({
         </header>
         <div className="flex-1 p-6 lg:p-8">{children ?? <Outlet />}</div>
       </div>
+      </div>
     </div>
   );
 }
