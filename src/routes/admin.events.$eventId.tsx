@@ -537,6 +537,7 @@ function EventDetail() {
 
         // Optional venues.offer_summary column — degrade silently if missing.
         const offerSummaryByVenue = new Map<string, string | null>();
+        let offerSupported = false;
         if (venues.length > 0) {
           try {
             const { data: offerRows, error: offerErr } = await supabase
@@ -546,6 +547,7 @@ function EventDetail() {
               .eq("event_id", event.id)
               .in("id", venues.map((v) => v.id));
             if (!offerErr && Array.isArray(offerRows)) {
+              offerSupported = true;
               for (const row of offerRows as unknown as Array<{ id: string; offer_summary: string | null }>) {
                 offerSummaryByVenue.set(row.id, row.offer_summary ?? null);
               }
@@ -566,6 +568,7 @@ function EventDetail() {
           venues,
           qrByVenue,
           offerSummaryByVenue,
+          offerSupported,
           activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
         });
         setState("ready");
