@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+// `Link` is retained for downstream callers passing custom topLeft via this module's re-exports.
+void Link;
 import { ReactNode } from "react";
 import { Stamp, Map as MapIcon, Wine, Gift, MoreHorizontal } from "lucide-react";
 import { DEFAULT_VENUE_LABEL_PLURAL } from "@/lib/venue-labels";
