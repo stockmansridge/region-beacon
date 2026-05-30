@@ -1384,6 +1384,17 @@ function EventDetail() {
                                       <QrPreview
                                         value={built.url}
                                         downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+                                        poster={{
+                                          eventName: event.name,
+                                          venueName: v.name,
+                                          logoUrl: getEventAssetPublicUrl(branding?.logo_path),
+                                          primaryColor: branding?.primary_color ?? null,
+                                          accentColor: branding?.accent_color ?? null,
+                                          filename: posterFilename(
+                                            event.public_slug ?? event.slug,
+                                            v.name,
+                                          ),
+                                        }}
                                       />
                                     </div>
                                   )}
