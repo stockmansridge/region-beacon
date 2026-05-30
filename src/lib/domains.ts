@@ -35,6 +35,31 @@ export function tenantUrl(subdomain: string, path: string = ""): string {
   return `https://${tenantHost(subdomain)}${suffix}`;
 }
 
+/**
+ * RPC-compatibility host for the legacy `public.resolve_event_by_host` (and
+ * its siblings: `get_public_event_by_domain`, `get_public_venues_by_domain`,
+ * `get_public_event_venues_by_domain`, `get_public_leaderboard_by_domain`,
+ * `get_public_event_announcements_by_domain`).
+ *
+ * The currently-deployed SQL function hardcodes the legacy spelling
+ * `.getstamped.com.au` as its suffix check. Until a DB migration replaces
+ * that suffix with `.getstampd.com.au`, any `*.getstampd.com.au` host
+ * passed to those RPCs falls into the custom-domain branch and returns
+ * `not_found`, which surfaces in the UI as "Event not live yet".
+ *
+ * Until that migration lands, public `/live/*` routes MUST pass this
+ * legacy host into `_hostname` so the RPC resolves correctly. This is the
+ * ONLY place in product code allowed to mint a `getstamped.com.au` host —
+ * customer-facing URLs, QR codes, posters, share links, and admin
+ * preview links all continue to use `PUBLIC_TENANT_ROOT_DOMAIN`
+ * (`getstampd.com.au`).
+ */
+const LEGACY_RPC_ROOT_DOMAIN = "getstamped.com.au" as const;
+
+export function rpcEventHost(subdomain: string): string {
+  return `${subdomain}.${LEGACY_RPC_ROOT_DOMAIN}`;
+}
+
 /** Returns the matching root domain (without subdomain) for a hostname, or null. */
 export function matchRootDomain(hostname: string): RootDomain | null {
   const host = hostname.toLowerCase().split(":")[0];
