@@ -365,7 +365,19 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
               className="mb-4 rounded-xl border border-[#E8B5A3] bg-[#FBE3D6] px-3 py-2 text-sm"
               style={{ color: "#7A2E13" }}
             >
-              {topError}
+              <div>{topError}</div>
+              {debugInfo && (
+                <CopySupportDetailsButton
+                  build={() =>
+                    buildSupportReport(debugInfo, {
+                      event_id: event.event_id,
+                      subdomain,
+                      accepted_terms: form.accept_terms,
+                      terms_version_id: event.current_terms_version_id,
+                    })
+                  }
+                />
+              )}
             </div>
           )}
 
