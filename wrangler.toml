@@ -4,14 +4,6 @@
 # This file is checked in so CI / the production deploy step can use it.
 #
 # Zone: getstampd.com.au (registrar: Crazy Domains, DNS: Cloudflare)
-# Build output is produced by `bun run build` (nitro cloudflare-module).
-
-# Cloudflare Workers config for GetStampd production.
-#
-# DO NOT `wrangler deploy` from a local machine without coordination.
-# This file is checked in so CI / the production deploy step can use it.
-#
-# Zone: getstampd.com.au (registrar: Crazy Domains, DNS: Cloudflare)
 # Build output is produced by `bun run build` (nitro cloudflare-module via
 # @lovable.dev/vite-tanstack-config with `nitro: true` in vite.config.ts).
 #
@@ -50,26 +42,6 @@ NODE_ENV = "production"
 # (Vite replaces import.meta.env.* at build). Set them in the CI/build env,
 # not here. Runtime-only secrets (service role, webhook secrets) go in
 # `wrangler secret put NAME` once they exist.
-compatibility_date = "2025-05-01"
-compatibility_flags = ["nodejs_compat"]
-# account_id = "<fill-in-before-first-deploy>"
-
-# First deploy: workers.dev only, no zone routes. Safe to deploy without
-# affecting any live getstampd.com.au hostname.
-workers_dev = true
-
-# Serve the built static assets directly from the Worker.
-[assets]
-directory = "dist/client"
-binding = "ASSETS"
-
-[vars]
-NODE_ENV = "production"
-# VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY are baked in at BUILD time
-# (Vite replaces import.meta.env.* at build). Set them in the CI/build env,
-# not here. Runtime-only secrets (service role, webhook secrets) go in
-# `wrangler secret put NAME` once they exist.
-
 # Production zone routes — wildcard SaaS routing.
 # Workers Custom Domains do NOT support wildcards; we use Worker Routes
 # attached to the zone. Each matching hostname needs a proxied (orange-cloud)
