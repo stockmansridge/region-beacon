@@ -97,6 +97,7 @@ type QrSummary = {
   venue_id: string;
   status: string;
   issued_at: string;
+  entry_value: number;
 };
 
 type Activation = {
@@ -235,6 +236,8 @@ function EventDetail() {
   const [qrActionVenueId, setQrActionVenueId] = useState<string | null>(null);
   const [qrActionError, setQrActionError] = useState<string | null>(null);
   const [qrCopiedVenueId, setQrCopiedVenueId] = useState<string | null>(null);
+  const [qrEntryDraft, setQrEntryDraft] = useState<Map<string, string>>(new Map());
+  const [qrEntrySavingId, setQrEntrySavingId] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -342,7 +345,7 @@ function EventDetail() {
       if (venues.length > 0) {
         const { data: qrRows, error: qrErr } = await supabase
           .from("venue_qr_codes")
-          .select("venue_id, status, issued_at")
+          .select("venue_id, status, issued_at, entry_value")
           .eq("agency_id", agencyId)
           .eq("event_id", event.id)
           .eq("status", "active")
@@ -887,6 +890,36 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  async function saveQrEntryValue(venueId: string, raw: string) {
+    if (!agencyId || !canEdit) return;
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > 100) {
+      setQrActionError("Entry value must be a whole number between 1 and 100.");
+      return;
+    }
+    setQrActionError(null);
+    setQrEntrySavingId(venueId);
+    const { error } = await supabase
+      .from("venue_qr_codes")
+      .update({ entry_value: parsed })
+      .eq("venue_id", venueId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId)
+      .eq("status", "active");
+    setQrEntrySavingId(null);
+    if (error) {
+      setQrActionError("Could not save entry value. Please try again.");
+      return;
+    }
+    setQrEntryDraft((m) => {
+      const next = new Map(m);
+      next.delete(venueId);
+      return next;
+    });
+    setReloadKey((k) => k + 1);
+  }
+
+
 
   if (eventId === "new") {
     return (
@@ -1370,6 +1403,58 @@ function EventDetail() {
                                     >
                                       {isBusy ? "Working…" : "Rotate QR"}
                                     </button>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed bg-muted/20 px-2 py-1.5">
+                                    <label
+                                      htmlFor={`entry-value-${v.id}`}
+                                      className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                                    >
+                                      Stamp value
+                                    </label>
+                                    <input
+                                      id={`entry-value-${v.id}`}
+                                      type="number"
+                                      min={1}
+                                      max={100}
+                                      step={1}
+                                      inputMode="numeric"
+                                      value={
+                                        qrEntryDraft.get(v.id) ??
+                                        String(qr!.entry_value ?? 1)
+                                      }
+                                      onChange={(e) => {
+                                        const val = e.currentTarget.value;
+                                        setQrEntryDraft((m) => {
+                                          const next = new Map(m);
+                                          next.set(v.id, val);
+                                          return next;
+                                        });
+                                      }}
+                                      className="h-7 w-16 rounded-md border bg-background px-2 text-xs"
+                                    />
+                                    {(() => {
+                                      const draft = qrEntryDraft.get(v.id);
+                                      const dirty =
+                                        draft !== undefined &&
+                                        draft !== String(qr!.entry_value ?? 1);
+                                      const saving = qrEntrySavingId === v.id;
+                                      if (!dirty && !saving) return null;
+                                      return (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            saveQrEntryValue(v.id, draft ?? "1")
+                                          }
+                                          disabled={saving}
+                                          className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                        >
+                                          {saving ? "Saving…" : "Save"}
+                                        </button>
+                                      );
+                                    })()}
+                                    <span className="basis-full text-[10px] leading-tight text-muted-foreground">
+                                      Changes apply to future scans only. Existing check-ins keep the value earned at scan time.
+                                    </span>
                                   </div>
                                   {revealed && built && (
                                     <div className="flex flex-col gap-2">

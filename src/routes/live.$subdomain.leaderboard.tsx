@@ -10,7 +10,11 @@ export const Route = createFileRoute("/live/$subdomain/leaderboard")({
 type LeaderboardRow = {
   rank: number | null;
   display_name: string | null;
+  stamps: number | null;
+  points: number | null;
   visit_count: number | null;
+  tier: string | null;
+  is_completed: boolean | null;
   is_enabled: boolean | null;
   event_found: boolean | null;
 };
@@ -42,12 +46,10 @@ function PublicLeaderboardPage() {
       }
       const rows = (data ?? []) as LeaderboardRow[];
 
-      // Sentinel: not found.
       if (rows.length === 0 || rows[0].event_found === false) {
         setState({ kind: "not_found" });
         return;
       }
-      // Sentinel: disabled (single row with display_name=null, is_enabled=false).
       if (
         rows.length === 1 &&
         rows[0].is_enabled === false &&
@@ -56,7 +58,6 @@ function PublicLeaderboardPage() {
         setState({ kind: "disabled" });
         return;
       }
-      // Data rows. Filter out any sentinel-shaped rows defensively.
       const dataRows = rows.filter(
         (r) => r.display_name !== null && r.rank !== null,
       );
@@ -157,32 +158,67 @@ function EmptyState({ title, body }: { title: string; body: string }) {
   );
 }
 
+function tierColor(tier: string | null): { bg: string; fg: string } {
+  const t = (tier ?? "").toLowerCase();
+  if (t === "complete") return { bg: "#1F3D2B", fg: "#F6EFE2" };
+  if (t === "gold") return { bg: "#C9A24A", fg: "#1F1A12" };
+  if (t === "silver") return { bg: "#B8B0A0", fg: "#1F1A12" };
+  if (t === "bronze") return { bg: "#B5572A", fg: "#F6EFE2" };
+  return { bg: "#E6DCC7", fg: "#3D372C" };
+}
+
 function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
   return (
     <ul className="space-y-2">
-      {rows.map((r, i) => (
-        <li
-          key={`${r.rank}-${r.display_name}-${i}`}
-          className="flex items-center gap-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 shadow-sm"
-        >
-          <RankBadge rank={r.rank ?? i + 1} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-trail-serif text-base font-semibold text-[#1F3D2B]">
-              {r.display_name ?? "Guest"}
-            </p>
-          </div>
-          {r.visit_count !== null && r.visit_count !== undefined && (
-            <div className="text-right">
-              <div className="text-lg font-semibold text-[#B5572A]">
-                {r.visit_count}
-              </div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#8A7E66]">
-                {r.visit_count === 1 ? "stamp" : "stamps"}
+      {rows.map((r, i) => {
+        const stamps = r.stamps ?? r.visit_count ?? null;
+        const points = r.points ?? null;
+        const tier = r.tier;
+        const tc = tierColor(tier);
+        return (
+          <li
+            key={`${r.rank}-${r.display_name}-${i}`}
+            className="flex items-center gap-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 shadow-sm"
+          >
+            <RankBadge rank={r.rank ?? i + 1} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-trail-serif text-base font-semibold text-[#1F3D2B]">
+                {r.display_name ?? "Guest"}
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                {tier && (
+                  <span
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                    style={{ backgroundColor: tc.bg, color: tc.fg }}
+                  >
+                    {tier}
+                  </span>
+                )}
+                {r.is_completed && (
+                  <span className="inline-flex items-center rounded-full bg-[#1F3D2B]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1F3D2B]">
+                    Completed
+                  </span>
+                )}
               </div>
             </div>
-          )}
-        </li>
-      ))}
+            <div className="text-right">
+              {points !== null && (
+                <div className="text-lg font-semibold text-[#B5572A]">
+                  {points}
+                  <span className="ml-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[#8A7E66]">
+                    pts
+                  </span>
+                </div>
+              )}
+              {stamps !== null && (
+                <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#8A7E66]">
+                  {stamps} {stamps === 1 ? "stamp" : "stamps"}
+                </div>
+              )}
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }
