@@ -267,6 +267,7 @@ function EventDetail() {
     }
     let cancelled = false;
     setState("loading");
+    setDiagnostic(null);
 
     (async () => {
       // 1. Fetch event with explicit agency_id filter — confirms ownership.
@@ -282,10 +283,33 @@ function EventDetail() {
 
       if (cancelled) return;
       if (evErr) {
+        console.error("[event-detail] events lookup failed", {
+          eventId,
+          agencyId,
+          userId: auth.session?.user.id ?? null,
+          error: evErr,
+        });
+        setDiagnostic({
+          step: "events",
+          message: evErr.message,
+          code: (evErr as any).code ?? null,
+          details: (evErr as any).details ?? null,
+          hint: (evErr as any).hint ?? null,
+        });
         setState("error");
         return;
       }
       if (!event) {
+        console.warn("[event-detail] events lookup returned no rows", {
+          eventId,
+          agencyId,
+          userId: auth.session?.user.id ?? null,
+        });
+        setDiagnostic({
+          step: "events",
+          message:
+            "No event row matched this id for the current agency. Either the event id is wrong, the event belongs to another agency, or RLS hid it.",
+        });
         setState("not-found");
         return;
       }
@@ -346,14 +370,31 @@ function EventDetail() {
         ]);
 
       if (cancelled) return;
-      if (
-        brandingRes.error ||
-        domainsRes.error ||
-        checkinRes.error ||
-        leaderboardRes.error ||
-        venuesRes.error ||
-        termsRes.error
-      ) {
+      const stepErrors: Array<[string, { message: string; code?: string; details?: string; hint?: string } | null]> = [
+        ["event_branding", brandingRes.error as any],
+        ["event_domains", domainsRes.error as any],
+        ["event_checkin_settings", checkinRes.error as any],
+        ["leaderboard_settings", leaderboardRes.error as any],
+        ["venues", venuesRes.error as any],
+        ["event_terms_versions", termsRes.error as any],
+      ];
+      const firstError = stepErrors.find(([, e]) => e);
+      if (firstError) {
+        const [step, err] = firstError;
+        console.error("[event-detail] related-row lookup failed", {
+          step,
+          eventId,
+          agencyId,
+          userId: auth.session?.user.id ?? null,
+          error: err,
+        });
+        setDiagnostic({
+          step,
+          message: err?.message ?? "Unknown error",
+          code: err?.code ?? null,
+          details: err?.details ?? null,
+          hint: err?.hint ?? null,
+        });
         setState("error");
         return;
       }
