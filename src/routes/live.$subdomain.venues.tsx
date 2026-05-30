@@ -98,6 +98,12 @@ function PublicVenuesListPage() {
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
       <PublicAnnouncementBar subdomain={subdomain} />
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event?.name}
+        primaryColor={event?.primary_color}
+        accentColor={event?.accent_color}
+      />
       <div className="mx-auto max-w-md">
         <div className="mb-6">
           <Link
