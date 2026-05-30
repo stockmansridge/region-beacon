@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { PublicEventNav } from "@/components/public-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
 import { rpcEventHost } from "@/lib/domains";
