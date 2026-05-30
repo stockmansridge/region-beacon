@@ -36,11 +36,11 @@ returns table (
 language plpgsql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
-  sub text := lower(coalesce(_sub, ''));
-  slug text := lower(coalesce(_event_slug, ''));
+  sub text := lower(trim(coalesce(_sub, '')));
+  slug text := lower(trim(coalesce(_event_slug, '')));
 begin
   if sub !~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$' then return; end if;
   if slug = '' then return; end if;
