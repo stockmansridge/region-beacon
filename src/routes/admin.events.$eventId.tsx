@@ -260,210 +260,283 @@ function EventDetail() {
   const [qrEntrySavingId, setQrEntrySavingId] = useState<string | null>(null);
 
   useEffect(() => {
-
-    if (!agencyId || eventId === "new") {
-      if (eventId === "new") setState("not-found");
+    if (eventId === "new") {
+      setDiagnostic({
+        step: "params",
+        message:
+          'The route was opened with the literal id "new". The create-event flow should navigate to a real event id after insert.',
+        code: "INVALID_ID",
+      });
+      setState("not-found");
       return;
     }
+    if (!agencyId) {
+      setDiagnostic({
+        step: "agency-context",
+        message:
+          "No agency is selected for the current session. Switch to an agency in the workspace switcher before opening this event.",
+        code: "NO_AGENCY",
+      });
+      setState("error");
+      return;
+    }
+
     let cancelled = false;
     setState("loading");
     setDiagnostic(null);
 
     (async () => {
-      // 1. Fetch event with explicit agency_id filter — confirms ownership.
-      const { data: event, error: evErr } = await supabase
-        .from("events")
-        .select(
-          "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id",
-        )
-        .eq("id", eventId)
-        .eq("agency_id", agencyId)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (cancelled) return;
-      if (evErr) {
-        console.error("[event-detail] events lookup failed", {
-          eventId,
-          agencyId,
-          userId: auth.session?.user.id ?? null,
-          error: evErr,
-        });
-        setDiagnostic({
-          step: "events",
-          message: evErr.message,
-          code: (evErr as any).code ?? null,
-          details: (evErr as any).details ?? null,
-          hint: (evErr as any).hint ?? null,
-        });
-        setState("error");
-        return;
-      }
-      if (!event) {
-        console.warn("[event-detail] events lookup returned no rows", {
-          eventId,
-          agencyId,
-          userId: auth.session?.user.id ?? null,
-        });
-        setDiagnostic({
-          step: "events",
-          message:
-            "No event row matched this id for the current agency. Either the event id is wrong, the event belongs to another agency, or RLS hid it.",
-        });
-        setState("not-found");
-        return;
-      }
-
-      // 2. Fetch related rows in parallel, each filtered by both event_id AND agency_id.
-      const [brandingRes, domainsRes, checkinRes, leaderboardRes, venuesRes, termsRes, activationRes] =
-        await Promise.all([
-          supabase
-            .from("event_branding")
-            .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url")
-            .eq("event_id", event.id)
-            .eq("agency_id", agencyId)
-            .maybeSingle(),
-          supabase
-            .from("event_domains")
-            .select("id, public_subdomain, custom_domain, domain_type, status, is_primary, verified_at")
-            .eq("event_id", event.id)
-            .eq("agency_id", agencyId)
-            .order("is_primary", { ascending: false }),
-          supabase
-            .from("event_checkin_settings")
-            .select(
-              "one_checkin_per_venue, minimum_seconds_between_checkins, allow_manual_admin_checkins, max_checkins_per_passport_per_day",
-            )
-            .eq("event_id", event.id)
-            .eq("agency_id", agencyId)
-            .maybeSingle(),
-          supabase
-            .from("leaderboard_settings")
-            .select("is_enabled, display_mode, show_first_name, show_last_initial, show_visit_count, hide_below_checkins, allow_visitor_opt_out")
-            .eq("event_id", event.id)
-            .eq("agency_id", agencyId)
-            .maybeSingle(),
-          supabase
-            .from("venues")
-            .select(
-              "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path",
-            )
-            .eq("event_id", event.id)
-            .eq("agency_id", agencyId)
-            .is("deleted_at", null)
-            .order("order_index", { ascending: true }),
-          event.current_terms_version_id
-            ? supabase
-                .from("event_terms_versions")
-                .select("id, legal_source, terms_version, terms_url, terms_title, terms_body, privacy_version, privacy_url, privacy_title, privacy_body, effective_at")
-                .eq("id", event.current_terms_version_id)
-                .eq("event_id", event.id)
-                .eq("agency_id", agencyId)
-                .maybeSingle()
-            : Promise.resolve({ data: null, error: null }),
-          supabase
-            .from("event_activations")
-            .select("status, activation_kind, activated_at, expires_at")
-            .eq("event_id", event.id)
-            .eq("agency_id", agencyId)
-            .maybeSingle(),
-        ]);
-
-      if (cancelled) return;
-      const stepErrors: Array<[string, { message: string; code?: string; details?: string; hint?: string } | null]> = [
-        ["event_branding", brandingRes.error as any],
-        ["event_domains", domainsRes.error as any],
-        ["event_checkin_settings", checkinRes.error as any],
-        ["leaderboard_settings", leaderboardRes.error as any],
-        ["venues", venuesRes.error as any],
-        ["event_terms_versions", termsRes.error as any],
-      ];
-      const firstError = stepErrors.find(([, e]) => e);
-      if (firstError) {
-        const [step, err] = firstError;
-        console.error("[event-detail] related-row lookup failed", {
-          step,
-          eventId,
-          agencyId,
-          userId: auth.session?.user.id ?? null,
-          error: err,
-        });
-        setDiagnostic({
-          step,
-          message: err?.message ?? "Unknown error",
-          code: err?.code ?? null,
-          details: err?.details ?? null,
-          hint: err?.hint ?? null,
-        });
-        setState("error");
-        return;
-      }
-
-      const venues = (venuesRes.data ?? []) as Venue[];
-
-      // 3. Fetch active QR codes for these venues — status + issued_at only.
-      const qrByVenue = new Map<string, QrSummary>();
-      if (venues.length > 0) {
-        const { data: qrRows, error: qrErr } = await supabase
-          .from("venue_qr_codes")
-          .select("venue_id, status, issued_at, entry_value")
+      const userId = auth.session?.user.id ?? null;
+      try {
+        // 1. Fetch event with explicit agency_id filter — confirms ownership.
+        const { data: event, error: evErr } = await supabase
+          .from("events")
+          .select(
+            "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id",
+          )
+          .eq("id", eventId)
           .eq("agency_id", agencyId)
-          .eq("event_id", event.id)
-          .eq("status", "active")
-          .in("venue_id", venues.map((v) => v.id));
+          .is("deleted_at", null)
+          .maybeSingle();
 
         if (cancelled) return;
-        if (qrErr) {
+        if (evErr) {
+          console.error("[event-detail] events lookup failed", {
+            eventId,
+            agencyId,
+            userId,
+            error: evErr,
+          });
+          setDiagnostic({
+            step: "events",
+            message: evErr.message,
+            code: (evErr as any).code ?? null,
+            details: (evErr as any).details ?? null,
+            hint: (evErr as any).hint ?? null,
+          });
           setState("error");
           return;
         }
-        for (const row of (qrRows ?? []) as QrSummary[]) {
-          // First active per venue (a partial unique index guarantees uniqueness anyway).
-          if (!qrByVenue.has(row.venue_id)) qrByVenue.set(row.venue_id, row);
+        if (!event) {
+          // Probe whether the row exists at all (ignoring agency_id) to tell
+          // "wrong agency" vs "no such event" vs "RLS hidden" apart.
+          let probeNote =
+            "Either the event id is wrong, the event belongs to another agency, or RLS hid it.";
+          try {
+            const { data: probe, error: probeErr } = await supabase
+              .from("events")
+              .select("id, agency_id, deleted_at")
+              .eq("id", eventId)
+              .maybeSingle();
+            if (probeErr) {
+              probeNote = `Probe without agency filter failed: ${probeErr.message}. This usually means RLS denies SELECT on the events table for this user.`;
+            } else if (!probe) {
+              probeNote =
+                "No event row exists with this id (any agency). The id is wrong or the row was hard-deleted.";
+            } else if (probe.deleted_at) {
+              probeNote = `Event exists but is soft-deleted (deleted_at = ${probe.deleted_at}).`;
+            } else if (probe.agency_id !== agencyId) {
+              probeNote = `Event exists but belongs to agency ${probe.agency_id}, not the currently selected agency ${agencyId}.`;
+            }
+          } catch (probeException) {
+            probeNote = `Probe threw: ${String((probeException as any)?.message ?? probeException)}`;
+          }
+          console.warn("[event-detail] events lookup returned no rows", {
+            eventId,
+            agencyId,
+            userId,
+            probeNote,
+          });
+          setDiagnostic({
+            step: "events",
+            message: `No event row returned for this id and agency. ${probeNote}`,
+            code: "NO_ROWS",
+          });
+          setState("not-found");
+          return;
         }
-      }
 
-      // Feature-detect venues.offer_summary (optional schema). If the column
-      // exists, hydrate a map for poster generation; otherwise leave empty.
-      const offerSummaryByVenue = new Map<string, string | null>();
-      if (venues.length > 0) {
-        try {
-          const { data: offerRows, error: offerErr } = await supabase
-            .from("venues")
-            .select("id, offer_summary" as any)
+        // 2. Fetch related rows in parallel.
+        const [brandingRes, domainsRes, checkinRes, leaderboardRes, venuesRes, termsRes, activationRes] =
+          await Promise.all([
+            supabase
+              .from("event_branding")
+              .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url")
+              .eq("event_id", event.id)
+              .eq("agency_id", agencyId)
+              .maybeSingle(),
+            supabase
+              .from("event_domains")
+              .select("id, public_subdomain, custom_domain, domain_type, status, is_primary, verified_at")
+              .eq("event_id", event.id)
+              .eq("agency_id", agencyId)
+              .order("is_primary", { ascending: false }),
+            supabase
+              .from("event_checkin_settings")
+              .select(
+                "one_checkin_per_venue, minimum_seconds_between_checkins, allow_manual_admin_checkins, max_checkins_per_passport_per_day",
+              )
+              .eq("event_id", event.id)
+              .eq("agency_id", agencyId)
+              .maybeSingle(),
+            supabase
+              .from("leaderboard_settings")
+              .select("is_enabled, display_mode, show_first_name, show_last_initial, show_visit_count, hide_below_checkins, allow_visitor_opt_out")
+              .eq("event_id", event.id)
+              .eq("agency_id", agencyId)
+              .maybeSingle(),
+            supabase
+              .from("venues")
+              .select(
+                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path",
+              )
+              .eq("event_id", event.id)
+              .eq("agency_id", agencyId)
+              .is("deleted_at", null)
+              .order("order_index", { ascending: true }),
+            event.current_terms_version_id
+              ? supabase
+                  .from("event_terms_versions")
+                  .select("id, legal_source, terms_version, terms_url, terms_title, terms_body, privacy_version, privacy_url, privacy_title, privacy_body, effective_at")
+                  .eq("id", event.current_terms_version_id)
+                  .eq("event_id", event.id)
+                  .eq("agency_id", agencyId)
+                  .maybeSingle()
+              : Promise.resolve({ data: null, error: null }),
+            supabase
+              .from("event_activations")
+              .select("status, activation_kind, activated_at, expires_at")
+              .eq("event_id", event.id)
+              .eq("agency_id", agencyId)
+              .maybeSingle(),
+          ]);
+
+        if (cancelled) return;
+        const stepErrors: Array<[string, any]> = [
+          ["event_branding", brandingRes.error],
+          ["event_domains", domainsRes.error],
+          ["event_checkin_settings", checkinRes.error],
+          ["leaderboard_settings", leaderboardRes.error],
+          ["venues", venuesRes.error],
+          ["event_terms_versions", termsRes.error],
+        ];
+        const firstError = stepErrors.find(([, e]) => e);
+        if (firstError) {
+          const [step, err] = firstError;
+          console.error("[event-detail] related-row lookup failed", {
+            step,
+            eventId,
+            agencyId,
+            userId,
+            error: err,
+          });
+          setDiagnostic({
+            step,
+            message: err?.message ?? "Unknown error",
+            code: err?.code ?? null,
+            details: err?.details ?? null,
+            hint: err?.hint ?? null,
+          });
+          setState("error");
+          return;
+        }
+
+        const venues = (venuesRes.data ?? []) as Venue[];
+
+        // 3. Active QR codes for venues.
+        const qrByVenue = new Map<string, QrSummary>();
+        if (venues.length > 0) {
+          const { data: qrRows, error: qrErr } = await supabase
+            .from("venue_qr_codes")
+            .select("venue_id, status, issued_at, entry_value")
             .eq("agency_id", agencyId)
             .eq("event_id", event.id)
-            .in("id", venues.map((v) => v.id));
-          if (!offerErr && Array.isArray(offerRows)) {
-            for (const row of offerRows as unknown as Array<{ id: string; offer_summary: string | null }>) {
-              offerSummaryByVenue.set(row.id, row.offer_summary ?? null);
-            }
-          }
-        } catch {
-          // column not deployed in this env — degrade silently
-        }
-      }
-      if (cancelled) return;
+            .eq("status", "active")
+            .in("venue_id", venues.map((v) => v.id));
 
-      setBundle({
-        event: event as EventRow,
-        branding: (brandingRes.data ?? null) as Branding | null,
-        domains: (domainsRes.data ?? []) as Domain[],
-        terms: (termsRes.data ?? null) as TermsVersion | null,
-        checkin: (checkinRes.data ?? null) as CheckinSettings | null,
-        leaderboard: (leaderboardRes.data ?? null) as LeaderboardSettings | null,
-        venues,
-        qrByVenue,
-        offerSummaryByVenue,
-        activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
-      });
-      setState("ready");
+          if (cancelled) return;
+          if (qrErr) {
+            console.error("[event-detail] venue_qr_codes lookup failed", {
+              eventId,
+              agencyId,
+              userId,
+              error: qrErr,
+            });
+            setDiagnostic({
+              step: "venue_qr_codes",
+              message: qrErr.message,
+              code: (qrErr as any).code ?? null,
+              details: (qrErr as any).details ?? null,
+              hint: (qrErr as any).hint ?? null,
+            });
+            setState("error");
+            return;
+          }
+          for (const row of (qrRows ?? []) as QrSummary[]) {
+            if (!qrByVenue.has(row.venue_id)) qrByVenue.set(row.venue_id, row);
+          }
+        }
+
+        // Optional venues.offer_summary column — degrade silently if missing.
+        const offerSummaryByVenue = new Map<string, string | null>();
+        if (venues.length > 0) {
+          try {
+            const { data: offerRows, error: offerErr } = await supabase
+              .from("venues")
+              .select("id, offer_summary" as any)
+              .eq("agency_id", agencyId)
+              .eq("event_id", event.id)
+              .in("id", venues.map((v) => v.id));
+            if (!offerErr && Array.isArray(offerRows)) {
+              for (const row of offerRows as unknown as Array<{ id: string; offer_summary: string | null }>) {
+                offerSummaryByVenue.set(row.id, row.offer_summary ?? null);
+              }
+            }
+          } catch {
+            // column not deployed in this env
+          }
+        }
+        if (cancelled) return;
+
+        setBundle({
+          event: event as EventRow,
+          branding: (brandingRes.data ?? null) as Branding | null,
+          domains: (domainsRes.data ?? []) as Domain[],
+          terms: (termsRes.data ?? null) as TermsVersion | null,
+          checkin: (checkinRes.data ?? null) as CheckinSettings | null,
+          leaderboard: (leaderboardRes.data ?? null) as LeaderboardSettings | null,
+          venues,
+          qrByVenue,
+          offerSummaryByVenue,
+          activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
+        });
+        setState("ready");
+      } catch (unknownErr) {
+        if (cancelled) return;
+        console.error("[event-detail] unhandled loader exception", {
+          eventId,
+          agencyId,
+          userId,
+          error: unknownErr,
+        });
+        const anyErr = unknownErr as any;
+        setDiagnostic({
+          step: "unknown",
+          message: String(anyErr?.message ?? anyErr ?? "Unknown event detail loader error"),
+          code: anyErr?.code ?? null,
+          details:
+            anyErr?.details ??
+            (anyErr?.stack ? String(anyErr.stack).split("\n").slice(0, 4).join("\n") : null),
+          hint: anyErr?.hint ?? null,
+        });
+        setState("error");
+      }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [agencyId, eventId, reloadKey]);
+  }, [agencyId, eventId, reloadKey, auth.session?.user.id]);
 
   function startEdit() {
     if (!bundle) return;
