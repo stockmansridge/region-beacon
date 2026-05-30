@@ -114,7 +114,10 @@ type QrSummary = {
   venue_id: string;
   status: string;
   issued_at: string;
-  entry_value: number;
+  // Optional: the `entry_value` column is added by the prize-draw migration
+  // (supabase/migrations-draft-rewards-prize-draw). In environments where
+  // that migration has not yet been applied, the loader degrades to null.
+  entry_value: number | null;
 };
 
 type Activation = {
@@ -446,13 +449,41 @@ function EventDetail() {
         // 3. Active QR codes for venues.
         const qrByVenue = new Map<string, QrSummary>();
         if (venues.length > 0) {
-          const { data: qrRows, error: qrErr } = await supabase
-            .from("venue_qr_codes")
-            .select("venue_id, status, issued_at, entry_value")
-            .eq("agency_id", agencyId)
-            .eq("event_id", event.id)
-            .eq("status", "active")
-            .in("venue_id", venues.map((v) => v.id));
+          // The `entry_value` column comes from the prize-draw migration
+          // (`migrations-draft-rewards-prize-draw`). It is NOT yet applied
+          // to every environment, so we attempt the full select first and
+          // fall back to a select without `entry_value` if Postgres reports
+          // "undefined column" (SQLSTATE 42703). This keeps event detail
+          // loadable in environments where the migration is still pending.
+          const baseCols = "venue_id, status, issued_at";
+          let qrRows: any[] | null = null;
+          let qrErr: any = null;
+          {
+            const res = await supabase
+              .from("venue_qr_codes")
+              .select(`${baseCols}, entry_value`)
+              .eq("agency_id", agencyId)
+              .eq("event_id", event.id)
+              .eq("status", "active")
+              .in("venue_id", venues.map((v) => v.id));
+            qrRows = res.data as any[] | null;
+            qrErr = res.error;
+          }
+          if (qrErr && ((qrErr as any).code === "42703" || /entry_value/.test(qrErr.message ?? ""))) {
+            console.warn("[event-detail] venue_qr_codes.entry_value missing — falling back", {
+              eventId,
+              agencyId,
+            });
+            const res = await supabase
+              .from("venue_qr_codes")
+              .select(baseCols)
+              .eq("agency_id", agencyId)
+              .eq("event_id", event.id)
+              .eq("status", "active")
+              .in("venue_id", venues.map((v) => v.id));
+            qrRows = res.data as any[] | null;
+            qrErr = res.error;
+          }
 
           if (cancelled) return;
           if (qrErr) {
@@ -472,8 +503,15 @@ function EventDetail() {
             setState("error");
             return;
           }
-          for (const row of (qrRows ?? []) as QrSummary[]) {
-            if (!qrByVenue.has(row.venue_id)) qrByVenue.set(row.venue_id, row);
+          for (const row of (qrRows ?? []) as Array<Partial<QrSummary> & { venue_id: string; status: string; issued_at: string }>) {
+            if (!qrByVenue.has(row.venue_id)) {
+              qrByVenue.set(row.venue_id, {
+                venue_id: row.venue_id,
+                status: row.status,
+                issued_at: row.issued_at,
+                entry_value: (row as any).entry_value ?? null,
+              });
+            }
           }
         }
 
