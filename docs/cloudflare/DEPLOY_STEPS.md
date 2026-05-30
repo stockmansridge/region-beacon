@@ -21,10 +21,21 @@ Lovable remains preview/dev. Cloudflare becomes production hosting + routing.
 | ------------------ | ------------------------------------------------------------------------------------------- |
 | Install            | `bun install`                                                                               |
 | Build              | `bun run build`                                                                             |
-| Worker entry       | `.output/server/index.mjs`                                                                  |
-| Static assets      | `.output/public/`                                                                           |
-| Target             | Cloudflare Workers (workerd) via nitro `cloudflare-module` (preset from `@lovable.dev/vite-tanstack-config`) |
+| Worker entry       | `dist/server/index.mjs`                                                                     |
+| Static assets      | `dist/client/`                                                                              |
+| Generated config   | `dist/server/wrangler.json` (+ `.wrangler/deploy/config.json` pointer) — wrangler picks this up automatically; the root `wrangler.toml` is overridden (nitro emits a WARN saying so) |
+| Target             | Cloudflare Workers (workerd) via nitro `cloudflare-module` preset, force-enabled by `nitro: true` in `vite.config.ts` |
 | Node compat        | Required — `compatibility_flags = ["nodejs_compat"]`                                        |
+
+> **Why `nitro: true` is required:** `@lovable.dev/vite-tanstack-config`
+> auto-detects the Lovable sandbox and only runs the nitro deploy plugin
+> there. Cloudflare's GitHub-based build pipeline is *not* a Lovable context,
+> so without `nitro: true` the build emits a plain Vite `dist/` (no Worker
+> entry) and wrangler fails with `entry-point file at ".output/server/index.mjs"
+> was not found` (or whatever path you guessed). `vite.config.ts` now passes
+> `nitro: true` explicitly so every environment produces the same Worker
+> bundle.
+
 
 ---
 

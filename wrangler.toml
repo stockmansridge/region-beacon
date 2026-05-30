@@ -4,10 +4,25 @@
 # This file is checked in so CI / the production deploy step can use it.
 #
 # Zone: getstampd.com.au (registrar: Crazy Domains, DNS: Cloudflare)
-# Build output is produced by `bun run build` (nitro cloudflare-module).
+# Build output is produced by `bun run build` (nitro cloudflare-module via
+# @lovable.dev/vite-tanstack-config with `nitro: true` in vite.config.ts).
+#
+# IMPORTANT — nitro auto-generates its own Worker config at
+#   dist/server/wrangler.json
+# and writes `.wrangler/deploy/config.json` pointing wrangler at it. When
+# `wrangler deploy` runs from the repo root, it uses the nitro-generated
+# config, NOT this file. `main` / `[assets]` here are effectively overridden
+# (nitro emits a WARN to that effect during build). This file is kept for:
+#   1. documenting intent (project name, compat flags, routes plan), and
+#   2. providing a fallback if anyone explicitly runs `wrangler deploy
+#      --config wrangler.toml`.
+# Keep the values below in sync with what nitro emits.
 
 name = "getstampd-prod"
-main = ".output/server/index.mjs"
+# Worker entry emitted by nitro. The `tanstackStart.server.entry: "server"`
+# setting redirects the SSR entry to src/server.ts, but nitro still names the
+# emitted bundle `index.mjs`.
+main = "dist/server/index.mjs"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 # account_id = "<fill-in-before-first-deploy>"
@@ -16,9 +31,9 @@ compatibility_flags = ["nodejs_compat"]
 # affecting any live getstampd.com.au hostname.
 workers_dev = true
 
-# Serve the built static assets directly from the Worker.
+# Static assets emitted by nitro alongside the Worker bundle.
 [assets]
-directory = ".output/public"
+directory = "dist/client"
 binding = "ASSETS"
 
 [vars]
@@ -27,7 +42,6 @@ NODE_ENV = "production"
 # (Vite replaces import.meta.env.* at build). Set them in the CI/build env,
 # not here. Runtime-only secrets (service role, webhook secrets) go in
 # `wrangler secret put NAME` once they exist.
-
 # Production zone routes — wildcard SaaS routing.
 # Workers Custom Domains do NOT support wildcards; we use Worker Routes
 # attached to the zone. Each matching hostname needs a proxied (orange-cloud)
