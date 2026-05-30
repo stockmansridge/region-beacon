@@ -1533,6 +1533,8 @@ function EventDetail() {
                                           logoUrl: getEventAssetPublicUrl(branding?.logo_path),
                                           primaryColor: branding?.primary_color ?? null,
                                           accentColor: branding?.accent_color ?? null,
+                                          offerSummary: offerSummaryByVenue.get(v.id) ?? null,
+                                          entryValue: qr?.entry_value ?? null,
                                           filename: posterFilename(
                                             event.public_slug ?? event.slug,
                                             v.name,
