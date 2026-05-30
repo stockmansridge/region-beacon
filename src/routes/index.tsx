@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GetStampdLogo } from "@/components/brand";
 import {
   MapPin,
   Stamp,
