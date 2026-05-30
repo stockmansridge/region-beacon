@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 
@@ -115,6 +116,7 @@ function LivePublicPage() {
   const venueLabels = resolveVenueLabels(event);
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+      <PublicAnnouncementBar subdomain={subdomain} />
       <TrailLanding
         eventName={event.name}
         venueLabelPlural={venueLabels.plural}

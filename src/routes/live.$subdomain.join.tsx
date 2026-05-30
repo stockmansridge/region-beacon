@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
   component: LiveJoinPage,
@@ -246,8 +247,10 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   }
 
   return (
-    <TrailShell
-      eventName={event.name}
+    <>
+      <PublicAnnouncementBar subdomain={subdomain} />
+      <TrailShell
+        eventName={event.name}
       primaryColor={primary}
       accentColor={accent}
       topLeft={
@@ -442,6 +445,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         }
       `}</style>
     </TrailShell>
+    </>
   );
 }
 

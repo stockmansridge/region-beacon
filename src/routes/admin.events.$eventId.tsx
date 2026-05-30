@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
+import { AdminEventAnnouncements } from "@/components/admin-event-announcements";
 import { QrPreview } from "@/components/qr-preview";
 import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
 import { EventTermsDialog } from "@/components/event-terms-dialog";
@@ -1559,7 +1560,16 @@ function EventDetail() {
               onSaved={() => setReloadKey((k) => k + 1)}
             />
           </Section>
+
+          <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages.">
+            <AdminEventAnnouncements
+              eventId={event.id}
+              agencyId={event.agency_id}
+              canEdit={canEdit}
+            />
+          </Section>
         </div>
+
 
         <aside className="space-y-4">
           <Section title="Terms & privacy" id="section-terms">

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard" }] }),
@@ -70,6 +71,7 @@ function PublicLeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8 sm:py-12">
+      <PublicAnnouncementBar subdomain={subdomain} />
       <div className="mx-auto max-w-xl">
         <Header subdomain={subdomain} />
 

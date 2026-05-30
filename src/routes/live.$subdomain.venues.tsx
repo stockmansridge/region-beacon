@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 
 export const Route = createFileRoute("/live/$subdomain/venues")({
   head: () => ({ meta: [{ title: "Venues" }] }),
@@ -93,6 +94,7 @@ function PublicVenuesListPage() {
 
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+      <PublicAnnouncementBar subdomain={subdomain} />
       <div className="mx-auto max-w-md">
         <div className="mb-6">
           <Link
