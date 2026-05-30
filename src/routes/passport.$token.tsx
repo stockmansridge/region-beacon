@@ -542,6 +542,7 @@ function PassportView({
 
       </div>
     </TrailShell>
+    </>
   );
 }
 
