@@ -33,12 +33,19 @@ for (const file of targets) {
   cfg.observability = observability;
   writeFileSync(file, JSON.stringify(cfg, null, 2));
   console.log(`[observability] patched ${file}`);
+  console.log(
+    `[observability] effective: ${JSON.stringify(cfg.observability)}`,
+  );
   patched++;
 }
 
 if (!patched) {
-  console.warn(
-    "[observability] no Nitro wrangler.json found under dist/server/ — " +
-      "skipping. wrangler.toml settings will be used instead."
+  // Fail loudly: Nitro is expected to emit dist/server/wrangler.json, and
+  // wrangler deploy uses THAT file (not the repo-root wrangler.toml).
+  // Silent fallback would mean observability never reaches Cloudflare.
+  console.error(
+    "[observability] ERROR: no Nitro wrangler.json found under dist/server/. " +
+      "Cloudflare deploy would ignore observability settings. Failing the build.",
   );
+  process.exit(1);
 }
