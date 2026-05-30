@@ -196,7 +196,7 @@ export function EventTermsDialog({
 
       const { data: inserted, error: insertErr } = await supabase
         .from("event_terms_versions")
-        .insert(insertRow)
+        .insert(insertRow as never)
         .select("id")
         .single();
 
