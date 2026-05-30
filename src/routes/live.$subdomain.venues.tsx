@@ -49,7 +49,7 @@ function PublicVenuesListPage() {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstampd.com.au`;
+      const host = rpcEventHost(subdomain);
 
       const [{ data: venueData, error: venueErr }, { data: evtData }] =
         await Promise.all([
