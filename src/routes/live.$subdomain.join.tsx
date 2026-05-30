@@ -445,6 +445,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         }
       `}</style>
     </TrailShell>
+    </>
   );
 }
 
