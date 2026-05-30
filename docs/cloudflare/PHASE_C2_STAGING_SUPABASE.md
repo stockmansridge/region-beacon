@@ -251,10 +251,11 @@ Run before declaring C2 complete. Each check is independent.
 6. **Build banner check.** Lovable preview shows the amber `TestEnvBanner`
    strip at the top of `/admin`. `https://app.getstampd.com.au/admin/` does
    **not** show it.
-7. **`/debug/worker-health` parity check.** Both environments still return
-   `runtime: "cloudflare-worker"` (production) or `runtime: "node"` /
-   equivalent (Lovable preview), with the correct project ref baked into
-   the response.
+7. **`/debug/worker-health` env-presence check.** Both environments
+   return `hasSupabaseUrl: true` and `hasSupabaseKey: true`. Use this
+   check only to confirm the Worker received Supabase env vars — not to
+   assert which project ref is in use (see section 4 for the
+   Network-tab / admin-only project-ref check).
 
 A single failed check blocks the rollout; do not "fix forward" by
 patching env vars in production.
