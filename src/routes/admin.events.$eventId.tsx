@@ -843,7 +843,14 @@ function EventDetail() {
       lng: "",
       order_index: String(nextOrder),
       status: "active",
+      description: "",
+      offer_summary: "",
+      website_url: "",
+      phone: "",
+      logo_path: null,
+      cover_path: null,
     });
+    setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueEditingId("new");
@@ -857,7 +864,14 @@ function EventDetail() {
       lng: v.lng === null || v.lng === undefined ? "" : String(v.lng),
       order_index: String(v.order_index ?? 0),
       status: v.status === "inactive" ? "inactive" : "active",
+      description: v.description ?? "",
+      offer_summary: bundle?.offerSummaryByVenue.get(v.id) ?? "",
+      website_url: v.website_url ?? "",
+      phone: v.phone ?? "",
+      logo_path: v.logo_path ?? null,
+      cover_path: v.cover_path ?? null,
     });
+    setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueEditingId(v.id);
