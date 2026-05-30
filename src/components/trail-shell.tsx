@@ -44,7 +44,7 @@ export function TrailShell({
         <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
           <div className="flex items-center gap-2">
             {topLeft ?? (
-              <Link to="/demo" className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <div
                   className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-semibold tracking-wider text-[#F6EFE2]"
                   style={{ backgroundColor: primaryColor }}
@@ -54,7 +54,7 @@ export function TrailShell({
                 <span className="font-trail-serif text-base font-semibold" style={{ color: primaryColor }}>
                   {eventName ?? "GetStampd"}
                 </span>
-              </Link>
+              </div>
             )}
           </div>
           {topRight}
