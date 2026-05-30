@@ -1246,7 +1246,7 @@ function EventDetail() {
         eventId={event.id}
       />
 
-      {agency.isPlatformAdmin && (
+      {agency.isPlatformAdmin && diagnosticsEnabled && (
         <PublishGateDiagnostic
           event={event}
           domains={domains}
