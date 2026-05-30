@@ -18,7 +18,7 @@
 #      --config wrangler.toml`.
 # Keep the values below in sync with what nitro emits.
 
-name = "getstampd-prod"
+name = "region-beacon"
 # Worker entry emitted by nitro. The `tanstackStart.server.entry: "server"`
 # setting redirects the SSR entry to src/server.ts, but nitro still names the
 # emitted bundle `index.mjs`.
