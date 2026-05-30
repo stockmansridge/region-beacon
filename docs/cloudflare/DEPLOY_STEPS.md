@@ -27,24 +27,26 @@ Lovable remains preview/dev. Cloudflare becomes production hosting + routing.
 
 - `import.meta.env.VITE_SUPABASE_URL`
 - `import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY`
+- `import.meta.env.VITE_DEPLOY_TARGET` (build-time deploy-target tag)
 
-Both are replaced by Vite at **build time** (not runtime). Behavior:
+All three are replaced by Vite at **build time** (not runtime). Behavior:
 
-| Build context                          | Env vars set?              | Resolves to        |
-| -------------------------------------- | -------------------------- | ------------------ |
-| Lovable preview / dev (no env wiring)  | No                         | Staging fallback (hardcoded in the client as a dev convenience) |
-| Cloudflare production build            | **Required** — both vars   | Production project |
+| Build context                          | `VITE_DEPLOY_TARGET` | Supabase env vars | Resolves to        |
+| -------------------------------------- | -------------------- | ----------------- | ------------------ |
+| Lovable preview / dev                  | unset                | unset             | Staging fallback   |
+| Cloudflare test deploy (workers.dev)   | `cloudflare`         | **Required**      | Whatever you set (use prod) |
+| Cloudflare production cutover          | `cloudflare`         | **Required**      | Production project |
 
-Two guards make this safe:
-1. If both env vars and fallback are missing → throws at module init.
-2. If running on `*.getstampd.com` / `*.getstampd.com.au` AND no `VITE_SUPABASE_URL` was baked in → throws at boot (refuses to silently use staging in production).
+Three guards make this safe:
+1. **Build-time guard** — if `VITE_DEPLOY_TARGET=cloudflare` and either Supabase env var is missing, the module throws at init. This catches any Cloudflare build — including `workers.dev` — that forgot to bake in the env vars.
+2. If both env vars and the fallback are missing → throws at module init.
+3. **Runtime host guard** — if the page loads on `*.getstampd.com` / `*.getstampd.com.au` and the staging fallback is in use, the module throws at boot.
 
-### Setting the production env in the build environment
-
-Run `bun run build` with the env vars exported. Two equivalent ways:
+### Setting the build env
 
 ```bash
-# Inline (one-off)
+# Inline (one-off) — REQUIRED form for any Cloudflare build
+VITE_DEPLOY_TARGET=cloudflare \
 VITE_SUPABASE_URL=https://<prod-project>.supabase.co \
 VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt> \
   bun run build
@@ -52,17 +54,25 @@ VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt> \
 
 ```bash
 # Or a local .env.production.local (gitignored)
-echo 'VITE_SUPABASE_URL=https://<prod-project>.supabase.co'   >  .env.production.local
-echo 'VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt>'          >> .env.production.local
+cat > .env.production.local <<'ENV'
+VITE_DEPLOY_TARGET=cloudflare
+VITE_SUPABASE_URL=https://<prod-project>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt>
+ENV
 bun run build
 ```
 
 Vite auto-loads `.env.production.local` for `mode=production` (the default for
 `vite build`). Do not commit it.
 
+Lovable preview/dev keeps working with no env wiring — `VITE_DEPLOY_TARGET` is
+unset there, so the cloudflare guard doesn't fire and the staging fallback is
+used.
+
 **Capture before first deploy:**
 - production Supabase project URL
 - production Supabase `anon` / publishable JWT (NOT service role)
+
 
 ### Runtime env (Worker `[vars]` / secrets)
 
