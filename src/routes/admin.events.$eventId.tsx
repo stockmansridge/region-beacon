@@ -2232,16 +2232,53 @@ function DiagnosticPanel({
   eventId,
   agencyId,
   userId,
+  canCopy,
 }: {
   diagnostic: LoadDiagnostic | null;
   eventId: string;
   agencyId: string | null;
   userId: string | null;
+  canCopy?: boolean;
 }) {
+  const [copied, setCopied] = useState(false);
+  const payload = {
+    step: diagnostic?.step ?? "unknown",
+    message: diagnostic?.message ?? "No additional diagnostic captured.",
+    code: diagnostic?.code ?? null,
+    details: diagnostic?.details ?? null,
+    hint: diagnostic?.hint ?? null,
+    eventId,
+    agencyId,
+    userId,
+    href: typeof window !== "undefined" ? window.location.href : null,
+    capturedAt: new Date().toISOString(),
+  };
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
   return (
-    <details className="mt-4 rounded-md border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-      <summary className="cursor-pointer font-medium text-foreground">
-        Diagnostics (for support)
+    <details className="mt-4 rounded-md border bg-muted/30 px-4 py-3 text-xs text-muted-foreground" open>
+      <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground">
+        <span>Diagnostics (for support)</span>
+        {canCopy && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              copy();
+            }}
+            className="ml-2 inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs hover:bg-muted"
+          >
+            {copied ? "Copied" : "Copy diagnostic"}
+          </button>
+        )}
       </summary>
       <dl className="mt-3 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 font-mono">
         <dt>Attempted event id</dt>
@@ -2250,37 +2287,16 @@ function DiagnosticPanel({
         <dd className="break-all">{agencyId ?? "(none selected)"}</dd>
         <dt>Current user id</dt>
         <dd className="break-all">{userId ?? "(not signed in)"}</dd>
-        {diagnostic ? (
-          <>
-            <dt>Failing step</dt>
-            <dd className="break-all">{diagnostic.step}</dd>
-            <dt>Result</dt>
-            <dd className="break-all">{diagnostic.message}</dd>
-            {diagnostic.code ? (
-              <>
-                <dt>Code</dt>
-                <dd className="break-all">{diagnostic.code}</dd>
-              </>
-            ) : null}
-            {diagnostic.details ? (
-              <>
-                <dt>Details</dt>
-                <dd className="break-all">{diagnostic.details}</dd>
-              </>
-            ) : null}
-            {diagnostic.hint ? (
-              <>
-                <dt>Hint</dt>
-                <dd className="break-all">{diagnostic.hint}</dd>
-              </>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <dt>Result</dt>
-            <dd>No additional diagnostic captured.</dd>
-          </>
-        )}
+        <dt>Failing step</dt>
+        <dd className="break-all">{payload.step}</dd>
+        <dt>Result</dt>
+        <dd className="break-all whitespace-pre-wrap">{payload.message}</dd>
+        <dt>Code</dt>
+        <dd className="break-all">{payload.code ?? "—"}</dd>
+        <dt>Details</dt>
+        <dd className="break-all whitespace-pre-wrap">{payload.details ?? "—"}</dd>
+        <dt>Hint</dt>
+        <dd className="break-all">{payload.hint ?? "—"}</dd>
       </dl>
     </details>
   );
