@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { AdminEventAnnouncements } from "@/components/admin-event-announcements";
+import { AdminEventRewards } from "@/components/admin-event-rewards";
 import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
 import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
@@ -2013,19 +2014,12 @@ function EventDetail() {
             )}
           </Section>
 
-          <Section title="Rewards" id="section-rewards">
-            <div className="rounded-md border border-dashed bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
-              <div className="font-medium text-foreground">
-                Reward setup editor coming soon.
-              </div>
-              <p className="mt-1 text-xs">
-                Default Bronze / Silver / Gold thresholds are currently shown on visitor
-                passports, derived from this event's active venue count (3 / 5 / up to 8).
-                Configurable per-event reward tiers and prize draw rules will appear here once
-                the reward editor ships. No visitor PII or QR tokens are exposed by the
-                default tiers.
-              </p>
-            </div>
+          <Section title="Reward tiers" id="section-rewards">
+            <AdminEventRewards
+              agencyId={event.agency_id}
+              eventId={event.id}
+              canEdit={canEdit}
+            />
           </Section>
         </aside>
       </div>
