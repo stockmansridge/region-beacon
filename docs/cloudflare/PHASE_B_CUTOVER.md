@@ -1,5 +1,14 @@
 # Phase B Cloudflare Cutover — wildcard tenant routing
 
+**Status: ✅ COMPLETE — Phase B is live in production.**
+
+Wildcard DNS (`* CNAME → getstampd.com.au`, proxied) and the
+`*.getstampd.com.au/*` Worker route are both active. `wrangler.toml`
+persists the Phase B `[[routes]]` block so subsequent deploys re-assert
+the route from config. `workers_dev` remains `true`. Phase A routes are
+unchanged. No SQL was applied and no Lovable custom-domain records were
+removed.
+
 Scope: route every `*.getstampd.com.au` subdomain (other than the apex /
 `www` / `app` already covered in Phase A) through the `region-beacon`
 Cloudflare Worker so tenant agency workspaces resolve.
