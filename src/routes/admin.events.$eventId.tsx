@@ -1404,6 +1404,58 @@ function EventDetail() {
                                       {isBusy ? "Working…" : "Rotate QR"}
                                     </button>
                                   </div>
+                                  <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed bg-muted/20 px-2 py-1.5">
+                                    <label
+                                      htmlFor={`entry-value-${v.id}`}
+                                      className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                                    >
+                                      Stamp value
+                                    </label>
+                                    <input
+                                      id={`entry-value-${v.id}`}
+                                      type="number"
+                                      min={1}
+                                      max={100}
+                                      step={1}
+                                      inputMode="numeric"
+                                      value={
+                                        qrEntryDraft.get(v.id) ??
+                                        String(qr!.entry_value ?? 1)
+                                      }
+                                      onChange={(e) => {
+                                        const val = e.currentTarget.value;
+                                        setQrEntryDraft((m) => {
+                                          const next = new Map(m);
+                                          next.set(v.id, val);
+                                          return next;
+                                        });
+                                      }}
+                                      className="h-7 w-16 rounded-md border bg-background px-2 text-xs"
+                                    />
+                                    {(() => {
+                                      const draft = qrEntryDraft.get(v.id);
+                                      const dirty =
+                                        draft !== undefined &&
+                                        draft !== String(qr!.entry_value ?? 1);
+                                      const saving = qrEntrySavingId === v.id;
+                                      if (!dirty && !saving) return null;
+                                      return (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            saveQrEntryValue(v.id, draft ?? "1")
+                                          }
+                                          disabled={saving}
+                                          className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                        >
+                                          {saving ? "Saving…" : "Save"}
+                                        </button>
+                                      );
+                                    })()}
+                                    <span className="basis-full text-[10px] leading-tight text-muted-foreground">
+                                      Changes apply to future scans only. Existing check-ins keep the value earned at scan time.
+                                    </span>
+                                  </div>
                                   {revealed && built && (
                                     <div className="flex flex-col gap-2">
                                       <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono break-all text-foreground">
