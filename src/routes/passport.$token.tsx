@@ -185,26 +185,7 @@ function PassportPage() {
   }
 
   if (state.kind === "not_found") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6">
-        <div className="mx-auto w-full max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#1F3D2B]/10" />
-          <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
-            Passport link not found or replaced
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
-            This passport link is no longer valid. If you re-registered, use
-            the newest link. Otherwise, re-register at the event page.
-          </p>
-          <a
-            href="/"
-            className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] px-6 text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    );
+    return <PassportNotFound token={token} diagnostics={state.diagnostics} />;
   }
 
   return (
