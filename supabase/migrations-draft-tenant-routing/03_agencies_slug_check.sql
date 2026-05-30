@@ -1,19 +1,43 @@
--- DRAFT — NOT APPLIED. See README.md.
+-- DRAFT — staging only. Apply ONLY after the slug audit returns 0 rows:
 --
--- Hardens agencies.slug to match what the wildcard router accepts. This is
--- additive: existing slugs already passing the regex remain valid. Before
--- applying, audit `select id, slug from agencies where slug !~ '...';` and
--- decide whether to backfill/rename or skip the constraint until cleaned.
+--   select id, slug from public.agencies
+--   where slug::text !~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
+--      or lower(slug::text) in (
+--        'app','admin','api','www','events','support','billing',
+--        'login','signup','dashboard','system','assets','static',
+--        'cdn','demo','mail'
+--      );
 --
--- NOTE: This does NOT add a uniqueness constraint here — the project
--- already enforces uniqueness via the existing agencies_slug_key unique
--- index. If that index does not exist in this environment, add it
--- separately after backfill.
+-- Adds a CHECK constraint that enforces the public-subdomain shape rule for
+-- new INSERT / UPDATE traffic only. NOT VALID skips validation of existing
+-- rows so the apply cannot fail on legacy data. Run
+--
+--   alter table public.agencies validate constraint agencies_slug_public_subdomain_check;
+--
+-- as a separate follow-up once you're confident every existing slug already
+-- satisfies the rule (the audit above returning 0 rows is necessary but not
+-- sufficient — VALIDATE re-checks every row including ones written after the
+-- audit ran).
+--
+-- Notes on the predicate:
+--   - agencies.slug is citext, so we cast to text before regex / lower checks
+--     to make the rule explicit and resistant to citext quirks.
+--   - The reserved-list mirrors src/lib/reserved-subdomains.ts and the same
+--     list embedded in resolve_agency_by_subdomain.
+--   - `slug is null` is allowed so the constraint never blocks rows that
+--     legitimately have no public subdomain.
 
 alter table public.agencies
-  add constraint agencies_slug_subdomain_shape_chk
-  check (slug ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$')
-  not valid;
-
--- Run `alter table public.agencies validate constraint agencies_slug_subdomain_shape_chk;`
--- separately once existing rows have been audited / backfilled.
+  add constraint agencies_slug_public_subdomain_check
+  check (
+    slug is null
+    or (
+      slug::text = lower(slug::text)
+      and slug::text ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
+      and lower(slug::text) not in (
+        'app','admin','api','www','events','support','billing',
+        'login','signup','dashboard','system','assets','static',
+        'cdn','demo','mail'
+      )
+    )
+  ) not valid;
