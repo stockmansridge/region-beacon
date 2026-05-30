@@ -16,6 +16,18 @@ Supabase project.
 
 ---
 
+## 0. Pre-step — confirm the production Supabase region
+
+Before creating `getstampd-staging`, look up the production Supabase
+project in the Supabase dashboard (Project Settings → General) and
+record its region (e.g. `ap-southeast-2 (Sydney)`). The staging project
+**must** be created in the same region so latency, RLS timing, and any
+region-pinned extensions behave identically. Write the confirmed region
+into this doc before moving to section 1; if it cannot be confirmed,
+stop and ask — do not guess.
+
+---
+
 ## 1. New Supabase staging project requirements
 
 Create a brand-new Supabase project (do **not** clone, do **not** branch
