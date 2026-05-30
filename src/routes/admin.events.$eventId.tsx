@@ -931,34 +931,62 @@ function EventDetail() {
       return;
     }
 
+    const description = venueForm.description.trim();
+    if (description.length > 1200) {
+      setVenueValidationError("Description must be 1200 characters or fewer.");
+      return;
+    }
+    const offerSummary = venueForm.offer_summary.trim();
+    if (bundle.offerSupported && offerSummary.length > 800) {
+      setVenueValidationError("Offer summary must be 800 characters or fewer.");
+      return;
+    }
+    const website = venueForm.website_url.trim();
+    if (website.length > 0 && !/^https:\/\//i.test(website)) {
+      setVenueValidationError("Website URL must start with https://");
+      return;
+    }
+    const phone = venueForm.phone.trim();
+    if (phone.length > 40) {
+      setVenueValidationError("Phone must be 40 characters or fewer.");
+      return;
+    }
+    if (phone.length > 0 && !/^\+?[0-9 \-]{6,40}$/.test(phone)) {
+      setVenueValidationError("Phone may only contain digits, spaces, dashes, and an optional leading +.");
+      return;
+    }
+
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueSaving(true);
+
+    const patch: Record<string, unknown> = {
+      name,
+      address,
+      lat,
+      lng,
+      order_index: orderIndex,
+      status: venueForm.status,
+      description: description === "" ? null : description,
+      website_url: website === "" ? null : website,
+      phone: phone === "" ? null : phone,
+    };
+    if (bundle.offerSupported) {
+      patch.offer_summary = offerSummary === "" ? null : offerSummary;
+    }
 
     let error: { message: string } | null = null;
     if (venueEditingId === "new") {
       const { error: inErr } = await supabase.from("venues").insert({
         agency_id: agencyId,
         event_id: eventId,
-        name,
-        address,
-        lat,
-        lng,
-        order_index: orderIndex,
-        status: venueForm.status,
+        ...patch,
       });
       error = inErr ?? null;
     } else {
       const { error: upErr } = await supabase
         .from("venues")
-        .update({
-          name,
-          address,
-          lat,
-          lng,
-          order_index: orderIndex,
-          status: venueForm.status,
-        })
+        .update(patch)
         .eq("id", venueEditingId)
         .eq("event_id", eventId)
         .eq("agency_id", agencyId);
@@ -972,6 +1000,74 @@ function EventDetail() {
     }
     setVenueEditingId(null);
     setVenueForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
+  async function uploadVenueImage(kind: VenueAssetKind, file: File) {
+    if (!venueForm || !venueEditingId || venueEditingId === "new" || !agencyId) return;
+    setVenueAssetError(null);
+    setVenueAssetBusy(kind);
+    const previous = kind === "logo" ? venueForm.logo_path : venueForm.cover_path;
+    const result = await uploadVenueAsset({
+      agencyId,
+      eventId,
+      venueId: venueEditingId,
+      kind,
+      file,
+    });
+    if (!result.ok) {
+      setVenueAssetBusy(null);
+      setVenueAssetError(result.error);
+      return;
+    }
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const { error: dbErr } = await supabase
+      .from("venues")
+      .update({ [column]: result.path })
+      .eq("id", venueEditingId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+    if (dbErr) {
+      await deleteVenueAssetSafely(result.path);
+      setVenueAssetBusy(null);
+      setVenueAssetError(`Could not update venue: ${dbErr.message}`);
+      return;
+    }
+    setVenueForm({
+      ...venueForm,
+      [column]: result.path,
+    } as VenueEditForm);
+    if (previous && previous !== result.path) {
+      await deleteVenueAssetSafely(previous);
+    }
+    setVenueAssetBusy(null);
+    setReloadKey((k) => k + 1);
+  }
+
+  async function removeVenueImage(kind: VenueAssetKind) {
+    if (!venueForm || !venueEditingId || venueEditingId === "new" || !agencyId) return;
+    const previous = kind === "logo" ? venueForm.logo_path : venueForm.cover_path;
+    if (!previous) return;
+    setVenueAssetError(null);
+    setVenueAssetBusy(kind);
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const { error: dbErr } = await supabase
+      .from("venues")
+      .update({ [column]: null })
+      .eq("id", venueEditingId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+    if (dbErr) {
+      setVenueAssetBusy(null);
+      setVenueAssetError(`Could not remove image: ${dbErr.message}`);
+      return;
+    }
+    await deleteVenueAssetSafely(previous);
+    setVenueForm({
+      ...venueForm,
+      [column]: null,
+    } as VenueEditForm);
+    setVenueAssetBusy(null);
     setReloadKey((k) => k + 1);
   }
 
