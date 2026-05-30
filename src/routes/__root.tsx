@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { HostRouter } from "@/components/host-router";
 
 function NotFoundComponent() {
   return (
