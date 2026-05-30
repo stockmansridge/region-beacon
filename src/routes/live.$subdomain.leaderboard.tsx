@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { rpcEventHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard" }] }),
