@@ -2413,31 +2413,28 @@ function PublishGateDiagnostic({
       setPublishableError(null);
       setResolveError(null);
 
-      const publishablePromise = supabase
-        .rpc("event_is_publishable", { _event_id: event.id })
-        .then((r) => {
-          if (cancelled) return;
+      try {
+        const r = await supabase.rpc("event_is_publishable", { _event_id: event.id });
+        if (!cancelled) {
           if (r.error) setPublishableError(r.error.message);
           else setIsPublishable(Boolean(r.data));
-        })
-        .catch((e: unknown) => {
-          if (!cancelled) setPublishableError(e instanceof Error ? e.message : String(e));
-        });
+        }
+      } catch (e) {
+        if (!cancelled) setPublishableError(e instanceof Error ? e.message : String(e));
+      }
 
-      const resolvePromise = rpcHost
-        ? supabase
-            .rpc("resolve_event_by_host", { _hostname: rpcHost })
-            .then((r) => {
-              if (cancelled) return;
-              if (r.error) setResolveError(r.error.message);
-              else setResolveRow((r.data?.[0] ?? null) as ResolveEventByHostRow | null);
-            })
-            .catch((e: unknown) => {
-              if (!cancelled) setResolveError(e instanceof Error ? e.message : String(e));
-            })
-        : Promise.resolve();
+      if (rpcHost) {
+        try {
+          const r = await supabase.rpc("resolve_event_by_host", { _hostname: rpcHost });
+          if (!cancelled) {
+            if (r.error) setResolveError(r.error.message);
+            else setResolveRow((r.data?.[0] ?? null) as ResolveEventByHostRow | null);
+          }
+        } catch (e) {
+          if (!cancelled) setResolveError(e instanceof Error ? e.message : String(e));
+        }
+      }
 
-      await Promise.all([publishablePromise, resolvePromise]);
       if (!cancelled) setLoading(false);
     })();
     return () => {
