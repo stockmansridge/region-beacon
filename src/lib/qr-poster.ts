@@ -80,6 +80,11 @@ export async function generateQrPosterPdf(
   input: PosterInput,
   filename: string,
 ): Promise<void> {
+  const [{ jsPDF }, QRCode] = await Promise.all([
+    import("jspdf"),
+    import("qrcode").then((m) => m.default ?? m),
+  ]);
+
   const primary = normaliseHex(input.primaryColor, "#111827");
   const accent = normaliseHex(input.accentColor, primary);
 
