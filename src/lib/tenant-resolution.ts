@@ -9,7 +9,7 @@ import { PRIMARY_ROOT_DOMAIN, ROOT_DOMAINS } from "@/lib/domains";
  *
  * RPCs (defined in supabase/migrations-draft-tenant-routing/):
  *   - resolve_agency_by_subdomain(_sub text)
- *       returns (agency_id uuid, name text, slug text, logo_url text)
+ *       returns (agency_id uuid, name text, slug text)
  *   - get_public_event_by_agency_and_slug(_sub text, _event_slug text)
  *       returns same shape as get_public_event_by_domain
  *
@@ -22,7 +22,6 @@ export type PublicAgency = {
   agency_id: string;
   name: string;
   slug: string;
-  logo_url: string | null;
 };
 
 export async function resolveAgencyBySubdomain(sub: string): Promise<PublicAgency | null> {
