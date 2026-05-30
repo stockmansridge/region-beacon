@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { rpcEventHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard" }] }),
@@ -34,7 +35,7 @@ function PublicLeaderboardPage() {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstampd.com.au`;
+      const host = rpcEventHost(subdomain);
       const { data, error } = await supabase.rpc(
         "get_public_leaderboard_by_domain",
         { _hostname: host },

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PoweredByGetStampd } from "@/components/brand";
+import { rpcEventHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
   component: LiveJoinPage,
@@ -86,7 +87,7 @@ function LiveJoinPage() {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstampd.com.au`;
+      const host = rpcEventHost(subdomain);
 
       const { data: resolveData, error: resolveErr } = await supabase.rpc(
         "resolve_event_by_host",

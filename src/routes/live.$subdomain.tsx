@@ -6,6 +6,7 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
+import { rpcEventHost } from "@/lib/domains";
 
 
 export const Route = createFileRoute("/live/$subdomain")({
@@ -61,7 +62,7 @@ function LivePublicPage() {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstampd.com.au`;
+      const host = rpcEventHost(subdomain);
 
       const { data: resolveData, error: resolveErr } = await supabase.rpc(
         "resolve_event_by_host",
