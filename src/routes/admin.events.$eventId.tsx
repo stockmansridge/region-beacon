@@ -2888,6 +2888,97 @@ function Field({
   );
 }
 
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h5 className="border-b pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h5>
+      {children}
+    </div>
+  );
+}
+
+function VenueImageField({
+  kind,
+  label,
+  helpText,
+  path,
+  canEdit,
+  busy,
+  onUpload,
+  onRemove,
+}: {
+  kind: VenueAssetKind;
+  label: string;
+  helpText: string;
+  path: string | null;
+  canEdit: boolean;
+  busy: boolean;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const previewUrl = getVenueAssetPublicUrl(path);
+  const isCover = kind === "cover";
+  const inputId = `venue-asset-${kind}`;
+  return (
+    <div className="space-y-1.5">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <div className="rounded-md border bg-background/50 p-3">
+        {previewUrl ? (
+          <div
+            className={
+              isCover
+                ? "mb-3 aspect-[3/1] w-full overflow-hidden rounded bg-muted/30"
+                : "mb-3 h-24 w-24 overflow-hidden rounded bg-muted/30"
+            }
+          >
+            <img src={previewUrl} alt={`${label} preview`} className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <p className="mb-3 text-xs text-muted-foreground">No image uploaded.</p>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            id={inputId}
+            type="file"
+            accept={VENUE_ASSET_ALLOWED_MIME.join(",")}
+            disabled={!canEdit || busy}
+            className="hidden"
+            onChange={(e) => {
+              const f = e.currentTarget.files?.[0];
+              e.currentTarget.value = "";
+              if (f) onUpload(f);
+            }}
+          />
+          <label
+            htmlFor={inputId}
+            className={`inline-flex h-8 cursor-pointer items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted ${
+              !canEdit || busy ? "pointer-events-none opacity-50" : ""
+            }`}
+          >
+            {busy ? "Uploading…" : previewUrl ? "Replace" : "Upload"}
+          </label>
+          {previewUrl && (
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={!canEdit || busy}
+              className="inline-flex h-8 items-center rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">{helpText}</p>
+      </div>
+    </div>
+  );
+}
+
+
 function EventSetupWarnings({
   status,
   domains,
