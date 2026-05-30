@@ -11,6 +11,10 @@ export type PosterInput = {
   primaryColor?: string | null;
   /** CSS hex colour. Falls back to primary. */
   accentColor?: string | null;
+  /** Short descriptor shown under the QR (venues.offer_summary). */
+  offerSummary?: string | null;
+  /** Entries earned per scan. When > 1 a bonus line is shown. */
+  entryValue?: number | null;
 };
 
 /**
@@ -157,13 +161,41 @@ export async function generateQrPosterPdf(
   doc.rect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, "F");
   doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize, undefined, "FAST");
 
+  // Descriptor / offer summary under the QR (optional, truncated safely)
+  let belowQrY = qrY + qrSize + 8;
+  const summary = (input.offerSummary ?? "").trim();
+  if (summary) {
+    const truncated = summary.length > 220 ? `${summary.slice(0, 217)}…` : summary;
+    doc.setTextColor("#222222");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    const summaryLines = doc.splitTextToSize(truncated, pageW - 30);
+    const maxLines = Math.min(summaryLines.length, 3);
+    doc.text(summaryLines.slice(0, maxLines), pageW / 2, belowQrY, { align: "center" });
+    belowQrY += 5.5 * maxLines + 2;
+  }
+
+  // Bonus entries line
+  const entryValue = input.entryValue ?? 1;
+  if (typeof entryValue === "number" && entryValue > 1) {
+    doc.setTextColor(accent);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(
+      `Bonus: this stamp is worth ${entryValue} entries`,
+      pageW / 2,
+      belowQrY + 2,
+      { align: "center" },
+    );
+    belowQrY += 8;
+  }
+
   // Check-in URL in small text under the QR
-  const urlY = qrY + qrSize + 8;
   doc.setTextColor("#333333");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   const urlLines = doc.splitTextToSize(input.checkinUrl, pageW - 30);
-  doc.text(urlLines, pageW / 2, urlY, { align: "center" });
+  doc.text(urlLines, pageW / 2, belowQrY + 4, { align: "center" });
 
   // Footer band
   const footerH = 14;
