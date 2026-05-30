@@ -3,6 +3,7 @@ import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditC
 import { ReactNode } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
+import { TestEnvBanner } from "@/components/test-env-banner";
 
 /**
  * Sidebar nav items.
