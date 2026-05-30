@@ -13,6 +13,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { posterFilename } from "@/lib/qr-poster";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAuth } from "@/hooks/use-auth";
+import { PUBLIC_TENANT_ROOT_DOMAIN, rpcEventHost, tenantHost, tenantUrl } from "@/lib/domains";
 
 type LoadDiagnostic = {
   step: string;
