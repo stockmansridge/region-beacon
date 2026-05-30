@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
+import { PublicEventNav } from "@/components/public-event-nav";
+import { classifyHost } from "@/components/host-router";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import {
   DEFAULT_VENUE_LABEL_PLURAL,
@@ -286,6 +288,11 @@ function PassportView({
   const [copied, setCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const subdomain = useMemo(() => {
+    const cls = classifyHost(hostname);
+    return cls.kind === "tenant" ? cls.subdomain : null;
+  }, [hostname]);
 
   const labelSingular = stamps?.labelSingular ?? DEFAULT_VENUE_LABEL_SINGULAR;
   const labelPlural = stamps?.labelPlural ?? DEFAULT_VENUE_LABEL_PLURAL;
@@ -317,12 +324,33 @@ function PassportView({
     "Visitor";
 
   return (
-    <TrailShell
-      eventName={eventName ?? "Your passport"}
-      primaryColor={PRIMARY}
-      accentColor={ACCENT}
-      showBottomNav={false}
-    >
+    <>
+      {subdomain && (
+        <div className="bg-[#F6EFE2] px-4 pt-6">
+          <PublicEventNav
+            subdomain={subdomain}
+            eventName={eventName ?? "Your passport"}
+            primaryColor={PRIMARY}
+            accentColor={ACCENT}
+            activeOverride="join"
+            passportHref={passportUrl}
+          />
+        </div>
+      )}
+      <TrailShell
+        eventName={eventName ?? "Your passport"}
+        primaryColor={PRIMARY}
+        accentColor={ACCENT}
+        showBottomNav={false}
+        topLeft={
+          <span
+            className="font-trail-serif text-base font-semibold"
+            style={{ color: PRIMARY }}
+          >
+            {eventName ?? "Your passport"}
+          </span>
+        }
+      >
       <div className="mx-auto w-full max-w-md">
         <div className="text-center">
           <div
@@ -514,6 +542,7 @@ function PassportView({
 
       </div>
     </TrailShell>
+    </>
   );
 }
 

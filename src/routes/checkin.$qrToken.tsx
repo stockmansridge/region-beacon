@@ -77,6 +77,14 @@ function CheckinPage() {
     (async () => {
       const passports = readPassportsFromStorage();
       if (passports.length === 0) {
+        // Remember where we came from so post-registration can return here.
+        try {
+          if (typeof sessionStorage !== "undefined" && typeof window !== "undefined") {
+            sessionStorage.setItem("gs.returnTo.pending", window.location.pathname);
+          }
+        } catch {
+          // ignore
+        }
         if (!cancelled) setOutcome({ kind: "no_passport" });
         return;
       }

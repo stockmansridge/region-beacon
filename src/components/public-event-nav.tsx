@@ -21,6 +21,8 @@ export function PublicEventNav({
   hasTerms = true,
   hasPrivacy = true,
   canRegister = true,
+  activeOverride,
+  passportHref,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -29,6 +31,10 @@ export function PublicEventNav({
   hasTerms?: boolean;
   hasPrivacy?: boolean;
   canRegister?: boolean;
+  /** When set, forces this nav item to render as active, regardless of pathname. */
+  activeOverride?: "home" | "join" | "venues" | "leaderboard";
+  /** When set, the Passport item renders as a plain <a href> to this URL instead of the /join route. */
+  passportHref?: string;
 }) {
   const primary = primaryColor ?? "#1F3D2B";
   const accent = accentColor ?? "#B5572A";
@@ -37,6 +43,7 @@ export function PublicEventNav({
 
   const baseHome = `/live/${subdomain}`;
   const isActive = (target: "home" | "join" | "venues" | "leaderboard") => {
+    if (activeOverride) return target === activeOverride;
     if (target === "home") return pathname === baseHome || pathname === `${baseHome}/`;
     if (target === "venues")
       return pathname === `${baseHome}/venues` || pathname.startsWith(`${baseHome}/venues/`);
@@ -61,8 +68,17 @@ export function PublicEventNav({
     ...(canRegister
       ? [{
           key: "join",
-          label: "Start passport",
-          node: (
+          label: passportHref ? "Passport" : "Start passport",
+          node: passportHref ? (
+            <a
+              href={passportHref}
+              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+              style={{ color: primary }}
+              aria-current={isActive("join") ? "page" : undefined}
+            >
+              Passport
+            </a>
+          ) : (
             <Link
               to="/live/$subdomain/join"
               params={{ subdomain }}
@@ -222,16 +238,28 @@ export function PublicEventNav({
           </li>
           <li className="relative flex flex-1">
             {canRegister ? (
-              <Link
-                to="/live/$subdomain/join"
-                params={{ subdomain }}
-                aria-current={isActive("join") ? "page" : undefined}
-                className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: isActive("join") ? accent : primary }}
-              >
-                <Ticket className="h-5 w-5" />
-                <span>Passport</span>
-              </Link>
+              passportHref ? (
+                <a
+                  href={passportHref}
+                  aria-current={isActive("join") ? "page" : undefined}
+                  className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                  style={{ color: isActive("join") ? accent : primary }}
+                >
+                  <Ticket className="h-5 w-5" />
+                  <span>Passport</span>
+                </a>
+              ) : (
+                <Link
+                  to="/live/$subdomain/join"
+                  params={{ subdomain }}
+                  aria-current={isActive("join") ? "page" : undefined}
+                  className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                  style={{ color: isActive("join") ? accent : primary }}
+                >
+                  <Ticket className="h-5 w-5" />
+                  <span>Passport</span>
+                </Link>
+              )
             ) : (
               <button
                 type="button"
