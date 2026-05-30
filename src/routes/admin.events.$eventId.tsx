@@ -1655,35 +1655,54 @@ function EventDetail() {
                   )}
                 </div>
                 <DefList
-                  rows={[
-                    ["Terms version", terms.terms_version],
-                    [
-                      "Terms URL",
-                      <a
-                        key="t"
-                        href={terms.terms_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary underline-offset-2 hover:underline break-all"
-                      >
-                        {terms.terms_url}
-                      </a>,
-                    ],
-                    ["Privacy version", terms.privacy_version],
-                    [
-                      "Privacy URL",
-                      <a
-                        key="p"
-                        href={terms.privacy_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary underline-offset-2 hover:underline break-all"
-                      >
-                        {terms.privacy_url}
-                      </a>,
-                    ],
-                    ["Effective at", fmt(terms.effective_at)],
-                  ]}
+                  rows={
+                    terms.legal_source === "local_text"
+                      ? [
+                          ["Source", "GetStampd local pages"],
+                          ["Version", terms.terms_version],
+                          ["Terms title", terms.terms_title ?? "—"],
+                          ["Privacy title", terms.privacy_title ?? "—"],
+                          ["Effective at", fmt(terms.effective_at)],
+                        ]
+                      : [
+                          ["Source", "External URLs"],
+                          ["Terms version", terms.terms_version],
+                          [
+                            "Terms URL",
+                            terms.terms_url ? (
+                              <a
+                                key="t"
+                                href={terms.terms_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline-offset-2 hover:underline break-all"
+                              >
+                                {terms.terms_url}
+                              </a>
+                            ) : (
+                              "—"
+                            ),
+                          ],
+                          ["Privacy version", terms.privacy_version],
+                          [
+                            "Privacy URL",
+                            terms.privacy_url ? (
+                              <a
+                                key="p"
+                                href={terms.privacy_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline-offset-2 hover:underline break-all"
+                              >
+                                {terms.privacy_url}
+                              </a>
+                            ) : (
+                              "—"
+                            ),
+                          ],
+                          ["Effective at", fmt(terms.effective_at)],
+                        ]
+                  }
                 />
               </>
             ) : (
@@ -1714,7 +1733,21 @@ function EventDetail() {
                 onOpenChange={setTermsDialogOpen}
                 agencyId={agencyId}
                 eventId={bundle.event.id}
+                eventName={bundle.event.name}
                 initialVersionLabel={terms?.terms_version ?? null}
+                initialLegalSource={terms?.legal_source ?? null}
+                initial={
+                  terms
+                    ? {
+                        terms_title: terms.terms_title,
+                        terms_body: terms.terms_body,
+                        privacy_title: terms.privacy_title,
+                        privacy_body: terms.privacy_body,
+                        terms_url: terms.terms_url,
+                        privacy_url: terms.privacy_url,
+                      }
+                    : null
+                }
                 onSaved={() => {
                   toast.success("Terms & privacy updated");
                   setReloadKey((k) => k + 1);
