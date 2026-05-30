@@ -313,6 +313,12 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         // localStorage unavailable — token still shown on success screen
       }
 
+      // If user was redirected from a venue QR scan, send them back there.
+      const returnTo = consumeReturnTo(event.event_id);
+      if (returnTo && typeof window !== "undefined") {
+        window.location.replace(returnTo);
+        return;
+      }
       setSuccess({ token: row.access_token, passport_id: row.passport_id });
       setSubmitting(false);
     } catch (e) {
