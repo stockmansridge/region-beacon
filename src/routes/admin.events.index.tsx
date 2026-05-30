@@ -98,6 +98,7 @@ function Events() {
     agency.isPlatformAdmin || role === "agency_owner" || role === "agency_admin";
 
   const [rows, setRows] = useState<EventRow[] | null>(null);
+  const [extras, setExtras] = useState<Record<string, EventExtras>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -126,8 +127,68 @@ function Events() {
         setLoading(false);
         return;
       }
-      setRows((data ?? []) as EventRow[]);
+      const events = (data ?? []) as EventRow[];
+      setRows(events);
       setLoading(false);
+
+      const ids = events.map((e) => e.id);
+      if (ids.length === 0) {
+        setExtras({});
+        return;
+      }
+
+      const [domainsRes, venuesRes, activationsRes] = await Promise.all([
+        supabase
+          .from("event_domains")
+          .select("event_id, public_subdomain, status, is_primary")
+          .eq("agency_id", agencyId)
+          .in("event_id", ids)
+          .in("status", ["pending", "active"])
+          .order("is_primary", { ascending: false }),
+        supabase
+          .from("venues")
+          .select("event_id")
+          .eq("agency_id", agencyId)
+          .in("event_id", ids)
+          .is("deleted_at", null),
+        supabase
+          .from("event_activations")
+          .select("event_id, status")
+          .eq("agency_id", agencyId)
+          .in("event_id", ids),
+      ]);
+
+      if (cancelled) return;
+
+      const next: Record<string, EventExtras> = {};
+      for (const id of ids) {
+        next[id] = { domain: null, venuesCount: 0, activationStatus: null };
+      }
+      for (const d of (domainsRes.data ?? []) as Array<{
+        event_id: string;
+        public_subdomain: string | null;
+        status: string | null;
+      }>) {
+        // First row wins (already ordered by is_primary desc, active before pending if tied is not guaranteed,
+        // so prefer active over pending when both exist).
+        const cur = next[d.event_id]?.domain;
+        if (!cur || (cur.status !== "active" && d.status === "active")) {
+          next[d.event_id].domain = {
+            public_subdomain: d.public_subdomain,
+            status: d.status,
+          };
+        }
+      }
+      for (const v of (venuesRes.data ?? []) as Array<{ event_id: string }>) {
+        if (next[v.event_id]) next[v.event_id].venuesCount += 1;
+      }
+      for (const a of (activationsRes.data ?? []) as Array<{
+        event_id: string;
+        status: string | null;
+      }>) {
+        if (next[a.event_id]) next[a.event_id].activationStatus = a.status;
+      }
+      setExtras(next);
     })();
 
     return () => {
@@ -139,7 +200,7 @@ function Events() {
     <>
       <PageHeader
         title="Events"
-        description="Events for your agency. Create a draft, then configure branding, venues, and public address."
+        description="Manage your events. Reserve a public address, then configure branding, venues, and go-live."
         actions={
           canCreate ? (
             <button
@@ -152,6 +213,7 @@ function Events() {
           ) : null
         }
       />
+
       {error && (
         <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
