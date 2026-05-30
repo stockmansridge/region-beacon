@@ -2,13 +2,26 @@
 --
 -- get_public_event_by_agency_and_slug(_sub text, _event_slug text)
 --   Returns a single event row matching agencies.slug + events.public_slug,
---   filtered to published events. Mirrors the projection of the existing
---   get_public_event_by_domain RPC so the same client renderer is reusable.
+--   using the same public-event eligibility rule as
+--   public.get_public_event_by_domain / public.resolve_event_by_host:
+--
+--     e.status = 'published'
+--     and e.deleted_at is null
+--     and public.event_is_publishable(e.id) = true
+--
+--   Projection mirrors get_public_event_by_domain (17 columns) so the same
+--   client renderer is reusable. Branding columns come from
+--   public.event_branding (LEFT JOIN). Venue labels use the same
+--   coalesce(nullif(btrim(...), ''), default) pattern.
+--
+-- Schema notes (verified against staging):
+--   - events.public_slug is citext.
+--   - agencies.slug is citext.
+--   - events has status + deleted_at. NO is_published column.
 --
 -- Safety:
---   - SECURITY DEFINER, STABLE, narrow column projection.
---   - Rejects unpublished events.
---   - Returns nothing if the agency subdomain is reserved or malformed.
+--   - SECURITY DEFINER, STABLE, narrow public projection.
+--   - Returns nothing if subdomain is reserved/malformed or event slug empty.
 
 create or replace function public.get_public_event_by_agency_and_slug(
   _sub text,
@@ -17,7 +30,7 @@ create or replace function public.get_public_event_by_agency_and_slug(
 returns table (
   event_id uuid,
   name text,
-  public_slug text,
+  public_slug citext,
   description text,
   starts_at timestamptz,
   ends_at timestamptz,
@@ -39,7 +52,7 @@ security definer
 set search_path = public, pg_temp
 as $$
 declare
-  sub text := lower(trim(coalesce(_sub, '')));
+  sub  text := lower(trim(coalesce(_sub, '')));
   slug text := lower(trim(coalesce(_event_slug, '')));
 begin
   if sub !~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$' then return; end if;
@@ -51,28 +64,32 @@ begin
 
   return query
     select
-      e.id,
+      e.id                              as event_id,
       e.name,
       e.public_slug,
       e.description,
       e.starts_at,
       e.ends_at,
       e.timezone,
-      e.logo_path,
-      e.cover_path,
-      e.primary_color,
-      e.accent_color,
-      e.font_family,
-      e.welcome_copy,
-      e.terms_url,
+      b.logo_path,
+      b.cover_path,
+      b.primary_color,
+      b.accent_color,
+      b.font_family,
+      b.welcome_copy,
+      b.terms_url,
       e.current_terms_version_id,
-      e.venue_label_singular,
-      e.venue_label_plural
+      coalesce(nullif(btrim(b.venue_label_singular), ''), 'Venue')  as venue_label_singular,
+      coalesce(nullif(btrim(b.venue_label_plural),   ''), 'Venues') as venue_label_plural
     from public.events e
-    join public.agencies a on a.id = e.agency_id
-    where a.slug = sub
-      and e.public_slug = slug
-      and coalesce(e.is_published, false) = true
+    join public.agencies a       on a.id = e.agency_id
+    left join public.event_branding b on b.event_id = e.id
+    where a.slug = sub::citext
+      and a.deleted_at is null
+      and e.public_slug = slug::citext
+      and e.status = 'published'
+      and e.deleted_at is null
+      and public.event_is_publishable(e.id) = true
     limit 1;
 end
 $$;
