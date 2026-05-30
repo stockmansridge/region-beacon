@@ -65,13 +65,8 @@ function UpdatePassword() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-sidebar p-4">
       <div className="w-full max-w-sm rounded-2xl border bg-card p-8 shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-hero-gradient" />
-          <div>
-            <div className="text-sm font-semibold">GetStampd</div>
-            <div className="text-xs text-muted-foreground">Set a new password</div>
-          </div>
-        </div>
+        <GetStampdLogo variant="blue" size="md" caption="Set a new password" />
+
 
         {success ? (
           <div className="mt-6 space-y-4">
