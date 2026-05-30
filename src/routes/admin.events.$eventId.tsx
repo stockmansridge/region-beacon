@@ -1585,7 +1585,7 @@ function EventDetail() {
               </div>
             )}
             {venueEditingId !== null && venueForm && (
-              <div className="mb-4 space-y-3 rounded-lg border bg-muted/20 p-4">
+              <div className="mb-4 space-y-5 rounded-lg border bg-muted/20 p-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">
                     {venueEditingId === "new" ? "New venue" : "Edit venue"}
@@ -1614,105 +1614,202 @@ function EventDetail() {
                     {venueValidationError ?? venueSaveError}
                   </div>
                 )}
-                <Field label="Name" required>
-                  <input
-                    type="text"
-                    maxLength={150}
-                    value={venueForm.name}
-                    onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                </Field>
-                <Field label="Address">
-                  <input
-                    type="text"
-                    maxLength={300}
-                    value={venueForm.address}
-                    onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
-                    placeholder="e.g. 123 Main St, Sydney NSW 2000"
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                </Field>
-                <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    disabled
-                    title="Coming soon"
-                    className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-md border border-dashed bg-muted/30 px-3 text-xs font-medium text-muted-foreground"
-                  >
-                    <span aria-hidden></span>
-                    Select from Apple Maps
-                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
-                      Soon
-                    </span>
-                  </button>
-                  <p className="text-xs text-muted-foreground">
-                    Coming soon — search for a place, choose it on Apple Maps, or drop a pin to
-                    auto-fill the address and coordinates.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Status" required>
-                    <select
-                      value={venueForm.status}
-                      onChange={(e) =>
-                        setVenueForm({
-                          ...venueForm,
-                          status: e.target.value === "inactive" ? "inactive" : "active",
-                        })
-                      }
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                    >
-                      <option value="active">active</option>
-                      <option value="inactive">inactive</option>
-                    </select>
-                  </Field>
-                  <Field label="Order" required>
+
+                <FormSection title="Basics">
+                  <Field label="Name" required>
                     <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={venueForm.order_index}
-                      onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
+                      type="text"
+                      maxLength={150}
+                      value={venueForm.name}
+                      onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
                       className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                     />
                   </Field>
-                </div>
-                <details className="rounded-md border bg-background/50">
-                  <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
-                    Advanced coordinates
-                  </summary>
-                  <div className="space-y-3 border-t px-3 py-3">
-                    <p className="text-xs text-muted-foreground">
-                      Coordinates will normally be filled from Apple Maps. Use these only if you
-                      need to enter them manually.
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field label="Latitude">
-                        <input
-                          type="number"
-                          step="any"
-                          min={-90}
-                          max={90}
-                          value={venueForm.lat}
-                          onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
-                          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                        />
-                      </Field>
-                      <Field label="Longitude">
-                        <input
-                          type="number"
-                          step="any"
-                          min={-180}
-                          max={180}
-                          value={venueForm.lng}
-                          onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
-                          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                        />
-                      </Field>
-                    </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Status" required>
+                      <select
+                        value={venueForm.status}
+                        onChange={(e) =>
+                          setVenueForm({
+                            ...venueForm,
+                            status: e.target.value === "inactive" ? "inactive" : "active",
+                          })
+                        }
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      >
+                        <option value="active">active</option>
+                        <option value="inactive">inactive</option>
+                      </select>
+                    </Field>
+                    <Field label="Order" required>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={venueForm.order_index}
+                        onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      />
+                    </Field>
                   </div>
-                </details>
+                </FormSection>
+
+                <FormSection title="Public page content">
+                  <Field label="Description">
+                    <textarea
+                      rows={5}
+                      maxLength={1250}
+                      value={venueForm.description}
+                      onChange={(e) => setVenueForm({ ...venueForm, description: e.target.value })}
+                      placeholder="What makes this venue worth visiting?"
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {venueForm.description.length}/1200
+                    </p>
+                  </Field>
+                  {bundle?.offerSupported ? (
+                    <Field label="Offer summary">
+                      <textarea
+                        rows={4}
+                        maxLength={850}
+                        value={venueForm.offer_summary}
+                        onChange={(e) => setVenueForm({ ...venueForm, offer_summary: e.target.value })}
+                        placeholder="e.g. Complimentary tasting flight on arrival, plus a bonus stamp for trail visitors."
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        What visitors can expect — tasting offer, discount, bonus stamp, etc. {venueForm.offer_summary.length}/800
+                      </p>
+                    </Field>
+                  ) : (
+                    <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                      Offer summary field not available — the <span className="font-mono">venues.offer_summary</span> column is not deployed in this environment.
+                    </p>
+                  )}
+                </FormSection>
+
+                <FormSection title="Images">
+                  {venueEditingId === "new" ? (
+                    <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                      Save the venue first, then re-open Edit to upload a logo and hero image.
+                    </p>
+                  ) : (
+                    <>
+                      <VenueImageField
+                        kind="logo"
+                        label="Logo"
+                        helpText={`Square works best. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.logo / (1024 * 1024))} MB.`}
+                        path={venueForm.logo_path}
+                        canEdit={canEdit}
+                        busy={venueAssetBusy === "logo"}
+                        onUpload={(f) => uploadVenueImage("logo", f)}
+                        onRemove={() => removeVenueImage("logo")}
+                      />
+                      <VenueImageField
+                        kind="cover"
+                        label="Hero / cover image"
+                        helpText={`Wide hero image. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.cover / (1024 * 1024))} MB.`}
+                        path={venueForm.cover_path}
+                        canEdit={canEdit}
+                        busy={venueAssetBusy === "cover"}
+                        onUpload={(f) => uploadVenueImage("cover", f)}
+                        onRemove={() => removeVenueImage("cover")}
+                      />
+                      {venueAssetError && (
+                        <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                          {venueAssetError}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </FormSection>
+
+                <FormSection title="Contact">
+                  <Field label="Website">
+                    <input
+                      type="url"
+                      inputMode="url"
+                      value={venueForm.website_url}
+                      onChange={(e) => setVenueForm({ ...venueForm, website_url: e.target.value })}
+                      placeholder="https://example.com"
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">Must start with https://</p>
+                  </Field>
+                  <Field label="Phone">
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      maxLength={40}
+                      value={venueForm.phone}
+                      onChange={(e) => setVenueForm({ ...venueForm, phone: e.target.value })}
+                      placeholder="+61 400 000 000"
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                </FormSection>
+
+                <FormSection title="Location">
+                  <Field label="Address">
+                    <input
+                      type="text"
+                      maxLength={300}
+                      value={venueForm.address}
+                      onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
+                      placeholder="e.g. 123 Main St, Sydney NSW 2000"
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Latitude">
+                      <input
+                        type="number"
+                        step="any"
+                        min={-90}
+                        max={90}
+                        value={venueForm.lat}
+                        onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      />
+                    </Field>
+                    <Field label="Longitude">
+                      <input
+                        type="number"
+                        step="any"
+                        min={-180}
+                        max={180}
+                        value={venueForm.lng}
+                        onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      />
+                    </Field>
+                  </div>
+                  {(() => {
+                    const lat = venueForm.lat.trim() ? Number(venueForm.lat.trim()) : null;
+                    const lng = venueForm.lng.trim() ? Number(venueForm.lng.trim()) : null;
+                    const directionsUrl = buildAppleMapsDirectionsUrl({
+                      name: venueForm.name || "Venue",
+                      address: venueForm.address || null,
+                      lat: lat !== null && Number.isFinite(lat) ? lat : null,
+                      lng: lng !== null && Number.isFinite(lng) ? lng : null,
+                    });
+                    return directionsUrl ? (
+                      <a
+                        href={directionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-xs font-medium hover:bg-muted"
+                      >
+                        Preview “Get directions” (Apple Maps) ↗
+                      </a>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Add an address or coordinates to enable the “Get directions” link on the public venue page.
+                      </p>
+                    );
+                  })()}
+                </FormSection>
               </div>
             )}
             {venues.length === 0 ? (
