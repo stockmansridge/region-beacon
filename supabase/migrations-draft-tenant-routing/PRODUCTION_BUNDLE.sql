@@ -154,17 +154,31 @@ grant execute on function public.get_public_event_by_agency_and_slug(text, text)
 --   alter table public.agencies validate constraint agencies_slug_public_subdomain_check;
 -- That VALIDATE step is OUT OF SCOPE for this cutover.
 -- ---------------------------------------------------------------------
-alter table public.agencies
-  add constraint agencies_slug_public_subdomain_check
-  check (
-    slug is null
-    or (
-      slug::text = lower(slug::text)
-      and slug::text ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
-      and lower(slug::text) not in (
-        'app','admin','api','www','events','support','billing',
-        'login','signup','dashboard','system','assets','static',
-        'cdn','demo','mail'
-      )
-    )
-  ) not valid;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint c
+    join pg_class t      on t.oid = c.conrelid
+    join pg_namespace n  on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'agencies'
+      and c.conname = 'agencies_slug_public_subdomain_check'
+  ) then
+    alter table public.agencies
+      add constraint agencies_slug_public_subdomain_check
+      check (
+        slug is null
+        or (
+          slug::text = lower(slug::text)
+          and slug::text ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
+          and lower(slug::text) not in (
+            'app','admin','api','www','events','support','billing',
+            'login','signup','dashboard','system','assets','static',
+            'cdn','demo','mail'
+          )
+        )
+      ) not valid;
+  end if;
+end
+$$;
