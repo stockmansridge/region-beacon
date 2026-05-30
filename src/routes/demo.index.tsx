@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { TrailShell } from "@/components/trail-shell";
 import { TrailLanding } from "@/components/trail-landing";
+import { PoweredByGetStampd } from "@/components/brand";
 
 const SAMPLE = {
   eventName: "Cargo Road Wine Trail",
