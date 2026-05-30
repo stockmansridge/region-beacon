@@ -57,9 +57,18 @@ type StampsSummary = {
   venues: StampRow[];
 };
 
+type LookupDiagnostics = {
+  rpc: string;
+  zero_rows: boolean;
+  supabase_error_code: string | null;
+  supabase_error_message: string | null;
+  supabase_error_details: string | null;
+  supabase_error_hint: string | null;
+};
+
 type LoadState =
   | { kind: "loading" }
-  | { kind: "not_found" }
+  | { kind: "not_found"; diagnostics: LookupDiagnostics }
   | {
       kind: "ready";
       passport: PassportRow;
