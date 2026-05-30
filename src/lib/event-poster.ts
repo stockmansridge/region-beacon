@@ -5,8 +5,9 @@
 // nothing is uploaded or persisted — the PDF is built in the browser and
 // saved via jsPDF.save().
 
-import { jsPDF } from "jspdf";
-import QRCode from "qrcode";
+// jspdf and qrcode are imported lazily inside generateEventPosterPdf so they
+// never end up in the SSR/Worker bundle (both pull in `node:fs`, which
+// Cloudflare Workers do not support).
 import { slugForFilename } from "@/lib/qr-poster";
 
 export type EventPosterInput = {
