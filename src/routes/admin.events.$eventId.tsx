@@ -2351,6 +2351,284 @@ function DiagnosticPanel({
   );
 }
 
+type ResolveEventByHostRow = {
+  kind: string;
+  event_id: string | null;
+  public_slug: string | null;
+  requires_auth: boolean;
+};
+
+function PublishGateDiagnostic({
+  event,
+  domains,
+  activation,
+  terms,
+  checkin,
+  venues,
+}: {
+  event: EventRow;
+  domains: Domain[];
+  activation: Activation | null;
+  terms: TermsVersion | null;
+  checkin: CheckinSettings | null;
+  venues: Venue[];
+}) {
+  const [isPublishable, setIsPublishable] = useState<boolean | null>(null);
+  const [publishableError, setPublishableError] = useState<string | null>(null);
+  const [resolveRow, setResolveRow] = useState<ResolveEventByHostRow | null>(null);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const primarySub =
+    domains.find(
+      (d) => d.domain_type === "event_subdomain" && d.is_primary && d.status === "active",
+    )?.public_subdomain ??
+    domains.find((d) => d.domain_type === "event_subdomain")?.public_subdomain ??
+    null;
+  const primaryCustom =
+    domains.find(
+      (d) => d.domain_type === "event_custom" && d.is_primary && d.status === "active",
+    )?.custom_domain ?? null;
+  const publicHostDisplay = primaryCustom
+    ? primaryCustom
+    : primarySub
+      ? tenantHost(primarySub)
+      : null;
+  const publicUrl = primaryCustom
+    ? `https://${primaryCustom}/`
+    : primarySub
+      ? tenantUrl(primarySub, "/")
+      : null;
+  const rpcHost = primaryCustom
+    ? primaryCustom
+    : primarySub
+      ? rpcEventHost(primarySub)
+      : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setPublishableError(null);
+      setResolveError(null);
+
+      const publishablePromise = supabase
+        .rpc("event_is_publishable", { _event_id: event.id })
+        .then((r) => {
+          if (cancelled) return;
+          if (r.error) setPublishableError(r.error.message);
+          else setIsPublishable(Boolean(r.data));
+        })
+        .catch((e: unknown) => {
+          if (!cancelled) setPublishableError(e instanceof Error ? e.message : String(e));
+        });
+
+      const resolvePromise = rpcHost
+        ? supabase
+            .rpc("resolve_event_by_host", { _hostname: rpcHost })
+            .then((r) => {
+              if (cancelled) return;
+              if (r.error) setResolveError(r.error.message);
+              else setResolveRow((r.data?.[0] ?? null) as ResolveEventByHostRow | null);
+            })
+            .catch((e: unknown) => {
+              if (!cancelled) setResolveError(e instanceof Error ? e.message : String(e));
+            })
+        : Promise.resolve();
+
+      await Promise.all([publishablePromise, resolvePromise]);
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [event.id, rpcHost]);
+
+  const now = new Date();
+  const startsAt = event.starts_at ? new Date(event.starts_at) : null;
+  const endsAt = event.ends_at ? new Date(event.ends_at) : null;
+  const dateWindowValid =
+    (!startsAt || startsAt <= now) && (!endsAt || endsAt >= now);
+  const dateWindowLabel = !startsAt && !endsAt
+    ? "open (no window set)"
+    : `${fmt(event.starts_at)} → ${fmt(event.ends_at)} ${dateWindowValid ? "✓ in window" : "✗ outside window"}`;
+
+  const Check = ({ ok, label, detail }: { ok: boolean | null; label: string; detail?: React.ReactNode }) => (
+    <div className="flex items-start gap-2 py-1">
+      <span
+        className={
+          ok === null
+            ? "mt-0.5 inline-block h-3 w-3 rounded-full bg-muted-foreground/40"
+            : ok
+              ? "mt-0.5 inline-block h-3 w-3 rounded-full bg-emerald-500"
+              : "mt-0.5 inline-block h-3 w-3 rounded-full bg-destructive"
+        }
+        aria-hidden
+      />
+      <div className="flex-1 text-xs">
+        <div className="font-medium text-foreground">{label}</div>
+        {detail !== undefined && <div className="text-muted-foreground">{detail}</div>}
+      </div>
+    </div>
+  );
+
+  return (
+    <section className="rounded-xl border border-amber-300/60 bg-amber-50/40 p-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Publish gate diagnostic (platform_admin)</h3>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          read-only · live RPC
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Live view of every condition the public <code>resolve_event_by_host</code> gate
+        evaluates. Shown only to platform admins. Uses the legacy RPC host
+        (<code>{rpcHost ?? "—"}</code>) while the DB suffix migration is pending; the
+        customer-facing URL below uses <code>{PUBLIC_TENANT_ROOT_DOMAIN}</code>.
+      </p>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border bg-background p-4">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Event row
+          </h4>
+          <Check
+            ok={event.status === "published"}
+            label="status = published"
+            detail={<code>{event.status}</code>}
+          />
+          <Check
+            ok={true}
+            label="deleted_at"
+            detail={<code>null (loader filters soft-deleted)</code>}
+          />
+          <Check
+            ok={Boolean(event.public_slug)}
+            label="public_slug set"
+            detail={<code>{event.public_slug ?? "—"}</code>}
+          />
+          <Check
+            ok={dateWindowValid}
+            label="date window valid"
+            detail={dateWindowLabel}
+          />
+          <Check
+            ok={Boolean(event.current_terms_version_id)}
+            label="terms configured"
+            detail={
+              terms
+                ? <code>v{terms.terms_version} ({terms.legal_source ?? "—"})</code>
+                : <code>no current_terms_version_id</code>
+            }
+          />
+          <Check
+            ok={Boolean(checkin)}
+            label="check-in settings row exists"
+            detail={
+              checkin
+                ? `one-per-venue=${checkin.one_checkin_per_venue}, min-gap=${checkin.minimum_seconds_between_checkins}s`
+                : "missing"
+            }
+          />
+          <Check
+            ok={venues.length > 0}
+            label="at least one venue"
+            detail={`${venues.length} venue(s)`}
+          />
+        </div>
+
+        <div className="rounded-lg border bg-background p-4">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Domain + activation
+          </h4>
+          {domains.length === 0 ? (
+            <Check ok={false} label="event_domains" detail="no rows" />
+          ) : (
+            domains.map((d) => (
+              <Check
+                key={d.id}
+                ok={d.is_primary && d.status === "active"}
+                label={`event_domains[${d.domain_type}]`}
+                detail={
+                  <code className="break-all">
+                    {d.public_subdomain ?? d.custom_domain ?? "—"} · is_primary={String(d.is_primary)} · status={d.status}
+                  </code>
+                }
+              />
+            ))
+          )}
+          <Check
+            ok={Boolean(activation && (activation.status === "active" || activation.status === "comp"))}
+            label="event_activations status"
+            detail={
+              activation
+                ? <code>{activation.activation_kind} · {activation.status}</code>
+                : <code>no activation row</code>
+            }
+          />
+          <Check
+            ok={isPublishable}
+            label="event_is_publishable(event_id)"
+            detail={
+              loading
+                ? "checking…"
+                : publishableError
+                  ? <span className="text-destructive">RPC error: {publishableError}</span>
+                  : <code>{String(isPublishable)}</code>
+            }
+          />
+        </div>
+
+        <div className="rounded-lg border bg-background p-4 lg:col-span-2">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            resolve_event_by_host (live RPC)
+          </h4>
+          <dl className="grid grid-cols-[160px_1fr] gap-x-3 gap-y-1 text-xs">
+            <dt className="text-muted-foreground">Public URL</dt>
+            <dd>
+              {publicUrl ? (
+                <a href={publicUrl} target="_blank" rel="noreferrer" className="font-medium text-primary hover:underline break-all">
+                  {publicUrl}
+                </a>
+              ) : (
+                <span className="text-muted-foreground">— (no primary subdomain/custom domain)</span>
+              )}
+            </dd>
+            <dt className="text-muted-foreground">Public host</dt>
+            <dd className="break-all"><code>{publicHostDisplay ?? "—"}</code></dd>
+            <dt className="text-muted-foreground">RPC host sent</dt>
+            <dd className="break-all"><code>{rpcHost ?? "—"}</code></dd>
+            <dt className="text-muted-foreground">kind</dt>
+            <dd>
+              {loading ? "…" : resolveError ? (
+                <span className="text-destructive">RPC error: {resolveError}</span>
+              ) : (
+                <code className={resolveRow?.kind === "event" ? "" : "text-destructive"}>
+                  {resolveRow?.kind ?? "(no row)"}
+                </code>
+              )}
+            </dd>
+            <dt className="text-muted-foreground">event_id</dt>
+            <dd className="break-all"><code>{resolveRow?.event_id ?? "—"}</code></dd>
+            <dt className="text-muted-foreground">public_slug</dt>
+            <dd className="break-all"><code>{resolveRow?.public_slug ?? "—"}</code></dd>
+          </dl>
+          {!loading && resolveRow && resolveRow.kind !== "event" && (
+            <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+              Public gate is rejecting this event. Most common causes: (a) no <code>event_domains</code> row
+              with <code>is_primary=true</code> + <code>status=active</code>; (b) no active{" "}
+              <code>event_activations</code>; (c) <code>events.status</code> not <code>published</code>;
+              (d) DB <code>resolve_event_by_host</code> still pinned to the legacy{" "}
+              <code>.getstamped.com.au</code> suffix while the primary subdomain resolves on{" "}
+              <code>.{PUBLIC_TENANT_ROOT_DOMAIN}</code>.
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Field({
   label,
   required,
