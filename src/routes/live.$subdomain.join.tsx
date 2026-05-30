@@ -168,10 +168,15 @@ function readSavedPassport(eventId: string): SavedPassport | null {
 function consumeReturnTo(eventId: string): string | null {
   if (typeof sessionStorage === "undefined") return null;
   try {
-    const key = `gs.returnTo.${eventId}`;
-    const v = sessionStorage.getItem(key);
-    if (v) sessionStorage.removeItem(key);
-    return v;
+    const scopedKey = `gs.returnTo.${eventId}`;
+    const scoped = sessionStorage.getItem(scopedKey);
+    if (scoped) {
+      sessionStorage.removeItem(scopedKey);
+      return scoped;
+    }
+    const pending = sessionStorage.getItem("gs.returnTo.pending");
+    if (pending) sessionStorage.removeItem("gs.returnTo.pending");
+    return pending;
   } catch {
     return null;
   }
