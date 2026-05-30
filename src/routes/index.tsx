@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GetStampdLogo } from "@/components/brand";
 import {
   MapPin,
   Stamp,
@@ -43,16 +44,12 @@ export const Route = createFileRoute("/")({
 
 function Logo({ className = "" }: { className?: string }) {
   return (
-    <Link to="/" className={`flex items-center gap-2 ${className}`}>
-      <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#1e3a8a] via-[#2563eb] to-[#06b6d4] text-white shadow-sm">
-        <Stamp className="h-5 w-5" strokeWidth={2.25} />
-      </span>
-      <span className="text-[17px] font-semibold tracking-tight text-slate-900">
-        GetStampd
-      </span>
+    <Link to="/" className={`flex items-center ${className}`}>
+      <GetStampdLogo variant="blue" size="md" />
     </Link>
   );
 }
+
 
 function MarketingHome() {
   return (

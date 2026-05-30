@@ -5,6 +5,7 @@ import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { PoweredByGetStampd } from "@/components/brand";
 
 
 export const Route = createFileRoute("/live/$subdomain")({
@@ -187,9 +188,10 @@ function NotLiveYet() {
           This passport experience isn't available right now. Please check back
           closer to the event, or contact the organiser for details.
         </p>
-        <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
-          Powered by GetStampd
-        </p>
+        <div className="mt-6 flex justify-center">
+          <PoweredByGetStampd variant="trail" />
+        </div>
+
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard } from "lucide-react";
 import { ReactNode } from "react";
 import { signOut } from "@/hooks/use-auth";
+import { GetStampdLogo } from "@/components/brand";
 
 /**
  * Sidebar nav items.
@@ -60,13 +61,10 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen bg-sidebar">
       <aside className="hidden w-60 shrink-0 border-r bg-sidebar lg:flex lg:flex-col">
-        <div className="flex h-16 items-center gap-2 border-b px-5">
-          <div className="h-8 w-8 rounded-lg bg-hero-gradient" />
-          <div className="leading-tight">
-            <div className="text-sm font-semibold">GetStampd</div>
-            <div className="text-xs text-muted-foreground">Event admin</div>
-          </div>
+        <div className="flex h-16 items-center border-b px-5">
+          <GetStampdLogo variant="blue" size="md" caption="Event admin" />
         </div>
+
         <nav className="flex-1 space-y-1 p-3">
           {/* Rendered individually so each <Link to=...> stays type-safe. */}
           {(() => {

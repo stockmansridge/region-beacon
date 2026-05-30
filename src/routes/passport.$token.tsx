@@ -8,6 +8,7 @@ import {
   DEFAULT_VENUE_LABEL_SINGULAR,
 } from "@/lib/venue-labels";
 import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
+import { PoweredByGetStampd } from "@/components/brand";
 
 export const Route = createFileRoute("/passport/$token")({
   head: () => ({ meta: [{ title: "My passport" }] }),
@@ -430,9 +431,10 @@ function PassportView({
           </div>
         </section>
 
-        <p className="mt-6 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
-          Powered by GetStampd
-        </p>
+        <div className="mt-6 flex justify-center">
+          <PoweredByGetStampd variant="trail" />
+        </div>
+
       </div>
     </TrailShell>
   );
