@@ -52,33 +52,17 @@ Guards:
 
 ### Setting the build env
 
-The current/live Supabase project values (use these for both the
-workers.dev test deploy and the eventual production cutover):
+For Cloudflare, these values are set in the **Cloudflare Dashboard** as
+build-time variables on the Worker project (see §4.2 below). No local
+terminal step is required.
 
-- `VITE_SUPABASE_URL`            = `https://kyjwifumacnrpgyextzz.supabase.co`
+The current/live Supabase project values (used for both the workers.dev
+test deploy and the eventual production cutover):
+
+- `VITE_SUPABASE_URL`             = `https://kyjwifumacnrpgyextzz.supabase.co`
 - `VITE_SUPABASE_PUBLISHABLE_KEY` = the anon JWT hardcoded in
   `src/integrations/supabase/client.ts` (`CURRENT_PROJECT_PUBLISHABLE_KEY`)
-
-```bash
-# Inline (one-off) — REQUIRED form for any Cloudflare build
-VITE_DEPLOY_TARGET=cloudflare \
-VITE_SUPABASE_URL=https://kyjwifumacnrpgyextzz.supabase.co \
-VITE_SUPABASE_PUBLISHABLE_KEY=<live-anon-jwt> \
-  bun run build
-```
-
-```bash
-# Or a local .env.production.local (gitignored)
-cat > .env.production.local <<'ENV'
-VITE_DEPLOY_TARGET=cloudflare
-VITE_SUPABASE_URL=https://kyjwifumacnrpgyextzz.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=<live-anon-jwt>
-ENV
-bun run build
-```
-
-Vite auto-loads `.env.production.local` for `mode=production` (the default for
-`vite build`). Do not commit it.
+- `VITE_DEPLOY_TARGET`            = `cloudflare`
 
 Lovable preview/dev keeps working with no env wiring — `VITE_DEPLOY_TARGET`
 is unset there, so the cloudflare guard doesn't fire and the hardcoded
@@ -86,12 +70,11 @@ fallback (= live project) is used.
 
 ### Runtime env (Worker `[vars]` / secrets)
 
-| Name                          | Required now? | Notes                                     |
-| ----------------------------- | ------------- | ----------------------------------------- |
-| `NODE_ENV=production`         | Yes           | Set in `wrangler.toml` `[vars]` (done).   |
-| `SUPABASE_SERVICE_ROLE_KEY`   | No            | Only when a server fn needs admin scope.  |
+| Name                        | Required now? | Notes                                              |
+| --------------------------- | ------------- | -------------------------------------------------- |
+| `NODE_ENV=production`       | Yes           | Set in `wrangler.toml` `[vars]` (done).            |
+| `SUPABASE_SERVICE_ROLE_KEY` | No            | Only when a server fn needs admin scope. Add via Dashboard → Worker → **Settings → Variables and Secrets → Runtime secrets**. |
 
-Add runtime secrets later with `wrangler secret put NAME`.
 
 ---
 
