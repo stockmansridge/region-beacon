@@ -68,13 +68,16 @@ function AgencyWorkspacePage() {
         return;
       }
 
-      // 3. List published events for the agency. We deliberately scope to a
-      //    narrow column set; RLS is expected to expose only public-safe rows.
+      // 3. List published events for the agency. Schema uses events.status
+      //    ('draft' | 'published') + events.deleted_at — there is no
+      //    `is_published` column. Mirrors the eligibility rule in
+      //    public.get_public_event_by_domain.
       const { data: evtData } = await supabase
         .from("events")
-        .select("id, name, public_slug, starts_at, ends_at, is_published")
+        .select("id, name, public_slug, starts_at, ends_at, status, deleted_at")
         .eq("agency_id", agency.agency_id)
-        .eq("is_published", true)
+        .eq("status", "published")
+        .is("deleted_at", null)
         .order("starts_at", { ascending: false, nullsFirst: false });
 
       if (cancelled) return;
@@ -101,7 +104,8 @@ function AgencyWorkspacePage() {
         Loading…
         <HostDiagnostic
           resolvedEventId={state.kind === "legacy_event" ? state.eventId : null}
-          reason={state.kind === "legacy_event" ? "Legacy event_domain hit" : null}
+          resolutionSource={state.kind === "legacy_event" ? "legacy_event_domain" : null}
+          error={state.kind === "legacy_event" ? "Legacy event_domain hit" : null}
         />
       </div>
     );
@@ -121,7 +125,7 @@ function AgencyWorkspacePage() {
             <PoweredByGetStampd variant="trail" />
           </div>
         </div>
-        <HostDiagnostic reason={state.reason} />
+        <HostDiagnostic resolutionSource="not_found" error={state.reason} />
       </div>
     );
   }
@@ -170,7 +174,11 @@ function AgencyWorkspacePage() {
           <PoweredByGetStampd variant="trail" />
         </div>
       </div>
-      <HostDiagnostic resolvedAgencyId={agency.agency_id} reason="Agency resolved by subdomain" />
+      <HostDiagnostic
+        resolvedAgencyId={agency.agency_id}
+        resolutionSource="agency_subdomain"
+        error={null}
+      />
     </div>
   );
 }

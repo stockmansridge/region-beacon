@@ -126,7 +126,7 @@ function TenantEventPage() {
             <PoweredByGetStampd variant="trail" />
           </div>
         </div>
-        <HostDiagnostic reason={state.reason} />
+        <HostDiagnostic resolutionSource="not_found" error={state.reason} />
       </div>
     );
   }
@@ -184,7 +184,8 @@ function TenantEventPage() {
       <HostDiagnostic
         resolvedAgencyId={null}
         resolvedEventId={event.event_id}
-        reason="Event resolved by agency subdomain + event slug"
+        resolutionSource="public_event_slug"
+        error={null}
       />
     </div>
   );

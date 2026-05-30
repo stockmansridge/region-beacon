@@ -2,17 +2,35 @@ import { useEffect, useState } from "react";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { describeHost } from "@/components/host-router";
 
+/**
+ * Source/reason for the resolved (or unresolved) tenant context.
+ * Lets post-DNS smoke testers see *why* a host landed where it did.
+ */
+export type ResolutionSource =
+  | "legacy_event_domain"
+  | "agency_subdomain"
+  | "public_event_slug"
+  | "not_found"
+  | "reserved"
+  | "root"
+  | "app";
+
 type Extra = {
   resolvedAgencyId?: string | null;
   resolvedEventId?: string | null;
+  resolutionSource?: ResolutionSource | null;
+  /** Human-readable explanation when resolution fails or is interesting. */
+  error?: string | null;
+  /** Legacy alias for `error` — kept so existing callers continue to compile. */
   reason?: string | null;
 };
 
 /**
  * Platform-admin-only diagnostic panel. Renders nothing for normal visitors.
- * Shows hostname, route classification, resolved tenant/event ids and a
- * "Copy diagnostic" button. Visible when the signed-in user is
- * platform_admin OR when the URL contains ?diag=1 (for support).
+ * Visible when the signed-in user is platform_admin OR when the URL contains
+ * `?diag=1` (for support). Shows hostname, pathname, classification,
+ * subdomain, rewrite target, resolved agency/event ids, resolution source,
+ * and any error message — plus a "Copy diagnostic" button.
  */
 export function HostDiagnostic(props: Extra) {
   const access = useAdminAccess();
@@ -31,11 +49,34 @@ export function HostDiagnostic(props: Extra) {
   const isPlatformAdmin = access.status === "authorized" && access.isPlatformAdmin;
   if (!isPlatformAdmin && !diagQuery) return null;
 
+  // Derive resolutionSource from classification if the caller didn't provide one.
+  const derivedSource: ResolutionSource | null = (() => {
+    if (props.resolutionSource) return props.resolutionSource;
+    switch (snapshot.classification) {
+      case "root":
+        return "root";
+      case "app":
+        return "app";
+      case "reserved":
+        return "reserved";
+      default:
+        return null;
+    }
+  })();
+
+  const errorMessage = props.error ?? props.reason ?? null;
+
   const payload = {
-    ...snapshot,
+    hostname: snapshot.hostname,
+    pathname: snapshot.pathname,
+    rootDomain: snapshot.rootDomain,
+    classification: snapshot.classification,
+    subdomain: snapshot.subdomain,
+    rewriteTo: snapshot.rewriteTo,
     resolvedAgencyId: props.resolvedAgencyId ?? null,
     resolvedEventId: props.resolvedEventId ?? null,
-    reason: props.reason ?? null,
+    resolutionSource: derivedSource,
+    error: errorMessage,
     href: window.location.href,
     capturedAt: new Date().toISOString(),
   };
