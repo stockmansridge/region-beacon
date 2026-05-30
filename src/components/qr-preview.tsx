@@ -79,6 +79,8 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
         logoUrl: poster.logoUrl ?? null,
         primaryColor: poster.primaryColor ?? null,
         accentColor: poster.accentColor ?? null,
+        offerSummary: poster.offerSummary ?? null,
+        entryValue: poster.entryValue ?? null,
       };
       await generateQrPosterPdf(payload, poster.filename);
     } catch {
@@ -102,6 +104,11 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
   }
   return (
     <div className="flex flex-col items-start gap-2">
+      {poster?.venueName && (
+        <div className="text-[11px] font-medium text-muted-foreground">
+          QR for: <span className="font-semibold text-foreground">{poster.venueName}</span>
+        </div>
+      )}
       <img
         src={dataUrl}
         alt="QR code"
