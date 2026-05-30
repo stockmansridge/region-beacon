@@ -12,6 +12,10 @@ compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 # account_id = "<fill-in-before-first-deploy>"
 
+# First deploy: workers.dev only, no zone routes. Safe to deploy without
+# affecting any live getstampd.com.au hostname.
+workers_dev = true
+
 # Serve the built static assets directly from the Worker.
 [assets]
 directory = ".output/public"
@@ -24,33 +28,45 @@ NODE_ENV = "production"
 # not here. Runtime-only secrets (service role, webhook secrets) go in
 # `wrangler secret put NAME` once they exist.
 
-# Wildcard SaaS routing. Workers Custom Domains do NOT support wildcards —
-# we use Worker Routes attached to the zone. Each matching hostname needs a
-# proxied (orange-cloud) DNS record on the zone for the route to fire.
+# Production zone routes — wildcard SaaS routing.
+# Workers Custom Domains do NOT support wildcards; we use Worker Routes
+# attached to the zone. Each matching hostname needs a proxied (orange-cloud)
+# DNS record on the zone for the route to fire.
 #
-# Routes intentionally added in two phases:
-#   Phase A (initial cutover): apex + www + app only.
-#   Phase B (tenant routing):  add the *.getstampd.com.au wildcard route AND
-#                              the wildcard DNS record together.
-# Keep the wildcard route commented out until Phase B.
+# SAFETY: ALL zone routes are commented out for the FIRST test deploy.
+# First deploy goes to `workers.dev` only and is smoke-tested in isolation,
+# with zero impact on the live getstampd.com.au hostnames.
+#
+# Phase A (intentional production cutover): uncomment apex + www + app blocks,
+#   redeploy, then add the proxied DNS records for @, www, app on Cloudflare.
+# Phase B (tenant routing): uncomment the *.getstampd.com.au block AND add
+#   the wildcard DNS record together.
 
-[[routes]]
-pattern = "getstampd.com.au/*"
-zone_name = "getstampd.com.au"
-custom_domain = false
+# workers_dev = true is the default when no zone routes are active, which is
+# what we want for the first test deploy. The Worker will be reachable at
+# https://getstampd-prod.<account>.workers.dev — production hostnames are
+# untouched.
 
-[[routes]]
-pattern = "www.getstampd.com.au/*"
-zone_name = "getstampd.com.au"
-custom_domain = false
+# --- Phase A (DO NOT uncomment until intentional cutover) ---
+# [[routes]]
+# pattern = "getstampd.com.au/*"
+# zone_name = "getstampd.com.au"
+# custom_domain = false
+#
+# [[routes]]
+# pattern = "www.getstampd.com.au/*"
+# zone_name = "getstampd.com.au"
+# custom_domain = false
+#
+# [[routes]]
+# pattern = "app.getstampd.com.au/*"
+# zone_name = "getstampd.com.au"
+# custom_domain = false
 
-[[routes]]
-pattern = "app.getstampd.com.au/*"
-zone_name = "getstampd.com.au"
-custom_domain = false
-
-# Phase B — enable together with the `*` DNS record.
+# --- Phase B (enable together with wildcard DNS) ---
 # [[routes]]
 # pattern = "*.getstampd.com.au/*"
 # zone_name = "getstampd.com.au"
+# custom_domain = false
+
 # custom_domain = false
