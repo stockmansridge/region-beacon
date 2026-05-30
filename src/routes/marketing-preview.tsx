@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { GetStampdLogo } from "@/components/brand";
+import { useEffect } from "react";
+import { useAdminAccess } from "@/hooks/use-admin-access";
 import {
   MapPin,
   Stamp,
