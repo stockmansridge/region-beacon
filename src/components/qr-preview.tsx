@@ -20,6 +20,8 @@ type Props = {
     logoUrl?: string | null;
     primaryColor?: string | null;
     accentColor?: string | null;
+    offerSummary?: string | null;
+    entryValue?: number | null;
     /** Filename (with .pdf extension). */
     filename: string;
   };
