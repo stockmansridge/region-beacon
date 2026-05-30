@@ -377,7 +377,7 @@ function EventDetail() {
             .eq("event_id", event.id)
             .in("id", venues.map((v) => v.id));
           if (!offerErr && Array.isArray(offerRows)) {
-            for (const row of offerRows as Array<{ id: string; offer_summary: string | null }>) {
+            for (const row of offerRows as unknown as Array<{ id: string; offer_summary: string | null }>) {
               offerSummaryByVenue.set(row.id, row.offer_summary ?? null);
             }
           }
