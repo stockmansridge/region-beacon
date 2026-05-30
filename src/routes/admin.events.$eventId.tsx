@@ -12,6 +12,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { posterFilename } from "@/lib/qr-poster";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { useAuth } from "@/hooks/use-auth";
+
+type LoadDiagnostic = {
+  step: string;
+  message: string;
+  code?: string | null;
+  details?: string | null;
+  hint?: string | null;
+};
 
 export const Route = createFileRoute("/admin/events/$eventId")({
   head: () => ({ meta: [{ title: "Event detail" }] }),
