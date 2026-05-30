@@ -106,11 +106,6 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
   }
   return (
     <div className="flex flex-col items-start gap-2">
-      {poster?.venueName && (
-        <div className="text-[11px] font-medium text-muted-foreground">
-          QR for: <span className="font-semibold text-foreground">{poster.venueName}</span>
-        </div>
-      )}
       <img
         src={dataUrl}
         alt="QR code"
@@ -118,6 +113,26 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
         height={size}
         className="rounded-md border bg-white p-2"
       />
+      {poster?.venueName && (
+        <div className="space-y-0.5 text-xs">
+          <div className="font-semibold text-foreground">
+            QR Code for: {poster.venueName}
+          </div>
+          {poster.offerSummary && (
+            <div className="text-muted-foreground">
+              Special: {poster.offerSummary}
+            </div>
+          )}
+          {typeof poster.entryValue === "number" && poster.entryValue > 1 && (
+            <div className="font-medium text-foreground">
+              Stamp value: {poster.entryValue} entries
+            </div>
+          )}
+          {poster.entryValue === 1 && (
+            <div className="text-muted-foreground">Stamp value: 1 entry</div>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"

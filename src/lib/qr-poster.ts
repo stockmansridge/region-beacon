@@ -161,18 +161,31 @@ export async function generateQrPosterPdf(
   doc.rect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, "F");
   doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize, undefined, "FAST");
 
-  // Descriptor / offer summary under the QR (optional, truncated safely)
+  // Caption block directly under the QR. Always leads with the venue name
+  // so a cropped/screenshot QR remains unambiguous.
   let belowQrY = qrY + qrSize + 8;
+
+  doc.setTextColor(primary);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  const captionLines = doc.splitTextToSize(
+    `QR Code for: ${input.venueName}`,
+    pageW - 30,
+  );
+  doc.text(captionLines, pageW / 2, belowQrY, { align: "center" });
+  belowQrY += 6 * captionLines.length + 1;
+
+  // Descriptor / offer summary (optional, truncated safely)
   const summary = (input.offerSummary ?? "").trim();
   if (summary) {
-    const truncated = summary.length > 220 ? `${summary.slice(0, 217)}…` : summary;
+    const truncated = summary.length > 200 ? `${summary.slice(0, 197)}…` : summary;
     doc.setTextColor("#222222");
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    const summaryLines = doc.splitTextToSize(truncated, pageW - 30);
+    doc.setFontSize(11);
+    const summaryLines = doc.splitTextToSize(`Special: ${truncated}`, pageW - 30);
     const maxLines = Math.min(summaryLines.length, 3);
-    doc.text(summaryLines.slice(0, maxLines), pageW / 2, belowQrY, { align: "center" });
-    belowQrY += 5.5 * maxLines + 2;
+    doc.text(summaryLines.slice(0, maxLines), pageW / 2, belowQrY + 2, { align: "center" });
+    belowQrY += 5 * maxLines + 2;
   }
 
   // Bonus entries line
@@ -182,12 +195,12 @@ export async function generateQrPosterPdf(
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.text(
-      `Bonus: this stamp is worth ${entryValue} entries`,
+      `Bonus: this stamp is worth ${entryValue} entries.`,
       pageW / 2,
       belowQrY + 2,
       { align: "center" },
     );
-    belowQrY += 8;
+    belowQrY += 7;
   }
 
   // Check-in URL in small text under the QR
