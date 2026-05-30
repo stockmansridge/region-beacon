@@ -610,7 +610,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             No app download required
           </p>
         </form>
-        ) : null}
+        )}
         {showDiag && debugInfo && (
           <div className="mt-4">
             <DiagnosticPanel
