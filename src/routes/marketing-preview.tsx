@@ -26,23 +26,53 @@ import {
 export const Route = createFileRoute("/marketing-preview")({
   head: () => ({
     meta: [
-      { title: "GetStampd — Digital event passports for tourism & festivals" },
-      {
-        name: "description",
-        content:
-          "GetStampd helps tourism regions, festivals and event organisers launch branded QR passport experiences — no app download required.",
-      },
-      { property: "og:title", content: "GetStampd — Digital event passports" },
-      {
-        property: "og:description",
-        content:
-          "Launch branded QR passport experiences for tourism regions, festivals and events. No app download.",
-      },
-      { property: "og:type", content: "website" },
+      { title: "Marketing preview — GetStampd (internal)" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: MarketingHome,
+  component: GatedMarketingPreview,
 });
+
+function GatedMarketingPreview() {
+  const access = useAdminAccess();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (access.status === "unauthenticated") {
+      navigate({ to: "/admin/login", replace: true });
+    }
+  }, [access.status, navigate]);
+
+  if (access.status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="text-sm text-slate-500">Loading…</div>
+      </div>
+    );
+  }
+
+  if (!access.isPlatformAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white px-4">
+        <div className="max-w-md rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center">
+          <h1 className="text-lg font-semibold text-slate-900">Restricted preview</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            The full GetStampd marketing site preview is restricted to platform admins
+            while we test the public launch.
+          </p>
+          <Link
+            to="/"
+            className="mt-6 inline-flex h-9 items-center justify-center rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:opacity-90"
+          >
+            Back to home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return <MarketingHome />;
+}
 
 function Logo({ className = "" }: { className?: string }) {
   return (
