@@ -388,21 +388,27 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             />
             <span>
               I accept the{" "}
-              {event.terms_url ? (
-                <a
-                  href={event.terms_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                  style={{ color: accent }}
-                >
-                  terms & privacy policy
-                </a>
-              ) : (
-                <span className="underline" style={{ color: accent }}>
-                  terms & privacy policy
-                </span>
-              )}
+              <Link
+                to="/live/$subdomain/terms"
+                params={{ subdomain }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+                style={{ color: accent }}
+              >
+                terms
+              </Link>{" "}
+              and{" "}
+              <Link
+                to="/live/$subdomain/privacy"
+                params={{ subdomain }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+                style={{ color: accent }}
+              >
+                privacy policy
+              </Link>
               .
             </span>
           </label>

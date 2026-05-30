@@ -56,10 +56,15 @@ type Domain = {
 
 type TermsVersion = {
   id: string;
+  legal_source: "external_url" | "local_text" | null;
   terms_version: string;
-  terms_url: string;
+  terms_url: string | null;
+  terms_title: string | null;
+  terms_body: string | null;
   privacy_version: string;
-  privacy_url: string;
+  privacy_url: string | null;
+  privacy_title: string | null;
+  privacy_body: string | null;
   effective_at: string;
 };
 
@@ -314,7 +319,7 @@ function EventDetail() {
           event.current_terms_version_id
             ? supabase
                 .from("event_terms_versions")
-                .select("id, terms_version, terms_url, privacy_version, privacy_url, effective_at")
+                .select("id, legal_source, terms_version, terms_url, terms_title, terms_body, privacy_version, privacy_url, privacy_title, privacy_body, effective_at")
                 .eq("id", event.current_terms_version_id)
                 .eq("event_id", event.id)
                 .eq("agency_id", agencyId)
@@ -1650,35 +1655,54 @@ function EventDetail() {
                   )}
                 </div>
                 <DefList
-                  rows={[
-                    ["Terms version", terms.terms_version],
-                    [
-                      "Terms URL",
-                      <a
-                        key="t"
-                        href={terms.terms_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary underline-offset-2 hover:underline break-all"
-                      >
-                        {terms.terms_url}
-                      </a>,
-                    ],
-                    ["Privacy version", terms.privacy_version],
-                    [
-                      "Privacy URL",
-                      <a
-                        key="p"
-                        href={terms.privacy_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary underline-offset-2 hover:underline break-all"
-                      >
-                        {terms.privacy_url}
-                      </a>,
-                    ],
-                    ["Effective at", fmt(terms.effective_at)],
-                  ]}
+                  rows={
+                    terms.legal_source === "local_text"
+                      ? [
+                          ["Source", "GetStampd local pages"],
+                          ["Version", terms.terms_version],
+                          ["Terms title", terms.terms_title ?? "—"],
+                          ["Privacy title", terms.privacy_title ?? "—"],
+                          ["Effective at", fmt(terms.effective_at)],
+                        ]
+                      : [
+                          ["Source", "External URLs"],
+                          ["Terms version", terms.terms_version],
+                          [
+                            "Terms URL",
+                            terms.terms_url ? (
+                              <a
+                                key="t"
+                                href={terms.terms_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline-offset-2 hover:underline break-all"
+                              >
+                                {terms.terms_url}
+                              </a>
+                            ) : (
+                              "—"
+                            ),
+                          ],
+                          ["Privacy version", terms.privacy_version],
+                          [
+                            "Privacy URL",
+                            terms.privacy_url ? (
+                              <a
+                                key="p"
+                                href={terms.privacy_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline-offset-2 hover:underline break-all"
+                              >
+                                {terms.privacy_url}
+                              </a>
+                            ) : (
+                              "—"
+                            ),
+                          ],
+                          ["Effective at", fmt(terms.effective_at)],
+                        ]
+                  }
                 />
               </>
             ) : (
@@ -1709,7 +1733,21 @@ function EventDetail() {
                 onOpenChange={setTermsDialogOpen}
                 agencyId={agencyId}
                 eventId={bundle.event.id}
+                eventName={bundle.event.name}
                 initialVersionLabel={terms?.terms_version ?? null}
+                initialLegalSource={terms?.legal_source ?? null}
+                initial={
+                  terms
+                    ? {
+                        terms_title: terms.terms_title,
+                        terms_body: terms.terms_body,
+                        privacy_title: terms.privacy_title,
+                        privacy_body: terms.privacy_body,
+                        terms_url: terms.terms_url,
+                        privacy_url: terms.privacy_url,
+                      }
+                    : null
+                }
                 onSaved={() => {
                   toast.success("Terms & privacy updated");
                   setReloadKey((k) => k + 1);
