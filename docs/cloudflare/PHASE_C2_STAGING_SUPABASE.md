@@ -120,9 +120,17 @@ The Cloudflare Worker is built and deployed from a separate pipeline.
 Its build env (`VITE_SUPABASE_*`, `SUPABASE_*`) is **untouched** in
 Phase C2. Verification after Phase C2 ships:
 
-- Hit `https://getstampd.com.au/debug/worker-health` → `hasSupabaseUrl: true`,
-  `hasSupabaseKey: true`, and the URL fragment in the response should still
-  match the production Supabase project ref.
+- Hit `https://getstampd.com.au/debug/worker-health` → confirm
+  `hasSupabaseUrl: true` and `hasSupabaseKey: true`. Use this **only**
+  to prove the production Worker received its Supabase build env vars.
+  Do **not** rely on this endpoint to assert which Supabase project ref
+  is in use — treat any project-ref field it happens to expose as
+  incidental, not contractual.
+- Verify the production Supabase project ref via the browser **Network**
+  tab on `https://app.getstampd.com.au/admin` (any Supabase request URL
+  will contain the prod project ref), or via an authenticated
+  platform_admin-only diagnostic surface. Never publish project-ref
+  verification through a public debug endpoint.
 - Spot-check `https://app.getstampd.com.au/admin` → existing production
   data (agencies, events) still visible to an existing prod admin.
 - Spot-check `https://ready-marketing.getstampd.com.au/` → still resolves
