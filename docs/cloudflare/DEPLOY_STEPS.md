@@ -109,7 +109,10 @@ bun add -d wrangler
 bunx wrangler login
 bunx wrangler whoami         # paste account_id into wrangler.toml
 
-# Build with PROD Supabase env baked in
+# Build with PROD Supabase env baked in (VITE_DEPLOY_TARGET is REQUIRED
+# for any Cloudflare build — the client's build-time guard refuses to bake
+# the staging fallback when this flag is set).
+VITE_DEPLOY_TARGET=cloudflare \
 VITE_SUPABASE_URL=https://<prod>.supabase.co \
 VITE_SUPABASE_PUBLISHABLE_KEY=<prod-anon-jwt> \
   bun run build
