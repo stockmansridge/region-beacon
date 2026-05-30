@@ -306,7 +306,17 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
   return (
     <>
-      <PublicAnnouncementBar subdomain={subdomain} />
+      <div className="bg-[#F6EFE2] px-4 pt-6">
+        <PublicAnnouncementBar subdomain={subdomain} />
+        <PublicEventNav
+          subdomain={subdomain}
+          eventName={event.name}
+          primaryColor={primary}
+          accentColor={accent}
+          hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
+          hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
+        />
+      </div>
       <TrailShell
         eventName={event.name}
       primaryColor={primary}
