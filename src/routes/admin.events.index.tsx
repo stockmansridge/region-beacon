@@ -543,6 +543,31 @@ function CreateEventDialog({
       return;
     }
 
+    // Verify the new event is readable by the current session before navigating.
+    // If RLS or a race hides the row, stay on the list rather than dropping the
+    // user on a broken "Could not load event detail" page.
+    const { data: verifyRow, error: verifyErr } = await supabase
+      .from("events")
+      .select("id")
+      .eq("id", newId)
+      .eq("agency_id", agencyId)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (verifyErr || !verifyRow) {
+      console.error("[create-event] post-insert verify failed", {
+        newId,
+        agencyId,
+        error: verifyErr,
+      });
+      setSaveError(
+        verifyErr
+          ? `Event was created (id ${newId}) but could not be re-read: ${verifyErr.message}. Refresh the events list and try opening it manually.`
+          : `Event was created (id ${newId}) but is not visible to your account. This usually means an RLS policy is blocking access. Refresh the events list.`,
+      );
+      return;
+    }
+
     onCreated(newId);
   }
 

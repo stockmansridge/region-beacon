@@ -12,6 +12,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { posterFilename } from "@/lib/qr-poster";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { useAuth } from "@/hooks/use-auth";
+
+type LoadDiagnostic = {
+  step: string;
+  message: string;
+  code?: string | null;
+  details?: string | null;
+  hint?: string | null;
+};
 
 export const Route = createFileRoute("/admin/events/$eventId")({
   head: () => ({ meta: [{ title: "Event detail" }] }),
@@ -197,6 +206,7 @@ function fromLocalInput(s: string): string | null {
 function EventDetail() {
   const { eventId } = Route.useParams();
   const agency = useAgencyContext();
+  const auth = useAuth();
   const agencyId = agency.selected?.id ?? null;
   const canEdit =
     agency.isPlatformAdmin ||
@@ -205,6 +215,7 @@ function EventDetail() {
 
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
+  const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
 
@@ -256,6 +267,7 @@ function EventDetail() {
     }
     let cancelled = false;
     setState("loading");
+    setDiagnostic(null);
 
     (async () => {
       // 1. Fetch event with explicit agency_id filter — confirms ownership.
@@ -271,10 +283,33 @@ function EventDetail() {
 
       if (cancelled) return;
       if (evErr) {
+        console.error("[event-detail] events lookup failed", {
+          eventId,
+          agencyId,
+          userId: auth.session?.user.id ?? null,
+          error: evErr,
+        });
+        setDiagnostic({
+          step: "events",
+          message: evErr.message,
+          code: (evErr as any).code ?? null,
+          details: (evErr as any).details ?? null,
+          hint: (evErr as any).hint ?? null,
+        });
         setState("error");
         return;
       }
       if (!event) {
+        console.warn("[event-detail] events lookup returned no rows", {
+          eventId,
+          agencyId,
+          userId: auth.session?.user.id ?? null,
+        });
+        setDiagnostic({
+          step: "events",
+          message:
+            "No event row matched this id for the current agency. Either the event id is wrong, the event belongs to another agency, or RLS hid it.",
+        });
         setState("not-found");
         return;
       }
@@ -335,14 +370,31 @@ function EventDetail() {
         ]);
 
       if (cancelled) return;
-      if (
-        brandingRes.error ||
-        domainsRes.error ||
-        checkinRes.error ||
-        leaderboardRes.error ||
-        venuesRes.error ||
-        termsRes.error
-      ) {
+      const stepErrors: Array<[string, { message: string; code?: string; details?: string; hint?: string } | null]> = [
+        ["event_branding", brandingRes.error as any],
+        ["event_domains", domainsRes.error as any],
+        ["event_checkin_settings", checkinRes.error as any],
+        ["leaderboard_settings", leaderboardRes.error as any],
+        ["venues", venuesRes.error as any],
+        ["event_terms_versions", termsRes.error as any],
+      ];
+      const firstError = stepErrors.find(([, e]) => e);
+      if (firstError) {
+        const [step, err] = firstError;
+        console.error("[event-detail] related-row lookup failed", {
+          step,
+          eventId,
+          agencyId,
+          userId: auth.session?.user.id ?? null,
+          error: err,
+        });
+        setDiagnostic({
+          step,
+          message: err?.message ?? "Unknown error",
+          code: err?.code ?? null,
+          details: err?.details ?? null,
+          hint: err?.hint ?? null,
+        });
         setState("error");
         return;
       }
@@ -982,6 +1034,12 @@ function EventDetail() {
           </Link>
           .
         </EmptyNotice>
+        <DiagnosticPanel
+          diagnostic={diagnostic}
+          eventId={eventId}
+          agencyId={agencyId}
+          userId={auth.session?.user.id ?? null}
+        />
       </>
     );
   }
@@ -991,8 +1049,18 @@ function EventDetail() {
       <>
         <PageHeader title="Event detail" description="" />
         <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Could not load event detail.
+          Could not load event detail.{" "}
+          <Link to="/admin/events" className="font-medium underline">
+            Back to events
+          </Link>
+          .
         </div>
+        <DiagnosticPanel
+          diagnostic={diagnostic}
+          eventId={eventId}
+          agencyId={agencyId}
+          userId={auth.session?.user.id ?? null}
+        />
       </>
     );
   }
@@ -2081,6 +2149,65 @@ function EmptyNotice({ children }: { children: React.ReactNode }) {
     <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
       {children}
     </div>
+  );
+}
+
+function DiagnosticPanel({
+  diagnostic,
+  eventId,
+  agencyId,
+  userId,
+}: {
+  diagnostic: LoadDiagnostic | null;
+  eventId: string;
+  agencyId: string | null;
+  userId: string | null;
+}) {
+  return (
+    <details className="mt-4 rounded-md border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+      <summary className="cursor-pointer font-medium text-foreground">
+        Diagnostics (for support)
+      </summary>
+      <dl className="mt-3 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 font-mono">
+        <dt>Attempted event id</dt>
+        <dd className="break-all">{eventId}</dd>
+        <dt>Current agency id</dt>
+        <dd className="break-all">{agencyId ?? "(none selected)"}</dd>
+        <dt>Current user id</dt>
+        <dd className="break-all">{userId ?? "(not signed in)"}</dd>
+        {diagnostic ? (
+          <>
+            <dt>Failing step</dt>
+            <dd className="break-all">{diagnostic.step}</dd>
+            <dt>Result</dt>
+            <dd className="break-all">{diagnostic.message}</dd>
+            {diagnostic.code ? (
+              <>
+                <dt>Code</dt>
+                <dd className="break-all">{diagnostic.code}</dd>
+              </>
+            ) : null}
+            {diagnostic.details ? (
+              <>
+                <dt>Details</dt>
+                <dd className="break-all">{diagnostic.details}</dd>
+              </>
+            ) : null}
+            {diagnostic.hint ? (
+              <>
+                <dt>Hint</dt>
+                <dd className="break-all">{diagnostic.hint}</dd>
+              </>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <dt>Result</dt>
+            <dd>No additional diagnostic captured.</dd>
+          </>
+        )}
+      </dl>
+    </details>
   );
 }
 
