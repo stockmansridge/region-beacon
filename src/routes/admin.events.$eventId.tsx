@@ -118,6 +118,7 @@ type Bundle = {
   leaderboard: LeaderboardSettings | null;
   venues: Venue[];
   qrByVenue: Map<string, QrSummary>;
+  offerSummaryByVenue: Map<string, string | null>;
   activation: Activation | null;
 };
 
@@ -364,6 +365,28 @@ function EventDetail() {
         }
       }
 
+      // Feature-detect venues.offer_summary (optional schema). If the column
+      // exists, hydrate a map for poster generation; otherwise leave empty.
+      const offerSummaryByVenue = new Map<string, string | null>();
+      if (venues.length > 0) {
+        try {
+          const { data: offerRows, error: offerErr } = await supabase
+            .from("venues")
+            .select("id, offer_summary" as any)
+            .eq("agency_id", agencyId)
+            .eq("event_id", event.id)
+            .in("id", venues.map((v) => v.id));
+          if (!offerErr && Array.isArray(offerRows)) {
+            for (const row of offerRows as unknown as Array<{ id: string; offer_summary: string | null }>) {
+              offerSummaryByVenue.set(row.id, row.offer_summary ?? null);
+            }
+          }
+        } catch {
+          // column not deployed in this env — degrade silently
+        }
+      }
+      if (cancelled) return;
+
       setBundle({
         event: event as EventRow,
         branding: (brandingRes.data ?? null) as Branding | null,
@@ -373,6 +396,7 @@ function EventDetail() {
         leaderboard: (leaderboardRes.data ?? null) as LeaderboardSettings | null,
         venues,
         qrByVenue,
+        offerSummaryByVenue,
         activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
       });
       setState("ready");
@@ -967,7 +991,7 @@ function EventDetail() {
     );
   }
 
-  const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue, activation } = bundle;
+  const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue, offerSummaryByVenue, activation } = bundle;
 
   return (
     <>
@@ -1509,6 +1533,8 @@ function EventDetail() {
                                           logoUrl: getEventAssetPublicUrl(branding?.logo_path),
                                           primaryColor: branding?.primary_color ?? null,
                                           accentColor: branding?.accent_color ?? null,
+                                          offerSummary: offerSummaryByVenue.get(v.id) ?? null,
+                                          entryValue: qr?.entry_value ?? null,
                                           filename: posterFilename(
                                             event.public_slug ?? event.slug,
                                             v.name,
