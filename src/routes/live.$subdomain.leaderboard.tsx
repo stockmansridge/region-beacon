@@ -35,7 +35,7 @@ function PublicLeaderboardPage() {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstampd.com.au`;
+      const host = rpcEventHost(subdomain);
       const { data, error } = await supabase.rpc(
         "get_public_leaderboard_by_domain",
         { _hostname: host },
