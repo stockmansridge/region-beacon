@@ -1148,7 +1148,7 @@ function EventDetail() {
           </Link>
           .
         </EmptyNotice>
-        <DiagnosticPanel
+        <LoadDiagnosticPanel
           diagnostic={diagnostic}
           eventId={eventId}
           agencyId={agencyId}
@@ -1170,7 +1170,7 @@ function EventDetail() {
           </Link>
           .
         </div>
-        <DiagnosticPanel
+        <LoadDiagnosticPanel
           diagnostic={diagnostic}
           eventId={eventId}
           agencyId={agencyId}
@@ -2279,7 +2279,7 @@ function EmptyNotice({ children }: { children: React.ReactNode }) {
   );
 }
 
-function DiagnosticPanel({
+function LoadDiagnosticPanel({
   diagnostic,
   eventId,
   agencyId,
