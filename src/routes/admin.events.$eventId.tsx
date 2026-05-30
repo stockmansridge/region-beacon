@@ -56,10 +56,15 @@ type Domain = {
 
 type TermsVersion = {
   id: string;
+  legal_source: "external_url" | "local_text" | null;
   terms_version: string;
-  terms_url: string;
+  terms_url: string | null;
+  terms_title: string | null;
+  terms_body: string | null;
   privacy_version: string;
-  privacy_url: string;
+  privacy_url: string | null;
+  privacy_title: string | null;
+  privacy_body: string | null;
   effective_at: string;
 };
 
