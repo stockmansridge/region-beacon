@@ -102,6 +102,7 @@ function PublicVenueDetailPage() {
   return (
     <div className="min-h-screen bg-[#F6EFE2] pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
+      <div className="px-4"><PublicEventNav subdomain={subdomain} /></div>
       <div className="mx-auto max-w-md">
         <div className="relative aspect-[3/1] w-full overflow-hidden bg-[#1F3D2B]/10">
           {coverUrl ? (
