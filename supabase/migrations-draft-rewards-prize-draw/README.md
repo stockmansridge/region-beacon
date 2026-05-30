@@ -27,21 +27,33 @@ been run against any environment. Nothing here is wired into the UI yet.
    exist. No PII added.
 
 4. `04_prize_draw_results.sql`
-   New append-only audit table `public.prize_draw_results` recording
-   every drawn winner with the seed used, prize_rule_id, snapshot of
-   entrant pool size and winner's entries, and `drawn_by` (auth.uid()).
-   Soft-locks: no updates/deletes — only inserts.
+   New append-only audit table `public.prize_draw_results`. Stores
+   winner identifiers + cached `winner_display_name` and admin-only
+   `winner_email`, the `seed`, `total_eligible_passports`,
+   `total_entries`, `selected_entry_number`, `selected_hash`, full
+   `pool_snapshot jsonb`, and `drawn_by` (auth.uid()). Append-only via
+   RLS + grants — only the SECURITY DEFINER RPC writes.
 
 5. `05_admin_prize_draw_rpcs.sql`
    Admin-only RPCs:
-     * `admin_get_prize_draw_pool(_event_id uuid, _prize_rule_id uuid)`
-       — returns per-passport summary (visitor display name + entries),
-       gated by `has_role('platform_admin')` or membership in the
-       event's agency with role `agency_owner` / `agency_admin`.
-     * `admin_draw_prize_winner(_event_id uuid, _prize_rule_id uuid,
-       _seed uuid default null)` — picks one weighted-random winner
-       using `setseed()` for auditable determinism, writes a
-       `prize_draw_results` row, returns the winner row.
+     * `admin_get_prize_draw_pool(_event_id, _prize_rule_id)` — returns
+       per-passport summary (visitor display name + weighted entries).
+     * `admin_draw_prize_winner(_event_id, _prize_rule_id, _seed)` —
+       **deterministic hash-based weighted draw** (no `setseed()` / no
+       `random()`). Each passport is expanded into `entries` tickets;
+       each ticket gets `sha256(seed || ':' || passport_id || ':' ||
+       ticket_index)`; the ticket with the lexicographically smallest
+       hash wins. Same `(seed, pool)` always picks the same winner on
+       any server / Postgres version. Pool is snapshotted into
+       `prize_draw_results.pool_snapshot` so the draw stays auditable
+       after future check-ins.
+
+6. `06_verification.sql`
+   Hand-run verification queries covering: default `entry_value = 1`,
+   snapshot immutability when QR value changes, `redeem_checkin`
+   snapshot behaviour, public leaderboard return shape (tier + points,
+   no PII), weighted pool counts, single-draw audit row, seed
+   reproducibility, and non-admin rejection.
 
 ## Order of application (later, after review)
 
@@ -51,10 +63,11 @@ been run against any environment. Nothing here is wired into the UI yet.
 03_get_public_leaderboard_with_tiers.sql
 04_prize_draw_results.sql
 05_admin_prize_draw_rpcs.sql
+-- 06_verification.sql is hand-run only, never auto-applied
 ```
 
 `03` depends on `01` (uses `checkins.entry_value`).
-`05` depends on `01`, `04`.
+`05` depends on `01`, `04`, and `pgcrypto` (for `digest()`).
 
 ## Snapshot principle (important)
 
@@ -123,10 +136,12 @@ to 1).
   visitor scans, then admin lowers to 2 — the visitor keeps 5. This is
   intentional but should be surfaced in the QR settings UI ("Changes
   apply to future check-ins only").
-- **Weighted random**: `setseed()` is per-session. Wrapping it inside a
-  single SECURITY DEFINER call is safe because the function runs in
-  one session; we still record the seed so the same draw can be
-  reproduced.
+- **Weighted random**: deterministic, hash-based — `sha256(seed || ':'
+  || passport_id || ':' || ticket_index)`, smallest hash wins. No
+  `setseed()` / no `random()` / no session state. Each ticket's hash is
+  an i.i.d. uniform draw from a 2^256 space, so win probability is
+  exactly `entries / total_entries`. Reproducible offline by any
+  auditor with the seed and the stored `pool_snapshot`.
 
 ## Proposed (non-implemented) frontend changes
 
