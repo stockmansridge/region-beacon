@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 
