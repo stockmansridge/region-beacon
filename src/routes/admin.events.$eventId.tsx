@@ -114,7 +114,10 @@ type QrSummary = {
   venue_id: string;
   status: string;
   issued_at: string;
-  entry_value: number;
+  // Optional: the `entry_value` column is added by the prize-draw migration
+  // (supabase/migrations-draft-rewards-prize-draw). In environments where
+  // that migration has not yet been applied, the loader degrades to null.
+  entry_value: number | null;
 };
 
 type Activation = {
