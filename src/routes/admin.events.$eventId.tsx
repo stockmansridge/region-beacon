@@ -1242,6 +1242,17 @@ function EventDetail() {
         eventId={event.id}
       />
 
+      {agency.isPlatformAdmin && (
+        <PublishGateDiagnostic
+          event={event}
+          domains={domains}
+          activation={activation}
+          terms={terms}
+          checkin={checkin}
+          venues={venues}
+        />
+      )}
+
       <div id="section-go-live">
         <GoLivePanel
           agencyId={agencyId}
