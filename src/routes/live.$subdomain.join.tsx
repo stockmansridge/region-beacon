@@ -452,12 +452,12 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
 
 
-        {(!saved?.access_token || showRegisterAgain) && (
-        <form
-          onSubmit={onSubmit}
-          className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
-          noValidate
-        >
+        {(!saved?.access_token || showRegisterAgain) ? (
+          <form
+            onSubmit={onSubmit}
+            className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
+            noValidate
+          >
           {topError && (
             <div
               role="alert"
