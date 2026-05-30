@@ -71,9 +71,10 @@ export function PublicLegalShell({
         <div className="mt-4 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 shadow-sm sm:p-10">
           {children}
         </div>
-        <p className="mt-6 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
-          Powered by GetStampd
-        </p>
+        <div className="mt-6 flex justify-center">
+          <PoweredByGetStampd variant="trail" />
+        </div>
+
       </div>
     </div>
   );
