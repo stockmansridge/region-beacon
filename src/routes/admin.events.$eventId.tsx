@@ -319,7 +319,7 @@ function EventDetail() {
           event.current_terms_version_id
             ? supabase
                 .from("event_terms_versions")
-                .select("id, terms_version, terms_url, privacy_version, privacy_url, effective_at")
+                .select("id, legal_source, terms_version, terms_url, terms_title, terms_body, privacy_version, privacy_url, privacy_title, privacy_body, effective_at")
                 .eq("id", event.current_terms_version_id)
                 .eq("event_id", event.id)
                 .eq("agency_id", agencyId)
