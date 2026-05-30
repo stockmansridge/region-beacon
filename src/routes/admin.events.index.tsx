@@ -31,6 +31,19 @@ type EventRow = {
   updated_at: string;
 };
 
+type DomainInfo = {
+  public_subdomain: string | null;
+  status: string | null;
+};
+
+type EventExtras = {
+  domain: DomainInfo | null;
+  venuesCount: number;
+  activationStatus: string | null;
+};
+
+const SUBDOMAIN_ROOT = "getstamped.com.au";
+
 function fmt(d: string | null) {
   if (!d) return "—";
   try {
