@@ -21,6 +21,8 @@ export function PublicEventNav({
   hasTerms = true,
   hasPrivacy = true,
   canRegister = true,
+  activeOverride,
+  passportHref,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -29,6 +31,10 @@ export function PublicEventNav({
   hasTerms?: boolean;
   hasPrivacy?: boolean;
   canRegister?: boolean;
+  /** When set, forces this nav item to render as active, regardless of pathname. */
+  activeOverride?: "home" | "join" | "venues" | "leaderboard";
+  /** When set, the Passport item renders as a plain <a href> to this URL instead of the /join route. */
+  passportHref?: string;
 }) {
   const primary = primaryColor ?? "#1F3D2B";
   const accent = accentColor ?? "#B5572A";
@@ -37,6 +43,7 @@ export function PublicEventNav({
 
   const baseHome = `/live/${subdomain}`;
   const isActive = (target: "home" | "join" | "venues" | "leaderboard") => {
+    if (activeOverride) return target === activeOverride;
     if (target === "home") return pathname === baseHome || pathname === `${baseHome}/`;
     if (target === "venues")
       return pathname === `${baseHome}/venues` || pathname.startsWith(`${baseHome}/venues/`);
