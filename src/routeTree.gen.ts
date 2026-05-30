@@ -198,30 +198,30 @@ const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   getParentRoute: () => AdminRoute,
 } as any)
 const LiveSubdomainVenuesRoute = LiveSubdomainVenuesRouteImport.update({
-  id: '/venues',
-  path: '/venues',
-  getParentRoute: () => LiveSubdomainRoute,
+  id: '/live/$subdomain/venues',
+  path: '/live/$subdomain/venues',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LiveSubdomainTermsRoute = LiveSubdomainTermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => LiveSubdomainRoute,
+  id: '/live/$subdomain/terms',
+  path: '/live/$subdomain/terms',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LiveSubdomainPrivacyRoute = LiveSubdomainPrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => LiveSubdomainRoute,
+  id: '/live/$subdomain/privacy',
+  path: '/live/$subdomain/privacy',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LiveSubdomainLeaderboardRoute =
   LiveSubdomainLeaderboardRouteImport.update({
-    id: '/leaderboard',
-    path: '/leaderboard',
-    getParentRoute: () => LiveSubdomainRoute,
+    id: '/live/$subdomain/leaderboard',
+    path: '/live/$subdomain/leaderboard',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
-  id: '/join',
-  path: '/join',
-  getParentRoute: () => LiveSubdomainRoute,
+  id: '/live/$subdomain/join',
+  path: '/live/$subdomain/join',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DemoWineriesVenueIdRoute = DemoWineriesVenueIdRouteImport.update({
   id: '/$venueId',
@@ -556,6 +556,11 @@ export interface RootRouteChildren {
   DemoIndexRoute: typeof DemoIndexRoute
   PassportIndexRoute: typeof PassportIndexRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
+  LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
+  LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
+  LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
+  LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
+  LiveSubdomainVenuesRoute: typeof LiveSubdomainVenuesRouteWithChildren
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
 }
@@ -767,38 +772,38 @@ declare module '@tanstack/react-router' {
     }
     '/live/$subdomain/venues': {
       id: '/live/$subdomain/venues'
-      path: '/venues'
+      path: '/live/$subdomain/venues'
       fullPath: '/live/$subdomain/venues'
       preLoaderRoute: typeof LiveSubdomainVenuesRouteImport
-      parentRoute: typeof LiveSubdomainRoute
+      parentRoute: typeof rootRouteImport
     }
     '/live/$subdomain/terms': {
       id: '/live/$subdomain/terms'
-      path: '/terms'
+      path: '/live/$subdomain/terms'
       fullPath: '/live/$subdomain/terms'
       preLoaderRoute: typeof LiveSubdomainTermsRouteImport
-      parentRoute: typeof LiveSubdomainRoute
+      parentRoute: typeof rootRouteImport
     }
     '/live/$subdomain/privacy': {
       id: '/live/$subdomain/privacy'
-      path: '/privacy'
+      path: '/live/$subdomain/privacy'
       fullPath: '/live/$subdomain/privacy'
       preLoaderRoute: typeof LiveSubdomainPrivacyRouteImport
-      parentRoute: typeof LiveSubdomainRoute
+      parentRoute: typeof rootRouteImport
     }
     '/live/$subdomain/leaderboard': {
       id: '/live/$subdomain/leaderboard'
-      path: '/leaderboard'
+      path: '/live/$subdomain/leaderboard'
       fullPath: '/live/$subdomain/leaderboard'
       preLoaderRoute: typeof LiveSubdomainLeaderboardRouteImport
-      parentRoute: typeof LiveSubdomainRoute
+      parentRoute: typeof rootRouteImport
     }
     '/live/$subdomain/join': {
       id: '/live/$subdomain/join'
-      path: '/join'
+      path: '/live/$subdomain/join'
       fullPath: '/live/$subdomain/join'
       preLoaderRoute: typeof LiveSubdomainJoinRouteImport
-      parentRoute: typeof LiveSubdomainRoute
+      parentRoute: typeof rootRouteImport
     }
     '/demo/wineries/$venueId': {
       id: '/demo/wineries/$venueId'
@@ -913,6 +918,17 @@ const TAgencySlugRouteWithChildren = TAgencySlugRoute._addFileChildren(
   TAgencySlugRouteChildren,
 )
 
+interface LiveSubdomainVenuesRouteChildren {
+  LiveSubdomainVenuesVenueIdRoute: typeof LiveSubdomainVenuesVenueIdRoute
+}
+
+const LiveSubdomainVenuesRouteChildren: LiveSubdomainVenuesRouteChildren = {
+  LiveSubdomainVenuesVenueIdRoute: LiveSubdomainVenuesVenueIdRoute,
+}
+
+const LiveSubdomainVenuesRouteWithChildren =
+  LiveSubdomainVenuesRoute._addFileChildren(LiveSubdomainVenuesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -935,19 +951,14 @@ const rootRouteChildren: RootRouteChildren = {
   DemoIndexRoute: DemoIndexRoute,
   PassportIndexRoute: PassportIndexRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
+  LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
+  LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
+  LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
+  LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
+  LiveSubdomainVenuesRoute: LiveSubdomainVenuesRouteWithChildren,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

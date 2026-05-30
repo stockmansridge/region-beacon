@@ -148,6 +148,7 @@ type Bundle = {
   venues: Venue[];
   qrByVenue: Map<string, QrSummary>;
   offerSummaryByVenue: Map<string, string | null>;
+  offerSupported: boolean;
   activation: Activation | null;
 };
 
@@ -201,6 +202,12 @@ type VenueEditForm = {
   lng: string;
   order_index: string;
   status: "active" | "inactive";
+  description: string;
+  offer_summary: string;
+  website_url: string;
+  phone: string;
+  logo_path: string | null;
+  cover_path: string | null;
 };
 
 function toLocalInput(iso: string | null): string {
@@ -263,7 +270,8 @@ function EventDetail() {
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
-  const [publicProfileVenueId, setPublicProfileVenueId] = useState<string | null>(null);
+  const [venueAssetBusy, setVenueAssetBusy] = useState<VenueAssetKind | null>(null);
+  const [venueAssetError, setVenueAssetError] = useState<string | null>(null);
 
   // QR controls — token is fetched only on explicit reveal/rotate and held in
   // memory only. Map: venue_id -> revealed token.
