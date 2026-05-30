@@ -42,6 +42,25 @@ NODE_ENV = "production"
 # (Vite replaces import.meta.env.* at build). Set them in the CI/build env,
 # not here. Runtime-only secrets (service role, webhook secrets) go in
 # `wrangler secret put NAME` once they exist.
+
+# --- Observability ---
+# Enabled so we can diagnose the workers.dev runtime error from the
+# Cloudflare Dashboard → Worker → Observability / Logs.
+# NOTE: Nitro's generated dist/server/wrangler.json overrides this file at
+# deploy time. The post-build script `scripts/patch-wrangler-observability.mjs`
+# (wired into `bun run build`) injects the same observability block into the
+# generated JSON so these settings actually take effect. Keep the two in sync.
+# `traces` and `persist` are not valid wrangler observability fields and are
+# intentionally omitted; Workers Logs persistence is controlled in the Dashboard.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
 # Production zone routes — wildcard SaaS routing.
 # Workers Custom Domains do NOT support wildcards; we use Worker Routes
 # attached to the zone. Each matching hostname needs a proxied (orange-cloud)
