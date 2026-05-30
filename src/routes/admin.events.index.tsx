@@ -43,7 +43,7 @@ type EventExtras = {
   activationStatus: string | null;
 };
 
-const SUBDOMAIN_ROOT = "getstampd.com.au";
+const SUBDOMAIN_ROOT = PUBLIC_TENANT_ROOT_DOMAIN;
 
 function fmt(d: string | null) {
   if (!d) return "—";
