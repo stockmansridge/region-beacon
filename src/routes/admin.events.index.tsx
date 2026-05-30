@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
+import { PUBLIC_TENANT_ROOT_DOMAIN } from "@/lib/domains";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -42,7 +43,7 @@ type EventExtras = {
   activationStatus: string | null;
 };
 
-const SUBDOMAIN_ROOT = "getstamped.com.au";
+const SUBDOMAIN_ROOT = PUBLIC_TENANT_ROOT_DOMAIN;
 
 function fmt(d: string | null) {
   if (!d) return "—";

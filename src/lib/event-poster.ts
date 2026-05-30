@@ -12,7 +12,7 @@ import { slugForFilename } from "@/lib/qr-poster";
 
 export type EventPosterInput = {
   eventName: string;
-  publicUrl: string; // e.g. https://demo.getstamped.com.au
+  publicUrl: string; // e.g. https://demo.getstampd.com.au
   description?: string | null;
   welcomeCopy?: string | null;
   startsAt?: string | null; // ISO

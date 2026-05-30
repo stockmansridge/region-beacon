@@ -302,7 +302,7 @@ function SignupPage() {
             >
               <div className="flex items-center overflow-hidden rounded-md border bg-background">
                 <span className="px-3 text-xs text-muted-foreground">
-                  getstamped.com.au/w/
+                  getstampd.com.au/w/
                 </span>
                 <input
                   type="text"

@@ -115,33 +115,25 @@ Supabase project.** This is the highest-priority follow-up.
 
 ## 7. Hard-coded domain cleanup
 
-**Status: ⚠ outstanding — `getstamped.com.au` (with the extra "e") is
-still referenced in 19 source locations.**
+**Status: ✅ COMPLETE (Phase C1).** All 19 product/UI references to the
+legacy `getstamped.com.au` typo have been rewritten to `getstampd.com.au`.
+The only remaining occurrence in `src/` is the deliberate
+backward-compatibility fallback in `src/lib/tenant-resolution.ts:45`,
+which keeps historical `event_domains` rows resolvable.
 
-The intended constants live in `src/lib/domains.ts`
-(`ROOT_DOMAINS`, `PRIMARY_ROOT_DOMAIN`) and the file's own header
-comment already tracks this as known tech debt. Files still using the
-legacy literal string:
+`src/lib/domains.ts` now exports `PUBLIC_TENANT_ROOT_DOMAIN`,
+`tenantHost(sub)`, and `tenantUrl(sub, path)` helpers. New code MUST
+use these instead of hard-coding the domain string.
+`SUBDOMAIN_ROOT` in `src/routes/admin.events.index.tsx` now derives from
+`PUBLIC_TENANT_ROOT_DOMAIN`.
 
-- `src/components/public-announcement-bar.tsx:62`
-- `src/components/admin-event-poster.tsx:46`
-- `src/components/public-legal.tsx:34`
-- `src/lib/event-poster.ts:15` (comment only)
-- `src/lib/tenant-resolution.ts:45` (kept intentionally — host-resolution
-  fallback for legacy DNS; leave as the **only** allowed reference)
-- `src/routes/admin.account.tsx:317`
-- `src/routes/admin.events.$eventId.tsx` (lines 948, 2631, 2643, 2652,
-  2682, 2853, 2984)
-- `src/routes/admin.events.index.tsx:45` (`SUBDOMAIN_ROOT`)
-- `src/routes/live.$subdomain.{join,leaderboard,tsx,venues.tsx,venues.$venueId}.tsx`
-- `src/routes/signup.tsx:305`
-- `src/routes/marketing-preview.tsx:446`
+Verification:
+- `grep -rn "getstamped" src/` returns only `src/lib/tenant-resolution.ts`
+  (intentional fallback) and `src/lib/domains.ts` (explanatory comment).
+- Legacy mentions remain in historical docs (`docs/deployment-getstamped.md`,
+  `docs/plans/apple-mapkit-venue-picker.md`) and are not in scope.
+- No DNS / Cloudflare / Supabase / behavioural routing changes.
 
-Action: in a follow-up PR, replace each literal with
-`PRIMARY_ROOT_DOMAIN` (or a subdomain helper) from `src/lib/domains.ts`.
-Keep `tenant-resolution.ts`'s entry intact — it is the deliberate
-backward-compatibility hook. This is a pure refactor; no behaviour
-change, no DNS impact.
 
 ## 8. Worker / project name (`region-beacon` → `getstampd-prod`?)
 

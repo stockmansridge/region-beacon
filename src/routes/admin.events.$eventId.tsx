@@ -983,7 +983,7 @@ function EventDetail() {
     );
     if (sub?.public_subdomain) {
       return {
-        url: `https://${sub.public_subdomain}.getstamped.com.au/checkin/${token}`,
+        url: `https://${sub.public_subdomain}.getstampd.com.au/checkin/${token}`,
         isFallback: false,
       };
     }
@@ -2666,7 +2666,7 @@ function PublicAddressCard({
   }
 
   const previewHost = normalized && availability.kind !== "invalid"
-    ? `${normalized}.getstamped.com.au`
+    ? `${normalized}.getstampd.com.au`
     : null;
 
   return (
@@ -2678,7 +2678,7 @@ function PublicAddressCard({
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Claimed subdomain</span>
           <span className="font-mono">
             {subdomainRow?.public_subdomain
-              ? `${subdomainRow.public_subdomain}.getstamped.com.au`
+              ? `${subdomainRow.public_subdomain}.getstampd.com.au`
               : "—"}
           </span>
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Status</span>
@@ -2687,7 +2687,7 @@ function PublicAddressCard({
           </span>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Pick a friendly web address for your event on <span className="font-mono">getstamped.com.au</span>.
+          Pick a friendly web address for your event on <span className="font-mono">getstampd.com.au</span>.
           You can reserve it now — it only goes live after billing/activation.
         </p>
       </div>
@@ -2717,7 +2717,7 @@ function PublicAddressCard({
               className="h-9 w-full border bg-background px-2 text-sm font-mono"
             />
             <span className="inline-flex items-center rounded-r-md border border-l-0 bg-muted px-2 text-xs text-muted-foreground">
-              .getstamped.com.au
+              .getstampd.com.au
             </span>
           </div>
 
@@ -2888,7 +2888,7 @@ function GoLivePanel({
   const allPass = eventPass && domainPass && activationPass;
 
   const publicUrl = primarySubdomain?.public_subdomain
-    ? `https://${primarySubdomain.public_subdomain}.getstamped.com.au`
+    ? `https://${primarySubdomain.public_subdomain}.getstampd.com.au`
     : primaryCustom?.custom_domain
       ? `https://${primaryCustom.custom_domain}`
       : null;
@@ -3019,7 +3019,7 @@ function GoLivePanel({
             Test live public page →
           </a>
           <span className="ml-2 text-muted-foreground">
-            Simulates {primarySubdomain.public_subdomain}.getstamped.com.au. Only
+            Simulates {primarySubdomain.public_subdomain}.getstampd.com.au. Only
             shows the event when all three go-live gates pass.
           </span>
         </div>

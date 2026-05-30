@@ -86,7 +86,7 @@ function LiveJoinPage() {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstamped.com.au`;
+      const host = `${subdomain}.getstampd.com.au`;
 
       const { data: resolveData, error: resolveErr } = await supabase.rpc(
         "resolve_event_by_host",

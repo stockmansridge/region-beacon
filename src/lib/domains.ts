@@ -2,21 +2,38 @@
  * Central registry of GetStampd root domains.
  *
  * - `getstampd.com` is the canonical long-term brand domain.
- * - `getstampd.com.au` is kept for transition / existing DNS bindings.
+ * - `getstampd.com.au` is the currently-bound production tenant suffix
+ *   (Cloudflare zone, wildcard tenant routing, Lovable custom domain).
  *
- * NOTE: spell-check. The repo historically used `getstamped.com.au` (extra
- * "e"). That is a typo: the actual bound custom domain in Lovable is
- * `getstampd.com.au` (no "e"). New code should use these constants instead
- * of literal strings. Lingering `getstamped.com.au` references are tracked
- * in the audit report and will be cleaned up incrementally — changing them
- * blindly risks breaking `event_domains` rows that may have been written
- * with the typo.
+ * Phase C1 cleanup: the legacy `getstamped.com.au` typo has been removed
+ * from product/UI code. The ONLY remaining reference is the deliberate
+ * backward-compat fallback in `src/lib/tenant-resolution.ts`, which keeps
+ * historical `event_domains` rows written with the typo resolvable. Do not
+ * reintroduce the literal string anywhere else — use the helpers below.
  */
 
 export const ROOT_DOMAINS = ["getstampd.com", "getstampd.com.au"] as const;
 export type RootDomain = (typeof ROOT_DOMAINS)[number];
 
 export const PRIMARY_ROOT_DOMAIN: RootDomain = "getstampd.com";
+
+/**
+ * Public-facing root domain for tenant subdomains
+ * (`<sub>.getstampd.com.au`). This is what user-facing links, posters,
+ * announcement banners, and admin-generated URLs render today.
+ */
+export const PUBLIC_TENANT_ROOT_DOMAIN: RootDomain = "getstampd.com.au";
+
+/** Builds the public host for a tenant subdomain, e.g. `demo.getstampd.com.au`. */
+export function tenantHost(subdomain: string): string {
+  return `${subdomain}.${PUBLIC_TENANT_ROOT_DOMAIN}`;
+}
+
+/** Builds a public https URL for a tenant subdomain + optional path. */
+export function tenantUrl(subdomain: string, path: string = ""): string {
+  const suffix = path.startsWith("/") || path === "" ? path : `/${path}`;
+  return `https://${tenantHost(subdomain)}${suffix}`;
+}
 
 /** Returns the matching root domain (without subdomain) for a hostname, or null. */
 export function matchRootDomain(hostname: string): RootDomain | null {
@@ -35,3 +52,4 @@ export function extractSubdomain(hostname: string): { root: RootDomain; sub: str
   if (host === root) return { root, sub: "" };
   return { root, sub: host.slice(0, -1 * (`.${root}`.length)) };
 }
+

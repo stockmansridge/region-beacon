@@ -31,7 +31,7 @@ export function useLegal(subdomain: string): LoadState {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = `${subdomain}.getstamped.com.au`;
+      const host = `${subdomain}.getstampd.com.au`;
       const { data, error } = await supabase.rpc(
         "get_public_event_legal_by_domain",
         { _hostname: host },

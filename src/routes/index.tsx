@@ -84,7 +84,7 @@ function ComingSoon() {
         </div>
 
         <p className="mt-12 text-xs uppercase tracking-[0.22em] text-slate-500">
-          getstamped.com.au
+          getstampd.com.au
         </p>
       </main>
 
