@@ -100,7 +100,20 @@ function PassportPage() {
 
       const row = (passportRes.data?.[0] ?? null) as PassportRow | null;
       if (passportRes.error || !row?.passport_id) {
-        setState({ kind: "not_found" });
+        const err = (passportRes.error ?? null) as
+          | { code?: string | null; message?: string | null; details?: string | null; hint?: string | null }
+          | null;
+        setState({
+          kind: "not_found",
+          diagnostics: {
+            rpc: "get_passport_by_token",
+            zero_rows: !passportRes.error && !row?.passport_id,
+            supabase_error_code: err?.code ?? null,
+            supabase_error_message: err?.message ?? null,
+            supabase_error_details: err?.details ?? null,
+            supabase_error_hint: err?.hint ?? null,
+          },
+        });
         return;
       }
 
