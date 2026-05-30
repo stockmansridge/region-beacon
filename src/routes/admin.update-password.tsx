@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { GetStampdLogo } from "@/components/brand";
 
 export const Route = createFileRoute("/admin/update-password")({
   head: () => ({ meta: [{ title: "Set a new password" }] }),
