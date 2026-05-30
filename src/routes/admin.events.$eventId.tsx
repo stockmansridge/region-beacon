@@ -1134,6 +1134,7 @@ function EventDetail() {
           eventId={eventId}
           agencyId={agencyId}
           userId={auth.session?.user.id ?? null}
+          canCopy={agency.isPlatformAdmin || canEdit}
         />
       </>
     );
