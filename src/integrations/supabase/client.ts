@@ -4,14 +4,19 @@
 //   - VITE_SUPABASE_URL
 //   - VITE_SUPABASE_PUBLISHABLE_KEY  (publishable / anon key — safe in browser)
 //
-// Environment separation:
-//   - Lovable preview/dev: env vars default to the STAGING project values
-//     below if the build env doesn't set them. This keeps the in-IDE preview
-//     working without extra setup.
-//   - Cloudflare production build: MUST set both VITE_SUPABASE_URL and
-//     VITE_SUPABASE_PUBLISHABLE_KEY to the production project values in the
-//     CI/build environment. The build will fail fast (see assertions below)
-//     if production-ish hosts are detected without a real config.
+// Environment model (post-promotion):
+//   The Supabase project hardcoded as a fallback below is the PRODUCTION /
+//   LIVE database. Lovable preview/dev is currently connected to the same
+//   project. A separate staging/dev Supabase project will be created later,
+//   after Cloudflare production is stable.
+//
+//   - Lovable preview/dev: env vars unset → uses the fallback below
+//     (= production project). This is intentional during the temporary
+//     shared-project window.
+//   - Cloudflare builds (test or prod): MUST set both VITE_SUPABASE_URL and
+//     VITE_SUPABASE_PUBLISHABLE_KEY at build time. The build-time guard
+//     below enforces that, so a Cloudflare deploy can never silently rely
+//     on the hardcoded fallback.
 //
 // SECURITY:
 //   - The publishable key is designed by Supabase to ship to browsers; it is
@@ -25,11 +30,12 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// STAGING fallback values — kept here ONLY so Lovable preview/dev builds
-// continue to work without env wiring. Production builds MUST override via
-// env vars; the runtime guard below enforces that on non-preview hosts.
-const STAGING_FALLBACK_URL = "https://kyjwifumacnrpgyextzz.supabase.co";
-const STAGING_FALLBACK_PUBLISHABLE_KEY =
+// Current connected Supabase project = PRODUCTION / LIVE database.
+// Kept here so Lovable preview/dev continues to work without env wiring
+// during the temporary shared-project window. Cloudflare builds MUST
+// override these via env vars (enforced by the build-time guard below).
+const CURRENT_PROJECT_URL = "https://kyjwifumacnrpgyextzz.supabase.co";
+const CURRENT_PROJECT_PUBLISHABLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5andpZnVtYWNucnBneWV4dHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMzA4NjAsImV4cCI6MjA5NTYwNjg2MH0.VpyqPPjkKchTsCCQCyCVvy370x_QNoz_eUS8_byN__A";
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -37,47 +43,25 @@ const envKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefin
 const deployTarget = import.meta.env.VITE_DEPLOY_TARGET as string | undefined;
 
 // Build-time guard: any Cloudflare build (test or production) MUST set both
-// Supabase env vars. This prevents a workers.dev test deploy from silently
-// shipping the staging fallback to a non-getstampd hostname where the runtime
-// host-check below cannot catch it.
+// Supabase env vars explicitly. This keeps Cloudflare deployments
+// configuration-driven and prevents accidental coupling to whatever project
+// happens to be hardcoded in this file.
 if (deployTarget === "cloudflare" && (!envUrl || !envKey)) {
   throw new Error(
     "[supabase/client] VITE_DEPLOY_TARGET=cloudflare requires both " +
       "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to be set at build time. " +
-      "Refusing to bake the staging fallback into a Cloudflare deployment.",
+      "Refusing to bake the hardcoded fallback into a Cloudflare deployment.",
   );
 }
 
-export const SUPABASE_URL = envUrl ?? STAGING_FALLBACK_URL;
-export const SUPABASE_PUBLISHABLE_KEY = envKey ?? STAGING_FALLBACK_PUBLISHABLE_KEY;
+export const SUPABASE_URL = envUrl ?? CURRENT_PROJECT_URL;
+export const SUPABASE_PUBLISHABLE_KEY = envKey ?? CURRENT_PROJECT_PUBLISHABLE_KEY;
 
-// Fail loudly if neither env var nor fallback resolved to a usable value.
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   throw new Error(
     "[supabase/client] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. " +
       "Set both in the build environment.",
   );
-}
-
-
-// Production safety net: if the page is running on a getstampd.* host but the
-// client is still wired to the staging fallback, refuse to boot. This catches
-// the common mistake of deploying the production Worker without setting the
-// VITE_* build env. Lovable preview hosts and localhost are always allowed.
-if (typeof window !== "undefined" && !envUrl) {
-  const host = window.location.hostname;
-  const isProdHost =
-    host.endsWith("getstampd.com") || host.endsWith("getstampd.com.au");
-  const isPreviewHost =
-    host === "localhost" ||
-    host.endsWith(".lovable.app") ||
-    host.endsWith(".lovableproject.com");
-  if (isProdHost && !isPreviewHost) {
-    throw new Error(
-      "[supabase/client] Production host detected but VITE_SUPABASE_URL was " +
-        "not set at build time. Refusing to use staging fallback in production.",
-    );
-  }
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
