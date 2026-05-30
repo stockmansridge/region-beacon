@@ -161,7 +161,11 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [topError, setTopError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
   const [success, setSuccess] = useState<{ token: string; passport_id: string } | null>(null);
+  const { isPlatformAdmin } = useAdminAccess();
+  const [diagEnabled] = useDiagnosticsEnabled();
+  const showDiag = isPlatformAdmin && diagEnabled;
 
   const locale = useMemo(
     () => (typeof navigator !== "undefined" ? navigator.language : null),
