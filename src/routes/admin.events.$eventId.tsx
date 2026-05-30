@@ -97,6 +97,7 @@ type QrSummary = {
   venue_id: string;
   status: string;
   issued_at: string;
+  entry_value: number;
 };
 
 type Activation = {
@@ -342,7 +343,7 @@ function EventDetail() {
       if (venues.length > 0) {
         const { data: qrRows, error: qrErr } = await supabase
           .from("venue_qr_codes")
-          .select("venue_id, status, issued_at")
+          .select("venue_id, status, issued_at, entry_value")
           .eq("agency_id", agencyId)
           .eq("event_id", event.id)
           .eq("status", "active")
