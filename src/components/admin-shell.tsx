@@ -1,9 +1,11 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard } from "lucide-react";
+import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard, Bug } from "lucide-react";
 import { ReactNode } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
 import { TestEnvBanner } from "@/components/test-env-banner";
+import { useDiagnosticsEnabled } from "@/lib/diagnostics";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Sidebar nav items.
@@ -43,6 +45,7 @@ export function AdminShell({
   isPlatformAdmin?: boolean;
 }) {
   const navigate = useNavigate();
+  const [diagnosticsEnabled, setDiagnosticsEnabled] = useDiagnosticsEnabled();
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/admin/login", replace: true });
@@ -112,6 +115,21 @@ export function AdminShell({
           })()}
         </nav>
         <div className="border-t p-3">
+          {isPlatformAdmin && (
+            <label
+              className="mb-1 flex w-full cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
+              title="Show platform_admin diagnostic panels (HostDiagnostic, PublishGateDiagnostic). Stored locally in this browser only."
+            >
+              <span className="flex items-center gap-3">
+                <Bug className="h-4 w-4" /> Diagnostics
+              </span>
+              <Switch
+                checked={diagnosticsEnabled}
+                onCheckedChange={(v) => setDiagnosticsEnabled(Boolean(v))}
+                aria-label="Toggle platform admin diagnostics"
+              />
+            </label>
+          )}
           <button
             type="button"
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
