@@ -6,13 +6,50 @@
 # Zone: getstampd.com.au (registrar: Crazy Domains, DNS: Cloudflare)
 # Build output is produced by `bun run build` (nitro cloudflare-module).
 
+# Cloudflare Workers config for GetStampd production.
+#
+# DO NOT `wrangler deploy` from a local machine without coordination.
+# This file is checked in so CI / the production deploy step can use it.
+#
+# Zone: getstampd.com.au (registrar: Crazy Domains, DNS: Cloudflare)
+# Build output is produced by `bun run build` (nitro cloudflare-module via
+# @lovable.dev/vite-tanstack-config with `nitro: true` in vite.config.ts).
+#
+# IMPORTANT — nitro auto-generates its own Worker config at
+#   dist/server/wrangler.json
+# and writes `.wrangler/deploy/config.json` pointing wrangler at it. When
+# `wrangler deploy` runs from the repo root, it uses the nitro-generated
+# config, NOT this file. `main` / `[assets]` here are effectively overridden
+# (nitro emits a WARN to that effect during build). This file is kept for:
+#   1. documenting intent (project name, compat flags, routes plan), and
+#   2. providing a fallback if anyone explicitly runs `wrangler deploy
+#      --config wrangler.toml`.
+# Keep the values below in sync with what nitro emits.
+
 name = "getstampd-prod"
-# Build output layout (from @lovable.dev/vite-tanstack-config with `nitro: true`):
-#   - Worker entry: dist/server/server.js
-#       (filename is `server.js` because vite.config.ts sets
-#        tanstackStart.server.entry = "server", which maps to src/server.ts)
-#   - Static assets: dist/client/
-main = "dist/server/server.js"
+# Worker entry emitted by nitro. The `tanstackStart.server.entry: "server"`
+# setting redirects the SSR entry to src/server.ts, but nitro still names the
+# emitted bundle `index.mjs`.
+main = "dist/server/index.mjs"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+# account_id = "<fill-in-before-first-deploy>"
+
+# First deploy: workers.dev only, no zone routes. Safe to deploy without
+# affecting any live getstampd.com.au hostname.
+workers_dev = true
+
+# Static assets emitted by nitro alongside the Worker bundle.
+[assets]
+directory = "dist/client"
+binding = "ASSETS"
+
+[vars]
+NODE_ENV = "production"
+# VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY are baked in at BUILD time
+# (Vite replaces import.meta.env.* at build). Set them in the CI/build env,
+# not here. Runtime-only secrets (service role, webhook secrets) go in
+# `wrangler secret put NAME` once they exist.
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 # account_id = "<fill-in-before-first-deploy>"
