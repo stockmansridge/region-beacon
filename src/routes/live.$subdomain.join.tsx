@@ -247,8 +247,10 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   }
 
   return (
-    <TrailShell
-      eventName={event.name}
+    <>
+      <PublicAnnouncementBar subdomain={subdomain} />
+      <TrailShell
+        eventName={event.name}
       primaryColor={primary}
       accentColor={accent}
       topLeft={

@@ -71,6 +71,7 @@ function PublicLeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8 sm:py-12">
+      <PublicAnnouncementBar subdomain={subdomain} />
       <div className="mx-auto max-w-xl">
         <Header subdomain={subdomain} />
 
