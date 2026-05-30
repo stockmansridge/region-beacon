@@ -6,7 +6,15 @@ import { AdminEventAnnouncements } from "@/components/admin-event-announcements"
 import { AdminEventRewards } from "@/components/admin-event-rewards";
 import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
-import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
+import {
+  deleteVenueAssetSafely,
+  getVenueAssetPublicUrl,
+  uploadVenueAsset,
+  VENUE_ASSET_ALLOWED_MIME,
+  VENUE_ASSET_MAX_BYTES,
+  type VenueAssetKind,
+} from "@/lib/venue-assets";
+import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { EventTermsDialog } from "@/components/event-terms-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
@@ -140,6 +148,7 @@ type Bundle = {
   venues: Venue[];
   qrByVenue: Map<string, QrSummary>;
   offerSummaryByVenue: Map<string, string | null>;
+  offerSupported: boolean;
   activation: Activation | null;
 };
 
@@ -193,6 +202,12 @@ type VenueEditForm = {
   lng: string;
   order_index: string;
   status: "active" | "inactive";
+  description: string;
+  offer_summary: string;
+  website_url: string;
+  phone: string;
+  logo_path: string | null;
+  cover_path: string | null;
 };
 
 function toLocalInput(iso: string | null): string {
@@ -255,7 +270,8 @@ function EventDetail() {
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
-  const [publicProfileVenueId, setPublicProfileVenueId] = useState<string | null>(null);
+  const [venueAssetBusy, setVenueAssetBusy] = useState<VenueAssetKind | null>(null);
+  const [venueAssetError, setVenueAssetError] = useState<string | null>(null);
 
   // QR controls — token is fetched only on explicit reveal/rotate and held in
   // memory only. Map: venue_id -> revealed token.
@@ -521,6 +537,7 @@ function EventDetail() {
 
         // Optional venues.offer_summary column — degrade silently if missing.
         const offerSummaryByVenue = new Map<string, string | null>();
+        let offerSupported = false;
         if (venues.length > 0) {
           try {
             const { data: offerRows, error: offerErr } = await supabase
@@ -530,6 +547,7 @@ function EventDetail() {
               .eq("event_id", event.id)
               .in("id", venues.map((v) => v.id));
             if (!offerErr && Array.isArray(offerRows)) {
+              offerSupported = true;
               for (const row of offerRows as unknown as Array<{ id: string; offer_summary: string | null }>) {
                 offerSummaryByVenue.set(row.id, row.offer_summary ?? null);
               }
@@ -550,6 +568,7 @@ function EventDetail() {
           venues,
           qrByVenue,
           offerSummaryByVenue,
+          offerSupported,
           activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
         });
         setState("ready");
@@ -824,7 +843,14 @@ function EventDetail() {
       lng: "",
       order_index: String(nextOrder),
       status: "active",
+      description: "",
+      offer_summary: "",
+      website_url: "",
+      phone: "",
+      logo_path: null,
+      cover_path: null,
     });
+    setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueEditingId("new");
@@ -838,7 +864,14 @@ function EventDetail() {
       lng: v.lng === null || v.lng === undefined ? "" : String(v.lng),
       order_index: String(v.order_index ?? 0),
       status: v.status === "inactive" ? "inactive" : "active",
+      description: v.description ?? "",
+      offer_summary: bundle?.offerSummaryByVenue.get(v.id) ?? "",
+      website_url: v.website_url ?? "",
+      phone: v.phone ?? "",
+      logo_path: v.logo_path ?? null,
+      cover_path: v.cover_path ?? null,
     });
+    setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueEditingId(v.id);
@@ -898,34 +931,62 @@ function EventDetail() {
       return;
     }
 
+    const description = venueForm.description.trim();
+    if (description.length > 1200) {
+      setVenueValidationError("Description must be 1200 characters or fewer.");
+      return;
+    }
+    const offerSummary = venueForm.offer_summary.trim();
+    if (bundle.offerSupported && offerSummary.length > 800) {
+      setVenueValidationError("Offer summary must be 800 characters or fewer.");
+      return;
+    }
+    const website = venueForm.website_url.trim();
+    if (website.length > 0 && !/^https:\/\//i.test(website)) {
+      setVenueValidationError("Website URL must start with https://");
+      return;
+    }
+    const phone = venueForm.phone.trim();
+    if (phone.length > 40) {
+      setVenueValidationError("Phone must be 40 characters or fewer.");
+      return;
+    }
+    if (phone.length > 0 && !/^\+?[0-9 \-]{6,40}$/.test(phone)) {
+      setVenueValidationError("Phone may only contain digits, spaces, dashes, and an optional leading +.");
+      return;
+    }
+
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueSaving(true);
+
+    const patch: Record<string, unknown> = {
+      name,
+      address,
+      lat,
+      lng,
+      order_index: orderIndex,
+      status: venueForm.status,
+      description: description === "" ? null : description,
+      website_url: website === "" ? null : website,
+      phone: phone === "" ? null : phone,
+    };
+    if (bundle.offerSupported) {
+      patch.offer_summary = offerSummary === "" ? null : offerSummary;
+    }
 
     let error: { message: string } | null = null;
     if (venueEditingId === "new") {
       const { error: inErr } = await supabase.from("venues").insert({
         agency_id: agencyId,
         event_id: eventId,
-        name,
-        address,
-        lat,
-        lng,
-        order_index: orderIndex,
-        status: venueForm.status,
+        ...patch,
       });
       error = inErr ?? null;
     } else {
       const { error: upErr } = await supabase
         .from("venues")
-        .update({
-          name,
-          address,
-          lat,
-          lng,
-          order_index: orderIndex,
-          status: venueForm.status,
-        })
+        .update(patch)
         .eq("id", venueEditingId)
         .eq("event_id", eventId)
         .eq("agency_id", agencyId);
@@ -939,6 +1000,74 @@ function EventDetail() {
     }
     setVenueEditingId(null);
     setVenueForm(null);
+    setReloadKey((k) => k + 1);
+  }
+
+  async function uploadVenueImage(kind: VenueAssetKind, file: File) {
+    if (!venueForm || !venueEditingId || venueEditingId === "new" || !agencyId) return;
+    setVenueAssetError(null);
+    setVenueAssetBusy(kind);
+    const previous = kind === "logo" ? venueForm.logo_path : venueForm.cover_path;
+    const result = await uploadVenueAsset({
+      agencyId,
+      eventId,
+      venueId: venueEditingId,
+      kind,
+      file,
+    });
+    if (!result.ok) {
+      setVenueAssetBusy(null);
+      setVenueAssetError(result.error);
+      return;
+    }
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const { error: dbErr } = await supabase
+      .from("venues")
+      .update({ [column]: result.path })
+      .eq("id", venueEditingId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+    if (dbErr) {
+      await deleteVenueAssetSafely(result.path);
+      setVenueAssetBusy(null);
+      setVenueAssetError(`Could not update venue: ${dbErr.message}`);
+      return;
+    }
+    setVenueForm({
+      ...venueForm,
+      [column]: result.path,
+    } as VenueEditForm);
+    if (previous && previous !== result.path) {
+      await deleteVenueAssetSafely(previous);
+    }
+    setVenueAssetBusy(null);
+    setReloadKey((k) => k + 1);
+  }
+
+  async function removeVenueImage(kind: VenueAssetKind) {
+    if (!venueForm || !venueEditingId || venueEditingId === "new" || !agencyId) return;
+    const previous = kind === "logo" ? venueForm.logo_path : venueForm.cover_path;
+    if (!previous) return;
+    setVenueAssetError(null);
+    setVenueAssetBusy(kind);
+    const column = kind === "logo" ? "logo_path" : "cover_path";
+    const { error: dbErr } = await supabase
+      .from("venues")
+      .update({ [column]: null })
+      .eq("id", venueEditingId)
+      .eq("event_id", eventId)
+      .eq("agency_id", agencyId);
+    if (dbErr) {
+      setVenueAssetBusy(null);
+      setVenueAssetError(`Could not remove image: ${dbErr.message}`);
+      return;
+    }
+    await deleteVenueAssetSafely(previous);
+    setVenueForm({
+      ...venueForm,
+      [column]: null,
+    } as VenueEditForm);
+    setVenueAssetBusy(null);
     setReloadKey((k) => k + 1);
   }
 
@@ -1456,7 +1585,7 @@ function EventDetail() {
               </div>
             )}
             {venueEditingId !== null && venueForm && (
-              <div className="mb-4 space-y-3 rounded-lg border bg-muted/20 p-4">
+              <div className="mb-4 space-y-5 rounded-lg border bg-muted/20 p-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">
                     {venueEditingId === "new" ? "New venue" : "Edit venue"}
@@ -1485,105 +1614,202 @@ function EventDetail() {
                     {venueValidationError ?? venueSaveError}
                   </div>
                 )}
-                <Field label="Name" required>
-                  <input
-                    type="text"
-                    maxLength={150}
-                    value={venueForm.name}
-                    onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                </Field>
-                <Field label="Address">
-                  <input
-                    type="text"
-                    maxLength={300}
-                    value={venueForm.address}
-                    onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
-                    placeholder="e.g. 123 Main St, Sydney NSW 2000"
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                </Field>
-                <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    disabled
-                    title="Coming soon"
-                    className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-md border border-dashed bg-muted/30 px-3 text-xs font-medium text-muted-foreground"
-                  >
-                    <span aria-hidden></span>
-                    Select from Apple Maps
-                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
-                      Soon
-                    </span>
-                  </button>
-                  <p className="text-xs text-muted-foreground">
-                    Coming soon — search for a place, choose it on Apple Maps, or drop a pin to
-                    auto-fill the address and coordinates.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Status" required>
-                    <select
-                      value={venueForm.status}
-                      onChange={(e) =>
-                        setVenueForm({
-                          ...venueForm,
-                          status: e.target.value === "inactive" ? "inactive" : "active",
-                        })
-                      }
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                    >
-                      <option value="active">active</option>
-                      <option value="inactive">inactive</option>
-                    </select>
-                  </Field>
-                  <Field label="Order" required>
+
+                <FormSection title="Basics">
+                  <Field label="Name" required>
                     <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={venueForm.order_index}
-                      onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
+                      type="text"
+                      maxLength={150}
+                      value={venueForm.name}
+                      onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
                       className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                     />
                   </Field>
-                </div>
-                <details className="rounded-md border bg-background/50">
-                  <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
-                    Advanced coordinates
-                  </summary>
-                  <div className="space-y-3 border-t px-3 py-3">
-                    <p className="text-xs text-muted-foreground">
-                      Coordinates will normally be filled from Apple Maps. Use these only if you
-                      need to enter them manually.
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field label="Latitude">
-                        <input
-                          type="number"
-                          step="any"
-                          min={-90}
-                          max={90}
-                          value={venueForm.lat}
-                          onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
-                          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                        />
-                      </Field>
-                      <Field label="Longitude">
-                        <input
-                          type="number"
-                          step="any"
-                          min={-180}
-                          max={180}
-                          value={venueForm.lng}
-                          onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
-                          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                        />
-                      </Field>
-                    </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Status" required>
+                      <select
+                        value={venueForm.status}
+                        onChange={(e) =>
+                          setVenueForm({
+                            ...venueForm,
+                            status: e.target.value === "inactive" ? "inactive" : "active",
+                          })
+                        }
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      >
+                        <option value="active">active</option>
+                        <option value="inactive">inactive</option>
+                      </select>
+                    </Field>
+                    <Field label="Order" required>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={venueForm.order_index}
+                        onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      />
+                    </Field>
                   </div>
-                </details>
+                </FormSection>
+
+                <FormSection title="Public page content">
+                  <Field label="Description">
+                    <textarea
+                      rows={5}
+                      maxLength={1250}
+                      value={venueForm.description}
+                      onChange={(e) => setVenueForm({ ...venueForm, description: e.target.value })}
+                      placeholder="What makes this venue worth visiting?"
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {venueForm.description.length}/1200
+                    </p>
+                  </Field>
+                  {bundle?.offerSupported ? (
+                    <Field label="Offer summary">
+                      <textarea
+                        rows={4}
+                        maxLength={850}
+                        value={venueForm.offer_summary}
+                        onChange={(e) => setVenueForm({ ...venueForm, offer_summary: e.target.value })}
+                        placeholder="e.g. Complimentary tasting flight on arrival, plus a bonus stamp for trail visitors."
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        What visitors can expect — tasting offer, discount, bonus stamp, etc. {venueForm.offer_summary.length}/800
+                      </p>
+                    </Field>
+                  ) : (
+                    <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                      Offer summary field not available — the <span className="font-mono">venues.offer_summary</span> column is not deployed in this environment.
+                    </p>
+                  )}
+                </FormSection>
+
+                <FormSection title="Images">
+                  {venueEditingId === "new" ? (
+                    <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                      Save the venue first, then re-open Edit to upload a logo and hero image.
+                    </p>
+                  ) : (
+                    <>
+                      <VenueImageField
+                        kind="logo"
+                        label="Logo"
+                        helpText={`Square works best. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.logo / (1024 * 1024))} MB.`}
+                        path={venueForm.logo_path}
+                        canEdit={canEdit}
+                        busy={venueAssetBusy === "logo"}
+                        onUpload={(f) => uploadVenueImage("logo", f)}
+                        onRemove={() => removeVenueImage("logo")}
+                      />
+                      <VenueImageField
+                        kind="cover"
+                        label="Hero / cover image"
+                        helpText={`Wide hero image. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.cover / (1024 * 1024))} MB.`}
+                        path={venueForm.cover_path}
+                        canEdit={canEdit}
+                        busy={venueAssetBusy === "cover"}
+                        onUpload={(f) => uploadVenueImage("cover", f)}
+                        onRemove={() => removeVenueImage("cover")}
+                      />
+                      {venueAssetError && (
+                        <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                          {venueAssetError}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </FormSection>
+
+                <FormSection title="Contact">
+                  <Field label="Website">
+                    <input
+                      type="url"
+                      inputMode="url"
+                      value={venueForm.website_url}
+                      onChange={(e) => setVenueForm({ ...venueForm, website_url: e.target.value })}
+                      placeholder="https://example.com"
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">Must start with https://</p>
+                  </Field>
+                  <Field label="Phone">
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      maxLength={40}
+                      value={venueForm.phone}
+                      onChange={(e) => setVenueForm({ ...venueForm, phone: e.target.value })}
+                      placeholder="+61 400 000 000"
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                </FormSection>
+
+                <FormSection title="Location">
+                  <Field label="Address">
+                    <input
+                      type="text"
+                      maxLength={300}
+                      value={venueForm.address}
+                      onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
+                      placeholder="e.g. 123 Main St, Sydney NSW 2000"
+                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Latitude">
+                      <input
+                        type="number"
+                        step="any"
+                        min={-90}
+                        max={90}
+                        value={venueForm.lat}
+                        onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      />
+                    </Field>
+                    <Field label="Longitude">
+                      <input
+                        type="number"
+                        step="any"
+                        min={-180}
+                        max={180}
+                        value={venueForm.lng}
+                        onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      />
+                    </Field>
+                  </div>
+                  {(() => {
+                    const lat = venueForm.lat.trim() ? Number(venueForm.lat.trim()) : null;
+                    const lng = venueForm.lng.trim() ? Number(venueForm.lng.trim()) : null;
+                    const directionsUrl = buildAppleMapsDirectionsUrl({
+                      name: venueForm.name || "Venue",
+                      address: venueForm.address || null,
+                      lat: lat !== null && Number.isFinite(lat) ? lat : null,
+                      lng: lng !== null && Number.isFinite(lng) ? lng : null,
+                    });
+                    return directionsUrl ? (
+                      <a
+                        href={directionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-xs font-medium hover:bg-muted"
+                      >
+                        Preview “Get directions” (Apple Maps) ↗
+                      </a>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Add an address or coordinates to enable the “Get directions” link on the public venue page.
+                      </p>
+                    );
+                  })()}
+                </FormSection>
               </div>
             )}
             {venues.length === 0 ? (
@@ -1775,14 +2001,6 @@ function EventDetail() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setPublicProfileVenueId(v.id)}
-                                  disabled={venueEditingId !== null || venueArchivingId !== null}
-                                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                                >
-                                  Edit public page
-                                </button>
-                                <button
-                                  type="button"
                                   onClick={() => archiveVenue(v.id)}
                                   disabled={venueEditingId !== null || venueArchivingId !== null}
                                   className="inline-flex h-7 items-center rounded-md border border-destructive/40 bg-background px-2 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
@@ -1809,21 +2027,6 @@ function EventDetail() {
                 </p>
               </div>
             )}
-            <VenuePublicProfileDialog
-              open={publicProfileVenueId !== null}
-              onOpenChange={(next) => {
-                if (!next) setPublicProfileVenueId(null);
-              }}
-              venue={
-                publicProfileVenueId
-                  ? venues.find((vv) => vv.id === publicProfileVenueId) ?? null
-                  : null
-              }
-              eventId={event.id}
-              agencyId={agencyId}
-              canEdit={canEdit}
-              onSaved={() => setReloadKey((k) => k + 1)}
-            />
           </Section>
 
           <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages.">
@@ -2684,6 +2887,97 @@ function Field({
     </label>
   );
 }
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h5 className="border-b pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h5>
+      {children}
+    </div>
+  );
+}
+
+function VenueImageField({
+  kind,
+  label,
+  helpText,
+  path,
+  canEdit,
+  busy,
+  onUpload,
+  onRemove,
+}: {
+  kind: VenueAssetKind;
+  label: string;
+  helpText: string;
+  path: string | null;
+  canEdit: boolean;
+  busy: boolean;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const previewUrl = getVenueAssetPublicUrl(path);
+  const isCover = kind === "cover";
+  const inputId = `venue-asset-${kind}`;
+  return (
+    <div className="space-y-1.5">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <div className="rounded-md border bg-background/50 p-3">
+        {previewUrl ? (
+          <div
+            className={
+              isCover
+                ? "mb-3 aspect-[3/1] w-full overflow-hidden rounded bg-muted/30"
+                : "mb-3 h-24 w-24 overflow-hidden rounded bg-muted/30"
+            }
+          >
+            <img src={previewUrl} alt={`${label} preview`} className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <p className="mb-3 text-xs text-muted-foreground">No image uploaded.</p>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            id={inputId}
+            type="file"
+            accept={VENUE_ASSET_ALLOWED_MIME.join(",")}
+            disabled={!canEdit || busy}
+            className="hidden"
+            onChange={(e) => {
+              const f = e.currentTarget.files?.[0];
+              e.currentTarget.value = "";
+              if (f) onUpload(f);
+            }}
+          />
+          <label
+            htmlFor={inputId}
+            className={`inline-flex h-8 cursor-pointer items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted ${
+              !canEdit || busy ? "pointer-events-none opacity-50" : ""
+            }`}
+          >
+            {busy ? "Uploading…" : previewUrl ? "Replace" : "Upload"}
+          </label>
+          {previewUrl && (
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={!canEdit || busy}
+              className="inline-flex h-8 items-center rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">{helpText}</p>
+      </div>
+    </div>
+  );
+}
+
 
 function EventSetupWarnings({
   status,
