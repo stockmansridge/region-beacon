@@ -36,6 +36,8 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as LiveSubdomainVenuesRouteImport } from './routes/live.$subdomain.venues'
+import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
+import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
@@ -181,6 +183,16 @@ const LiveSubdomainVenuesRoute = LiveSubdomainVenuesRouteImport.update({
   path: '/venues',
   getParentRoute: () => LiveSubdomainRoute,
 } as any)
+const LiveSubdomainTermsRoute = LiveSubdomainTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => LiveSubdomainRoute,
+} as any)
+const LiveSubdomainPrivacyRoute = LiveSubdomainPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => LiveSubdomainRoute,
+} as any)
 const LiveSubdomainLeaderboardRoute =
   LiveSubdomainLeaderboardRouteImport.update({
     id: '/leaderboard',
@@ -263,6 +275,8 @@ export interface FileRoutesByFullPath {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
+  '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -300,6 +314,8 @@ export interface FileRoutesByTo {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
+  '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events': typeof AdminEventsIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -339,6 +355,8 @@ export interface FileRoutesById {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
+  '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events/': typeof AdminEventsIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
@@ -379,6 +397,8 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/privacy'
+    | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
     | '/admin/events/'
     | '/admin/events/$eventId/branding'
@@ -416,6 +436,8 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/privacy'
+    | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
     | '/admin/events'
     | '/admin/events/$eventId/branding'
@@ -454,6 +476,8 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/privacy'
+    | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
     | '/admin/events/'
     | '/admin/events/$eventId_/branding'
@@ -676,6 +700,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainVenuesRouteImport
       parentRoute: typeof LiveSubdomainRoute
     }
+    '/live/$subdomain/terms': {
+      id: '/live/$subdomain/terms'
+      path: '/terms'
+      fullPath: '/live/$subdomain/terms'
+      preLoaderRoute: typeof LiveSubdomainTermsRouteImport
+      parentRoute: typeof LiveSubdomainRoute
+    }
+    '/live/$subdomain/privacy': {
+      id: '/live/$subdomain/privacy'
+      path: '/privacy'
+      fullPath: '/live/$subdomain/privacy'
+      preLoaderRoute: typeof LiveSubdomainPrivacyRouteImport
+      parentRoute: typeof LiveSubdomainRoute
+    }
     '/live/$subdomain/leaderboard': {
       id: '/live/$subdomain/leaderboard'
       path: '/leaderboard'
@@ -798,12 +836,16 @@ const LiveSubdomainVenuesRouteWithChildren =
 interface LiveSubdomainRouteChildren {
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
+  LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
+  LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
   LiveSubdomainVenuesRoute: typeof LiveSubdomainVenuesRouteWithChildren
 }
 
 const LiveSubdomainRouteChildren: LiveSubdomainRouteChildren = {
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
+  LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
+  LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
   LiveSubdomainVenuesRoute: LiveSubdomainVenuesRouteWithChildren,
 }
 
@@ -836,3 +878,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
