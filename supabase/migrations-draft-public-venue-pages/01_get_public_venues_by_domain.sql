@@ -8,6 +8,8 @@
 --   * public.resolve_event_by_host(text)
 --   * public.venues (with description/website_url/phone/logo_path/cover_path
 --     columns from migrations-draft-venue-public-pages/01)
+--   * public.venues.offer_summary
+--     (from migrations-draft-venue-offer-summary/01_venues_offer_summary.sql)
 --
 -- SECURITY: SECURITY DEFINER with explicit search_path. No SELECT *.
 -- Only the projected columns below leave each function. No QR tokens,
@@ -85,11 +87,14 @@ grant execute on function public.get_public_venues_by_domain(text)
 -- =============================================================================
 -- 2) Detail RPC: get_public_venue_by_domain
 -- =============================================================================
--- Returns zero rows if:
+-- Adding offer_summary changes the function's return shape, so we drop and
+-- recreate rather than `create or replace`. Returns zero rows if:
 --   * host does not resolve to a live event
 --   * venue is not in this event
 --   * venue is inactive / soft-deleted
-create or replace function public.get_public_venue_by_domain(
+drop function if exists public.get_public_venue_by_domain(text, uuid);
+
+create function public.get_public_venue_by_domain(
   _hostname text,
   _venue_id uuid
 )
@@ -97,48 +102,50 @@ returns table (
   venue_id      uuid,
   name          text,
   description   text,
-  offer_summary text,
   address       text,
   website_url   text,
   phone         text,
   logo_path     text,
   cover_path    text,
-  lat           numeric(9,6),
-  lng           numeric(9,6),
-  order_index   int
+  offer_summary text,
+  lat           numeric,
+  lng           numeric,
+  order_index   integer
 )
-language plpgsql
+language sql
 stable
 security definer
 set search_path = public
 as $$
-declare
-  r record;
-begin
-  select kind, event_id into r
-  from public.resolve_event_by_host(_hostname);
-
-  if r.kind is null or r.kind <> 'event' or r.event_id is null then
-    return;
-  end if;
-
-  if _venue_id is null then
-    return;
-  end if;
-
-  return query
-    select
-      v.id, v.name, v.description, v.offer_summary, v.address,
-      v.website_url, v.phone, v.logo_path, v.cover_path,
-      v.lat, v.lng, v.order_index
-    from public.venues v
-    where v.id         = _venue_id
-      and v.event_id   = r.event_id
-      and v.status     = 'active'
-      and v.deleted_at is null;
-end;
+  with resolved as (
+    select *
+    from public.resolve_event_by_host(_hostname)
+  )
+  select
+    v.id as venue_id,
+    v.name,
+    v.description,
+    v.address,
+    v.website_url,
+    v.phone,
+    v.logo_path,
+    v.cover_path,
+    v.offer_summary,
+    v.lat,
+    v.lng,
+    v.order_index
+  from resolved r
+  join public.venues v
+    on v.event_id = r.event_id
+  where r.kind = 'event'
+    and v.id = _venue_id
+    and v.status = 'active'
+    and v.deleted_at is null
+  order by v.order_index, v.name
+  limit 1;
 $$;
 
+revoke all on function public.get_public_venue_by_domain(text, uuid) from public;
 grant execute on function public.get_public_venue_by_domain(text, uuid)
   to anon, authenticated;
 
