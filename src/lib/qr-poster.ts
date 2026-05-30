@@ -1,5 +1,6 @@
-import { jsPDF } from "jspdf";
-import QRCode from "qrcode";
+// jspdf and qrcode are imported lazily inside generateQrPosterPdf so they
+// never end up in the SSR/Worker bundle. Both pull in `node:fs` indirectly
+// which Cloudflare Workers do not support.
 
 export type PosterInput = {
   eventName: string;
@@ -79,6 +80,11 @@ export async function generateQrPosterPdf(
   input: PosterInput,
   filename: string,
 ): Promise<void> {
+  const [{ jsPDF }, QRCode] = await Promise.all([
+    import("jspdf"),
+    import("qrcode").then((m) => m.default ?? m),
+  ]);
+
   const primary = normaliseHex(input.primaryColor, "#111827");
   const accent = normaliseHex(input.accentColor, primary);
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
+// qrcode is loaded lazily inside the effect — it imports `node:fs`
+// transitively, which Cloudflare Workers cannot resolve at SSR time.
 import { generateQrPosterPdf, type PosterInput } from "@/lib/qr-poster";
 
 type Props = {
@@ -42,13 +43,17 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
     setError(null);
     setDataUrl(null);
     // Render at 4x for a crisp downloadable PNG.
-    QRCode.toDataURL(value, {
-      errorCorrectionLevel: "M",
-      margin: 2,
-      width: size * 4,
-      color: { dark: "#000000", light: "#ffffff" },
-    })
-      .then((url) => {
+    import("qrcode")
+      .then((m) => (m.default ?? m))
+      .then((QRCode) =>
+        QRCode.toDataURL(value, {
+          errorCorrectionLevel: "M",
+          margin: 2,
+          width: size * 4,
+          color: { dark: "#000000", light: "#ffffff" },
+        }),
+      )
+      .then((url: string) => {
         if (!cancelled) setDataUrl(url);
       })
       .catch(() => {
