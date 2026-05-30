@@ -91,9 +91,10 @@ function DemoLanding() {
         termsUrl={null}
       />
 
-      <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
-        Powered by GetStampd
-      </p>
+      <div className="mt-6 flex justify-center">
+        <PoweredByGetStampd variant="trail" />
+      </div>
+
     </TrailShell>
   );
 }
