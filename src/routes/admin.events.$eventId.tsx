@@ -2152,6 +2152,65 @@ function EmptyNotice({ children }: { children: React.ReactNode }) {
   );
 }
 
+function DiagnosticPanel({
+  diagnostic,
+  eventId,
+  agencyId,
+  userId,
+}: {
+  diagnostic: LoadDiagnostic | null;
+  eventId: string;
+  agencyId: string | null;
+  userId: string | null;
+}) {
+  return (
+    <details className="mt-4 rounded-md border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+      <summary className="cursor-pointer font-medium text-foreground">
+        Diagnostics (for support)
+      </summary>
+      <dl className="mt-3 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 font-mono">
+        <dt>Attempted event id</dt>
+        <dd className="break-all">{eventId}</dd>
+        <dt>Current agency id</dt>
+        <dd className="break-all">{agencyId ?? "(none selected)"}</dd>
+        <dt>Current user id</dt>
+        <dd className="break-all">{userId ?? "(not signed in)"}</dd>
+        {diagnostic ? (
+          <>
+            <dt>Failing step</dt>
+            <dd className="break-all">{diagnostic.step}</dd>
+            <dt>Result</dt>
+            <dd className="break-all">{diagnostic.message}</dd>
+            {diagnostic.code ? (
+              <>
+                <dt>Code</dt>
+                <dd className="break-all">{diagnostic.code}</dd>
+              </>
+            ) : null}
+            {diagnostic.details ? (
+              <>
+                <dt>Details</dt>
+                <dd className="break-all">{diagnostic.details}</dd>
+              </>
+            ) : null}
+            {diagnostic.hint ? (
+              <>
+                <dt>Hint</dt>
+                <dd className="break-all">{diagnostic.hint}</dd>
+              </>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <dt>Result</dt>
+            <dd>No additional diagnostic captured.</dd>
+          </>
+        )}
+      </dl>
+    </details>
+  );
+}
+
 function Field({
   label,
   required,
