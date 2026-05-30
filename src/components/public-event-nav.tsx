@@ -238,16 +238,28 @@ export function PublicEventNav({
           </li>
           <li className="relative flex flex-1">
             {canRegister ? (
-              <Link
-                to="/live/$subdomain/join"
-                params={{ subdomain }}
-                aria-current={isActive("join") ? "page" : undefined}
-                className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: isActive("join") ? accent : primary }}
-              >
-                <Ticket className="h-5 w-5" />
-                <span>Passport</span>
-              </Link>
+              passportHref ? (
+                <a
+                  href={passportHref}
+                  aria-current={isActive("join") ? "page" : undefined}
+                  className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                  style={{ color: isActive("join") ? accent : primary }}
+                >
+                  <Ticket className="h-5 w-5" />
+                  <span>Passport</span>
+                </a>
+              ) : (
+                <Link
+                  to="/live/$subdomain/join"
+                  params={{ subdomain }}
+                  aria-current={isActive("join") ? "page" : undefined}
+                  className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                  style={{ color: isActive("join") ? accent : primary }}
+                >
+                  <Ticket className="h-5 w-5" />
+                  <span>Passport</span>
+                </Link>
+              )
             ) : (
               <button
                 type="button"
