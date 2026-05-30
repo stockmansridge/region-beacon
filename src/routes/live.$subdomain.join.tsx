@@ -178,6 +178,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTopError(null);
+    setDebugInfo(null);
 
     const parsed = formSchema.safeParse(form);
     if (!parsed.success) {
@@ -187,13 +188,30 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         if (!next[key]) next[key] = issue.message;
       }
       setErrors(next);
+      setDebugInfo({
+        stage: "client_validation",
+        issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
+      });
       return;
     }
     setErrors({});
     setSubmitting(true);
 
+    const { first, last } = splitName(form.full_name);
+    const payloadShape = {
+      _event_id: event.event_id,
+      _email_length: form.email.trim().length,
+      _full_name_length: form.full_name.trim().length,
+      _first_name_length: first.length,
+      _last_name_length: last.length,
+      _mobile_present: Boolean(form.mobile.trim()),
+      _postcode_present: Boolean(form.postcode.trim()),
+      _marketing_opt_in: form.marketing_opt_in,
+      _accepted_terms_version_id: event.current_terms_version_id,
+      _locale: locale,
+    };
+
     try {
-      const { first, last } = splitName(form.full_name);
       const { data, error } = await supabase.rpc("register_visitor", {
         _event_id: event.event_id,
         _email: form.email.trim(),
@@ -211,6 +229,20 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
       if (error) {
         setTopError(friendlyError(error.message));
+        setDebugInfo({
+          stage: "rpc_error",
+          rpc: "register_visitor",
+          payload_shape: payloadShape,
+          error_message: error.message,
+          error_code: (error as { code?: string }).code ?? null,
+          error_details: (error as { details?: string }).details ?? null,
+          error_hint: (error as { hint?: string }).hint ?? null,
+          event_id: event.event_id,
+          public_slug: event.public_slug,
+          subdomain,
+          accepted_terms: form.accept_terms,
+          terms_version_id: event.current_terms_version_id,
+        });
         setSubmitting(false);
         return;
       }
@@ -219,6 +251,14 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         | null;
       if (!row?.access_token || !row?.passport_id) {
         setTopError("Could not create your passport. Please try again.");
+        setDebugInfo({
+          stage: "empty_rpc_response",
+          rpc: "register_visitor",
+          payload_shape: payloadShape,
+          returned_data: data,
+          event_id: event.event_id,
+          subdomain,
+        });
         setSubmitting(false);
         return;
       }
@@ -240,8 +280,16 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
       setSuccess({ token: row.access_token, passport_id: row.passport_id });
       setSubmitting(false);
-    } catch {
+    } catch (e) {
       setTopError("Could not create your passport. Please try again.");
+      setDebugInfo({
+        stage: "exception",
+        rpc: "register_visitor",
+        payload_shape: payloadShape,
+        error_message: e instanceof Error ? e.message : String(e),
+        event_id: event.event_id,
+        subdomain,
+      });
       setSubmitting(false);
     }
   }
