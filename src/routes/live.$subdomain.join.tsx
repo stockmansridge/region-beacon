@@ -499,6 +499,21 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             No app download required
           </p>
         </form>
+        {showDiag && debugInfo && (
+          <div className="mt-4">
+            <DiagnosticPanel
+              title="Join / Passport creation"
+              subtitle="Visible to platform_admin with Diagnostics enabled."
+              getReport={() =>
+                formatDiagnosticReport("Join / Passport creation", debugInfo)
+              }
+            >
+              <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background/60 p-3 text-[11px] leading-relaxed">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </DiagnosticPanel>
+          </div>
+        )}
       </div>
 
       <style>{`
