@@ -146,6 +146,37 @@ function LiveJoinPage() {
   return <JoinForm event={state.event} subdomain={subdomain} />;
 }
 
+type SavedPassport = {
+  access_token?: string;
+  passport_id?: string;
+  event_id?: string;
+  created_at?: string;
+};
+
+function readSavedPassport(eventId: string): SavedPassport | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(`gs.passport.${eventId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SavedPassport;
+    return parsed?.access_token ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function consumeReturnTo(eventId: string): string | null {
+  if (typeof sessionStorage === "undefined") return null;
+  try {
+    const key = `gs.returnTo.${eventId}`;
+    const v = sessionStorage.getItem(key);
+    if (v) sessionStorage.removeItem(key);
+    return v;
+  } catch {
+    return null;
+  }
+}
+
 function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string }) {
   const primary = event.primary_color ?? "#1F3D2B";
   const accent = event.accent_color ?? "#B5572A";
