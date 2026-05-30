@@ -395,6 +395,58 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           </p>
         </div>
 
+        {saved?.access_token && !showRegisterAgain && (
+          <section
+            className="mb-5 rounded-3xl border p-5 shadow-sm"
+            style={{ borderColor: `${primary}33`, backgroundColor: "#FBF5E8" }}
+          >
+            <div
+              className="text-[10px] font-medium uppercase tracking-[0.32em]"
+              style={{ color: accent }}
+            >
+              Welcome back
+            </div>
+            <h2
+              className="font-trail-serif mt-1 text-xl font-semibold"
+              style={{ color: primary }}
+            >
+              You already have a passport for this trail
+            </h2>
+            <p className="mt-2 text-sm text-[#3D372C]/80">
+              We found a passport saved on this device. Continue where you left
+              off, or register again to issue a new passport link (your older
+              link will stop working).
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <Link
+                to="/passport/$token"
+                params={{ token: saved.access_token }}
+                className="flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+                style={{ backgroundColor: primary }}
+              >
+                Continue to passport
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowRegisterAgain(true)}
+                className="h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
+                style={{ borderColor: `${primary}40`, color: primary, backgroundColor: "transparent" }}
+              >
+                Register again / replace passport
+              </button>
+            </div>
+          </section>
+        )}
+
+        {(!saved?.access_token || showRegisterAgain) && (
+          <p className="mb-3 text-center text-[11px] text-[#8A7E66]">
+            Already registered? Enter the same email below — we'll issue a new
+            passport link and any older link will stop working.
+          </p>
+        )}
+
+
+
         <form
           onSubmit={onSubmit}
           className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
