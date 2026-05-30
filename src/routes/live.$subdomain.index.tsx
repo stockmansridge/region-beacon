@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { PublicEventNav } from "@/components/public-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
 import { rpcEventHost } from "@/lib/domains";
@@ -119,6 +120,15 @@ function LivePublicPage() {
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
       <PublicAnnouncementBar subdomain={subdomain} />
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event.name}
+        primaryColor={event.primary_color}
+        accentColor={event.accent_color}
+        hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
+        hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
+        canRegister={canRegister}
+      />
       <TrailLanding
         eventName={event.name}
         venueLabelPlural={venueLabels.plural}

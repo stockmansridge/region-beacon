@@ -4,8 +4,12 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { rpcEventHost } from "@/lib/domains";
+import { useAdminAccess } from "@/hooks/use-admin-access";
+import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
+import { DiagnosticPanel } from "@/components/diagnostic-panel";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
   component: LiveJoinPage,
@@ -157,7 +161,11 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [topError, setTopError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
   const [success, setSuccess] = useState<{ token: string; passport_id: string } | null>(null);
+  const { isPlatformAdmin } = useAdminAccess();
+  const [diagEnabled] = useDiagnosticsEnabled();
+  const showDiag = isPlatformAdmin && diagEnabled;
 
   const locale = useMemo(
     () => (typeof navigator !== "undefined" ? navigator.language : null),
@@ -170,6 +178,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTopError(null);
+    setDebugInfo(null);
 
     const parsed = formSchema.safeParse(form);
     if (!parsed.success) {
@@ -179,13 +188,30 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         if (!next[key]) next[key] = issue.message;
       }
       setErrors(next);
+      setDebugInfo({
+        stage: "client_validation",
+        issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
+      });
       return;
     }
     setErrors({});
     setSubmitting(true);
 
+    const { first, last } = splitName(form.full_name);
+    const payloadShape = {
+      _event_id: event.event_id,
+      _email_length: form.email.trim().length,
+      _full_name_length: form.full_name.trim().length,
+      _first_name_length: first.length,
+      _last_name_length: last.length,
+      _mobile_present: Boolean(form.mobile.trim()),
+      _postcode_present: Boolean(form.postcode.trim()),
+      _marketing_opt_in: form.marketing_opt_in,
+      _accepted_terms_version_id: event.current_terms_version_id,
+      _locale: locale,
+    };
+
     try {
-      const { first, last } = splitName(form.full_name);
       const { data, error } = await supabase.rpc("register_visitor", {
         _event_id: event.event_id,
         _email: form.email.trim(),
@@ -203,6 +229,20 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
       if (error) {
         setTopError(friendlyError(error.message));
+        setDebugInfo({
+          stage: "rpc_error",
+          rpc: "register_visitor",
+          payload_shape: payloadShape,
+          error_message: error.message,
+          error_code: (error as { code?: string }).code ?? null,
+          error_details: (error as { details?: string }).details ?? null,
+          error_hint: (error as { hint?: string }).hint ?? null,
+          event_id: event.event_id,
+          public_slug: event.public_slug,
+          subdomain,
+          accepted_terms: form.accept_terms,
+          terms_version_id: event.current_terms_version_id,
+        });
         setSubmitting(false);
         return;
       }
@@ -211,6 +251,14 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         | null;
       if (!row?.access_token || !row?.passport_id) {
         setTopError("Could not create your passport. Please try again.");
+        setDebugInfo({
+          stage: "empty_rpc_response",
+          rpc: "register_visitor",
+          payload_shape: payloadShape,
+          returned_data: data,
+          event_id: event.event_id,
+          subdomain,
+        });
         setSubmitting(false);
         return;
       }
@@ -232,8 +280,16 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
       setSuccess({ token: row.access_token, passport_id: row.passport_id });
       setSubmitting(false);
-    } catch {
+    } catch (e) {
       setTopError("Could not create your passport. Please try again.");
+      setDebugInfo({
+        stage: "exception",
+        rpc: "register_visitor",
+        payload_shape: payloadShape,
+        error_message: e instanceof Error ? e.message : String(e),
+        event_id: event.event_id,
+        subdomain,
+      });
       setSubmitting(false);
     }
   }
@@ -250,7 +306,17 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
   return (
     <>
-      <PublicAnnouncementBar subdomain={subdomain} />
+      <div className="bg-[#F6EFE2] px-4 pt-6">
+        <PublicAnnouncementBar subdomain={subdomain} />
+        <PublicEventNav
+          subdomain={subdomain}
+          eventName={event.name}
+          primaryColor={primary}
+          accentColor={accent}
+          hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
+          hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
+        />
+      </div>
       <TrailShell
         eventName={event.name}
       primaryColor={primary}
@@ -433,6 +499,21 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             No app download required
           </p>
         </form>
+        {showDiag && debugInfo && (
+          <div className="mt-4">
+            <DiagnosticPanel
+              title="Join / Passport creation"
+              subtitle="Visible to platform_admin with Diagnostics enabled."
+              getReport={() =>
+                formatDiagnosticReport("Join / Passport creation", debugInfo)
+              }
+            >
+              <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background/60 p-3 text-[11px] leading-relaxed">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </DiagnosticPanel>
+          </div>
+        )}
       </div>
 
       <style>{`

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { rpcEventHost } from "@/lib/domains";
 
@@ -101,6 +102,7 @@ function PublicVenueDetailPage() {
   return (
     <div className="min-h-screen bg-[#F6EFE2] pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
+      <div className="px-4"><PublicEventNav subdomain={subdomain} /></div>
       <div className="mx-auto max-w-md">
         <div className="relative aspect-[3/1] w-full overflow-hidden bg-[#1F3D2B]/10">
           {coverUrl ? (

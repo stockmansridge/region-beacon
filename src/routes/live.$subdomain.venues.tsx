@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { rpcEventHost } from "@/lib/domains";
 
@@ -97,6 +98,12 @@ function PublicVenuesListPage() {
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
       <PublicAnnouncementBar subdomain={subdomain} />
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event?.name}
+        primaryColor={event?.primary_color}
+        accentColor={event?.accent_color}
+      />
       <div className="mx-auto max-w-md">
         <div className="mb-6">
           <Link
