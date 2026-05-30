@@ -21,7 +21,6 @@ import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TAgencySlugRouteImport } from './routes/t.$agencySlug'
 import { Route as PassportTokenRouteImport } from './routes/passport.$token'
-import { Route as LiveSubdomainRouteImport } from './routes/live.$subdomain'
 import { Route as DemoWineriesRouteImport } from './routes/demo.wineries'
 import { Route as DemoTrailMapRouteImport } from './routes/demo.trail-map'
 import { Route as DemoRewardsRouteImport } from './routes/demo.rewards'
@@ -37,6 +36,7 @@ import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
+import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain.index'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as LiveSubdomainVenuesRouteImport } from './routes/live.$subdomain.venues'
 import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
@@ -110,11 +110,6 @@ const TAgencySlugRoute = TAgencySlugRouteImport.update({
 const PassportTokenRoute = PassportTokenRouteImport.update({
   id: '/passport/$token',
   path: '/passport/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveSubdomainRoute = LiveSubdomainRouteImport.update({
-  id: '/live/$subdomain',
-  path: '/live/$subdomain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoWineriesRoute = DemoWineriesRouteImport.update({
@@ -191,6 +186,11 @@ const AdminAccountRoute = AdminAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => AdminRoute,
+} as any)
+const LiveSubdomainIndexRoute = LiveSubdomainIndexRouteImport.update({
+  id: '/live/$subdomain/',
+  path: '/live/$subdomain/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   id: '/events/',
@@ -291,7 +291,6 @@ export interface FileRoutesByFullPath {
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
-  '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
@@ -306,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events/': typeof AdminEventsIndexRoute
+  '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
@@ -334,7 +334,6 @@ export interface FileRoutesByTo {
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
-  '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
@@ -349,6 +348,7 @@ export interface FileRoutesByTo {
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events': typeof AdminEventsIndexRoute
+  '/live/$subdomain': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
@@ -379,7 +379,6 @@ export interface FileRoutesById {
   '/demo/rewards': typeof DemoRewardsRoute
   '/demo/trail-map': typeof DemoTrailMapRoute
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
-  '/live/$subdomain': typeof LiveSubdomainRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
@@ -394,6 +393,7 @@ export interface FileRoutesById {
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
   '/admin/events/': typeof AdminEventsIndexRoute
+  '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId_/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
@@ -425,7 +425,6 @@ export interface FileRouteTypes {
     | '/demo/rewards'
     | '/demo/trail-map'
     | '/demo/wineries'
-    | '/live/$subdomain'
     | '/passport/$token'
     | '/t/$agencySlug'
     | '/admin/'
@@ -440,6 +439,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
     | '/admin/events/'
+    | '/live/$subdomain/'
     | '/admin/events/$eventId/branding'
     | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/preview'
@@ -468,7 +468,6 @@ export interface FileRouteTypes {
     | '/demo/rewards'
     | '/demo/trail-map'
     | '/demo/wineries'
-    | '/live/$subdomain'
     | '/passport/$token'
     | '/t/$agencySlug'
     | '/admin'
@@ -483,6 +482,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
     | '/admin/events'
+    | '/live/$subdomain'
     | '/admin/events/$eventId/branding'
     | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/preview'
@@ -512,7 +512,6 @@ export interface FileRouteTypes {
     | '/demo/rewards'
     | '/demo/trail-map'
     | '/demo/wineries'
-    | '/live/$subdomain'
     | '/passport/$token'
     | '/t/$agencySlug'
     | '/admin/'
@@ -527,6 +526,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
     | '/admin/events/'
+    | '/live/$subdomain/'
     | '/admin/events/$eventId_/branding'
     | '/admin/events/$eventId_/leaderboard'
     | '/admin_/events/$eventId/preview'
@@ -551,12 +551,12 @@ export interface RootRouteChildren {
   DemoRewardsRoute: typeof DemoRewardsRoute
   DemoTrailMapRoute: typeof DemoTrailMapRoute
   DemoWineriesRoute: typeof DemoWineriesRouteWithChildren
-  LiveSubdomainRoute: typeof LiveSubdomainRouteWithChildren
   PassportTokenRoute: typeof PassportTokenRoute
   TAgencySlugRoute: typeof TAgencySlugRouteWithChildren
   DemoIndexRoute: typeof DemoIndexRoute
   PassportIndexRoute: typeof PassportIndexRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
+  LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
 }
 
@@ -644,13 +644,6 @@ declare module '@tanstack/react-router' {
       path: '/passport/$token'
       fullPath: '/passport/$token'
       preLoaderRoute: typeof PassportTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain': {
-      id: '/live/$subdomain'
-      path: '/live/$subdomain'
-      fullPath: '/live/$subdomain'
-      preLoaderRoute: typeof LiveSubdomainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/wineries': {
@@ -757,6 +750,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/account'
       preLoaderRoute: typeof AdminAccountRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/live/$subdomain/': {
+      id: '/live/$subdomain/'
+      path: '/live/$subdomain'
+      fullPath: '/live/$subdomain/'
+      preLoaderRoute: typeof LiveSubdomainIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/events/': {
       id: '/admin/events/'
@@ -901,37 +901,6 @@ const DemoWineriesRouteWithChildren = DemoWineriesRoute._addFileChildren(
   DemoWineriesRouteChildren,
 )
 
-interface LiveSubdomainVenuesRouteChildren {
-  LiveSubdomainVenuesVenueIdRoute: typeof LiveSubdomainVenuesVenueIdRoute
-}
-
-const LiveSubdomainVenuesRouteChildren: LiveSubdomainVenuesRouteChildren = {
-  LiveSubdomainVenuesVenueIdRoute: LiveSubdomainVenuesVenueIdRoute,
-}
-
-const LiveSubdomainVenuesRouteWithChildren =
-  LiveSubdomainVenuesRoute._addFileChildren(LiveSubdomainVenuesRouteChildren)
-
-interface LiveSubdomainRouteChildren {
-  LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
-  LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
-  LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
-  LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
-  LiveSubdomainVenuesRoute: typeof LiveSubdomainVenuesRouteWithChildren
-}
-
-const LiveSubdomainRouteChildren: LiveSubdomainRouteChildren = {
-  LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
-  LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
-  LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
-  LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
-  LiveSubdomainVenuesRoute: LiveSubdomainVenuesRouteWithChildren,
-}
-
-const LiveSubdomainRouteWithChildren = LiveSubdomainRoute._addFileChildren(
-  LiveSubdomainRouteChildren,
-)
-
 interface TAgencySlugRouteChildren {
   TAgencySlugEEventSlugRoute: typeof TAgencySlugEEventSlugRoute
 }
@@ -961,12 +930,12 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRewardsRoute: DemoRewardsRoute,
   DemoTrailMapRoute: DemoTrailMapRoute,
   DemoWineriesRoute: DemoWineriesRouteWithChildren,
-  LiveSubdomainRoute: LiveSubdomainRouteWithChildren,
   PassportTokenRoute: PassportTokenRoute,
   TAgencySlugRoute: TAgencySlugRouteWithChildren,
   DemoIndexRoute: DemoIndexRoute,
   PassportIndexRoute: PassportIndexRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
+  LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
 }
 export const routeTree = rootRouteImport
