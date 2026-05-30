@@ -1,0 +1,122 @@
+-- 06_verification.sql
+-- DRAFT ONLY. Run by hand in staging after 01–05 are applied.
+-- Each block prints PASS/FAIL via raise notice.
+
+-- =============================================================================
+-- 1) New QR rows default entry_value = 1.
+-- =============================================================================
+-- select column_default from information_schema.columns
+--   where table_schema='public' and table_name='venue_qr_codes' and column_name='entry_value';
+-- expect: 1
+
+-- select column_default from information_schema.columns
+--   where table_schema='public' and table_name='checkins' and column_name='entry_value';
+-- expect: 1
+
+-- =============================================================================
+-- 2) Changing QR entry_value does NOT mutate historic checkins.entry_value.
+-- =============================================================================
+-- Replace the UUIDs below with a real staging QR + passport before running.
+--
+-- begin;
+--   -- pick any existing checkin row
+--   select id, venue_qr_code_id, entry_value
+--     from public.checkins order by created_at desc limit 1;
+--   -- bump the QR's entry_value
+--   update public.venue_qr_codes set entry_value = 7 where id = '<qr_id>';
+--   -- re-read the same checkin row
+--   select id, entry_value from public.checkins where id = '<checkin_id>';
+--   -- expect: entry_value unchanged (1, or whatever it was at insert time)
+-- rollback;
+
+-- =============================================================================
+-- 3) redeem_checkin snapshots the QR's current entry_value into the new row.
+-- =============================================================================
+-- begin;
+--   update public.venue_qr_codes set entry_value = 5 where id = '<qr_id>';
+--   select * from public.redeem_checkin('<qr_token>', '<passport_token>', null, 'verification');
+--   select entry_value from public.checkins order by created_at desc limit 1;
+--   -- expect: 5
+-- rollback;
+
+-- =============================================================================
+-- 4) Public leaderboard exposes tier + points and NO private columns.
+-- =============================================================================
+-- select column_name
+-- from information_schema.columns
+-- where table_schema = 'public'
+--   and table_name  = 'get_public_leaderboard_by_domain';   -- pg_proc-derived view
+-- -- For functions, inspect the return type instead:
+-- select pg_get_function_result(p.oid)
+-- from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+-- where n.nspname='public' and p.proname='get_public_leaderboard_by_domain';
+-- expect return columns to include: rank, display_name, stamps, points,
+--   visit_count, tier, is_completed, is_enabled, event_found
+-- expect NOT to include: email, mobile, postcode, full_name, visitor_id,
+--   passport_id, access_token_hash.
+
+-- Live call:
+-- select * from public.get_public_leaderboard_by_domain('<event-host>') limit 5;
+
+-- =============================================================================
+-- 5) Prize draw pool counts weighted entries correctly.
+-- =============================================================================
+-- select passport_id, stamps, entries
+-- from public.admin_get_prize_draw_pool('<event_id>'::uuid, '<prize_rule_id>'::uuid)
+-- order by entries desc;
+-- expect: entries == sum(checkins.entry_value) per passport, capped by
+--   prize_rules.max_entries_per_passport when set.
+
+-- =============================================================================
+-- 6) Draw produces a winner and writes an audit row.
+-- =============================================================================
+-- select * from public.admin_draw_prize_winner(
+--   '<event_id>'::uuid, '<prize_rule_id>'::uuid, null
+-- );
+-- select id, winner_passport_id, winner_display_name, winner_entries,
+--        total_eligible_passports, total_entries, selected_entry_number,
+--        selected_hash, seed, drawn_by, drawn_at,
+--        jsonb_array_length(pool_snapshot) as snapshot_size
+-- from public.prize_draw_results
+-- order by drawn_at desc limit 1;
+
+-- =============================================================================
+-- 7) Same seed + same pool reproduces the same winner.
+-- =============================================================================
+-- with first_draw as (
+--   select * from public.admin_draw_prize_winner(
+--     '<event_id>'::uuid, '<prize_rule_id>'::uuid, '11111111-1111-1111-1111-111111111111'::uuid
+--   )
+-- ),
+-- second_draw as (
+--   select * from public.admin_draw_prize_winner(
+--     '<event_id>'::uuid, '<prize_rule_id>'::uuid, '11111111-1111-1111-1111-111111111111'::uuid
+--   )
+-- )
+-- select
+--   (select winner_passport_id from first_draw)  =
+--   (select winner_passport_id from second_draw) as same_winner,
+--   (select selected_hash from first_draw)       =
+--   (select selected_hash from second_draw)      as same_hash;
+-- expect: same_winner = true, same_hash = true
+-- (Caveat: this writes two audit rows. Wrap in `begin; ... rollback;` if
+--  you don't want them persisted.)
+
+-- =============================================================================
+-- 8) Non-admin cannot call admin RPCs.
+-- =============================================================================
+-- As a non-admin authenticated session:
+-- select * from public.admin_get_prize_draw_pool('<event_id>'::uuid, '<prize_rule_id>'::uuid);
+-- expect: ERROR: forbidden (SQLSTATE 42501)
+--
+-- select * from public.admin_draw_prize_winner('<event_id>'::uuid, '<prize_rule_id>'::uuid);
+-- expect: ERROR: forbidden (SQLSTATE 42501)
+
+-- =============================================================================
+-- 9) Backfill sanity: every existing checkin row has entry_value = 1.
+-- =============================================================================
+-- select count(*) filter (where entry_value is null)  as null_rows,
+--        count(*) filter (where entry_value <> 1)     as non_default_rows,
+--        count(*)                                     as total_rows
+-- from public.checkins;
+-- expect: null_rows = 0, non_default_rows = 0 immediately after migration.
