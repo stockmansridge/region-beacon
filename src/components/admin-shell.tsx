@@ -60,8 +60,11 @@ export function AdminShell({
     }`;
 
   return (
-    <div className="flex min-h-screen bg-sidebar">
+    <div className="flex min-h-screen flex-col bg-sidebar">
+      <TestEnvBanner />
+      <div className="flex flex-1">
       <aside className="hidden w-60 shrink-0 border-r bg-sidebar lg:flex lg:flex-col">
+
         <div className="flex h-16 items-center border-b px-5">
           <GetStampdLogo variant="blue" size="md" caption="Event admin" />
         </div>
