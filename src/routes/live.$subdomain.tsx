@@ -116,6 +116,7 @@ function LivePublicPage() {
   const venueLabels = resolveVenueLabels(event);
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+      <PublicAnnouncementBar subdomain={subdomain} />
       <TrailLanding
         eventName={event.name}
         venueLabelPlural={venueLabels.plural}
