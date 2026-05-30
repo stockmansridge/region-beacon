@@ -4,8 +4,12 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { rpcEventHost } from "@/lib/domains";
+import { useAdminAccess } from "@/hooks/use-admin-access";
+import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
+import { DiagnosticPanel } from "@/components/diagnostic-panel";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
   component: LiveJoinPage,
