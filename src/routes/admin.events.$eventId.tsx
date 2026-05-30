@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { AdminEventAnnouncements } from "@/components/admin-event-announcements";
+import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
 import { VenuePublicProfileDialog } from "@/components/venue-public-profile-dialog";
 import { EventTermsDialog } from "@/components/event-terms-dialog";
@@ -1041,6 +1042,38 @@ function EventDetail() {
           onChanged={() => setReloadKey((k) => k + 1)}
         />
       </div>
+
+      {(() => {
+        const activeSub =
+          domains.find(
+            (d) =>
+              d.domain_type === "event_subdomain" &&
+              d.status === "active" &&
+              d.is_primary,
+          ) ??
+          domains.find(
+            (d) => d.domain_type === "event_subdomain" && d.status === "active",
+          ) ??
+          null;
+        return (
+          <AdminEventPoster
+            canEdit={canEdit}
+            event={{
+              name: event.name,
+              slug: event.slug,
+              public_slug: event.public_slug,
+              description: event.description,
+              starts_at: event.starts_at,
+              ends_at: event.ends_at,
+              timezone: event.timezone,
+            }}
+            branding={branding}
+            logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+            coverUrl={getEventAssetPublicUrl(branding?.cover_path)}
+            activePublicSubdomain={activeSub?.public_subdomain ?? null}
+          />
+        );
+      })()}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
