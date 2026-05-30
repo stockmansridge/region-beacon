@@ -206,6 +206,7 @@ function fromLocalInput(s: string): string | null {
 function EventDetail() {
   const { eventId } = Route.useParams();
   const agency = useAgencyContext();
+  const auth = useAuth();
   const agencyId = agency.selected?.id ?? null;
   const canEdit =
     agency.isPlatformAdmin ||
@@ -214,6 +215,7 @@ function EventDetail() {
 
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
+  const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
 
