@@ -619,7 +619,7 @@ function OrganisationSlugEditor({
       return;
     }
 
-    toast.success("Organisation slug updated.");
+    toast.success("Organisation URL name updated.");
     setEditing(false);
     // Refresh so sidebar/header/agency context pick up the new slug.
     window.location.reload();
