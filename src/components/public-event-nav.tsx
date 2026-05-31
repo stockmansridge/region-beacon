@@ -190,15 +190,15 @@ export function PublicEventNav({
         <ul className="mx-auto flex h-14 max-w-md items-stretch">
           <li className="relative flex flex-1">
             <Link
-              to="/"
-              aria-current={isActive("home") ? "page" : undefined}
+              to="/map"
+              aria-current={isActive("map") ? "page" : undefined}
               className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-              style={{ color: isActive("home") ? accent : primary }}
+              style={{ color: isActive("map") ? accent : primary }}
             >
-              <Home className="h-5 w-5" />
-              <span>Home</span>
+              <MapIcon className="h-5 w-5" />
+              <span>Trail Map</span>
             </Link>
-            {isActive("home") && (
+            {isActive("map") && (
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
