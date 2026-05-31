@@ -538,3 +538,146 @@ function OrganisationNameEditor({
     </div>
   );
 }
+
+const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])?$/;
+
+function OrganisationSlugEditor({
+  agencyId,
+  currentSlug,
+  canEdit,
+}: {
+  agencyId: string | null;
+  currentSlug: string;
+  canEdit: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(currentSlug);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValue(currentSlug);
+  }, [currentSlug]);
+
+  if (!editing) {
+    return (
+      <div className="flex items-baseline justify-between gap-4 text-sm">
+        <span className="text-muted-foreground">Organisation slug</span>
+        <span className="flex items-center gap-2">
+          <span className="font-mono text-xs">{currentSlug || "—"}</span>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Edit
+            </button>
+          )}
+        </span>
+      </div>
+    );
+  }
+
+  const normalized = value.trim().toLowerCase();
+  const formatValid = SLUG_REGEX.test(normalized) && normalized.length >= 3;
+  const unchanged = normalized === currentSlug;
+
+  const onSave = async () => {
+    if (!agencyId || !formatValid || unchanged) return;
+    setSaving(true);
+    setError(null);
+
+    // Best-effort availability check. RLS may hide other organisations' rows,
+    // so a "not found" here is not a guarantee — the update below is the real
+    // race-safe check via the unique constraint.
+    const { data: existing } = await supabase
+      .from("agencies")
+      .select("id")
+      .eq("slug", normalized)
+      .maybeSingle();
+    if (existing && existing.id !== agencyId) {
+      setSaving(false);
+      setError("That organisation slug is already taken.");
+      return;
+    }
+
+    const { error: updErr } = await supabase
+      .from("agencies")
+      .update({ slug: normalized })
+      .eq("id", agencyId);
+    setSaving(false);
+
+    if (updErr) {
+      // 23505 = unique_violation
+      const code = (updErr as { code?: string }).code;
+      if (code === "23505" || /duplicate|unique/i.test(updErr.message)) {
+        setError("That organisation slug is already taken.");
+      } else {
+        setError(`Could not update slug: ${updErr.message}`);
+      }
+      return;
+    }
+
+    toast.success("Organisation slug updated.");
+    setEditing(false);
+    // Refresh so sidebar/header/agency context pick up the new slug.
+    window.location.reload();
+  };
+
+  return (
+    <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+      <label className="text-xs font-medium text-muted-foreground">
+        Organisation slug
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          setError(null);
+        }}
+        maxLength={50}
+        placeholder="my-organisation"
+        className="h-9 w-full rounded-md border bg-background px-3 font-mono text-sm"
+        autoFocus
+      />
+      <p className="text-[11px] text-muted-foreground">
+        Lowercase letters, numbers and hyphens. 3–50 characters. Must start and
+        end with a letter or number.
+      </p>
+      <p className="text-[11px] text-amber-700 dark:text-amber-400">
+        Changing this slug may affect admin workspace links. Public event URLs
+        are not changed.
+      </p>
+      {!formatValid && normalized.length > 0 && (
+        <p className="text-xs text-destructive">
+          Slug format is invalid.
+        </p>
+      )}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false);
+            setValue(currentSlug);
+            setError(null);
+          }}
+          disabled={saving}
+          className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving || !formatValid || unchanged}
+          className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save slug"}
+        </button>
+      </div>
+    </div>
+  );
+}
