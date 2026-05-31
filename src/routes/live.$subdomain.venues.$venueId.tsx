@@ -179,9 +179,26 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             {venue.name}
           </h1>
 
-          {venue.address && (
-            <p className="mt-1 text-sm text-[#8A7E66]">{venue.address}</p>
+          {visited.kind === "visited" && (
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#1F3D2B] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#FBF5E8]">
+              ✓ Visited
+              {visited.at && (
+                <span className="font-normal normal-case tracking-normal opacity-80">
+                  · {new Date(visited.at).toLocaleDateString()}
+                </span>
+              )}
+            </div>
           )}
+          {visited.kind === "not_visited" && (
+            <div className="mt-2 inline-flex items-center rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-[#8A7E66]">
+              Not visited yet
+            </div>
+          )}
+
+          {venue.address && (
+            <p className="mt-3 text-sm text-[#8A7E66]">📍 {venue.address}</p>
+          )}
+
 
           {venue.description && (
             <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[#3D372C]">
