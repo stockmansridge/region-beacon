@@ -1,5 +1,10 @@
 # Domain rename draft — easypassport.com.au → getstampd.com.au
 
+> **Archived.** An earlier typo domain in this draft was removed because it
+> is not owned. The canonical owned root is `getstampd.com.au`. See
+> `supabase/migrations-draft-domain-rename-v2/` for the corrected resolver
+> that this draft has been superseded by.
+
 Status: **DRAFT — do not execute.**
 
 The platform is being renamed from Easy Passport to **GetStampd** and the
