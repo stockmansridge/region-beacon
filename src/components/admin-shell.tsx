@@ -6,6 +6,7 @@ import { GetStampdLogo } from "@/components/brand";
 import { TestEnvBanner } from "@/components/test-env-banner";
 import { useDiagnosticsEnabled } from "@/lib/diagnostics";
 import { Switch } from "@/components/ui/switch";
+import { formatRoleLabel } from "@/lib/role-labels";
 import {
   Sheet,
   SheetContent,
