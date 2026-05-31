@@ -10,8 +10,12 @@ import { rpcEventHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
-  component: PublicVenueDetailPage,
+  component: function VenueDetailRoute() {
+    const { subdomain, venueId } = Route.useParams();
+    return <PublicVenueDetailPage subdomain={subdomain} venueId={venueId} />;
+  },
 });
+
 
 type VenueRow = {
   venue_id: string;
