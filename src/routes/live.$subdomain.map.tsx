@@ -428,43 +428,14 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       />
 
       <div className="mx-auto mt-4 max-w-5xl">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="font-trail-serif text-2xl font-semibold" style={{ color: primary }}>
-              Trail Map
-            </h1>
-            {hasPassport && totalCount > 0 && (
-              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#8A7E66]">
-                {visitedCount} of {totalCount} {labels.plural.toLowerCase()} visited
-              </p>
-            )}
-          </div>
+        <div className="mb-3">
+          <h1 className="font-trail-serif text-2xl font-semibold" style={{ color: primary }}>
+            Trail Map
+          </h1>
           {hasPassport && totalCount > 0 && (
-            <div className="flex gap-1 rounded-full border border-[#E6DCC7] bg-[#FBF5E8] p-1 text-xs">
-              {(
-                [
-                  { k: "all", label: "All" },
-                  { k: "visited", label: "Visited" },
-                  { k: "not_visited", label: "Not visited" },
-                ] as Array<{ k: Filter; label: string }>
-              ).map((f) => {
-                const active = filter === f.k;
-                return (
-                  <button
-                    key={f.k}
-                    type="button"
-                    onClick={() => setFilter(f.k)}
-                    className="rounded-full px-3 py-1 font-medium transition"
-                    style={{
-                      backgroundColor: active ? primary : "transparent",
-                      color: active ? "#FBF5E8" : primary,
-                    }}
-                  >
-                    {f.label}
-                  </button>
-                );
-              })}
-            </div>
+            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#8A7E66]">
+              {visitedCount} of {totalCount} {labels.plural.toLowerCase()} visited
+            </p>
           )}
         </div>
 
@@ -495,9 +466,14 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
                     key={v.venue_id ?? Math.random()}
                     className="rounded-lg bg-white px-3 py-2"
                   >
-                    <span className="font-semibold" style={{ color: primary }}>
+                    <Link
+                      to="/venues/$venueId"
+                      params={{ venueId: v.venue_id ?? "" }}
+                      className="font-semibold underline-offset-2 hover:underline"
+                      style={{ color: primary }}
+                    >
                       {v.name ?? "Venue"}
-                    </span>
+                    </Link>
                     {v.address && (
                       <span className="block text-xs text-[#8A7E66]">{v.address}</span>
                     )}
@@ -522,22 +498,56 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
             buildReport={buildSupportReport}
           />
         ) : (
-          <>
+          <div className="relative">
             <div
               ref={mapContainerRef}
-              className="h-[60vh] min-h-[420px] w-full overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#1F3D2B]/10"
+              className="h-[70vh] min-h-[460px] w-full overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#1F3D2B]/10"
             />
-            {selected && (
-              <SelectedVenueCard
-                venue={selected}
-                visited={hasPassport && !!selected.venue_id && visitedIds.has(selected.venue_id)}
-                primary={primary}
-                accent={accent}
-                onClose={() => setSelected(null)}
-              />
+            {hasPassport && totalCount > 0 && (
+              <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center px-3">
+                <div className="pointer-events-auto flex gap-1 rounded-full border border-[#E6DCC7] bg-[#FBF5E8]/95 p-1 text-xs shadow-sm backdrop-blur">
+                  {(
+                    [
+                      { k: "all", label: "All" },
+                      { k: "visited", label: "Visited" },
+                      { k: "not_visited", label: "Not visited" },
+                    ] as Array<{ k: Filter; label: string }>
+                  ).map((f) => {
+                    const active = filter === f.k;
+                    return (
+                      <button
+                        key={f.k}
+                        type="button"
+                        onClick={() => setFilter(f.k)}
+                        className="rounded-full px-3 py-1 font-medium transition"
+                        style={{
+                          backgroundColor: active ? primary : "transparent",
+                          color: active ? "#FBF5E8" : primary,
+                        }}
+                      >
+                        {f.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
-          </>
+            {selected && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-3">
+                <div className="pointer-events-auto w-full max-w-md">
+                  <SelectedVenueCard
+                    venue={selected}
+                    visited={hasPassport && !!selected.venue_id && visitedIds.has(selected.venue_id)}
+                    primary={primary}
+                    accent={accent}
+                    onClose={() => setSelected(null)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         )}
+
 
         {!noCoords && unmappedVenues.length > 0 && (
           <div className="mt-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4 text-xs text-[#3D372C]">
