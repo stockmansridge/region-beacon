@@ -37,9 +37,9 @@ type State =
   | { kind: "not_found" }
   | { kind: "ready"; venue: VenueRow };
 
-function PublicVenueDetailPage() {
-  const { subdomain, venueId } = Route.useParams();
+export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: string; venueId: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+
 
   useEffect(() => {
     let cancelled = false;
