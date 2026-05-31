@@ -40,6 +40,7 @@ type State =
 
 type VisitedState =
   | { kind: "none" }
+  | { kind: "no_passport" }
   | { kind: "not_visited" }
   | { kind: "visited"; at: string | null };
 
@@ -73,30 +74,36 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
       // Visited state from local passport (if any)
       const evt = (evtData?.[0] ?? null) as { event_id?: string } | null;
-      if (evt?.event_id && typeof localStorage !== "undefined") {
-        try {
-          const raw = localStorage.getItem(`gs.passport.${evt.event_id}`);
-          if (!raw) return;
-          const parsed = JSON.parse(raw) as { access_token?: string };
-          if (!parsed?.access_token) return;
-          const { data: stampsData } = await supabase.rpc(
-            "get_passport_stamps_by_token" as never,
-            { _raw_token: parsed.access_token } as never,
-          );
-          if (cancelled) return;
-          const stamp = ((stampsData ?? []) as Array<{
-            venue_id: string | null;
-            stamped: boolean | null;
-            stamped_at: string | null;
-          }>).find((s) => s.venue_id === venueId);
-          if (stamp?.stamped) {
-            setVisited({ kind: "visited", at: stamp.stamped_at ?? null });
-          } else {
-            setVisited({ kind: "not_visited" });
-          }
-        } catch {
-          /* ignore */
+      if (!evt?.event_id) return;
+      if (typeof localStorage === "undefined") return;
+      try {
+        const raw = localStorage.getItem(`gs.passport.${evt.event_id}`);
+        if (!raw) {
+          setVisited({ kind: "no_passport" });
+          return;
         }
+        const parsed = JSON.parse(raw) as { access_token?: string };
+        if (!parsed?.access_token) {
+          setVisited({ kind: "no_passport" });
+          return;
+        }
+        const { data: stampsData } = await supabase.rpc(
+          "get_passport_stamps_by_token" as never,
+          { _raw_token: parsed.access_token } as never,
+        );
+        if (cancelled) return;
+        const stamp = ((stampsData ?? []) as Array<{
+          venue_id: string | null;
+          stamped: boolean | null;
+          stamped_at: string | null;
+        }>).find((s) => s.venue_id === venueId);
+        if (stamp?.stamped) {
+          setVisited({ kind: "visited", at: stamp.stamped_at ?? null });
+        } else {
+          setVisited({ kind: "not_visited" });
+        }
+      } catch {
+        /* ignore */
       }
     })();
     return () => {
@@ -193,6 +200,14 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           {visited.kind === "not_visited" && (
             <div className="mt-2 inline-flex items-center rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-[#8A7E66]">
               Not visited yet
+            </div>
+          )}
+          {visited.kind === "no_passport" && (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-3 py-1 text-[11px] font-medium text-[#3D372C]">
+              <span>Create a passport to track visited venues</span>
+              <Link to="/join" className="font-semibold text-[#1F3D2B] underline underline-offset-2">
+                Start
+              </Link>
             </div>
           )}
 
