@@ -421,7 +421,7 @@ function PassportView({
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
             style={{ color: ACCENT }}
           >
-            Your passport
+            My Passport
           </div>
           <h1
             className="font-trail-serif mt-1 text-3xl font-semibold"
@@ -430,7 +430,7 @@ function PassportView({
             {eventName ?? "Trail passport"}
           </h1>
           <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
-            Hi {greetingName} · No app download required
+            Hi {greetingName}
           </p>
         </div>
 
@@ -467,17 +467,47 @@ function PassportView({
             </div>
           </div>
 
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#E6DCC7] bg-[#F6EFE2] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#3D372C]">
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{
-                backgroundColor:
-                  passport.status === "completed" ? PRIMARY : ACCENT,
-              }}
-            />
-            Status · {statusLabel}
-          </div>
+          {totalVenues > 0 && (
+            <p
+              className="mt-4 text-sm font-medium"
+              style={{ color: PRIMARY }}
+            >
+              {stampedCount} of {totalVenues}{" "}
+              {totalVenues === 1
+                ? labelSingular.toLowerCase()
+                : labelPlural.toLowerCase()}{" "}
+              visited
+            </p>
+          )}
+
+          {totalVenues > 0 && stampedCount >= totalVenues ? (
+            <div
+              className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#F6EFE2]"
+              style={{ backgroundColor: PRIMARY }}
+            >
+              <span aria-hidden>★</span>
+              Trail complete
+            </div>
+          ) : (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#E6DCC7] bg-[#F6EFE2] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#3D372C]">
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{
+                  backgroundColor:
+                    passport.status === "completed" ? PRIMARY : ACCENT,
+                }}
+              />
+              Status · {statusLabel}
+            </div>
+          )}
         </section>
+
+        {/* Stamp grid */}
+        <StampGrid
+          venues={stamps?.venues ?? []}
+          labelSingular={labelSingular}
+          labelPlural={labelPlural}
+        />
 
         {/* Rewards */}
         <RewardsSection
@@ -505,68 +535,6 @@ function PassportView({
           )}
         </section>
 
-        {/* Stamped venues */}
-        <section className="mt-5">
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2
-              className="font-trail-serif text-lg font-semibold"
-              style={{ color: PRIMARY }}
-            >
-              Your stamps
-            </h2>
-            <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
-              {stampedCount} stamped
-            </span>
-          </div>
-
-          {stampedVenues.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-[#C9A24A]/50 bg-[#FBF5E8] p-6 text-center">
-              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#C9A24A]">
-                No stamps yet
-              </div>
-              <p className="mt-2 text-sm text-[#3D372C]">
-                Stamps will appear as you scan {labelPlural.toLowerCase()} QR codes.
-              </p>
-            </div>
-          ) : (
-            <ul className="space-y-2">
-              {stampedVenues.map((v) => (
-                <VenueRow key={v.venue_id} venue={v} primary={PRIMARY} accent={ACCENT} stamped />
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Remaining venues */}
-        {remainingVenues.length > 0 && (
-          <section className="mt-5">
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2
-                className="font-trail-serif text-lg font-semibold"
-                style={{ color: PRIMARY }}
-              >
-                Still to collect
-              </h2>
-              <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
-                {remainingVenues.length} remaining
-              </span>
-            </div>
-            <ul className="space-y-2">
-              {remainingVenues.map((v) => (
-                <VenueRow
-                  key={v.venue_id}
-                  venue={v}
-                  primary={PRIMARY}
-                  accent={ACCENT}
-                  stamped={false}
-                />
-              ))}
-            </ul>
-            <p className="mt-2 text-[11px] text-[#8A7E66]">
-              Scan the {labelSingular.toLowerCase()} QR code on arrival to collect a stamp.
-            </p>
-          </section>
-        )}
 
         {/* Copy link */}
         <section className="mt-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm">
