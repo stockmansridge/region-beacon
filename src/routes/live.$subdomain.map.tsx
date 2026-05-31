@@ -119,9 +119,9 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
               const visited = new Set<string>();
               for (const s of (stampsData ?? []) as Array<{
                 venue_id: string | null;
-                stamped: boolean | null;
+                is_stamped: boolean | null;
               }>) {
-                if (s.venue_id && s.stamped) visited.add(s.venue_id);
+                if (s.venue_id && s.is_stamped) visited.add(String(s.venue_id));
               }
               setVisitedIds(visited);
             }
