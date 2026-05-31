@@ -576,84 +576,141 @@ function PassportView({
   );
 }
 
-function VenueRow({
-  venue,
-  primary,
-  accent,
-  stamped,
+function StampGrid({
+  venues,
+  labelSingular,
+  labelPlural,
 }: {
-  venue: StampRow;
-  primary: string;
-  accent: string;
-  stamped: boolean;
+  venues: StampRow[];
+  labelSingular: string;
+  labelPlural: string;
 }) {
-  const logoUrl = getVenueAssetPublicUrl(venue.venue_logo_path);
-  const coverUrl = getVenueAssetPublicUrl(venue.venue_cover_path);
-  const thumb = logoUrl ?? coverUrl;
+  if (venues.length === 0) {
+    return (
+      <section className="mt-5">
+        <div className="rounded-3xl border border-dashed border-[#C9A24A]/50 bg-[#FBF5E8] p-6 text-center">
+          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#C9A24A]">
+            No {labelPlural.toLowerCase()} configured
+          </div>
+          <p className="mt-2 text-sm text-[#3D372C]">
+            The event organiser hasn't published any {labelPlural.toLowerCase()} yet.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mt-6">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2
+          className="font-trail-serif text-lg font-semibold"
+          style={{ color: PRIMARY }}
+        >
+          Stamp collection
+        </h2>
+        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+          Tap a {labelSingular.toLowerCase()} for details
+        </span>
+      </div>
+      <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4">
+          {venues.map((v) => (
+            <StampCell key={v.venue_id} venue={v} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function StampCell({ venue }: { venue: StampRow }) {
+  const stamped = !!venue.is_stamped;
   const when = venue.checked_in_at
-    ? new Date(venue.checked_in_at).toLocaleString(undefined, {
+    ? new Date(venue.checked_in_at).toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
       })
     : null;
 
   return (
-    <li
-      className={`flex items-center gap-3 rounded-2xl border p-3 shadow-sm ${
+    <Link
+      to="/venues/$venueId"
+      params={{ venueId: venue.venue_id }}
+      className="group flex flex-col items-center text-center focus:outline-none"
+      aria-label={
         stamped
-          ? "border-[#E6DCC7] bg-[#FBF5E8]"
-          : "border-dashed border-[#E6DCC7] bg-[#F6EFE2]/60"
-      }`}
+          ? `${venue.venue_name ?? "Venue"} — visited${when ? ` on ${when}` : ""}`
+          : `${venue.venue_name ?? "Venue"} — not visited yet`
+      }
     >
       <div
-        className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-xl ${
-          stamped ? "" : "opacity-60"
+        className={`relative flex h-20 w-20 items-center justify-center rounded-full transition-transform group-hover:scale-[1.04] group-focus-visible:ring-2 group-focus-visible:ring-offset-2 ${
+          stamped ? "" : ""
         }`}
-        style={{ backgroundColor: stamped ? "#F6EFE2" : "#EFE7D2" }}
-      >
-        {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumb}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div
-            className="flex h-full w-full items-center justify-center font-trail-serif text-base"
-            style={{ color: stamped ? primary : "#8A7E66" }}
-          >
-            {(venue.venue_name ?? "?").slice(0, 1).toUpperCase()}
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div
-          className={`truncate font-trail-serif text-sm font-semibold ${
-            stamped ? "" : "text-[#8A7E66]"
-          }`}
-          style={stamped ? { color: primary } : undefined}
-        >
-          {venue.venue_name ?? "Venue"}
-        </div>
-        <div className="text-[11px] text-[#8A7E66]">
-          {stamped ? (when ? `Stamped · ${when}` : "Stamped") : "Not yet stamped"}
-        </div>
-      </div>
-      <div
-        className="ml-auto inline-flex h-7 items-center rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
         style={
           stamped
-            ? { backgroundColor: primary, color: "#F6EFE2" }
-            : { border: `1px solid ${accent}55`, color: accent }
+            ? {
+                backgroundColor: PRIMARY,
+                color: "#F6EFE2",
+                boxShadow:
+                  "inset 0 0 0 2px #F6EFE2, inset 0 0 0 4px rgba(31,61,43,0.65), 0 2px 6px rgba(31,61,43,0.18)",
+              }
+            : {
+                backgroundColor: "#F6EFE2",
+                color: "#8A7E66",
+                boxShadow: "inset 0 0 0 2px #E6DCC7",
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, transparent 0 6px, rgba(138,126,102,0.06) 6px 7px)",
+              }
         }
       >
-        {stamped ? "✓ Stamp" : "Locked"}
+        {stamped ? (
+          <div className="flex flex-col items-center justify-center leading-none">
+            <span
+              aria-hidden
+              className="font-trail-serif text-2xl font-bold"
+              style={{
+                transform: "rotate(-8deg)",
+                letterSpacing: "0.02em",
+              }}
+            >
+              ✓
+            </span>
+            <span
+              aria-hidden
+              className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em]"
+              style={{ transform: "rotate(-8deg)" }}
+            >
+              Visited
+            </span>
+          </div>
+        ) : (
+          <span
+            aria-hidden
+            className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#A89C82]"
+          >
+            Empty
+          </span>
+        )}
       </div>
-    </li>
+      <div
+        className={`mt-2 line-clamp-2 text-[12px] font-semibold leading-tight ${
+          stamped ? "" : "text-[#8A7E66]"
+        }`}
+        style={stamped ? { color: PRIMARY } : undefined}
+      >
+        {venue.venue_name ?? "Venue"}
+      </div>
+      {stamped && when && (
+        <div className="mt-0.5 text-[10px] text-[#8A7E66]">{when}</div>
+      )}
+      {!stamped && (
+        <div className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[#A89C82]">
+          Not visited
+        </div>
+      )}
+    </Link>
   );
 }
 
