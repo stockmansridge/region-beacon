@@ -1400,6 +1400,17 @@ function EventDetail() {
                   Edit basics
                 </button>
               )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={archiveEvent}
+                  disabled={deleting}
+                  title="Archive this event (soft delete). Existing records are preserved."
+                  className="inline-flex h-9 items-center rounded-lg border border-destructive/40 bg-destructive/5 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                >
+                  {deleting ? "Archiving…" : "Archive event"}
+                </button>
+              )}
             </div>
           )
         }
