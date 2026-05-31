@@ -244,7 +244,7 @@ function Events() {
             {!loading && rows && rows.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  No events yet for this agency.
+                  No events yet for this organisation.
                 </td>
               </tr>
             )}
