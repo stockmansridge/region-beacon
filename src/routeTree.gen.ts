@@ -13,6 +13,7 @@ import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-fo
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ScanRouteImport } from './routes/scan'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
 import { Route as MapRouteImport } from './routes/map'
@@ -78,6 +79,11 @@ const SupportRoute = SupportRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScanRoute = ScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/privacy': typeof PrivacyRoute
+  '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -377,6 +384,7 @@ export interface FileRoutesByTo {
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/privacy': typeof PrivacyRoute
+  '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -430,6 +438,7 @@ export interface FileRoutesById {
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/privacy': typeof PrivacyRoute
+  '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -484,6 +493,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/marketing-preview'
     | '/privacy'
+    | '/scan'
     | '/signup'
     | '/support'
     | '/terms'
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/marketing-preview'
     | '/privacy'
+    | '/scan'
     | '/signup'
     | '/support'
     | '/terms'
@@ -587,6 +598,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/marketing-preview'
     | '/privacy'
+    | '/scan'
     | '/signup'
     | '/support'
     | '/terms'
@@ -640,6 +652,7 @@ export interface RootRouteChildren {
   MapRoute: typeof MapRoute
   MarketingPreviewRoute: typeof MarketingPreviewRoute
   PrivacyRoute: typeof PrivacyRoute
+  ScanRoute: typeof ScanRoute
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
@@ -699,6 +712,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scan': {
+      id: '/scan'
+      path: '/scan'
+      fullPath: '/scan'
+      preLoaderRoute: typeof ScanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -1089,6 +1109,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapRoute: MapRoute,
   MarketingPreviewRoute: MarketingPreviewRoute,
   PrivacyRoute: PrivacyRoute,
+  ScanRoute: ScanRoute,
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,

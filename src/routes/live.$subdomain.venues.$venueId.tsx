@@ -6,6 +6,7 @@ import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
+import { VenueMiniMap } from "@/components/venue-mini-map";
 import { tenantHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
@@ -259,21 +260,21 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             )}
           </div>
 
-          <div className="mt-6 flex aspect-[5/3] w-full items-center justify-center rounded-2xl border border-dashed border-[#8A7E66]/40 bg-[#FBF5E8] text-center text-xs text-[#8A7E66]">
-            Map coming soon
-            {venue.lat !== null && venue.lng !== null && (
-              <span className="sr-only">
-                Located at {venue.lat}, {venue.lng}
-              </span>
-            )}
-          </div>
+          <VenueMiniMap
+            name={venue.name}
+            lat={venue.lat}
+            lng={venue.lng}
+            hasAddress={Boolean(venue.address)}
+          />
 
-          <div
-            className="mt-6 rounded-2xl px-4 py-4 text-center text-sm font-medium text-[#F6EFE2] shadow"
+          <Link
+            to="/scan"
+            className="mt-6 flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-center text-sm font-semibold text-[#F6EFE2] shadow transition hover:opacity-95"
             style={{ backgroundColor: "#1F3D2B" }}
           >
-            Scan the venue QR to collect your stamp.
-          </div>
+            <span aria-hidden>📷</span>
+            Scan venue QR to collect your stamp
+          </Link>
 
           <div className="mt-8 flex justify-center"><PoweredByGetStampd variant="trail" /></div>
         </div>
