@@ -4,6 +4,8 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { LegalBody } from "@/components/legal-body";
 import { PoweredByGetStampd } from "@/components/brand";
+import { PublicEventNav } from "@/components/public-event-nav";
+
 
 export type LegalRow = {
   event_id: string;
@@ -53,14 +55,25 @@ export function useLegal(subdomain: string): LoadState {
 
 export function PublicLegalShell({
   subdomain,
+  eventName,
+  activeOverride,
   children,
 }: {
   subdomain: string;
+  eventName?: string | null;
+  activeOverride?: "home" | "join" | "venues" | "leaderboard";
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
-      <div className="mx-auto max-w-2xl">
+    <div className="min-h-screen bg-[#F6EFE2] px-4 py-4">
+      <div className="mx-auto max-w-5xl">
+        <PublicEventNav
+          subdomain={subdomain}
+          eventName={eventName ?? "Event"}
+          activeOverride={activeOverride}
+        />
+      </div>
+      <div className="mx-auto mt-6 max-w-2xl">
         <Link
           to="/live/$subdomain"
           params={{ subdomain }}
@@ -94,6 +107,7 @@ export function NotAvailable({ subdomain }: { subdomain: string }) {
   );
 }
 
+
 export function ExternalLinkOnly({
   subdomain,
   url,
@@ -106,7 +120,8 @@ export function ExternalLinkOnly({
   eventName: string;
 }) {
   return (
-    <PublicLegalShell subdomain={subdomain}>
+    <PublicLegalShell subdomain={subdomain} eventName={eventName}>
+
       <p className="text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
         {eventName}
       </p>
@@ -146,7 +161,8 @@ export function LocalLegalPage({
 }) {
   const effective = effectiveAt ? new Date(effectiveAt) : null;
   return (
-    <PublicLegalShell subdomain={subdomain}>
+    <PublicLegalShell subdomain={subdomain} eventName={eventName}>
+
       <p className="text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
         {eventName}
       </p>
