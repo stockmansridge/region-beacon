@@ -893,6 +893,9 @@ function EventDetail() {
     setVenueForm(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
+    // Refresh in case a venue was just created (we skipped reload then to keep
+    // the editor mounted for image upload).
+    setReloadKey((k) => k + 1);
   }
 
   async function saveVenue() {
