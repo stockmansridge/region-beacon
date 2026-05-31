@@ -6,6 +6,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
 import { TestEnvBanner } from "@/components/test-env-banner";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import {
+  savePendingOrganisationSignup,
+  clearPendingOrganisationSignup,
+} from "@/lib/pending-organisation-signup";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -41,13 +45,13 @@ const SignupSchema = z
     businessName: z
       .string()
       .trim()
-      .min(1, "Business / organisation name is required.")
+      .min(1, "Organisation name is required.")
       .max(200),
     slug: z
       .string()
       .trim()
-      .min(2, "Workspace URL must be at least 2 characters.")
-      .max(60, "Workspace URL must be 60 characters or fewer.")
+      .min(2, "Organisation URL name must be at least 2 characters.")
+      .max(60, "Organisation URL name must be 60 characters or fewer.")
       .regex(
         /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
         "Use lowercase letters, numbers and hyphens only.",
@@ -119,6 +123,16 @@ function SignupPage() {
     setStage("submitting");
     const data = parsed.data;
 
+    // Persist pending organisation details BEFORE auth.signUp so that, if
+    // email confirmation is required, we can complete organisation creation
+    // after the user confirms email and signs in.
+    savePendingOrganisationSignup({
+      businessName: data.businessName,
+      organisationUrlName: data.slug,
+      email: data.email,
+      source: "signup",
+    });
+
     // 1. Create auth user
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: data.email,
@@ -130,18 +144,20 @@ function SignupPage() {
     });
 
     if (signUpErr) {
+      clearPendingOrganisationSignup();
       setStage("form");
       setTopError(signUpErr.message || "Could not create account.");
       return;
     }
 
     // If email confirmation is required, no session yet — ask them to confirm.
+    // Pending signup stays in localStorage and will be completed on first sign-in.
     if (!signUpData.session) {
       setStage("check-email");
       return;
     }
 
-    // 2. Create the agency workspace via SECURITY DEFINER RPC.
+    // 2. Create the organisation via SECURITY DEFINER RPC.
     const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
       _agency_name: data.businessName,
       _agency_slug: data.slug,
@@ -151,11 +167,13 @@ function SignupPage() {
       setStage("form");
       const msg = rpcErr.message || "";
       if (/agency_slug_taken/i.test(msg)) {
-        setFieldErrors({ slug: "That workspace URL is already taken. Try another." });
+        setFieldErrors({
+          slug: "That Organisation URL name is already taken. Please choose another.",
+        });
       } else if (/invalid_agency_slug/i.test(msg)) {
-        setFieldErrors({ slug: "Workspace URL is invalid." });
+        setFieldErrors({ slug: "Organisation URL name is invalid." });
       } else if (/invalid_agency_name/i.test(msg)) {
-        setFieldErrors({ businessName: "Business name is invalid." });
+        setFieldErrors({ businessName: "Organisation name is invalid." });
       } else if (/not_authenticated/i.test(msg)) {
         setTopError("Sign-in did not persist. Please try logging in.");
       } else if (/Could not find the function|function .* does not exist/i.test(msg)) {
@@ -163,11 +181,12 @@ function SignupPage() {
           "Self-service signup is not yet enabled on this environment. Please contact support.",
         );
       } else {
-        setTopError(`Account created but workspace setup failed: ${msg}`);
+        setTopError(`Account created but organisation setup failed: ${msg}`);
       }
       return;
     }
 
+    clearPendingOrganisationSignup();
     setStage("done");
     navigate({ to: "/admin", replace: true });
   }
@@ -204,7 +223,7 @@ function SignupPage() {
             <p className="mt-3 text-sm text-muted-foreground">
               We sent a confirmation link to <strong>{email}</strong>. Click it to
               activate your account, then return and sign in to finish creating
-              your workspace.
+              your organisation.
             </p>
             <Link
               to="/admin/login"
@@ -219,7 +238,7 @@ function SignupPage() {
             className="space-y-5 rounded-2xl border bg-card p-8 shadow-sm"
           >
             <div>
-              <h1 className="text-xl font-semibold">Create your workspace</h1>
+              <h1 className="text-xl font-semibold">Create your organisation</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Start setting up your first GetStampd event. Free to test —
                 payments and live publishing are not active during public testing.
@@ -280,7 +299,7 @@ function SignupPage() {
             </div>
 
             <Field
-              label="Business / organisation name"
+              label="Organisation name"
               error={fieldErrors.businessName}
             >
               <input
@@ -296,8 +315,8 @@ function SignupPage() {
             </Field>
 
             <Field
-              label="Workspace URL"
-              hint="Used internally to identify your workspace. Lowercase letters, numbers and hyphens."
+              label="Organisation URL name"
+              hint="Used in your organisation's web address. Lowercase letters, numbers and hyphens."
               error={fieldErrors.slug}
             >
               <div className="flex items-center overflow-hidden rounded-md border bg-background">
@@ -340,7 +359,7 @@ function SignupPage() {
               className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {stage === "submitting" && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create workspace
+              Create organisation
             </button>
           </form>
         )}
