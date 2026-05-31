@@ -424,14 +424,20 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       subdomain,
       route: "/live/$subdomain/map",
       hostnameLooksAllowed: isAllowedLooking,
+      eventId: event?.event_id ?? null,
       venueCount: venues.length,
       venueCountWithLatLng: geoVenues.length,
+      savedPassportKey: stampDiag.savedPassportKey,
+      savedPassportFound: stampDiag.savedPassportFound,
+      stampRpcError: stampDiag.stampRpcError,
+      stampRowCount: stampDiag.stampRowCount,
+      matchedVisitedVenueCount: visitedCount,
       fallbackListRendered: Boolean(mapError),
       mapError,
       mapkit: mapDiag,
     };
     return JSON.stringify(report, null, 2);
-  }, [subdomain, venues.length, geoVenues.length, mapError, mapDiag]);
+  }, [subdomain, event?.event_id, venues.length, geoVenues.length, mapError, mapDiag, stampDiag, visitedCount]);
 
   if (loading) {
     return (
