@@ -2125,6 +2125,7 @@ function EventDetail() {
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="px-3 py-2 font-medium">Active QR</th>
                       <th className="px-3 py-2 font-medium">Issued</th>
+                      {canEdit && <th className="px-3 py-2 font-medium">QR link</th>}
                       {canEdit && <th className="px-3 py-2 font-medium">QR controls</th>}
                       {canEdit && <th className="px-3 py-2 font-medium">Actions</th>}
                     </tr>
