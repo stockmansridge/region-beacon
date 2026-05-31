@@ -578,10 +578,55 @@ function SelectedVenueCard({
   );
 }
 
-function MapFallbackList({ venues, primary }: { venues: VenueRow[]; primary: string }) {
+function MapFallbackList({
+  venues,
+  primary,
+  errorMessage,
+  buildReport,
+}: {
+  venues: VenueRow[];
+  primary: string;
+  errorMessage: string;
+  buildReport: () => string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const handleCopy = async () => {
+    const report = buildReport();
+    try {
+      await navigator.clipboard.writeText(report);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback: open the report so the visitor can copy manually.
+      setShowDetails(true);
+    }
+  };
   return (
     <div className="rounded-2xl border border-amber-500/40 bg-amber-50 p-4 text-sm text-amber-900">
-      <p className="mb-3 font-medium">Map preview unavailable. Here's the venue list:</p>
+      <p className="mb-1 font-medium">Map preview unavailable. Here's the venue list:</p>
+      <p className="mb-3 text-xs text-amber-800">{errorMessage}</p>
+      <div className="mb-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="rounded-full border border-amber-600/40 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-900 hover:bg-amber-100"
+        >
+          {copied ? "Copied ✓" : "Copy support details"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowDetails((v) => !v)}
+          className="rounded-full border border-amber-600/40 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-900 hover:bg-amber-100"
+        >
+          {showDetails ? "Hide" : "Show"} details
+        </button>
+      </div>
+      {showDetails && (
+        <pre className="mb-3 max-h-64 overflow-auto rounded-lg bg-white p-3 text-[10px] leading-snug text-amber-900">
+          {buildReport()}
+        </pre>
+      )}
       <ul className="space-y-2">
         {venues.map((v) => (
           <li key={v.venue_id ?? Math.random()}>
