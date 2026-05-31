@@ -2305,15 +2305,15 @@ function EventDetail() {
                             </td>
                           )}
                           {canEdit && (
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => startEditVenue(v)}
+                                  onClick={(e) => { e.stopPropagation(); startEditVenue(v); }}
                                   disabled={venueEditingId !== null || venueArchivingId !== null}
                                   className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
                                 >
-                                  Edit
+                                  Edit details
                                 </button>
                                 <button
                                   type="button"
