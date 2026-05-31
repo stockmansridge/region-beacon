@@ -1916,6 +1916,35 @@ function EventDetail() {
                       />
                     </Field>
                   </div>
+                  <div className="space-y-2">
+                    {!mapPickerOpen && (
+                      <button
+                        type="button"
+                        onClick={() => setMapPickerOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-xs font-medium hover:bg-muted"
+                      >
+                        Select location with Apple Maps
+                      </button>
+                    )}
+                    {mapPickerOpen && (
+                      <VenueMapKitPicker
+                        value={{
+                          name: venueForm.name,
+                          address: venueForm.address,
+                          lat: venueForm.lat,
+                          lng: venueForm.lng,
+                        }}
+                        nameIsBlank={venueForm.name.trim().length === 0}
+                        onChange={(next) =>
+                          setVenueForm((prev) => (prev ? { ...prev, ...next } : prev))
+                        }
+                        onClose={() => setMapPickerOpen(false)}
+                      />
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Map selection sets the public venue location. Manual address and coordinates still work if the map is unavailable.
+                    </p>
+                  </div>
                   {(() => {
                     const lat = venueForm.lat.trim() ? Number(venueForm.lat.trim()) : null;
                     const lng = venueForm.lng.trim() ? Number(venueForm.lng.trim()) : null;
