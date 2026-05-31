@@ -426,7 +426,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
         {noCoords ? (
           <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center text-sm text-[#3D372C]">
-            <p>No mapped {labels.plural.toLowerCase()} yet.</p>
+            <p>No venue locations have been set yet.</p>
             <Link
               to="/venues"
               className="mt-3 inline-block rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider"
@@ -436,7 +436,12 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
             </Link>
           </div>
         ) : mapError ? (
-          <MapFallbackList venues={geoVenues} primary={primary} />
+          <MapFallbackList
+            venues={geoVenues}
+            primary={primary}
+            errorMessage={mapError}
+            buildReport={buildSupportReport}
+          />
         ) : (
           <>
             <div
@@ -453,6 +458,28 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
               />
             )}
           </>
+        )}
+
+        {!noCoords && unmappedVenues.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4 text-xs text-[#3D372C]">
+            <p className="mb-2 font-semibold uppercase tracking-[0.18em] text-[#8A7E66]">
+              {labels.plural} without map locations
+            </p>
+            <ul className="space-y-1">
+              {unmappedVenues.map((v) => (
+                <li key={v.venue_id ?? Math.random()}>
+                  <Link
+                    to="/venues/$venueId"
+                    params={{ venueId: v.venue_id ?? "" }}
+                    className="underline-offset-2 hover:underline"
+                    style={{ color: primary }}
+                  >
+                    {v.name ?? "Venue"}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         <div className="mt-6 flex justify-center">
