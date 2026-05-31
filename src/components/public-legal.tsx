@@ -55,14 +55,25 @@ export function useLegal(subdomain: string): LoadState {
 
 export function PublicLegalShell({
   subdomain,
+  eventName,
+  activeOverride,
   children,
 }: {
   subdomain: string;
+  eventName?: string | null;
+  activeOverride?: "home" | "join" | "venues" | "leaderboard";
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
-      <div className="mx-auto max-w-2xl">
+    <div className="min-h-screen bg-[#F6EFE2] px-4 py-4">
+      <div className="mx-auto max-w-5xl">
+        <PublicEventNav
+          subdomain={subdomain}
+          eventName={eventName ?? "Event"}
+          activeOverride={activeOverride}
+        />
+      </div>
+      <div className="mx-auto mt-6 max-w-2xl">
         <Link
           to="/live/$subdomain"
           params={{ subdomain }}
@@ -95,6 +106,7 @@ export function NotAvailable({ subdomain }: { subdomain: string }) {
     </PublicLegalShell>
   );
 }
+
 
 export function ExternalLinkOnly({
   subdomain,
