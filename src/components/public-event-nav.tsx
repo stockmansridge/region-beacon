@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Home, Ticket, MapPin, Trophy } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 
 /**
  * Public event navigation.
