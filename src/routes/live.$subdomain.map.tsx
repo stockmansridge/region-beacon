@@ -160,34 +160,101 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     if (geoVenues.length === 0) return;
     let cancelled = false;
     (async () => {
+      // 1. Token
+      let tokenRes: Awaited<ReturnType<typeof fetchToken>>;
       try {
-        const tokenRes = await fetchToken();
+        tokenRes = await fetchToken();
+      } catch (e) {
         if (cancelled) return;
-        if (!tokenRes.token) {
-          setMapError("Map unavailable right now.");
-          return;
-        }
+        const msg = e instanceof Error ? e.message : "Token endpoint failed";
+        setMapDiag((d) => ({ ...d, tokenStatus: "error", tokenError: msg }));
+        setMapError(`Could not reach MapKit token endpoint: ${msg}`);
+        return;
+      }
+      if (cancelled) return;
+      setMapDiag((d) => ({
+        ...d,
+        tokenStatus: tokenRes.token ? "ok" : "error",
+        tokenError: tokenRes.error ?? null,
+        tokenDiag: tokenRes.diag ?? null,
+      }));
+      if (!tokenRes.token) {
+        setMapError(tokenRes.error ?? "MapKit token unavailable.");
+        return;
+      }
+
+      // 2. Script
+      try {
         await loadMapKitScript();
+      } catch (e) {
         if (cancelled) return;
-        const mapkit = window.mapkit;
-        if (!mapkit) {
-          setMapError("Map unavailable right now.");
-          return;
-        }
+        const msg = e instanceof Error ? e.message : "Script load failed";
+        setMapDiag((d) => ({ ...d, scriptStatus: "error", scriptError: msg }));
+        setMapError(`Apple MapKit JS failed to load: ${msg}`);
+        return;
+      }
+      if (cancelled) return;
+      const mapkit = window.mapkit;
+      if (!mapkit) {
+        setMapDiag((d) => ({
+          ...d,
+          scriptStatus: "error",
+          scriptError: "window.mapkit missing after load",
+        }));
+        setMapError("Apple MapKit JS loaded but window.mapkit is missing.");
+        return;
+      }
+      setMapDiag((d) => ({ ...d, scriptStatus: "ok" }));
+
+      // 3. Listen for Apple rejecting the token (typically domain not allowed).
+      try {
+        mapkit.addEventListener?.("error", (e: any) => {
+          const status = e?.status ?? e?.code ?? "unknown";
+          const message = e?.message ?? String(status);
+          setMapDiag((d) => ({
+            ...d,
+            appleErrorStatus: String(status),
+            appleErrorMessage: message,
+          }));
+          if (status === "Unauthorized" || status === "Initialization Failed") {
+            setMapError(
+              `Apple rejected this domain (${status}). Add *.getstampd.com.au to the MapKit JS allowed domains in your Apple Developer account.`,
+            );
+          } else {
+            setMapError(`Apple MapKit error: ${status}`);
+          }
+        });
+      } catch {
+        /* ignore */
+      }
+
+      // 4. Init + create map
+      try {
         mapkit.init({
           authorizationCallback: (done: (t: string) => void) => {
             done(tokenRes.token!);
           },
         });
-        if (!mapContainerRef.current) return;
+        if (!mapContainerRef.current) {
+          setMapDiag((d) => ({
+            ...d,
+            initStatus: "error",
+            initError: "map container not mounted",
+          }));
+          setMapError("Map container is not ready.");
+          return;
+        }
         const map = new mapkit.Map(mapContainerRef.current, {
           showsCompass: mapkit.FeatureVisibility?.Adaptive,
           isRotationEnabled: false,
           showsUserLocationControl: true,
         });
         mapRef.current = map;
+        setMapDiag((d) => ({ ...d, initStatus: "ok" }));
       } catch (e) {
-        setMapError(e instanceof Error ? e.message : "Map unavailable.");
+        const msg = e instanceof Error ? e.message : "Map init failed";
+        setMapDiag((d) => ({ ...d, initStatus: "error", initError: msg }));
+        setMapError(`Apple MapKit failed to initialise: ${msg}`);
       }
     })();
     return () => {
