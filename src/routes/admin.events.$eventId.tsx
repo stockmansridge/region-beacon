@@ -492,7 +492,7 @@ function EventDetail() {
           // fall back to a select without `entry_value` if Postgres reports
           // "undefined column" (SQLSTATE 42703). This keeps event detail
           // loadable in environments where the migration is still pending.
-          const baseCols = "venue_id, status, issued_at";
+          const baseCols = "venue_id, status, issued_at, token";
           let qrRows: any[] | null = null;
           let qrErr: any = null;
           {
