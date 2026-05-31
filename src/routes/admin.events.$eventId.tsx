@@ -2121,9 +2121,41 @@ function EventDetail() {
                       const isBusy = qrActionVenueId === v.id;
                       const built = revealed ? buildCheckinUrl(revealed) : null;
                       return (
-                        <tr key={v.id} className="border-t align-top">
+                        <tr
+                          key={v.id}
+                          onClick={() => {
+                            if (canEdit && venueEditingId === null && venueArchivingId === null) {
+                              startEditVenue(v);
+                            }
+                          }}
+                          className={
+                            "border-t align-top " +
+                            (canEdit && venueEditingId === null && venueArchivingId === null
+                              ? "cursor-pointer transition-colors hover:bg-muted/40"
+                              : "")
+                          }
+                          title={canEdit && venueEditingId === null ? "Open venue details" : undefined}
+                        >
                           <td className="px-3 py-2 text-muted-foreground">{v.order_index}</td>
-                          <td className="px-3 py-2 font-medium">{v.name}</td>
+                          <td className="px-3 py-2 font-medium">
+                            {canEdit ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (venueEditingId === null && venueArchivingId === null) {
+                                    startEditVenue(v);
+                                  }
+                                }}
+                                disabled={venueEditingId !== null || venueArchivingId !== null}
+                                className="text-left font-medium text-foreground underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:no-underline"
+                              >
+                                {v.name}
+                              </button>
+                            ) : (
+                              v.name
+                            )}
+                          </td>
                           <td className="px-3 py-2 text-muted-foreground">{v.address ?? "—"}</td>
                           <td className="px-3 py-2">
                             <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{v.status}</span>
