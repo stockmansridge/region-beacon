@@ -4153,3 +4153,488 @@ function AdminBtn({
     </button>
   );
 }
+
+// =====================================================================
+// LaunchReadinessChecklist
+// =====================================================================
+// Operational readiness panel for organisation owners/admins. Visible to
+// every authenticated admin viewing this event — NOT gated behind the
+// platform-admin Diagnostics flag. Pure presentation: reflects existing
+// data, does not introduce new publishing restrictions.
+// =====================================================================
+
+type CheckStatus = "ready" | "recommended" | "attention" | "blocking";
+
+type CheckItem = {
+  label: string;
+  status: CheckStatus;
+  detail?: string;
+  action?: React.ReactNode;
+};
+
+type CheckSection = {
+  id: string;
+  title: string;
+  items: CheckItem[];
+};
+
+function statusMeta(s: CheckStatus) {
+  switch (s) {
+    case "ready":
+      return { label: "Ready", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300", dot: "bg-emerald-500" };
+    case "recommended":
+      return { label: "Recommended", cls: "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300", dot: "bg-sky-500" };
+    case "attention":
+      return { label: "Needs attention", cls: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300", dot: "bg-amber-500" };
+    case "blocking":
+      return { label: "Blocking", cls: "border-destructive/40 bg-destructive/10 text-destructive", dot: "bg-destructive" };
+  }
+}
+
+function CopyLinkButton({ url, label = "Copy link" }: { url: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopied(true);
+          toast.success("Link copied");
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          toast.error("Could not copy");
+        }
+      }}
+      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+    >
+      {copied ? "Copied" : label}
+    </button>
+  );
+}
+
+function OpenLinkButton({ href, label = "Open" }: { href: string; label?: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+    >
+      {label}
+    </a>
+  );
+}
+
+function AnchorButton({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+    >
+      {label}
+    </a>
+  );
+}
+
+function LaunchReadinessChecklist({
+  event,
+  domains,
+  terms,
+  venues,
+  qrByVenue,
+  activation,
+  leaderboard,
+}: {
+  event: EventRow;
+  domains: Domain[];
+  terms: TermsVersion | null;
+  venues: Venue[];
+  qrByVenue: Map<string, QrSummary>;
+  activation: Activation | null;
+  leaderboard: LeaderboardSettings | null;
+}) {
+  const primarySub =
+    domains.find((d) => d.domain_type === "event_subdomain" && d.status === "active" && d.is_primary) ??
+    domains.find((d) => d.domain_type === "event_subdomain" && d.status === "active") ??
+    domains.find((d) => d.domain_type === "event_subdomain") ??
+    null;
+  const primaryCustom =
+    domains.find((d) => d.domain_type === "event_custom" && d.status === "active" && d.is_primary) ??
+    domains.find((d) => d.domain_type === "event_custom" && d.status === "active") ??
+    null;
+  const sub = primarySub?.public_subdomain ?? null;
+  const publicUrl = sub
+    ? tenantUrl(sub)
+    : primaryCustom?.custom_domain
+      ? `https://${primaryCustom.custom_domain}`
+      : null;
+  const joinUrl = publicUrl ? `${publicUrl}/join` : null;
+  const mapUrl = publicUrl ? `${publicUrl}/map` : null;
+  const leaderboardUrl = publicUrl ? `${publicUrl}/leaderboard` : null;
+  const termsUrl = publicUrl ? `${publicUrl}/terms` : null;
+  const privacyUrl = publicUrl ? `${publicUrl}/privacy` : null;
+
+  const activeVenues = venues.filter((v) => v.status === "active");
+  const venuesMissingAddress = activeVenues.filter((v) => !v.address || !v.address.trim());
+  const venuesMissingCoords = activeVenues.filter(
+    (v) => !Number.isFinite(v.lat ?? NaN) || !Number.isFinite(v.lng ?? NaN) || v.lat === 0 || v.lng === 0,
+  );
+  const venuesMissingImage = activeVenues.filter((v) => !v.logo_path && !v.cover_path);
+  const venuesMissingQr = activeVenues.filter((v) => !qrByVenue.has(v.id));
+
+  // ----- 1. Event basics ---------------------------------------------
+  const basics: CheckItem[] = [];
+  basics.push({
+    label: "Event name",
+    status: event.name?.trim() ? "ready" : "blocking",
+    detail: event.name?.trim() ? event.name : "Not set",
+  });
+  basics.push({
+    label: "Start & end dates",
+    status: event.starts_at && event.ends_at ? "ready" : "recommended",
+    detail:
+      event.starts_at && event.ends_at
+        ? `${fmt(event.starts_at)} → ${fmt(event.ends_at)}`
+        : "Dates help visitors know when the trail runs.",
+  });
+  basics.push({
+    label: "Event status",
+    status: event.status === "published" ? "ready" : event.status === "archived" ? "attention" : "recommended",
+    detail: event.status,
+    action: <AnchorButton href="#section-go-live" label="Go live" />,
+  });
+  basics.push({
+    label: "Public subdomain",
+    status: sub ? "ready" : "blocking",
+    detail: sub ? tenantHost(sub) : "No subdomain claimed",
+    action: <AnchorButton href="#section-public-address" label="Configure" />,
+  });
+
+  // ----- 2. Public address -------------------------------------------
+  const publicAddr: CheckItem[] = [];
+  publicAddr.push({
+    label: "Public event URL",
+    status: publicUrl ? "ready" : "blocking",
+    detail: publicUrl ?? "Available once a subdomain is active.",
+    action: publicUrl ? (
+      <span className="flex gap-1">
+        <CopyLinkButton url={publicUrl} />
+        <OpenLinkButton href={publicUrl} />
+      </span>
+    ) : undefined,
+  });
+  publicAddr.push({
+    label: "Primary domain active",
+    status:
+      (primarySub && primarySub.status === "active") || (primaryCustom && primaryCustom.status === "active")
+        ? "ready"
+        : primarySub || primaryCustom
+          ? "attention"
+          : "blocking",
+    detail: primarySub
+      ? `subdomain · ${primarySub.status}${primarySub.is_primary ? " · primary" : ""}`
+      : primaryCustom
+        ? `custom · ${primaryCustom.status}`
+        : "No domain claimed",
+    action: <AnchorButton href="#section-public-address" label="Manage" />,
+  });
+
+  // ----- 3. Terms & privacy ------------------------------------------
+  const legal: CheckItem[] = [];
+  legal.push({
+    label: "Terms configured",
+    status: terms ? "ready" : "blocking",
+    detail: terms
+      ? `v${terms.terms_version} · ${terms.legal_source === "local_text" ? "local text" : "external URL"}`
+      : "No terms version set.",
+    action: <AnchorButton href="#section-terms" label="Edit terms" />,
+  });
+  legal.push({
+    label: "Privacy configured",
+    status: terms && (terms.privacy_body || terms.privacy_url) ? "ready" : "blocking",
+    detail: terms
+      ? `v${terms.privacy_version}`
+      : "No privacy version set.",
+    action: <AnchorButton href="#section-terms" label="Edit privacy" />,
+  });
+  legal.push({
+    label: "Current terms version pinned to event",
+    status: event.current_terms_version_id ? "ready" : "attention",
+    detail: event.current_terms_version_id ?? "Not set",
+  });
+  if (termsUrl && privacyUrl) {
+    legal.push({
+      label: "Public legal pages",
+      status: "ready",
+      detail: "Visitors can view terms and privacy from the public site.",
+      action: (
+        <span className="flex gap-1">
+          <OpenLinkButton href={termsUrl} label="Open /terms" />
+          <OpenLinkButton href={privacyUrl} label="Open /privacy" />
+        </span>
+      ),
+    });
+  }
+
+  // ----- 4. Venues ---------------------------------------------------
+  const venuesChecks: CheckItem[] = [];
+  venuesChecks.push({
+    label: "At least one active venue",
+    status: activeVenues.length > 0 ? "ready" : "blocking",
+    detail:
+      activeVenues.length > 0
+        ? `${activeVenues.length} active venue${activeVenues.length === 1 ? "" : "s"}`
+        : "Add at least one stop on the trail.",
+    action: <AnchorButton href="#section-venues" label="Add venue" />,
+  });
+  venuesChecks.push({
+    label: "All venues have an address",
+    status: venuesMissingAddress.length === 0 ? "ready" : "attention",
+    detail:
+      venuesMissingAddress.length === 0
+        ? "All addresses set."
+        : `${venuesMissingAddress.length} missing: ${venuesMissingAddress.map((v) => v.name).join(", ")}`,
+    action: <AnchorButton href="#section-venues" label="Fix venues" />,
+  });
+  venuesChecks.push({
+    label: "All venues mapped (lat/lng)",
+    status: venuesMissingCoords.length === 0 ? "ready" : "attention",
+    detail:
+      venuesMissingCoords.length === 0
+        ? "All venues will show on the trail map."
+        : `Unmapped: ${venuesMissingCoords.map((v) => v.name).join(", ")}`,
+    action: <AnchorButton href="#section-venues" label="Set location" />,
+  });
+  venuesChecks.push({
+    label: "Venue images",
+    status: venuesMissingImage.length === 0 ? "ready" : "recommended",
+    detail:
+      venuesMissingImage.length === 0
+        ? "All venues have a logo or cover."
+        : `Recommended — missing on ${venuesMissingImage.length} venue${venuesMissingImage.length === 1 ? "" : "s"}.`,
+  });
+  if (sub) {
+    venuesChecks.push({
+      label: "Public venue pages reachable",
+      status: activeVenues.length > 0 ? "ready" : "recommended",
+      detail: activeVenues.length > 0
+        ? `e.g. ${tenantUrl(sub, `/venues/${activeVenues[0].id}`)}`
+        : "Available once a venue is added.",
+      action: activeVenues.length > 0 ? (
+        <OpenLinkButton href={tenantUrl(sub, `/venues/${activeVenues[0].id}`)} label="Open sample" />
+      ) : undefined,
+    });
+  }
+
+  // ----- 5. QR / check-in --------------------------------------------
+  const qrChecks: CheckItem[] = [];
+  qrChecks.push({
+    label: "Active QR per venue",
+    status:
+      activeVenues.length === 0
+        ? "recommended"
+        : venuesMissingQr.length === 0
+          ? "ready"
+          : "attention",
+    detail:
+      activeVenues.length === 0
+        ? "Add venues first."
+        : venuesMissingQr.length === 0
+          ? "Every active venue has a QR ready to scan."
+          : `Missing QR: ${venuesMissingQr.map((v) => v.name).join(", ")}`,
+    action:
+      venuesMissingQr.length > 0
+        ? <AnchorButton href="#section-venues" label="Generate QR" />
+        : undefined,
+  });
+
+  // ----- 6. Passport flow --------------------------------------------
+  const passport: CheckItem[] = [];
+  passport.push({
+    label: "Join / passport URL",
+    status: joinUrl ? "ready" : "blocking",
+    detail: joinUrl ?? "Available once subdomain is claimed.",
+    action: joinUrl ? (
+      <span className="flex gap-1">
+        <CopyLinkButton url={joinUrl} />
+        <OpenLinkButton href={joinUrl} />
+      </span>
+    ) : undefined,
+  });
+
+  // ----- 7. Trail map ------------------------------------------------
+  const mapChecks: CheckItem[] = [];
+  mapChecks.push({
+    label: "Trail map URL",
+    status: mapUrl ? "ready" : "blocking",
+    detail: mapUrl ?? "Available once subdomain is claimed.",
+    action: mapUrl ? (
+      <span className="flex gap-1">
+        <CopyLinkButton url={mapUrl} />
+        <OpenLinkButton href={mapUrl} />
+      </span>
+    ) : undefined,
+  });
+  mapChecks.push({
+    label: "Map has mappable venues",
+    status:
+      activeVenues.length === 0
+        ? "recommended"
+        : activeVenues.length - venuesMissingCoords.length > 0
+          ? venuesMissingCoords.length === 0
+            ? "ready"
+            : "attention"
+          : "attention",
+    detail:
+      activeVenues.length === 0
+        ? "No venues yet."
+        : venuesMissingCoords.length === 0
+          ? `${activeVenues.length} venue${activeVenues.length === 1 ? "" : "s"} will render on the map.`
+          : `Map warning — ${venuesMissingCoords.length} venue${venuesMissingCoords.length === 1 ? "" : "s"} missing coordinates: ${venuesMissingCoords.map((v) => v.name).join(", ")}`,
+    action: venuesMissingCoords.length > 0
+      ? <AnchorButton href="#section-venues" label="Add locations" />
+      : undefined,
+  });
+
+  // ----- 8. Leaderboard ----------------------------------------------
+  const lbChecks: CheckItem[] = [];
+  lbChecks.push({
+    label: "Leaderboard enabled",
+    status: leaderboard?.is_enabled ? "ready" : "recommended",
+    detail: leaderboard?.is_enabled ? "Visible to visitors." : "Optional — turn on to add competition.",
+    action: <AnchorButton href="#section-leaderboard" label="Configure" />,
+  });
+  if (leaderboardUrl) {
+    lbChecks.push({
+      label: "Leaderboard URL",
+      status: "ready",
+      detail: leaderboardUrl,
+      action: (
+        <span className="flex gap-1">
+          <CopyLinkButton url={leaderboardUrl} />
+          <OpenLinkButton href={leaderboardUrl} />
+        </span>
+      ),
+    });
+  }
+
+  // ----- 9. Publish gate (friendly summary) --------------------------
+  const eventPass = event.status === "published";
+  const primaryDomain = primarySub ?? primaryCustom;
+  const domainPass = !!primaryDomain && primaryDomain.status === "active";
+  const activationStatus = activation?.status ?? "unpaid";
+  const activationPass = activationStatus === "active" || activationStatus === "comp";
+  const publishGate: CheckItem[] = [
+    {
+      label: "Event status published",
+      status: eventPass ? "ready" : "blocking",
+      detail: event.status,
+    },
+    {
+      label: "Primary domain active",
+      status: domainPass ? "ready" : "blocking",
+      detail: primaryDomain
+        ? `${primaryDomain.status}${primaryDomain.is_primary ? " · primary" : " · not primary"}`
+        : "No domain",
+    },
+    {
+      label: "Commercial activation",
+      status: activationPass ? "ready" : "blocking",
+      detail: `${activationStatus}${activation?.activation_kind ? ` · ${activation.activation_kind}` : ""}`,
+    },
+  ];
+
+  const sections: CheckSection[] = [
+    { id: "basics", title: "Event basics", items: basics },
+    { id: "public-address", title: "Public address", items: publicAddr },
+    { id: "legal", title: "Terms & privacy", items: legal },
+    { id: "venues", title: "Venues", items: venuesChecks },
+    { id: "qr", title: "QR & check-in", items: qrChecks },
+    { id: "passport", title: "Passport flow", items: passport },
+    { id: "map", title: "Trail map", items: mapChecks },
+    { id: "leaderboard", title: "Leaderboard", items: lbChecks },
+    { id: "publish-gate", title: "Publish gate", items: publishGate },
+  ];
+
+  const allItems = sections.flatMap((s) => s.items);
+  const blockingCount = allItems.filter((i) => i.status === "blocking").length;
+  const attentionCount = allItems.filter((i) => i.status === "attention").length;
+  const recommendedCount = allItems.filter((i) => i.status === "recommended").length;
+  const readyCount = allItems.filter((i) => i.status === "ready").length;
+
+  const overall: CheckStatus =
+    blockingCount > 0 ? "blocking" : attentionCount > 0 ? "attention" : recommendedCount > 0 ? "recommended" : "ready";
+  const overallMeta = statusMeta(overall);
+  const overallHeadline =
+    overall === "ready"
+      ? "Ready to share with visitors"
+      : overall === "recommended"
+        ? "Ready — a few nice-to-haves left"
+        : overall === "attention"
+          ? "Almost ready — items need attention"
+          : "Setup incomplete";
+
+  return (
+    <section className="mb-6 rounded-xl border bg-card p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">Launch readiness</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Everything an organiser should confirm before sharing the public trail.
+          </p>
+        </div>
+        <div className={`rounded-md border px-3 py-1 text-xs font-semibold ${overallMeta.cls}`}>
+          {overallHeadline}
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2 text-xs">
+        <span className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1">
+          <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" /> {readyCount} ready
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1">
+          <span className="inline-block h-2 w-2 rounded-full bg-sky-500" /> {recommendedCount} recommended
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1">
+          <span className="inline-block h-2 w-2 rounded-full bg-amber-500" /> {attentionCount} needs attention
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1">
+          <span className="inline-block h-2 w-2 rounded-full bg-destructive" /> {blockingCount} blocking
+        </span>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {sections.map((sec) => (
+          <div key={sec.id} className="rounded-lg border bg-background/40 p-4">
+            <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {sec.title}
+            </div>
+            <ul className="space-y-2">
+              {sec.items.map((it, idx) => {
+                const m = statusMeta(it.status);
+                return (
+                  <li key={idx} className="flex flex-wrap items-start justify-between gap-2 border-b border-dashed pb-2 last:border-0 last:pb-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${m.dot}`} aria-hidden />
+                        <span className="text-sm font-medium">{it.label}</span>
+                        <span className={`hidden sm:inline rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${m.cls}`}>
+                          {m.label}
+                        </span>
+                      </div>
+                      {it.detail && (
+                        <div className="mt-0.5 break-words pl-4 text-xs text-muted-foreground">{it.detail}</div>
+                      )}
+                    </div>
+                    {it.action && <div className="shrink-0">{it.action}</div>}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
