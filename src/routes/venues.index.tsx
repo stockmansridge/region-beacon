@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PublicVenuesListPage } from "./live.$subdomain.venues";
+import { PublicVenuesListPage } from "./live.$subdomain.venues.index";
 import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
 
-export const Route = createFileRoute("/venues")({
+export const Route = createFileRoute("/venues/")({
   head: () => ({ meta: [{ title: "Venues" }] }),
   component: VenuesCleanRoute,
 });

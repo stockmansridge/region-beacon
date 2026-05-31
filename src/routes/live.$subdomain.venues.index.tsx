@@ -8,7 +8,7 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
 
-export const Route = createFileRoute("/live/$subdomain/venues")({
+export const Route = createFileRoute("/live/$subdomain/venues/")({
   head: () => ({ meta: [{ title: "Venues" }] }),
   component: function VenuesListRoute() {
     const { subdomain } = Route.useParams();
