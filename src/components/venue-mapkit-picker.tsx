@@ -105,11 +105,20 @@ export function VenueMapKitPicker({
         const mapkit = window.mapkit;
         if (!mapkit) throw new Error("MapKit JS unavailable");
 
+        // Listen for Apple rejecting the token (typically domain not allowed).
+        try {
+          mapkit.addEventListener?.("error", (e: any) => {
+            const status = e?.status ?? e?.code ?? "unknown";
+            setStatus("error");
+            setErrorMsg(
+              `Apple MapKit token was created, but Apple rejected this domain (${status}). Check the MapKit JS allowed domains.`,
+            );
+          });
+        } catch { /* ignore */ }
+
         mapkit.init({
           authorizationCallback: (done: (t: string) => void) => {
-            // Initial token. Refreshes happen by re-fetching below.
             done(tokenRes.token!);
-            // Schedule a single proactive refresh ~1 min before expiry.
             if (tokenRes.expiresAt) {
               const ms = Math.max(60_000, tokenRes.expiresAt - Date.now() - 60_000);
               setTimeout(async () => {
