@@ -893,6 +893,7 @@ function EventDetail() {
   function cancelVenueEdit() {
     setVenueEditingId(null);
     setVenueForm(null);
+    setMapPickerOpen(false);
     setVenueValidationError(null);
     setVenueSaveError(null);
     // Refresh in case a venue was just created (we skipped reload then to keep
