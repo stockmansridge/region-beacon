@@ -76,6 +76,12 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const [mapDiag, setMapDiag] = useState<MapDiagnostics>(INITIAL_DIAG);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [hasPassport, setHasPassport] = useState(false);
+  const [stampDiag, setStampDiag] = useState<{
+    savedPassportKey: string | null;
+    savedPassportFound: boolean;
+    stampRpcError: string | null;
+    stampRowCount: number;
+  }>({ savedPassportKey: null, savedPassportFound: false, stampRpcError: null, stampRowCount: 0 });
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<VenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
