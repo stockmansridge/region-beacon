@@ -3262,6 +3262,15 @@ function EventSetupWarnings({
                 >
                   {it.action.label}
                 </a>
+              ) : it.action.kind === "external" ? (
+                <a
+                  href={it.action.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                >
+                  {it.action.label}
+                </a>
               ) : (
                 <Link
                   to={it.action.to}
