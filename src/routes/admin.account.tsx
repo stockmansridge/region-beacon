@@ -612,7 +612,7 @@ function OrganisationSlugEditor({
       // 23505 = unique_violation
       const code = (updErr as { code?: string }).code;
       if (code === "23505" || /duplicate|unique/i.test(updErr.message)) {
-        setError("That organisation slug is already taken.");
+        setError("That organisation URL name is already taken.");
       } else {
         setError(`Could not update slug: ${updErr.message}`);
       }
