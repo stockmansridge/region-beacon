@@ -130,6 +130,7 @@ type QrSummary = {
   // (supabase/migrations-draft-rewards-prize-draw). In environments where
   // that migration has not yet been applied, the loader degrades to null.
   entry_value: number | null;
+  token: string | null;
 };
 
 type Activation = {
@@ -491,7 +492,7 @@ function EventDetail() {
           // fall back to a select without `entry_value` if Postgres reports
           // "undefined column" (SQLSTATE 42703). This keeps event detail
           // loadable in environments where the migration is still pending.
-          const baseCols = "venue_id, status, issued_at";
+          const baseCols = "venue_id, status, issued_at, token";
           let qrRows: any[] | null = null;
           let qrErr: any = null;
           {
@@ -546,6 +547,7 @@ function EventDetail() {
                 status: row.status,
                 issued_at: row.issued_at,
                 entry_value: (row as any).entry_value ?? null,
+                token: (row as any).token ?? null,
               });
             }
           }
@@ -1708,6 +1710,403 @@ function EventDetail() {
             />
           </Section>
 
+          <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages.">
+            <AdminEventAnnouncements
+              eventId={event.id}
+              agencyId={event.agency_id}
+              canEdit={canEdit}
+            />
+          </Section>
+        </div>
+
+
+        <aside className="space-y-4">
+          <Section title="Terms & privacy" id="section-terms">
+            {terms ? (
+              <>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Active
+                  </span>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => setTermsDialogOpen(true)}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Update terms & privacy
+                    </button>
+                  )}
+                </div>
+                <DefList
+                  rows={
+                    terms.legal_source === "local_text"
+                      ? [
+                          ["Source", "GetStampd local pages"],
+                          ["Version", terms.terms_version],
+                          ["Terms title", terms.terms_title ?? "—"],
+                          ["Privacy title", terms.privacy_title ?? "—"],
+                          ["Effective at", fmt(terms.effective_at)],
+                        ]
+                      : [
+                          ["Source", "External URLs"],
+                          ["Terms version", terms.terms_version],
+                          [
+                            "Terms URL",
+                            terms.terms_url ? (
+                              <a
+                                key="t"
+                                href={terms.terms_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline-offset-2 hover:underline break-all"
+                              >
+                                {terms.terms_url}
+                              </a>
+                            ) : (
+                              "—"
+                            ),
+                          ],
+                          ["Privacy version", terms.privacy_version],
+                          [
+                            "Privacy URL",
+                            terms.privacy_url ? (
+                              <a
+                                key="p"
+                                href={terms.privacy_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline-offset-2 hover:underline break-all"
+                              >
+                                {terms.privacy_url}
+                              </a>
+                            ) : (
+                              "—"
+                            ),
+                          ],
+                          ["Effective at", fmt(terms.effective_at)],
+                        ]
+                  }
+                />
+              </>
+            ) : (
+              <div className="rounded-md border border-amber-300/60 bg-amber-50 px-3 py-3 text-sm text-amber-900">
+                <div className="font-medium">Terms & privacy not configured</div>
+                <p className="mt-1 text-xs text-amber-800">
+                  Visitor registration on the public join page is blocked until an active
+                  terms version is set for this event.
+                </p>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => setTermsDialogOpen(true)}
+                    className="mt-2 inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+                  >
+                    Configure terms & privacy
+                  </button>
+                ) : (
+                  <p className="mt-2 text-xs text-amber-800">
+                    Ask an organisation admin or owner to configure terms.
+                  </p>
+                )}
+              </div>
+            )}
+            {agencyId && (
+              <EventTermsDialog
+                open={termsDialogOpen}
+                onOpenChange={setTermsDialogOpen}
+                agencyId={agencyId}
+                eventId={bundle.event.id}
+                eventName={bundle.event.name}
+                initialVersionLabel={terms?.terms_version ?? null}
+                initialLegalSource={terms?.legal_source ?? null}
+                initial={
+                  terms
+                    ? {
+                        terms_title: terms.terms_title,
+                        terms_body: terms.terms_body,
+                        privacy_title: terms.privacy_title,
+                        privacy_body: terms.privacy_body,
+                        terms_url: terms.terms_url,
+                        privacy_url: terms.privacy_url,
+                      }
+                    : null
+                }
+                onSaved={() => {
+                  toast.success("Terms & privacy updated");
+                  setReloadKey((k) => k + 1);
+                }}
+              />
+            )}
+          </Section>
+
+
+          <Section title="Check-in settings">
+            {isEditingCheckin && checkinForm ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelEditCheckin}
+                    disabled={checkinSaving}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditCheckin}
+                    disabled={checkinSaving}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {checkinSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+                {(checkinValidationError || checkinSaveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {checkinValidationError ?? checkinSaveError}
+                  </div>
+                )}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={checkinForm.one_checkin_per_venue}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, one_checkin_per_venue: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">One check-in per venue</span>
+                </label>
+                <Field label="Minimum seconds between check-ins" required>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={checkinForm.minimum_seconds_between_checkins}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, minimum_seconds_between_checkins: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                </Field>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={checkinForm.allow_manual_admin_checkins}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, allow_manual_admin_checkins: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Allow manual admin check-ins</span>
+                </label>
+                <Field label="Max check-ins per passport per day">
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={checkinForm.max_checkins_per_passport_per_day}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, max_checkins_per_passport_per_day: e.target.value })}
+                    placeholder="Leave blank for unlimited"
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Leave blank for unlimited.</p>
+                </Field>
+              </div>
+            ) : (
+              <>
+                {canEdit && (
+                  <div className="mb-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={startEditCheckin}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Edit check-in settings
+                    </button>
+                  </div>
+                )}
+                {checkin ? (
+                  <DefList
+                    rows={[
+                      ["One per venue", checkin.one_checkin_per_venue ? "yes" : "no"],
+                      ["Min seconds between", String(checkin.minimum_seconds_between_checkins)],
+                      ["Allow manual admin", checkin.allow_manual_admin_checkins ? "yes" : "no"],
+                      [
+                        "Max per passport/day",
+                        checkin.max_checkins_per_passport_per_day === null
+                          ? "unlimited"
+                          : String(checkin.max_checkins_per_passport_per_day),
+                      ],
+                    ]}
+                  />
+                ) : (
+                  <EmptyNotice>No check-in settings.</EmptyNotice>
+                )}
+              </>
+            )}
+          </Section>
+
+          <Section title="Leaderboard" id="section-leaderboard">
+            {isEditingLeaderboard && lbForm ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {lbSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+                <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  Public leaderboard display is privacy-limited. Visitor email, mobile, postcode,
+                  and full name are never shown. Default display is first name + last initial.
+                </p>
+                {(lbValidationError || lbSaveError) && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {lbValidationError ?? lbSaveError}
+                  </div>
+                )}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.is_enabled}
+                    onChange={(e) => setLbForm({ ...lbForm, is_enabled: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Public leaderboard enabled</span>
+                </label>
+                <Field label="Display mode" required>
+                  <select
+                    value={lbForm.display_mode}
+                    onChange={(e) =>
+                      setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
+                    }
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="first_name_last_initial">First name + last initial</option>
+                    <option value="first_name_only">First name only</option>
+                    <option value="alias_only">Alias only</option>
+                    <option value="anonymous">Anonymous</option>
+                  </select>
+                </Field>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_first_name}
+                    onChange={(e) => setLbForm({ ...lbForm, show_first_name: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show first name</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_last_initial}
+                    onChange={(e) => setLbForm({ ...lbForm, show_last_initial: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show last initial</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.show_visit_count}
+                    onChange={(e) => setLbForm({ ...lbForm, show_visit_count: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Show visit count</span>
+                </label>
+                <Field label="Hide below check-ins" required>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={lbForm.hide_below_checkins}
+                    onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
+                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Visitors below this number of check-ins are hidden from the public leaderboard.
+                  </p>
+                </Field>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={lbForm.allow_visitor_opt_out}
+                    onChange={(e) => setLbForm({ ...lbForm, allow_visitor_opt_out: e.target.checked })}
+                    className="h-4 w-4 rounded border"
+                  />
+                  <span className="text-sm">Allow visitors to opt out</span>
+                </label>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 flex flex-wrap justify-end gap-2">
+                  <Link
+                    to="/admin/events/$eventId/leaderboard"
+                    params={{ eventId: bundle.event.id }}
+                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                  >
+                    Open leaderboard
+                  </Link>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={startEditLeaderboard}
+                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Edit leaderboard settings
+                    </button>
+                  )}
+                </div>
+                {leaderboard ? (
+                  <>
+                    {!leaderboard.is_enabled && (
+                      <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                        Public leaderboard is disabled for this event.
+                      </div>
+                    )}
+                    <DefList
+                      rows={[
+                        ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
+                        ["Display mode", leaderboard.display_mode],
+                        ["Show first name", leaderboard.show_first_name ? "yes" : "no"],
+                        ["Show last initial", leaderboard.show_last_initial ? "yes" : "no"],
+                        ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
+                        ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
+                        ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
+                      ]}
+                    />
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Privacy: email, mobile, postcode, and full name are never displayed publicly.
+                      Default display is first name + last initial.
+                    </p>
+                  </>
+                ) : (
+                  <EmptyNotice>
+                    No leaderboard settings. Public leaderboard is disabled by default.
+                  </EmptyNotice>
+                )}
+              </>
+            )}
+          </Section>
+
+          <Section title="Reward tiers" id="section-rewards">
+            <AdminEventRewards
+              agencyId={event.agency_id}
+              eventId={event.id}
+              canEdit={canEdit}
+            />
+          </Section>
+        </aside>
+      </div>
 
           <Section
             id="section-venues"
@@ -2123,6 +2522,7 @@ function EventDetail() {
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="px-3 py-2 font-medium">Active QR</th>
                       <th className="px-3 py-2 font-medium">Issued</th>
+                      {canEdit && <th className="px-3 py-2 font-medium">QR link</th>}
                       {canEdit && <th className="px-3 py-2 font-medium">QR controls</th>}
                       {canEdit && <th className="px-3 py-2 font-medium">Actions</th>}
                     </tr>
@@ -2131,9 +2531,9 @@ function EventDetail() {
                     {venues.map((v) => {
                       const qr = qrByVenue.get(v.id);
                       const hasActiveQr = !!qr;
-                      const revealed = revealedQrByVenue.get(v.id);
                       const isBusy = qrActionVenueId === v.id;
-                      const built = revealed ? buildCheckinUrl(revealed) : null;
+                      const token = qr?.token ?? null;
+                      const built = token ? buildCheckinUrl(token) : null;
                       return (
                         <tr
                           key={v.id}
@@ -2185,28 +2585,37 @@ function EventDetail() {
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
                           {canEdit && (
-                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                              {hasActiveQr ? (
+                            <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
+                              {!hasActiveQr ? (
+                                <span className="text-xs text-muted-foreground/70">No QR yet</span>
+                              ) : !built ? (
+                                <span className="text-xs text-muted-foreground/70">—</span>
+                              ) : built.isFallback ? (
+                                <div className="space-y-1.5">
+                                  <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                                    Public address required before QR link can be shown.
+                                  </p>
+                                  <Link
+                                    to="/admin/events/$eventId"
+                                    params={{ eventId: event.id }}
+                                    hash="section-public-address"
+                                    className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted"
+                                  >
+                                    Set public address
+                                  </Link>
+                                </div>
+                              ) : (
                                 <div className="flex flex-col gap-1.5">
+                                  <a
+                                    href={built.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono text-[11px] break-all text-primary underline-offset-2 hover:underline"
+                                    title={built.url}
+                                  >
+                                    {built.url.replace(/^https?:\/\//, "")}
+                                  </a>
                                   <div className="flex flex-wrap items-center gap-1.5">
-                                    {revealed ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => hideQr(v.id)}
-                                        className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
-                                      >
-                                        Hide
-                                      </button>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() => revealQr(v.id)}
-                                        disabled={isBusy}
-                                        className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                                      >
-                                        {isBusy ? "Loading…" : "Reveal QR link"}
-                                      </button>
-                                    )}
                                     <button
                                       type="button"
                                       onClick={() => copyQrLink(v.id)}
@@ -2215,6 +2624,24 @@ function EventDetail() {
                                     >
                                       {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
                                     </button>
+                                    <a
+                                      href={built.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+                                    >
+                                      Open
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+                          )}
+                          {canEdit && (
+                            <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
+                              {hasActiveQr ? (
+                                <div className="flex flex-col gap-1.5">
+                                  <div className="flex flex-wrap items-center gap-1.5">
                                     <button
                                       type="button"
                                       onClick={() => generateOrRotateQr(v.id, true)}
@@ -2276,34 +2703,24 @@ function EventDetail() {
                                       Changes apply to future scans only. Existing check-ins keep the value earned at scan time.
                                     </span>
                                   </div>
-                                  {revealed && built && (
-                                    <div className="flex flex-col gap-2">
-                                      <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono break-all text-foreground">
-                                        {built.url}
-                                        {built.isFallback && (
-                                          <span className="ml-2 rounded bg-amber-500/15 px-1 py-0.5 text-[10px] font-sans font-medium text-amber-700 dark:text-amber-400">
-                                            demo/fallback URL — no active public subdomain
-                                          </span>
-                                        )}
-                                      </div>
-                                      <QrPreview
-                                        value={built.url}
-                                        downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
-                                        poster={{
-                                          eventName: event.name,
-                                          venueName: v.name,
-                                          logoUrl: getEventAssetPublicUrl(branding?.logo_path),
-                                          primaryColor: branding?.primary_color ?? null,
-                                          accentColor: branding?.accent_color ?? null,
-                                          offerSummary: offerSummaryByVenue.get(v.id) ?? null,
-                                          entryValue: qr?.entry_value ?? null,
-                                          filename: posterFilename(
-                                            event.public_slug ?? event.slug,
-                                            v.name,
-                                          ),
-                                        }}
-                                      />
-                                    </div>
+                                  {built && (
+                                    <QrPreview
+                                      value={built.url}
+                                      downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+                                      poster={{
+                                        eventName: event.name,
+                                        venueName: v.name,
+                                        logoUrl: getEventAssetPublicUrl(branding?.logo_path),
+                                        primaryColor: branding?.primary_color ?? null,
+                                        accentColor: branding?.accent_color ?? null,
+                                        offerSummary: offerSummaryByVenue.get(v.id) ?? null,
+                                        entryValue: qr?.entry_value ?? null,
+                                        filename: posterFilename(
+                                          event.public_slug ?? event.slug,
+                                          v.name,
+                                        ),
+                                      }}
+                                    />
                                   )}
                                 </div>
                               ) : (
@@ -2375,404 +2792,6 @@ function EventDetail() {
               </div>
             )}
           </Section>
-
-          <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages.">
-            <AdminEventAnnouncements
-              eventId={event.id}
-              agencyId={event.agency_id}
-              canEdit={canEdit}
-            />
-          </Section>
-        </div>
-
-
-        <aside className="space-y-4">
-          <Section title="Terms & privacy" id="section-terms">
-            {terms ? (
-              <>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    Active
-                  </span>
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => setTermsDialogOpen(true)}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                    >
-                      Update terms & privacy
-                    </button>
-                  )}
-                </div>
-                <DefList
-                  rows={
-                    terms.legal_source === "local_text"
-                      ? [
-                          ["Source", "GetStampd local pages"],
-                          ["Version", terms.terms_version],
-                          ["Terms title", terms.terms_title ?? "—"],
-                          ["Privacy title", terms.privacy_title ?? "—"],
-                          ["Effective at", fmt(terms.effective_at)],
-                        ]
-                      : [
-                          ["Source", "External URLs"],
-                          ["Terms version", terms.terms_version],
-                          [
-                            "Terms URL",
-                            terms.terms_url ? (
-                              <a
-                                key="t"
-                                href={terms.terms_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-primary underline-offset-2 hover:underline break-all"
-                              >
-                                {terms.terms_url}
-                              </a>
-                            ) : (
-                              "—"
-                            ),
-                          ],
-                          ["Privacy version", terms.privacy_version],
-                          [
-                            "Privacy URL",
-                            terms.privacy_url ? (
-                              <a
-                                key="p"
-                                href={terms.privacy_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-primary underline-offset-2 hover:underline break-all"
-                              >
-                                {terms.privacy_url}
-                              </a>
-                            ) : (
-                              "—"
-                            ),
-                          ],
-                          ["Effective at", fmt(terms.effective_at)],
-                        ]
-                  }
-                />
-              </>
-            ) : (
-              <div className="rounded-md border border-amber-300/60 bg-amber-50 px-3 py-3 text-sm text-amber-900">
-                <div className="font-medium">Terms & privacy not configured</div>
-                <p className="mt-1 text-xs text-amber-800">
-                  Visitor registration on the public join page is blocked until an active
-                  terms version is set for this event.
-                </p>
-                {canEdit ? (
-                  <button
-                    type="button"
-                    onClick={() => setTermsDialogOpen(true)}
-                    className="mt-2 inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
-                  >
-                    Configure terms & privacy
-                  </button>
-                ) : (
-                  <p className="mt-2 text-xs text-amber-800">
-                    Ask an organisation admin or owner to configure terms.
-                  </p>
-                )}
-              </div>
-            )}
-            {agencyId && (
-              <EventTermsDialog
-                open={termsDialogOpen}
-                onOpenChange={setTermsDialogOpen}
-                agencyId={agencyId}
-                eventId={bundle.event.id}
-                eventName={bundle.event.name}
-                initialVersionLabel={terms?.terms_version ?? null}
-                initialLegalSource={terms?.legal_source ?? null}
-                initial={
-                  terms
-                    ? {
-                        terms_title: terms.terms_title,
-                        terms_body: terms.terms_body,
-                        privacy_title: terms.privacy_title,
-                        privacy_body: terms.privacy_body,
-                        terms_url: terms.terms_url,
-                        privacy_url: terms.privacy_url,
-                      }
-                    : null
-                }
-                onSaved={() => {
-                  toast.success("Terms & privacy updated");
-                  setReloadKey((k) => k + 1);
-                }}
-              />
-            )}
-          </Section>
-
-
-          <Section title="Check-in settings">
-            {isEditingCheckin && checkinForm ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={cancelEditCheckin}
-                    disabled={checkinSaving}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveEditCheckin}
-                    disabled={checkinSaving}
-                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                  >
-                    {checkinSaving ? "Saving…" : "Save"}
-                  </button>
-                </div>
-                {(checkinValidationError || checkinSaveError) && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                    {checkinValidationError ?? checkinSaveError}
-                  </div>
-                )}
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={checkinForm.one_checkin_per_venue}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, one_checkin_per_venue: e.target.checked })}
-                    className="h-4 w-4 rounded border"
-                  />
-                  <span className="text-sm">One check-in per venue</span>
-                </label>
-                <Field label="Minimum seconds between check-ins" required>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={checkinForm.minimum_seconds_between_checkins}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, minimum_seconds_between_checkins: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={checkinForm.allow_manual_admin_checkins}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, allow_manual_admin_checkins: e.target.checked })}
-                    className="h-4 w-4 rounded border"
-                  />
-                  <span className="text-sm">Allow manual admin check-ins</span>
-                </label>
-                <Field label="Max check-ins per passport per day">
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={checkinForm.max_checkins_per_passport_per_day}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, max_checkins_per_passport_per_day: e.target.value })}
-                    placeholder="Leave blank for unlimited"
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                  <p className="text-xs text-muted-foreground">Leave blank for unlimited.</p>
-                </Field>
-              </div>
-            ) : (
-              <>
-                {canEdit && (
-                  <div className="mb-4 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={startEditCheckin}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                    >
-                      Edit check-in settings
-                    </button>
-                  </div>
-                )}
-                {checkin ? (
-                  <DefList
-                    rows={[
-                      ["One per venue", checkin.one_checkin_per_venue ? "yes" : "no"],
-                      ["Min seconds between", String(checkin.minimum_seconds_between_checkins)],
-                      ["Allow manual admin", checkin.allow_manual_admin_checkins ? "yes" : "no"],
-                      [
-                        "Max per passport/day",
-                        checkin.max_checkins_per_passport_per_day === null
-                          ? "unlimited"
-                          : String(checkin.max_checkins_per_passport_per_day),
-                      ],
-                    ]}
-                  />
-                ) : (
-                  <EmptyNotice>No check-in settings.</EmptyNotice>
-                )}
-              </>
-            )}
-          </Section>
-
-          <Section title="Leaderboard" id="section-leaderboard">
-            {isEditingLeaderboard && lbForm ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={cancelEditLeaderboard}
-                    disabled={lbSaving}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveEditLeaderboard}
-                    disabled={lbSaving}
-                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                  >
-                    {lbSaving ? "Saving…" : "Save"}
-                  </button>
-                </div>
-                <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  Public leaderboard display is privacy-limited. Visitor email, mobile, postcode,
-                  and full name are never shown. Default display is first name + last initial.
-                </p>
-                {(lbValidationError || lbSaveError) && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                    {lbValidationError ?? lbSaveError}
-                  </div>
-                )}
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={lbForm.is_enabled}
-                    onChange={(e) => setLbForm({ ...lbForm, is_enabled: e.target.checked })}
-                    className="h-4 w-4 rounded border"
-                  />
-                  <span className="text-sm">Public leaderboard enabled</span>
-                </label>
-                <Field label="Display mode" required>
-                  <select
-                    value={lbForm.display_mode}
-                    onChange={(e) =>
-                      setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
-                    }
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  >
-                    <option value="first_name_last_initial">First name + last initial</option>
-                    <option value="first_name_only">First name only</option>
-                    <option value="alias_only">Alias only</option>
-                    <option value="anonymous">Anonymous</option>
-                  </select>
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={lbForm.show_first_name}
-                    onChange={(e) => setLbForm({ ...lbForm, show_first_name: e.target.checked })}
-                    className="h-4 w-4 rounded border"
-                  />
-                  <span className="text-sm">Show first name</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={lbForm.show_last_initial}
-                    onChange={(e) => setLbForm({ ...lbForm, show_last_initial: e.target.checked })}
-                    className="h-4 w-4 rounded border"
-                  />
-                  <span className="text-sm">Show last initial</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={lbForm.show_visit_count}
-                    onChange={(e) => setLbForm({ ...lbForm, show_visit_count: e.target.checked })}
-                    className="h-4 w-4 rounded border"
-                  />
-                  <span className="text-sm">Show visit count</span>
-                </label>
-                <Field label="Hide below check-ins" required>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={lbForm.hide_below_checkins}
-                    onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Visitors below this number of check-ins are hidden from the public leaderboard.
-                  </p>
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={lbForm.allow_visitor_opt_out}
-                    onChange={(e) => setLbForm({ ...lbForm, allow_visitor_opt_out: e.target.checked })}
-                    className="h-4 w-4 rounded border"
-                  />
-                  <span className="text-sm">Allow visitors to opt out</span>
-                </label>
-              </div>
-            ) : (
-              <>
-                <div className="mb-4 flex flex-wrap justify-end gap-2">
-                  <Link
-                    to="/admin/events/$eventId/leaderboard"
-                    params={{ eventId: bundle.event.id }}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                  >
-                    Open leaderboard
-                  </Link>
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={startEditLeaderboard}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                    >
-                      Edit leaderboard settings
-                    </button>
-                  )}
-                </div>
-                {leaderboard ? (
-                  <>
-                    {!leaderboard.is_enabled && (
-                      <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                        Public leaderboard is disabled for this event.
-                      </div>
-                    )}
-                    <DefList
-                      rows={[
-                        ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
-                        ["Display mode", leaderboard.display_mode],
-                        ["Show first name", leaderboard.show_first_name ? "yes" : "no"],
-                        ["Show last initial", leaderboard.show_last_initial ? "yes" : "no"],
-                        ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
-                        ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
-                        ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
-                      ]}
-                    />
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      Privacy: email, mobile, postcode, and full name are never displayed publicly.
-                      Default display is first name + last initial.
-                    </p>
-                  </>
-                ) : (
-                  <EmptyNotice>
-                    No leaderboard settings. Public leaderboard is disabled by default.
-                  </EmptyNotice>
-                )}
-              </>
-            )}
-          </Section>
-
-          <Section title="Reward tiers" id="section-rewards">
-            <AdminEventRewards
-              agencyId={event.agency_id}
-              eventId={event.id}
-              canEdit={canEdit}
-            />
-          </Section>
-        </aside>
-      </div>
     </>
   );
 }
