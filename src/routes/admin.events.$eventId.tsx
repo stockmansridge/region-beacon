@@ -268,6 +268,7 @@ function EventDetail() {
   // Venue editor: "new" = creating, string = editing existing id, null = closed.
   const [venueEditingId, setVenueEditingId] = useState<string | "new" | null>(null);
   const [venueForm, setVenueForm] = useState<VenueEditForm | null>(null);
+  const [mapPickerOpen, setMapPickerOpen] = useState(false);
   const [venueSaving, setVenueSaving] = useState(false);
   const [venueSaveError, setVenueSaveError] = useState<string | null>(null);
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
