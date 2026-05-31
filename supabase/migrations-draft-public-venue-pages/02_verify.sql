@@ -17,31 +17,31 @@ where n.nspname = 'public'
 order by p.proname, r.rolname;
 
 -- 2) Unknown host → list returns a single sentinel row with event_found=false.
-select * from public.get_public_venues_by_domain('does-not-exist.getstamped.com.au');
+select * from public.get_public_venues_by_domain('does-not-exist.getstampd.com.au');
 
 -- 3) Apex / admin / reserved hosts → all sentinel rows (kind <> 'event').
-select * from public.get_public_venues_by_domain('getstamped.com.au');
-select * from public.get_public_venues_by_domain('app.getstamped.com.au');
+select * from public.get_public_venues_by_domain('getstampd.com.au');
+select * from public.get_public_venues_by_domain('app.getstampd.com.au');
 
 -- 4) Live event host → real venue rows, event_found=true.
 --    Replace <LIVE_SUB> with an actually-published event subdomain.
-select * from public.get_public_venues_by_domain('<LIVE_SUB>.getstamped.com.au');
+select * from public.get_public_venues_by_domain('<LIVE_SUB>.getstampd.com.au');
 
 -- 5) Detail RPC: unknown host → zero rows.
 select * from public.get_public_venue_by_domain(
-  'does-not-exist.getstamped.com.au',
+  'does-not-exist.getstampd.com.au',
   '00000000-0000-0000-0000-000000000000'
 );
 
 -- 6) Detail RPC: wrong venue id for the event → zero rows.
 select * from public.get_public_venue_by_domain(
-  '<LIVE_SUB>.getstamped.com.au',
+  '<LIVE_SUB>.getstampd.com.au',
   '00000000-0000-0000-0000-000000000000'
 );
 
 -- 7) Detail RPC: real venue id of a live event → exactly one row.
 select * from public.get_public_venue_by_domain(
-  '<LIVE_SUB>.getstamped.com.au',
+  '<LIVE_SUB>.getstampd.com.au',
   '<VENUE_ID>'
 );
 
@@ -56,5 +56,5 @@ where n.nspname = 'public'
 
 -- 9) Anon role smoke check — should succeed (sentinel for unknown host).
 set local role anon;
-select event_found from public.get_public_venues_by_domain('does-not-exist.getstamped.com.au');
+select event_found from public.get_public_venues_by_domain('does-not-exist.getstampd.com.au');
 reset role;

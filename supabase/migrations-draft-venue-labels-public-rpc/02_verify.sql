@@ -24,7 +24,7 @@ select
   name,
   venue_label_singular,
   venue_label_plural
-from public.get_public_event_by_domain('your-event.getstamped.com.au');
+from public.get_public_event_by_domain('your-event.getstampd.com.au');
 
 -- 4. Event with null/blank labels falls back to 'Venue' / 'Venues'.
 -- Pick an event_id whose event_branding row has NULL or '' for the label

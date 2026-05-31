@@ -1,10 +1,10 @@
 -- DRAFT verification — read-only. Safe to run on staging after 01 is applied.
 --
 -- Static checks (no setup required):
---   * getstamped.com.au           -> marketing
---   * app.getstamped.com.au       -> admin (requires_auth = true)
+--   * getstampd.com.au           -> marketing
+--   * app.getstampd.com.au       -> admin (requires_auth = true)
 --   * easypassport.com.au / *.easypassport.com.au -> not_found
---   * admin.getstamped.com.au     -> not_found (reserved label)
+--   * admin.getstampd.com.au     -> not_found (reserved label)
 --
 -- The remaining scenarios depend on per-event rows. Set up the fixture below
 -- in staging first, run the scenario block, then mutate the fixture between
@@ -15,13 +15,13 @@
 -- A. Static checks (run as-is)
 -- ---------------------------------------------------------------------------
 
-select 'apex marketing' as case, * from public.resolve_event_by_host('getstamped.com.au');
-select 'apex marketing :443' as case, * from public.resolve_event_by_host('getstamped.com.au:443');
-select 'admin host' as case, * from public.resolve_event_by_host('app.getstamped.com.au');
-select 'admin host :443' as case, * from public.resolve_event_by_host('app.getstamped.com.au:443');
+select 'apex marketing' as case, * from public.resolve_event_by_host('getstampd.com.au');
+select 'apex marketing :443' as case, * from public.resolve_event_by_host('getstampd.com.au:443');
+select 'admin host' as case, * from public.resolve_event_by_host('app.getstampd.com.au');
+select 'admin host :443' as case, * from public.resolve_event_by_host('app.getstampd.com.au:443');
 select 'old apex' as case, * from public.resolve_event_by_host('easypassport.com.au');
 select 'old subdomain' as case, * from public.resolve_event_by_host('demo.easypassport.com.au');
-select 'reserved label' as case, * from public.resolve_event_by_host('admin.getstamped.com.au');
+select 'reserved label' as case, * from public.resolve_event_by_host('admin.getstampd.com.au');
 select 'unknown custom' as case, * from public.resolve_event_by_host('notapartner.example.com');
 
 -- ---------------------------------------------------------------------------
@@ -74,7 +74,7 @@ select e.id, e.status as event_status, d.status as domain_status,
 --            event_activations.status='comp'.
 --   (Use platform_set_event_activation to set comp; events.status stays draft.)
 select 'S1 draft+active+comp' as case,
-       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstampd.com.au');
 -- Expected: kind = 'not_found'
 
 -- Scenario 2: PUBLISHED event + PENDING domain + comp activation -> not_found
@@ -83,34 +83,34 @@ select 'S1 draft+active+comp' as case,
 --   NOTE: publishing/domain activation are NOT in scope of this migration; do
 --   these mutations manually in staging only.
 select 'S2 published+pending+comp' as case,
-       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstampd.com.au');
 -- Expected: kind = 'not_found'
 
 -- Scenario 3: published + active domain + UNPAID activation -> not_found
 --   Fixture: events.status='published', event_domains.status='active',
 --            event_activations.status='unpaid'  (kind='one_time').
 select 'S3 published+active+unpaid' as case,
-       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstampd.com.au');
 -- Expected: kind = 'not_found'
 
 -- Scenario 4: published + active domain + COMP activation -> event
 --   Fixture: events.status='published', event_domains.status='active',
 --            event_activations.status='comp'.
 select 'S4 published+active+comp' as case,
-       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstampd.com.au');
 -- Expected: kind = 'event', event_id matches fixture.
 
 -- Scenario 5: published + active domain + ACTIVE activation -> event
 --   Fixture: events.status='published', event_domains.status='active',
 --            event_activations.status='active'.
 select 'S5 published+active+active' as case,
-       * from public.resolve_event_by_host('gate-test.getstamped.com.au');
+       * from public.resolve_event_by_host('gate-test.getstampd.com.au');
 -- Expected: kind = 'event', event_id matches fixture.
 
 -- Scenario 6: pending subdomain (no published event, no active domain).
 --   Fixture: any event_domains row with status='pending' on a known subdomain.
 select 'S6 pending subdomain' as case,
-       * from public.resolve_event_by_host('some-pending-label.getstamped.com.au');
+       * from public.resolve_event_by_host('some-pending-label.getstampd.com.au');
 -- Expected: kind = 'not_found'
 
 -- ---------------------------------------------------------------------------

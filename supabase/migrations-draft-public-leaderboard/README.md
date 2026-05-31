@@ -6,7 +6,7 @@ are applied by reviewing these files.
 ## Target route
 
 Future public page: `/live/$subdomain/leaderboard`
-Production equivalent: `{subdomain}.getstamped.com.au/leaderboard`.
+Production equivalent: `{subdomain}.getstampd.com.au/leaderboard`.
 
 ## Existing schema findings
 

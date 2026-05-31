@@ -1,21 +1,13 @@
 -- DRAFT — do not execute.
 --
--- Replaces public.resolve_event_by_host(text) so it accepts the NEW primary
--- root domain `getstampd.com.au` as well as the legacy `getstamped.com.au`
--- suffix that the previously deployed version hard-coded.
+-- Replaces public.resolve_event_by_host(text) so it recognises ONLY the
+-- correct public tenant root `getstampd.com.au`. The earlier typo domain
+-- (which was never owned) is not accepted; no dual-suffix fallback.
 --
--- Builds on:
---   * supabase/migrations-draft-domain-rename/02_resolve_event_by_host.sql
---   * supabase/migrations-draft-publishing-gate/01_resolve_event_by_host_publishable.sql
---
--- The ONLY substantive changes vs the publishing-gate version are:
---   1. v_root_new   constant  citext := 'getstampd.com.au';
---   2. v_suffix_new constant  text   := '.getstampd.com.au';
---   3. Apex / admin / event-subdomain branches recognise EITHER suffix.
---
--- Signature, return type, language, volatility, SECURITY DEFINER, search_path,
--- publishing gate, reserved-label check, and custom-domain branch are all
--- preserved unchanged. Grants are re-stated defensively.
+-- Builds on the previously deployed publishing-gate version. The ONLY
+-- substantive change is the root/suffix constants. Signature, return type,
+-- language, volatility, SECURITY DEFINER, search_path, publishing gate,
+-- reserved-label check, custom-domain branch, and grants are all preserved.
 
 begin;
 
@@ -33,46 +25,29 @@ set search_path = public
 as $$
 declare
   v_host citext := lower(_hostname);
-
-  -- New primary public root (customer-facing).
-  v_root_new   constant citext := 'getstampd.com.au';
-  v_suffix_new constant text   := '.getstampd.com.au';
-
-  -- Legacy root retained temporarily so deploys are not order-sensitive
-  -- with the frontend's rpcEventHost() bridge. A follow-up migration will
-  -- drop these once rpcEventHost is removed from product code.
-  v_root_old   constant citext := 'getstamped.com.au';
-  v_suffix_old constant text   := '.getstamped.com.au';
-
+  v_root constant citext := 'getstampd.com.au';
+  v_suffix constant text := '.getstampd.com.au';
   v_label citext;
   v_evt uuid;
   v_slug citext;
-  v_is_event_subdomain boolean := false;
 begin
   -- Strip an optional :port (Host headers can include one).
   v_host := split_part(v_host::text, ':', 1)::citext;
 
-  -- 1) Apex marketing site — either root.
-  if v_host = v_root_new or v_host = v_root_old then
+  -- 1) Apex marketing site.
+  if v_host = v_root then
     return query select 'marketing'::text, null::uuid, null::citext, false;
     return;
   end if;
 
-  -- 2) Admin host — app.<either root>.
-  if v_host = ('app' || v_suffix_new)::citext
-     or v_host = ('app' || v_suffix_old)::citext then
+  -- 2) Admin host.
+  if v_host = ('app' || v_suffix)::citext then
     return query select 'admin'::text, null::uuid, null::citext, true;
     return;
   end if;
 
-  -- 3) Event subdomain branch — must end with either suffix.
-  if right(v_host::text, length(v_suffix_new)) = v_suffix_new then
-    v_is_event_subdomain := true;
-  elsif right(v_host::text, length(v_suffix_old)) = v_suffix_old then
-    v_is_event_subdomain := true;
-  end if;
-
-  if v_is_event_subdomain then
+  -- 3) Event subdomain branch — must end with .getstampd.com.au.
+  if right(v_host::text, length(v_suffix)) = v_suffix then
     v_label := split_part(v_host::text, '.', 1)::citext;
 
     -- Reserved labels (admin, www, api, …) never resolve as events.
@@ -114,8 +89,7 @@ begin
 end;
 $$;
 
--- Re-state EXECUTE grants. CREATE OR REPLACE preserves them, but restating
--- protects against accidental DROP/CREATE later.
+-- Re-state EXECUTE grants defensively.
 grant execute on function public.resolve_event_by_host(text) to anon, authenticated;
 
 commit;

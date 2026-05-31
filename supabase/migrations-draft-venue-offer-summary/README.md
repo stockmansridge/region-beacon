@@ -65,7 +65,7 @@ where n.nspname = 'public'
 -- 4) Live smoke test (replace with a real published host + venue id)
 select *
 from public.get_public_venue_by_domain(
-  'cargordtrail.getstamped.com.au'::text,
+  'cargordtrail.getstampd.com.au'::text,
   '66b1b161-068e-4d7c-b5ff-9d0761ffa594'::uuid
 );
 ```

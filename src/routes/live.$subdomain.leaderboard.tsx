@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
-import { rpcEventHost } from "@/lib/domains";
+import { tenantHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard" }] }),
@@ -40,7 +40,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = rpcEventHost(subdomain);
+      const host = tenantHost(subdomain);
       const { data, error } = await supabase.rpc(
         "get_public_leaderboard_by_domain",
         { _hostname: host },

@@ -10,7 +10,7 @@ import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
-import { rpcEventHost, matchRootDomain } from "@/lib/domains";
+import { matchRootDomain, tenantHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/map")({
   head: () => ({ meta: [{ title: "Trail Map" }] }),
@@ -88,7 +88,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const host = rpcEventHost(subdomain);
+      const host = tenantHost(subdomain);
       const [{ data: venueData }, { data: evtData }] = await Promise.all([
         supabase.rpc("get_public_venues_by_domain", { _hostname: host }),
         supabase.rpc("get_public_event_by_domain", { _hostname: host }),

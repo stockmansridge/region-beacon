@@ -82,7 +82,7 @@ Key handling rules:
 - Allowed domains on the MapKit key must list:
   - `*.lovable.app` (preview)
   - `getstampd.com.au`, `www.getstampd.com.au`
-  - `*.getstamped.com.au` (visitor-facing subdomains — only relevant if we
+  - `*.getstampd.com.au` (visitor-facing subdomains — only relevant if we
     ever embed maps on the visitor side; for admin-only use, restrict to the
     admin host only)
 - Restrict the key to **MapKit JS** and **Maps Server APIs** only.

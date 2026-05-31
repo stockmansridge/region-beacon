@@ -7,8 +7,8 @@ Draft only. Nothing in this folder has been executed. Production untouched.
 - `01_resolve_event_by_host_publishable.sql` — `CREATE OR REPLACE FUNCTION
   public.resolve_event_by_host(text)` that adds
   `and public.event_is_publishable(e.id) = true` to BOTH the event_subdomain
-  branch and the event_custom branch. Marketing (`getstamped.com.au`) and
-  admin (`app.getstamped.com.au`) branches are unchanged. Reserved labels
+  branch and the event_custom branch. Marketing (`getstampd.com.au`) and
+  admin (`app.getstampd.com.au`) branches are unchanged. Reserved labels
   still short-circuit to `not_found`. No first-label fallback.
 - `02_verify.sql` — static checks (run as-is) plus scenario checks that
   depend on a manually-prepared fixture event in staging. Read-only — every
@@ -18,9 +18,9 @@ Draft only. Nothing in this folder has been executed. Production untouched.
 
 | Host pattern                       | kind        | conditions                                                                                                                                                                                  |
 |------------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `getstamped.com.au` (apex)         | marketing   | exact match; `requires_auth = false`                                                                                                                                                        |
-| `app.getstamped.com.au`            | admin       | exact match; `requires_auth = true`                                                                                                                                                         |
-| `<label>.getstamped.com.au`        | event       | `label` not reserved AND `event_domains.status='active'` AND `event_domains.domain_type='event_subdomain'` AND `event_domains.public_subdomain=label` AND `events.status='published'` AND `event_is_publishable(events.id)=true` |
+| `getstampd.com.au` (apex)         | marketing   | exact match; `requires_auth = false`                                                                                                                                                        |
+| `app.getstampd.com.au`            | admin       | exact match; `requires_auth = true`                                                                                                                                                         |
+| `<label>.getstampd.com.au`        | event       | `label` not reserved AND `event_domains.status='active'` AND `event_domains.domain_type='event_subdomain'` AND `event_domains.public_subdomain=label` AND `events.status='published'` AND `event_is_publishable(events.id)=true` |
 | Any other hostname (exact match)   | event       | `event_domains.status='active'` AND `event_domains.domain_type='event_custom'` AND `event_domains.custom_domain=host` AND `events.status='published'` AND `event_is_publishable(events.id)=true` |
 | anything else                      | not_found   | including old `*.easypassport.com.au` hosts and arbitrary unknown hosts                                                                                                                     |
 
@@ -28,10 +28,10 @@ Draft only. Nothing in this folder has been executed. Production untouched.
 
 `02_verify.sql` exercises:
 
-- `getstamped.com.au` → marketing
-- `app.getstamped.com.au` (+ `:443`) → admin
+- `getstampd.com.au` → marketing
+- `app.getstampd.com.au` (+ `:443`) → admin
 - `easypassport.com.au` / `demo.easypassport.com.au` → not_found
-- reserved `admin.getstamped.com.au` → not_found
+- reserved `admin.getstampd.com.au` → not_found
 - pending subdomain → not_found
 - active domain + DRAFT event + comp activation → not_found
 - PUBLISHED event + PENDING domain + comp activation → not_found

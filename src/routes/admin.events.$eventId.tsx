@@ -22,7 +22,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { posterFilename } from "@/lib/qr-poster";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAuth } from "@/hooks/use-auth";
-import { PUBLIC_TENANT_ROOT_DOMAIN, rpcEventHost, tenantHost, tenantUrl } from "@/lib/domains";
+import { PUBLIC_TENANT_ROOT_DOMAIN, tenantHost, tenantUrl } from "@/lib/domains";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticCopyButton } from "@/components/diagnostic-panel";
 
@@ -2931,7 +2931,7 @@ function PublishGateDiagnostic({
   const rpcHost = primaryCustom
     ? primaryCustom
     : primarySub
-      ? rpcEventHost(primarySub)
+      ? tenantHost(primarySub)
       : null;
 
   useEffect(() => {
@@ -3010,8 +3010,7 @@ function PublishGateDiagnostic({
         public_host: publicHostDisplay,
         rpc_host_sent: rpcHost,
         rpc_host_note:
-          "Legacy *.getstamped.com.au host used because DB resolve_event_by_host suffix migration is pending; customer-facing URL still uses " +
-          PUBLIC_TENANT_ROOT_DOMAIN,
+          "RPC _hostname matches the customer-facing host on " + PUBLIC_TENANT_ROOT_DOMAIN,
         starts_at: event.starts_at,
         ends_at: event.ends_at,
         date_window_valid: dateWindowValid,
@@ -3193,9 +3192,8 @@ function PublishGateDiagnostic({
               Public gate is rejecting this event. Most common causes: (a) no <code>event_domains</code> row
               with <code>is_primary=true</code> + <code>status=active</code>; (b) no active{" "}
               <code>event_activations</code>; (c) <code>events.status</code> not <code>published</code>;
-              (d) DB <code>resolve_event_by_host</code> still pinned to the legacy{" "}
-              <code>.getstamped.com.au</code> suffix while the primary subdomain resolves on{" "}
-              <code>.{PUBLIC_TENANT_ROOT_DOMAIN}</code>.
+              (d) DB <code>resolve_event_by_host</code> does not recognise the{" "}
+              <code>.{PUBLIC_TENANT_ROOT_DOMAIN}</code> suffix yet.
             </p>
           )}
         </div>

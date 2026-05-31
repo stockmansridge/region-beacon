@@ -36,14 +36,12 @@ export async function resolveAgencyBySubdomain(sub: string): Promise<PublicAgenc
   }
 }
 
-/** Tries each known root domain so legacy `event_domains` rows resolve too. */
+/** Tries each known root domain for legacy `event_domains` rows. */
 export async function resolveLegacyEventForSubdomain(
   sub: string,
 ): Promise<{ event_id: string } | null> {
   const tried = new Set<string>();
-  // Try canonical spelling first, then the typo that exists in older rows.
-  const variants = [...ROOT_DOMAINS, "getstamped.com.au"];
-  for (const root of variants) {
+  for (const root of ROOT_DOMAINS) {
     const host = `${sub}.${root}`;
     if (tried.has(host)) continue;
     tried.add(host);
