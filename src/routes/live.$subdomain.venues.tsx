@@ -46,9 +46,9 @@ type State =
   | { kind: "not_found" }
   | { kind: "ready"; event: EventRow | null; venues: VenueRow[] };
 
-function PublicVenuesListPage() {
-  const { subdomain } = Route.useParams();
+export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+
 
   useEffect(() => {
     let cancelled = false;
