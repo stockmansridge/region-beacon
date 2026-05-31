@@ -3192,9 +3192,8 @@ function PublishGateDiagnostic({
               Public gate is rejecting this event. Most common causes: (a) no <code>event_domains</code> row
               with <code>is_primary=true</code> + <code>status=active</code>; (b) no active{" "}
               <code>event_activations</code>; (c) <code>events.status</code> not <code>published</code>;
-              (d) DB <code>resolve_event_by_host</code> still pinned to the legacy{" "}
-              <code>.getstamped.com.au</code> suffix while the primary subdomain resolves on{" "}
-              <code>.{PUBLIC_TENANT_ROOT_DOMAIN}</code>.
+              (d) DB <code>resolve_event_by_host</code> does not recognise the{" "}
+              <code>.{PUBLIC_TENANT_ROOT_DOMAIN}</code> suffix yet.
             </p>
           )}
         </div>
