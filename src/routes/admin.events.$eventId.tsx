@@ -4594,19 +4594,34 @@ function LaunchReadinessChecklist({
           ? "Almost ready — items need attention"
           : "Setup incomplete";
 
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <section className="mb-6 rounded-xl border bg-card p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="flex w-full flex-wrap items-start justify-between gap-3 text-left"
+      >
         <div>
           <h3 className="text-sm font-semibold">Launch readiness</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Everything an organiser should confirm before sharing the public trail.
           </p>
         </div>
-        <div className={`rounded-md border px-3 py-1 text-xs font-semibold ${overallMeta.cls}`}>
-          {overallHeadline}
+        <div className="flex items-center gap-2">
+          <div className={`rounded-md border px-3 py-1 text-xs font-semibold ${overallMeta.cls}`}>
+            {overallHeadline}
+          </div>
+          <span
+            aria-hidden
+            className={`inline-block text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
+          >
+            ▾
+          </span>
         </div>
-      </div>
+      </button>
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs">
         <span className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1">
@@ -4621,39 +4636,48 @@ function LaunchReadinessChecklist({
         <span className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1">
           <span className="inline-block h-2 w-2 rounded-full bg-destructive" /> {blockingCount} blocking
         </span>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="ml-auto inline-flex items-center rounded-md border bg-background px-2 py-1 text-xs font-medium hover:bg-muted"
+        >
+          {expanded ? "Hide checklist" : "Show checklist"}
+        </button>
       </div>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        {sections.map((sec) => (
-          <div key={sec.id} className="rounded-lg border bg-background/40 p-4">
-            <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {sec.title}
-            </div>
-            <ul className="space-y-2">
-              {sec.items.map((it, idx) => {
-                const m = statusMeta(it.status);
-                return (
-                  <li key={idx} className="flex flex-wrap items-start justify-between gap-2 border-b border-dashed pb-2 last:border-0 last:pb-0">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${m.dot}`} aria-hidden />
-                        <span className="text-sm font-medium">{it.label}</span>
-                        <span className={`hidden sm:inline rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${m.cls}`}>
-                          {m.label}
-                        </span>
+      {expanded && (
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {sections.map((sec) => (
+            <div key={sec.id} className="rounded-lg border bg-background/40 p-4">
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {sec.title}
+              </div>
+              <ul className="space-y-2">
+                {sec.items.map((it, idx) => {
+                  const m = statusMeta(it.status);
+                  return (
+                    <li key={idx} className="flex flex-wrap items-start justify-between gap-2 border-b border-dashed pb-2 last:border-0 last:pb-0">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${m.dot}`} aria-hidden />
+                          <span className="text-sm font-medium">{it.label}</span>
+                          <span className={`hidden sm:inline rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${m.cls}`}>
+                            {m.label}
+                          </span>
+                        </div>
+                        {it.detail && (
+                          <div className="mt-0.5 break-words pl-4 text-xs text-muted-foreground">{it.detail}</div>
+                        )}
                       </div>
-                      {it.detail && (
-                        <div className="mt-0.5 break-words pl-4 text-xs text-muted-foreground">{it.detail}</div>
-                      )}
-                    </div>
-                    {it.action && <div className="shrink-0">{it.action}</div>}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
+                      {it.action && <div className="shrink-0">{it.action}</div>}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
