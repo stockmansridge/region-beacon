@@ -987,13 +987,19 @@ function EventDetail() {
     }
 
     let error: { message: string } | null = null;
+    let newVenueId: string | null = null;
     if (venueEditingId === "new") {
-      const { error: inErr } = await supabase.from("venues").insert({
-        agency_id: agencyId,
-        event_id: eventId,
-        ...patch,
-      });
+      const { data: insData, error: inErr } = await supabase
+        .from("venues")
+        .insert({
+          agency_id: agencyId,
+          event_id: eventId,
+          ...patch,
+        })
+        .select("id")
+        .single();
       error = inErr ?? null;
+      newVenueId = (insData?.id as string | undefined) ?? null;
     } else {
       const { error: upErr } = await supabase
         .from("venues")
@@ -1009,8 +1015,15 @@ function EventDetail() {
       setVenueSaveError("Could not save venue. Please try again.");
       return;
     }
-    setVenueEditingId(null);
-    setVenueForm(null);
+    if (venueEditingId === "new" && newVenueId) {
+      // Keep editor open in edit mode so image upload becomes available immediately.
+      setVenueEditingId(newVenueId);
+      toast.success("Venue created. You can now upload a logo/cover image.");
+    } else {
+      setVenueEditingId(null);
+      setVenueForm(null);
+      toast.success("Venue saved.");
+    }
     setReloadKey((k) => k + 1);
   }
 
