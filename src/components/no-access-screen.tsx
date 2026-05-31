@@ -15,7 +15,7 @@ export function NoAccessScreen({ email }: { email: string | null }) {
         <h1 className="mt-4 text-lg font-semibold">No access</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {email ? <>You're signed in as <span className="font-medium text-foreground">{email}</span>, but </> : "You are "}
-          this account does not have a platform or agency role assigned for the admin portal.
+          this account does not have a platform or organisation role assigned for the admin portal.
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
           Ask a platform admin to grant you a role, then sign in again.

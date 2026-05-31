@@ -244,7 +244,7 @@ function Events() {
             {!loading && rows && rows.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  No events yet for this agency.
+                  No events yet for this organisation.
                 </td>
               </tr>
             )}
@@ -421,7 +421,7 @@ function CreateEventDialog({
 
   async function handleCreate() {
     if (!agencyId) {
-      setSaveError("No agency selected.");
+      setSaveError("No organisation selected.");
       return;
     }
     const name = form.name.trim();
@@ -485,7 +485,7 @@ function CreateEventDialog({
       setSaving(false);
       const msg = evErr?.message ?? "Could not create event.";
       if (/duplicate|unique/i.test(msg) && /slug/i.test(msg)) {
-        setSaveError("That slug is already used by another event in this agency. Try a different slug.");
+        setSaveError("That slug is already used by another event in this organisation. Try a different slug.");
       } else {
         setSaveError(`Could not create event: ${msg}`);
       }

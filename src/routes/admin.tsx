@@ -62,7 +62,7 @@ function AdminLayout() {
           }}
         />
       ) : agency.status === "error" ? (
-        <ErrorState message={agency.error ?? "Could not load agency information."} />
+        <ErrorState message={agency.error ?? "Could not load organisation information."} />
       ) : (
         <Outlet />
       )}
@@ -79,15 +79,15 @@ function NoAgencyState({
 }) {
   return (
     <div className="mx-auto max-w-xl rounded-2xl border bg-card p-8 text-center">
-      <h1 className="text-lg font-semibold">No agency selected</h1>
+      <h1 className="text-lg font-semibold">No organisation selected</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {isPlatformAdmin ? (
           <>
-            You're signed in as a platform admin but you don't have an agency membership yet.
-            Create or assign an agency before opening dashboard data.
+            You're signed in as a platform admin but you don't have an organisation membership yet.
+            Create or assign an organisation before opening dashboard data.
           </>
         ) : (
-          <>You don't have an active agency membership yet.</>
+          <>You don't have an active organisation membership yet.</>
         )}
       </p>
       <button

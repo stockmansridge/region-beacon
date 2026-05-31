@@ -1307,7 +1307,7 @@ function EventDetail() {
       <>
         <PageHeader title="Event not found" description="" />
         <EmptyNotice>
-          This event does not exist for your agency, or you do not have access to it.{" "}
+          This event does not exist for your organisation, or you do not have access to it.{" "}
           <Link to="/admin/events" className="font-medium text-primary hover:underline">
             Back to events
           </Link>
@@ -2069,7 +2069,7 @@ function EventDetail() {
                 <p className="border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   {canEdit
                     ? "Rotating a QR invalidates the previous code immediately. Visitor redemption and poster downloads are not wired yet."
-                    : "QR controls are restricted to agency owners and admins."}
+                    : "QR controls are restricted to organisation owners and admins."}
                 </p>
               </div>
             )}
@@ -2172,7 +2172,7 @@ function EventDetail() {
                   </button>
                 ) : (
                   <p className="mt-2 text-xs text-amber-800">
-                    Ask an agency admin or owner to configure terms.
+                    Ask an organisation admin or owner to configure terms.
                   </p>
                 )}
               </div>

@@ -19,18 +19,18 @@ export const Route = createFileRoute("/admin/system")({
 const sections = [
   {
     icon: Building2,
-    title: "Agencies",
-    desc: "Create, suspend and inspect agency tenants across the platform.",
+    title: "Organisations",
+    desc: "Create, suspend and inspect organisation tenants across the platform.",
   },
   {
     icon: Users,
     title: "Users & invites",
-    desc: "Manage platform admin users and pending agency invitations.",
+    desc: "Manage platform admin users and pending organisation invitations.",
   },
   {
     icon: Calendar,
     title: "Events across platform",
-    desc: "Cross-agency view of all events, statuses and check-in volume.",
+    desc: "Cross-organisation view of all events, statuses and check-in volume.",
   },
   {
     icon: ScrollText,
@@ -40,7 +40,7 @@ const sections = [
   {
     icon: CreditCard,
     title: "Billing",
-    desc: "Plans, usage, invoices and payment status per agency.",
+    desc: "Plans, usage, invoices and payment status per organisation.",
   },
   {
     icon: Settings2,
@@ -101,7 +101,7 @@ function SystemAdmin() {
 
       <div className="rounded-2xl border border-dashed bg-muted/30 p-5 text-xs text-muted-foreground">
         Note: this area is intentionally read-only for now. No create, edit or
-        delete actions are wired. Agency and event admin tooling remains in the
+        delete actions are wired. Organisation and event admin tooling remains in the
         main Event admin dashboard.
       </div>
     </div>
