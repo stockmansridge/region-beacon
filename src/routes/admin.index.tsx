@@ -10,9 +10,6 @@ export const Route = createFileRoute("/admin/")({
   component: Dashboard,
 });
 
-type TileTarget =
-  | { to: "/admin/events" }
-  | { to: "/admin/analytics" };
 
 type Counts = { events: number; venues: number; checkins: number; visitors: number };
 
