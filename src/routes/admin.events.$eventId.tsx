@@ -293,6 +293,15 @@ function EventDetail() {
       setState("not-found");
       return;
     }
+    // Wait for the agency context to finish resolving before deciding
+    // whether to show an error. Without this gate, the first render
+    // (where agencyId is briefly null while agency context loads) flashes
+    // the "Could not load event detail" panel before the real fetch runs.
+    if (agency.status === "loading") {
+      setState("loading");
+      setDiagnostic(null);
+      return;
+    }
     if (!agencyId) {
       setDiagnostic({
         step: "agency-context",
