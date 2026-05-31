@@ -299,7 +299,7 @@ function SignupPage() {
             </div>
 
             <Field
-              label="Business / organisation name"
+              label="Organisation name"
               error={fieldErrors.businessName}
             >
               <input
