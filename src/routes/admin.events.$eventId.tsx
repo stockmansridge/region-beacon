@@ -282,6 +282,8 @@ function EventDetail() {
   const [revealedQrByVenue, setRevealedQrByVenue] = useState<Map<string, string>>(new Map());
   const [qrActionVenueId, setQrActionVenueId] = useState<string | null>(null);
   const [qrActionError, setQrActionError] = useState<string | null>(null);
+  const [qrSupportDetails, setQrSupportDetails] = useState<string | null>(null);
+  const [qrSupportCopied, setQrSupportCopied] = useState(false);
   const [qrCopiedVenueId, setQrCopiedVenueId] = useState<string | null>(null);
   const [qrEntryDraft, setQrEntryDraft] = useState<Map<string, string>>(new Map());
   const [qrEntrySavingId, setQrEntrySavingId] = useState<string | null>(null);
