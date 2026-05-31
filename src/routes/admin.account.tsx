@@ -598,7 +598,7 @@ function OrganisationSlugEditor({
       .maybeSingle();
     if (existing && existing.id !== agencyId) {
       setSaving(false);
-      setError("That organisation slug is already taken.");
+      setError("That organisation URL name is already taken.");
       return;
     }
 
