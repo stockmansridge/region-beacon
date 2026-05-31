@@ -154,7 +154,7 @@ function Analytics() {
       setCheckins((cRes.data ?? []) as CheckinRow[]);
       setVisitors((viRes.data ?? []) as VisitorRow[]);
       setPassports((pRes.data ?? []) as PassportRow[]);
-      setPrizeRules(((prRes.data ?? []) as PrizeRule[]) ?? []);
+      setPrizeRules((prRes.data ?? []) as PrizeRule[]);
       setLoading(false);
     })();
     return () => {
