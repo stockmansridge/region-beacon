@@ -1099,7 +1099,7 @@ function EventDetail() {
       [column]: null,
     } as VenueEditForm);
     setVenueAssetBusy(null);
-    setReloadKey((k) => k + 1);
+    // See uploadVenueImage: skip reloadKey to keep the editor mounted.
   }
 
   async function archiveVenue(venueId: string) {
