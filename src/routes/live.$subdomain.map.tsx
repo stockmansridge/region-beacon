@@ -76,6 +76,12 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const [mapDiag, setMapDiag] = useState<MapDiagnostics>(INITIAL_DIAG);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [hasPassport, setHasPassport] = useState(false);
+  const [stampDiag, setStampDiag] = useState<{
+    savedPassportKey: string | null;
+    savedPassportFound: boolean;
+    stampRpcError: string | null;
+    stampRowCount: number;
+  }>({ savedPassportKey: null, savedPassportFound: false, stampRpcError: null, stampRowCount: 0 });
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<VenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
@@ -105,30 +111,47 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
       // Load passport stamps if a saved passport exists for this event.
       if (evt?.event_id && typeof localStorage !== "undefined") {
+        const key = `gs.passport.${evt.event_id}`;
+        let savedFound = false;
+        let stampRpcError: string | null = null;
+        let stampRowCount = 0;
         try {
-          const raw = localStorage.getItem(`gs.passport.${evt.event_id}`);
+          const raw = localStorage.getItem(key);
           if (raw) {
             const parsed = JSON.parse(raw) as { access_token?: string };
             if (parsed?.access_token) {
+              savedFound = true;
               setHasPassport(true);
-              const { data: stampsData } = await supabase.rpc(
+              const { data: stampsData, error: stampsErr } = await supabase.rpc(
                 "get_passport_stamps_by_token" as never,
                 { _raw_token: parsed.access_token } as never,
               );
               if (cancelled) return;
-              const visited = new Set<string>();
-              for (const s of (stampsData ?? []) as Array<{
+              if (stampsErr) {
+                stampRpcError =
+                  (stampsErr as { message?: string }).message ?? "rpc error";
+              }
+              const rows = (stampsData ?? []) as Array<{
                 venue_id: string | null;
-                stamped: boolean | null;
-              }>) {
-                if (s.venue_id && s.stamped) visited.add(s.venue_id);
+                is_stamped: boolean | null;
+              }>;
+              stampRowCount = rows.length;
+              const visited = new Set<string>();
+              for (const s of rows) {
+                if (s.venue_id && s.is_stamped) visited.add(String(s.venue_id));
               }
               setVisitedIds(visited);
             }
           }
-        } catch {
-          /* ignore */
+        } catch (e) {
+          stampRpcError = e instanceof Error ? e.message : String(e);
         }
+        setStampDiag({
+          savedPassportKey: key,
+          savedPassportFound: savedFound,
+          stampRpcError,
+          stampRowCount,
+        });
       }
     })();
     return () => {
@@ -384,7 +407,10 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     [venues, geoVenueIds],
   );
 
-  const visitedCount = visitedIds.size;
+  const visitedCount = useMemo(
+    () => geoVenues.filter((v) => v.venue_id && visitedIds.has(v.venue_id)).length,
+    [geoVenues, visitedIds],
+  );
   const totalCount = geoVenues.length;
 
   const buildSupportReport = useCallback(() => {
@@ -398,14 +424,20 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       subdomain,
       route: "/live/$subdomain/map",
       hostnameLooksAllowed: isAllowedLooking,
+      eventId: event?.event_id ?? null,
       venueCount: venues.length,
       venueCountWithLatLng: geoVenues.length,
+      savedPassportKey: stampDiag.savedPassportKey,
+      savedPassportFound: stampDiag.savedPassportFound,
+      stampRpcError: stampDiag.stampRpcError,
+      stampRowCount: stampDiag.stampRowCount,
+      matchedVisitedVenueCount: visitedCount,
       fallbackListRendered: Boolean(mapError),
       mapError,
       mapkit: mapDiag,
     };
     return JSON.stringify(report, null, 2);
-  }, [subdomain, venues.length, geoVenues.length, mapError, mapDiag]);
+  }, [subdomain, event?.event_id, venues.length, geoVenues.length, mapError, mapDiag, stampDiag, visitedCount]);
 
   if (loading) {
     return (

@@ -1,15 +1,19 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Ticket, MapPin, Trophy, Map as MapIcon } from "lucide-react";
+import { useState } from "react";
+import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X } from "lucide-react";
+import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 
+type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "leaderboard" | "more";
 
 /**
  * Public event navigation.
  *
- * Renders clean tenant URLs (`/`, `/join`, `/venues`, `/leaderboard`) so
- * the browser address bar stays free of internal `/live/$subdomain/...`
- * paths on tenant hosts. The clean routes derive the subdomain from
- * window.location.hostname, so the `subdomain` prop here is only used
- * for active-state matching and labels.
+ * Renders clean tenant URLs (`/`, `/join`, `/venues`, `/leaderboard`,
+ * `/passport/<token>`) so the browser address bar stays free of internal
+ * `/live/$subdomain/...` paths. The Passport item automatically resolves
+ * to the visitor's saved /passport/<token> URL when a passport for the
+ * current tenant is stored in localStorage; otherwise it falls back to
+ * `/join`.
  */
 export function PublicEventNav({
   subdomain,
@@ -20,7 +24,7 @@ export function PublicEventNav({
   hasPrivacy = true,
   canRegister = true,
   activeOverride,
-  passportHref,
+  passportHref: passportHrefOverride,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -30,8 +34,8 @@ export function PublicEventNav({
   hasPrivacy?: boolean;
   canRegister?: boolean;
   /** When set, forces this nav item to render as active, regardless of pathname. */
-  activeOverride?: "home" | "join" | "map" | "venues" | "leaderboard";
-  /** When set, the Passport item renders as a plain <a href> to this URL instead of the /join route. */
+  activeOverride?: ActiveTarget | "join";
+  /** Explicit passport href override; if omitted, derived from localStorage. */
   passportHref?: string;
 }) {
   void subdomain;
@@ -39,11 +43,19 @@ export function PublicEventNav({
   const accent = accentColor ?? "#B5572A";
   const location = useLocation();
   const pathname = location.pathname;
+  const { passportHref: derivedPassportHref } = useCurrentEventPassport();
+  const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
+  const [moreOpen, setMoreOpen] = useState(false);
 
-  const isActive = (target: "home" | "join" | "map" | "venues" | "leaderboard") => {
-    if (activeOverride) return target === activeOverride;
+  // Normalise legacy "join" override → "passport".
+  const normalisedOverride: ActiveTarget | undefined =
+    activeOverride === "join" ? "passport" : (activeOverride as ActiveTarget | undefined);
+
+  const isActive = (target: ActiveTarget) => {
+    if (normalisedOverride) return target === normalisedOverride;
     if (target === "home") return pathname === "/" || pathname === "";
-    if (target === "join") return pathname === "/join";
+    if (target === "passport")
+      return pathname === "/join" || pathname.startsWith("/passport");
     if (target === "map") return pathname === "/map";
     if (target === "venues")
       return pathname === "/venues" || pathname.startsWith("/venues/");
@@ -51,10 +63,58 @@ export function PublicEventNav({
     return false;
   };
 
-  const desktopItems: Array<{ key: string; label: string; node: React.ReactNode }> = [
+  const passportLabel = passportHref ? "Passport" : "Start passport";
+
+  const PassportLink = ({
+    className,
+    style,
+    children,
+  }: {
+    className?: string;
+    style?: React.CSSProperties;
+    children: React.ReactNode;
+  }) => {
+    if (!canRegister && !passportHref) {
+      return (
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          title="Registration closed"
+          className={className}
+          style={{ ...style, opacity: 0.4 }}
+        >
+          {children}
+        </button>
+      );
+    }
+    if (passportHref) {
+      return (
+        <a
+          href={passportHref}
+          className={className}
+          style={style}
+          aria-current={isActive("passport") ? "page" : undefined}
+        >
+          {children}
+        </a>
+      );
+    }
+    return (
+      <Link
+        to="/join"
+        className={className}
+        style={style}
+        aria-current={isActive("passport") ? "page" : undefined}
+      >
+        {children}
+      </Link>
+    );
+  };
+
+  const desktopItems: Array<{ key: string; node: React.ReactNode }> = [
     {
       key: "home",
-      label: "Home",
       node: (
         <Link
           to="/"
@@ -65,33 +125,19 @@ export function PublicEventNav({
         </Link>
       ),
     },
-    ...(canRegister
-      ? [{
-          key: "join",
-          label: passportHref ? "Passport" : "Start passport",
-          node: passportHref ? (
-            <a
-              href={passportHref}
-              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-              style={{ color: primary }}
-              aria-current={isActive("join") ? "page" : undefined}
-            >
-              Passport
-            </a>
-          ) : (
-            <Link
-              to="/join"
-              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-              style={{ color: primary }}
-            >
-              Start passport
-            </Link>
-          ),
-        }]
-      : []),
+    {
+      key: "passport",
+      node: (
+        <PassportLink
+          className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+          style={{ color: primary }}
+        >
+          {passportLabel}
+        </PassportLink>
+      ),
+    },
     {
       key: "map",
-      label: "Trail Map",
       node: (
         <Link
           to="/map"
@@ -104,7 +150,6 @@ export function PublicEventNav({
     },
     {
       key: "venues",
-      label: "Venues",
       node: (
         <Link
           to="/venues"
@@ -117,7 +162,6 @@ export function PublicEventNav({
     },
     {
       key: "leaderboard",
-      label: "Leaderboard",
       node: (
         <Link
           to="/leaderboard"
@@ -131,7 +175,6 @@ export function PublicEventNav({
     ...(hasTerms
       ? [{
           key: "terms",
-          label: "Terms",
           node: (
             <Link
               to="/terms"
@@ -146,7 +189,6 @@ export function PublicEventNav({
     ...(hasPrivacy
       ? [{
           key: "privacy",
-          label: "Privacy",
           node: (
             <Link
               to="/privacy"
@@ -159,6 +201,12 @@ export function PublicEventNav({
         }]
       : []),
   ];
+
+  const moreActive =
+    isActive("home") ||
+    isActive("leaderboard") ||
+    pathname === "/terms" ||
+    pathname === "/privacy";
 
   return (
     <>
@@ -181,58 +229,23 @@ export function PublicEventNav({
         </div>
       </nav>
 
-      {/* Fixed bottom mobile nav */}
+      {/* Fixed bottom mobile nav: Passport / Trail Map / Venues / More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E6DCC7] bg-[#FBF5E8]/95 backdrop-blur md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <ul className="mx-auto flex h-14 max-w-md items-stretch">
-          <li className="relative flex flex-1">
-            {canRegister ? (
-              passportHref ? (
-                <a
-                  href={passportHref}
-                  aria-current={isActive("join") ? "page" : undefined}
-                  className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-                  style={{ color: isActive("join") ? accent : primary }}
-                >
-                  <Ticket className="h-5 w-5" />
-                  <span>Passport</span>
-                </a>
-              ) : (
-                <Link
-                  to="/join"
-                  aria-current={isActive("join") ? "page" : undefined}
-                  className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-                  style={{ color: isActive("join") ? accent : primary }}
-                >
-                  <Ticket className="h-5 w-5" />
-                  <span>Passport</span>
-                </Link>
-              )
-            ) : (
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                title="Registration closed"
-                className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: primary, opacity: 0.4 }}
-              >
-                <Ticket className="h-5 w-5" />
-                <span>Passport</span>
-              </button>
-            )}
-            {canRegister && isActive("join") && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
-                style={{ backgroundColor: accent }}
-              />
-            )}
-          </li>
-          <li className="relative flex flex-1">
+          <BottomItem active={isActive("passport")} accent={accent} primary={primary}>
+            <PassportLink
+              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: isActive("passport") ? accent : primary }}
+            >
+              <Ticket className="h-5 w-5" />
+              <span>Passport</span>
+            </PassportLink>
+          </BottomItem>
+          <BottomItem active={isActive("map")} accent={accent} primary={primary}>
             <Link
               to="/map"
               aria-current={isActive("map") ? "page" : undefined}
@@ -242,15 +255,8 @@ export function PublicEventNav({
               <MapIcon className="h-5 w-5" />
               <span>Trail Map</span>
             </Link>
-            {isActive("map") && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
-                style={{ backgroundColor: accent }}
-              />
-            )}
-          </li>
-          <li className="relative flex flex-1">
+          </BottomItem>
+          <BottomItem active={isActive("venues")} accent={accent} primary={primary}>
             <Link
               to="/venues"
               aria-current={isActive("venues") ? "page" : undefined}
@@ -260,34 +266,35 @@ export function PublicEventNav({
               <MapPin className="h-5 w-5" />
               <span>Venues</span>
             </Link>
-            {isActive("venues") && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
-                style={{ backgroundColor: accent }}
-              />
-            )}
-          </li>
-          <li className="relative flex flex-1">
-            <Link
-              to="/leaderboard"
-              aria-current={isActive("leaderboard") ? "page" : undefined}
+          </BottomItem>
+          <BottomItem active={moreActive} accent={accent} primary={primary}>
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={moreOpen}
               className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-              style={{ color: isActive("leaderboard") ? accent : primary }}
+              style={{ color: moreActive ? accent : primary }}
             >
-              <Trophy className="h-5 w-5" />
-              <span>Board</span>
-            </Link>
-            {isActive("leaderboard") && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
-                style={{ backgroundColor: accent }}
-              />
-            )}
-          </li>
+              <MoreHorizontal className="h-5 w-5" />
+              <span>More</span>
+            </button>
+          </BottomItem>
         </ul>
       </nav>
+
+      {moreOpen && (
+        <MoreSheet
+          onClose={() => setMoreOpen(false)}
+          primary={primary}
+          accent={accent}
+          hasTerms={hasTerms}
+          hasPrivacy={hasPrivacy}
+          passportHref={passportHref}
+          passportLabel={passportLabel}
+          canRegister={canRegister}
+        />
+      )}
 
       {/* Bottom-nav clearance: only on mobile while this nav is mounted */}
       <style>{`
@@ -296,5 +303,132 @@ export function PublicEventNav({
         }
       `}</style>
     </>
+  );
+}
+
+function BottomItem({
+  active,
+  accent,
+  primary,
+  children,
+}: {
+  active: boolean;
+  accent: string;
+  primary: string;
+  children: React.ReactNode;
+}) {
+  void primary;
+  return (
+    <li className="relative flex flex-1">
+      {children}
+      {active && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
+          style={{ backgroundColor: accent }}
+        />
+      )}
+    </li>
+  );
+}
+
+function MoreSheet({
+  onClose,
+  primary,
+  accent,
+  hasTerms,
+  hasPrivacy,
+  passportHref,
+  passportLabel,
+  canRegister,
+}: {
+  onClose: () => void;
+  primary: string;
+  accent: string;
+  hasTerms: boolean;
+  hasPrivacy: boolean;
+  passportHref: string | null;
+  passportLabel: string;
+  canRegister: boolean;
+}) {
+  void accent;
+  const rowClass =
+    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium hover:bg-[#1F3D2B]/5";
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 md:hidden"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-[#E6DCC7] bg-[#FBF5E8] p-4 shadow-xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <p
+            className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: primary }}
+          >
+            More
+          </p>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="rounded-full p-1 text-[#3D372C] hover:bg-[#1F3D2B]/10"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <ul className="flex flex-col gap-1" style={{ color: primary }}>
+          <li>
+            <Link to="/" onClick={onClose} className={rowClass}>
+              <Home className="h-4 w-4" />
+              Home
+            </Link>
+          </li>
+          {(canRegister || passportHref) && (
+            <li>
+              {passportHref ? (
+                <a href={passportHref} onClick={onClose} className={rowClass}>
+                  <Ticket className="h-4 w-4" />
+                  {passportLabel}
+                </a>
+              ) : (
+                <Link to="/join" onClick={onClose} className={rowClass}>
+                  <Ticket className="h-4 w-4" />
+                  {passportLabel}
+                </Link>
+              )}
+            </li>
+          )}
+          <li>
+            <Link to="/leaderboard" onClick={onClose} className={rowClass}>
+              <Trophy className="h-4 w-4" />
+              Leaderboard
+            </Link>
+          </li>
+          {hasTerms && (
+            <li>
+              <Link to="/terms" onClick={onClose} className={rowClass}>
+                <FileText className="h-4 w-4" />
+                Terms
+              </Link>
+            </li>
+          )}
+          {hasPrivacy && (
+            <li>
+              <Link to="/privacy" onClick={onClose} className={rowClass}>
+                <ShieldCheck className="h-4 w-4" />
+                Privacy
+              </Link>
+            </li>
+          )}
+        </ul>
+      </div>
+    </div>
   );
 }

@@ -394,7 +394,7 @@ function PassportView({
             eventName={eventName ?? "Your passport"}
             primaryColor={PRIMARY}
             accentColor={ACCENT}
-            activeOverride="join"
+            activeOverride="passport"
             passportHref={passportUrl}
           />
         </div>
