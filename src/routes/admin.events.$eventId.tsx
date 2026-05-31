@@ -2134,9 +2134,9 @@ function EventDetail() {
                     {venues.map((v) => {
                       const qr = qrByVenue.get(v.id);
                       const hasActiveQr = !!qr;
-                      const revealed = revealedQrByVenue.get(v.id);
                       const isBusy = qrActionVenueId === v.id;
-                      const built = revealed ? buildCheckinUrl(revealed) : null;
+                      const token = qr?.token ?? null;
+                      const built = token ? buildCheckinUrl(token) : null;
                       return (
                         <tr
                           key={v.id}
