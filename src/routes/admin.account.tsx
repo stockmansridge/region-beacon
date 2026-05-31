@@ -254,10 +254,11 @@ function AccountPage() {
             canEdit={canEditOrg}
           />
           <Row label="Signed-in email" value={auth.email ?? "—"} />
-          <Row label="Organisation role" value={agencyRole ?? "—"} />
+          <Row label="Organisation role" value={formatRoleLabel(agencyRole)} />
           {access.isPlatformAdmin && (
-            <Row label="Platform role" value="platform_admin" />
+            <Row label="Platform role" value={formatRoleLabel("platform_admin")} />
           )}
+
         </Card>
 
         <Card title="Plan">
