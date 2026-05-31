@@ -430,3 +430,106 @@ function DisabledButton({ label, small }: { label: string; small?: boolean }) {
     </button>
   );
 }
+
+function OrganisationNameEditor({
+  agencyId,
+  currentName,
+  canEdit,
+}: {
+  agencyId: string | null;
+  currentName: string;
+  canEdit: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(currentName);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(currentName);
+  }, [currentName]);
+
+  if (!editing) {
+    return (
+      <div className="flex items-baseline justify-between gap-4 text-sm">
+        <span className="text-muted-foreground">Organisation</span>
+        <span className="flex items-center gap-2">
+          <span className="font-medium">{currentName || "—"}</span>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Edit
+            </button>
+          )}
+        </span>
+      </div>
+    );
+  }
+
+  const trimmed = value.trim();
+  const tooShort = trimmed.length < 2;
+  const tooLong = trimmed.length > 120;
+  const invalid = tooShort || tooLong;
+
+  const onSave = async () => {
+    if (!agencyId || invalid) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("agencies")
+      .update({ name: trimmed })
+      .eq("id", agencyId);
+    setSaving(false);
+    if (error) {
+      toast.error(`Could not update organisation name: ${error.message}`);
+      return;
+    }
+    toast.success("Organisation name updated.");
+    setEditing(false);
+    // Refresh so the sidebar/header pick up the new name.
+    window.location.reload();
+  };
+
+  return (
+    <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+      <label className="text-xs font-medium text-muted-foreground">
+        Organisation name
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        maxLength={120}
+        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+        autoFocus
+      />
+      {invalid && (
+        <p className="text-xs text-destructive">
+          {tooShort ? "Name must be at least 2 characters." : "Name is too long (max 120)."}
+        </p>
+      )}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false);
+            setValue(currentName);
+          }}
+          disabled={saving}
+          className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving || invalid}
+          className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+      </div>
+    </div>
+  );
+}
