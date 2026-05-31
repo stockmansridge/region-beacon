@@ -30,7 +30,7 @@ export function PublicEventNav({
   hasPrivacy?: boolean;
   canRegister?: boolean;
   /** When set, forces this nav item to render as active, regardless of pathname. */
-  activeOverride?: "home" | "join" | "venues" | "leaderboard";
+  activeOverride?: "home" | "join" | "map" | "venues" | "leaderboard";
   /** When set, the Passport item renders as a plain <a href> to this URL instead of the /join route. */
   passportHref?: string;
 }) {
@@ -40,10 +40,11 @@ export function PublicEventNav({
   const location = useLocation();
   const pathname = location.pathname;
 
-  const isActive = (target: "home" | "join" | "venues" | "leaderboard") => {
+  const isActive = (target: "home" | "join" | "map" | "venues" | "leaderboard") => {
     if (activeOverride) return target === activeOverride;
     if (target === "home") return pathname === "/" || pathname === "";
     if (target === "join") return pathname === "/join";
+    if (target === "map") return pathname === "/map";
     if (target === "venues")
       return pathname === "/venues" || pathname.startsWith("/venues/");
     if (target === "leaderboard") return pathname === "/leaderboard";
