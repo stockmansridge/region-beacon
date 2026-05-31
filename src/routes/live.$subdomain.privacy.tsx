@@ -7,11 +7,13 @@ import {
 } from "@/components/public-legal";
 
 export const Route = createFileRoute("/live/$subdomain/privacy")({
-  component: PrivacyPage,
+  component: function PrivacyRoute() {
+    const { subdomain } = Route.useParams();
+    return <PrivacyPage subdomain={subdomain} />;
+  },
 });
 
-function PrivacyPage() {
-  const { subdomain } = Route.useParams();
+export function PrivacyPage({ subdomain }: { subdomain: string }) {
   const state = useLegal(subdomain);
 
   if (state.kind === "loading") {

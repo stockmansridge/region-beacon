@@ -10,15 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-found'
+import { Route as VenuesRouteImport } from './routes/venues'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as JoinRouteImport } from './routes/join'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PassportIndexRouteImport } from './routes/passport.index'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as VenuesVenueIdRouteImport } from './routes/venues.$venueId'
 import { Route as TAgencySlugRouteImport } from './routes/t.$agencySlug'
 import { Route as PassportTokenRouteImport } from './routes/passport.$token'
 import { Route as DemoWineriesRouteImport } from './routes/demo.wineries'
@@ -57,6 +63,16 @@ const WorkspaceNotFoundRoute = WorkspaceNotFoundRouteImport.update({
   path: '/workspace-not-found',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VenuesRoute = VenuesRouteImport.update({
+  id: '/venues',
+  path: '/venues',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -67,9 +83,24 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarketingPreviewRoute = MarketingPreviewRouteImport.update({
   id: '/marketing-preview',
   path: '/marketing-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -101,6 +132,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const VenuesVenueIdRoute = VenuesVenueIdRouteImport.update({
+  id: '/$venueId',
+  path: '/$venueId',
+  getParentRoute: () => VenuesRoute,
 } as any)
 const TAgencySlugRoute = TAgencySlugRouteImport.update({
   id: '/t/$agencySlug',
@@ -272,9 +308,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
+  '/join': typeof JoinRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/marketing-preview': typeof MarketingPreviewRoute
+  '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
+  '/venues': typeof VenuesRouteWithChildren
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -293,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
+  '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/passport/': typeof PassportIndexRoute
@@ -315,9 +357,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
+  '/join': typeof JoinRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/marketing-preview': typeof MarketingPreviewRoute
+  '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
+  '/venues': typeof VenuesRouteWithChildren
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -336,6 +383,7 @@ export interface FileRoutesByTo {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
+  '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin': typeof AdminIndexRoute
   '/demo': typeof DemoIndexRoute
   '/passport': typeof PassportIndexRoute
@@ -360,9 +408,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
+  '/join': typeof JoinRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/marketing-preview': typeof MarketingPreviewRoute
+  '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
+  '/venues': typeof VenuesRouteWithChildren
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -381,6 +434,7 @@ export interface FileRoutesById {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
+  '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/passport/': typeof PassportIndexRoute
@@ -406,9 +460,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/join'
+    | '/leaderboard'
     | '/marketing-preview'
+    | '/privacy'
     | '/signup'
     | '/support'
+    | '/terms'
+    | '/venues'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -427,6 +486,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/passport/$token'
     | '/t/$agencySlug'
+    | '/venues/$venueId'
     | '/admin/'
     | '/demo/'
     | '/passport/'
@@ -449,9 +509,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/contact'
+    | '/join'
+    | '/leaderboard'
     | '/marketing-preview'
+    | '/privacy'
     | '/signup'
     | '/support'
+    | '/terms'
+    | '/venues'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -470,6 +535,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/passport/$token'
     | '/t/$agencySlug'
+    | '/venues/$venueId'
     | '/admin'
     | '/demo'
     | '/passport'
@@ -493,9 +559,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/join'
+    | '/leaderboard'
     | '/marketing-preview'
+    | '/privacy'
     | '/signup'
     | '/support'
+    | '/terms'
+    | '/venues'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -514,6 +585,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/passport/$token'
     | '/t/$agencySlug'
+    | '/venues/$venueId'
     | '/admin/'
     | '/demo/'
     | '/passport/'
@@ -538,9 +610,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   ContactRoute: typeof ContactRoute
+  JoinRoute: typeof JoinRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   MarketingPreviewRoute: typeof MarketingPreviewRoute
+  PrivacyRoute: typeof PrivacyRoute
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
+  VenuesRoute: typeof VenuesRouteWithChildren
   WorkspaceNotFoundRoute: typeof WorkspaceNotFoundRoute
   CheckinQrTokenRoute: typeof CheckinQrTokenRoute
   DemoInviteRoute: typeof DemoInviteRoute
@@ -574,6 +651,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceNotFoundRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/venues': {
+      id: '/venues'
+      path: '/venues'
+      fullPath: '/venues'
+      preLoaderRoute: typeof VenuesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/support': {
       id: '/support'
       path: '/support'
@@ -588,11 +679,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/marketing-preview': {
       id: '/marketing-preview'
       path: '/marketing-preview'
       fullPath: '/marketing-preview'
       preLoaderRoute: typeof MarketingPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -636,6 +748,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/venues/$venueId': {
+      id: '/venues/$venueId'
+      path: '/$venueId'
+      fullPath: '/venues/$venueId'
+      preLoaderRoute: typeof VenuesVenueIdRouteImport
+      parentRoute: typeof VenuesRoute
     }
     '/t/$agencySlug': {
       id: '/t/$agencySlug'
@@ -894,6 +1013,17 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface VenuesRouteChildren {
+  VenuesVenueIdRoute: typeof VenuesVenueIdRoute
+}
+
+const VenuesRouteChildren: VenuesRouteChildren = {
+  VenuesVenueIdRoute: VenuesVenueIdRoute,
+}
+
+const VenuesRouteWithChildren =
+  VenuesRoute._addFileChildren(VenuesRouteChildren)
+
 interface DemoWineriesRouteChildren {
   DemoWineriesVenueIdRoute: typeof DemoWineriesVenueIdRoute
 }
@@ -933,9 +1063,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   ContactRoute: ContactRoute,
+  JoinRoute: JoinRoute,
+  LeaderboardRoute: LeaderboardRoute,
   MarketingPreviewRoute: MarketingPreviewRoute,
+  PrivacyRoute: PrivacyRoute,
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
+  VenuesRoute: VenuesRouteWithChildren,
   WorkspaceNotFoundRoute: WorkspaceNotFoundRoute,
   CheckinQrTokenRoute: CheckinQrTokenRoute,
   DemoInviteRoute: DemoInviteRoute,
@@ -962,3 +1097,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

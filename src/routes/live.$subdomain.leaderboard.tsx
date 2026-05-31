@@ -7,8 +7,12 @@ import { rpcEventHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard" }] }),
-  component: PublicLeaderboardPage,
+  component: function LeaderboardRoute() {
+    const { subdomain } = Route.useParams();
+    return <PublicLeaderboardPage subdomain={subdomain} />;
+  },
 });
+
 
 type LeaderboardRow = {
   rank: number | null;
@@ -28,9 +32,9 @@ type State =
   | { kind: "disabled" }
   | { kind: "ready"; rows: LeaderboardRow[] };
 
-function PublicLeaderboardPage() {
-  const { subdomain } = Route.useParams();
+export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+
 
   useEffect(() => {
     let cancelled = false;
@@ -113,8 +117,7 @@ function PublicLeaderboardPage() {
 
         <div className="mt-8 text-center">
           <Link
-            to="/live/$subdomain"
-            params={{ subdomain }}
+            to="/"
             className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
           >
             ← Back to event

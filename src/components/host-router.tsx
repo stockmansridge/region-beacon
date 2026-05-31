@@ -95,26 +95,15 @@ export function computeHostRewrite(hostname: string, pathname: string): Rewrite 
         return { to: `/t/${sub}/e${rest}`, replace: true };
       }
 
-      // Legacy event-subdomain paths — keep working during transition.
-      const legacyPrefixes: Array<[string, (rest: string) => string]> = [
-        ["/join", () => `/live/${sub}/join`],
-        ["/venues", (rest) => `/live/${sub}/venues${rest}`],
-        ["/leaderboard", () => `/live/${sub}/leaderboard`],
-        ["/terms", () => `/live/${sub}/terms`],
-        ["/privacy", () => `/live/${sub}/privacy`],
-      ];
-      for (const [prefix, build] of legacyPrefixes) {
-        if (pathname === prefix || pathname.startsWith(prefix + "/")) {
-          const rest = pathname.slice(prefix.length);
-          return { to: build(rest), replace: true };
-        }
-      }
-
-      if (pathname === "/" || pathname === "") {
-        return { to: `/t/${sub}`, replace: true };
-      }
+      // Clean public tenant paths (`/`, `/join`, `/venues`, `/venues/:id`,
+      // `/leaderboard`, `/terms`, `/privacy`, `/passport/:token`) are now
+      // served directly by flat top-level routes that derive the subdomain
+      // from window.location.hostname. No rewrite needed — the URL stays
+      // clean in the browser address bar.
+      void sub;
       return null;
     }
+
     case "root":
     case "reserved":
     case "other":

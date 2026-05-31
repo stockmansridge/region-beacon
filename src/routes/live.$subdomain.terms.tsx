@@ -7,11 +7,13 @@ import {
 } from "@/components/public-legal";
 
 export const Route = createFileRoute("/live/$subdomain/terms")({
-  component: TermsPage,
+  component: function TermsRoute() {
+    const { subdomain } = Route.useParams();
+    return <TermsPage subdomain={subdomain} />;
+  },
 });
 
-function TermsPage() {
-  const { subdomain } = Route.useParams();
+export function TermsPage({ subdomain }: { subdomain: string }) {
   const state = useLegal(subdomain);
 
   if (state.kind === "loading") {

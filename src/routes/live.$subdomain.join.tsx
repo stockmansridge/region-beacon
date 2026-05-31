@@ -12,8 +12,12 @@ import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics
 import { DiagnosticPanel } from "@/components/diagnostic-panel";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
-  component: LiveJoinPage,
+  component: function LiveJoinRoute() {
+    const { subdomain } = Route.useParams();
+    return <LiveJoinPage subdomain={subdomain} />;
+  },
 });
+
 
 type ResolveRow = {
   kind: "marketing" | "admin" | "event" | "not_found";
@@ -83,8 +87,8 @@ function friendlyError(raw: string | undefined): string {
   return "Could not create your passport. Please try again.";
 }
 
-function LiveJoinPage() {
-  const { subdomain } = Route.useParams();
+export function LiveJoinPage({ subdomain }: { subdomain: string }) {
+
   const [state, setState] = useState<LoadState>({ kind: "loading" });
 
   useEffect(() => {
@@ -369,8 +373,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
       accentColor={accent}
       topLeft={
         <Link
-          to="/live/$subdomain"
-          params={{ subdomain }}
+          to="/"
           className="text-xs font-semibold uppercase tracking-[0.18em]"
           style={{ color: primary }}
         >
@@ -567,8 +570,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             <span>
               I accept the{" "}
               <Link
-                to="/live/$subdomain/terms"
-                params={{ subdomain }}
+                to="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
@@ -578,8 +580,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
               </Link>{" "}
               and{" "}
               <Link
-                to="/live/$subdomain/privacy"
-                params={{ subdomain }}
+                to="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
@@ -709,8 +710,7 @@ function SuccessScreen({
       accentColor={accent}
       topLeft={
         <Link
-          to="/live/$subdomain"
-          params={{ subdomain }}
+          to="/"
           className="text-xs font-semibold uppercase tracking-[0.18em]"
           style={{ color: primary }}
         >
@@ -821,8 +821,7 @@ function InfoScreen({
       accentColor={event.accent_color ?? "#B5572A"}
       topLeft={
         <Link
-          to="/live/$subdomain"
-          params={{ subdomain }}
+          to="/"
           className="text-xs font-semibold uppercase tracking-[0.18em]"
           style={{ color: primary }}
         >

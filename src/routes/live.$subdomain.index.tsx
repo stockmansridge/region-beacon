@@ -11,8 +11,12 @@ import { rpcEventHost } from "@/lib/domains";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
-  component: LivePublicPage,
+  component: function LivePublicRoute() {
+    const { subdomain } = Route.useParams();
+    return <LivePublicPage subdomain={subdomain} />;
+  },
 });
+
 
 type ResolveRow = {
   kind: "marketing" | "admin" | "event" | "not_found";
@@ -55,9 +59,9 @@ type State =
   | { kind: "not_found" }
   | { kind: "event"; event: PublicEvent; venues: PublicVenue[] };
 
-function LivePublicPage() {
-  const { subdomain } = Route.useParams();
+export function LivePublicPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+
 
   useEffect(() => {
     let cancelled = false;
@@ -145,8 +149,7 @@ function LivePublicPage() {
         primaryCta={
           canRegister ? (
             <Link
-              to="/live/$subdomain/join"
-              params={{ subdomain }}
+              to="/join"
               className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
               style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
             >
@@ -168,15 +171,13 @@ function LivePublicPage() {
       />
       <div className="mx-auto mt-6 flex max-w-md flex-col items-center gap-3 text-center">
         <Link
-          to="/live/$subdomain/venues"
-          params={{ subdomain }}
+          to="/venues"
           className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
         >
           View {venueLabels.plural.toLowerCase()} →
         </Link>
         <Link
-          to="/live/$subdomain/leaderboard"
-          params={{ subdomain }}
+          to="/leaderboard"
           className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
         >
           View leaderboard →

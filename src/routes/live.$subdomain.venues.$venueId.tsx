@@ -10,8 +10,12 @@ import { rpcEventHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
-  component: PublicVenueDetailPage,
+  component: function VenueDetailRoute() {
+    const { subdomain, venueId } = Route.useParams();
+    return <PublicVenueDetailPage subdomain={subdomain} venueId={venueId} />;
+  },
 });
+
 
 type VenueRow = {
   venue_id: string;
@@ -33,9 +37,9 @@ type State =
   | { kind: "not_found" }
   | { kind: "ready"; venue: VenueRow };
 
-function PublicVenueDetailPage() {
-  const { subdomain, venueId } = Route.useParams();
+export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: string; venueId: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+
 
   useEffect(() => {
     let cancelled = false;
@@ -84,8 +88,7 @@ function PublicVenueDetailPage() {
             This venue isn't available right now.
           </p>
           <Link
-            to="/live/$subdomain/venues"
-            params={{ subdomain }}
+            to="/venues"
             className="mt-6 inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
           >
             ← All venues
@@ -113,8 +116,7 @@ function PublicVenueDetailPage() {
             />
           ) : null}
           <Link
-            to="/live/$subdomain/venues"
-            params={{ subdomain }}
+            to="/venues"
             className="absolute left-3 top-3 rounded-full bg-[#F6EFE2]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] shadow"
           >
             ← Back
