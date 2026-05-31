@@ -6,6 +6,7 @@ import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
+import { VenueMiniMap } from "@/components/venue-mini-map";
 import { tenantHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
