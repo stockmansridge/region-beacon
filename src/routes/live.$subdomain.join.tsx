@@ -12,8 +12,12 @@ import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics
 import { DiagnosticPanel } from "@/components/diagnostic-panel";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
-  component: LiveJoinPage,
+  component: function LiveJoinRoute() {
+    const { subdomain } = Route.useParams();
+    return <LiveJoinPage subdomain={subdomain} />;
+  },
 });
+
 
 type ResolveRow = {
   kind: "marketing" | "admin" | "event" | "not_found";
