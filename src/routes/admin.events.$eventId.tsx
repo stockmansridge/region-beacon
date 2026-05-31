@@ -2069,7 +2069,7 @@ function EventDetail() {
                 <p className="border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   {canEdit
                     ? "Rotating a QR invalidates the previous code immediately. Visitor redemption and poster downloads are not wired yet."
-                    : "QR controls are restricted to agency owners and admins."}
+                    : "QR controls are restricted to organisation owners and admins."}
                 </p>
               </div>
             )}
