@@ -606,7 +606,7 @@ function EventDetail() {
     return () => {
       cancelled = true;
     };
-  }, [agencyId, eventId, reloadKey, auth.session?.user.id]);
+  }, [agencyId, eventId, reloadKey, auth.session?.user.id, agency.status]);
 
   function startEdit() {
     if (!bundle) return;
