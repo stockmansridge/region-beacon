@@ -78,6 +78,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const [hasPassport, setHasPassport] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<VenueRow | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
