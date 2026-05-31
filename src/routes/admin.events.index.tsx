@@ -421,7 +421,7 @@ function CreateEventDialog({
 
   async function handleCreate() {
     if (!agencyId) {
-      setSaveError("No agency selected.");
+      setSaveError("No organisation selected.");
       return;
     }
     const name = form.name.trim();
