@@ -614,7 +614,7 @@ function OrganisationSlugEditor({
       if (code === "23505" || /duplicate|unique/i.test(updErr.message)) {
         setError("That organisation URL name is already taken.");
       } else {
-        setError(`Could not update slug: ${updErr.message}`);
+        setError(`Could not update URL name: ${updErr.message}`);
       }
       return;
     }
