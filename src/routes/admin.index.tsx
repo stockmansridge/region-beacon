@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Calendar, MapPin, QrCode, Users } from "lucide-react";
 import { PageHeader } from "@/components/placeholder";
@@ -9,6 +9,7 @@ export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Admin dashboard" }] }),
   component: Dashboard,
 });
+
 
 type Counts = { events: number; venues: number; checkins: number; visitors: number };
 
@@ -58,10 +59,34 @@ function Dashboard() {
   }, [agencyId]);
 
   const items = [
-    { label: "Events", value: counts?.events, icon: Calendar },
-    { label: "Venues", value: counts?.venues, icon: MapPin },
-    { label: "Check-ins", value: counts?.checkins, icon: QrCode },
-    { label: "Visitors", value: counts?.visitors, icon: Users },
+    {
+      label: "Events",
+      value: counts?.events,
+      icon: Calendar,
+      to: "/admin/events" as const,
+      ariaLabel: "Open Events",
+    },
+    {
+      label: "Venues",
+      value: counts?.venues,
+      icon: MapPin,
+      to: "/admin/events" as const,
+      ariaLabel: "Open Events to manage venues",
+    },
+    {
+      label: "Check-ins",
+      value: counts?.checkins,
+      icon: QrCode,
+      to: "/admin/analytics" as const,
+      ariaLabel: "Open Analytics for check-ins",
+    },
+    {
+      label: "Visitors",
+      value: counts?.visitors,
+      icon: Users,
+      to: "/admin/analytics" as const,
+      ariaLabel: "Open Analytics for visitors",
+    },
   ];
 
   return (
@@ -80,13 +105,19 @@ function Dashboard() {
         </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {items.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="rounded-xl border bg-card p-5">
+        {items.map(({ label, value, icon: Icon, to, ariaLabel }) => (
+          <Link
+            key={label}
+            to={to}
+            aria-label={ariaLabel}
+            title={ariaLabel}
+            className="group block rounded-xl border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-accent hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground group-hover:text-foreground">
                 {label}
               </span>
-              <Icon className="h-4 w-4 text-muted-foreground" />
+              <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
             </div>
             <div className="mt-3 text-2xl font-semibold">
               {loading || value === undefined ? "…" : value}
@@ -94,7 +125,7 @@ function Dashboard() {
             <div className="mt-1 text-xs text-muted-foreground">
               {loading ? "Loading…" : "Live"}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </>
