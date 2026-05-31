@@ -90,6 +90,19 @@ export function PublicEventNav({
         }]
       : []),
     {
+      key: "map",
+      label: "Trail Map",
+      node: (
+        <Link
+          to="/map"
+          className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+          style={{ color: primary }}
+        >
+          Trail Map
+        </Link>
+      ),
+    },
+    {
       key: "venues",
       label: "Venues",
       node: (
