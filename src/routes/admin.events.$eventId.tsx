@@ -2171,7 +2171,7 @@ function EventDetail() {
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
                           {canEdit && (
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                               {hasActiveQr ? (
                                 <div className="flex flex-col gap-1.5">
                                   <div className="flex flex-wrap items-center gap-1.5">
