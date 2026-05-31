@@ -431,11 +431,11 @@ function CreateEventDialog({
 
     if (!name) return setValidationError("Name is required.");
     if (name.length > 200) return setValidationError("Name must be 200 characters or fewer.");
-    if (!slug) return setValidationError("Slug is required.");
-    if (slug.length > 80) return setValidationError("Slug must be 80 characters or fewer.");
+    if (!slug) return setValidationError("URL name is required.");
+    if (slug.length > 80) return setValidationError("URL name must be 80 characters or fewer.");
     if (!SLUG_RE.test(slug))
       return setValidationError(
-        "Slug must contain only lowercase letters, numbers, and hyphens (no leading/trailing or doubled hyphens).",
+        "URL name must contain only lowercase letters, numbers, and hyphens (no leading/trailing or doubled hyphens).",
       );
     if (!timezone) return setValidationError("Timezone is required.");
     if (timezone.length > 64) return setValidationError("Timezone must be 64 characters or fewer.");
@@ -485,7 +485,7 @@ function CreateEventDialog({
       setSaving(false);
       const msg = evErr?.message ?? "Could not create event.";
       if (/duplicate|unique/i.test(msg) && /slug/i.test(msg)) {
-        setSaveError("That slug is already used by another event in this organisation. Try a different slug.");
+        setSaveError("That URL name is already used by another event in this organisation. Try a different URL name.");
       } else {
         setSaveError(`Could not create event: ${msg}`);
       }
@@ -595,7 +595,7 @@ function CreateEventDialog({
           </Field>
 
           <Field
-            label="Internal slug"
+            label="Internal event URL name"
             required
             hint="Lowercase letters, numbers and hyphens. Used inside the admin only."
           >
