@@ -202,6 +202,14 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
               Not visited yet
             </div>
           )}
+          {visited.kind === "no_passport" && (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-3 py-1 text-[11px] font-medium text-[#3D372C]">
+              <span>Create a passport to track visited venues</span>
+              <Link to="/join" className="font-semibold text-[#1F3D2B] underline underline-offset-2">
+                Start
+              </Link>
+            </div>
+          )}
 
           {venue.address && (
             <p className="mt-3 text-sm text-[#8A7E66]">📍 {venue.address}</p>
