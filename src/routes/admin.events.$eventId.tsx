@@ -3154,15 +3154,20 @@ function EventSetupWarnings({
   hasVenues: boolean;
   eventId: string;
 }) {
-  const hasActiveSubdomain = domains.some(
+  const activeSub = domains.find(
     (d) => d.domain_type === "event_subdomain" && d.status === "active",
   );
+  const hasActiveSubdomain = Boolean(activeSub);
+  const activePublicUrl = activeSub
+    ? `https://${activeSub.public_subdomain}.getstampd.com.au/`
+    : null;
   const hasPendingSubdomain = domains.some(
     (d) => d.domain_type === "event_subdomain" && d.status === "pending",
   );
 
   type Action =
     | { kind: "anchor"; href: string; label: string }
+    | { kind: "external"; href: string; label: string }
     | { kind: "link"; to: string; params?: Record<string, string>; label: string };
 
   const items: {
