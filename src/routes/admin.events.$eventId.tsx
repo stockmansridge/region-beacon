@@ -130,6 +130,7 @@ type QrSummary = {
   // (supabase/migrations-draft-rewards-prize-draw). In environments where
   // that migration has not yet been applied, the loader degrades to null.
   entry_value: number | null;
+  token: string | null;
 };
 
 type Activation = {
