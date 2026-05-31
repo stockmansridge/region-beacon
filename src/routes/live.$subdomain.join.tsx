@@ -452,12 +452,11 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
 
 
-        {(!saved?.access_token || showRegisterAgain) && (
-          <form
-            onSubmit={onSubmit}
-            className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
-            noValidate
-          >
+        {(!saved?.access_token || showRegisterAgain) && <form
+          onSubmit={onSubmit}
+          className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
+          noValidate
+        >
           {topError && (
             <div
               role="alert"
@@ -609,8 +608,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
             No app download required
           </p>
-        </form>
-        )}
+        </form>}
         {showDiag && debugInfo && (
           <div className="mt-4">
             <DiagnosticPanel
