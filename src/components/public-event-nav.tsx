@@ -5,13 +5,11 @@ import { cn } from "@/lib/utils";
 /**
  * Public event navigation.
  *
- * - Desktop (md+): inline top nav rendered in the page header.
- * - Mobile: top header shows only the event name; navigation moves to a
- *   fixed bottom bar with four icon+label buttons (Home, Passport, Venues,
- *   Leaderboard). Respects iOS safe-area inset. Page bottom padding is
- *   injected via a scoped <style> tag so content isn't hidden by the nav.
- *
- * No hamburger / drawer. Terms & Privacy stay as footer text links.
+ * Renders clean tenant URLs (`/`, `/join`, `/venues`, `/leaderboard`) so
+ * the browser address bar stays free of internal `/live/$subdomain/...`
+ * paths on tenant hosts. The clean routes derive the subdomain from
+ * window.location.hostname, so the `subdomain` prop here is only used
+ * for active-state matching and labels.
  */
 export function PublicEventNav({
   subdomain,
@@ -36,18 +34,20 @@ export function PublicEventNav({
   /** When set, the Passport item renders as a plain <a href> to this URL instead of the /join route. */
   passportHref?: string;
 }) {
+  void subdomain;
   const primary = primaryColor ?? "#1F3D2B";
   const accent = accentColor ?? "#B5572A";
   const location = useLocation();
   const pathname = location.pathname;
 
-  const baseHome = `/live/${subdomain}`;
   const isActive = (target: "home" | "join" | "venues" | "leaderboard") => {
     if (activeOverride) return target === activeOverride;
-    if (target === "home") return pathname === baseHome || pathname === `${baseHome}/`;
+    if (target === "home") return pathname === "/" || pathname === "";
+    if (target === "join") return pathname === "/join";
     if (target === "venues")
-      return pathname === `${baseHome}/venues` || pathname.startsWith(`${baseHome}/venues/`);
-    return pathname === `${baseHome}/${target}`;
+      return pathname === "/venues" || pathname.startsWith("/venues/");
+    if (target === "leaderboard") return pathname === "/leaderboard";
+    return false;
   };
 
   const desktopItems: Array<{ key: string; label: string; node: React.ReactNode }> = [
@@ -56,8 +56,7 @@ export function PublicEventNav({
       label: "Home",
       node: (
         <Link
-          to="/live/$subdomain"
-          params={{ subdomain }}
+          to="/"
           className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
           style={{ color: primary }}
         >
@@ -80,8 +79,7 @@ export function PublicEventNav({
             </a>
           ) : (
             <Link
-              to="/live/$subdomain/join"
-              params={{ subdomain }}
+              to="/join"
               className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
               style={{ color: primary }}
             >
@@ -95,8 +93,7 @@ export function PublicEventNav({
       label: "Venues",
       node: (
         <Link
-          to="/live/$subdomain/venues"
-          params={{ subdomain }}
+          to="/venues"
           className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
           style={{ color: primary }}
         >
@@ -109,8 +106,7 @@ export function PublicEventNav({
       label: "Leaderboard",
       node: (
         <Link
-          to="/live/$subdomain/leaderboard"
-          params={{ subdomain }}
+          to="/leaderboard"
           className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
           style={{ color: primary }}
         >
@@ -124,8 +120,7 @@ export function PublicEventNav({
           label: "Terms",
           node: (
             <Link
-              to="/live/$subdomain/terms"
-              params={{ subdomain }}
+              to="/terms"
               className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
               style={{ color: primary }}
             >
@@ -140,8 +135,7 @@ export function PublicEventNav({
           label: "Privacy",
           node: (
             <Link
-              to="/live/$subdomain/privacy"
-              params={{ subdomain }}
+              to="/privacy"
               className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
               style={{ color: primary }}
             >
@@ -152,42 +146,6 @@ export function PublicEventNav({
       : []),
   ];
 
-  // Mobile bottom nav item helper
-  function BottomItem({
-    active,
-    label,
-    icon,
-    disabled,
-    children,
-  }: {
-    active: boolean;
-    label: string;
-    icon: React.ReactNode;
-    disabled?: boolean;
-    children: (className: string, style: React.CSSProperties) => React.ReactNode;
-  }) {
-    const color = active ? accent : primary;
-    const opacity = disabled ? 0.4 : 1;
-    const className = cn(
-      "flex h-full flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]",
-      active && "relative",
-    );
-    const style: React.CSSProperties = { color, opacity };
-    return (
-      <>
-        {children(className, style)}
-        {active && (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute top-0 h-[3px] w-10 rounded-b-full"
-            style={{ backgroundColor: accent }}
-          />
-        )}
-        <span className="sr-only">{label}</span>
-      </>
-    );
-  }
-
   return (
     <>
       {/* Top header: event name + desktop inline nav */}
@@ -196,8 +154,7 @@ export function PublicEventNav({
         className="mx-auto mt-3 flex w-full max-w-5xl items-center justify-between rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]/90 px-4 py-3 shadow-sm backdrop-blur"
       >
         <Link
-          to="/live/$subdomain"
-          params={{ subdomain }}
+          to="/"
           className="truncate text-sm font-semibold tracking-wide"
           style={{ color: primary }}
         >
@@ -219,8 +176,7 @@ export function PublicEventNav({
         <ul className="mx-auto flex h-14 max-w-md items-stretch">
           <li className="relative flex flex-1">
             <Link
-              to="/live/$subdomain"
-              params={{ subdomain }}
+              to="/"
               aria-current={isActive("home") ? "page" : undefined}
               className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: isActive("home") ? accent : primary }}
@@ -250,8 +206,7 @@ export function PublicEventNav({
                 </a>
               ) : (
                 <Link
-                  to="/live/$subdomain/join"
-                  params={{ subdomain }}
+                  to="/join"
                   aria-current={isActive("join") ? "page" : undefined}
                   className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
                   style={{ color: isActive("join") ? accent : primary }}
@@ -283,8 +238,7 @@ export function PublicEventNav({
           </li>
           <li className="relative flex flex-1">
             <Link
-              to="/live/$subdomain/venues"
-              params={{ subdomain }}
+              to="/venues"
               aria-current={isActive("venues") ? "page" : undefined}
               className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: isActive("venues") ? accent : primary }}
@@ -302,8 +256,7 @@ export function PublicEventNav({
           </li>
           <li className="relative flex flex-1">
             <Link
-              to="/live/$subdomain/leaderboard"
-              params={{ subdomain }}
+              to="/leaderboard"
               aria-current={isActive("leaderboard") ? "page" : undefined}
               className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
               style={{ color: isActive("leaderboard") ? accent : primary }}
