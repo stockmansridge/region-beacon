@@ -323,14 +323,6 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const primary = event?.primary_color ?? "#1F3D2B";
   const accent = event?.accent_color ?? "#B5572A";
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
-        Loading…
-      </div>
-    );
-  }
-
   const noCoords = geoVenues.length === 0;
   const unmappedVenues = useMemo(
     () => venues.filter((v) => !geoVenues.includes(v)),
@@ -358,6 +350,15 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     };
     return JSON.stringify(report, null, 2);
   }, [subdomain, venues.length, geoVenues.length, mapError, mapDiag]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+        Loading…
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-6">
