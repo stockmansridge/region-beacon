@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Ticket, MapPin, Trophy } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon } from "lucide-react";
 
 
 /**
