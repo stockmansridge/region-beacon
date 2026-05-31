@@ -123,6 +123,16 @@ function SignupPage() {
     setStage("submitting");
     const data = parsed.data;
 
+    // Persist pending organisation details BEFORE auth.signUp so that, if
+    // email confirmation is required, we can complete organisation creation
+    // after the user confirms email and signs in.
+    savePendingOrganisationSignup({
+      businessName: data.businessName,
+      organisationUrlName: data.slug,
+      email: data.email,
+      source: "signup",
+    });
+
     // 1. Create auth user
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: data.email,
@@ -134,18 +144,20 @@ function SignupPage() {
     });
 
     if (signUpErr) {
+      clearPendingOrganisationSignup();
       setStage("form");
       setTopError(signUpErr.message || "Could not create account.");
       return;
     }
 
     // If email confirmation is required, no session yet — ask them to confirm.
+    // Pending signup stays in localStorage and will be completed on first sign-in.
     if (!signUpData.session) {
       setStage("check-email");
       return;
     }
 
-    // 2. Create the agency workspace via SECURITY DEFINER RPC.
+    // 2. Create the organisation via SECURITY DEFINER RPC.
     const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
       _agency_name: data.businessName,
       _agency_slug: data.slug,
@@ -155,11 +167,13 @@ function SignupPage() {
       setStage("form");
       const msg = rpcErr.message || "";
       if (/agency_slug_taken/i.test(msg)) {
-        setFieldErrors({ slug: "That workspace URL is already taken. Try another." });
+        setFieldErrors({
+          slug: "That Organisation URL name is already taken. Please choose another.",
+        });
       } else if (/invalid_agency_slug/i.test(msg)) {
-        setFieldErrors({ slug: "Workspace URL is invalid." });
+        setFieldErrors({ slug: "Organisation URL name is invalid." });
       } else if (/invalid_agency_name/i.test(msg)) {
-        setFieldErrors({ businessName: "Business name is invalid." });
+        setFieldErrors({ businessName: "Organisation name is invalid." });
       } else if (/not_authenticated/i.test(msg)) {
         setTopError("Sign-in did not persist. Please try logging in.");
       } else if (/Could not find the function|function .* does not exist/i.test(msg)) {
@@ -167,11 +181,12 @@ function SignupPage() {
           "Self-service signup is not yet enabled on this environment. Please contact support.",
         );
       } else {
-        setTopError(`Account created but workspace setup failed: ${msg}`);
+        setTopError(`Account created but organisation setup failed: ${msg}`);
       }
       return;
     }
 
+    clearPendingOrganisationSignup();
     setStage("done");
     navigate({ to: "/admin", replace: true });
   }
