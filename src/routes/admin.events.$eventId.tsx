@@ -3010,8 +3010,7 @@ function PublishGateDiagnostic({
         public_host: publicHostDisplay,
         rpc_host_sent: rpcHost,
         rpc_host_note:
-          "Legacy *.getstamped.com.au host used because DB resolve_event_by_host suffix migration is pending; customer-facing URL still uses " +
-          PUBLIC_TENANT_ROOT_DOMAIN,
+          "RPC _hostname matches the customer-facing host on " + PUBLIC_TENANT_ROOT_DOMAIN,
         starts_at: event.starts_at,
         ends_at: event.ends_at,
         date_window_valid: dateWindowValid,
