@@ -97,6 +97,7 @@ export function VenueMapKitPicker({
       try {
         const tokenRes = await fetchToken();
         if (cancelled) return;
+        setDiag(tokenRes.diag ?? null);
         if (!tokenRes.token) {
           setStatus("error");
           setErrorMsg(tokenRes.error ?? "MapKit token unavailable.");
