@@ -1742,6 +1742,64 @@ function EventDetail() {
                   </div>
                 )}
 
+                {venueEditingId === "new" ? (
+                  <div className="space-y-4">
+                    <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+                      <strong>Step 1 of 2.</strong> Name the venue and pin its location. You can add description, images, contact details, and QR after this step.
+                    </div>
+                    <Field label="Venue name" required>
+                      <input
+                        type="text"
+                        maxLength={150}
+                        autoFocus
+                        value={venueForm.name}
+                        onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
+                        placeholder="e.g. Riverbank Cellar Door"
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      />
+                    </Field>
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-foreground">Find location</div>
+                      <VenueMapKitPicker
+                        value={{
+                          name: venueForm.name,
+                          address: venueForm.address,
+                          lat: venueForm.lat,
+                          lng: venueForm.lng,
+                        }}
+                        nameIsBlank={venueForm.name.trim().length === 0}
+                        onChange={(next) =>
+                          setVenueForm((prev) => (prev ? { ...prev, ...next } : prev))
+                        }
+                        onClose={() => { /* keep picker mounted in step 1 */ }}
+                      />
+                    </div>
+                    <Field label="Address">
+                      <input
+                        type="text"
+                        maxLength={300}
+                        value={venueForm.address}
+                        onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
+                        placeholder="Set automatically from the map, or enter manually"
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Coordinates are saved from the map and shown later in the Location section.
+                      </p>
+                    </Field>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={saveVenue}
+                        disabled={venueSaving || venueForm.name.trim().length === 0}
+                        className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                      >
+                        {venueSaving ? "Creating…" : "Create venue & continue"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                <>
                 <FormSection title="Basics">
                   <Field label="Name" required>
                     <input
