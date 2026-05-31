@@ -1717,10 +1717,10 @@ function EventDetail() {
               </div>
             )}
             {venueEditingId !== null && venueForm && (
-              <div className="mb-4 space-y-5 rounded-lg border bg-muted/20 p-4">
+              <div ref={venueEditorRef} className="mb-4 space-y-5 rounded-lg border bg-muted/20 p-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">
-                    {venueEditingId === "new" ? "New venue" : "Edit venue"}
+                    {venueEditingId === "new" ? "New venue" : "Edit venue details"}
                   </h4>
                   <div className="flex items-center gap-2">
                     <button
