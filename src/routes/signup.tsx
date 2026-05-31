@@ -223,7 +223,7 @@ function SignupPage() {
             <p className="mt-3 text-sm text-muted-foreground">
               We sent a confirmation link to <strong>{email}</strong>. Click it to
               activate your account, then return and sign in to finish creating
-              your workspace.
+              your organisation.
             </p>
             <Link
               to="/admin/login"
