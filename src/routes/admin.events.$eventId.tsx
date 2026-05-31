@@ -1031,6 +1031,7 @@ function EventDetail() {
     } else {
       setVenueEditingId(null);
       setVenueForm(null);
+      setMapPickerOpen(false);
       toast.success("Venue saved.");
       setReloadKey((k) => k + 1);
     }
