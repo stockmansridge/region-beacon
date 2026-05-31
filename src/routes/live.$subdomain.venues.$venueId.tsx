@@ -88,8 +88,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             This venue isn't available right now.
           </p>
           <Link
-            to="/live/$subdomain/venues"
-            params={{ subdomain }}
+            to="/venues"
             className="mt-6 inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
           >
             ← All venues
@@ -117,8 +116,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             />
           ) : null}
           <Link
-            to="/live/$subdomain/venues"
-            params={{ subdomain }}
+            to="/venues"
             className="absolute left-3 top-3 rounded-full bg-[#F6EFE2]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] shadow"
           >
             ← Back

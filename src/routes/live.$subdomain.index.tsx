@@ -149,8 +149,7 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
         primaryCta={
           canRegister ? (
             <Link
-              to="/live/$subdomain/join"
-              params={{ subdomain }}
+              to="/join"
               className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
               style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
             >
@@ -172,15 +171,13 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
       />
       <div className="mx-auto mt-6 flex max-w-md flex-col items-center gap-3 text-center">
         <Link
-          to="/live/$subdomain/venues"
-          params={{ subdomain }}
+          to="/venues"
           className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
         >
           View {venueLabels.plural.toLowerCase()} →
         </Link>
         <Link
-          to="/live/$subdomain/leaderboard"
-          params={{ subdomain }}
+          to="/leaderboard"
           className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
         >
           View leaderboard →

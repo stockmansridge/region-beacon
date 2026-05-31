@@ -85,8 +85,7 @@ function PassportIndex() {
         <div className="mt-6 flex flex-col gap-2">
           {subdomain ? (
             <Link
-              to="/live/$subdomain"
-              params={{ subdomain }}
+              to="/"
               className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
             >
               Return to event page

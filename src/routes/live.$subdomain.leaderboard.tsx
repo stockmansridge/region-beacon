@@ -117,8 +117,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
         <div className="mt-8 text-center">
           <Link
-            to="/live/$subdomain"
-            params={{ subdomain }}
+            to="/"
             className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
           >
             ← Back to event

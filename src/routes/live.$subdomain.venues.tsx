@@ -111,8 +111,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
       <div className="mx-auto max-w-md">
         <div className="mb-6">
           <Link
-            to="/live/$subdomain"
-            params={{ subdomain }}
+            to="/"
             className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
           >
             ← Back
@@ -136,8 +135,8 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
             {venues.map((v) => (
               <li key={v.venue_id ?? Math.random()}>
                 <Link
-                  to="/live/$subdomain/venues/$venueId"
-                  params={{ subdomain, venueId: v.venue_id ?? "" }}
+                  to="/venues/$venueId"
+                  params={{ venueId: v.venue_id ?? "" }}
                   className="flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-3 shadow-sm transition hover:border-[#1F3D2B]/40"
                 >
                   <Thumb path={v.logo_path ?? v.cover_path} />

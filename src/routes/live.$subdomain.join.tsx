@@ -373,8 +373,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
       accentColor={accent}
       topLeft={
         <Link
-          to="/live/$subdomain"
-          params={{ subdomain }}
+          to="/"
           className="text-xs font-semibold uppercase tracking-[0.18em]"
           style={{ color: primary }}
         >
@@ -571,8 +570,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             <span>
               I accept the{" "}
               <Link
-                to="/live/$subdomain/terms"
-                params={{ subdomain }}
+                to="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
@@ -582,8 +580,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
               </Link>{" "}
               and{" "}
               <Link
-                to="/live/$subdomain/privacy"
-                params={{ subdomain }}
+                to="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
@@ -713,8 +710,7 @@ function SuccessScreen({
       accentColor={accent}
       topLeft={
         <Link
-          to="/live/$subdomain"
-          params={{ subdomain }}
+          to="/"
           className="text-xs font-semibold uppercase tracking-[0.18em]"
           style={{ color: primary }}
         >
@@ -825,8 +821,7 @@ function InfoScreen({
       accentColor={event.accent_color ?? "#B5572A"}
       topLeft={
         <Link
-          to="/live/$subdomain"
-          params={{ subdomain }}
+          to="/"
           className="text-xs font-semibold uppercase tracking-[0.18em]"
           style={{ color: primary }}
         >
