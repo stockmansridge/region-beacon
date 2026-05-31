@@ -1017,14 +1017,17 @@ function EventDetail() {
     }
     if (venueEditingId === "new" && newVenueId) {
       // Keep editor open in edit mode so image upload becomes available immediately.
+      // Do NOT trigger a full reload here — that would flip state to "loading" and
+      // unmount the editor. The new venue will appear in the list when the user
+      // saves again or cancels.
       setVenueEditingId(newVenueId);
       toast.success("Venue created. You can now upload a logo/cover image.");
     } else {
       setVenueEditingId(null);
       setVenueForm(null);
       toast.success("Venue saved.");
+      setReloadKey((k) => k + 1);
     }
-    setReloadKey((k) => k + 1);
   }
 
   async function uploadVenueImage(kind: VenueAssetKind, file: File) {
