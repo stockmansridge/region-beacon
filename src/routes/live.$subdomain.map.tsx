@@ -384,7 +384,10 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     [venues, geoVenueIds],
   );
 
-  const visitedCount = visitedIds.size;
+  const visitedCount = useMemo(
+    () => geoVenues.filter((v) => v.venue_id && visitedIds.has(v.venue_id)).length,
+    [geoVenues, visitedIds],
+  );
   const totalCount = geoVenues.length;
 
   const buildSupportReport = useCallback(() => {
