@@ -547,6 +547,7 @@ function EventDetail() {
                 status: row.status,
                 issued_at: row.issued_at,
                 entry_value: (row as any).entry_value ?? null,
+                token: (row as any).token ?? null,
               });
             }
           }
