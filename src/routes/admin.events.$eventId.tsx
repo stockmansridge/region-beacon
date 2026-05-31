@@ -3191,7 +3191,9 @@ function EventSetupWarnings({
       tone: "info",
       title: "Public address active",
       body: "This event's subdomain is active.",
-      action: { kind: "anchor", href: "#section-public-address", label: "View address" },
+      action: activePublicUrl
+        ? { kind: "external", href: activePublicUrl, label: "View public page" }
+        : { kind: "anchor", href: "#section-public-address", label: "View address" },
     });
   } else {
     items.push({
