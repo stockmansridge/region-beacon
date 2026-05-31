@@ -87,8 +87,8 @@ function friendlyError(raw: string | undefined): string {
   return "Could not create your passport. Please try again.";
 }
 
-function LiveJoinPage() {
-  const { subdomain } = Route.useParams();
+export function LiveJoinPage({ subdomain }: { subdomain: string }) {
+
   const [state, setState] = useState<LoadState>({ kind: "loading" });
 
   useEffect(() => {
