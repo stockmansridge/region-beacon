@@ -207,9 +207,50 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   const [saved, setSaved] = useState<SavedPassport | null>(() =>
     readSavedPassport(event.event_id),
   );
+  const [savedValidating, setSavedValidating] = useState<boolean>(() =>
+    Boolean(readSavedPassport(event.event_id)?.access_token),
+  );
+  const [staleNotice, setStaleNotice] = useState<string | null>(null);
   const { isPlatformAdmin } = useAdminAccess();
   const [diagEnabled] = useDiagnosticsEnabled();
   const showDiag = isPlatformAdmin && diagEnabled;
+
+  // Validate saved passport token before showing "Continue to passport".
+  // If invalid/replaced, clear only this event's saved passport and let the
+  // visitor register again. Never block them on a stale link.
+  useEffect(() => {
+    let cancelled = false;
+    const token = saved?.access_token;
+    if (!token) {
+      setSavedValidating(false);
+      return;
+    }
+    setSavedValidating(true);
+    (async () => {
+      const { data, error } = await supabase.rpc("get_passport_by_token", {
+        _raw_token: token,
+      });
+      if (cancelled) return;
+      const row = (data?.[0] ?? null) as { passport_id?: string } | null;
+      if (error || !row?.passport_id) {
+        try {
+          localStorage.removeItem(`gs.passport.${event.event_id}`);
+        } catch {
+          // ignore
+        }
+        setSaved(null);
+        setStaleNotice(
+          "Your previous passport link has expired or was replaced. Please register again to continue.",
+        );
+      }
+      setSavedValidating(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Only validate once on mount per event.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event.event_id]);
 
   const locale = useMemo(
     () => (typeof navigator !== "undefined" ? navigator.language : null),
@@ -403,7 +444,15 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           </p>
         </div>
 
-        {saved?.access_token && !showRegisterAgain && (
+        {savedValidating && (
+          <section
+            className="mb-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 text-center text-sm text-[#8A7E66] shadow-sm"
+          >
+            Checking your saved passport…
+          </section>
+        )}
+
+        {!savedValidating && saved?.access_token && !showRegisterAgain && (
           <section
             className="mb-5 rounded-3xl border p-5 shadow-sm"
             style={{ borderColor: `${primary}33`, backgroundColor: "#FBF5E8" }}
@@ -446,7 +495,20 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           </section>
         )}
 
-        {(!saved?.access_token || showRegisterAgain) && (
+        {!savedValidating && staleNotice && (
+          <div
+            className="mb-4 rounded-xl border px-3 py-2 text-sm"
+            style={{
+              borderColor: `${accent}55`,
+              backgroundColor: `${accent}10`,
+              color: "#5A2410",
+            }}
+          >
+            {staleNotice}
+          </div>
+        )}
+
+        {!savedValidating && (!saved?.access_token || showRegisterAgain) && (
           <p className="mb-3 text-center text-[11px] text-[#8A7E66]">
             Already registered? Enter the same email below — we'll issue a new
             passport link and any older link will stop working.
@@ -455,7 +517,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
 
 
-        {(!saved?.access_token || showRegisterAgain) && <form
+        {!savedValidating && (!saved?.access_token || showRegisterAgain) && <form
           onSubmit={onSubmit}
           className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
           noValidate
