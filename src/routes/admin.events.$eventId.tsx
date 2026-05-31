@@ -15,6 +15,7 @@ import {
   type VenueAssetKind,
 } from "@/lib/venue-assets";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
+import { VenueMapKitPicker } from "@/components/venue-mapkit-picker";
 import { EventTermsDialog } from "@/components/event-terms-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
@@ -267,6 +268,7 @@ function EventDetail() {
   // Venue editor: "new" = creating, string = editing existing id, null = closed.
   const [venueEditingId, setVenueEditingId] = useState<string | "new" | null>(null);
   const [venueForm, setVenueForm] = useState<VenueEditForm | null>(null);
+  const [mapPickerOpen, setMapPickerOpen] = useState(false);
   const [venueSaving, setVenueSaving] = useState(false);
   const [venueSaveError, setVenueSaveError] = useState<string | null>(null);
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
@@ -891,6 +893,7 @@ function EventDetail() {
   function cancelVenueEdit() {
     setVenueEditingId(null);
     setVenueForm(null);
+    setMapPickerOpen(false);
     setVenueValidationError(null);
     setVenueSaveError(null);
     // Refresh in case a venue was just created (we skipped reload then to keep
@@ -1028,6 +1031,7 @@ function EventDetail() {
     } else {
       setVenueEditingId(null);
       setVenueForm(null);
+      setMapPickerOpen(false);
       toast.success("Venue saved.");
       setReloadKey((k) => k + 1);
     }
@@ -1913,6 +1917,35 @@ function EventDetail() {
                         className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                       />
                     </Field>
+                  </div>
+                  <div className="space-y-2">
+                    {!mapPickerOpen && (
+                      <button
+                        type="button"
+                        onClick={() => setMapPickerOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-xs font-medium hover:bg-muted"
+                      >
+                        Select location with Apple Maps
+                      </button>
+                    )}
+                    {mapPickerOpen && (
+                      <VenueMapKitPicker
+                        value={{
+                          name: venueForm.name,
+                          address: venueForm.address,
+                          lat: venueForm.lat,
+                          lng: venueForm.lng,
+                        }}
+                        nameIsBlank={venueForm.name.trim().length === 0}
+                        onChange={(next) =>
+                          setVenueForm((prev) => (prev ? { ...prev, ...next } : prev))
+                        }
+                        onClose={() => setMapPickerOpen(false)}
+                      />
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Map selection sets the public venue location. Manual address and coordinates still work if the map is unavailable.
+                    </p>
                   </div>
                   {(() => {
                     const lat = venueForm.lat.trim() ? Number(venueForm.lat.trim()) : null;
