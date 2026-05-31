@@ -1636,15 +1636,15 @@ function EventDetail() {
                   </Field>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Internal slug, public slug, and status remain read-only here.
+                  Internal event URL name, public event code, and status remain read-only here.
                 </p>
               </div>
             ) : (
               <DefList
                 rows={[
                   ["Name", event.name],
-                  ["Internal slug", event.slug],
-                  ["Public slug", event.public_slug ?? "—"],
+                  ["Internal event URL name", event.slug],
+                  ["Public event code", event.public_slug ?? "—"],
                   ["Status", event.status],
                   ["Timezone", event.timezone],
                   ["Starts at", fmt(event.starts_at)],
@@ -3653,7 +3653,7 @@ function PublicAddressCard({
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 text-sm">
         <div className="grid gap-1 sm:grid-cols-[160px_1fr]">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Public slug</span>
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Public event code</span>
           <span className="font-mono">{publicSlug ?? "—"}</span>
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Claimed subdomain</span>
           <span className="font-mono">
