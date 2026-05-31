@@ -332,10 +332,15 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const accent = event?.accent_color ?? "#B5572A";
 
   const noCoords = geoVenues.length === 0;
-  const unmappedVenues = useMemo(
-    () => venues.filter((v) => !geoVenues.includes(v)),
-    [venues, geoVenues],
+  const geoVenueIds = useMemo(
+    () => new Set(geoVenues.map((v) => v.venue_id)),
+    [geoVenues],
   );
+  const unmappedVenues = useMemo(
+    () => venues.filter((v) => !geoVenueIds.has(v.venue_id)),
+    [venues, geoVenueIds],
+  );
+
   const visitedCount = visitedIds.size;
   const totalCount = geoVenues.length;
 
