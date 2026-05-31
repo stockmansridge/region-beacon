@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-found'
-import { Route as VenuesRouteImport } from './routes/venues'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -22,6 +21,7 @@ import { Route as JoinRouteImport } from './routes/join'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VenuesIndexRouteImport } from './routes/venues.index'
 import { Route as PassportIndexRouteImport } from './routes/passport.index'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -63,11 +63,6 @@ import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.e
 const WorkspaceNotFoundRoute = WorkspaceNotFoundRouteImport.update({
   id: '/workspace-not-found',
   path: '/workspace-not-found',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VenuesRoute = VenuesRouteImport.update({
-  id: '/venues',
-  path: '/venues',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -123,6 +118,11 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VenuesIndexRoute = VenuesIndexRouteImport.update({
+  id: '/venues/',
+  path: '/venues/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PassportIndexRoute = PassportIndexRouteImport.update({
@@ -328,7 +328,6 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/venues': typeof VenuesRouteWithChildren
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -351,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/passport/': typeof PassportIndexRoute
+  '/venues/': typeof VenuesIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
@@ -379,7 +379,6 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/venues': typeof VenuesRouteWithChildren
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -402,6 +401,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/demo': typeof DemoIndexRoute
   '/passport': typeof PassportIndexRoute
+  '/venues': typeof VenuesIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
@@ -432,7 +432,6 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/venues': typeof VenuesRouteWithChildren
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -455,6 +454,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
   '/passport/': typeof PassportIndexRoute
+  '/venues/': typeof VenuesIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
@@ -486,7 +486,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/support'
     | '/terms'
-    | '/venues'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -509,6 +508,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/demo/'
     | '/passport/'
+    | '/venues/'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
@@ -537,7 +537,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/support'
     | '/terms'
-    | '/venues'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -560,6 +559,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/demo'
     | '/passport'
+    | '/venues'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
@@ -589,7 +589,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/support'
     | '/terms'
-    | '/venues'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -612,6 +611,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/demo/'
     | '/passport/'
+    | '/venues/'
     | '/admin/events/$eventId'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
@@ -642,7 +642,6 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
-  VenuesRoute: typeof VenuesRouteWithChildren
   WorkspaceNotFoundRoute: typeof WorkspaceNotFoundRoute
   CheckinQrTokenRoute: typeof CheckinQrTokenRoute
   DemoInviteRoute: typeof DemoInviteRoute
@@ -657,6 +656,7 @@ export interface RootRouteChildren {
   TAgencySlugRoute: typeof TAgencySlugRouteWithChildren
   DemoIndexRoute: typeof DemoIndexRoute
   PassportIndexRoute: typeof PassportIndexRoute
+  VenuesIndexRoute: typeof VenuesIndexRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
@@ -675,13 +675,6 @@ declare module '@tanstack/react-router' {
       path: '/workspace-not-found'
       fullPath: '/workspace-not-found'
       preLoaderRoute: typeof WorkspaceNotFoundRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/venues': {
-      id: '/venues'
-      path: '/venues'
-      fullPath: '/venues'
-      preLoaderRoute: typeof VenuesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -759,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/venues/': {
+      id: '/venues/'
+      path: '/venues'
+      fullPath: '/venues/'
+      preLoaderRoute: typeof VenuesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passport/': {
@@ -1053,17 +1053,6 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface VenuesRouteChildren {
-  VenuesVenueIdRoute: typeof VenuesVenueIdRoute
-}
-
-const VenuesRouteChildren: VenuesRouteChildren = {
-  VenuesVenueIdRoute: VenuesVenueIdRoute,
-}
-
-const VenuesRouteWithChildren =
-  VenuesRoute._addFileChildren(VenuesRouteChildren)
-
 interface DemoWineriesRouteChildren {
   DemoWineriesVenueIdRoute: typeof DemoWineriesVenueIdRoute
 }
@@ -1111,7 +1100,6 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
-  VenuesRoute: VenuesRouteWithChildren,
   WorkspaceNotFoundRoute: WorkspaceNotFoundRoute,
   CheckinQrTokenRoute: CheckinQrTokenRoute,
   DemoInviteRoute: DemoInviteRoute,
@@ -1126,6 +1114,7 @@ const rootRouteChildren: RootRouteChildren = {
   TAgencySlugRoute: TAgencySlugRouteWithChildren,
   DemoIndexRoute: DemoIndexRoute,
   PassportIndexRoute: PassportIndexRoute,
+  VenuesIndexRoute: VenuesIndexRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
@@ -1139,3 +1128,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
