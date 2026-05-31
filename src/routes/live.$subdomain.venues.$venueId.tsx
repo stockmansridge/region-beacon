@@ -6,7 +6,7 @@ import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
-import { rpcEventHost } from "@/lib/domains";
+import { tenantHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
@@ -45,7 +45,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = rpcEventHost(subdomain);
+      const host = tenantHost(subdomain);
 
       const { data, error } = await supabase.rpc(
         "get_public_venue_by_domain",

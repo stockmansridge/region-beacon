@@ -7,7 +7,7 @@ import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
-import { rpcEventHost } from "@/lib/domains";
+import { tenantHost } from "@/lib/domains";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
@@ -67,7 +67,7 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = rpcEventHost(subdomain);
+      const host = tenantHost(subdomain);
 
       const { data: resolveData, error: resolveErr } = await supabase.rpc(
         "resolve_event_by_host",

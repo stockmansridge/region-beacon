@@ -6,7 +6,7 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
-import { rpcEventHost } from "@/lib/domains";
+import { tenantHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/venues")({
   head: () => ({ meta: [{ title: "Venues" }] }),
@@ -54,7 +54,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
-      const host = rpcEventHost(subdomain);
+      const host = tenantHost(subdomain);
 
       const [{ data: venueData, error: venueErr }, { data: evtData }] =
         await Promise.all([
