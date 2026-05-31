@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Calendar, MapPin, QrCode, Users } from "lucide-react";
 import { PageHeader } from "@/components/placeholder";
@@ -9,6 +9,10 @@ export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Admin dashboard" }] }),
   component: Dashboard,
 });
+
+type TileTarget =
+  | { to: "/admin/events" }
+  | { to: "/admin/analytics" };
 
 type Counts = { events: number; venues: number; checkins: number; visitors: number };
 
