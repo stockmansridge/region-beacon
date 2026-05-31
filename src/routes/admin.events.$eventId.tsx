@@ -2931,7 +2931,7 @@ function PublishGateDiagnostic({
   const rpcHost = primaryCustom
     ? primaryCustom
     : primarySub
-      ? rpcEventHost(primarySub)
+      ? tenantHost(primarySub)
       : null;
 
   useEffect(() => {
