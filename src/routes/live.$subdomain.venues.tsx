@@ -132,39 +132,42 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
           </div>
         ) : (
           <ul className="space-y-3">
-            {venues.map((v) => (
-              <li key={v.venue_id ?? Math.random()}>
-                <Link
-                  to="/venues/$venueId"
-                  params={{ venueId: v.venue_id ?? "" }}
-                  className="flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-3 shadow-sm transition hover:border-[#1F3D2B]/40"
-                >
-                  <Thumb path={v.logo_path ?? v.cover_path} />
-                  <div className="flex min-w-0 flex-1 flex-col justify-center">
-                    <p className="truncate font-trail-serif text-lg font-semibold text-[#1F3D2B]">
-                      {v.name ?? "Unnamed"}
-                    </p>
-                    {v.description && (
-                      <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-[#3D372C]">
-                        {v.description}
-                      </p>
-                    )}
-                    {v.address && (
-                      <p className="mt-1 truncate text-[11px] text-[#8A7E66]">
-                        {v.address}
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className="self-center text-lg leading-none"
-                    style={{ color: accent }}
-                    aria-hidden
+            {venues.map((v) => {
+              const vid = v.venue_id ?? "";
+              return (
+                <li key={vid || Math.random()}>
+                  <a
+                    href={vid ? `/venues/${vid}` : "#"}
+                    aria-label={`View ${v.name ?? "venue"} details`}
+                    className="flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-3 shadow-sm transition hover:border-[#1F3D2B]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F3D2B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F6EFE2] cursor-pointer"
                   >
-                    ›
-                  </span>
-                </Link>
-              </li>
-            ))}
+                    <Thumb path={v.logo_path ?? v.cover_path} />
+                    <div className="flex min-w-0 flex-1 flex-col justify-center">
+                      <p className="truncate font-trail-serif text-lg font-semibold text-[#1F3D2B]">
+                        {v.name ?? "Unnamed"}
+                      </p>
+                      {v.description && (
+                        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-[#3D372C]">
+                          {v.description}
+                        </p>
+                      )}
+                      {v.address && (
+                        <p className="mt-1 truncate text-[11px] text-[#8A7E66]">
+                          {v.address}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className="self-center text-lg leading-none"
+                      style={{ color: accent }}
+                      aria-hidden
+                    >
+                      ›
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         )}
 
