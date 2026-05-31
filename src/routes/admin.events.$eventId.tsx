@@ -2188,28 +2188,37 @@ function EventDetail() {
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
                           {canEdit && (
-                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                              {hasActiveQr ? (
+                            <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
+                              {!hasActiveQr ? (
+                                <span className="text-xs text-muted-foreground/70">No QR yet</span>
+                              ) : !built ? (
+                                <span className="text-xs text-muted-foreground/70">—</span>
+                              ) : built.isFallback ? (
+                                <div className="space-y-1.5">
+                                  <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                                    Public address required before QR link can be shown.
+                                  </p>
+                                  <Link
+                                    to="/admin/events/$eventId"
+                                    params={{ eventId: event.id }}
+                                    hash="section-public-address"
+                                    className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted"
+                                  >
+                                    Set public address
+                                  </Link>
+                                </div>
+                              ) : (
                                 <div className="flex flex-col gap-1.5">
+                                  <a
+                                    href={built.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono text-[11px] break-all text-primary underline-offset-2 hover:underline"
+                                    title={built.url}
+                                  >
+                                    {built.url.replace(/^https?:\/\//, "")}
+                                  </a>
                                   <div className="flex flex-wrap items-center gap-1.5">
-                                    {revealed ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => hideQr(v.id)}
-                                        className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
-                                      >
-                                        Hide
-                                      </button>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() => revealQr(v.id)}
-                                        disabled={isBusy}
-                                        className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                                      >
-                                        {isBusy ? "Loading…" : "Reveal QR link"}
-                                      </button>
-                                    )}
                                     <button
                                       type="button"
                                       onClick={() => copyQrLink(v.id)}
@@ -2218,6 +2227,24 @@ function EventDetail() {
                                     >
                                       {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
                                     </button>
+                                    <a
+                                      href={built.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+                                    >
+                                      Open
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+                          )}
+                          {canEdit && (
+                            <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
+                              {hasActiveQr ? (
+                                <div className="flex flex-col gap-1.5">
+                                  <div className="flex flex-wrap items-center gap-1.5">
                                     <button
                                       type="button"
                                       onClick={() => generateOrRotateQr(v.id, true)}
@@ -2279,34 +2306,24 @@ function EventDetail() {
                                       Changes apply to future scans only. Existing check-ins keep the value earned at scan time.
                                     </span>
                                   </div>
-                                  {revealed && built && (
-                                    <div className="flex flex-col gap-2">
-                                      <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono break-all text-foreground">
-                                        {built.url}
-                                        {built.isFallback && (
-                                          <span className="ml-2 rounded bg-amber-500/15 px-1 py-0.5 text-[10px] font-sans font-medium text-amber-700 dark:text-amber-400">
-                                            demo/fallback URL — no active public subdomain
-                                          </span>
-                                        )}
-                                      </div>
-                                      <QrPreview
-                                        value={built.url}
-                                        downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
-                                        poster={{
-                                          eventName: event.name,
-                                          venueName: v.name,
-                                          logoUrl: getEventAssetPublicUrl(branding?.logo_path),
-                                          primaryColor: branding?.primary_color ?? null,
-                                          accentColor: branding?.accent_color ?? null,
-                                          offerSummary: offerSummaryByVenue.get(v.id) ?? null,
-                                          entryValue: qr?.entry_value ?? null,
-                                          filename: posterFilename(
-                                            event.public_slug ?? event.slug,
-                                            v.name,
-                                          ),
-                                        }}
-                                      />
-                                    </div>
+                                  {built && (
+                                    <QrPreview
+                                      value={built.url}
+                                      downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+                                      poster={{
+                                        eventName: event.name,
+                                        venueName: v.name,
+                                        logoUrl: getEventAssetPublicUrl(branding?.logo_path),
+                                        primaryColor: branding?.primary_color ?? null,
+                                        accentColor: branding?.accent_color ?? null,
+                                        offerSummary: offerSummaryByVenue.get(v.id) ?? null,
+                                        entryValue: qr?.entry_value ?? null,
+                                        filename: posterFilename(
+                                          event.public_slug ?? event.slug,
+                                          v.name,
+                                        ),
+                                      }}
+                                    />
                                   )}
                                 </div>
                               ) : (
