@@ -11,8 +11,12 @@ import { rpcEventHost } from "@/lib/domains";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
-  component: LivePublicPage,
+  component: function LivePublicRoute() {
+    const { subdomain } = Route.useParams();
+    return <LivePublicPage subdomain={subdomain} />;
+  },
 });
+
 
 type ResolveRow = {
   kind: "marketing" | "admin" | "event" | "not_found";
