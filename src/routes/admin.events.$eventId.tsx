@@ -15,6 +15,7 @@ import {
   type VenueAssetKind,
 } from "@/lib/venue-assets";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
+import { VenueMapKitPicker } from "@/components/venue-mapkit-picker";
 import { EventTermsDialog } from "@/components/event-terms-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
