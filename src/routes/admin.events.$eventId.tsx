@@ -1101,6 +1101,30 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  async function archiveEvent() {
+    if (!agencyId || !bundle) return;
+    if (
+      !window.confirm(
+        "Archive this event? It will be removed from active admin lists and public access. Existing records (venues, visitors, check-ins) are kept for audit/history.",
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    const { error } = await supabase
+      .from("events")
+      .update({ deleted_at: new Date().toISOString(), status: "archived" })
+      .eq("id", bundle.event.id)
+      .eq("agency_id", agencyId);
+    if (error) {
+      setDeleting(false);
+      toast.error(`Could not archive event: ${error.message}`);
+      return;
+    }
+    toast.success("Event archived.");
+    navigate({ to: "/admin/events", replace: true });
+  }
+
   /**
    * Build the check-in URL for a QR token.
    * Prefers the event's active public_subdomain domain. Falls back to the
