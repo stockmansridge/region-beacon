@@ -562,7 +562,7 @@ function OrganisationSlugEditor({
   if (!editing) {
     return (
       <div className="flex items-baseline justify-between gap-4 text-sm">
-        <span className="text-muted-foreground">Organisation slug</span>
+        <span className="text-muted-foreground">Organisation URL name</span>
         <span className="flex items-center gap-2">
           <span className="font-mono text-xs">{currentSlug || "—"}</span>
           {canEdit && (
@@ -598,7 +598,7 @@ function OrganisationSlugEditor({
       .maybeSingle();
     if (existing && existing.id !== agencyId) {
       setSaving(false);
-      setError("That organisation slug is already taken.");
+      setError("That organisation URL name is already taken.");
       return;
     }
 
@@ -612,14 +612,14 @@ function OrganisationSlugEditor({
       // 23505 = unique_violation
       const code = (updErr as { code?: string }).code;
       if (code === "23505" || /duplicate|unique/i.test(updErr.message)) {
-        setError("That organisation slug is already taken.");
+        setError("That organisation URL name is already taken.");
       } else {
-        setError(`Could not update slug: ${updErr.message}`);
+        setError(`Could not update URL name: ${updErr.message}`);
       }
       return;
     }
 
-    toast.success("Organisation slug updated.");
+    toast.success("Organisation URL name updated.");
     setEditing(false);
     // Refresh so sidebar/header/agency context pick up the new slug.
     window.location.reload();
@@ -628,7 +628,7 @@ function OrganisationSlugEditor({
   return (
     <div className="space-y-2 rounded-md border bg-muted/30 p-3">
       <label className="text-xs font-medium text-muted-foreground">
-        Organisation slug
+        Organisation URL name
       </label>
       <input
         type="text"
@@ -643,16 +643,16 @@ function OrganisationSlugEditor({
         autoFocus
       />
       <p className="text-[11px] text-muted-foreground">
-        Lowercase letters, numbers and hyphens. 3–50 characters. Must start and
-        end with a letter or number.
+        Used for workspace links and internal organisation references. Use lowercase
+        letters, numbers, and hyphens only. Public event URLs are not changed.
       </p>
       <p className="text-[11px] text-amber-700 dark:text-amber-400">
-        Changing this slug may affect admin workspace links. Public event URLs
+        Changing this URL name may affect admin workspace links. Public event URLs
         are not changed.
       </p>
       {!formatValid && normalized.length > 0 && (
         <p className="text-xs text-destructive">
-          Slug format is invalid.
+          URL name format is invalid.
         </p>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -675,7 +675,7 @@ function OrganisationSlugEditor({
           disabled={saving || !formatValid || unchanged}
           className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save slug"}
+          {saving ? "Saving…" : "Save URL name"}
         </button>
       </div>
     </div>
