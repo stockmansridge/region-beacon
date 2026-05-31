@@ -218,11 +218,16 @@ function AccountPage() {
   };
 
 
+  const canEditOrg =
+    access.isPlatformAdmin ||
+    agencyRole === "agency_owner" ||
+    agencyRole === "agency_admin";
+
   return (
     <>
       <PageHeader
         title="Account & Billing"
-        description="Manage your agency account and event activations. Billing will be available soon."
+        description="Manage your organisation account and event activations. Billing will be available soon."
       />
 
       <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
@@ -237,19 +242,19 @@ function AccountPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Account">
+        <Card title="Organisation">
           <OrganisationNameEditor
             agencyId={agencyId}
             currentName={agency.selected?.name ?? ""}
-            canEdit={
-              access.isPlatformAdmin ||
-              agencyRole === "agency_owner" ||
-              agencyRole === "agency_admin"
-            }
+            canEdit={canEditOrg}
           />
-          <Row label="Agency slug" value={agency.selected?.slug ?? "—"} mono />
+          <OrganisationSlugEditor
+            agencyId={agencyId}
+            currentSlug={agency.selected?.slug ?? ""}
+            canEdit={canEditOrg}
+          />
           <Row label="Signed-in email" value={auth.email ?? "—"} />
-          <Row label="Agency role" value={agencyRole ?? "—"} />
+          <Row label="Organisation role" value={agencyRole ?? "—"} />
           {access.isPlatformAdmin && (
             <Row label="Platform role" value="platform_admin" />
           )}
