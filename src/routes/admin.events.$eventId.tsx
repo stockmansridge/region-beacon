@@ -22,7 +22,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { posterFilename } from "@/lib/qr-poster";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAuth } from "@/hooks/use-auth";
-import { PUBLIC_TENANT_ROOT_DOMAIN, rpcEventHost, tenantHost, tenantUrl } from "@/lib/domains";
+import { PUBLIC_TENANT_ROOT_DOMAIN, tenantHost, tenantUrl } from "@/lib/domains";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticCopyButton } from "@/components/diagnostic-panel";
 
