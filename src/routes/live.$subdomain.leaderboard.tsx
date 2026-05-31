@@ -7,8 +7,12 @@ import { rpcEventHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard" }] }),
-  component: PublicLeaderboardPage,
+  component: function LeaderboardRoute() {
+    const { subdomain } = Route.useParams();
+    return <PublicLeaderboardPage subdomain={subdomain} />;
+  },
 });
+
 
 type LeaderboardRow = {
   rank: number | null;
