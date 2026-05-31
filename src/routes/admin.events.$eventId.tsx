@@ -3154,15 +3154,20 @@ function EventSetupWarnings({
   hasVenues: boolean;
   eventId: string;
 }) {
-  const hasActiveSubdomain = domains.some(
+  const activeSub = domains.find(
     (d) => d.domain_type === "event_subdomain" && d.status === "active",
   );
+  const hasActiveSubdomain = Boolean(activeSub);
+  const activePublicUrl = activeSub
+    ? `https://${activeSub.public_subdomain}.getstampd.com.au/`
+    : null;
   const hasPendingSubdomain = domains.some(
     (d) => d.domain_type === "event_subdomain" && d.status === "pending",
   );
 
   type Action =
     | { kind: "anchor"; href: string; label: string }
+    | { kind: "external"; href: string; label: string }
     | { kind: "link"; to: string; params?: Record<string, string>; label: string };
 
   const items: {
@@ -3186,7 +3191,9 @@ function EventSetupWarnings({
       tone: "info",
       title: "Public address active",
       body: "This event's subdomain is active.",
-      action: { kind: "anchor", href: "#section-public-address", label: "View address" },
+      action: activePublicUrl
+        ? { kind: "external", href: activePublicUrl, label: "View public page" }
+        : { kind: "anchor", href: "#section-public-address", label: "View address" },
     });
   } else {
     items.push({
@@ -3253,6 +3260,15 @@ function EventSetupWarnings({
               {it.action.kind === "anchor" ? (
                 <a
                   href={it.action.href}
+                  className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                >
+                  {it.action.label}
+                </a>
+              ) : it.action.kind === "external" ? (
+                <a
+                  href={it.action.href}
+                  target="_blank"
+                  rel="noreferrer"
                   className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
                 >
                   {it.action.label}
