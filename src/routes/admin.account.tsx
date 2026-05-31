@@ -7,6 +7,7 @@ import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useAuth } from "@/hooks/use-auth";
 import { NoAccessScreen } from "@/components/no-access-screen";
+import { formatRoleLabel } from "@/lib/role-labels";
 
 export const Route = createFileRoute("/admin/account")({
   head: () => ({ meta: [{ title: "Account & Billing" }] }),
