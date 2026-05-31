@@ -440,15 +440,37 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
         {noCoords ? (
           <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center text-sm text-[#3D372C]">
-            <p>No venue locations have been set yet.</p>
-            <Link
-              to="/venues"
+            <p>
+              {venues.length === 0
+                ? "No venue locations have been set yet."
+                : `${labels.plural} have been added, but map locations have not been set yet.`}
+            </p>
+            {venues.length > 0 && (
+              <ul className="mt-4 space-y-2 text-left">
+                {venues.map((v) => (
+                  <li
+                    key={v.venue_id ?? Math.random()}
+                    className="rounded-lg bg-white px-3 py-2"
+                  >
+                    <span className="font-semibold" style={{ color: primary }}>
+                      {v.name ?? "Venue"}
+                    </span>
+                    {v.address && (
+                      <span className="block text-xs text-[#8A7E66]">{v.address}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <a
+              href="/venues"
               className="mt-3 inline-block rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider"
               style={{ backgroundColor: primary, color: "#FBF5E8" }}
             >
               See {labels.plural.toLowerCase()} list
-            </Link>
+            </a>
           </div>
+
         ) : mapError ? (
           <MapFallbackList
             venues={geoVenues}
