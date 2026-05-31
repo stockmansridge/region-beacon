@@ -332,8 +332,32 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   }
 
   const noCoords = geoVenues.length === 0;
+  const unmappedVenues = useMemo(
+    () => venues.filter((v) => !geoVenues.includes(v)),
+    [venues, geoVenues],
+  );
   const visitedCount = visitedIds.size;
   const totalCount = geoVenues.length;
+
+  const buildSupportReport = useCallback(() => {
+    const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+    const href = typeof window !== "undefined" ? window.location.href : "";
+    const isAllowedLooking = Boolean(matchRootDomain(hostname));
+    const report = {
+      timestamp: new Date().toISOString(),
+      pageUrl: href,
+      hostname,
+      subdomain,
+      route: "/live/$subdomain/map",
+      hostnameLooksAllowed: isAllowedLooking,
+      venueCount: venues.length,
+      venueCountWithLatLng: geoVenues.length,
+      fallbackListRendered: Boolean(mapError),
+      mapError,
+      mapkit: mapDiag,
+    };
+    return JSON.stringify(report, null, 2);
+  }, [subdomain, venues.length, geoVenues.length, mapError, mapDiag]);
 
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-6">
