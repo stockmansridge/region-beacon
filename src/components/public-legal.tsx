@@ -4,6 +4,8 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { LegalBody } from "@/components/legal-body";
 import { PoweredByGetStampd } from "@/components/brand";
+import { PublicEventNav } from "@/components/public-event-nav";
+
 
 export type LegalRow = {
   event_id: string;
