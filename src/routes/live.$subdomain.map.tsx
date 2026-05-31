@@ -600,69 +600,81 @@ function SelectedVenueCard({
     lng: venue.lng ?? null,
   });
   return (
-    <div className="mt-3 flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-3 shadow-sm">
-      {img ? (
-        <img
-          src={img}
-          alt=""
-          className="h-20 w-20 flex-shrink-0 rounded-xl object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <div className="h-20 w-20 flex-shrink-0 rounded-xl bg-[#1F3D2B]/10" />
-      )}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-start justify-between gap-2">
-          <p className="truncate font-trail-serif text-lg font-semibold" style={{ color: primary }}>
-            {venue.name ?? "Venue"}
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="text-sm text-[#8A7E66] hover:text-[#3D372C]"
-          >
-            ×
-          </button>
-        </div>
-        {visited && (
-          <span
-            className="mt-0.5 inline-block w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-            style={{ backgroundColor: primary, color: "#FBF5E8" }}
-          >
-            Visited
-          </span>
+    <div className="relative overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] shadow-lg">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close venue card"
+        className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-base text-[#3D372C] shadow-sm hover:bg-white"
+      >
+        ×
+      </button>
+      <Link
+        to="/venues/$venueId"
+        params={{ venueId: venue.venue_id ?? "" }}
+        className="flex items-stretch gap-3 p-3 pr-10 transition hover:bg-white/40 focus:outline-none focus:ring-2 focus:ring-offset-1"
+        style={{ minHeight: 88 }}
+      >
+        {img ? (
+          <img
+            src={img}
+            alt=""
+            className="h-20 w-20 flex-shrink-0 rounded-xl object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="h-20 w-20 flex-shrink-0 rounded-xl bg-[#1F3D2B]/10" />
         )}
-        {venue.description && (
-          <p className="mt-1 line-clamp-2 text-xs leading-snug text-[#3D372C]">
-            {venue.description}
-          </p>
-        )}
-        {venue.address && (
-          <p className="mt-1 truncate text-[11px] text-[#8A7E66]">{venue.address}</p>
-        )}
-        <div className="mt-2 flex flex-wrap gap-2">
-          <Link
-            to="/venues/$venueId"
-            params={{ venueId: venue.venue_id ?? "" }}
-            className="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider"
-            style={{ backgroundColor: primary, color: "#FBF5E8" }}
-          >
-            View details
-          </Link>
-          {directions && (
-            <a
-              href={directions}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider"
-              style={{ borderColor: accent, color: accent }}
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
+          <div className="flex items-center gap-2">
+            <p className="truncate font-trail-serif text-lg font-semibold" style={{ color: primary }}>
+              {venue.name ?? "Venue"}
+            </p>
+            {visited && (
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                style={{ backgroundColor: primary, color: "#FBF5E8" }}
+              >
+                Visited
+              </span>
+            )}
+          </div>
+          {venue.address ? (
+            <p className="mt-0.5 truncate text-[11px] text-[#8A7E66]">{venue.address}</p>
+          ) : venue.description ? (
+            <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-[#3D372C]">
+              {venue.description}
+            </p>
+          ) : null}
+          <div className="mt-1.5 flex items-center gap-3">
+            <span
+              className="text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: primary }}
             >
-              Directions ↗
-            </a>
-          )}
+              View details
+            </span>
+            {directions && (
+              <a
+                href={directions}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: accent }}
+              >
+                Directions ↗
+              </a>
+            )}
+          </div>
         </div>
-      </div>
+        <span
+          aria-hidden
+          className="flex flex-shrink-0 items-center text-2xl"
+          style={{ color: primary }}
+        >
+          ›
+        </span>
+      </Link>
     </div>
   );
 }
