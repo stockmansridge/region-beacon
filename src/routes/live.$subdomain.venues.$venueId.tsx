@@ -40,6 +40,7 @@ type State =
 
 type VisitedState =
   | { kind: "none" }
+  | { kind: "no_passport" }
   | { kind: "not_visited" }
   | { kind: "visited"; at: string | null };
 
