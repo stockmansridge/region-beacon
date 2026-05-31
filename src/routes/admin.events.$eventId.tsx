@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { AdminEventAnnouncements } from "@/components/admin-event-announcements";
@@ -276,6 +276,7 @@ function EventDetail() {
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
   const [venueAssetBusy, setVenueAssetBusy] = useState<VenueAssetKind | null>(null);
   const [venueAssetError, setVenueAssetError] = useState<string | null>(null);
+  const venueEditorRef = useRef<HTMLDivElement | null>(null);
 
   // QR controls — token is fetched only on explicit reveal/rotate and held in
   // memory only. Map: venue_id -> revealed token.
@@ -890,6 +891,9 @@ function EventDetail() {
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueEditingId(v.id);
+    requestAnimationFrame(() => {
+      venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function cancelVenueEdit() {
@@ -1029,7 +1033,11 @@ function EventDetail() {
       // unmount the editor. The new venue will appear in the list when the user
       // saves again or cancels.
       setVenueEditingId(newVenueId);
-      toast.success("Venue created. You can now upload a logo/cover image.");
+      toast.success("Venue created. Add public details, images and QR next.");
+      // Scroll the editor into view so the user sees the new full-detail panel.
+      requestAnimationFrame(() => {
+        venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     } else {
       setVenueEditingId(null);
       setVenueForm(null);
@@ -1712,10 +1720,10 @@ function EventDetail() {
               </div>
             )}
             {venueEditingId !== null && venueForm && (
-              <div className="mb-4 space-y-5 rounded-lg border bg-muted/20 p-4">
+              <div ref={venueEditorRef} className="mb-4 space-y-5 rounded-lg border bg-muted/20 p-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">
-                    {venueEditingId === "new" ? "New venue" : "Edit venue"}
+                    {venueEditingId === "new" ? "New venue" : "Edit venue details"}
                   </h4>
                   <div className="flex items-center gap-2">
                     <button
@@ -2116,9 +2124,41 @@ function EventDetail() {
                       const isBusy = qrActionVenueId === v.id;
                       const built = revealed ? buildCheckinUrl(revealed) : null;
                       return (
-                        <tr key={v.id} className="border-t align-top">
+                        <tr
+                          key={v.id}
+                          onClick={() => {
+                            if (canEdit && venueEditingId === null && venueArchivingId === null) {
+                              startEditVenue(v);
+                            }
+                          }}
+                          className={
+                            "border-t align-top " +
+                            (canEdit && venueEditingId === null && venueArchivingId === null
+                              ? "cursor-pointer transition-colors hover:bg-muted/40"
+                              : "")
+                          }
+                          title={canEdit && venueEditingId === null ? "Open venue details" : undefined}
+                        >
                           <td className="px-3 py-2 text-muted-foreground">{v.order_index}</td>
-                          <td className="px-3 py-2 font-medium">{v.name}</td>
+                          <td className="px-3 py-2 font-medium">
+                            {canEdit ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (venueEditingId === null && venueArchivingId === null) {
+                                    startEditVenue(v);
+                                  }
+                                }}
+                                disabled={venueEditingId !== null || venueArchivingId !== null}
+                                className="text-left font-medium text-foreground underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:no-underline"
+                              >
+                                {v.name}
+                              </button>
+                            ) : (
+                              v.name
+                            )}
+                          </td>
                           <td className="px-3 py-2 text-muted-foreground">{v.address ?? "—"}</td>
                           <td className="px-3 py-2">
                             <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{v.status}</span>
@@ -2134,7 +2174,7 @@ function EventDetail() {
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
                           {canEdit && (
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                               {hasActiveQr ? (
                                 <div className="flex flex-col gap-1.5">
                                   <div className="flex flex-wrap items-center gap-1.5">
@@ -2268,15 +2308,15 @@ function EventDetail() {
                             </td>
                           )}
                           {canEdit && (
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => startEditVenue(v)}
+                                  onClick={(e) => { e.stopPropagation(); startEditVenue(v); }}
                                   disabled={venueEditingId !== null || venueArchivingId !== null}
                                   className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
                                 >
-                                  Edit
+                                  Edit details
                                 </button>
                                 <button
                                   type="button"
