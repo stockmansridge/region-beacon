@@ -210,6 +210,51 @@ function PassportNotFound({
   diagnostics: LookupDiagnostics;
 }) {
   const [copied, setCopied] = useState(false);
+  const [clearedEventId, setClearedEventId] = useState<string | null>(null);
+  const [storageKeyCleared, setStorageKeyCleared] = useState<boolean>(false);
+  const [hasReturnTo, setHasReturnTo] = useState<boolean>(false);
+
+  // Resolve the current event from the hostname and clear the stale
+  // gs.passport.<event_id> entry so the visitor isn't trapped on the next
+  // visit. Other events' saved passports are untouched.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (typeof window === "undefined") return;
+      try {
+        const { data } = await supabase.rpc("resolve_event_by_host", {
+          _hostname: window.location.hostname,
+        });
+        const row = Array.isArray(data) ? data[0] : data;
+        const eventId =
+          (row as { event_id?: string | null } | null)?.event_id ?? null;
+        if (cancelled || !eventId) return;
+        setClearedEventId(eventId);
+        try {
+          const key = `gs.passport.${eventId}`;
+          const existed = localStorage.getItem(key) !== null;
+          if (existed) {
+            localStorage.removeItem(key);
+            setStorageKeyCleared(true);
+          }
+        } catch {
+          // ignore
+        }
+        try {
+          const pending = sessionStorage.getItem("gs.returnTo.pending");
+          const scoped = sessionStorage.getItem(`gs.returnTo.${eventId}`);
+          setHasReturnTo(Boolean(pending || scoped));
+        } catch {
+          // ignore
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function copySupport() {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -226,6 +271,16 @@ function PassportNotFound({
       token_is_url_safe: URL_SAFE_TOKEN_RE.test(token),
       rpc: diagnostics.rpc,
       zero_rows: diagnostics.zero_rows,
+      validation_result: diagnostics.zero_rows
+        ? "not_found_or_replaced"
+        : "rpc_error",
+      event_id: clearedEventId,
+      localStorage_key_checked: clearedEventId
+        ? `gs.passport.${clearedEventId}`
+        : null,
+      localStorage_key_cleared: storageKeyCleared,
+      saved_passport_existed: storageKeyCleared,
+      return_to_preserved: hasReturnTo,
       supabase_error_code: diagnostics.supabase_error_code,
       supabase_error_message: diagnostics.supabase_error_message,
       supabase_error_details: diagnostics.supabase_error_details,
@@ -249,23 +304,32 @@ function PassportNotFound({
           Passport link not found or replaced
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
-          This passport link is no longer valid. If you re-registered, use the
-          newest link. Otherwise, re-register at the event page.
+          This passport link is no longer valid. If you re-registered, the
+          newest link is the only working one. You can register again for this
+          trail to get a fresh passport.
         </p>
-        <a
-          href="/"
-          className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] px-6 text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-        >
-          Go home
-        </a>
-        <button
-          type="button"
-          onClick={copySupport}
-          className="mt-3 inline-flex h-9 items-center justify-center rounded-full border border-[#E6DCC7] bg-[#F6EFE2] px-4 text-xs font-medium text-[#3D372C]"
-        >
-          {copied ? "Copied support details" : "Copy support details"}
-        </button>
-        <p className="mt-2 text-[10px] text-[#8A7E66]">
+        <div className="mt-6 flex flex-col gap-2">
+          <a
+            href="/join"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] px-6 text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+          >
+            Register again for this trail
+          </a>
+          <a
+            href="/"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-[#1F3D2B]/30 bg-transparent text-sm font-semibold tracking-wide text-[#1F3D2B]"
+          >
+            Back to trail home
+          </a>
+          <button
+            type="button"
+            onClick={copySupport}
+            className="mt-1 inline-flex h-9 items-center justify-center rounded-full border border-[#E6DCC7] bg-[#F6EFE2] px-4 text-xs font-medium text-[#3D372C]"
+          >
+            {copied ? "Copied support details" : "Copy support details"}
+          </button>
+        </div>
+        <p className="mt-3 text-[10px] text-[#8A7E66]">
           Support details do not include your full passport link or any visitor
           personal information.
         </p>
