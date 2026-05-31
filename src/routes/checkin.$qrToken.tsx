@@ -33,21 +33,31 @@ type SupabaseLikeError = {
 type FailureDiagnostics = {
   stage: string;
   rpc: string | null;
+  current_event_id: string | null;
+  saved_passport_event_ids: string[];
+  saved_passport_count: number;
+  localStorage_key_attempted: string | null;
   passport_attempted: boolean;
-  saved_passport_found: boolean;
   return_to_stored: boolean;
-  event_resolved: boolean;
-  venue_resolved: boolean;
   error: SupabaseLikeError | null;
 };
 
 type Outcome =
   | { kind: "loading" }
-  | { kind: "no_passport"; subdomain: string | null }
-  | { kind: "stamped"; venueName: string | null; passportToken: string; isNew: boolean }
+  | {
+      kind: "stamped";
+      venueName: string | null;
+      passportToken: string;
+      isNew: boolean;
+    }
   | { kind: "qr_invalid"; diag: FailureDiagnostics }
   | { kind: "event_not_live"; diag: FailureDiagnostics }
-  | { kind: "mismatch"; diag: FailureDiagnostics }
+  | {
+      kind: "no_passport_for_event";
+      diag: FailureDiagnostics;
+      subdomain: string | null;
+      otherPassports: StoredPassport[];
+    }
   | { kind: "rate_limited"; diag: FailureDiagnostics }
   | { kind: "error"; diag: FailureDiagnostics };
 
@@ -66,7 +76,7 @@ function getSubdomain(): string | null {
   return host.kind === "tenant" ? host.subdomain : null;
 }
 
-function readPassportsFromStorage(): StoredPassport[] {
+function readAllPassports(): StoredPassport[] {
   if (typeof localStorage === "undefined") return [];
   const out: StoredPassport[] = [];
   try {
@@ -77,7 +87,11 @@ function readPassportsFromStorage(): StoredPassport[] {
       if (!raw) continue;
       try {
         const parsed = JSON.parse(raw) as StoredPassport;
-        if (parsed?.access_token) out.push(parsed);
+        if (parsed?.access_token) {
+          // event_id might be missing on older entries — derive from key
+          if (!parsed.event_id) parsed.event_id = key.slice("gs.passport.".length);
+          out.push(parsed);
+        }
       } catch {
         // skip
       }
@@ -92,14 +106,52 @@ function readPassportsFromStorage(): StoredPassport[] {
   return out;
 }
 
-function classifyError(msg: string): Exclude<Outcome["kind"], "loading" | "stamped" | "no_passport"> {
+function readPassportForEvent(eventId: string): StoredPassport | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(`gs.passport.${eventId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredPassport;
+    if (!parsed?.access_token) return null;
+    if (!parsed.event_id) parsed.event_id = eventId;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function storeReturnTo(eventId: string | null) {
+  if (typeof sessionStorage === "undefined" || typeof window === "undefined") return;
+  try {
+    const path = window.location.pathname;
+    sessionStorage.setItem("gs.returnTo.pending", path);
+    if (eventId) sessionStorage.setItem(`gs.returnTo.${eventId}`, path);
+    const sub = getSubdomain();
+    if (sub) sessionStorage.setItem(`gs.returnTo.sub.${sub}`, path);
+  } catch {
+    // ignore
+  }
+}
+
+function classifyError(msg: string): Exclude<Outcome["kind"], "loading" | "stamped" | "no_passport_for_event"> {
   const m = msg.toLowerCase();
   if (m.includes("qr_invalid")) return "qr_invalid";
   if (m.includes("event_not_available")) return "event_not_live";
-  if (m.includes("passport_event_mismatch")) return "mismatch";
-  if (m.includes("passport_not_found")) return "mismatch";
   if (m.includes("rate_limited")) return "rate_limited";
   return "error";
+}
+
+async function resolveCurrentEventId(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const { data } = await supabase.rpc("resolve_event_by_host", {
+      _hostname: window.location.hostname,
+    });
+    const row = Array.isArray(data) ? data[0] : data;
+    return (row as { event_id?: string } | null)?.event_id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function CheckinPage() {
@@ -110,116 +162,132 @@ function CheckinPage() {
     let cancelled = false;
     (async () => {
       const subdomain = getSubdomain();
-      const passports = readPassportsFromStorage();
-      let returnToStored = false;
+      const currentEventId = await resolveCurrentEventId();
+      if (cancelled) return;
 
-      if (passports.length === 0) {
-        try {
-          if (typeof sessionStorage !== "undefined" && typeof window !== "undefined") {
-            sessionStorage.setItem("gs.returnTo.pending", window.location.pathname);
-            if (subdomain) {
-              sessionStorage.setItem(`gs.returnTo.sub.${subdomain}`, window.location.pathname);
-            }
-            returnToStored = true;
-          }
-        } catch {
-          // ignore
-        }
-        void returnToStored; // captured into no_passport via UI message
-        if (!cancelled) setOutcome({ kind: "no_passport", subdomain });
-        return;
-      }
+      const allPassports = readAllPassports();
+      const matchingPassport = currentEventId
+        ? readPassportForEvent(currentEventId)
+        : null;
 
-      let lastNonMismatch: Outcome | null = null;
-      let lastError: SupabaseLikeError | null = null;
-      for (const p of passports) {
-        const token = p.access_token!;
-        const { data, error } = await supabase.rpc("redeem_checkin", {
-          _qr_token: qrToken,
-          _passport_token: token,
-        });
-        if (cancelled) return;
+      const baseDiag = (extra: Partial<FailureDiagnostics> = {}): FailureDiagnostics => ({
+        stage: extra.stage ?? "redeem_checkin_error",
+        rpc: extra.rpc ?? "redeem_checkin",
+        current_event_id: currentEventId,
+        saved_passport_event_ids: allPassports
+          .map((p) => p.event_id)
+          .filter((x): x is string => !!x),
+        saved_passport_count: allPassports.length,
+        localStorage_key_attempted: currentEventId ? `gs.passport.${currentEventId}` : null,
+        passport_attempted: !!matchingPassport,
+        return_to_stored: false,
+        error: null,
+        ...extra,
+      });
 
-        if (error) {
-          const kind = classifyError(error.message ?? "");
-          lastError = {
-            message: error.message ?? null,
-            code: (error as { code?: string }).code ?? null,
-            details: (error as { details?: string }).details ?? null,
-            hint: (error as { hint?: string }).hint ?? null,
-          };
-          if (kind === "mismatch") {
-            continue;
-          }
-          const diag: FailureDiagnostics = {
-            stage: "redeem_checkin_error",
-            rpc: "redeem_checkin",
-            passport_attempted: true,
-            saved_passport_found: true,
-            return_to_stored: false,
-            event_resolved: false,
-            venue_resolved: false,
-            error: lastError,
-          };
-          lastNonMismatch = { kind, diag } as Outcome;
-          break;
-        }
-
-        const row = (data?.[0] ?? null) as
-          | { checkin_id: string; venue_id: string; passport_id: string; is_new: boolean }
-          | null;
-        if (!row) {
-          lastNonMismatch = {
-            kind: "error",
-            diag: {
-              stage: "redeem_checkin_empty",
-              rpc: "redeem_checkin",
-              passport_attempted: true,
-              saved_passport_found: true,
-              return_to_stored: false,
-              event_resolved: false,
-              venue_resolved: false,
-              error: null,
-            },
-          };
-          break;
-        }
-
-        let venueName: string | null = null;
-        try {
-          const { data: v } = await supabase
-            .from("venues")
-            .select("name")
-            .eq("id", row.venue_id)
-            .maybeSingle();
-          venueName = (v as { name: string | null } | null)?.name ?? null;
-        } catch {
-          venueName = null;
-        }
-
+      // No passport for the current event → don't try other passports.
+      if (!matchingPassport) {
+        storeReturnTo(currentEventId);
+        const otherPassports = allPassports.filter(
+          (p) => !currentEventId || p.event_id !== currentEventId,
+        );
         if (!cancelled) {
           setOutcome({
-            kind: "stamped",
-            venueName,
-            passportToken: token,
-            isNew: !!row.is_new,
+            kind: "no_passport_for_event",
+            subdomain,
+            otherPassports,
+            diag: baseDiag({
+              stage: currentEventId
+                ? allPassports.length > 0
+                  ? "passport_event_mismatch"
+                  : "no_passport_on_device"
+                : "current_event_unresolved",
+              rpc: null,
+              return_to_stored: true,
+            }),
           });
         }
         return;
       }
 
-      if (!cancelled) {
-        const fallbackDiag: FailureDiagnostics = {
-          stage: "all_passports_mismatched",
-          rpc: "redeem_checkin",
-          passport_attempted: true,
-          saved_passport_found: passports.length > 0,
-          return_to_stored: false,
-          event_resolved: false,
-          venue_resolved: false,
-          error: lastError,
+      // Try the matching passport only.
+      const token = matchingPassport.access_token!;
+      const { data, error } = await supabase.rpc("redeem_checkin", {
+        _qr_token: qrToken,
+        _passport_token: token,
+      });
+      if (cancelled) return;
+
+      if (error) {
+        const kind = classifyError(error.message ?? "");
+        const supaErr: SupabaseLikeError = {
+          message: error.message ?? null,
+          code: (error as { code?: string }).code ?? null,
+          details: (error as { details?: string }).details ?? null,
+          hint: (error as { hint?: string }).hint ?? null,
         };
-        setOutcome(lastNonMismatch ?? { kind: "mismatch", diag: fallbackDiag });
+        // passport_event_mismatch shouldn't happen now (we picked matching passport)
+        // but handle defensively as "no passport for event".
+        if ((error.message ?? "").toLowerCase().includes("passport_event_mismatch") ||
+            (error.message ?? "").toLowerCase().includes("passport_not_found")) {
+          storeReturnTo(currentEventId);
+          const otherPassports = allPassports.filter(
+            (p) => !currentEventId || p.event_id !== currentEventId,
+          );
+          setOutcome({
+            kind: "no_passport_for_event",
+            subdomain,
+            otherPassports,
+            diag: baseDiag({
+              stage: "passport_event_mismatch",
+              return_to_stored: true,
+              passport_attempted: true,
+              error: supaErr,
+            }),
+          });
+          return;
+        }
+        setOutcome({
+          kind,
+          diag: baseDiag({
+            stage: "redeem_checkin_error",
+            passport_attempted: true,
+            error: supaErr,
+          }),
+        } as Outcome);
+        return;
+      }
+
+      const row = (data?.[0] ?? null) as
+        | { checkin_id: string; venue_id: string; passport_id: string; is_new: boolean }
+        | null;
+      if (!row) {
+        setOutcome({
+          kind: "error",
+          diag: baseDiag({ stage: "redeem_checkin_empty", passport_attempted: true }),
+        });
+        return;
+      }
+
+      let venueName: string | null = null;
+      try {
+        const { data: v } = await supabase
+          .from("venues")
+          .select("name")
+          .eq("id", row.venue_id)
+          .maybeSingle();
+        venueName = (v as { name: string | null } | null)?.name ?? null;
+      } catch {
+        venueName = null;
+      }
+
+      if (!cancelled) {
+        setOutcome({
+          kind: "stamped",
+          venueName,
+          passportToken: token,
+          isNew: !!row.is_new,
+        });
       }
     })();
     return () => {
@@ -305,13 +373,25 @@ function CheckinFailureCard({
   outcome: Exclude<Outcome, { kind: "loading" } | { kind: "stamped" }>;
   qrToken: string;
 }) {
-  const subdomain = outcome.kind === "no_passport" ? outcome.subdomain : getSubdomain();
-  const diag = outcome.kind === "no_passport" ? null : outcome.diag;
+  const subdomain =
+    outcome.kind === "no_passport_for_event" ? outcome.subdomain : getSubdomain();
+  const diag = outcome.diag;
+  const otherPassports =
+    outcome.kind === "no_passport_for_event" ? outcome.otherPassports : [];
 
-  const copy: Record<Exclude<Outcome["kind"], "loading" | "stamped">, { title: string; body: string }> = {
-    no_passport: {
-      title: "Passport required",
-      body: "You need to join this event before you can collect stamps. Tap below to register — we'll bring you back here to collect this stamp.",
+  const copy: Record<
+    Exclude<Outcome["kind"], "loading" | "stamped">,
+    { title: string; body: string }
+  > = {
+    no_passport_for_event: {
+      title:
+        diag.saved_passport_count > 0
+          ? "You need a passport for this trail"
+          : "Passport required",
+      body:
+        diag.saved_passport_count > 0
+          ? "Your saved passport is for a different trail. Create one for this trail to collect this stamp — we'll bring you straight back here."
+          : "You need to join this trail before you can collect stamps. Tap below to register — we'll bring you back here to collect this stamp.",
     },
     qr_invalid: {
       title: "This QR code is not valid",
@@ -320,10 +400,6 @@ function CheckinFailureCard({
     event_not_live: {
       title: "This event isn't accepting check-ins yet",
       body: "The organiser hasn't opened check-ins for this event. Try again once the event is live.",
-    },
-    mismatch: {
-      title: "This passport doesn't match this event",
-      body: "The passport on this device was issued for a different event. Open the correct event link and register if you haven't yet.",
     },
     rate_limited: {
       title: "Slow down a moment",
@@ -343,20 +419,21 @@ function CheckinFailureCard({
       page_url: typeof window !== "undefined" ? window.location.href : null,
       route: "/checkin/$qrToken",
       public_subdomain: subdomain,
-      stage: diag?.stage ?? "no_passport_on_device",
-      rpc: diag?.rpc ?? null,
+      stage: diag.stage,
+      rpc: diag.rpc,
       qr_token_length: qrFp.length,
       qr_token_first4: qrFp.first4,
       qr_token_last4: qrFp.last4,
-      saved_passport_found: diag?.saved_passport_found ?? false,
-      passport_attempted: diag?.passport_attempted ?? false,
-      return_to_stored: outcome.kind === "no_passport",
-      event_resolved: diag?.event_resolved ?? false,
-      venue_resolved: diag?.venue_resolved ?? false,
-      error_code: diag?.error?.code ?? null,
-      error_message: diag?.error?.message ?? null,
-      error_details: diag?.error?.details ?? null,
-      error_hint: diag?.error?.hint ?? null,
+      current_event_id: diag.current_event_id,
+      saved_passport_count: diag.saved_passport_count,
+      saved_passport_event_ids: diag.saved_passport_event_ids,
+      localStorage_key_attempted: diag.localStorage_key_attempted,
+      passport_attempted: diag.passport_attempted,
+      return_to_stored: diag.return_to_stored,
+      error_code: diag.error?.code ?? null,
+      error_message: diag.error?.message ?? null,
+      error_details: diag.error?.details ?? null,
+      error_hint: diag.error?.hint ?? null,
       outcome_kind: outcome.kind,
     };
     return JSON.stringify(report, null, 2);
@@ -374,6 +451,8 @@ function CheckinFailureCard({
   }
 
   const joinHref = subdomain ? "/join" : "/";
+  const otherPassportToken =
+    otherPassports.length > 0 ? otherPassports[0].access_token! : null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6 py-10">
@@ -383,27 +462,46 @@ function CheckinFailureCard({
         <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">{body}</p>
 
         <div className="mt-6 flex flex-col gap-2">
-          {outcome.kind === "no_passport" ? (
-            <a
-              href={joinHref}
-              className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-            >
-              Register & collect this stamp
-            </a>
+          {outcome.kind === "no_passport_for_event" ? (
+            <>
+              <a
+                href={joinHref}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+              >
+                Create passport for this trail
+              </a>
+              <a
+                href="/"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[#1F3D2B]/30 bg-transparent text-sm font-semibold tracking-wide text-[#1F3D2B]"
+              >
+                Back to trail home
+              </a>
+              {otherPassportToken && (
+                <Link
+                  to="/passport/$token"
+                  params={{ token: otherPassportToken }}
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-transparent text-xs font-medium tracking-wide text-[#3D372C] underline underline-offset-2"
+                >
+                  Open saved passport from another trail
+                </Link>
+              )}
+            </>
           ) : (
-            <a
-              href="/passport"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-            >
-              Open my passport
-            </a>
+            <>
+              <a
+                href="/passport"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+              >
+                Open my passport
+              </a>
+              <a
+                href="/"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[#1F3D2B]/30 bg-transparent text-sm font-semibold tracking-wide text-[#1F3D2B]"
+              >
+                Back to home
+              </a>
+            </>
           )}
-          <a
-            href="/"
-            className="inline-flex h-11 items-center justify-center rounded-full border border-[#1F3D2B]/30 bg-transparent text-sm font-semibold tracking-wide text-[#1F3D2B]"
-          >
-            Back to home
-          </a>
           <button
             type="button"
             onClick={copySupport}
