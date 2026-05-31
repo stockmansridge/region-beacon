@@ -59,9 +59,9 @@ type State =
   | { kind: "not_found" }
   | { kind: "event"; event: PublicEvent; venues: PublicVenue[] };
 
-function LivePublicPage() {
-  const { subdomain } = Route.useParams();
+export function LivePublicPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+
 
   useEffect(() => {
     let cancelled = false;
