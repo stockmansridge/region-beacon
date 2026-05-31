@@ -284,6 +284,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         }
         mapRef.current = map;
         setMapDiag((d) => ({ ...d, initStatus: "ok" }));
+        setMapReady(true);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Map init failed";
         setMapDiag((d) => ({ ...d, initStatus: "error", initError: msg }));
@@ -292,6 +293,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     })();
     return () => {
       cancelled = true;
+      setMapReady(false);
       if (mapRef.current) {
         try {
           mapRef.current.destroy();
