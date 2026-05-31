@@ -562,7 +562,7 @@ function OrganisationSlugEditor({
   if (!editing) {
     return (
       <div className="flex items-baseline justify-between gap-4 text-sm">
-        <span className="text-muted-foreground">Organisation slug</span>
+        <span className="text-muted-foreground">Organisation URL name</span>
         <span className="flex items-center gap-2">
           <span className="font-mono text-xs">{currentSlug || "—"}</span>
           {canEdit && (
