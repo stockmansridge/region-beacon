@@ -444,7 +444,15 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           </p>
         </div>
 
-        {saved?.access_token && !showRegisterAgain && (
+        {savedValidating && (
+          <section
+            className="mb-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 text-center text-sm text-[#8A7E66] shadow-sm"
+          >
+            Checking your saved passport…
+          </section>
+        )}
+
+        {!savedValidating && saved?.access_token && !showRegisterAgain && (
           <section
             className="mb-5 rounded-3xl border p-5 shadow-sm"
             style={{ borderColor: `${primary}33`, backgroundColor: "#FBF5E8" }}
@@ -487,7 +495,20 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           </section>
         )}
 
-        {(!saved?.access_token || showRegisterAgain) && (
+        {!savedValidating && staleNotice && (
+          <div
+            className="mb-4 rounded-xl border px-3 py-2 text-sm"
+            style={{
+              borderColor: `${accent}55`,
+              backgroundColor: `${accent}10`,
+              color: "#5A2410",
+            }}
+          >
+            {staleNotice}
+          </div>
+        )}
+
+        {!savedValidating && (!saved?.access_token || showRegisterAgain) && (
           <p className="mb-3 text-center text-[11px] text-[#8A7E66]">
             Already registered? Enter the same email below — we'll issue a new
             passport link and any older link will stop working.
@@ -496,7 +517,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
 
 
-        {(!saved?.access_token || showRegisterAgain) && <form
+        {!savedValidating && (!saved?.access_token || showRegisterAgain) && <form
           onSubmit={onSubmit}
           className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
           noValidate
