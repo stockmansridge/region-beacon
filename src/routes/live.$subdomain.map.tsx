@@ -135,17 +135,25 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     };
   }, [subdomain]);
 
+  // PostgREST serialises numeric(9,6) as strings, so coerce defensively and
+  // store the normalised numbers on each row for downstream use.
   const geoVenues = useMemo(
     () =>
-      venues.filter(
-        (v) =>
-          typeof v.lat === "number" &&
-          typeof v.lng === "number" &&
-          Number.isFinite(v.lat) &&
-          Number.isFinite(v.lng),
-      ),
+      venues
+        .map((v) => {
+          const lat = v.lat == null ? NaN : Number(v.lat as unknown as string);
+          const lng = v.lng == null ? NaN : Number(v.lng as unknown as string);
+          return { ...v, lat, lng };
+        })
+        .filter(
+          (v) =>
+            Number.isFinite(v.lat) &&
+            Number.isFinite(v.lng) &&
+            !(v.lat === 0 && v.lng === 0),
+        ),
     [venues],
   );
+
 
   const filteredVenues = useMemo(() => {
     if (!hasPassport || filter === "all") return geoVenues;
