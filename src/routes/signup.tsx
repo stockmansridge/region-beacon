@@ -315,8 +315,8 @@ function SignupPage() {
             </Field>
 
             <Field
-              label="Workspace URL"
-              hint="Used internally to identify your workspace. Lowercase letters, numbers and hyphens."
+              label="Organisation URL name"
+              hint="Used in your organisation's web address. Lowercase letters, numbers and hyphens."
               error={fieldErrors.slug}
             >
               <div className="flex items-center overflow-hidden rounded-md border bg-background">
