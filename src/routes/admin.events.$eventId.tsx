@@ -1307,7 +1307,7 @@ function EventDetail() {
       <>
         <PageHeader title="Event not found" description="" />
         <EmptyNotice>
-          This event does not exist for your agency, or you do not have access to it.{" "}
+          This event does not exist for your organisation, or you do not have access to it.{" "}
           <Link to="/admin/events" className="font-medium text-primary hover:underline">
             Back to events
           </Link>
