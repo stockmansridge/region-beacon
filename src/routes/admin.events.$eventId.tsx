@@ -1506,6 +1506,16 @@ function EventDetail() {
 
       />
 
+      <LaunchReadinessChecklist
+        event={event}
+        domains={domains}
+        terms={terms}
+        venues={venues}
+        qrByVenue={qrByVenue}
+        activation={activation}
+        leaderboard={leaderboard}
+      />
+
       <EventSetupWarnings
         status={event.status}
         domains={domains}
@@ -1513,6 +1523,7 @@ function EventDetail() {
         hasVenues={venues.length > 0}
         eventId={event.id}
       />
+
 
       {agency.isPlatformAdmin && diagnosticsEnabled && (
         <PublishGateDiagnostic
