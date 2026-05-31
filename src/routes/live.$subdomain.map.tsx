@@ -111,30 +111,47 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
       // Load passport stamps if a saved passport exists for this event.
       if (evt?.event_id && typeof localStorage !== "undefined") {
+        const key = `gs.passport.${evt.event_id}`;
+        let savedFound = false;
+        let stampRpcError: string | null = null;
+        let stampRowCount = 0;
         try {
-          const raw = localStorage.getItem(`gs.passport.${evt.event_id}`);
+          const raw = localStorage.getItem(key);
           if (raw) {
             const parsed = JSON.parse(raw) as { access_token?: string };
             if (parsed?.access_token) {
+              savedFound = true;
               setHasPassport(true);
-              const { data: stampsData } = await supabase.rpc(
+              const { data: stampsData, error: stampsErr } = await supabase.rpc(
                 "get_passport_stamps_by_token" as never,
                 { _raw_token: parsed.access_token } as never,
               );
               if (cancelled) return;
-              const visited = new Set<string>();
-              for (const s of (stampsData ?? []) as Array<{
+              if (stampsErr) {
+                stampRpcError =
+                  (stampsErr as { message?: string }).message ?? "rpc error";
+              }
+              const rows = (stampsData ?? []) as Array<{
                 venue_id: string | null;
                 is_stamped: boolean | null;
-              }>) {
+              }>;
+              stampRowCount = rows.length;
+              const visited = new Set<string>();
+              for (const s of rows) {
                 if (s.venue_id && s.is_stamped) visited.add(String(s.venue_id));
               }
               setVisitedIds(visited);
             }
           }
-        } catch {
-          /* ignore */
+        } catch (e) {
+          stampRpcError = e instanceof Error ? e.message : String(e);
         }
+        setStampDiag({
+          savedPassportKey: key,
+          savedPassportFound: savedFound,
+          stampRpcError,
+          stampRowCount,
+        });
       }
     })();
     return () => {
