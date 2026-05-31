@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
@@ -240,6 +240,8 @@ function EventDetail() {
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState<EditForm | null>(null);
@@ -291,6 +293,15 @@ function EventDetail() {
         code: "INVALID_ID",
       });
       setState("not-found");
+      return;
+    }
+    // Wait for the agency context to finish resolving before deciding
+    // whether to show an error. Without this gate, the first render
+    // (where agencyId is briefly null while agency context loads) flashes
+    // the "Could not load event detail" panel before the real fetch runs.
+    if (agency.status === "loading") {
+      setState("loading");
+      setDiagnostic(null);
       return;
     }
     if (!agencyId) {
@@ -597,7 +608,7 @@ function EventDetail() {
     return () => {
       cancelled = true;
     };
-  }, [agencyId, eventId, reloadKey, auth.session?.user.id]);
+  }, [agencyId, eventId, reloadKey, auth.session?.user.id, agency.status]);
 
   function startEdit() {
     if (!bundle) return;
@@ -1090,6 +1101,30 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  async function archiveEvent() {
+    if (!agencyId || !bundle) return;
+    if (
+      !window.confirm(
+        "Archive this event? It will be removed from active admin lists and public access. Existing records (venues, visitors, check-ins) are kept for audit/history.",
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    const { error } = await supabase
+      .from("events")
+      .update({ deleted_at: new Date().toISOString(), status: "archived" })
+      .eq("id", bundle.event.id)
+      .eq("agency_id", agencyId);
+    if (error) {
+      setDeleting(false);
+      toast.error(`Could not archive event: ${error.message}`);
+      return;
+    }
+    toast.success("Event archived.");
+    navigate({ to: "/admin/events", replace: true });
+  }
+
   /**
    * Build the check-in URL for a QR token.
    * Prefers the event's active public_subdomain domain. Falls back to the
@@ -1363,6 +1398,17 @@ function EventDetail() {
                   className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
                 >
                   Edit basics
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={archiveEvent}
+                  disabled={deleting}
+                  title="Archive this event (soft delete). Existing records are preserved."
+                  className="inline-flex h-9 items-center rounded-lg border border-destructive/40 bg-destructive/5 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                >
+                  {deleting ? "Archiving…" : "Archive event"}
                 </button>
               )}
             </div>
