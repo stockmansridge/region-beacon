@@ -230,16 +230,25 @@ function CheckinPage() {
         // but handle defensively as "no passport for event".
         if ((error.message ?? "").toLowerCase().includes("passport_event_mismatch") ||
             (error.message ?? "").toLowerCase().includes("passport_not_found")) {
+          // Saved passport is stale/replaced — clear only this event's entry
+          // so the visitor can register fresh. Other events' passports remain.
+          if (currentEventId) {
+            try {
+              localStorage.removeItem(`gs.passport.${currentEventId}`);
+            } catch {
+              // ignore
+            }
+          }
           storeReturnTo(currentEventId);
-          const otherPassports = allPassports.filter(
+          const remaining = allPassports.filter(
             (p) => !currentEventId || p.event_id !== currentEventId,
           );
           setOutcome({
             kind: "no_passport_for_event",
             subdomain,
-            otherPassports,
+            otherPassports: remaining,
             diag: baseDiag({
-              stage: "passport_event_mismatch",
+              stage: "passport_stale_cleared",
               return_to_stored: true,
               passport_attempted: true,
               error: supaErr,
