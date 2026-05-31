@@ -74,30 +74,36 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
       // Visited state from local passport (if any)
       const evt = (evtData?.[0] ?? null) as { event_id?: string } | null;
-      if (evt?.event_id && typeof localStorage !== "undefined") {
-        try {
-          const raw = localStorage.getItem(`gs.passport.${evt.event_id}`);
-          if (!raw) return;
-          const parsed = JSON.parse(raw) as { access_token?: string };
-          if (!parsed?.access_token) return;
-          const { data: stampsData } = await supabase.rpc(
-            "get_passport_stamps_by_token" as never,
-            { _raw_token: parsed.access_token } as never,
-          );
-          if (cancelled) return;
-          const stamp = ((stampsData ?? []) as Array<{
-            venue_id: string | null;
-            stamped: boolean | null;
-            stamped_at: string | null;
-          }>).find((s) => s.venue_id === venueId);
-          if (stamp?.stamped) {
-            setVisited({ kind: "visited", at: stamp.stamped_at ?? null });
-          } else {
-            setVisited({ kind: "not_visited" });
-          }
-        } catch {
-          /* ignore */
+      if (!evt?.event_id) return;
+      if (typeof localStorage === "undefined") return;
+      try {
+        const raw = localStorage.getItem(`gs.passport.${evt.event_id}`);
+        if (!raw) {
+          setVisited({ kind: "no_passport" });
+          return;
         }
+        const parsed = JSON.parse(raw) as { access_token?: string };
+        if (!parsed?.access_token) {
+          setVisited({ kind: "no_passport" });
+          return;
+        }
+        const { data: stampsData } = await supabase.rpc(
+          "get_passport_stamps_by_token" as never,
+          { _raw_token: parsed.access_token } as never,
+        );
+        if (cancelled) return;
+        const stamp = ((stampsData ?? []) as Array<{
+          venue_id: string | null;
+          stamped: boolean | null;
+          stamped_at: string | null;
+        }>).find((s) => s.venue_id === venueId);
+        if (stamp?.stamped) {
+          setVisited({ kind: "visited", at: stamp.stamped_at ?? null });
+        } else {
+          setVisited({ kind: "not_visited" });
+        }
+      } catch {
+        /* ignore */
       }
     })();
     return () => {
