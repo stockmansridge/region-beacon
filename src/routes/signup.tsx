@@ -45,13 +45,13 @@ const SignupSchema = z
     businessName: z
       .string()
       .trim()
-      .min(1, "Business / organisation name is required.")
+      .min(1, "Organisation name is required.")
       .max(200),
     slug: z
       .string()
       .trim()
-      .min(2, "Workspace URL must be at least 2 characters.")
-      .max(60, "Workspace URL must be 60 characters or fewer.")
+      .min(2, "Organisation URL name must be at least 2 characters.")
+      .max(60, "Organisation URL name must be 60 characters or fewer.")
       .regex(
         /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
         "Use lowercase letters, numbers and hyphens only.",
