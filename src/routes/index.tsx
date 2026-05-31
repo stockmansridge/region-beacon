@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GetStampdLogo, GetStampdMark } from "@/components/brand";
 import { Mail, LifeBuoy, ShieldCheck } from "lucide-react";
+import { useTenantSubdomain } from "@/lib/tenant-host";
+import { LivePublicPage } from "./live.$subdomain.index";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,8 +23,15 @@ export const Route = createFileRoute("/")({
       { name: "robots", content: "index, follow" },
     ],
   }),
-  component: ComingSoon,
+  component: IndexRoute,
 });
+
+function IndexRoute() {
+  const subdomain = useTenantSubdomain();
+  if (subdomain) return <LivePublicPage subdomain={subdomain} />;
+  return <ComingSoon />;
+}
+
 
 function ComingSoon() {
   return (
