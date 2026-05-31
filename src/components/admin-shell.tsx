@@ -200,7 +200,7 @@ export function AdminShell({
           <header className="hidden h-16 items-center justify-between border-b bg-background px-6 lg:flex">
             <div>
               <div className="text-xs text-muted-foreground">
-                {agencyName ? "Agency workspace" : "Signed in as"}
+                {agencyName ? "Organisation workspace" : "Signed in as"}
               </div>
               <div className="text-sm font-semibold">
                 {agencyName ?? email ?? "—"}
@@ -209,10 +209,10 @@ export function AdminShell({
             <div className="flex items-center gap-3">
               {ambiguousAgency && (
                 <span
-                  title="You belong to multiple agencies. Showing the first one until an agency switcher is added."
+                  title="You belong to multiple organisations. Showing the first one until an organisation switcher is added."
                   className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400"
                 >
-                  Multi-agency (temp)
+                  Multi-organisation (temp)
                 </span>
               )}
               {agencyRole && (
