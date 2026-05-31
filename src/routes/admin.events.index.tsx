@@ -485,7 +485,7 @@ function CreateEventDialog({
       setSaving(false);
       const msg = evErr?.message ?? "Could not create event.";
       if (/duplicate|unique/i.test(msg) && /slug/i.test(msg)) {
-        setSaveError("That slug is already used by another event in this agency. Try a different slug.");
+        setSaveError("That slug is already used by another event in this organisation. Try a different slug.");
       } else {
         setSaveError(`Could not create event: ${msg}`);
       }
