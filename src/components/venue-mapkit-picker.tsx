@@ -237,8 +237,26 @@ export function VenueMapKitPicker({
       </div>
 
       {status === "error" && (
-        <div className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-          Apple Maps picker is unavailable ({errorMsg ?? "unknown error"}). You can still set address and lat/lng manually below.
+        <div className="space-y-2 rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <div>
+            Apple Maps picker is unavailable ({errorMsg ?? "unknown error"}). You can still set address and lat/lng manually below.
+          </div>
+          {diag && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowDiag((v) => !v)}
+                className="text-[11px] underline underline-offset-2"
+              >
+                {showDiag ? "Hide" : "Show"} diagnostics (no key material)
+              </button>
+              {showDiag && (
+                <pre className="mt-1 max-h-48 overflow-auto rounded bg-amber-100/60 p-2 text-[10px] leading-snug dark:bg-amber-950/60">
+{JSON.stringify(diag, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
         </div>
       )}
 
