@@ -66,6 +66,8 @@ export function VenueMapKitPicker({
   const fetchToken = useServerFn(getMapkitToken);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [diag, setDiag] = useState<MapkitDiag | null>(null);
+  const [showDiag, setShowDiag] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<Array<{ id: string; name: string; address: string; lat: number; lng: number }>>([]);
   const [searching, setSearching] = useState(false);
