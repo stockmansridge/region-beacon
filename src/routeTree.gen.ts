@@ -141,9 +141,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   getParentRoute: () => AdminRoute,
 } as any)
 const VenuesVenueIdRoute = VenuesVenueIdRouteImport.update({
-  id: '/$venueId',
-  path: '/$venueId',
-  getParentRoute: () => VenuesRoute,
+  id: '/venues/$venueId',
+  path: '/venues/$venueId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const TAgencySlugRoute = TAgencySlugRouteImport.update({
   id: '/t/$agencySlug',
@@ -294,9 +294,9 @@ const TAgencySlugEEventSlugRoute = TAgencySlugEEventSlugRouteImport.update({
 } as any)
 const LiveSubdomainVenuesVenueIdRoute =
   LiveSubdomainVenuesVenueIdRouteImport.update({
-    id: '/$venueId',
-    path: '/$venueId',
-    getParentRoute: () => LiveSubdomainVenuesRoute,
+    id: '/live/$subdomain/venues/$venueId',
+    path: '/live/$subdomain/venues/$venueId',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AdminEventsEventIdPreviewRoute =
   AdminEventsEventIdPreviewRouteImport.update({
@@ -655,6 +655,7 @@ export interface RootRouteChildren {
   DemoWineriesRoute: typeof DemoWineriesRouteWithChildren
   PassportTokenRoute: typeof PassportTokenRoute
   TAgencySlugRoute: typeof TAgencySlugRouteWithChildren
+  VenuesVenueIdRoute: typeof VenuesVenueIdRoute
   DemoIndexRoute: typeof DemoIndexRoute
   PassportIndexRoute: typeof PassportIndexRoute
   VenuesIndexRoute: typeof VenuesIndexRoute
@@ -666,6 +667,7 @@ export interface RootRouteChildren {
   LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
+  LiveSubdomainVenuesVenueIdRoute: typeof LiveSubdomainVenuesVenueIdRoute
   LiveSubdomainVenuesIndexRoute: typeof LiveSubdomainVenuesIndexRoute
 }
 
@@ -785,10 +787,10 @@ declare module '@tanstack/react-router' {
     }
     '/venues/$venueId': {
       id: '/venues/$venueId'
-      path: '/$venueId'
+      path: '/venues/$venueId'
       fullPath: '/venues/$venueId'
       preLoaderRoute: typeof VenuesVenueIdRouteImport
-      parentRoute: typeof VenuesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/t/$agencySlug': {
       id: '/t/$agencySlug'
@@ -995,10 +997,10 @@ declare module '@tanstack/react-router' {
     }
     '/live/$subdomain/venues/$venueId': {
       id: '/live/$subdomain/venues/$venueId'
-      path: '/$venueId'
+      path: '/live/$subdomain/venues/$venueId'
       fullPath: '/live/$subdomain/venues/$venueId'
       preLoaderRoute: typeof LiveSubdomainVenuesVenueIdRouteImport
-      parentRoute: typeof LiveSubdomainVenuesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin_/events/$eventId/preview': {
       id: '/admin_/events/$eventId/preview'
@@ -1102,6 +1104,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoWineriesRoute: DemoWineriesRouteWithChildren,
   PassportTokenRoute: PassportTokenRoute,
   TAgencySlugRoute: TAgencySlugRouteWithChildren,
+  VenuesVenueIdRoute: VenuesVenueIdRoute,
   DemoIndexRoute: DemoIndexRoute,
   PassportIndexRoute: PassportIndexRoute,
   VenuesIndexRoute: VenuesIndexRoute,
@@ -1113,18 +1116,9 @@ const rootRouteChildren: RootRouteChildren = {
   LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
+  LiveSubdomainVenuesVenueIdRoute: LiveSubdomainVenuesVenueIdRoute,
   LiveSubdomainVenuesIndexRoute: LiveSubdomainVenuesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
