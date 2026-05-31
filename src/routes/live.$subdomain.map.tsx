@@ -352,7 +352,23 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         /* ignore */
       }
     }
-  }, [filteredVenues, hasPassport, visitedIds, event?.accent_color, event?.primary_color]);
+  }, [mapReady, filteredVenues, hasPassport, visitedIds, event?.accent_color, event?.primary_color]);
+
+  // Highlight the selected pin without recreating annotations.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    try {
+      if (selected?.venue_id) {
+        const a = annotationsRef.current.get(selected.venue_id);
+        if (a) map.selectedAnnotation = a;
+      } else {
+        map.selectedAnnotation = null;
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [selected, mapReady]);
 
   const labels = resolveVenueLabels(event ?? {});
   const primary = event?.primary_color ?? "#1F3D2B";
