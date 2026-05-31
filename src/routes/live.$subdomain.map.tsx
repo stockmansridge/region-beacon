@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { getMapkitToken } from "@/lib/mapkit.functions";
+import { getMapkitToken, type MapkitDiag } from "@/lib/mapkit.functions";
 import { loadMapKitScript } from "@/lib/mapkit-loader";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
@@ -10,7 +10,7 @@ import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
-import { rpcEventHost } from "@/lib/domains";
+import { rpcEventHost, matchRootDomain } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/map")({
   head: () => ({ meta: [{ title: "Trail Map" }] }),
@@ -43,12 +43,37 @@ type EventRow = {
 
 type Filter = "all" | "visited" | "not_visited";
 
+type MapDiagnostics = {
+  tokenStatus: "pending" | "ok" | "error";
+  tokenError: string | null;
+  tokenDiag: MapkitDiag | null;
+  scriptStatus: "pending" | "ok" | "error";
+  scriptError: string | null;
+  initStatus: "pending" | "ok" | "error";
+  initError: string | null;
+  appleErrorStatus: string | null;
+  appleErrorMessage: string | null;
+};
+
+const INITIAL_DIAG: MapDiagnostics = {
+  tokenStatus: "pending",
+  tokenError: null,
+  tokenDiag: null,
+  scriptStatus: "pending",
+  scriptError: null,
+  initStatus: "pending",
+  initError: null,
+  appleErrorStatus: null,
+  appleErrorMessage: null,
+};
+
 export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const fetchToken = useServerFn(getMapkitToken);
   const [event, setEvent] = useState<EventRow | null>(null);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [mapDiag, setMapDiag] = useState<MapDiagnostics>(INITIAL_DIAG);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [hasPassport, setHasPassport] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
@@ -135,34 +160,101 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     if (geoVenues.length === 0) return;
     let cancelled = false;
     (async () => {
+      // 1. Token
+      let tokenRes: Awaited<ReturnType<typeof fetchToken>>;
       try {
-        const tokenRes = await fetchToken();
+        tokenRes = await fetchToken();
+      } catch (e) {
         if (cancelled) return;
-        if (!tokenRes.token) {
-          setMapError("Map unavailable right now.");
-          return;
-        }
+        const msg = e instanceof Error ? e.message : "Token endpoint failed";
+        setMapDiag((d) => ({ ...d, tokenStatus: "error", tokenError: msg }));
+        setMapError(`Could not reach MapKit token endpoint: ${msg}`);
+        return;
+      }
+      if (cancelled) return;
+      setMapDiag((d) => ({
+        ...d,
+        tokenStatus: tokenRes.token ? "ok" : "error",
+        tokenError: tokenRes.error ?? null,
+        tokenDiag: tokenRes.diag ?? null,
+      }));
+      if (!tokenRes.token) {
+        setMapError(tokenRes.error ?? "MapKit token unavailable.");
+        return;
+      }
+
+      // 2. Script
+      try {
         await loadMapKitScript();
+      } catch (e) {
         if (cancelled) return;
-        const mapkit = window.mapkit;
-        if (!mapkit) {
-          setMapError("Map unavailable right now.");
-          return;
-        }
+        const msg = e instanceof Error ? e.message : "Script load failed";
+        setMapDiag((d) => ({ ...d, scriptStatus: "error", scriptError: msg }));
+        setMapError(`Apple MapKit JS failed to load: ${msg}`);
+        return;
+      }
+      if (cancelled) return;
+      const mapkit = window.mapkit;
+      if (!mapkit) {
+        setMapDiag((d) => ({
+          ...d,
+          scriptStatus: "error",
+          scriptError: "window.mapkit missing after load",
+        }));
+        setMapError("Apple MapKit JS loaded but window.mapkit is missing.");
+        return;
+      }
+      setMapDiag((d) => ({ ...d, scriptStatus: "ok" }));
+
+      // 3. Listen for Apple rejecting the token (typically domain not allowed).
+      try {
+        mapkit.addEventListener?.("error", (e: any) => {
+          const status = e?.status ?? e?.code ?? "unknown";
+          const message = e?.message ?? String(status);
+          setMapDiag((d) => ({
+            ...d,
+            appleErrorStatus: String(status),
+            appleErrorMessage: message,
+          }));
+          if (status === "Unauthorized" || status === "Initialization Failed") {
+            setMapError(
+              `Apple rejected this domain (${status}). Add *.getstampd.com.au to the MapKit JS allowed domains in your Apple Developer account.`,
+            );
+          } else {
+            setMapError(`Apple MapKit error: ${status}`);
+          }
+        });
+      } catch {
+        /* ignore */
+      }
+
+      // 4. Init + create map
+      try {
         mapkit.init({
           authorizationCallback: (done: (t: string) => void) => {
             done(tokenRes.token!);
           },
         });
-        if (!mapContainerRef.current) return;
+        if (!mapContainerRef.current) {
+          setMapDiag((d) => ({
+            ...d,
+            initStatus: "error",
+            initError: "map container not mounted",
+          }));
+          setMapError("Map container is not ready.");
+          return;
+        }
         const map = new mapkit.Map(mapContainerRef.current, {
           showsCompass: mapkit.FeatureVisibility?.Adaptive,
           isRotationEnabled: false,
           showsUserLocationControl: true,
         });
         mapRef.current = map;
+        setMapDiag((d) => ({ ...d, initStatus: "ok" }));
       } catch (e) {
-        setMapError(e instanceof Error ? e.message : "Map unavailable.");
+        const msg = e instanceof Error ? e.message : "Map init failed";
+        setMapDiag((d) => ({ ...d, initStatus: "error", initError: msg }));
+        setMapError(`Apple MapKit failed to initialise: ${msg}`);
       }
     })();
     return () => {
@@ -240,8 +332,32 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   }
 
   const noCoords = geoVenues.length === 0;
+  const unmappedVenues = useMemo(
+    () => venues.filter((v) => !geoVenues.includes(v)),
+    [venues, geoVenues],
+  );
   const visitedCount = visitedIds.size;
   const totalCount = geoVenues.length;
+
+  const buildSupportReport = useCallback(() => {
+    const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+    const href = typeof window !== "undefined" ? window.location.href : "";
+    const isAllowedLooking = Boolean(matchRootDomain(hostname));
+    const report = {
+      timestamp: new Date().toISOString(),
+      pageUrl: href,
+      hostname,
+      subdomain,
+      route: "/live/$subdomain/map",
+      hostnameLooksAllowed: isAllowedLooking,
+      venueCount: venues.length,
+      venueCountWithLatLng: geoVenues.length,
+      fallbackListRendered: Boolean(mapError),
+      mapError,
+      mapkit: mapDiag,
+    };
+    return JSON.stringify(report, null, 2);
+  }, [subdomain, venues.length, geoVenues.length, mapError, mapDiag]);
 
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-6">
@@ -310,7 +426,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
         {noCoords ? (
           <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center text-sm text-[#3D372C]">
-            <p>No mapped {labels.plural.toLowerCase()} yet.</p>
+            <p>No venue locations have been set yet.</p>
             <Link
               to="/venues"
               className="mt-3 inline-block rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider"
@@ -320,7 +436,12 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
             </Link>
           </div>
         ) : mapError ? (
-          <MapFallbackList venues={geoVenues} primary={primary} />
+          <MapFallbackList
+            venues={geoVenues}
+            primary={primary}
+            errorMessage={mapError}
+            buildReport={buildSupportReport}
+          />
         ) : (
           <>
             <div
@@ -337,6 +458,28 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
               />
             )}
           </>
+        )}
+
+        {!noCoords && unmappedVenues.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4 text-xs text-[#3D372C]">
+            <p className="mb-2 font-semibold uppercase tracking-[0.18em] text-[#8A7E66]">
+              {labels.plural} without map locations
+            </p>
+            <ul className="space-y-1">
+              {unmappedVenues.map((v) => (
+                <li key={v.venue_id ?? Math.random()}>
+                  <Link
+                    to="/venues/$venueId"
+                    params={{ venueId: v.venue_id ?? "" }}
+                    className="underline-offset-2 hover:underline"
+                    style={{ color: primary }}
+                  >
+                    {v.name ?? "Venue"}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         <div className="mt-6 flex justify-center">
@@ -435,10 +578,55 @@ function SelectedVenueCard({
   );
 }
 
-function MapFallbackList({ venues, primary }: { venues: VenueRow[]; primary: string }) {
+function MapFallbackList({
+  venues,
+  primary,
+  errorMessage,
+  buildReport,
+}: {
+  venues: VenueRow[];
+  primary: string;
+  errorMessage: string;
+  buildReport: () => string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const handleCopy = async () => {
+    const report = buildReport();
+    try {
+      await navigator.clipboard.writeText(report);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback: open the report so the visitor can copy manually.
+      setShowDetails(true);
+    }
+  };
   return (
     <div className="rounded-2xl border border-amber-500/40 bg-amber-50 p-4 text-sm text-amber-900">
-      <p className="mb-3 font-medium">Map preview unavailable. Here's the venue list:</p>
+      <p className="mb-1 font-medium">Map preview unavailable. Here's the venue list:</p>
+      <p className="mb-3 text-xs text-amber-800">{errorMessage}</p>
+      <div className="mb-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="rounded-full border border-amber-600/40 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-900 hover:bg-amber-100"
+        >
+          {copied ? "Copied ✓" : "Copy support details"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowDetails((v) => !v)}
+          className="rounded-full border border-amber-600/40 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-900 hover:bg-amber-100"
+        >
+          {showDetails ? "Hide" : "Show"} details
+        </button>
+      </div>
+      {showDetails && (
+        <pre className="mb-3 max-h-64 overflow-auto rounded-lg bg-white p-3 text-[10px] leading-snug text-amber-900">
+          {buildReport()}
+        </pre>
+      )}
       <ul className="space-y-2">
         {venues.map((v) => (
           <li key={v.venue_id ?? Math.random()}>
