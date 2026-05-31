@@ -101,7 +101,7 @@ function SystemAdmin() {
 
       <div className="rounded-2xl border border-dashed bg-muted/30 p-5 text-xs text-muted-foreground">
         Note: this area is intentionally read-only for now. No create, edit or
-        delete actions are wired. Agency and event admin tooling remains in the
+        delete actions are wired. Organisation and event admin tooling remains in the
         main Event admin dashboard.
       </div>
     </div>
