@@ -128,8 +128,7 @@ function Dashboard() {
             <div className="mt-1 text-xs text-muted-foreground">
               {loading ? "Loading…" : "Live"}
             </div>
-
-          </div>
+          </Link>
         ))}
       </div>
     </>
