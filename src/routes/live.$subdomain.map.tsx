@@ -43,12 +43,37 @@ type EventRow = {
 
 type Filter = "all" | "visited" | "not_visited";
 
+type MapDiagnostics = {
+  tokenStatus: "pending" | "ok" | "error";
+  tokenError: string | null;
+  tokenDiag: MapkitDiag | null;
+  scriptStatus: "pending" | "ok" | "error";
+  scriptError: string | null;
+  initStatus: "pending" | "ok" | "error";
+  initError: string | null;
+  appleErrorStatus: string | null;
+  appleErrorMessage: string | null;
+};
+
+const INITIAL_DIAG: MapDiagnostics = {
+  tokenStatus: "pending",
+  tokenError: null,
+  tokenDiag: null,
+  scriptStatus: "pending",
+  scriptError: null,
+  initStatus: "pending",
+  initError: null,
+  appleErrorStatus: null,
+  appleErrorMessage: null,
+};
+
 export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const fetchToken = useServerFn(getMapkitToken);
   const [event, setEvent] = useState<EventRow | null>(null);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [mapDiag, setMapDiag] = useState<MapDiagnostics>(INITIAL_DIAG);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [hasPassport, setHasPassport] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
