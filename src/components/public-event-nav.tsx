@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Ticket, MapPin, Trophy } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon } from "lucide-react";
 
 
 /**
@@ -30,7 +30,7 @@ export function PublicEventNav({
   hasPrivacy?: boolean;
   canRegister?: boolean;
   /** When set, forces this nav item to render as active, regardless of pathname. */
-  activeOverride?: "home" | "join" | "venues" | "leaderboard";
+  activeOverride?: "home" | "join" | "map" | "venues" | "leaderboard";
   /** When set, the Passport item renders as a plain <a href> to this URL instead of the /join route. */
   passportHref?: string;
 }) {
@@ -40,10 +40,11 @@ export function PublicEventNav({
   const location = useLocation();
   const pathname = location.pathname;
 
-  const isActive = (target: "home" | "join" | "venues" | "leaderboard") => {
+  const isActive = (target: "home" | "join" | "map" | "venues" | "leaderboard") => {
     if (activeOverride) return target === activeOverride;
     if (target === "home") return pathname === "/" || pathname === "";
     if (target === "join") return pathname === "/join";
+    if (target === "map") return pathname === "/map";
     if (target === "venues")
       return pathname === "/venues" || pathname.startsWith("/venues/");
     if (target === "leaderboard") return pathname === "/leaderboard";
@@ -88,6 +89,19 @@ export function PublicEventNav({
           ),
         }]
       : []),
+    {
+      key: "map",
+      label: "Trail Map",
+      node: (
+        <Link
+          to="/map"
+          className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+          style={{ color: primary }}
+        >
+          Trail Map
+        </Link>
+      ),
+    },
     {
       key: "venues",
       label: "Venues",
@@ -175,24 +189,6 @@ export function PublicEventNav({
       >
         <ul className="mx-auto flex h-14 max-w-md items-stretch">
           <li className="relative flex flex-1">
-            <Link
-              to="/"
-              aria-current={isActive("home") ? "page" : undefined}
-              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-              style={{ color: isActive("home") ? accent : primary }}
-            >
-              <Home className="h-5 w-5" />
-              <span>Home</span>
-            </Link>
-            {isActive("home") && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
-                style={{ backgroundColor: accent }}
-              />
-            )}
-          </li>
-          <li className="relative flex flex-1">
             {canRegister ? (
               passportHref ? (
                 <a
@@ -229,6 +225,24 @@ export function PublicEventNav({
               </button>
             )}
             {canRegister && isActive("join") && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
+                style={{ backgroundColor: accent }}
+              />
+            )}
+          </li>
+          <li className="relative flex flex-1">
+            <Link
+              to="/map"
+              aria-current={isActive("map") ? "page" : undefined}
+              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: isActive("map") ? accent : primary }}
+            >
+              <MapIcon className="h-5 w-5" />
+              <span>Trail Map</span>
+            </Link>
+            {isActive("map") && (
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"

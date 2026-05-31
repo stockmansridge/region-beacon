@@ -16,6 +16,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
+import { Route as MapRouteImport } from './routes/map'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -47,6 +48,7 @@ import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.inde
 import { Route as LiveSubdomainVenuesRouteImport } from './routes/live.$subdomain.venues'
 import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
 import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
+import { Route as LiveSubdomainMapRouteImport } from './routes/live.$subdomain.map'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
@@ -91,6 +93,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const MarketingPreviewRoute = MarketingPreviewRouteImport.update({
   id: '/marketing-preview',
   path: '/marketing-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeaderboardRoute = LeaderboardRouteImport.update({
@@ -248,6 +255,11 @@ const LiveSubdomainPrivacyRoute = LiveSubdomainPrivacyRouteImport.update({
   path: '/live/$subdomain/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiveSubdomainMapRoute = LiveSubdomainMapRouteImport.update({
+  id: '/live/$subdomain/map',
+  path: '/live/$subdomain/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveSubdomainLeaderboardRoute =
   LiveSubdomainLeaderboardRouteImport.update({
     id: '/live/$subdomain/leaderboard',
@@ -310,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
@@ -343,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/map': typeof LiveSubdomainMapRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
@@ -359,6 +373,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
@@ -392,6 +407,7 @@ export interface FileRoutesByTo {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/map': typeof LiveSubdomainMapRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
@@ -410,6 +426,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
@@ -443,6 +460,7 @@ export interface FileRoutesById {
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
+  '/live/$subdomain/map': typeof LiveSubdomainMapRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesRouteWithChildren
@@ -462,6 +480,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/join'
     | '/leaderboard'
+    | '/map'
     | '/marketing-preview'
     | '/privacy'
     | '/signup'
@@ -495,6 +514,7 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/map'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
@@ -511,6 +531,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/join'
     | '/leaderboard'
+    | '/map'
     | '/marketing-preview'
     | '/privacy'
     | '/signup'
@@ -544,6 +565,7 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/map'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
@@ -561,6 +583,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/join'
     | '/leaderboard'
+    | '/map'
     | '/marketing-preview'
     | '/privacy'
     | '/signup'
@@ -594,6 +617,7 @@ export interface FileRouteTypes {
     | '/demo/wineries/$venueId'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
+    | '/live/$subdomain/map'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/venues'
@@ -612,6 +636,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   JoinRoute: typeof JoinRoute
   LeaderboardRoute: typeof LeaderboardRoute
+  MapRoute: typeof MapRoute
   MarketingPreviewRoute: typeof MarketingPreviewRoute
   PrivacyRoute: typeof PrivacyRoute
   SignupRoute: typeof SignupRoute
@@ -635,6 +660,7 @@ export interface RootRouteChildren {
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
+  LiveSubdomainMapRoute: typeof LiveSubdomainMapRoute
   LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
   LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
   LiveSubdomainVenuesRoute: typeof LiveSubdomainVenuesRouteWithChildren
@@ -691,6 +717,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing-preview'
       fullPath: '/marketing-preview'
       preLoaderRoute: typeof MarketingPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leaderboard': {
@@ -910,6 +943,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/live/$subdomain/map': {
+      id: '/live/$subdomain/map'
+      path: '/live/$subdomain/map'
+      fullPath: '/live/$subdomain/map'
+      preLoaderRoute: typeof LiveSubdomainMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/leaderboard': {
       id: '/live/$subdomain/leaderboard'
       path: '/live/$subdomain/leaderboard'
@@ -1065,6 +1105,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   JoinRoute: JoinRoute,
   LeaderboardRoute: LeaderboardRoute,
+  MapRoute: MapRoute,
   MarketingPreviewRoute: MarketingPreviewRoute,
   PrivacyRoute: PrivacyRoute,
   SignupRoute: SignupRoute,
@@ -1088,6 +1129,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
+  LiveSubdomainMapRoute: LiveSubdomainMapRoute,
   LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
   LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
   LiveSubdomainVenuesRoute: LiveSubdomainVenuesRouteWithChildren,
@@ -1097,13 +1139,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
