@@ -891,6 +891,9 @@ function EventDetail() {
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueEditingId(v.id);
+    requestAnimationFrame(() => {
+      venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function cancelVenueEdit() {
