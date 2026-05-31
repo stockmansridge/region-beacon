@@ -368,8 +368,6 @@ function PassportView({
   const goal = totalVenues > 0 ? totalVenues : Math.max(stampedCount, 1);
   const pct = Math.min(100, Math.round((stampedCount / goal) * 100));
 
-  const stampedVenues = (stamps?.venues ?? []).filter((v) => v.is_stamped);
-  const remainingVenues = (stamps?.venues ?? []).filter((v) => !v.is_stamped);
 
   async function copy() {
     try {
