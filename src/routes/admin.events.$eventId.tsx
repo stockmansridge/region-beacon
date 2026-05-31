@@ -2087,6 +2087,8 @@ function EventDetail() {
                     );
                   })()}
                 </FormSection>
+                </>
+                )}
               </div>
             )}
             {venues.length === 0 ? (
