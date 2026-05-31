@@ -238,7 +238,15 @@ function AccountPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Account">
-          <Row label="Agency" value={agency.selected?.name ?? "—"} />
+          <OrganisationNameEditor
+            agencyId={agencyId}
+            currentName={agency.selected?.name ?? ""}
+            canEdit={
+              access.isPlatformAdmin ||
+              agencyRole === "agency_owner" ||
+              agencyRole === "agency_admin"
+            }
+          />
           <Row label="Agency slug" value={agency.selected?.slug ?? "—"} mono />
           <Row label="Signed-in email" value={auth.email ?? "—"} />
           <Row label="Agency role" value={agencyRole ?? "—"} />
