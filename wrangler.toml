@@ -42,6 +42,15 @@ NODE_ENV = "production"
 # (Vite replaces import.meta.env.* at build). Set them in the CI/build env,
 # not here. Runtime-only secrets (service role, webhook secrets) go in
 # `wrangler secret put NAME` once they exist.
+#
+# Required runtime secrets on the `region-beacon` Worker (set via
+# `wrangler secret put <NAME> --name region-beacon`):
+#   - MAPKIT_TEAM_ID       Apple Developer Team ID (JWT iss)
+#   - MAPKIT_KEY_ID        MapKit JS Key ID (JWT kid)
+#   - MAPKIT_PRIVATE_KEY   Full .p8 PEM contents (BEGIN/END headers included)
+# Lovable-managed secrets are NOT synced to this self-deployed Worker; the
+# production tenant hosts (*.getstampd.com.au) read these via process.env
+# from the Worker's own secret store. See docs/cloudflare/MAPKIT_WORKER_SECRETS.md.
 
 # --- Observability ---
 # Enabled so we can diagnose the workers.dev runtime error from the
