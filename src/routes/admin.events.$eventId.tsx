@@ -1755,10 +1755,73 @@ function EventDetail() {
                   )}
                 </FormSection>
 
+                {venueEditingId !== "new" && (() => {
+                  const activeSub =
+                    domains.find(
+                      (d) =>
+                        d.domain_type === "event_subdomain" &&
+                        d.status === "active" &&
+                        d.is_primary &&
+                        !!d.public_subdomain,
+                    ) ??
+                    domains.find(
+                      (d) =>
+                        d.domain_type === "event_subdomain" &&
+                        d.status === "active" &&
+                        !!d.public_subdomain,
+                    ) ??
+                    null;
+                  const publicVenueUrl = activeSub?.public_subdomain
+                    ? tenantUrl(activeSub.public_subdomain, `/venues/${venueEditingId}`)
+                    : null;
+                  return (
+                    <FormSection title="Public links">
+                      {publicVenueUrl ? (
+                        <div className="space-y-2">
+                          <div className="rounded-md border bg-background/60 px-3 py-2 text-xs font-mono break-all">
+                            {publicVenueUrl}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(publicVenueUrl);
+                                  toast.success("Public venue URL copied.");
+                                } catch {
+                                  toast.error("Could not copy to clipboard.");
+                                }
+                              }}
+                              className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                            >
+                              Copy public URL
+                            </button>
+                            <a
+                              href={publicVenueUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                            >
+                              Open ↗
+                            </a>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Only visible publicly when the venue status is <span className="font-mono">active</span>.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                          Add an active public subdomain for this event to get a shareable venue URL.
+                        </p>
+                      )}
+                    </FormSection>
+                  );
+                })()}
+
                 <FormSection title="Images">
                   {venueEditingId === "new" ? (
                     <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-                      Save the venue first, then re-open Edit to upload a logo and hero image.
+                      Save the venue first — the editor will stay open and image upload will become available immediately.
                     </p>
                   ) : (
                     <>
