@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getMapkitToken } from "@/lib/mapkit.functions";
+import { getMapkitToken, type MapkitDiag } from "@/lib/mapkit.functions";
 
 // Apple MapKit JS venue picker. Loaded only inside the admin venue editor.
 // MapKit JS itself is fetched from Apple's CDN on demand.
