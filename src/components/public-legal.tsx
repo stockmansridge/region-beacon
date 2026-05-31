@@ -120,7 +120,8 @@ export function ExternalLinkOnly({
   eventName: string;
 }) {
   return (
-    <PublicLegalShell subdomain={subdomain}>
+    <PublicLegalShell subdomain={subdomain} eventName={eventName}>
+
       <p className="text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
         {eventName}
       </p>
