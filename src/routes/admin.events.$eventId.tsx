@@ -1071,7 +1071,8 @@ function EventDetail() {
       await deleteVenueAssetSafely(previous);
     }
     setVenueAssetBusy(null);
-    setReloadKey((k) => k + 1);
+    // Do not reloadKey here — that would flip the page into loading state and
+    // unmount the editor. venueForm is already updated locally.
   }
 
   async function removeVenueImage(kind: VenueAssetKind) {
