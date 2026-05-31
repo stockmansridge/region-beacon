@@ -116,7 +116,7 @@ Supabase project.** This is the highest-priority follow-up.
 ## 7. Hard-coded domain cleanup
 
 **Status: ✅ COMPLETE (Phase C1).** All 19 product/UI references to the
-legacy `getstamped.com.au` typo have been rewritten to `getstampd.com.au`.
+legacy `getstampd.com.au` typo have been rewritten to `getstampd.com.au`.
 The only remaining occurrence in `src/` is the deliberate
 backward-compatibility fallback in `src/lib/tenant-resolution.ts:45`,
 which keeps historical `event_domains` rows resolvable.
@@ -128,9 +128,9 @@ use these instead of hard-coding the domain string.
 `PUBLIC_TENANT_ROOT_DOMAIN`.
 
 Verification:
-- `grep -rn "getstamped" src/` returns only `src/lib/tenant-resolution.ts`
+- `grep -rn "getstampd" src/` returns only `src/lib/tenant-resolution.ts`
   (intentional fallback) and `src/lib/domains.ts` (explanatory comment).
-- Legacy mentions remain in historical docs (`docs/deployment-getstamped.md`,
+- Legacy mentions remain in historical docs (`docs/deployment-getstampd.md`,
   `docs/plans/apple-mapkit-venue-picker.md`) and are not in scope.
 - No DNS / Cloudflare / Supabase / behavioural routing changes.
 

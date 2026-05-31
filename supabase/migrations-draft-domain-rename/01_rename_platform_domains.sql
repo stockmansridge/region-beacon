@@ -11,12 +11,12 @@
 begin;
 
 update public.event_domains
-   set custom_domain = 'getstamped.com.au'
+   set custom_domain = 'getstampd.com.au'
  where custom_domain = 'easypassport.com.au'
    and domain_type   = 'platform_marketing';
 
 update public.event_domains
-   set custom_domain = 'app.getstamped.com.au'
+   set custom_domain = 'app.getstampd.com.au'
  where custom_domain = 'app.easypassport.com.au'
    and domain_type   = 'platform_admin';
 
@@ -28,11 +28,11 @@ declare
 begin
   select count(*) into v_marketing
     from public.event_domains
-   where domain_type = 'platform_marketing' and custom_domain = 'getstamped.com.au';
+   where domain_type = 'platform_marketing' and custom_domain = 'getstampd.com.au';
 
   select count(*) into v_admin
     from public.event_domains
-   where domain_type = 'platform_admin' and custom_domain = 'app.getstamped.com.au';
+   where domain_type = 'platform_admin' and custom_domain = 'app.getstampd.com.au';
 
   if v_marketing <> 1 or v_admin <> 1 then
     raise exception 'domain rename verification failed: marketing=% admin=%',

@@ -43,4 +43,4 @@ where conrelid = 'public.event_terms_versions'::regclass
 
 -- E. Public RPC returns one row for a known live subdomain and zero for garbage.
 select * from public.get_public_event_legal_by_domain('garbage-host.invalid');
--- select * from public.get_public_event_legal_by_domain('demo.getstamped.com.au');
+-- select * from public.get_public_event_legal_by_domain('demo.getstampd.com.au');

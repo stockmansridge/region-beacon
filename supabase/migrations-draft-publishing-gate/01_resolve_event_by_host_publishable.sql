@@ -30,8 +30,8 @@ set search_path = public
 as $$
 declare
   v_host citext := lower(_hostname);
-  v_root constant citext := 'getstamped.com.au';
-  v_suffix constant text := '.getstamped.com.au';
+  v_root constant citext := 'getstampd.com.au';
+  v_suffix constant text := '.getstampd.com.au';
   v_label citext;
   v_evt uuid;
   v_slug citext;
@@ -51,7 +51,7 @@ begin
     return;
   end if;
 
-  -- 3) Event subdomain branch — must end with .getstamped.com.au.
+  -- 3) Event subdomain branch — must end with .getstampd.com.au.
   if right(v_host::text, length(v_suffix)) = v_suffix then
     v_label := split_part(v_host::text, '.', 1)::citext;
 

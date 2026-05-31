@@ -6,22 +6,22 @@
 -- A) Unknown host → single sentinel row (event_found = false).
 --    Expect: one row, all data fields null, is_enabled null, event_found false.
 select *
-from public.get_public_leaderboard_by_domain('does-not-exist.getstamped.com.au');
+from public.get_public_leaderboard_by_domain('does-not-exist.getstampd.com.au');
 
 -- B) Apex / admin / reserved host → same not-found sentinel.
-select * from public.get_public_leaderboard_by_domain('getstamped.com.au');
-select * from public.get_public_leaderboard_by_domain('app.getstamped.com.au');
-select * from public.get_public_leaderboard_by_domain('www.getstamped.com.au');
+select * from public.get_public_leaderboard_by_domain('getstampd.com.au');
+select * from public.get_public_leaderboard_by_domain('app.getstampd.com.au');
+select * from public.get_public_leaderboard_by_domain('www.getstampd.com.au');
 
 -- C) Live event subdomain with leaderboard_settings.is_enabled = false
 --    Expect: one row (null, null, null, false, true).
 --    Replace <SUB> with a real active subdomain whose event is publishable.
--- select * from public.get_public_leaderboard_by_domain('<SUB>.getstamped.com.au');
+-- select * from public.get_public_leaderboard_by_domain('<SUB>.getstampd.com.au');
 
 -- D) Live event with leaderboard enabled and check-ins.
 --    Expect: 1+ rows with rank starting at 1, display_name non-null,
 --    visit_count populated only when show_visit_count = true.
--- select * from public.get_public_leaderboard_by_domain('<SUB>.getstamped.com.au');
+-- select * from public.get_public_leaderboard_by_domain('<SUB>.getstampd.com.au');
 
 -- E) hide_below_checkins guard.
 --    Temporarily set hide_below_checkins higher than every passport's count
@@ -40,7 +40,7 @@ select * from public.get_public_leaderboard_by_domain('www.getstamped.com.au');
 --    exist) if the projection accidentally grows.
 select
   rank, display_name, visit_count, is_enabled, event_found
-from public.get_public_leaderboard_by_domain('getstamped.com.au')
+from public.get_public_leaderboard_by_domain('getstampd.com.au')
 limit 0;
 
 -- H) Confirm EXECUTE grants.

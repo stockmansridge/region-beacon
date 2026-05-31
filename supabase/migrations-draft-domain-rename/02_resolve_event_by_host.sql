@@ -1,6 +1,6 @@
 -- DRAFT — do not execute.
 -- Replaces public.resolve_event_by_host so its hardcoded host constants point
--- at getstamped.com.au instead of easypassport.com.au.
+-- at getstampd.com.au instead of easypassport.com.au.
 --
 -- Identical signature, return type, language, volatility, security mode, and
 -- search_path as the version in supabase/migrations-draft/32_rpcs_public.sql.
@@ -26,8 +26,8 @@ set search_path = public
 as $$
 declare
   v_host citext := lower(_hostname);
-  v_root constant citext := 'getstamped.com.au';
-  v_suffix constant text := '.getstamped.com.au';
+  v_root constant citext := 'getstampd.com.au';
+  v_suffix constant text := '.getstampd.com.au';
   v_label citext;
   v_evt uuid;
   v_slug citext;
@@ -47,7 +47,7 @@ begin
     return;
   end if;
 
-  -- Event subdomain: ONLY when host ends with .getstamped.com.au and the
+  -- Event subdomain: ONLY when host ends with .getstampd.com.au and the
   -- first label is not a reserved name.
   if right(v_host::text, length(v_suffix)) = v_suffix then
     v_label := split_part(v_host::text, '.', 1)::citext;

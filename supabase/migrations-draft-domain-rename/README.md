@@ -1,9 +1,9 @@
-# Domain rename draft — easypassport.com.au → getstamped.com.au
+# Domain rename draft — easypassport.com.au → getstampd.com.au
 
 Status: **DRAFT — do not execute.**
 
 The platform is being renamed from Easy Passport to **GetStampd** and the
-primary domain from `easypassport.com.au` to `getstamped.com.au`. Staging
+primary domain from `easypassport.com.au` to `getstampd.com.au`. Staging
 already has `event_domains` rows and a `resolve_event_by_host` RPC seeded
 against the old hostnames, so the rename cannot be done silently from the
 frontend — it requires a coordinated DB change.
@@ -11,15 +11,15 @@ frontend — it requires a coordinated DB change.
 ## What this draft proposes
 
 1. **Rename platform rows in `public.event_domains`**
-   - `easypassport.com.au`     → `getstamped.com.au`     (`platform_marketing`)
-   - `app.easypassport.com.au` → `app.getstamped.com.au` (`platform_admin`)
+   - `easypassport.com.au`     → `getstampd.com.au`     (`platform_marketing`)
+   - `app.easypassport.com.au` → `app.getstampd.com.au` (`platform_admin`)
 
 2. **Replace hardcoded host checks inside `public.resolve_event_by_host`**
-   - Root constant: `easypassport.com.au`  → `getstamped.com.au`
-   - Suffix constant: `.easypassport.com.au` → `.getstamped.com.au`
-   - Admin host check: `app.easypassport.com.au` → `app.getstamped.com.au`
+   - Root constant: `easypassport.com.au`  → `getstampd.com.au`
+   - Suffix constant: `.easypassport.com.au` → `.getstampd.com.au`
+   - Admin host check: `app.easypassport.com.au` → `app.getstampd.com.au`
    - Net effect: event subdomain resolution becomes
-     `{event}.getstamped.com.au`.
+     `{event}.getstampd.com.au`.
 
 3. **No schema changes.** No new columns, no enum changes, no policy
    changes, no storage buckets. RLS is unaffected.
@@ -53,11 +53,11 @@ where domain_type in ('platform_marketing','platform_admin')
 order by domain_type;
 
 -- 2. resolve_event_by_host returns the right role for each host shape.
-select * from public.resolve_event_by_host('getstamped.com.au');         -- marketing
-select * from public.resolve_event_by_host('app.getstamped.com.au');     -- admin
-select * from public.resolve_event_by_host('app.getstamped.com.au:443'); -- admin (port stripped)
-select * from public.resolve_event_by_host('example.getstamped.com.au'); -- unseeded event subdomain
-select * from public.resolve_event_by_host('admin.getstamped.com.au');   -- reserved label rejected
+select * from public.resolve_event_by_host('getstampd.com.au');         -- marketing
+select * from public.resolve_event_by_host('app.getstampd.com.au');     -- admin
+select * from public.resolve_event_by_host('app.getstampd.com.au:443'); -- admin (port stripped)
+select * from public.resolve_event_by_host('example.getstampd.com.au'); -- unseeded event subdomain
+select * from public.resolve_event_by_host('admin.getstampd.com.au');   -- reserved label rejected
 
 -- 3. Old hostnames no longer resolve.
 select * from public.resolve_event_by_host('easypassport.com.au');       -- expect: none / unknown

@@ -1,4 +1,4 @@
-# Deployment notes — getstamped.com.au public test
+# Deployment notes — getstampd.com.au public test
 
 Staging Supabase project is the backend. **No production database changes.**
 
@@ -9,11 +9,11 @@ shown in Lovable → Project → Custom Domain — do not guess A / CNAME values
 
 | Host                              | Purpose                          |
 | --------------------------------- | -------------------------------- |
-| `getstamped.com.au`               | Root → Coming Soon page          |
-| `www.getstamped.com.au`           | Mirror of root → Coming Soon     |
-| `app.getstamped.com.au`           | Admin portal (`/admin`)          |
-| `demo.getstamped.com.au`          | Demo trail (`/demo`)             |
-| `*.getstamped.com.au` (wildcard)  | Public event sites               |
+| `getstampd.com.au`               | Root → Coming Soon page          |
+| `www.getstampd.com.au`           | Mirror of root → Coming Soon     |
+| `app.getstampd.com.au`           | Admin portal (`/admin`)          |
+| `demo.getstampd.com.au`          | Demo trail (`/demo`)             |
+| `*.getstampd.com.au` (wildcard)  | Public event sites               |
 
 All five hosts must serve the **same deployed app** — host-aware redirects
 happen in `src/components/host-router.tsx` after the app boots.
@@ -25,7 +25,7 @@ are reserved and will NOT be treated as event subdomains.
 
 ## QR / mobile compatibility
 
-Existing QR tokens encode `https://{public_subdomain}.getstamped.com.au/checkin/{token}`.
+Existing QR tokens encode `https://{public_subdomain}.getstampd.com.au/checkin/{token}`.
 `/checkin/$qrToken` remains a top-level route, so QR scans work on any host
 unchanged. Host-router never rewrites `/checkin/*`.
 
@@ -37,16 +37,16 @@ the form falls back to a "signup not yet enabled" message.
 
 ## Smoke test checklist
 
-1. `https://getstamped.com.au/` → Coming Soon, "Admin login" CTA works.
-2. `https://www.getstamped.com.au/` → Coming Soon.
-3. `https://app.getstamped.com.au/` → redirects to `/admin` → login screen.
-4. `https://demo.getstamped.com.au/` → redirects to `/demo`.
-5. `https://cargordtrail.getstamped.com.au/` → renders `/live/cargordtrail`.
-6. `https://cargordtrail.getstamped.com.au/join`, `/venues`, `/venues/{id}`,
+1. `https://getstampd.com.au/` → Coming Soon, "Admin login" CTA works.
+2. `https://www.getstampd.com.au/` → Coming Soon.
+3. `https://app.getstampd.com.au/` → redirects to `/admin` → login screen.
+4. `https://demo.getstampd.com.au/` → redirects to `/demo`.
+5. `https://cargordtrail.getstampd.com.au/` → renders `/live/cargordtrail`.
+6. `https://cargordtrail.getstampd.com.au/join`, `/venues`, `/venues/{id}`,
    `/leaderboard`, `/terms`, `/privacy` all render.
-7. `https://cargordtrail.getstamped.com.au/checkin/{token}` works on mobile.
+7. `https://cargordtrail.getstampd.com.au/checkin/{token}` works on mobile.
 8. `/live/cargordtrail` on Lovable preview still works (no host rewrite there).
-9. `https://app.getstamped.com.au/signup` → form creates auth user + agency,
+9. `https://app.getstampd.com.au/signup` → form creates auth user + agency,
    then lands in `/admin`.
 10. Platform admin → `/marketing-preview` shows the full marketing site.
     Non-platform-admin → restricted screen.
