@@ -255,8 +255,32 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         const map = new mapkit.Map(mapContainerRef.current, {
           showsCompass: mapkit.FeatureVisibility?.Adaptive,
           isRotationEnabled: false,
-          showsUserLocationControl: true,
+          showsUserLocationControl: false,
+          tracksUserLocation: false,
+          showsUserLocation: false,
         });
+        // Set initial region centred on event venues (never the visitor's
+        // device location) so the map opens framed on the trail.
+        try {
+          const lats = geoVenues.map((v) => v.lat as number);
+          const lngs = geoVenues.map((v) => v.lng as number);
+          const minLat = Math.min(...lats);
+          const maxLat = Math.max(...lats);
+          const minLng = Math.min(...lngs);
+          const maxLng = Math.max(...lngs);
+          const centerLat = (minLat + maxLat) / 2;
+          const centerLng = (minLng + maxLng) / 2;
+          // Add padding; clamp to a sensible minimum span for single-venue
+          // events so we don't zoom in absurdly far.
+          const latSpan = Math.max((maxLat - minLat) * 1.6, 0.02);
+          const lngSpan = Math.max((maxLng - minLng) * 1.6, 0.02);
+          map.region = new mapkit.CoordinateRegion(
+            new mapkit.Coordinate(centerLat, centerLng),
+            new mapkit.CoordinateSpan(latSpan, lngSpan),
+          );
+        } catch {
+          /* ignore — annotations effect will still call showItems */
+        }
         mapRef.current = map;
         setMapDiag((d) => ({ ...d, initStatus: "ok" }));
       } catch (e) {
