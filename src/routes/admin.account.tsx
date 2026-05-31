@@ -628,7 +628,7 @@ function OrganisationSlugEditor({
   return (
     <div className="space-y-2 rounded-md border bg-muted/30 p-3">
       <label className="text-xs font-medium text-muted-foreground">
-        Organisation slug
+        Organisation URL name
       </label>
       <input
         type="text"
@@ -643,16 +643,16 @@ function OrganisationSlugEditor({
         autoFocus
       />
       <p className="text-[11px] text-muted-foreground">
-        Lowercase letters, numbers and hyphens. 3–50 characters. Must start and
-        end with a letter or number.
+        Used for workspace links and internal organisation references. Use lowercase
+        letters, numbers, and hyphens only. Public event URLs are not changed.
       </p>
       <p className="text-[11px] text-amber-700 dark:text-amber-400">
-        Changing this slug may affect admin workspace links. Public event URLs
+        Changing this URL name may affect admin workspace links. Public event URLs
         are not changed.
       </p>
       {!formatValid && normalized.length > 0 && (
         <p className="text-xs text-destructive">
-          Slug format is invalid.
+          URL name format is invalid.
         </p>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -675,7 +675,7 @@ function OrganisationSlugEditor({
           disabled={saving || !formatValid || unchanged}
           className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save slug"}
+          {saving ? "Saving…" : "Save URL name"}
         </button>
       </div>
     </div>
