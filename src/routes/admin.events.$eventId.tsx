@@ -2172,7 +2172,7 @@ function EventDetail() {
                   </button>
                 ) : (
                   <p className="mt-2 text-xs text-amber-800">
-                    Ask an agency admin or owner to configure terms.
+                    Ask an organisation admin or owner to configure terms.
                   </p>
                 )}
               </div>
