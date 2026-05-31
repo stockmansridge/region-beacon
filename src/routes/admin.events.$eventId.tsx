@@ -2235,9 +2235,26 @@ function EventDetail() {
                   </tbody>
                 </table>
                 {qrActionError && canEdit && (
-                  <p className="border-t bg-destructive/5 px-3 py-2 text-xs text-destructive">
-                    {qrActionError}
-                  </p>
+                  <div className="border-t bg-destructive/5 px-3 py-2 text-xs text-destructive space-y-1">
+                    <p>{qrActionError}</p>
+                    {qrSupportDetails && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={copyQrSupportDetails}
+                          className="inline-flex h-6 items-center rounded-md border border-destructive/40 bg-background px-2 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                        >
+                          {qrSupportCopied ? "Copied" : "Copy support details"}
+                        </button>
+                        <details className="text-[11px] text-destructive/80">
+                          <summary className="cursor-pointer">Show details</summary>
+                          <pre className="mt-1 max-h-48 overflow-auto rounded bg-destructive/5 p-2 text-[10px] leading-snug text-destructive">
+{qrSupportDetails}
+                          </pre>
+                        </details>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <p className="border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   {canEdit
