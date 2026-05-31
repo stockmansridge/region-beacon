@@ -6,6 +6,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
 import { TestEnvBanner } from "@/components/test-env-banner";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import {
+  savePendingOrganisationSignup,
+  clearPendingOrganisationSignup,
+} from "@/lib/pending-organisation-signup";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
