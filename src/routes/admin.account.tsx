@@ -7,6 +7,7 @@ import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useAuth } from "@/hooks/use-auth";
 import { NoAccessScreen } from "@/components/no-access-screen";
+import { formatRoleLabel } from "@/lib/role-labels";
 
 export const Route = createFileRoute("/admin/account")({
   head: () => ({ meta: [{ title: "Account & Billing" }] }),
@@ -254,10 +255,11 @@ function AccountPage() {
             canEdit={canEditOrg}
           />
           <Row label="Signed-in email" value={auth.email ?? "—"} />
-          <Row label="Organisation role" value={agencyRole ?? "—"} />
+          <Row label="Organisation role" value={formatRoleLabel(agencyRole)} />
           {access.isPlatformAdmin && (
-            <Row label="Platform role" value="platform_admin" />
+            <Row label="Platform role" value={formatRoleLabel("platform_admin")} />
           )}
+
         </Card>
 
         <Card title="Plan">
