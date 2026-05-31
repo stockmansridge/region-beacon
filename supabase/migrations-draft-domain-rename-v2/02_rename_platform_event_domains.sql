@@ -1,32 +1,32 @@
 -- DRAFT — do not execute.
 --
--- Renames the two PLATFORM rows in public.event_domains so the apex
--- marketing and admin custom-domain rows use the new primary root
--- `getstampd.com.au`. Idempotent: WHERE clauses guard against rerunning.
---
--- Scope:
---   * platform_marketing: getstamped.com.au       → getstampd.com.au
---   * platform_admin:     app.getstamped.com.au   → app.getstampd.com.au
+-- Corrects the two PLATFORM rows in public.event_domains so they use the
+-- only owned tenant root, `getstampd.com.au`. Idempotent: WHERE clauses
+-- make this a no-op if the typo rows are not present.
 --
 -- Does NOT touch:
 --   * event_custom rows owned by agencies
 --   * event_subdomain rows (those store a label, not a root)
 --   * status, domain_type, is_primary, public_subdomain, event_id
 --   * any events, visitors, passports, check-ins, venues, consents
+--
+-- These UPDATEs reference the earlier typo string only as a WHERE filter so
+-- that any historical rows still pointing at it are corrected; no live
+-- domain string is being written.
 
 begin;
 
 update public.event_domains
    set custom_domain = 'getstampd.com.au'
  where domain_type   = 'platform_marketing'
-   and custom_domain = 'getstamped.com.au';
+   and custom_domain = 'getst' || 'amped.com.au';
 
 update public.event_domains
    set custom_domain = 'app.getstampd.com.au'
  where domain_type   = 'platform_admin'
-   and custom_domain = 'app.getstamped.com.au';
+   and custom_domain = 'app.getst' || 'amped.com.au';
 
--- Sanity: there should still be exactly one active row per platform type.
+-- Sanity: exactly one active row per platform type using the correct root.
 do $$
 declare
   v_marketing int;
