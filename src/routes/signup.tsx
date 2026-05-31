@@ -203,7 +203,7 @@ function SignupPage() {
             to="/admin/login"
             className="text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            Already have an account? Sign in
+            <span className="hidden sm:inline">Already have an account? </span>Sign in
           </Link>
         </div>
       </header>
