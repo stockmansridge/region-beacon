@@ -657,7 +657,7 @@ function Analytics() {
                         <tr key={`${e.passport_id}-${i}`} className="border-t">
                           <td className="px-3 py-1.5">{e.rule}</td>
                           <td className="px-3 py-1.5">
-                            {e.visitor?.full_name ??
+                            {e.visitor?.full_name ||
                               `${e.visitor?.first_name ?? ""} ${e.visitor?.last_name ?? ""}`.trim() ||
                               "—"}
                           </td>
