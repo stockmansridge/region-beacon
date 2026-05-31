@@ -282,6 +282,8 @@ function EventDetail() {
   const [revealedQrByVenue, setRevealedQrByVenue] = useState<Map<string, string>>(new Map());
   const [qrActionVenueId, setQrActionVenueId] = useState<string | null>(null);
   const [qrActionError, setQrActionError] = useState<string | null>(null);
+  const [qrSupportDetails, setQrSupportDetails] = useState<string | null>(null);
+  const [qrSupportCopied, setQrSupportCopied] = useState(false);
   const [qrCopiedVenueId, setQrCopiedVenueId] = useState<string | null>(null);
   const [qrEntryDraft, setQrEntryDraft] = useState<Map<string, string>>(new Map());
   const [qrEntrySavingId, setQrEntrySavingId] = useState<string | null>(null);
@@ -1256,16 +1258,59 @@ function EventDetail() {
       if (!ok) return;
     }
     setQrActionError(null);
+    setQrSupportDetails(null);
+    setQrSupportCopied(false);
     setQrActionVenueId(venueId);
-    const { error } = await supabase.rpc("rotate_venue_qr", { _venue_id: venueId });
+
+    // Probe existing active QR row before mutating, for support details.
+    let hadActiveQrBefore: boolean | null = null;
+    let hadEntryValueColumn: boolean | null = null;
+    try {
+      const probe = await supabase
+        .from("venue_qr_codes")
+        .select("id, entry_value")
+        .eq("venue_id", venueId)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId)
+        .eq("status", "active")
+        .maybeSingle();
+      if (!probe.error) {
+        hadActiveQrBefore = Boolean(probe.data);
+        hadEntryValueColumn = probe.data ? "entry_value" in (probe.data as object) : null;
+      } else if (probe.error.message?.includes("entry_value")) {
+        hadEntryValueColumn = false;
+      }
+    } catch { /* ignore probe failure */ }
+
+    const venueRow = venues.find((vv) => vv.id === venueId);
+    const rpcPayload = { _venue_id: venueId };
+    const { error } = await supabase.rpc("rotate_venue_qr", rpcPayload);
     setQrActionVenueId(null);
     if (error) {
-      // Do not leak raw Supabase errors to the UI.
+      const details = {
+        timestamp: new Date().toISOString(),
+        event_id: eventId,
+        venue_id: venueId,
+        venue_status: venueRow?.status ?? null,
+        event_status: event?.status ?? null,
+        rpc_name: "rotate_venue_qr",
+        rpc_payload_keys: Object.keys(rpcPayload),
+        action: isRotate ? "rotate" : "generate",
+        supabase_error: {
+          code: (error as { code?: string }).code ?? null,
+          message: error.message ?? null,
+          details: (error as { details?: string }).details ?? null,
+          hint: (error as { hint?: string }).hint ?? null,
+        },
+        had_active_qr_before: hadActiveQrBefore,
+        entry_value_column_present: hadEntryValueColumn,
+      };
       setQrActionError(
-        isRotate
-          ? "Could not rotate QR. Please try again."
-          : "Could not generate QR. Please try again.",
+        `${isRotate ? "Could not rotate QR" : "Could not generate QR"}: ${
+          error.message ?? "unknown error"
+        }`,
       );
+      setQrSupportDetails(JSON.stringify(details, null, 2));
       return;
     }
     // Token stays hidden after generate/rotate; admin must explicitly reveal.
@@ -1276,6 +1321,18 @@ function EventDetail() {
     });
     setReloadKey((k) => k + 1);
   }
+
+  async function copyQrSupportDetails() {
+    if (!qrSupportDetails) return;
+    try {
+      await navigator.clipboard.writeText(qrSupportDetails);
+      setQrSupportCopied(true);
+      setTimeout(() => setQrSupportCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  }
+
 
   async function saveQrEntryValue(venueId: string, raw: string) {
     if (!agencyId || !canEdit) return;
@@ -2178,9 +2235,26 @@ function EventDetail() {
                   </tbody>
                 </table>
                 {qrActionError && canEdit && (
-                  <p className="border-t bg-destructive/5 px-3 py-2 text-xs text-destructive">
-                    {qrActionError}
-                  </p>
+                  <div className="border-t bg-destructive/5 px-3 py-2 text-xs text-destructive space-y-1">
+                    <p>{qrActionError}</p>
+                    {qrSupportDetails && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={copyQrSupportDetails}
+                          className="inline-flex h-6 items-center rounded-md border border-destructive/40 bg-background px-2 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                        >
+                          {qrSupportCopied ? "Copied" : "Copy support details"}
+                        </button>
+                        <details className="text-[11px] text-destructive/80">
+                          <summary className="cursor-pointer">Show details</summary>
+                          <pre className="mt-1 max-h-48 overflow-auto rounded bg-destructive/5 p-2 text-[10px] leading-snug text-destructive">
+{qrSupportDetails}
+                          </pre>
+                        </details>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <p className="border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   {canEdit
