@@ -217,14 +217,15 @@ export function AdminShell({
               )}
               {agencyRole && (
                 <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                  {agencyRole}
+                  {formatRoleLabel(agencyRole)}
                 </span>
               )}
               {role && (
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                  {role}
+                  {formatRoleLabel(role)}
                 </span>
               )}
+
               <div className="hidden text-right text-xs text-muted-foreground sm:block">
                 {email}
               </div>
