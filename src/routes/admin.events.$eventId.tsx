@@ -240,6 +240,8 @@ function EventDetail() {
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState<EditForm | null>(null);
