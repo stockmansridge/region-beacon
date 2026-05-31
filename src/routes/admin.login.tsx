@@ -79,7 +79,7 @@ function Login() {
 
 
         <p className="mt-4 text-xs text-muted-foreground">
-          Restricted to authorised event and agency administrators. Visitor accounts cannot
+          Restricted to authorised event and organisation administrators. Visitor accounts cannot
           sign in here.
         </p>
 
