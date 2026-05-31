@@ -893,6 +893,9 @@ function EventDetail() {
     setVenueForm(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
+    // Refresh in case a venue was just created (we skipped reload then to keep
+    // the editor mounted for image upload).
+    setReloadKey((k) => k + 1);
   }
 
   async function saveVenue() {
@@ -987,13 +990,19 @@ function EventDetail() {
     }
 
     let error: { message: string } | null = null;
+    let newVenueId: string | null = null;
     if (venueEditingId === "new") {
-      const { error: inErr } = await supabase.from("venues").insert({
-        agency_id: agencyId,
-        event_id: eventId,
-        ...patch,
-      });
+      const { data: insData, error: inErr } = await supabase
+        .from("venues")
+        .insert({
+          agency_id: agencyId,
+          event_id: eventId,
+          ...patch,
+        })
+        .select("id")
+        .single();
       error = inErr ?? null;
+      newVenueId = (insData?.id as string | undefined) ?? null;
     } else {
       const { error: upErr } = await supabase
         .from("venues")
@@ -1009,9 +1018,19 @@ function EventDetail() {
       setVenueSaveError("Could not save venue. Please try again.");
       return;
     }
-    setVenueEditingId(null);
-    setVenueForm(null);
-    setReloadKey((k) => k + 1);
+    if (venueEditingId === "new" && newVenueId) {
+      // Keep editor open in edit mode so image upload becomes available immediately.
+      // Do NOT trigger a full reload here — that would flip state to "loading" and
+      // unmount the editor. The new venue will appear in the list when the user
+      // saves again or cancels.
+      setVenueEditingId(newVenueId);
+      toast.success("Venue created. You can now upload a logo/cover image.");
+    } else {
+      setVenueEditingId(null);
+      setVenueForm(null);
+      toast.success("Venue saved.");
+      setReloadKey((k) => k + 1);
+    }
   }
 
   async function uploadVenueImage(kind: VenueAssetKind, file: File) {
@@ -1052,7 +1071,8 @@ function EventDetail() {
       await deleteVenueAssetSafely(previous);
     }
     setVenueAssetBusy(null);
-    setReloadKey((k) => k + 1);
+    // Do not reloadKey here — that would flip the page into loading state and
+    // unmount the editor. venueForm is already updated locally.
   }
 
   async function removeVenueImage(kind: VenueAssetKind) {
@@ -1079,7 +1099,7 @@ function EventDetail() {
       [column]: null,
     } as VenueEditForm);
     setVenueAssetBusy(null);
-    setReloadKey((k) => k + 1);
+    // See uploadVenueImage: skip reloadKey to keep the editor mounted.
   }
 
   async function archiveVenue(venueId: string) {
@@ -1735,10 +1755,73 @@ function EventDetail() {
                   )}
                 </FormSection>
 
+                {venueEditingId !== "new" && (() => {
+                  const activeSub =
+                    domains.find(
+                      (d) =>
+                        d.domain_type === "event_subdomain" &&
+                        d.status === "active" &&
+                        d.is_primary &&
+                        !!d.public_subdomain,
+                    ) ??
+                    domains.find(
+                      (d) =>
+                        d.domain_type === "event_subdomain" &&
+                        d.status === "active" &&
+                        !!d.public_subdomain,
+                    ) ??
+                    null;
+                  const publicVenueUrl = activeSub?.public_subdomain
+                    ? tenantUrl(activeSub.public_subdomain, `/venues/${venueEditingId}`)
+                    : null;
+                  return (
+                    <FormSection title="Public links">
+                      {publicVenueUrl ? (
+                        <div className="space-y-2">
+                          <div className="rounded-md border bg-background/60 px-3 py-2 text-xs font-mono break-all">
+                            {publicVenueUrl}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(publicVenueUrl);
+                                  toast.success("Public venue URL copied.");
+                                } catch {
+                                  toast.error("Could not copy to clipboard.");
+                                }
+                              }}
+                              className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                            >
+                              Copy public URL
+                            </button>
+                            <a
+                              href={publicVenueUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
+                            >
+                              Open ↗
+                            </a>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Only visible publicly when the venue status is <span className="font-mono">active</span>.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                          Add an active public subdomain for this event to get a shareable venue URL.
+                        </p>
+                      )}
+                    </FormSection>
+                  );
+                })()}
+
                 <FormSection title="Images">
                   {venueEditingId === "new" ? (
                     <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-                      Save the venue first, then re-open Edit to upload a logo and hero image.
+                      Save the venue first — the editor will stay open and image upload will become available immediately.
                     </p>
                   ) : (
                     <>
