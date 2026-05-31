@@ -276,6 +276,7 @@ function EventDetail() {
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
   const [venueAssetBusy, setVenueAssetBusy] = useState<VenueAssetKind | null>(null);
   const [venueAssetError, setVenueAssetError] = useState<string | null>(null);
+  const venueEditorRef = useRef<HTMLDivElement | null>(null);
 
   // QR controls — token is fetched only on explicit reveal/rotate and held in
   // memory only. Map: venue_id -> revealed token.
