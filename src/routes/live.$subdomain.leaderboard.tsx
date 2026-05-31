@@ -32,9 +32,9 @@ type State =
   | { kind: "disabled" }
   | { kind: "ready"; rows: LeaderboardRow[] };
 
-function PublicLeaderboardPage() {
-  const { subdomain } = Route.useParams();
+export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+
 
   useEffect(() => {
     let cancelled = false;
