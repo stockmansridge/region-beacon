@@ -50,13 +50,22 @@ function ComingSoon() {
         <Link to="/" className="flex items-center">
           <GetStampdLogo variant="blue" size="md" wordmarkClassName="text-white" />
         </Link>
-        <Link
-          to="/admin/login"
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 text-sm font-medium text-white hover:bg-white/10"
-        >
-          <ShieldCheck className="h-4 w-4" />
-          Admin login
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/signup"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+          >
+            <Sparkles className="h-4 w-4" />
+            Create organisation
+          </Link>
+          <Link
+            to="/admin/login"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 text-sm font-medium text-white hover:bg-white/10"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Admin login
+          </Link>
+        </div>
       </header>
 
       <main className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-6 pb-24 pt-16 text-center sm:pt-28">
