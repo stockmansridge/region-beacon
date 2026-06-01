@@ -608,7 +608,7 @@ function BrandingEditor() {
             currentPath={branding?.logo_path ?? null}
             canEdit={canEdit}
             onUpload={async (file) => {
-              if (!agencyId) return "Select an agency before uploading.";
+              if (!agencyId) return "Select an organisation before uploading.";
               const res = await uploadEventAsset({
                 agencyId,
                 eventId: event.id,
@@ -625,7 +625,7 @@ function BrandingEditor() {
             currentPath={branding?.cover_path ?? null}
             canEdit={canEdit}
             onUpload={async (file) => {
-              if (!agencyId) return "Select an agency before uploading.";
+              if (!agencyId) return "Select an organisation before uploading.";
               const res = await uploadEventAsset({
                 agencyId,
                 eventId: event.id,
