@@ -2865,6 +2865,21 @@ function EventDetail() {
               </div>
             )}
           </Section>
+
+          <Section title="Analytics" id="section-analytics" tab="analytics">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Event analytics live on a dedicated dashboard. Open it to view
+              visitor counts, check-ins, top venues and CSV exports.
+            </p>
+            <Link
+              to="/admin/analytics"
+              className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+            >
+              Open analytics dashboard
+            </Link>
+          </Section>
+        </div>
+      </EventTabContext.Provider>
     </>
   );
 }
