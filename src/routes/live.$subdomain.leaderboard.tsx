@@ -46,6 +46,22 @@ type State =
 
 export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [eventId, setEventId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const host = tenantHost(subdomain);
+      const { data } = await supabase.rpc("resolve_event_by_host", {
+        _hostname: host,
+      });
+      const row = (data?.[0] ?? null) as { event_id?: string | null } | null;
+      if (!cancelled) setEventId(row?.event_id ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [subdomain]);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,7 +132,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8 sm:py-12">
       <PublicAnnouncementBar subdomain={subdomain} />
-      <PublicEventNav subdomain={subdomain} />
+      <PublicEventNav subdomain={subdomain} eventId={eventId} activeOverride="leaderboard" />
       <div className="mx-auto max-w-xl">
         <Header subdomain={subdomain} />
 

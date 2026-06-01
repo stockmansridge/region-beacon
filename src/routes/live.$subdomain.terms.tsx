@@ -32,6 +32,7 @@ export function TermsPage({ subdomain }: { subdomain: string }) {
       <LocalLegalPage
         subdomain={subdomain}
         eventName={row.event_name}
+        eventId={row.event_id}
         title={row.terms_title || "Terms & Conditions"}
         body={row.terms_body}
         version={row.terms_version}
@@ -46,6 +47,7 @@ export function TermsPage({ subdomain }: { subdomain: string }) {
         url={row.terms_url}
         title="Terms & Conditions"
         eventName={row.event_name}
+        eventId={row.event_id}
       />
     );
   }
