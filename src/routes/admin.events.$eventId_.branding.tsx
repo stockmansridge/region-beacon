@@ -610,8 +610,16 @@ function BrandingEditor() {
           </div>
           <LandingPreview
             eventName={event.name}
-            primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B"}
-            accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A"}
+            primaryColor={(() => {
+              const p = getPalette(form.palette_key || null);
+              if (p) return p.primary;
+              return HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B";
+            })()}
+            accentColor={(() => {
+              const p = getPalette(form.palette_key || null);
+              if (p) return p.accent;
+              return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
+            })()}
             fontFamily={form.font_family.trim() || undefined}
             welcomeCopy={form.welcome_copy.trim()}
             termsUrl={form.terms_url.trim()}
