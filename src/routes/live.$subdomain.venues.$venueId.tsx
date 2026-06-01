@@ -10,6 +10,7 @@ import { VenueMiniMap } from "@/components/venue-mini-map";
 import { tenantHost } from "@/lib/domains";
 import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
