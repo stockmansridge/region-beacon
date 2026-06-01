@@ -719,12 +719,11 @@ function Sparkline({ data }: { data: number[] }) {
     .map((v, i) => `${i * step},${h - (v / max) * (h - 10) - 2}`)
     .join(" ");
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-20 w-full" preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-20 w-full text-[#2F6FE4]" preserveAspectRatio="none">
       <polyline
         fill="none"
         stroke="currentColor"
         strokeWidth="2"
-        className="text-primary"
         points={points}
       />
     </svg>
