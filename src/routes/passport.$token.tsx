@@ -300,7 +300,7 @@ function PassportView({
 }: {
   passport: PassportRow;
   eventName: string | null;
-  stamps: StampsSummary | null;
+  stamps: PassportStampState;
   token: string;
 }) {
   const [copied, setCopied] = useState(false);
@@ -312,13 +312,11 @@ function PassportView({
     return cls.kind === "tenant" ? cls.subdomain : null;
   }, [hostname]);
 
-  const labelSingular = stamps?.labelSingular ?? DEFAULT_VENUE_LABEL_SINGULAR;
-  const labelPlural = stamps?.labelPlural ?? DEFAULT_VENUE_LABEL_PLURAL;
+  const labelSingular = stamps.labelSingular;
+  const labelPlural = stamps.labelPlural;
 
-  // Prefer the authoritative stamps RPC counts; fall back to passport.checkin_count.
-  const stampedCount =
-    stamps?.stampedCount ?? passport.checkin_count ?? 0;
-  const totalVenues = stamps?.totalVenues ?? 0;
+  const stampedCount = stamps.visitedCount || passport.checkin_count || 0;
+  const totalVenues = stamps.totalVenueCount;
   const goal = totalVenues > 0 ? totalVenues : Math.max(stampedCount, 1);
   const pct = Math.min(100, Math.round((stampedCount / goal) * 100));
 
@@ -456,7 +454,7 @@ function PassportView({
 
         {/* Stamp grid */}
         <StampGrid
-          venues={stamps?.venues ?? []}
+          venues={stamps.allVenues}
           labelSingular={labelSingular}
           labelPlural={labelPlural}
         />
