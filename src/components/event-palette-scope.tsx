@@ -66,8 +66,17 @@ export function EventPaletteScope({
     palette = getPaletteOrDefault(paletteKey);
   }
 
-  // Optional card override
-  if (cardBackgroundColor && HEX_RE.test(cardBackgroundColor)) {
+  // Custom page/card colour overrides are ONLY active when the user
+  // explicitly selected the "custom_color" background. Selecting any
+  // preset background must fully take over and ignore stale custom
+  // values that may still be present on the row for convenience.
+  const isCustomBackground = backgroundKey === "custom_color";
+
+  if (
+    isCustomBackground &&
+    cardBackgroundColor &&
+    HEX_RE.test(cardBackgroundColor)
+  ) {
     palette = { ...palette, cardBg: cardBackgroundColor };
   }
 
@@ -76,7 +85,7 @@ export function EventPaletteScope({
   let bgStyle: React.CSSProperties = {};
   if (applyBackground) {
     if (
-      backgroundKey === "custom_color" &&
+      isCustomBackground &&
       pageBackgroundColor &&
       HEX_RE.test(pageBackgroundColor)
     ) {
