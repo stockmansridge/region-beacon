@@ -22,7 +22,11 @@ export type EventBackgroundKey =
   | "soft_gradient"
   | "festival_glow"
   | "country_texture"
-  | "dark_premium";
+  | "dark_premium"
+  | "soft_green_tint"
+  | "pale_blue"
+  | "soft_gold"
+  | "custom_color";
 
 export type EventBackground = {
   key: EventBackgroundKey;
