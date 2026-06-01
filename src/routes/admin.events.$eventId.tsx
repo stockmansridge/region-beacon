@@ -2012,63 +2012,62 @@ function EventDetail() {
 
           <Section title="Check-in settings" tab="checkin">
             {canEdit && isEditingCheckin && checkinForm ? (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {(checkinValidationError || checkinSaveError) && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                     {checkinValidationError ?? checkinSaveError}
                   </div>
                 )}
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ToggleRow
+                    title="One check-in per venue"
+                    description="Each visitor counts once per venue, regardless of how many times they scan."
                     checked={checkinForm.one_checkin_per_venue}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, one_checkin_per_venue: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setCheckinForm({ ...checkinForm, one_checkin_per_venue: v })}
                   />
-                  <span className="text-sm">One check-in per venue</span>
-                </label>
-                <Field label="Minimum seconds between check-ins" required>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={checkinForm.minimum_seconds_between_checkins}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, minimum_seconds_between_checkins: e.target.value })}
-                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
-                  />
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <ToggleRow
+                    title="Allow manual admin check-ins"
+                    description="Lets admins record a check-in without the visitor scanning."
                     checked={checkinForm.allow_manual_admin_checkins}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, allow_manual_admin_checkins: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setCheckinForm({ ...checkinForm, allow_manual_admin_checkins: v })}
                   />
-                  <span className="text-sm">Allow manual admin check-ins</span>
-                </label>
-                <Field label="Max check-ins per passport per day">
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={checkinForm.max_checkins_per_passport_per_day}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, max_checkins_per_passport_per_day: e.target.value })}
-                    placeholder="Leave blank for unlimited"
-                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
-                  />
-                  <p className="text-xs text-muted-foreground">Leave blank for unlimited.</p>
-                </Field>
+                </div>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <Field label="Minimum seconds between check-ins" required>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={checkinForm.minimum_seconds_between_checkins}
+                      onChange={(e) => setCheckinForm({ ...checkinForm, minimum_seconds_between_checkins: e.target.value })}
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="text-xs leading-5 text-[#64748B]">Throttles rapid re-scans at the same venue.</p>
+                  </Field>
+                  <Field label="Max check-ins per passport per day">
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={checkinForm.max_checkins_per_passport_per_day}
+                      onChange={(e) => setCheckinForm({ ...checkinForm, max_checkins_per_passport_per_day: e.target.value })}
+                      placeholder="Leave blank for unlimited"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="text-xs leading-5 text-[#64748B]">Leave blank for unlimited.</p>
+                  </Field>
+                </div>
                 {checkinSaveSuccess && (
-                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm text-[#047857]">
                     Check-in settings saved.
                   </div>
                 )}
-                <div className="flex items-center justify-end gap-2 pt-1">
+                <div className="flex items-center justify-end gap-3 border-t border-[#E6ECF4] pt-5">
                   <button
                     type="button"
                     onClick={cancelEditCheckin}
                     disabled={checkinSaving}
-                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
                   >
                     Discard changes
                   </button>
@@ -2076,9 +2075,9 @@ function EventDetail() {
                     type="button"
                     onClick={saveEditCheckin}
                     disabled={checkinSaving}
-                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {checkinSaving ? "Saving…" : "Save"}
+                    {checkinSaving ? "Saving…" : "Save changes"}
                   </button>
                 </div>
               </div>
