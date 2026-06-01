@@ -270,8 +270,11 @@ function EventTabBar({
   onChange: (next: EventTabKey) => void;
 }) {
   return (
-    <div className="-mx-1 overflow-x-auto">
-      <div role="tablist" className="flex min-w-max gap-1 px-1">
+    <div className="overflow-x-auto pb-1">
+      <div
+        role="tablist"
+        className="inline-flex min-w-max items-center gap-1.5 rounded-[14px] bg-[#EEF2F7] p-1"
+      >
         {EVENT_TABS.map((t) => {
           const isActive = t.key === active;
           return (
@@ -282,10 +285,10 @@ function EventTabBar({
               aria-selected={isActive}
               onClick={() => onChange(t.key)}
               className={
-                "relative h-9 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition " +
+                "flex h-10 shrink-0 items-center whitespace-nowrap rounded-[10px] px-4 text-sm font-medium transition-colors " +
                 (isActive
-                  ? "bg-card text-foreground ring-1 ring-border shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground")
+                  ? "bg-white text-[#1F56C5] shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
+                  : "text-[#64748B] hover:bg-white/70 hover:text-[#111827]")
               }
             >
               {t.label}
