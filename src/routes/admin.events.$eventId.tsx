@@ -3491,10 +3491,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <label className="block space-y-2">
+      <span className="block text-sm font-medium text-[#334155]">
         {label}
-        {required ? <span className="ml-1 text-destructive">*</span> : null}
+        {required ? <span className="ml-1 text-[#E11D48]">*</span> : null}
       </span>
       {children}
     </label>
