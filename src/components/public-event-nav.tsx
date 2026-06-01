@@ -390,8 +390,12 @@ function MoreSheet({
     >
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-[#E6DCC7] bg-[#FBF5E8] p-4 shadow-xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+        className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t p-4 shadow-xl"
+        style={{
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)",
+          borderColor: "var(--event-border, #E6DCC7)",
+          background: "var(--event-card-bg, #FBF5E8)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
