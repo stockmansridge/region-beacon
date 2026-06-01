@@ -257,7 +257,21 @@ function BrandingEditor() {
 
     const palette_key = form.palette_key.trim();
     const page_background_key = form.page_background_key.trim();
-    const payload = {
+    const page_background_color = form.page_background_color.trim();
+    const card_background_color = form.card_background_color.trim();
+
+    if (page_background_color && !HEX_RE.test(page_background_color)) {
+      setSaving(false);
+      setValidationError("Custom page background must be a valid 6-digit hex code (e.g. #F6EFE2).");
+      return;
+    }
+    if (card_background_color && !HEX_RE.test(card_background_color)) {
+      setSaving(false);
+      setValidationError("Custom card background must be a valid 6-digit hex code.");
+      return;
+    }
+
+    const basePayload = {
       primary_color: primary_color || null,
       accent_color: accent_color || null,
       font_family: font_family || null,
@@ -268,20 +282,41 @@ function BrandingEditor() {
       palette_key: palette_key || null,
       page_background_key: page_background_key || null,
     };
+    const extendedPayload = {
+      ...basePayload,
+      page_background_color: page_background_color || null,
+      card_background_color: card_background_color || null,
+    };
 
-    let error: { message: string } | null = null;
-    if (bundle.hasBranding) {
-      const { error: upErr } = await supabase
-        .from("event_branding")
-        .update(payload)
-        .eq("event_id", bundle.event.id)
-        .eq("agency_id", agencyId);
-      error = upErr ?? null;
-    } else {
+    async function attemptSave(payload: Record<string, unknown>) {
+      if (!bundle) return { message: "Internal error." } as { message: string };
+      if (bundle.hasBranding) {
+        const { error: upErr } = await supabase
+          .from("event_branding")
+          .update(payload)
+          .eq("event_id", bundle.event.id)
+          .eq("agency_id", agencyId!);
+        return upErr ?? null;
+      }
       const { error: inErr } = await supabase
         .from("event_branding")
-        .insert({ agency_id: agencyId, event_id: bundle.event.id, ...payload });
-      error = inErr ?? null;
+        .insert({ agency_id: agencyId!, event_id: bundle.event.id, ...payload });
+      return inErr ?? null;
+    }
+
+    let error = await attemptSave(extendedPayload);
+    if (error && /(page_background_color|card_background_color)/i.test(error.message)) {
+      // Custom background columns not yet migrated. Save remaining fields
+      // and surface a friendly hint.
+      error = await attemptSave(basePayload);
+      if (!error && (page_background_color || card_background_color)) {
+        setSaveError(
+          "Saved core branding. Custom hex background colours require the database migration in supabase/migrations-draft-event-background/03_custom_background_colors.sql to be applied.",
+        );
+        setSaving(false);
+        setReloadKey((k) => k + 1);
+        return;
+      }
     }
 
     setSaving(false);
