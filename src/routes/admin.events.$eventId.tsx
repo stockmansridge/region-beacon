@@ -1739,7 +1739,7 @@ function EventDetail() {
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     maxLength={200}
                   />
                 </Field>
@@ -1757,7 +1757,7 @@ function EventDetail() {
                     value={form.timezone}
                     onChange={(e) => setForm({ ...form, timezone: e.target.value })}
                     placeholder="e.g. Europe/London"
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     maxLength={64}
                   />
                 </Field>
@@ -1767,7 +1767,7 @@ function EventDetail() {
                       type="datetime-local"
                       value={form.starts_at}
                       onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                   <Field label="Ends at">
@@ -1775,7 +1775,7 @@ function EventDetail() {
                       type="datetime-local"
                       value={form.ends_at}
                       onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                 </div>
@@ -2034,7 +2034,7 @@ function EventDetail() {
                     step={1}
                     value={checkinForm.minimum_seconds_between_checkins}
                     onChange={(e) => setCheckinForm({ ...checkinForm, minimum_seconds_between_checkins: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                   />
                 </Field>
                 <label className="flex items-center gap-2">
@@ -2054,7 +2054,7 @@ function EventDetail() {
                     value={checkinForm.max_checkins_per_passport_per_day}
                     onChange={(e) => setCheckinForm({ ...checkinForm, max_checkins_per_passport_per_day: e.target.value })}
                     placeholder="Leave blank for unlimited"
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                   />
                   <p className="text-xs text-muted-foreground">Leave blank for unlimited.</p>
                 </Field>
@@ -2138,7 +2138,7 @@ function EventDetail() {
                     onChange={(e) =>
                       setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
                     }
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                   >
                     <option value="first_name_last_initial">First name + last initial</option>
                     <option value="first_name_only">First name only</option>
@@ -2180,7 +2180,7 @@ function EventDetail() {
                     step={1}
                     value={lbForm.hide_below_checkins}
                     onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                   />
                   <p className="text-xs text-muted-foreground">
                     Visitors below this number of check-ins are hidden from the public leaderboard.
@@ -2326,7 +2326,7 @@ function EventDetail() {
                         value={venueForm.name}
                         onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
                         placeholder="e.g. Riverbank Cellar Door"
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                     </Field>
                     <div className="space-y-2">
@@ -2352,7 +2352,7 @@ function EventDetail() {
                         value={venueForm.address}
                         onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
                         placeholder="Set automatically from the map, or enter manually"
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
                         Coordinates are saved from the map and shown later in the Location section.
@@ -2378,7 +2378,7 @@ function EventDetail() {
                       maxLength={150}
                       value={venueForm.name}
                       onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
@@ -2391,7 +2391,7 @@ function EventDetail() {
                             status: e.target.value === "inactive" ? "inactive" : "active",
                           })
                         }
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       >
                         <option value="active">active</option>
                         <option value="inactive">inactive</option>
@@ -2404,7 +2404,7 @@ function EventDetail() {
                         step={1}
                         value={venueForm.order_index}
                         onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                     </Field>
                   </div>
@@ -2552,7 +2552,7 @@ function EventDetail() {
                       value={venueForm.website_url}
                       onChange={(e) => setVenueForm({ ...venueForm, website_url: e.target.value })}
                       placeholder="https://example.com"
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">Must start with https://</p>
                   </Field>
@@ -2564,7 +2564,7 @@ function EventDetail() {
                       value={venueForm.phone}
                       onChange={(e) => setVenueForm({ ...venueForm, phone: e.target.value })}
                       placeholder="+61 400 000 000"
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                 </FormSection>
@@ -2577,7 +2577,7 @@ function EventDetail() {
                       value={venueForm.address}
                       onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
                       placeholder="e.g. 123 Main St, Sydney NSW 2000"
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
@@ -2589,7 +2589,7 @@ function EventDetail() {
                         max={90}
                         value={venueForm.lat}
                         onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                     </Field>
                     <Field label="Longitude">
@@ -2600,7 +2600,7 @@ function EventDetail() {
                         max={180}
                         value={venueForm.lng}
                         onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                     </Field>
                   </div>
