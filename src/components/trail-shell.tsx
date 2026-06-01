@@ -19,6 +19,7 @@ export function TrailShell({
   contentClassName = "",
   venueLabelPlural = DEFAULT_VENUE_LABEL_PLURAL,
   paletteKey = null,
+  backgroundKey = null,
 }: {
   children: ReactNode;
   eventName?: string;
@@ -32,6 +33,7 @@ export function TrailShell({
   contentClassName?: string;
   venueLabelPlural?: string;
   paletteKey?: string | null;
+  backgroundKey?: string | null;
 }) {
   const initials = (monogram ?? eventName ?? "EP")
     .split(/\s+/)
@@ -42,7 +44,11 @@ export function TrailShell({
     .toUpperCase();
 
   return (
-    <EventPaletteScope paletteKey={paletteKey} className="min-h-screen text-[#2A2620]">
+    <EventPaletteScope
+      paletteKey={paletteKey}
+      backgroundKey={backgroundKey}
+      className="min-h-screen text-[#2A2620]"
+    >
       <header className="sticky top-0 z-40 border-b border-[#E6DCC7] bg-[#F6EFE2]/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
           <div className="flex items-center gap-2">
