@@ -199,79 +199,96 @@ function EventPreview() {
   }
 
   const { event, branding, venues, termsUrl } = bundle;
+  // Resolve palette: if a curated palette_key is set, derive primary/accent
+  // from it; otherwise use stored hex colours (custom palette path).
+  const resolved = applyPaletteToEvent({
+    palette_key: branding?.palette_key ?? null,
+    primary_color: branding?.primary_color ?? null,
+    accent_color: branding?.accent_color ?? null,
+  });
   const primaryColor =
-    branding?.primary_color && HEX_RE.test(branding.primary_color) ? branding.primary_color : "#1F3D2B";
+    resolved.primary_color && HEX_RE.test(resolved.primary_color) ? resolved.primary_color : "#1F3D2B";
   const accentColor =
-    branding?.accent_color && HEX_RE.test(branding.accent_color) ? branding.accent_color : "#B5572A";
+    resolved.accent_color && HEX_RE.test(resolved.accent_color) ? resolved.accent_color : "#B5572A";
   const fontFamily = branding?.font_family?.trim() || undefined;
   const welcomeCopy =
     branding?.welcome_copy?.trim() ||
     "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail.";
 
   return (
-    <div className="min-h-screen bg-trail-cream" style={fontFamily ? { fontFamily } : undefined}>
-      {/* Floating admin controls */}
-      <div className="fixed left-4 top-4 z-50">
-        <Link
-          to="/admin/events/$eventId"
-          params={{ eventId }}
-          className="inline-flex h-9 items-center rounded-full border bg-white/95 px-3 text-xs font-medium text-neutral-700 shadow hover:bg-white"
-        >
-          ← Back to admin
-        </Link>
-      </div>
-      <div className="fixed right-4 top-4 z-50">
-        <div
-          className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300 bg-amber-100/95 px-3 text-xs font-semibold text-amber-900 shadow"
-          title={`Status: ${event.status}`}
-        >
-          <span className="h-2 w-2 rounded-full bg-amber-500" />
-          Preview — not live
+    <EventPaletteScope
+      paletteKey={branding?.palette_key ?? null}
+      backgroundKey={branding?.page_background_key ?? null}
+      primaryColor={branding?.primary_color ?? null}
+      accentColor={branding?.accent_color ?? null}
+      pageBackgroundColor={branding?.page_background_color ?? null}
+      cardBackgroundColor={branding?.card_background_color ?? null}
+      className="min-h-screen"
+    >
+      <div style={fontFamily ? { fontFamily } : undefined}>
+        {/* Floating admin controls */}
+        <div className="fixed left-4 top-4 z-50">
+          <Link
+            to="/admin/events/$eventId"
+            params={{ eventId }}
+            className="inline-flex h-9 items-center rounded-full border bg-white/95 px-3 text-xs font-medium text-neutral-700 shadow hover:bg-white"
+          >
+            ← Back to admin
+          </Link>
+        </div>
+        <div className="fixed right-4 top-4 z-50">
+          <div
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300 bg-amber-100/95 px-3 text-xs font-semibold text-amber-900 shadow"
+            title={`Status: ${event.status}`}
+          >
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            Preview — not live
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-md px-4 py-16">
+          <TrailLanding
+            eventName={event.name}
+            pitch={event.description ?? undefined}
+            welcomeCopy={welcomeCopy}
+            primaryColor={primaryColor}
+            accentColor={accentColor}
+            fontFamily={fontFamily}
+            badge="Preview"
+            venueNames={venues.map((v) => v.name)}
+            venueCount={venues.length}
+            venueLabelPlural={resolveVenueLabels(branding).plural}
+            logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+            heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
+            termsUrl={termsUrl ?? null}
+            primaryCta={
+              <button
+                type="button"
+                disabled
+                title="Preview only — the live event is not active"
+                className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
+                style={{ backgroundColor: primaryColor }}
+              >
+                Start passport · Preview only
+              </button>
+            }
+            secondaryCta={
+              <button
+                type="button"
+                disabled
+                className="flex h-11 w-full cursor-not-allowed items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide opacity-70"
+                style={{ borderColor: `${primaryColor}40`, color: primaryColor }}
+              >
+                I already have a passport
+              </button>
+            }
+          />
+
+          <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
+            Admin preview · no visitors, passports, or check-ins are created
+          </p>
         </div>
       </div>
-
-      <div className="mx-auto max-w-md px-4 py-16">
-        <TrailLanding
-          eventName={event.name}
-          pitch={event.description ?? undefined}
-          welcomeCopy={welcomeCopy}
-          primaryColor={primaryColor}
-          accentColor={accentColor}
-          fontFamily={fontFamily}
-          badge="Preview"
-          venueNames={venues.map((v) => v.name)}
-          venueCount={venues.length}
-          venueLabelPlural={resolveVenueLabels(branding).plural}
-          logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-          heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
-          termsUrl={termsUrl ?? null}
-          primaryCta={
-            <button
-              type="button"
-              disabled
-              title="Preview only — the live event is not active"
-              className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
-              style={{ backgroundColor: primaryColor }}
-            >
-              Start passport · Preview only
-            </button>
-          }
-          secondaryCta={
-            <button
-              type="button"
-              disabled
-              className="flex h-11 w-full cursor-not-allowed items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide opacity-70"
-              style={{ borderColor: `${primaryColor}40`, color: primaryColor }}
-            >
-              I already have a passport
-            </button>
-          }
-        />
-
-        <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
-          Admin preview · no visitors, passports, or check-ins are created
-        </p>
-      </div>
-    </div>
+    </EventPaletteScope>
   );
 }
