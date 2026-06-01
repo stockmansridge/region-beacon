@@ -650,7 +650,7 @@ function BrandingEditor() {
               !!form.palette_key && form.palette_key !== "custom";
             const customActive = !isCurated;
             return (
-              <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+              <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
                 <div>
                   <div className="text-sm font-semibold">Custom brand colours</div>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -714,7 +714,7 @@ function BrandingEditor() {
 
           {/* Custom background hex inputs — visible when custom_color is selected */}
           {form.page_background_key === "custom_color" && (
-            <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+            <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
               <div>
                 <div className="text-sm font-semibold">Custom background colour</div>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -798,7 +798,7 @@ function BrandingEditor() {
               terms_url value is preserved in the database and on save. */}
 
           {/* ============== Customer wording ============== */}
-          <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+          <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
             <div>
               <div className="text-sm font-semibold">Customer wording</div>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -1017,7 +1017,7 @@ function AssetUploader({
       : "aspect-[16/9] w-full rounded-lg";
 
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex items-baseline justify-between">
         <div className="text-sm font-semibold">{label}</div>
         <div className="text-[11px] text-muted-foreground">
@@ -1106,7 +1106,7 @@ function PaletteSelector({
 }) {
   const selected = getPalette(value || null);
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex items-baseline justify-between">
         <div className="text-sm font-semibold">Colour palette</div>
         {selected && !disabled && (
@@ -1255,7 +1255,7 @@ function BackgroundSelector({
   })();
   const selected = getBackground(value || null);
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex items-baseline justify-between">
         <div className="text-sm font-semibold">Page background</div>
         {selected && !disabled && (
