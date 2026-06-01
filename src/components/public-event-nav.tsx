@@ -221,6 +221,7 @@ export function PublicEventNav({
   const moreActive =
     isActive("home") ||
     isActive("leaderboard") ||
+    isActive("offers") ||
     pathname === "/terms" ||
     pathname === "/privacy";
 
