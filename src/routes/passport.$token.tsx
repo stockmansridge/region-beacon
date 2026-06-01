@@ -403,6 +403,14 @@ function PassportView({
         }
       >
       <div className="mx-auto w-full max-w-md">
+        <div className="mb-3">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1F3D2B]/80 hover:text-[#1F3D2B]"
+          >
+            <span aria-hidden>←</span> Back to {eventName ?? "trail"}
+          </Link>
+        </div>
         <div className="text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
@@ -420,6 +428,7 @@ function PassportView({
             Hi {greetingName}
           </p>
         </div>
+
 
         {/* Progress card */}
         <section className="mt-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center shadow-sm">
