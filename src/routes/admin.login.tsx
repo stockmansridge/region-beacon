@@ -30,6 +30,11 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showCompleteSignupBanner, setShowCompleteSignupBanner] = useState(false);
+  const [mismatch, setMismatch] = useState<{
+    currentEmail: string;
+    pendingEmail: string;
+  } | null>(null);
   const [mismatch, setMismatch] = useState<{
     currentEmail: string;
     pendingEmail: string;
