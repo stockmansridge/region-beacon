@@ -96,13 +96,32 @@ function EventPreview() {
         return;
       }
 
-      const [brandingRes, venuesRes, termsRes] = await Promise.all([
-        supabase
+      const BRANDING_FULL =
+        "primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, logo_path, cover_path, palette_key, page_background_key, page_background_color, card_background_color";
+      const BRANDING_FALLBACK =
+        "primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, logo_path, cover_path, palette_key, page_background_key";
+
+      let brandingRes = await supabase
+        .from("event_branding")
+        .select(BRANDING_FULL)
+        .eq("event_id", event.id)
+        .eq("agency_id", agencyId)
+        .maybeSingle();
+      if (
+        brandingRes.error &&
+        /(page_background_color|card_background_color|palette_key|page_background_key)/i.test(
+          brandingRes.error.message ?? "",
+        )
+      ) {
+        brandingRes = await supabase
           .from("event_branding")
-          .select("primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, logo_path, cover_path, palette_key, page_background_key, page_background_color, card_background_color")
+          .select(BRANDING_FALLBACK)
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
-          .maybeSingle(),
+          .maybeSingle();
+      }
+
+      const [venuesRes, termsRes] = await Promise.all([
         supabase
           .from("venues")
           .select("id, name")
