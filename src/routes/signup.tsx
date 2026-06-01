@@ -458,6 +458,8 @@ function AuthenticatedRecoveryForm({
     setBusy(true);
     // eslint-disable-next-line no-console
     console.info("[org-signup] recovery: calling create_customer_agency", {
+      supabaseUrl: SUPABASE_URL,
+      argKeys: ["_agency_name", "_agency_slug"],
       name: businessName.trim(),
       slug: computedSlug,
     });
