@@ -510,21 +510,21 @@ function BrandingEditor() {
   const { event, branding, venueCount } = bundle;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-5 p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          <div className="text-xs uppercase tracking-wider text-[#64748B]">
             Customer landing page
           </div>
-          <h1 className="mt-1 text-2xl font-semibold">{event.name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="rounded-full border bg-muted/40 px-2 py-0.5">
+          <h1 className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-[#111827]">{event.name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#64748B]">
+            <span className="rounded-full border border-[#D9E2EF] bg-white px-2.5 py-0.5">
               Status: {event.status}
             </span>
-            <span className="rounded-full border bg-muted/40 px-2 py-0.5">
+            <span className="rounded-full border border-[#D9E2EF] bg-white px-2.5 py-0.5">
               Slug: {event.public_slug ?? "—"}
             </span>
-            <span className="rounded-full border bg-muted/40 px-2 py-0.5">
+            <span className="rounded-full border border-[#D9E2EF] bg-white px-2.5 py-0.5">
               {primaryDomain
                 ? `${primaryDomain.public_subdomain ?? primaryDomain.custom_domain ?? "—"} · ${primaryDomain.status}`
                 : "No domain configured"}
@@ -535,7 +535,7 @@ function BrandingEditor() {
           <Link
             to="/admin/events/$eventId"
             params={{ eventId }}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
           >
             ← Back to event
           </Link>
@@ -543,7 +543,7 @@ function BrandingEditor() {
             to="/admin/events/$eventId/preview"
             params={{ eventId }}
             target="_blank"
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
           >
             Open full preview
           </Link>
@@ -551,7 +551,7 @@ function BrandingEditor() {
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
             title="Discard unsaved changes and return to the event"
           >
             Discard changes
@@ -562,7 +562,7 @@ function BrandingEditor() {
                 type="button"
                 onClick={() => onSave()}
                 disabled={saving}
-                className="inline-flex h-9 items-center rounded-lg border border-primary bg-background px-4 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-50"
+                className="inline-flex h-10 items-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save"}
               </button>
@@ -570,7 +570,7 @@ function BrandingEditor() {
                 type="button"
                 onClick={() => onSave({ returnAfter: true })}
                 disabled={saving}
-                className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save & return to event"}
               </button>
@@ -582,24 +582,25 @@ function BrandingEditor() {
       </div>
 
       {!canEdit && (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          You have view-only access. Only agency owners, agency admins, and platform admins can edit branding.
+        <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-[#334155]">
+          You have view-only access. Only organisation owners, organisation admins, and platform admins can edit branding.
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
         {/* ============== Form ============== */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {(validationError || saveError) && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
               {validationError ?? saveError}
             </div>
           )}
           {saveSuccess && !saveError && !validationError && (
-            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
+            <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm text-[#047857]">
               {saveSuccess}
             </div>
           )}
+
 
 
           <AssetUploader
