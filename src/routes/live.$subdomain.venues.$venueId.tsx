@@ -8,6 +8,8 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { VenueMiniMap } from "@/components/venue-mini-map";
 import { tenantHost } from "@/lib/domains";
+import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
+import { loadPassportStampState } from "@/lib/passport-stamps";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
@@ -36,7 +38,7 @@ type VenueRow = {
 type State =
   | { kind: "loading" }
   | { kind: "not_found" }
-  | { kind: "ready"; venue: VenueRow };
+  | { kind: "ready"; venue: VenueRow; eventId: string | null };
 
 type VisitedState =
   | { kind: "none" }
@@ -70,35 +72,21 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         setState({ kind: "not_found" });
         return;
       }
-      setState({ kind: "ready", venue: row });
-
-      // Visited state from local passport (if any)
       const evt = (evtData?.[0] ?? null) as { event_id?: string } | null;
+      setState({ kind: "ready", venue: row, eventId: evt?.event_id ?? null });
+
       if (!evt?.event_id) return;
-      if (typeof localStorage === "undefined") return;
       try {
-        const raw = localStorage.getItem(`gs.passport.${evt.event_id}`);
-        if (!raw) {
+        const passport = await resolveCurrentEventPassport(evt.event_id);
+        if (!passport.token) {
           setVisited({ kind: "no_passport" });
           return;
         }
-        const parsed = JSON.parse(raw) as { access_token?: string };
-        if (!parsed?.access_token) {
-          setVisited({ kind: "no_passport" });
-          return;
-        }
-        const { data: stampsData } = await supabase.rpc(
-          "get_passport_stamps_by_token" as never,
-          { _raw_token: parsed.access_token } as never,
-        );
+        const stamps = await loadPassportStampState(passport.token);
         if (cancelled) return;
-        const stamp = ((stampsData ?? []) as Array<{
-          venue_id: string | null;
-          stamped: boolean | null;
-          stamped_at: string | null;
-        }>).find((s) => s.venue_id === venueId);
-        if (stamp?.stamped) {
-          setVisited({ kind: "visited", at: stamp.stamped_at ?? null });
+        const stamp = stamps.allVenues.find((s) => String(s.venue_id) === String(venueId));
+        if (stamp?.is_stamped) {
+          setVisited({ kind: "visited", at: stamp.checked_in_at ?? null });
         } else {
           setVisited({ kind: "not_visited" });
         }
