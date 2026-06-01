@@ -237,6 +237,7 @@ function BrandingEditor() {
     setSaveError(null);
     setSaving(true);
 
+    const palette_key = form.palette_key.trim();
     const payload = {
       primary_color: primary_color || null,
       accent_color: accent_color || null,
@@ -245,6 +246,7 @@ function BrandingEditor() {
       terms_url: terms_url || null,
       venue_label_singular,
       venue_label_plural,
+      palette_key: palette_key || null,
     };
 
     let error: { message: string } | null = null;
