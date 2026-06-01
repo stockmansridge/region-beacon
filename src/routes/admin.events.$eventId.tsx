@@ -2017,7 +2017,7 @@ function EventDetail() {
                     disabled={checkinSaving}
                     className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
                   >
-                    Cancel
+                    Discard changes
                   </button>
                   <button
                     type="button"
