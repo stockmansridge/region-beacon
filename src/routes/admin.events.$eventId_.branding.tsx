@@ -19,6 +19,11 @@ import {
   uploadEventAsset,
   type EventAssetKind,
 } from "@/lib/event-assets";
+import {
+  EVENT_PALETTES,
+  type EventPaletteKey,
+  getPalette,
+} from "@/lib/event-palettes";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
@@ -44,6 +49,7 @@ type Branding = {
   terms_url: string | null;
   venue_label_singular: string | null;
   venue_label_plural: string | null;
+  palette_key: string | null;
 };
 
 type Domain = {
@@ -70,6 +76,7 @@ type Form = {
   terms_url: string;
   venue_label_singular: string;
   venue_label_plural: string;
+  palette_key: string;
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
