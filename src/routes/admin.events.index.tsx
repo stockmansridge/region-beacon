@@ -704,13 +704,13 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-sm font-medium">
+    <label className="block space-y-2">
+      <span className="text-sm font-medium text-[#334155]">
         {label}
-        {required && <span className="ml-0.5 text-destructive">*</span>}
+        {required && <span className="ml-0.5 text-[#E11D48]">*</span>}
       </span>
       {children}
-      {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
+      {hint && <span className="block text-xs leading-5 text-[#64748B]">{hint}</span>}
     </label>
   );
 }
