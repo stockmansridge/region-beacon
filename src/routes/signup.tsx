@@ -227,7 +227,31 @@ function SignupPage() {
           Back
         </Link>
 
-        {stage === "check-email" ? (
+        {auth.status === "authenticated" && stage !== "check-email" && stage !== "done" ? (
+          <div className="rounded-2xl border bg-card p-8 shadow-sm">
+            <h1 className="text-xl font-semibold">You're already signed in</h1>
+            <p className="mt-3 text-sm text-muted-foreground">
+              You're currently signed in as{" "}
+              <strong>{auth.email ?? "another account"}</strong>. To create a new
+              organisation under a different email, sign out first.
+            </p>
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+              <Link
+                to="/admin"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+              >
+                Continue to admin
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOutAndRestart}
+                className="inline-flex h-10 items-center justify-center rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
+              >
+                Sign out and create a new organisation
+              </button>
+            </div>
+          </div>
+        ) : stage === "check-email" ? (
           <div className="rounded-2xl border bg-card p-8 shadow-sm">
             <h1 className="text-xl font-semibold">Check your email</h1>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -235,14 +259,15 @@ function SignupPage() {
               activate your account, then return and sign in to finish creating
               your organisation.
             </p>
-            <Link
-              to="/admin/login"
+            <a
+              href={authUrl("/admin/login?complete_signup=1")}
               className="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
             >
               Go to sign in
-            </Link>
+            </a>
           </div>
         ) : (
+
           <form
             onSubmit={onSubmit}
             className="space-y-5 rounded-2xl border bg-card p-8 shadow-sm"
