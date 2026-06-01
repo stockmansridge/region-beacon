@@ -247,6 +247,22 @@ function EventDetail() {
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [activeTab, setActiveTabRaw] = useState<EventTabKey>(() => readTabFromHash());
+  const setActiveTab = (next: EventTabKey) => {
+    setActiveTabRaw(next);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.hash = `tab=${next}`;
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
+  useEffect(() => {
+    const onHash = () => setActiveTabRaw(readTabFromHash());
+    if (typeof window !== "undefined") {
+      window.addEventListener("hashchange", onHash);
+      return () => window.removeEventListener("hashchange", onHash);
+    }
+  }, []);
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
