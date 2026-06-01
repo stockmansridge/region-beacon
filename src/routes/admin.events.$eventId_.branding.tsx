@@ -977,4 +977,98 @@ function PaletteSelector({
   );
 }
 
+// ============================================================================
+// BackgroundSelector
+// ============================================================================
+
+function BackgroundSelector({
+  value,
+  paletteKey,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  paletteKey: string;
+  onChange: (key: string) => void;
+  disabled?: boolean;
+}) {
+  const palette = getPaletteOrDefault(paletteKey || null);
+  const selected = getBackground(value || null);
+  return (
+    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+      <div className="flex items-baseline justify-between">
+        <div className="text-sm font-semibold">Page background</div>
+        {selected && !disabled && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Choose the page background used behind the public event pages. This is
+        independent of the colour palette and falls back to a clean light
+        background when unset.
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {EVENT_BACKGROUNDS.map((bg) => {
+          const active = bg.key === value;
+          return (
+            <button
+              key={bg.key}
+              type="button"
+              onClick={() => onChange(bg.key as EventBackgroundKey)}
+              disabled={disabled}
+              className={`flex items-stretch gap-3 rounded-lg border p-2 text-left transition disabled:opacity-50 ${
+                active
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                  : "border-border hover:bg-muted/40"
+              }`}
+            >
+              <span
+                className="block h-14 w-16 flex-shrink-0 rounded border"
+                style={bg.swatch(palette)}
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">{bg.label}</span>
+                <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                  {bg.description}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {selected && (
+        <div
+          className="mt-2 rounded-lg p-3 text-xs"
+          style={{
+            ...selected.build(palette),
+            color: palette.bodyText,
+            border: `1px solid ${palette.border}`,
+          }}
+        >
+          <div
+            className="mb-1 font-semibold"
+            style={{ color: palette.heading }}
+          >
+            {selected.label} preview
+          </div>
+          <div
+            className="rounded p-2"
+            style={{ background: palette.cardBg, color: palette.bodyText }}
+          >
+            Sample card on this background — confirms cards stay readable.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
