@@ -25,6 +25,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { PUBLIC_TENANT_ROOT_DOMAIN, tenantHost, tenantUrl } from "@/lib/domains";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticCopyButton } from "@/components/diagnostic-panel";
+import { resolveEventPalette } from "@/lib/event-palettes";
+import { getBackground } from "@/lib/event-backgrounds";
 
 type LoadDiagnostic = {
   step: string;
