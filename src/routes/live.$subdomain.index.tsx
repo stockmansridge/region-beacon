@@ -8,6 +8,7 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
+import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
