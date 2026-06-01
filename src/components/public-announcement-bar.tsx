@@ -80,13 +80,9 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
         return;
       }
       const list = (data ?? []) as PublicAnnouncement[];
-      console.info("[announcement] loaded", {
-        host,
-        count: list.length,
-        active: list.filter((r) => (r.message ?? "").trim()).length,
-      });
       setRows(list);
     })();
+
     return () => {
       cancelled = true;
     };
