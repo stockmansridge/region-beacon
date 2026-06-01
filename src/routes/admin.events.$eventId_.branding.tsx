@@ -124,6 +124,7 @@ function BrandingEditor() {
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
