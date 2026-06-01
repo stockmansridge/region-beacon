@@ -39,7 +39,7 @@ type VenueRow = {
 type State =
   | { kind: "loading" }
   | { kind: "not_found" }
-  | { kind: "ready"; venue: VenueRow; eventId: string | null; paletteKey: string | null };
+  | { kind: "ready"; venue: VenueRow; eventId: string | null; paletteKey: string | null; backgroundKey: string | null };
 
 type VisitedState =
   | { kind: "none" }
@@ -73,8 +73,8 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         setState({ kind: "not_found" });
         return;
       }
-      const evt = (evtData?.[0] ?? null) as { event_id?: string; palette_key?: string | null } | null;
-      setState({ kind: "ready", venue: row, eventId: evt?.event_id ?? null, paletteKey: evt?.palette_key ?? null });
+      const evt = (evtData?.[0] ?? null) as { event_id?: string; palette_key?: string | null; page_background_key?: string | null } | null;
+      setState({ kind: "ready", venue: row, eventId: evt?.event_id ?? null, paletteKey: evt?.palette_key ?? null, backgroundKey: evt?.page_background_key ?? null });
 
       if (!evt?.event_id) return;
       try {
@@ -135,7 +135,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
   const logoUrl = getVenueAssetPublicUrl(venue.logo_path);
 
   return (
-    <EventPaletteScope paletteKey={state.paletteKey} className="min-h-screen pb-12">
+    <EventPaletteScope paletteKey={state.paletteKey} backgroundKey={state.backgroundKey} className="min-h-screen pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} /></div>
       <div className="mx-auto max-w-md">
