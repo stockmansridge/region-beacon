@@ -11,6 +11,8 @@ import { signOut } from "@/hooks/use-auth";
 import {
   savePendingOrganisationSignup,
   clearPendingOrganisationSignup,
+  isOrganisationSignupServerSetupError,
+  ORG_SIGNUP_SERVER_SETUP_ERROR,
 } from "@/lib/pending-organisation-signup";
 
 
@@ -186,10 +188,8 @@ function SignupPage() {
         setFieldErrors({ businessName: "Organisation name is invalid." });
       } else if (/not_authenticated/i.test(msg)) {
         setTopError("Sign-in did not persist. Please try logging in.");
-      } else if (/Could not find the function|function .* does not exist/i.test(msg)) {
-        setTopError(
-          "Self-service signup is not yet enabled on this environment. Please contact support.",
-        );
+      } else if (isOrganisationSignupServerSetupError(msg)) {
+        setTopError(ORG_SIGNUP_SERVER_SETUP_ERROR);
       } else {
         setTopError(`Account created but organisation setup failed: ${msg}`);
       }
@@ -459,6 +459,8 @@ function AuthenticatedRecoveryForm({
         setFieldErrors({ slug: "Organisation URL name is invalid." });
       } else if (/invalid_agency_name/i.test(msg)) {
         setFieldErrors({ businessName: "Organisation name is invalid." });
+      } else if (isOrganisationSignupServerSetupError(msg)) {
+        setError(ORG_SIGNUP_SERVER_SETUP_ERROR);
       } else {
         setError(msg || "Could not create organisation.");
       }
