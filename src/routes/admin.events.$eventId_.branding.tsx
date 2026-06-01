@@ -300,14 +300,14 @@ function BrandingEditor() {
       .eq("agency_id", agencyId)
       .maybeSingle();
 
-    console.info("[branding-save] precheck", {
-      event_id: bundle.event.id,
-      agency_id: agencyId,
-      existingFound: Boolean(existing),
-      existingErrorCode: existingErr?.code ?? null,
-      existingErrorMessage: existingErr?.message ?? null,
-      payloadKeys: Object.keys(fullPayload),
-    });
+    if (existingErr) {
+      // eslint-disable-next-line no-console
+      console.warn("[branding-save] precheck failed", {
+        code: existingErr.code,
+        message: existingErr.message,
+      });
+    }
+
 
     async function writeRow(payload: Record<string, unknown>, mode: "update" | "insert") {
       if (!bundle) return { row: null, error: { message: "Internal error." } as any };
