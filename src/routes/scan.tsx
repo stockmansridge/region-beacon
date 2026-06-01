@@ -110,7 +110,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6EFE2] pb-12">
+    <EventPaletteScope paletteKey={paletteKey} className="min-h-screen pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} /></div>
       <div className="mx-auto max-w-md px-4 pt-4">
