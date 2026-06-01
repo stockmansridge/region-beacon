@@ -842,3 +842,120 @@ function AssetUploader({
   );
 }
 
+// ============================================================================
+// PaletteSelector
+// ============================================================================
+
+function PaletteSelector({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (key: string) => void;
+  disabled?: boolean;
+}) {
+  const selected = getPalette(value || null);
+  return (
+    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+      <div className="flex items-baseline justify-between">
+        <div className="text-sm font-semibold">Colour palette</div>
+        {selected && !disabled && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Pick a curated palette to colour the public event pages. When set, the
+        palette overrides the primary &amp; accent colours below. Leave unset to
+        keep the GetStampd default look (or your own primary/accent hex codes).
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {EVENT_PALETTES.map((p) => {
+          const active = p.key === value;
+          return (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => onChange(p.key as EventPaletteKey)}
+              disabled={disabled}
+              className={`flex items-start gap-3 rounded-lg border p-2 text-left transition disabled:opacity-50 ${
+                active
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                  : "border-border hover:bg-muted/40"
+              }`}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span
+                  className="block h-5 w-10 rounded"
+                  style={{ background: p.primary }}
+                  aria-hidden
+                />
+                <span
+                  className="block h-5 w-10 rounded"
+                  style={{ background: p.accent }}
+                  aria-hidden
+                />
+                <span
+                  className="block h-5 w-10 rounded border"
+                  style={{ background: p.pageBg, borderColor: p.border }}
+                  aria-hidden
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium">{p.label}</div>
+                <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                  {p.description}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {selected && (
+        <div
+          className="mt-2 rounded-lg p-3 text-xs"
+          style={{
+            background: selected.cardBg,
+            color: selected.bodyText,
+            border: `1px solid ${selected.border}`,
+          }}
+        >
+          <div
+            className="mb-1 font-semibold"
+            style={{ color: selected.heading }}
+          >
+            {selected.label} preview
+          </div>
+          <div style={{ color: selected.mutedText }}>
+            Sample card · Body text · Muted line
+          </div>
+          <div className="mt-2 flex gap-2">
+            <span
+              className="rounded-full px-3 py-1 text-[11px] font-semibold"
+              style={{
+                background: selected.primary,
+                color: selected.primaryForeground,
+              }}
+            >
+              Primary
+            </span>
+            <span
+              className="rounded-full px-3 py-1 text-[11px] font-semibold"
+              style={{ background: selected.accent, color: "#fff" }}
+            >
+              Accent
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
