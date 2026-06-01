@@ -121,6 +121,7 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
 
   const { event, venues } = state;
   const canRegister = Boolean(event.current_terms_version_id);
+  const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
