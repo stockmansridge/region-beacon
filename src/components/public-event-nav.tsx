@@ -165,6 +165,18 @@ export function PublicEventNav({
       ),
     },
     {
+      key: "offers",
+      node: (
+        <Link
+          to="/offers"
+          className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+          style={{ color: primary }}
+        >
+          Offers
+        </Link>
+      ),
+    },
+    {
       key: "leaderboard",
       node: (
         <Link
