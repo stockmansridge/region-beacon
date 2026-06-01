@@ -471,7 +471,13 @@ function AuthenticatedRecoveryForm({
     if (rpcErr) {
       const msg = rpcErr.message || "";
       // eslint-disable-next-line no-console
-      console.warn("[org-signup] recovery RPC error", msg);
+      console.warn("[org-signup] recovery RPC error", {
+        supabaseUrl: SUPABASE_URL,
+        code: rpcErr.code,
+        message: msg,
+        details: (rpcErr as { details?: string }).details,
+        hint: (rpcErr as { hint?: string }).hint,
+      });
       if (/agency_slug_taken/i.test(msg)) {
         setFieldErrors({ slug: "That Organisation URL name is already taken." });
       } else if (/invalid_agency_slug/i.test(msg)) {
