@@ -764,14 +764,15 @@ function EmptyState({
   cta: string;
 }) {
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-        <p className="text-base font-semibold">{title}</p>
-        <p className="max-w-md text-sm text-muted-foreground">{message}</p>
-        <Button asChild>
-          <Link to={to}>{cta}</Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-10 text-center shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <p className="text-base font-semibold text-[#111827]">{title}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#64748B]">{message}</p>
+      <Link
+        to={to}
+        className="mt-5 inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5]"
+      >
+        {cta}
+      </Link>
+    </div>
   );
 }
