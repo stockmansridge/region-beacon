@@ -587,9 +587,9 @@ function BrandingEditor() {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
-        {/* ============== Form ============== */}
-        <div className="space-y-5">
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+        {/* ============== LEFT: choices ============== */}
+        <div className="space-y-5 lg:order-1 order-2">
           {(validationError || saveError) && (
             <div className="rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
               {validationError ?? saveError}
@@ -601,107 +601,63 @@ function BrandingEditor() {
             </div>
           )}
 
-
-
-          <AssetUploader
-            kind="logo"
-            currentPath={branding?.logo_path ?? null}
-            canEdit={canEdit}
-            onUpload={async (file) => {
-              if (!agencyId) return "Select an organisation before uploading.";
-              const res = await uploadEventAsset({
-                agencyId,
-                eventId: event.id,
-                kind: "logo",
-                file,
-              });
-              if (!res.ok) return res.error;
-              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
-            }}
-            onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
-          />
-          <AssetUploader
-            kind="cover"
-            currentPath={branding?.cover_path ?? null}
-            canEdit={canEdit}
-            onUpload={async (file) => {
-              if (!agencyId) return "Select an organisation before uploading.";
-              const res = await uploadEventAsset({
-                agencyId,
-                eventId: event.id,
-                kind: "cover",
-                file,
-              });
-              if (!res.ok) return res.error;
-              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
-            }}
-            onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
-          />
-
           <PaletteSelector
             value={form.palette_key}
             onChange={(key) => setForm({ ...form, palette_key: key })}
             disabled={!canEdit || saving}
           />
 
-          {/* Custom brand colours — only active when palette is unset or "custom" */}
-          {(() => {
-            const isCurated =
-              !!form.palette_key && form.palette_key !== "custom";
-            const customActive = !isCurated;
-            return (
-              <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-                <div>
-                  <div className="text-sm font-semibold">Custom brand colours</div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {isCurated
-                      ? "These overrides are inactive while a curated palette is selected. Switch the palette to Custom (or clear it) to use your own hex colours."
-                      : "Used as the primary button colour and accent across the public pages. Leave blank to fall back to the GetStampd defaults."}
-                  </p>
-                </div>
-                <Field label="Primary button colour">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={HEX_RE.test(form.primary_color) ? form.primary_color : "#1F3D2B"}
-                      onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-                      disabled={!canEdit || saving || !customActive}
-                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                    <input
-                      type="text"
-                      value={form.primary_color}
-                      onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-                      placeholder="#1F3D2B"
-                      disabled={!canEdit || saving || !customActive}
-                      maxLength={7}
-                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  </div>
-                </Field>
-                <Field label="Accent colour">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={HEX_RE.test(form.accent_color) ? form.accent_color : "#B5572A"}
-                      onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
-                      disabled={!canEdit || saving || !customActive}
-                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                    <input
-                      type="text"
-                      value={form.accent_color}
-                      onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
-                      placeholder="#B5572A"
-                      disabled={!canEdit || saving || !customActive}
-                      maxLength={7}
-                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  </div>
-                </Field>
+          {/* Custom brand colours — only visible when the Custom palette is selected. */}
+          {form.palette_key === "custom" && (
+            <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+              <div>
+                <div className="text-sm font-semibold">Custom brand colours</div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Used as the primary button colour and accent across the public pages. Leave blank to fall back to the GetStampd defaults.
+                </p>
               </div>
-            );
-          })()}
+              <Field label="Primary button colour">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(form.primary_color) ? form.primary_color : "#1F3D2B"}
+                    onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                    disabled={!canEdit || saving}
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={form.primary_color}
+                    onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                    placeholder="#1F3D2B"
+                    disabled={!canEdit || saving}
+                    maxLength={7}
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </Field>
+              <Field label="Accent colour">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(form.accent_color) ? form.accent_color : "#B5572A"}
+                    onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
+                    disabled={!canEdit || saving}
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={form.accent_color}
+                    onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
+                    placeholder="#B5572A"
+                    disabled={!canEdit || saving}
+                    maxLength={7}
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </Field>
+            </div>
+          )}
 
           <BackgroundSelector
             value={form.page_background_key}
@@ -719,9 +675,7 @@ function BrandingEditor() {
                 <div className="text-sm font-semibold">Custom background colour</div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Pick a hex page background, and optionally a card background.
-                  Requires the database migration in{" "}
-                  <code>migrations-draft-event-background/03_custom_background_colors.sql</code>{" "}
-                  to be applied.
+                  These values are only applied while “Custom colour” is the selected page background.
                 </p>
               </div>
               <Field label="Page background colour">
@@ -793,10 +747,6 @@ function BrandingEditor() {
             </div>
           </Field>
 
-          {/* Terms URL removed from Branding — Terms & Privacy are managed
-              in the main event Terms & Privacy section. The existing
-              terms_url value is preserved in the database and on save. */}
-
           {/* ============== Customer wording ============== */}
           <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
             <div>
@@ -842,51 +792,109 @@ function BrandingEditor() {
           </div>
         </div>
 
-        {/* ============== Preview ============== */}
-        <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-          <div className="mb-3 flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <h3 className="text-base font-semibold text-[#111827]">Live preview</h3>
-              <p className="text-sm leading-6 text-[#64748B]">
-                Preview how the public event page will use this branding.
-              </p>
+        {/* ============== RIGHT: sticky preview + uploads ============== */}
+        <div className="lg:order-2 order-1 space-y-5 lg:sticky lg:top-6 lg:self-start">
+          <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+            <div className="mb-3 flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-[#111827]">Live preview</h3>
+                <p className="text-sm leading-6 text-[#64748B]">
+                  Preview how the public event page will use this branding.
+                </p>
+              </div>
             </div>
+            <EventPaletteScope
+              paletteKey={form.palette_key || null}
+              backgroundKey={form.page_background_key || null}
+              primaryColor={form.primary_color}
+              accentColor={form.accent_color}
+              pageBackgroundColor={form.page_background_color}
+              cardBackgroundColor={form.card_background_color}
+              className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
+            >
+              <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-muted, #8A7E66)" }}>
+                <span>Customer landing — live preview</span>
+                <span>Mobile</span>
+              </div>
+              <TrailLanding
+                eventName={event.name}
+                welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
+                primaryColor={(() => {
+                  const p = getPalette(form.palette_key || null);
+                  if (p) return p.primary;
+                  return HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B";
+                })()}
+                accentColor={(() => {
+                  const p = getPalette(form.palette_key || null);
+                  if (p) return p.accent;
+                  return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
+                })()}
+                fontFamily={form.font_family.trim() || undefined}
+                venueCount={venueCount}
+                venueLabelPlural={resolveVenueLabels({ venue_label_singular: form.venue_label_singular, venue_label_plural: form.venue_label_plural }).plural}
+                logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+                heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
+                badge="Preview"
+                termsUrl={null}
+              />
+            </EventPaletteScope>
           </div>
-          <EventPaletteScope
-            paletteKey={form.palette_key || null}
-            backgroundKey={form.page_background_key || null}
-            primaryColor={form.primary_color}
-            accentColor={form.accent_color}
-            pageBackgroundColor={form.page_background_color}
-            cardBackgroundColor={form.card_background_color}
-            className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
-          >
-            <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-muted, #8A7E66)" }}>
-              <span>Customer landing — live preview</span>
-              <span>Mobile</span>
+
+          <AssetUploader
+            kind="logo"
+            currentPath={branding?.logo_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an organisation before uploading.";
+              const res = await uploadEventAsset({
+                agencyId,
+                eventId: event.id,
+                kind: "logo",
+                file,
+              });
+              if (!res.ok) return res.error;
+              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
+            }}
+            onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
+          />
+          <AssetUploader
+            kind="cover"
+            currentPath={branding?.cover_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an organisation before uploading.";
+              const res = await uploadEventAsset({
+                agencyId,
+                eventId: event.id,
+                kind: "cover",
+                file,
+              });
+              if (!res.ok) return res.error;
+              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
+            }}
+            onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
+          />
+
+          {canEdit && (
+            <div className="flex flex-wrap gap-2 rounded-[16px] border border-[#D9E2EF] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+              <button
+                type="button"
+                onClick={() => onSave()}
+                disabled={saving}
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onSave({ returnAfter: true })}
+                disabled={saving}
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save & return"}
+              </button>
             </div>
-            <TrailLanding
-              eventName={event.name}
-              welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
-              primaryColor={(() => {
-                const p = getPalette(form.palette_key || null);
-                if (p) return p.primary;
-                return HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B";
-              })()}
-              accentColor={(() => {
-                const p = getPalette(form.palette_key || null);
-                if (p) return p.accent;
-                return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
-              })()}
-              fontFamily={form.font_family.trim() || undefined}
-              venueCount={venueCount}
-              venueLabelPlural={resolveVenueLabels({ venue_label_singular: form.venue_label_singular, venue_label_plural: form.venue_label_plural }).plural}
-              logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-              heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
-              badge="Preview"
-              termsUrl={null}
-            />
-          </EventPaletteScope>
+          )}
         </div>
       </div>
     </div>
