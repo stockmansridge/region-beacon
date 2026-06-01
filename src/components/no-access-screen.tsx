@@ -84,22 +84,29 @@ export function NoAccessScreen({ email }: { email: string | null }) {
           </>
         ) : (
           <>
-            <h1 className="mt-4 text-lg font-semibold">No access</h1>
+            <h1 className="mt-4 text-lg font-semibold">No organisation yet</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {email ? <>You're signed in as <span className="font-medium text-foreground">{email}</span>, but </> : "You are "}
-              this account does not have a platform or organisation role assigned for the admin portal.
+              this account does not have a platform or organisation role yet.
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              Ask a platform admin to grant you a role, then sign in again.
+              If you were in the middle of signing up, create your organisation now. Otherwise, ask a platform admin to grant you a role.
             </p>
+            <Link
+              to="/signup"
+              className="mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+            >
+              Create an organisation
+            </Link>
             <button
               type="button"
               onClick={handleSignOut}
-              className="mt-6 inline-flex h-10 items-center justify-center rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
+              className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-lg border bg-background px-4 text-xs font-medium hover:bg-muted"
             >
               Sign out
             </button>
           </>
+
         )}
       </div>
     </div>
