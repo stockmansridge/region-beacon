@@ -270,8 +270,11 @@ function EventTabBar({
   onChange: (next: EventTabKey) => void;
 }) {
   return (
-    <div className="-mx-1 overflow-x-auto">
-      <div role="tablist" className="flex min-w-max gap-1 px-1">
+    <div className="overflow-x-auto pb-1">
+      <div
+        role="tablist"
+        className="inline-flex min-w-max items-center gap-1.5 rounded-[14px] bg-[#EEF2F7] p-1"
+      >
         {EVENT_TABS.map((t) => {
           const isActive = t.key === active;
           return (
@@ -282,10 +285,10 @@ function EventTabBar({
               aria-selected={isActive}
               onClick={() => onChange(t.key)}
               className={
-                "relative h-9 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition " +
+                "flex h-10 shrink-0 items-center whitespace-nowrap rounded-[10px] px-4 text-sm font-medium transition-colors " +
                 (isActive
-                  ? "bg-card text-foreground ring-1 ring-border shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground")
+                  ? "bg-white text-[#1F56C5] shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
+                  : "text-[#64748B] hover:bg-white/70 hover:text-[#111827]")
               }
             >
               {t.label}
@@ -1596,10 +1599,10 @@ function EventDetail() {
 
   const statusPillClass =
     event.status === "published"
-      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+      ? "bg-[#ECFDF5] text-[#047857] border-[#86EFAC]"
       : event.status === "archived"
-        ? "bg-muted text-muted-foreground ring-border"
-        : "bg-amber-50 text-amber-700 ring-amber-200";
+        ? "bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]"
+        : "bg-[#FFF7ED] text-[#B45309] border-[#FDBA74]";
   const statusLabel =
     event.status === "published"
       ? "Published"
@@ -1613,12 +1616,12 @@ function EventDetail() {
         title={event.name}
         description={undefined}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               to="/admin/events/$eventId/preview"
               params={{ eventId: bundle.event.id }}
               target="_blank"
-              className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+              className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F8FAFC]"
             >
               Preview customer page
             </Link>
@@ -1628,19 +1631,18 @@ function EventDetail() {
                 onClick={archiveEvent}
                 disabled={deleting}
                 title="Archive this event (soft delete). Existing records are preserved."
-                className="inline-flex h-9 items-center rounded-lg border border-destructive/40 bg-destructive/5 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                className="inline-flex h-10 items-center rounded-[10px] border border-[#FDA4AF] bg-white px-4 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:opacity-50"
               >
                 {deleting ? "Archiving…" : "Archive event"}
               </button>
             )}
           </div>
         }
-
       />
 
-      <div className="-mt-2 mb-1 flex flex-wrap items-center gap-2 pb-1 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
         <span
-          className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
+          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusPillClass}`}
         >
           {statusLabel}
         </span>
@@ -1649,33 +1651,33 @@ function EventDetail() {
             href={`https://${activeSubdomain}.getstampd.com.au`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
+            className="inline-flex items-center gap-1 rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857] hover:bg-emerald-100"
           >
             Live at {activeSubdomain}.getstampd.com.au
           </a>
         ) : (
-          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-700 ring-1 ring-amber-200">
+          <span className="inline-flex items-center rounded-full border border-[#FECACA] bg-[#FEF2F2] px-3 py-1 text-xs font-semibold text-[#B91C1C]">
             Public address not claimed
           </span>
         )}
       </div>
 
-      <details className="group rounded-xl border bg-card">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-          <span className="flex items-center gap-2">
-            <span>Setup &amp; launch status</span>
-            <span className="text-xs font-normal text-muted-foreground">
+      <details className="group rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold text-[#111827]">Setup &amp; launch status</span>
+            <span className="text-sm text-[#64748B]">
               Checklist, blockers and go-live gates
             </span>
           </span>
-          <span className="text-xs font-medium text-muted-foreground group-open:hidden">
+          <span className="text-sm font-medium text-[#334155] hover:text-[#1F56C5] group-open:hidden">
             Show
           </span>
-          <span className="hidden text-xs font-medium text-muted-foreground group-open:inline">
+          <span className="hidden text-sm font-medium text-[#334155] hover:text-[#1F56C5] group-open:inline">
             Hide
           </span>
         </summary>
-        <div className="space-y-4 border-t p-4">
+        <div className="space-y-4 border-t border-[#E6ECF4] px-5 py-5">
           <LaunchReadinessChecklist
             event={event}
             domains={domains}
@@ -1720,6 +1722,7 @@ function EventDetail() {
       </details>
 
       <EventTabBar active={activeTab} onChange={setActiveTab} />
+
 
       <EventTabContext.Provider value={activeTab}>
         <div className="min-h-[60vh] space-y-6">
@@ -2980,13 +2983,13 @@ function Section({
     <section
       id={id}
       hidden={isHidden}
-      className="scroll-mt-24 rounded-xl border bg-card p-6"
+      className="scroll-mt-24 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]"
     >
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <h3 className="text-base font-semibold text-[#111827]">{title}</h3>
       {description && (
-        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        <p className="mt-1 text-sm leading-6 text-[#64748B]">{description}</p>
       )}
-      <div className="mt-4">{children}</div>
+      <div className="mt-5">{children}</div>
     </section>
   );
 }

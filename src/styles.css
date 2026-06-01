@@ -158,3 +158,41 @@
     background-color: #F6EFE2;
   }
 }
+
+/* GetStampd admin design tokens (modern dashboard skin) */
+:root {
+  --gs-bg: #F5F7FB;
+  --gs-surface: #FFFFFF;
+  --gs-surface-soft: #F8FAFC;
+  --gs-surface-blue: #EEF5FF;
+
+  --gs-border: #D9E2EF;
+  --gs-border-soft: #E6ECF4;
+
+  --gs-text: #111827;
+  --gs-text-muted: #64748B;
+  --gs-text-soft: #94A3B8;
+
+  --gs-primary: #2F6FE4;
+  --gs-primary-hover: #1F56C5;
+  --gs-primary-soft: #EAF2FF;
+
+  --gs-sidebar: #071527;
+  --gs-sidebar-hover: #10233A;
+  --gs-sidebar-active: #2F6FE4;
+  --gs-sidebar-text: #CBD5E1;
+  --gs-sidebar-muted: #94A3B8;
+
+  --gs-success: #16A34A;
+  --gs-warning: #F59E0B;
+  --gs-danger: #E11D48;
+
+  --gs-radius-sm: 8px;
+  --gs-radius-md: 10px;
+  --gs-radius-lg: 14px;
+  --gs-radius-xl: 16px;
+  --gs-radius-2xl: 20px;
+
+  --gs-shadow-card: 0 8px 24px rgba(15, 23, 42, 0.045);
+  --gs-shadow-button: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
