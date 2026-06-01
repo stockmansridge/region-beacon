@@ -348,6 +348,7 @@ function PassportView({
             accentColor={ACCENT}
             activeOverride="passport"
             passportHref={passportUrl}
+            eventId={passport.event_id}
           />
         </div>
       )}
