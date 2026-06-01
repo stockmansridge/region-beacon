@@ -106,12 +106,21 @@ export type CompletePendingResult =
  */
 export async function completePendingOrganisationSignup(): Promise<CompletePendingResult> {
   const pending = readPendingOrganisationSignup();
+  // eslint-disable-next-line no-console
+  console.info(
+    "[org-signup] pending lookup",
+    pending
+      ? { hasPending: true, pendingEmail: pending.email, businessName: pending.businessName, source: pending.source }
+      : { hasPending: false, origin: typeof window !== "undefined" ? window.location.origin : "(ssr)" },
+  );
   if (!pending) {
     return { ok: false, code: "no_pending", message: "No pending organisation signup found." };
   }
 
   const { data: userRes, error: userErr } = await supabase.auth.getUser();
   if (userErr || !userRes.user) {
+    // eslint-disable-next-line no-console
+    console.warn("[org-signup] not authenticated when completing", userErr);
     return {
       ok: false,
       code: "not_authenticated",
