@@ -1638,44 +1638,27 @@ function EventDetail() {
 
       />
 
-      {(
-        <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs">
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
+      <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs">
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
+        >
+          {statusLabel}
+        </span>
+        {activeSubdomain ? (
+          <a
+            href={`https://${activeSubdomain}.getstampd.com.au`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
           >
-            {statusLabel}
+            Live at {activeSubdomain}.getstampd.com.au
+          </a>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-700 ring-1 ring-amber-200">
+            Public address not claimed
           </span>
-          {activeSubdomain ? (
-            <a
-              href={`https://${activeSubdomain}.getstampd.com.au`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
-            >
-              Live at {activeSubdomain}.getstampd.com.au
-            </a>
-        <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs">
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
-          >
-            {statusLabel}
-          </span>
-          {activeSubdomain ? (
-            <a
-              href={`https://${activeSubdomain}.getstampd.com.au`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
-            >
-              Live at {activeSubdomain}.getstampd.com.au
-            </a>
-          ) : (
-            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-700 ring-1 ring-amber-200">
-              Public address not claimed
-            </span>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       <details className="group rounded-xl border bg-card">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
