@@ -6,6 +6,8 @@ import { tenantHost } from "@/lib/domains";
 import { LegalBody } from "@/components/legal-body";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
+import { EventPaletteScope } from "@/components/event-palette-scope";
+import { useEventPaletteKey } from "@/lib/use-event-palette";
 
 
 export type LegalRow = {
