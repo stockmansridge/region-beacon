@@ -338,21 +338,21 @@ function EventDetail() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-
-
-
+  const [basicsSaveSuccess, setBasicsSaveSuccess] = useState(false);
 
   const [isEditingCheckin, setIsEditingCheckin] = useState(false);
   const [checkinForm, setCheckinForm] = useState<CheckinEditForm | null>(null);
   const [checkinSaving, setCheckinSaving] = useState(false);
   const [checkinSaveError, setCheckinSaveError] = useState<string | null>(null);
   const [checkinValidationError, setCheckinValidationError] = useState<string | null>(null);
+  const [checkinSaveSuccess, setCheckinSaveSuccess] = useState(false);
 
   const [isEditingLeaderboard, setIsEditingLeaderboard] = useState(false);
   const [lbForm, setLbForm] = useState<LeaderboardEditForm | null>(null);
   const [lbSaving, setLbSaving] = useState(false);
   const [lbSaveError, setLbSaveError] = useState<string | null>(null);
   const [lbValidationError, setLbValidationError] = useState<string | null>(null);
+  const [lbSaveSuccess, setLbSaveSuccess] = useState(false);
 
   // Venue editor: "new" = creating, string = editing existing id, null = closed.
   const [venueEditingId, setVenueEditingId] = useState<string | "new" | null>(null);
