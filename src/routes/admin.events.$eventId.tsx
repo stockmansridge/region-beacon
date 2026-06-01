@@ -2185,6 +2185,7 @@ function EventDetail() {
             id="section-venues"
             title="Venues for this event"
             description="Add and manage the venues/stops that visitors can collect stamps from for this event."
+            tab="venues"
           >
             {canEdit && venueEditingId === null && (
               <div className="mb-4 flex justify-end">
