@@ -312,7 +312,7 @@ function Events() {
                             href={`https://${domain!.public_subdomain}.${SUBDOMAIN_ROOT}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-sm text-muted-foreground hover:underline"
+                            className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
                           >
                             Preview
                           </a>
@@ -320,7 +320,7 @@ function Events() {
                         <Link
                           to="/admin/events/$eventId"
                           params={{ eventId: e.id }}
-                          className="text-sm font-medium text-primary hover:underline"
+                          className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
                         >
                           Setup
                         </Link>
