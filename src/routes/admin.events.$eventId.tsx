@@ -2109,26 +2109,17 @@ function EventDetail() {
           </Section>
 
           <Section title="Leaderboard" id="section-leaderboard" tab="leaderboard">
-            {isEditingLeaderboard && lbForm ? (
+            <div className="mb-4 flex flex-wrap justify-end gap-2">
+              <Link
+                to="/admin/events/$eventId/leaderboard"
+                params={{ eventId: bundle.event.id }}
+                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+              >
+                Open leaderboard
+              </Link>
+            </div>
+            {canEdit && isEditingLeaderboard && lbForm ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={cancelEditLeaderboard}
-                    disabled={lbSaving}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveEditLeaderboard}
-                    disabled={lbSaving}
-                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                  >
-                    {lbSaving ? "Saving…" : "Save"}
-                  </button>
-                </div>
                 <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   Public leaderboard display is privacy-limited. Visitor email, mobile, postcode,
                   and full name are never shown. Default display is first name + last initial.
@@ -2210,58 +2201,60 @@ function EventDetail() {
                   />
                   <span className="text-sm">Allow visitors to opt out</span>
                 </label>
-              </div>
-            ) : (
-              <>
-                <div className="mb-4 flex flex-wrap justify-end gap-2">
-                  <Link
-                    to="/admin/events/$eventId/leaderboard"
-                    params={{ eventId: bundle.event.id }}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                  >
-                    Open leaderboard
-                  </Link>
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={startEditLeaderboard}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                    >
-                      Edit leaderboard settings
-                    </button>
-                  )}
-                </div>
-                {leaderboard ? (
-                  <>
-                    {!leaderboard.is_enabled && (
-                      <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                        Public leaderboard is disabled for this event.
-                      </div>
-                    )}
-                    <DefList
-                      rows={[
-                        ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
-                        ["Display mode", leaderboard.display_mode],
-                        ["Show first name", leaderboard.show_first_name ? "yes" : "no"],
-                        ["Show last initial", leaderboard.show_last_initial ? "yes" : "no"],
-                        ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
-                        ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
-                        ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
-                      ]}
-                    />
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      Privacy: email, mobile, postcode, and full name are never displayed publicly.
-                      Default display is first name + last initial.
-                    </p>
-                  </>
-                ) : (
-                  <EmptyNotice>
-                    No leaderboard settings. Public leaderboard is disabled by default.
-                  </EmptyNotice>
+                {lbSaveSuccess && (
+                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    Leaderboard settings saved.
+                  </div>
                 )}
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={cancelEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Discard changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {lbSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
+            ) : leaderboard ? (
+              <>
+                {!leaderboard.is_enabled && (
+                  <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    Public leaderboard is disabled for this event.
+                  </div>
+                )}
+                <DefList
+                  rows={[
+                    ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
+                    ["Display mode", leaderboard.display_mode],
+                    ["Show first name", leaderboard.show_first_name ? "yes" : "no"],
+                    ["Show last initial", leaderboard.show_last_initial ? "yes" : "no"],
+                    ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
+                    ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
+                    ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
+                  ]}
+                />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Privacy: email, mobile, postcode, and full name are never displayed publicly.
+                  Default display is first name + last initial.
+                </p>
               </>
+            ) : (
+              <EmptyNotice>
+                No leaderboard settings. Public leaderboard is disabled by default.
+              </EmptyNotice>
             )}
           </Section>
+
 
           <Section title="Reward tiers" id="section-rewards" tab="leaderboard">
             <AdminEventRewards
