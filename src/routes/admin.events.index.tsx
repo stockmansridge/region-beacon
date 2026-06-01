@@ -589,7 +589,7 @@ function CreateEventDialog({
               value={form.name}
               onChange={(e) => onNameChange(e.target.value)}
               maxLength={200}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               placeholder="Summer Food Trail 2026"
             />
           </Field>
@@ -606,7 +606,7 @@ function CreateEventDialog({
                 setForm((f) => ({ ...f, slug: e.target.value, slugDirty: true }))
               }
               maxLength={80}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm font-mono"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               placeholder="summer-food-trail-2026"
             />
           </Field>
@@ -617,7 +617,7 @@ function CreateEventDialog({
               value={form.timezone}
               onChange={(e) => update("timezone", e.target.value)}
               maxLength={64}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm font-mono"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               placeholder="Australia/Sydney"
             />
           </Field>
@@ -628,7 +628,7 @@ function CreateEventDialog({
                 type="datetime-local"
                 value={form.starts_at}
                 onChange={(e) => update("starts_at", e.target.value)}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               />
             </Field>
             <Field label="Ends at">
@@ -636,7 +636,7 @@ function CreateEventDialog({
                 type="datetime-local"
                 value={form.ends_at}
                 onChange={(e) => update("ends_at", e.target.value)}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               />
             </Field>
           </div>
@@ -647,23 +647,23 @@ function CreateEventDialog({
               onChange={(e) => update("description", e.target.value)}
               maxLength={2000}
               rows={3}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="min-h-[96px] w-full rounded-[12px] border border-[#D9E2EF] bg-white px-3 py-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               placeholder="Short summary of the event."
             />
           </Field>
 
           {validationError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
               {validationError}
             </div>
           )}
           {saveError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
               {saveError}
             </div>
           )}
           {childWarning && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+            <div className="rounded-[12px] border border-[#FDBA74] bg-[#FFF7ED] px-4 py-3 text-sm leading-6 text-[#B45309]">
               {childWarning}
             </div>
           )}
@@ -674,7 +674,7 @@ function CreateEventDialog({
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={saving}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
           >
             Cancel
           </button>
@@ -682,7 +682,7 @@ function CreateEventDialog({
             type="button"
             onClick={handleCreate}
             disabled={saving}
-            className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:opacity-50"
           >
             {saving ? "Creating…" : "Create draft event"}
           </button>
