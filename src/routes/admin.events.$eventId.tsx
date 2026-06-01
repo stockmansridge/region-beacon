@@ -1531,6 +1531,32 @@ function EventDetail() {
 
   const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue, offerSummaryByVenue, activation } = bundle;
 
+  const activeSub =
+    domains.find(
+      (d) =>
+        d.domain_type === "event_subdomain" &&
+        d.status === "active" &&
+        d.is_primary,
+    ) ??
+    domains.find(
+      (d) => d.domain_type === "event_subdomain" && d.status === "active",
+    ) ??
+    null;
+  const activeSubdomain = activeSub?.public_subdomain ?? null;
+
+  const statusPillClass =
+    event.status === "published"
+      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+      : event.status === "archived"
+        ? "bg-muted text-muted-foreground ring-border"
+        : "bg-amber-50 text-amber-700 ring-amber-200";
+  const statusLabel =
+    event.status === "published"
+      ? "Published"
+      : event.status === "archived"
+        ? "Archived"
+        : "Draft";
+
   return (
     <>
       <PageHeader
@@ -1538,7 +1564,7 @@ function EventDetail() {
         description={
           isEditing
             ? `Editing basics · status: ${event.status}`
-            : `Read-only view · status: ${event.status}`
+            : undefined
         }
         actions={
           isEditing ? (
@@ -1596,79 +1622,88 @@ function EventDetail() {
 
       />
 
-      <LaunchReadinessChecklist
-        event={event}
-        domains={domains}
-        terms={terms}
-        venues={venues}
-        qrByVenue={qrByVenue}
-        activation={activation}
-        leaderboard={leaderboard}
-      />
-
-      <EventSetupWarnings
-        status={event.status}
-        domains={domains}
-        hasTerms={!!terms}
-        hasVenues={venues.length > 0}
-        eventId={event.id}
-      />
-
-
-      {agency.isPlatformAdmin && diagnosticsEnabled && (
-        <PublishGateDiagnostic
-          event={event}
-          domains={domains}
-          activation={activation}
-          terms={terms}
-          checkin={checkin}
-          venues={venues}
-        />
+      {!isEditing && (
+        <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs">
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
+          >
+            {statusLabel}
+          </span>
+          {activeSubdomain ? (
+            <a
+              href={`https://${activeSubdomain}.getstampd.com.au`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
+            >
+              Live at {activeSubdomain}.getstampd.com.au
+            </a>
+          ) : (
+            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-700 ring-1 ring-amber-200">
+              Public address not claimed
+            </span>
+          )}
+        </div>
       )}
 
-      <div id="section-go-live">
-        <GoLivePanel
-          agencyId={agencyId}
-          eventId={event.id}
-          eventStatus={event.status}
-          domains={domains}
-          activation={activation}
-          isPlatformAdmin={agency.isPlatformAdmin}
-          onChanged={() => setReloadKey((k) => k + 1)}
-        />
-      </div>
-
-      {(() => {
-        const activeSub =
-          domains.find(
-            (d) =>
-              d.domain_type === "event_subdomain" &&
-              d.status === "active" &&
-              d.is_primary,
-          ) ??
-          domains.find(
-            (d) => d.domain_type === "event_subdomain" && d.status === "active",
-          ) ??
-          null;
-        return (
-          <AdminEventPoster
-            canEdit={canEdit}
-            event={{
-              name: event.name,
-              slug: event.slug,
-              public_slug: event.public_slug,
-              description: event.description,
-              starts_at: event.starts_at,
-              ends_at: event.ends_at,
-              timezone: event.timezone,
-            }}
-            branding={branding}
-            logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-            coverUrl={getEventAssetPublicUrl(branding?.cover_path)}
-            activePublicSubdomain={activeSub?.public_subdomain ?? null}
+      <details className="group rounded-xl border bg-card">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-2">
+            <span>Setup &amp; launch status</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              Checklist, blockers and go-live gates
+            </span>
+          </span>
+          <span className="text-xs font-medium text-muted-foreground group-open:hidden">
+            Show
+          </span>
+          <span className="hidden text-xs font-medium text-muted-foreground group-open:inline">
+            Hide
+          </span>
+        </summary>
+        <div className="space-y-4 border-t p-4">
+          <LaunchReadinessChecklist
+            event={event}
+            domains={domains}
+            terms={terms}
+            venues={venues}
+            qrByVenue={qrByVenue}
+            activation={activation}
+            leaderboard={leaderboard}
           />
-        );
-      })()}
+
+          <EventSetupWarnings
+            status={event.status}
+            domains={domains}
+            hasTerms={!!terms}
+            hasVenues={venues.length > 0}
+            eventId={event.id}
+          />
+
+          {agency.isPlatformAdmin && diagnosticsEnabled && (
+            <PublishGateDiagnostic
+              event={event}
+              domains={domains}
+              activation={activation}
+              terms={terms}
+              checkin={checkin}
+              venues={venues}
+            />
+          )}
+
+          <div id="section-go-live">
+            <GoLivePanel
+              agencyId={agencyId}
+              eventId={event.id}
+              eventStatus={event.status}
+              domains={domains}
+              activation={activation}
+              isPlatformAdmin={agency.isPlatformAdmin}
+              onChanged={() => setReloadKey((k) => k + 1)}
+            />
+          </div>
+        </div>
+      </details>
 
       <EventTabBar active={activeTab} onChange={setActiveTab} />
 
@@ -1792,6 +1827,27 @@ function EventDetail() {
               canEdit={canEdit}
             />
           </Section>
+
+          <Section title="Marketing assets" id="section-marketing" tab="overview" description="Printable poster with a QR code linking to your public event page.">
+            <AdminEventPoster
+              canEdit={canEdit}
+              event={{
+                name: event.name,
+                slug: event.slug,
+                public_slug: event.public_slug,
+                description: event.description,
+                starts_at: event.starts_at,
+                ends_at: event.ends_at,
+                timezone: event.timezone,
+              }}
+              branding={branding}
+              logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+              coverUrl={getEventAssetPublicUrl(branding?.cover_path)}
+              activePublicSubdomain={activeSubdomain}
+            />
+          </Section>
+
+
 
           <Section title="Terms & privacy" id="section-terms" tab="terms">
             {terms ? (
