@@ -6,6 +6,8 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
 import { HostDiagnostic } from "@/components/host-diagnostic";
+import { EventPaletteScope } from "@/components/event-palette-scope";
+import { applyPaletteToEvent } from "@/lib/event-palettes";
 
 export const Route = createFileRoute("/t/$agencySlug/e/$eventSlug")({
   head: () => ({
@@ -35,6 +37,12 @@ type PublicEvent = {
   current_terms_version_id: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
+  // Optional — only present once the public RPC is extended to surface
+  // palette/background fields. The route stays safe when they're missing.
+  palette_key?: string | null;
+  page_background_key?: string | null;
+  page_background_color?: string | null;
+  card_background_color?: string | null;
 };
 
 type PublicVenue = {
@@ -65,7 +73,10 @@ function TenantEventPage() {
           "get_public_event_by_agency_and_slug",
           { _sub: agencySlug, _event_slug: eventSlug },
         );
-        if (!error) evt = (data?.[0] ?? null) as PublicEvent | null;
+        if (!error) {
+          const raw = (data?.[0] ?? null) as PublicEvent | null;
+          evt = raw ? applyPaletteToEvent(raw) : null;
+        }
       } catch {
         evt = null;
       }
@@ -136,7 +147,15 @@ function TenantEventPage() {
   const venueLabels = resolveVenueLabels(event);
 
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+    <EventPaletteScope
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
+      primaryColor={event.primary_color ?? null}
+      accentColor={event.accent_color ?? null}
+      pageBackgroundColor={event.page_background_color ?? null}
+      cardBackgroundColor={event.card_background_color ?? null}
+      className="min-h-screen px-4 py-8"
+    >
       <TrailLanding
         eventName={event.name}
         venueLabelPlural={venueLabels.plural}
@@ -187,6 +206,6 @@ function TenantEventPage() {
         resolutionSource="public_event_slug"
         error={null}
       />
-    </div>
+    </EventPaletteScope>
   );
 }
