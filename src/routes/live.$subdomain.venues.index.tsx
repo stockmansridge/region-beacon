@@ -90,7 +90,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
 
   if (state.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
         Loading…
       </div>
     );
@@ -102,7 +102,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
 
   const { event, venues } = state;
   const labels = resolveVenueLabels(event ?? {});
-  const accent = event?.primary_color ?? "#1F3D2B";
+  const accent = event?.primary_color ?? "var(--event-primary,#1F3D2B)";
 
   return (
     <EventPaletteScope
@@ -122,22 +122,22 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
         <div className="mb-6">
           <Link
             to="/"
-            className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
+            className="text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
           >
             ← Back
           </Link>
-          <h1 className="mt-3 font-trail-serif text-3xl font-semibold text-[#1F3D2B]">
+          <h1 className="mt-3 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
             {labels.plural}
           </h1>
           {event?.name && (
-            <p className="mt-1 text-xs uppercase tracking-[0.22em] text-[#8A7E66]">
+            <p className="mt-1 text-xs uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
               {event.name}
             </p>
           )}
         </div>
 
         {venues.length === 0 ? (
-          <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center text-sm text-[#3D372C]">
+          <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
             No {labels.plural.toLowerCase()} listed yet. Check back soon.
           </div>
         ) : (
@@ -149,20 +149,20 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                   <a
                     href={vid ? `/venues/${vid}` : "#"}
                     aria-label={`View ${v.name ?? "venue"} details`}
-                    className="flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-3 shadow-sm transition hover:border-[#1F3D2B]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F3D2B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F6EFE2] cursor-pointer"
+                    className="flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-3 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--event-page-bg,#F6EFE2)] cursor-pointer"
                   >
                     <Thumb path={v.logo_path ?? v.cover_path} />
                     <div className="flex min-w-0 flex-1 flex-col justify-center">
-                      <p className="truncate font-trail-serif text-lg font-semibold text-[#1F3D2B]">
+                      <p className="truncate font-trail-serif text-lg font-semibold text-[var(--event-primary,#1F3D2B)]">
                         {v.name ?? "Unnamed"}
                       </p>
                       {v.description && (
-                        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-[#3D372C]">
+                        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-[var(--event-body,#3D372C)]">
                           {v.description}
                         </p>
                       )}
                       {v.address && (
-                        <p className="mt-1 truncate text-[11px] text-[#8A7E66]">
+                        <p className="mt-1 truncate text-[11px] text-[var(--event-muted,#8A7E66)]">
                           {v.address}
                         </p>
                       )}
@@ -191,11 +191,11 @@ function Thumb({ path }: { path: string | null }) {
   const url = getVenueAssetPublicUrl(path);
   if (!url) {
     return (
-      <div className="h-16 w-16 flex-shrink-0 rounded-xl bg-[#1F3D2B]/10" />
+      <div className="h-16 w-16 flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />
     );
   }
   return (
-    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[#1F3D2B]/10">
+    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10">
       <img
         src={url}
         alt=""
@@ -208,13 +208,13 @@ function Thumb({ path }: { path: string | null }) {
 
 function NotLiveYet() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6">
-      <div className="mx-auto max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#1F3D2B]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
+      <div className="mx-auto max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
+        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           Event not live yet
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
           This passport experience isn't available right now. Please check back
           closer to the event, or contact the organiser for details.
         </p>

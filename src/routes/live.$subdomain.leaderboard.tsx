@@ -142,7 +142,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
         {state.kind === "loading" && (
           <Card>
-            <p className="text-center text-sm text-[#8A7E66]">Loading…</p>
+            <p className="text-center text-sm text-[var(--event-muted,#8A7E66)]">Loading…</p>
           </Card>
         )}
 
@@ -179,7 +179,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
         <div className="mt-8 text-center">
           <Link
             to="/"
-            className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
+            className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
           >
             ← Back to event
           </Link>
@@ -192,13 +192,13 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 function Header({ subdomain }: { subdomain: string }) {
   return (
     <div className="mb-6 text-center">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#B5572A]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--event-accent,#B5572A)]">
         {subdomain}.getstampd.com.au
       </p>
-      <h1 className="font-trail-serif mt-2 text-3xl font-semibold text-[#1F3D2B] sm:text-4xl">
+      <h1 className="font-trail-serif mt-2 text-3xl font-semibold text-[var(--event-primary,#1F3D2B)] sm:text-4xl">
         Leaderboard
       </h1>
-      <p className="mt-2 text-sm text-[#3D372C]/80">
+      <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]/80">
         Top stamp collectors at this event.
       </p>
     </div>
@@ -207,7 +207,7 @@ function Header({ subdomain }: { subdomain: string }) {
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 shadow-sm">
+    <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm">
       {children}
     </div>
   );
@@ -216,11 +216,11 @@ function Card({ children }: { children: React.ReactNode }) {
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <Card>
-      <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-[#1F3D2B]/10" />
-      <h2 className="font-trail-serif text-center text-xl font-semibold text-[#1F3D2B]">
+      <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
+      <h2 className="font-trail-serif text-center text-xl font-semibold text-[var(--event-primary,#1F3D2B)]">
         {title}
       </h2>
-      <p className="mx-auto mt-2 max-w-sm text-center text-sm leading-relaxed text-[#3D372C]/80">
+      <p className="mx-auto mt-2 max-w-sm text-center text-sm leading-relaxed text-[var(--event-body,#3D372C)]/80">
         {body}
       </p>
     </Card>
@@ -229,11 +229,11 @@ function EmptyState({ title, body }: { title: string; body: string }) {
 
 function tierColor(tier: string | null): { bg: string; fg: string } {
   const t = (tier ?? "").toLowerCase();
-  if (t === "complete") return { bg: "#1F3D2B", fg: "#F6EFE2" };
+  if (t === "complete") return { bg: "var(--event-primary,#1F3D2B)", fg: "var(--event-page-bg,#F6EFE2)" };
   if (t === "gold") return { bg: "#C9A24A", fg: "#1F1A12" };
   if (t === "silver") return { bg: "#B8B0A0", fg: "#1F1A12" };
-  if (t === "bronze") return { bg: "#B5572A", fg: "#F6EFE2" };
-  return { bg: "#E6DCC7", fg: "#3D372C" };
+  if (t === "bronze") return { bg: "var(--event-accent,#B5572A)", fg: "var(--event-page-bg,#F6EFE2)" };
+  return { bg: "var(--event-border,#E6DCC7)", fg: "var(--event-body,#3D372C)" };
 }
 
 function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
@@ -247,11 +247,11 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
         return (
           <li
             key={`${r.rank}-${r.display_name}-${i}`}
-            className="flex items-center gap-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 shadow-sm"
+            className="flex items-center gap-4 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 shadow-sm"
           >
             <RankBadge rank={r.rank ?? i + 1} />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-trail-serif text-base font-semibold text-[#1F3D2B]">
+              <p className="truncate font-trail-serif text-base font-semibold text-[var(--event-primary,#1F3D2B)]">
                 {r.display_name ?? "Guest"}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -264,7 +264,7 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
                   </span>
                 )}
                 {r.is_completed && (
-                  <span className="inline-flex items-center rounded-full bg-[#1F3D2B]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1F3D2B]">
+                  <span className="inline-flex items-center rounded-full bg-[var(--event-primary,#1F3D2B)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)]">
                     Completed
                   </span>
                 )}
@@ -272,15 +272,15 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
             </div>
             <div className="text-right">
               {points !== null && (
-                <div className="text-lg font-semibold text-[#B5572A]">
+                <div className="text-lg font-semibold text-[var(--event-accent,#B5572A)]">
                   {points}
-                  <span className="ml-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[#8A7E66]">
+                  <span className="ml-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]">
                     pts
                   </span>
                 </div>
               )}
               {stamps !== null && (
-                <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#8A7E66]">
+                <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]">
                   {stamps} {stamps === 1 ? "stamp" : "stamps"}
                 </div>
               )}
@@ -301,11 +301,11 @@ function RankBadge({ rank }: { rank: number }) {
     : silver
       ? "#B8B0A0"
       : bronze
-        ? "#B5572A"
-        : "#1F3D2B";
+        ? "var(--event-accent,#B5572A)"
+        : "var(--event-primary,#1F3D2B)";
   return (
     <div
-      className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-[#F6EFE2]"
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-[var(--event-page-bg,#F6EFE2)]"
       style={{ backgroundColor: bg }}
     >
       {rank}
@@ -315,7 +315,7 @@ function RankBadge({ rank }: { rank: number }) {
 
 function PrivacyNote() {
   return (
-    <p className="mx-auto mt-6 max-w-md text-center text-[11px] leading-relaxed text-[#8A7E66]">
+    <p className="mx-auto mt-6 max-w-md text-center text-[11px] leading-relaxed text-[var(--event-muted,#8A7E66)]">
       Names are shown according to the organiser's privacy settings. We never
       publish email, phone, postcode, or full names.
     </p>
@@ -326,9 +326,9 @@ function SupportDetailsBlock({ details }: { details: SupportDetails }) {
   const [copied, setCopied] = useState(false);
   const text = JSON.stringify(details, null, 2);
   return (
-    <div className="mx-auto mt-4 max-w-md rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4 text-left">
+    <div className="mx-auto mt-4 max-w-md rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-4 text-left">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A7E66]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]">
           Support details
         </p>
         <button
@@ -342,15 +342,15 @@ function SupportDetailsBlock({ details }: { details: SupportDetails }) {
               // ignore clipboard failure
             }
           }}
-          className="rounded-full border border-[#E6DCC7] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+          className="rounded-full border border-[var(--event-border,#E6DCC7)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)] hover:bg-[var(--event-primary,#1F3D2B)]/5"
         >
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all text-[10px] leading-snug text-[#3D372C]">
+      <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all text-[10px] leading-snug text-[var(--event-body,#3D372C)]">
         {text}
       </pre>
-      <p className="mt-2 text-[10px] text-[#8A7E66]">
+      <p className="mt-2 text-[10px] text-[var(--event-muted,#8A7E66)]">
         If this keeps happening, paste these details to the organiser. No
         personal data is included.
       </p>

@@ -91,12 +91,12 @@ export function PublicLegalShell({
       <div className="mx-auto mt-6 max-w-2xl">
         <Link
           to="/"
-          className="inline-flex items-center text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
+          className="inline-flex items-center text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
         >
           ← Back to event
         </Link>
 
-        <div className="mt-4 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 shadow-sm sm:p-10">
+        <div className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm sm:p-10">
           {children}
         </div>
         <div className="mt-6 flex justify-center">
@@ -111,10 +111,10 @@ export function PublicLegalShell({
 export function NotAvailable({ subdomain }: { subdomain: string }) {
   return (
     <PublicLegalShell subdomain={subdomain}>
-      <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+      <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
         Not available
       </h1>
-      <p className="mt-3 text-sm text-[#3D372C]">
+      <p className="mt-3 text-sm text-[var(--event-body,#3D372C)]">
         This page isn&apos;t available right now. The event may not be live yet,
         or legal pages have not been configured.
       </p>
@@ -139,24 +139,24 @@ export function ExternalLinkOnly({
   return (
     <PublicLegalShell subdomain={subdomain} eventName={eventName} eventId={eventId}>
 
-      <p className="text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
+      <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
         {eventName}
       </p>
-      <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[#1F3D2B]">
+      <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
         {title}
       </h1>
-      <p className="mt-4 text-sm text-[#3D372C]">
+      <p className="mt-4 text-sm text-[var(--event-body,#3D372C)]">
         This document is published by the event organiser on an external site.
       </p>
       <a
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-5 inline-flex h-11 items-center rounded-full bg-[#1F3D2B] px-5 text-sm font-semibold text-[#F6EFE2] shadow"
+        className="mt-5 inline-flex h-11 items-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-5 text-sm font-semibold text-[var(--event-page-bg,#F6EFE2)] shadow"
       >
         Open {title.toLowerCase()} ↗
       </a>
-      <p className="mt-3 break-all text-[11px] text-[#8A7E66]">{url}</p>
+      <p className="mt-3 break-all text-[11px] text-[var(--event-muted,#8A7E66)]">{url}</p>
     </PublicLegalShell>
   );
 }
@@ -182,14 +182,14 @@ export function LocalLegalPage({
   return (
     <PublicLegalShell subdomain={subdomain} eventName={eventName} eventId={eventId}>
 
-      <p className="text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
+      <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
         {eventName}
       </p>
-      <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[#1F3D2B]">
+      <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
         {title}
       </h1>
       {(version || effective) && (
-        <p className="mt-2 text-[11px] text-[#8A7E66]">
+        <p className="mt-2 text-[11px] text-[var(--event-muted,#8A7E66)]">
           {version ? `Version ${version}` : null}
           {version && effective ? " · " : null}
           {effective ? `Effective ${effective.toLocaleDateString()}` : null}

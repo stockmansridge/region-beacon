@@ -33,8 +33,8 @@ export function TrailLanding({
   subtitle = "Digital Passport",
   pitch,
   welcomeCopy,
-  primaryColor = "#1F3D2B",
-  accentColor = "#B5572A",
+  primaryColor = "var(--event-primary,#1F3D2B)",
+  accentColor = "var(--event-accent,#B5572A)",
   goldColor = "#C9A24A",
   fontFamily,
   heroImageUrl,
@@ -82,15 +82,15 @@ export function TrailLanding({
           />
           {badge && (
             <div
-              className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[#F6EFE2]"
+              className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-page-bg,#F6EFE2)]"
               style={{ backgroundColor: `${accentColor}E6` }}
             >
-              <span className="h-1 w-1 rounded-full bg-[#F6EFE2]" />
+              <span className="h-1 w-1 rounded-full bg-[var(--event-page-bg,#F6EFE2)]" />
               {badge}
             </div>
           )}
 
-          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-7 text-center text-[#F6EFE2]">
+          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-7 text-center text-[var(--event-page-bg,#F6EFE2)]">
             {logoUrl ? (
               <div
                 className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border bg-white/95"
@@ -124,23 +124,23 @@ export function TrailLanding({
               {eventName}
             </h1>
             {pitch && (
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#F6EFE2]/85">{pitch}</p>
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--event-page-bg,#F6EFE2)]/85">{pitch}</p>
             )}
           </div>
         </div>
       </div>
 
       {/* CTA card */}
-      <div className="mt-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm">
+      <div className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
         {welcomeCopy && (
-          <p className="text-sm leading-relaxed text-[#3D372C]">{welcomeCopy}</p>
+          <p className="text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{welcomeCopy}</p>
         )}
 
         <div className="mt-4 space-y-2.5">
           {primaryCta ?? (
             <button
               type="button"
-              className="h-12 w-full rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+              className="h-12 w-full rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
               style={{ backgroundColor: primaryColor }}
             >
               Join the trail
@@ -157,17 +157,17 @@ export function TrailLanding({
           )}
         </div>
 
-        <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
+        <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
           {noAppNote}
         </p>
       </div>
 
       {/* Stats / venues */}
       {(typeof venueCount === "number" || (venueNames && venueNames.length > 0)) && (
-        <div className="mt-4 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5">
+        <div className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
                 On the trail
               </div>
               <div
@@ -175,7 +175,7 @@ export function TrailLanding({
                 style={{ color: primaryColor }}
               >
                 {venueCount ?? venueNames?.length ?? 0}
-                <span className="ml-1 text-sm font-medium text-[#8A7E66]">{venueLabelPlural.toLowerCase()}</span>
+                <span className="ml-1 text-sm font-medium text-[var(--event-muted,#8A7E66)]">{venueLabelPlural.toLowerCase()}</span>
               </div>
             </div>
             <div
@@ -191,7 +191,7 @@ export function TrailLanding({
               {venueNames.slice(0, 6).map((n, i) => (
                 <li
                   key={`${n}-${i}`}
-                  className="flex items-center gap-3 rounded-xl border border-[#EFE6D2] bg-[#F6EFE2] px-3 py-2 text-sm text-[#3D372C]"
+                  className="flex items-center gap-3 rounded-xl border border-[#EFE6D2] bg-[var(--event-page-bg,#F6EFE2)] px-3 py-2 text-sm text-[var(--event-body,#3D372C)]"
                 >
                   <span
                     className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold"
@@ -203,7 +203,7 @@ export function TrailLanding({
                 </li>
               ))}
               {venueNames.length > 6 && (
-                <li className="text-center text-[11px] uppercase tracking-[0.18em] text-[#8A7E66]">
+                <li className="text-center text-[11px] uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]">
                   + {venueNames.length - 6} more {venueLabelPlural.toLowerCase()}
                 </li>
               )}
@@ -213,7 +213,7 @@ export function TrailLanding({
       )}
 
       {termsUrl !== undefined && (
-        <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-[#8A7E66]">
+        <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-[var(--event-muted,#8A7E66)]">
           By joining you accept the{" "}
           <span className="underline" style={{ color: accentColor }}>
             terms & privacy

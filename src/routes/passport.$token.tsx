@@ -55,8 +55,8 @@ type LoadState =
       stamps: PassportStampState;
     };
 
-const PRIMARY = "#1F3D2B";
-const ACCENT = "#B5572A";
+const PRIMARY = "var(--event-primary,#1F3D2B)";
+const ACCENT = "var(--event-accent,#B5572A)";
 
 function PassportPage() {
   const { token } = Route.useParams();
@@ -135,7 +135,7 @@ function PassportPage() {
 
   if (state.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
         Loading your passport…
       </div>
     );
@@ -252,13 +252,13 @@ function PassportNotFound({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6">
-      <div className="mx-auto w-full max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#1F3D2B]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
+      <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
+        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           Passport link not found or replaced
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
           This passport link is no longer valid. If you re-registered, the
           newest link is the only working one. You can register again for this
           trail to get a fresh passport.
@@ -266,25 +266,25 @@ function PassportNotFound({
         <div className="mt-6 flex flex-col gap-2">
           <a
             href="/join"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] px-6 text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-6 text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
           >
             Register again for this trail
           </a>
           <a
             href="/"
-            className="inline-flex h-11 items-center justify-center rounded-full border border-[#1F3D2B]/30 bg-transparent text-sm font-semibold tracking-wide text-[#1F3D2B]"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 bg-transparent text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
           >
             Back to trail home
           </a>
           <button
             type="button"
             onClick={copySupport}
-            className="mt-1 inline-flex h-9 items-center justify-center rounded-full border border-[#E6DCC7] bg-[#F6EFE2] px-4 text-xs font-medium text-[#3D372C]"
+            className="mt-1 inline-flex h-9 items-center justify-center rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] px-4 text-xs font-medium text-[var(--event-body,#3D372C)]"
           >
             {copied ? "Copied support details" : "Copy support details"}
           </button>
         </div>
-        <p className="mt-3 text-[10px] text-[#8A7E66]">
+        <p className="mt-3 text-[10px] text-[var(--event-muted,#8A7E66)]">
           Support details do not include your full passport link or any visitor
           personal information.
         </p>
@@ -378,7 +378,7 @@ function PassportView({
   return (
     <>
       {subdomain && (
-        <div className="bg-[#F6EFE2] px-4 pt-6">
+        <div className="bg-[var(--event-page-bg,#F6EFE2)] px-4 pt-6">
           <PublicEventNav
             subdomain={subdomain}
             eventName={eventName ?? "Your passport"}
@@ -410,7 +410,7 @@ function PassportView({
         <div className="mb-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1F3D2B]/80 hover:text-[#1F3D2B]"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)]/80 hover:text-[var(--event-primary,#1F3D2B)]"
           >
             <span aria-hidden>←</span> Back to {eventName ?? "trail"}
           </Link>
@@ -428,17 +428,17 @@ function PassportView({
           >
             {eventName ?? "Trail passport"}
           </h1>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
+          <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
             Hi {greetingName}
           </p>
         </div>
 
 
         {/* Progress card */}
-        <section className="mt-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center shadow-sm">
+        <section className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center shadow-sm">
           <div className="relative mx-auto h-32 w-32">
             <svg viewBox="0 0 120 120" className="h-32 w-32 -rotate-90">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="#E6DCC7" strokeWidth="10" />
+              <circle cx="60" cy="60" r="52" fill="none" stroke="var(--event-border,#E6DCC7)" strokeWidth="10" />
               <circle
                 cx="60"
                 cy="60"
@@ -458,10 +458,10 @@ function PassportView({
               >
                 {stampedCount}
                 {totalVenues > 0 ? (
-                  <span className="text-base text-[#8A7E66]">/{totalVenues}</span>
+                  <span className="text-base text-[var(--event-muted,#8A7E66)]">/{totalVenues}</span>
                 ) : null}
               </div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
                 stamps
               </div>
             </div>
@@ -482,14 +482,14 @@ function PassportView({
 
           {totalVenues > 0 && stampedCount >= totalVenues ? (
             <div
-              className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#F6EFE2]"
+              className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--event-page-bg,#F6EFE2)]"
               style={{ backgroundColor: PRIMARY }}
             >
               <span aria-hidden>★</span>
               Trail complete
             </div>
           ) : (
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#E6DCC7] bg-[#F6EFE2] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#3D372C]">
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-body,#3D372C)]">
               <span
                 className="h-1.5 w-1.5 rounded-full"
                 style={{
@@ -518,8 +518,8 @@ function PassportView({
         />
 
         {/* Visitor details */}
-        <section className="mt-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm">
-          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+        <section className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
+          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
             Passport holder
           </div>
           <div
@@ -529,7 +529,7 @@ function PassportView({
             {passport.full_name ?? "Visitor"}
           </div>
           {passport.email && (
-            <div className="mt-0.5 text-sm text-[#3D372C]/80 break-all">
+            <div className="mt-0.5 text-sm text-[var(--event-body,#3D372C)]/80 break-all">
               {passport.email}
             </div>
           )}
@@ -537,12 +537,12 @@ function PassportView({
 
 
         {/* Copy link */}
-        <section className="mt-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm">
-          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+        <section className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
+          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
             Your private passport link
           </div>
           <div
-            className="mt-2 break-all rounded-2xl border border-[#E6DCC7] bg-[#F6EFE2] p-3 font-mono text-xs"
+            className="mt-2 break-all rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] p-3 font-mono text-xs"
             style={{ color: PRIMARY }}
           >
             {passportUrl}
@@ -550,7 +550,7 @@ function PassportView({
           <button
             type="button"
             onClick={copy}
-            className="mt-3 h-11 w-full rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+            className="mt-3 h-11 w-full rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
             style={{ backgroundColor: PRIMARY }}
           >
             {copied ? "Copied!" : "Copy passport link"}
@@ -569,11 +569,11 @@ function PassportView({
           <button
             type="button"
             onClick={copySupportDetails}
-            className="mt-3 h-9 w-full rounded-full border border-[#E6DCC7] bg-[#F6EFE2] text-xs font-semibold tracking-wide text-[#3D372C]"
+            className="mt-3 h-9 w-full rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] text-xs font-semibold tracking-wide text-[var(--event-body,#3D372C)]"
           >
             {supportCopied ? "Copied support details" : "Copy support details"}
           </button>
-          <p className="mt-2 text-[10px] leading-snug text-[#8A7E66]">
+          <p className="mt-2 text-[10px] leading-snug text-[var(--event-muted,#8A7E66)]">
             Support details exclude your full passport link and visitor details.
           </p>
         </section>
@@ -600,11 +600,11 @@ function StampGrid({
   if (venues.length === 0) {
     return (
       <section className="mt-5">
-        <div className="rounded-3xl border border-dashed border-[#C9A24A]/50 bg-[#FBF5E8] p-6 text-center">
+        <div className="rounded-3xl border border-dashed border-[#C9A24A]/50 bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center">
           <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#C9A24A]">
             No {labelPlural.toLowerCase()} configured
           </div>
-          <p className="mt-2 text-sm text-[#3D372C]">
+          <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]">
             The event organiser hasn't published any {labelPlural.toLowerCase()} yet.
           </p>
         </div>
@@ -621,11 +621,11 @@ function StampGrid({
         >
           Stamp collection
         </h2>
-        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
           Tap a {labelSingular.toLowerCase()} for details
         </span>
       </div>
-      <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm">
+      <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4">
           {venues.map((v) => (
             <StampCell key={v.venue_id} venue={v} />
@@ -664,14 +664,14 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
           stamped
             ? {
                 backgroundColor: PRIMARY,
-                color: "#F6EFE2",
+                color: "var(--event-page-bg,#F6EFE2)",
                 boxShadow:
-                  "inset 0 0 0 2px #F6EFE2, inset 0 0 0 4px rgba(31,61,43,0.65), 0 2px 6px rgba(31,61,43,0.18)",
+                  "inset 0 0 0 2px var(--event-page-bg,#F6EFE2), inset 0 0 0 4px rgba(31,61,43,0.65), 0 2px 6px rgba(31,61,43,0.18)",
               }
             : {
-                backgroundColor: "#F6EFE2",
-                color: "#8A7E66",
-                boxShadow: "inset 0 0 0 2px #E6DCC7",
+                backgroundColor: "var(--event-page-bg,#F6EFE2)",
+                color: "var(--event-muted,#8A7E66)",
+                boxShadow: "inset 0 0 0 2px var(--event-border,#E6DCC7)",
                 backgroundImage:
                   "repeating-linear-gradient(45deg, transparent 0 6px, rgba(138,126,102,0.06) 6px 7px)",
               }
@@ -708,14 +708,14 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
       </div>
       <div
         className={`mt-2 line-clamp-2 text-[12px] font-semibold leading-tight ${
-          stamped ? "" : "text-[#8A7E66]"
+          stamped ? "" : "text-[var(--event-muted,#8A7E66)]"
         }`}
         style={stamped ? { color: PRIMARY } : undefined}
       >
         {venue.venue_name ?? "Venue"}
       </div>
       {stamped && when && (
-        <div className="mt-0.5 text-[10px] text-[#8A7E66]">{when}</div>
+        <div className="mt-0.5 text-[10px] text-[var(--event-muted,#8A7E66)]">{when}</div>
       )}
       {!stamped && (
         <div className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[#A89C82]">
@@ -750,7 +750,7 @@ function RewardsSection({
         >
           Rewards
         </h2>
-        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]">
+        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
           Default tiers
         </span>
       </div>
@@ -766,7 +766,7 @@ function RewardsSection({
         ))}
 
         {/* Major prize draw placeholder — surfaced once admin reward editor ships */}
-        <li className="rounded-2xl border border-dashed border-[#C9A24A]/50 bg-[#FBF5E8] p-4">
+        <li className="rounded-2xl border border-dashed border-[#C9A24A]/50 bg-[var(--event-card-bg,#FBF5E8)] p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div
@@ -775,7 +775,7 @@ function RewardsSection({
               >
                 Major prize draw
               </div>
-              <div className="mt-0.5 text-[11px] text-[#8A7E66]">
+              <div className="mt-0.5 text-[11px] text-[var(--event-muted,#8A7E66)]">
                 Coming soon — eligibility rules will be set by the event organiser.
               </div>
             </div>
@@ -789,7 +789,7 @@ function RewardsSection({
         </li>
       </ul>
 
-      <p className="mt-2 text-[11px] text-[#8A7E66]">
+      <p className="mt-2 text-[11px] text-[var(--event-muted,#8A7E66)]">
         Default event rewards shown until the organiser publishes custom tiers.
       </p>
     </section>
@@ -811,19 +811,19 @@ function RewardTierRow({
     <li
       className={`rounded-2xl border p-4 shadow-sm ${
         tier.unlocked
-          ? "border-[#E6DCC7] bg-[#FBF5E8]"
-          : "border-dashed border-[#E6DCC7] bg-[#F6EFE2]/60"
+          ? "border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]"
+          : "border-dashed border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)]/60"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div
             className="font-trail-serif text-sm font-semibold"
-            style={{ color: tier.unlocked ? PRIMARY : "#8A7E66" }}
+            style={{ color: tier.unlocked ? PRIMARY : "var(--event-muted,#8A7E66)" }}
           >
             {tier.label} · Visit {tier.threshold} {unit}
           </div>
-          <div className="mt-0.5 text-[11px] text-[#8A7E66]">
+          <div className="mt-0.5 text-[11px] text-[var(--event-muted,#8A7E66)]">
             {tier.unlocked
               ? "Unlocked"
               : remaining === 1
@@ -835,14 +835,14 @@ function RewardTierRow({
           className="inline-flex h-7 items-center rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
           style={
             tier.unlocked
-              ? { backgroundColor: PRIMARY, color: "#F6EFE2" }
+              ? { backgroundColor: PRIMARY, color: "var(--event-page-bg,#F6EFE2)" }
               : { border: `1px solid ${ACCENT}55`, color: ACCENT }
           }
         >
           {tier.unlocked ? "✓ Unlocked" : "Locked"}
         </span>
       </div>
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#E6DCC7]">
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--event-border,#E6DCC7)]">
         <div
           className="h-full rounded-full transition-all"
           style={{
