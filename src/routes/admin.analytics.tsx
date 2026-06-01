@@ -423,74 +423,78 @@ function Analytics() {
     );
   }
 
+  const primaryBtn =
+    "inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5]";
+  const secondaryBtn =
+    "inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]";
+  const cardClass =
+    "rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]";
+  const tableWrap =
+    "overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white";
+  const thClass =
+    "bg-[#F8FAFC] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]";
+  const tdClass = "px-4 py-3 text-sm text-[#334155]";
+
   return (
     <>
       <PageHeader
         title="Analytics"
         description="Track registrations, venue visits, check-ins and visitor engagement."
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={() => setReloadKey((k) => k + 1)} className={secondaryBtn}>
               <RefreshCw className="h-4 w-4" /> Refresh
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/admin">
-                <LayoutDashboard className="h-4 w-4" /> Dashboard
-              </Link>
-            </Button>
+            </button>
+            <Link to="/admin" className={secondaryBtn}>
+              <LayoutDashboard className="h-4 w-4" /> Dashboard
+            </Link>
           </div>
         }
       />
 
       {/* Filters */}
-      <div className="mb-6 flex flex-wrap gap-3">
-        <div className="min-w-[220px]">
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Event
-          </label>
-          <Select value={eventFilter} onValueChange={setEventFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All events" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All events</SelectItem>
-              {events.map((e) => (
-                <SelectItem key={e.id} value={e.id}>
-                  {e.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="min-w-[180px]">
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Date range
-          </label>
-          <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All time</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className={`mb-5 ${cardClass}`}>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="min-w-[220px] space-y-2">
+            <label className="text-sm font-medium text-[#334155]">Event</label>
+            <Select value={eventFilter} onValueChange={setEventFilter}>
+              <SelectTrigger className="h-10 rounded-[10px] border-[#D9E2EF] bg-white text-sm text-[#111827] focus:ring-2 focus:ring-[#2F6FE4]/20">
+                <SelectValue placeholder="All events" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All events</SelectItem>
+                {events.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="min-w-[180px] space-y-2">
+            <label className="text-sm font-medium text-[#334155]">Date range</label>
+            <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+              <SelectTrigger className="h-10 rounded-[10px] border-[#D9E2EF] bg-white text-sm text-[#111827] focus:ring-2 focus:ring-[#2F6FE4]/20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All time</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
           {error}
         </div>
       )}
 
       {loading && !events.length ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            Loading analytics…
-          </CardContent>
-        </Card>
+        <div className={`${cardClass} text-center text-sm text-[#64748B]`}>Loading analytics…</div>
       ) : events.length === 0 ? (
         <EmptyState
           title="No events yet"
@@ -499,9 +503,9 @@ function Analytics() {
           cta="Go to Events"
         />
       ) : (
-        <>
+        <div className="space-y-5">
           {/* Summary cards */}
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Events" value={totalEvents} icon={Calendar} />
             <Stat label="Published events" value={publishedEvents} icon={CheckCircle2} />
             <Stat label="Venues" value={totalVenues} icon={MapPin} />
@@ -517,167 +521,169 @@ function Analytics() {
           </div>
 
           {/* Registrations over time */}
-          <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">Registrations over time</CardTitle>
-              <Button size="sm" variant="outline" onClick={exportVisitors}>
+          <section className={cardClass}>
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Registrations over time</h3>
+                <p className="text-sm leading-6 text-[#64748B]">Daily visitor registrations across selected events.</p>
+              </div>
+              <button type="button" onClick={exportVisitors} className={secondaryBtn}>
                 <Download className="h-4 w-4" /> Visitors CSV
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {regsByDay.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No registrations in this range.</p>
-              ) : (
-                <>
+              </button>
+            </div>
+            {regsByDay.length === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
+                No analytics data is available yet. Visitor activity will appear here once people start checking in.
+              </div>
+            ) : (
+              <>
+                <div className="rounded-[14px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
                   <Sparkline data={regsByDay.map(([, n]) => n)} />
-                  <div className="mt-3 max-h-48 overflow-auto rounded border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-                        <tr>
-                          <th className="px-3 py-2">Date</th>
-                          <th className="px-3 py-2 text-right">Registrations</th>
+                </div>
+                <div className={`mt-4 max-h-64 overflow-auto ${tableWrap}`}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className={thClass}>Date</th>
+                        <th className={`${thClass} text-right`}>Registrations</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {regsByDay.slice().reverse().map(([day, n]) => (
+                        <tr key={day} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                          <td className={tdClass}>{day}</td>
+                          <td className={`${tdClass} text-right font-medium text-[#111827]`}>{n}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {regsByDay
-                          .slice()
-                          .reverse()
-                          .map(([day, n]) => (
-                            <tr key={day} className="border-t">
-                              <td className="px-3 py-1.5">{day}</td>
-                              <td className="px-3 py-1.5 text-right font-medium">{n}</td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </section>
 
           {/* Funnel */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-base">Completion funnel</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FunnelBars
-                rows={[
-                  { label: "Registered", count: funnel.reg },
-                  { label: "Checked in at 1+ venue", count: funnel.one },
-                  { label: "Checked in at 2+ venues", count: funnel.two },
-                  { label: "Completed trail", count: funnel.completed },
-                ]}
-              />
-            </CardContent>
-          </Card>
+          <section className={cardClass}>
+            <div className="mb-5">
+              <h3 className="text-base font-semibold text-[#111827]">Completion funnel</h3>
+              <p className="text-sm leading-6 text-[#64748B]">From registration through trail completion.</p>
+            </div>
+            <FunnelBars
+              rows={[
+                { label: "Registered", count: funnel.reg },
+                { label: "Checked in at 1+ venue", count: funnel.one },
+                { label: "Checked in at 2+ venues", count: funnel.two },
+                { label: "Completed trail", count: funnel.completed },
+              ]}
+            />
+          </section>
 
-          {/* Check-ins by venue / most visited */}
-          <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">Check-ins by venue</CardTitle>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={exportVenuePerf}>
-                  <Download className="h-4 w-4" /> Venues CSV
-                </Button>
-                <Button size="sm" variant="outline" onClick={exportCheckins}>
-                  <Download className="h-4 w-4" /> Check-ins CSV
-                </Button>
+          {/* Check-ins by venue */}
+          <section className={cardClass}>
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Check-ins by venue</h3>
+                <p className="text-sm leading-6 text-[#64748B]">Top-performing venues for the selected filter.</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              {venueStats.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No check-ins yet.</p>
-              ) : (
-                <div className="overflow-auto rounded border">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-                      <tr>
-                        <th className="px-3 py-2">#</th>
-                        <th className="px-3 py-2">Venue</th>
-                        <th className="px-3 py-2 text-right">Check-ins</th>
-                        <th className="px-3 py-2 text-right">Unique</th>
-                        <th className="px-3 py-2 text-right">Share</th>
-                        <th className="px-3 py-2">Last</th>
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" onClick={exportVenuePerf} className={secondaryBtn}>
+                  <Download className="h-4 w-4" /> Venues CSV
+                </button>
+                <button type="button" onClick={exportCheckins} className={secondaryBtn}>
+                  <Download className="h-4 w-4" /> Check-ins CSV
+                </button>
+              </div>
+            </div>
+            {venueStats.length === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
+                No check-ins yet. Venue performance will appear here once visitors start scanning.
+              </div>
+            ) : (
+              <div className={`overflow-auto ${tableWrap}`}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className={thClass}>#</th>
+                      <th className={thClass}>Venue</th>
+                      <th className={`${thClass} text-right`}>Check-ins</th>
+                      <th className={`${thClass} text-right`}>Unique</th>
+                      <th className={`${thClass} text-right`}>Share</th>
+                      <th className={thClass}>Last</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {venueStats.map((s, i) => (
+                      <tr key={s.venue_id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                        <td className={`${tdClass} text-[#64748B]`}>{i + 1}</td>
+                        <td className={`${tdClass} font-medium text-[#111827]`}>{s.name}</td>
+                        <td className={`${tdClass} text-right font-medium text-[#111827]`}>{s.count}</td>
+                        <td className={`${tdClass} text-right`}>{s.unique}</td>
+                        <td className={`${tdClass} text-right`}>{s.pct.toFixed(1)}%</td>
+                        <td className={`${tdClass} text-[#64748B]`}>{s.last ? new Date(s.last).toLocaleString() : "—"}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {venueStats.map((s, i) => (
-                        <tr key={s.venue_id} className="border-t">
-                          <td className="px-3 py-1.5 text-muted-foreground">{i + 1}</td>
-                          <td className="px-3 py-1.5 font-medium">{s.name}</td>
-                          <td className="px-3 py-1.5 text-right">{s.count}</td>
-                          <td className="px-3 py-1.5 text-right">{s.unique}</td>
-                          <td className="px-3 py-1.5 text-right">{s.pct.toFixed(1)}%</td>
-                          <td className="px-3 py-1.5 text-muted-foreground">
-                            {s.last ? new Date(s.last).toLocaleString() : "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
 
           {/* Prize entrants */}
-          <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">Qualified prize entrants</CardTitle>
+          <section className={cardClass}>
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Qualified prize entrants</h3>
+                <p className="text-sm leading-6 text-[#64748B]">Visitors meeting active prize-rule thresholds.</p>
+              </div>
               {activePrizeRules.length > 0 && (
-                <Button size="sm" variant="outline" onClick={exportEntrants}>
+                <button type="button" onClick={exportEntrants} className={secondaryBtn}>
                   <Download className="h-4 w-4" /> Entrants CSV
-                </Button>
+                </button>
               )}
-            </CardHeader>
-            <CardContent>
-              {activePrizeRules.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Prize eligibility is not configured for the selected event(s).
-                </p>
-              ) : prizeEntrants.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No qualified entrants yet for active prize rules.
-                </p>
-              ) : (
-                <div className="overflow-auto rounded border">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-                      <tr>
-                        <th className="px-3 py-2">Prize rule</th>
-                        <th className="px-3 py-2">Visitor</th>
-                        <th className="px-3 py-2">Email</th>
-                        <th className="px-3 py-2 text-right">Stamps</th>
+            </div>
+            {activePrizeRules.length === 0 ? (
+              <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
+                Prize eligibility is not configured for the selected event(s).
+              </div>
+            ) : prizeEntrants.length === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
+                No qualified entrants yet for active prize rules.
+              </div>
+            ) : (
+              <div className={`overflow-auto ${tableWrap}`}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className={thClass}>Prize rule</th>
+                      <th className={thClass}>Visitor</th>
+                      <th className={thClass}>Email</th>
+                      <th className={`${thClass} text-right`}>Stamps</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prizeEntrants.map((e, i) => (
+                      <tr key={`${e.passport_id}-${i}`} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                        <td className={tdClass}>{e.rule}</td>
+                        <td className={tdClass}>
+                          {e.visitor?.full_name ||
+                            `${e.visitor?.first_name ?? ""} ${e.visitor?.last_name ?? ""}`.trim() ||
+                            "—"}
+                        </td>
+                        <td className={`${tdClass} text-[#64748B]`}>{e.visitor?.email ?? "—"}</td>
+                        <td className={`${tdClass} text-right font-medium text-[#111827]`}>{e.stamps}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {prizeEntrants.map((e, i) => (
-                        <tr key={`${e.passport_id}-${i}`} className="border-t">
-                          <td className="px-3 py-1.5">{e.rule}</td>
-                          <td className="px-3 py-1.5">
-                            {e.visitor?.full_name ||
-                              `${e.visitor?.first_name ?? ""} ${e.visitor?.last_name ?? ""}`.trim() ||
-                              "—"}
-                          </td>
-                          <td className="px-3 py-1.5 text-muted-foreground">
-                            {e.visitor?.email ?? "—"}
-                          </td>
-                          <td className="px-3 py-1.5 text-right">{e.stamps}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
       )}
     </>
   );
 }
+
 
 function Stat({
   label,
