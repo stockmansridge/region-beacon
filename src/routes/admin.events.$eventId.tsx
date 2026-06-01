@@ -2253,18 +2253,23 @@ function EventDetail() {
             tab="venues"
           >
             {canEdit && venueEditingId === null && (
-              <div className="mb-4 flex justify-end">
+              <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm leading-6 text-[#64748B]">
+                    Manage the venues that visitors can check in at during this event.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={startCreateVenue}
-                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                  className="h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5]"
                 >
                   Add venue
                 </button>
               </div>
             )}
             {venueArchiveError && (
-              <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              <div className="mb-3 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                 {venueArchiveError}
               </div>
             )}
