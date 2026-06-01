@@ -90,6 +90,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<VenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const hasPassport = passportState.hasPassport;
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -391,22 +392,28 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       pageUrl: href,
       hostname,
       subdomain,
-      route: "/live/$subdomain/map",
+      route: "/map",
       hostnameLooksAllowed: isAllowedLooking,
       eventId: event?.event_id ?? null,
       venueCount: venues.length,
       venueCountWithLatLng: geoVenues.length,
-      savedPassportKey: stampDiag.savedPassportKey,
-      savedPassportFound: stampDiag.savedPassportFound,
-      stampRpcError: stampDiag.stampRpcError,
-      stampRowCount: stampDiag.stampRowCount,
+      savedPassportKey: passportState.savedPassportKey,
+      savedPassportFound: passportState.savedPassportFound,
+      passportValidationStatus: passportState.validationStatus,
+      passportValidationError: passportState.validationError,
+      staleCleared: passportState.staleCleared,
+      stampRpcStatus: stampState.status,
+      stampRpcError: stampState.error,
+      stampRowCount: stampState.rowCount,
+      stampedRowCount: stampState.stampedRowCount,
+      firstStampRowFieldNames: stampState.firstRowFieldNames,
       matchedVisitedVenueCount: visitedCount,
       fallbackListRendered: Boolean(mapError),
       mapError,
       mapkit: mapDiag,
     };
     return JSON.stringify(report, null, 2);
-  }, [subdomain, event?.event_id, venues.length, geoVenues.length, mapError, mapDiag, stampDiag, visitedCount]);
+  }, [subdomain, event?.event_id, venues.length, geoVenues.length, mapError, mapDiag, passportState, stampState, visitedCount]);
 
   if (loading) {
     return (
