@@ -26,15 +26,26 @@ type LeaderboardRow = {
   event_found: boolean | null;
 };
 
+type SupportDetails = {
+  hostname: string;
+  subdomain: string;
+  rpc_error_code: string | null;
+  rpc_error_message: string | null;
+  rpc_error_details: string | null;
+  rpc_error_hint: string | null;
+  row_count: number;
+  first_row_event_found: boolean | null;
+  first_row_is_enabled: boolean | null;
+};
+
 type State =
   | { kind: "loading" }
-  | { kind: "not_found" }
+  | { kind: "not_found"; support: SupportDetails }
   | { kind: "disabled" }
   | { kind: "ready"; rows: LeaderboardRow[] };
 
 export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
-
 
   useEffect(() => {
     let cancelled = false;
@@ -47,24 +58,51 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
       );
       if (cancelled) return;
 
-      if (error) {
-        setState({ kind: "not_found" });
-        return;
-      }
       const rows = (data ?? []) as LeaderboardRow[];
+      const firstFound = rows[0]?.event_found ?? null;
+      const firstEnabled = rows[0]?.is_enabled ?? null;
 
-      if (rows.length === 0 || rows[0].event_found === false) {
-        setState({ kind: "not_found" });
+      const buildSupport = (): SupportDetails => ({
+        hostname:
+          typeof window !== "undefined" ? window.location.hostname : host,
+        subdomain,
+        rpc_error_code: (error as { code?: string } | null)?.code ?? null,
+        rpc_error_message: error?.message ?? null,
+        rpc_error_details:
+          (error as { details?: string } | null)?.details ?? null,
+        rpc_error_hint: (error as { hint?: string } | null)?.hint ?? null,
+        row_count: rows.length,
+        first_row_event_found: firstFound,
+        first_row_is_enabled: firstEnabled,
+      });
+
+      // Hard RPC failure → not_found with support details.
+      if (error) {
+        setState({ kind: "not_found", support: buildSupport() });
         return;
       }
+
+      // Explicit not-found sentinel from the RPC:
+      //   rows.length === 1 AND event_found === false.
+      // An empty result set (rows.length === 0) means the event IS live
+      // and the leaderboard IS enabled — just no qualifying entries yet —
+      // so it must fall through to the "ready" empty state, NOT not_found.
+      if (rows.length === 1 && firstFound === false) {
+        setState({ kind: "not_found", support: buildSupport() });
+        return;
+      }
+
+      // Explicit disabled sentinel: event_found = true, is_enabled = false,
+      // display_name = null.
       if (
         rows.length === 1 &&
-        rows[0].is_enabled === false &&
+        firstEnabled === false &&
         rows[0].display_name === null
       ) {
         setState({ kind: "disabled" });
         return;
       }
+
       const dataRows = rows.filter(
         (r) => r.display_name !== null && r.rank !== null,
       );
