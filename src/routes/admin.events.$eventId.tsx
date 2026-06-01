@@ -1708,7 +1708,7 @@ function EventDetail() {
       <EventTabBar active={activeTab} onChange={setActiveTab} />
 
       <EventTabContext.Provider value={activeTab}>
-        <div className="space-y-6">
+        <div className="min-h-[60vh] space-y-6">
           <Section title="Basics" tab="details">
             {isEditing && form ? (
               <div className="space-y-4">
