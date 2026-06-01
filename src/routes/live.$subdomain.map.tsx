@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { getMapkitToken, type MapkitDiag } from "@/lib/mapkit.functions";
 import { loadMapKitScript } from "@/lib/mapkit-loader";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
@@ -47,6 +48,7 @@ type EventRow = {
   name: string;
   primary_color: string | null;
   accent_color: string | null;
+  palette_key?: string \| null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
 };

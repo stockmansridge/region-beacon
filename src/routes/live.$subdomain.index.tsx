@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
@@ -38,6 +39,7 @@ type PublicEvent = {
   cover_path: string | null;
   primary_color: string | null;
   accent_color: string | null;
+  palette_key?: string \| null;
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
