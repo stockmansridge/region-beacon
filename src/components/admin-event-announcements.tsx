@@ -80,7 +80,6 @@ function formatRange(starts_at: string | null, ends_at: string | null): string |
 function validate(form: FormState): string | null {
   const title = form.title.trim();
   const message = form.message.trim();
-  if (!title) return "Title is required.";
   if (title.length > 120) return "Title must be 120 characters or fewer.";
   if (!message) return "Message is required.";
   if (message.length > 300) return "Message must be 300 characters or fewer.";
@@ -97,6 +96,7 @@ function validate(form: FormState): string | null {
   }
   return null;
 }
+
 
 export function AdminEventAnnouncements({
   eventId,
