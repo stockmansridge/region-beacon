@@ -2112,99 +2112,83 @@ function EventDetail() {
               </Link>
             </div>
             {canEdit && isEditingLeaderboard && lbForm ? (
-              <div className="space-y-4">
-                <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  Public leaderboard display is privacy-limited. Visitor email, mobile, postcode,
-                  and full name are never shown. Default display is first name + last initial.
-                </p>
+              <div className="space-y-5">
                 {(lbValidationError || lbSaveError) && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                     {lbValidationError ?? lbSaveError}
                   </div>
                 )}
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ToggleRow
+                    title="Public leaderboard enabled"
+                    description="Visitors can see the public leaderboard for this event."
                     checked={lbForm.is_enabled}
-                    onChange={(e) => setLbForm({ ...lbForm, is_enabled: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, is_enabled: v })}
                   />
-                  <span className="text-sm">Public leaderboard enabled</span>
-                </label>
-                <Field label="Display mode" required>
-                  <select
-                    value={lbForm.display_mode}
-                    onChange={(e) =>
-                      setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
-                    }
-                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
-                  >
-                    <option value="first_name_last_initial">First name + last initial</option>
-                    <option value="first_name_only">First name only</option>
-                    <option value="alias_only">Alias only</option>
-                    <option value="anonymous">Anonymous</option>
-                  </select>
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <Field label="Display mode" required>
+                    <select
+                      value={lbForm.display_mode}
+                      onChange={(e) =>
+                        setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
+                      }
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    >
+                      <option value="first_name_last_initial">First name + last initial</option>
+                      <option value="first_name_only">First name only</option>
+                      <option value="alias_only">Alias only</option>
+                      <option value="anonymous">Anonymous</option>
+                    </select>
+                  </Field>
+                  <ToggleRow
+                    title="Show first name"
                     checked={lbForm.show_first_name}
-                    onChange={(e) => setLbForm({ ...lbForm, show_first_name: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, show_first_name: v })}
                   />
-                  <span className="text-sm">Show first name</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <ToggleRow
+                    title="Show last initial"
                     checked={lbForm.show_last_initial}
-                    onChange={(e) => setLbForm({ ...lbForm, show_last_initial: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, show_last_initial: v })}
                   />
-                  <span className="text-sm">Show last initial</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <ToggleRow
+                    title="Show visit count"
                     checked={lbForm.show_visit_count}
-                    onChange={(e) => setLbForm({ ...lbForm, show_visit_count: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, show_visit_count: v })}
                   />
-                  <span className="text-sm">Show visit count</span>
-                </label>
-                <Field label="Hide below check-ins" required>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={lbForm.hide_below_checkins}
-                    onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
-                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Visitors below this number of check-ins are hidden from the public leaderboard.
-                  </p>
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <Field label="Hide below check-ins" required>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={lbForm.hide_below_checkins}
+                      onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="text-xs leading-5 text-[#64748B]">
+                      Visitors below this number of check-ins are hidden.
+                    </p>
+                  </Field>
+                  <ToggleRow
+                    title="Allow visitors to opt out"
+                    description="Lets visitors hide themselves from the public leaderboard."
                     checked={lbForm.allow_visitor_opt_out}
-                    onChange={(e) => setLbForm({ ...lbForm, allow_visitor_opt_out: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, allow_visitor_opt_out: v })}
                   />
-                  <span className="text-sm">Allow visitors to opt out</span>
-                </label>
+                </div>
+                <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-[#334155]">
+                  Privacy: email, mobile, postcode, and full name are never displayed
+                  publicly. Default display is first name + last initial.
+                </div>
                 {lbSaveSuccess && (
-                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm text-[#047857]">
                     Leaderboard settings saved.
                   </div>
                 )}
-                <div className="flex items-center justify-end gap-2 pt-1">
+                <div className="flex items-center justify-end gap-3 border-t border-[#E6ECF4] pt-5">
                   <button
                     type="button"
                     onClick={cancelEditLeaderboard}
                     disabled={lbSaving}
-                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
                   >
                     Discard changes
                   </button>
@@ -2212,9 +2196,9 @@ function EventDetail() {
                     type="button"
                     onClick={saveEditLeaderboard}
                     disabled={lbSaving}
-                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {lbSaving ? "Saving…" : "Save"}
+                    {lbSaving ? "Saving…" : "Save changes"}
                   </button>
                 </div>
               </div>
