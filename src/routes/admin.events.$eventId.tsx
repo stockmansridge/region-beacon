@@ -1678,22 +1678,7 @@ function EventDetail() {
               </Link>
             </div>
             {branding ? (
-              <DefList
-                rows={[
-                  ["Primary colour", <ColorSwatch key="p" value={branding.primary_color} />],
-                  ["Accent colour", <ColorSwatch key="a" value={branding.accent_color} />],
-                  ["Font family", branding.font_family ?? "—"],
-                  [
-                    "Welcome copy",
-                    branding.welcome_copy
-                      ? branding.welcome_copy.length > 140
-                        ? `${branding.welcome_copy.slice(0, 140)}…`
-                        : branding.welcome_copy
-                      : "—",
-                  ],
-                  ["Terms URL", branding.terms_url ?? "—"],
-                ]}
-              />
+              <BrandingSummary branding={branding} />
             ) : (
               <EmptyNotice>No branding configured yet.</EmptyNotice>
             )}
