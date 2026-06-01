@@ -47,7 +47,6 @@ export function AdminShell({
   };
   const location = useLocation();
 
-  // Auto-close drawer when route changes.
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
@@ -56,11 +55,14 @@ export function AdminShell({
     exact ? location.pathname === to : location.pathname.startsWith(to);
 
   const linkClass = (active: boolean) =>
-    `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+    `flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-colors ${
       active
-        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        ? "bg-[#2F6FE4] text-white shadow-[0_6px_16px_rgba(47,111,228,0.28)]"
+        : "text-[#CBD5E1] hover:bg-[#10233A] hover:text-white"
     }`;
+
+  const iconClass = (active: boolean) =>
+    `h-4 w-4 ${active ? "text-white" : "text-[#94A3B8]"}`;
 
   const showAccount =
     isPlatformAdmin ||
@@ -69,35 +71,34 @@ export function AdminShell({
 
   const NavLinks = () => {
     const [dash, events, analytics] = navItems;
+    const dashActive = isActive(dash.to, dash.exact);
+    const evActive = isActive(events.to, events.exact);
+    const anActive = isActive(analytics.to, analytics.exact);
+    const acctActive = isActive("/admin/account", false);
+    const sysActive = isActive("/admin/system", false);
     return (
       <>
-        <Link to={dash.to} className={linkClass(isActive(dash.to, dash.exact))}>
-          <dash.icon className="h-4 w-4" />
+        <Link to={dash.to} className={linkClass(dashActive)}>
+          <dash.icon className={iconClass(dashActive)} />
           {dash.label}
         </Link>
-        <Link to={events.to} className={linkClass(isActive(events.to, events.exact))}>
-          <events.icon className="h-4 w-4" />
+        <Link to={events.to} className={linkClass(evActive)}>
+          <events.icon className={iconClass(evActive)} />
           {events.label}
         </Link>
-        <Link to={analytics.to} className={linkClass(isActive(analytics.to, analytics.exact))}>
-          <analytics.icon className="h-4 w-4" />
+        <Link to={analytics.to} className={linkClass(anActive)}>
+          <analytics.icon className={iconClass(anActive)} />
           {analytics.label}
         </Link>
         {showAccount && (
-          <Link
-            to="/admin/account"
-            className={linkClass(isActive("/admin/account", false))}
-          >
-            <CreditCard className="h-4 w-4" />
+          <Link to="/admin/account" className={linkClass(acctActive)}>
+            <CreditCard className={iconClass(acctActive)} />
             Account & Billing
           </Link>
         )}
         {isPlatformAdmin && (
-          <Link
-            to="/admin/system"
-            className={linkClass(isActive("/admin/system", false))}
-          >
-            <Shield className="h-4 w-4" />
+          <Link to="/admin/system" className={linkClass(sysActive)}>
+            <Shield className={iconClass(sysActive)} />
             System Admin
           </Link>
         )}
@@ -105,15 +106,18 @@ export function AdminShell({
     );
   };
 
+  const footerLinkClass =
+    "flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium text-[#CBD5E1] hover:bg-[#10233A] hover:text-white transition-colors";
+
   const FooterControls = () => (
     <>
       {isPlatformAdmin && (
         <label
-          className="mb-1 flex w-full cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
+          className="mb-1 flex w-full cursor-pointer items-center justify-between gap-3 rounded-[10px] px-3 py-2.5 text-sm text-[#CBD5E1] hover:bg-[#10233A] hover:text-white transition-colors"
           title="Show platform_admin diagnostic panels. Stored locally in this browser only."
         >
           <span className="flex items-center gap-3">
-            <Bug className="h-4 w-4" /> Diagnostics
+            <Bug className="h-4 w-4 text-[#94A3B8]" /> Diagnostics
           </span>
           <Switch
             checked={diagnosticsEnabled}
@@ -122,51 +126,44 @@ export function AdminShell({
           />
         </label>
       )}
-      <button
-        type="button"
-        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
-      >
-        <Settings className="h-4 w-4" /> Settings
+      <button type="button" className={footerLinkClass}>
+        <Settings className="h-4 w-4 text-[#94A3B8]" /> Settings
       </button>
-      <button
-        type="button"
-        onClick={handleSignOut}
-        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
-      >
-        <LogOut className="h-4 w-4" /> Sign out
+      <button type="button" onClick={handleSignOut} className={footerLinkClass}>
+        <LogOut className="h-4 w-4 text-[#94A3B8]" /> Sign out
       </button>
     </>
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-sidebar">
+    <div className="flex min-h-screen flex-col bg-[#071527]">
       <TestEnvBanner />
 
-      {/* Mobile top bar (visible < lg) */}
-      <header className="flex h-14 items-center justify-between border-b bg-background px-4 lg:hidden">
+      {/* Mobile top bar (< lg) */}
+      <header className="flex h-14 items-center justify-between border-b border-[#E6ECF4] bg-white px-4 lg:hidden">
         <div className="flex min-w-0 items-center gap-3">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <button
                 type="button"
                 aria-label="Open admin menu"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground hover:bg-muted"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#D9E2EF] bg-white text-[#111827] hover:bg-[#F8FAFC]"
               >
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 bg-sidebar p-0">
-              <SheetHeader className="border-b px-5 py-4 text-left">
-                <SheetTitle>
+            <SheetContent side="left" className="w-72 bg-[#071527] p-0 text-[#CBD5E1]">
+              <SheetHeader className="border-b border-[#10233A] px-5 py-4 text-left">
+                <SheetTitle className="text-white">
                   <GetStampdLogo variant="blue" size="md" caption="Event admin" />
                 </SheetTitle>
               </SheetHeader>
-              <nav className="flex-1 space-y-1 p-3">
+              <nav className="flex-1 space-y-1.5 px-4 py-4">
                 <NavLinks />
               </nav>
-              <div className="border-t p-3">
-                <div className="mb-3 px-3 text-xs text-muted-foreground">
-                  <div className="font-medium text-foreground">
+              <div className="border-t border-[#10233A] px-4 py-4">
+                <div className="mb-3 px-3 text-xs text-[#94A3B8]">
+                  <div className="font-medium text-white">
                     {agencyName ?? email ?? "—"}
                   </div>
                   {email && agencyName && <div className="truncate">{email}</div>}
@@ -179,31 +176,41 @@ export function AdminShell({
             <GetStampdLogo variant="blue" size="sm" caption="Admin" />
           </div>
         </div>
-        <div className="flex items-center gap-2 truncate text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 truncate text-xs text-[#64748B]">
           <span className="max-w-[160px] truncate">{agencyName ?? email ?? ""}</span>
         </div>
       </header>
 
       <div className="flex flex-1">
-        <aside className="hidden w-60 shrink-0 border-r bg-sidebar lg:flex lg:flex-col">
-          <div className="flex h-16 items-center border-b px-5">
-            <GetStampdLogo variant="blue" size="md" caption="Event admin" />
+        {/* Desktop sidebar */}
+        <aside className="hidden w-[260px] shrink-0 flex-col border-r border-[#10233A] bg-[#071527] lg:flex">
+          <div className="px-5 py-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#2F6FE4] text-white shadow-sm">
+                <GetStampdLogo variant="blue" size="sm" iconOnly />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-white">GetStampd</div>
+                <div className="text-xs text-[#94A3B8]">Event admin</div>
+              </div>
+            </div>
           </div>
-          <nav className="flex-1 space-y-1 p-3">
+          <nav className="flex-1 space-y-1.5 px-4">
             <NavLinks />
           </nav>
-          <div className="border-t p-3">
+          <div className="mt-auto space-y-1.5 px-4 py-5">
             <FooterControls />
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col bg-background">
-          <header className="hidden h-16 items-center justify-between border-b bg-background px-6 lg:flex">
+        {/* Main column */}
+        <div className="flex min-w-0 flex-1 flex-col bg-[#F5F7FB] text-[#111827]">
+          <header className="hidden h-[72px] items-center justify-between border-b border-[#E6ECF4] bg-white px-8 lg:flex">
             <div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs font-medium text-[#64748B]">
                 {agencyName ? "Organisation workspace" : "Signed in as"}
               </div>
-              <div className="text-sm font-semibold">
+              <div className="text-sm font-semibold text-[#111827]">
                 {agencyName ?? email ?? "—"}
               </div>
             </div>
@@ -211,29 +218,34 @@ export function AdminShell({
               {ambiguousAgency && (
                 <span
                   title="You belong to multiple organisations. Showing the first one until an organisation switcher is added."
-                  className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400"
+                  className="rounded-full bg-[#FFF7ED] px-3 py-1.5 text-xs font-medium text-[#9A3412] ring-1 ring-[#FED7AA]"
                 >
                   Multi-organisation (temp)
                 </span>
               )}
               {agencyRole && (
-                <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                <span className="rounded-full bg-[#F1F5F9] px-3 py-1.5 text-xs font-medium text-[#475569]">
                   {formatRoleLabel(agencyRole)}
                 </span>
               )}
               {role && (
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                <span className="rounded-full bg-[#EAF2FF] px-3 py-1.5 text-xs font-semibold text-[#1F56C5]">
                   {formatRoleLabel(role)}
                 </span>
               )}
-
-              <div className="hidden text-right text-xs text-muted-foreground sm:block">
-                {email}
+              {email && (
+                <div className="hidden text-right text-xs text-[#64748B] sm:block">
+                  {email}
+                </div>
+              )}
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2F6FE4] text-sm font-semibold text-white">
+                {(email ?? "?").slice(0, 1).toUpperCase()}
               </div>
-              <div className="h-8 w-8 rounded-full bg-hero-gradient" />
             </div>
           </header>
-          <div className="flex-1 p-4 sm:p-6 lg:p-8">{children ?? <Outlet />}</div>
+          <div className="flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+            <div className="space-y-5">{children ?? <Outlet />}</div>
+          </div>
         </div>
       </div>
     </div>
