@@ -178,11 +178,17 @@ export function AdminEventAnnouncements({
     }
     setSaving(true);
     setFormError(null);
+    const trimmedMessage = form.message.trim();
+    const trimmedTitle = form.title.trim();
+    // Public display hides the title; keep DB NOT NULL satisfied by falling
+    // back to a short slice of the message.
+    const titleForDb =
+      trimmedTitle || trimmedMessage.slice(0, 60) || "Announcement";
     const payload = {
       agency_id: agencyId,
       event_id: eventId,
-      title: form.title.trim(),
-      message: form.message.trim(),
+      title: titleForDb,
+      message: trimmedMessage,
       tone: form.tone,
       link_label: form.link_label.trim() || null,
       link_url: form.link_url.trim() || null,
@@ -190,6 +196,7 @@ export function AdminEventAnnouncements({
       ends_at: fromLocalInput(form.ends_at),
       is_active: form.is_active,
     };
+
     if (editingId === "new") {
       const { error: err } = await supabase
         .from("event_announcements")
