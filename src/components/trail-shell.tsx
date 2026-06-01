@@ -47,9 +47,17 @@ export function TrailShell({
     <EventPaletteScope
       paletteKey={paletteKey}
       backgroundKey={backgroundKey}
-      className="min-h-screen text-[#2A2620]"
+      className="min-h-screen"
     >
-      <header className="sticky top-0 z-40 border-b border-[#E6DCC7] bg-[#F6EFE2]/90 backdrop-blur">
+      <div style={{ color: "var(--event-body, #2A2620)" }}>
+      <header
+        className="sticky top-0 z-40 border-b backdrop-blur"
+        style={{
+          borderColor: "var(--event-border, #E6DCC7)",
+          background:
+            "color-mix(in srgb, var(--event-card-bg, #F6EFE2) 90%, transparent)",
+        }}
+      >
         <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
           <div className="flex items-center gap-2">
             {topLeft ?? (
