@@ -433,6 +433,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         primaryColor={event?.primary_color}
         accentColor={event?.accent_color}
         activeOverride="map"
+        eventId={event?.event_id ?? null}
       />
 
       <div className="mx-auto mt-4 max-w-5xl">
