@@ -1,0 +1,30 @@
+-- 04_extend_get_public_event_by_domain_custom_background_colors.sql
+-- DRAFT ONLY. Do not execute against production without approval.
+--
+-- Purpose:
+--   Extend public.get_public_event_by_domain(_hostname) to also surface
+--   page_background_color and card_background_color so the public pages
+--   can paint a custom hex page background when an event has chosen the
+--   "Custom colour" background option.
+--
+-- This migration MUST be run AFTER 03_custom_background_colors.sql.
+--
+-- Preserves:
+--   - SECURITY DEFINER
+--   - search_path = public
+--   - existing publish-gate / RLS-bypass behaviour
+--   - existing grants to anon, authenticated, service_role
+--   - all other returned columns (palette_key, page_background_key, …)
+--
+-- The function body is otherwise unchanged from the previous version
+-- (02_extend_get_public_event_by_domain_page_background_key.sql). Only
+-- the RETURNS TABLE shape and the inner SELECT list are widened by two
+-- columns at the end.
+--
+-- See migrations-draft-event-background/02_*.sql for the full body
+-- template; this file is intentionally a placeholder noting the surgical
+-- shape change. Implementer should replicate the existing function body
+-- and append:
+--     , eb.page_background_color
+--     , eb.card_background_color
+-- to both the RETURNS TABLE definition and the SELECT list.
