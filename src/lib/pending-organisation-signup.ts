@@ -87,12 +87,22 @@ export function clearPendingOrganisationSignup(): void {
 
 export type CompletePendingResult =
   | { ok: true; alreadyHadOrganisation?: boolean }
-  | { ok: false; code: string; message: string };
+  | {
+      ok: false;
+      code: string;
+      message: string;
+      currentEmail?: string;
+      pendingEmail?: string;
+    };
 
 /**
  * Completes pending organisation signup for the currently authenticated user.
  * Safe to call multiple times — if the user already has a membership, this
  * clears the pending entry and returns ok.
+ *
+ * REFUSES to run if the signed-in user's email does not match the email
+ * the pending signup was created for. This prevents a new organisation
+ * being attached to the wrong existing account.
  */
 export async function completePendingOrganisationSignup(): Promise<CompletePendingResult> {
   const pending = readPendingOrganisationSignup();
@@ -109,6 +119,22 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     };
   }
   const userId = userRes.user.id;
+  const currentEmail = (userRes.user.email ?? "").toLowerCase().trim();
+  const pendingEmail = (pending.email ?? "").toLowerCase().trim();
+
+  // Wrong-session protection: don't attach a new organisation to a different
+  // existing user.
+  if (pendingEmail && currentEmail && currentEmail !== pendingEmail) {
+    return {
+      ok: false,
+      code: "email_mismatch",
+      message:
+        `You're signed in as ${userRes.user.email}, but this organisation signup was created for ${pending.email}. Sign out and sign in with the correct account to finish creating the organisation.`,
+      currentEmail: userRes.user.email ?? "",
+      pendingEmail: pending.email,
+    };
+  }
+
 
   // If the user already has a membership, just clear and succeed.
   const { data: existing, error: existingErr } = await supabase

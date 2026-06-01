@@ -1,12 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
+import { authUrl, cleanAuthUrlFragments } from "@/lib/auth-redirect";
 import {
   readPendingOrganisationSignup,
   completePendingOrganisationSignup,
+  clearPendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
+
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({ meta: [{ title: "Admin sign in" }] }),
@@ -22,11 +25,16 @@ function isValidEmail(value: string) {
 
 function Login() {
   const navigate = useNavigate();
-  const { status } = useAuth();
+  const { status, email: sessionEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [mismatch, setMismatch] = useState<{
+    currentEmail: string;
+    pendingEmail: string;
+  } | null>(null);
+  const [mismatchBusy, setMismatchBusy] = useState(false);
 
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -34,9 +42,45 @@ function Login() {
   const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [resetSubmitting, setResetSubmitting] = useState(false);
 
+  // Strip any access_token/refresh_token/code fragments Supabase left in the
+  // URL after consuming the email confirmation link.
   useEffect(() => {
-    if (status === "authenticated") navigate({ to: "/admin", replace: true });
-  }, [status, navigate]);
+    cleanAuthUrlFragments();
+  }, []);
+
+  // If authenticated, decide whether to auto-complete pending signup,
+  // show a mismatch screen, or just continue to /admin.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    (async () => {
+      const pending = readPendingOrganisationSignup();
+      if (!pending) {
+        navigate({ to: "/admin", replace: true });
+        return;
+      }
+      const result = await completePendingOrganisationSignup();
+      if (cancelled) return;
+      if (result.ok) {
+        navigate({ to: "/admin", replace: true });
+        return;
+      }
+      if (result.code === "email_mismatch") {
+        setMismatch({
+          currentEmail: result.currentEmail ?? sessionEmail ?? "",
+          pendingEmail: result.pendingEmail ?? pending.email,
+        });
+        return;
+      }
+      // Non-fatal — let user continue; NoAccessScreen will offer a retry.
+      // eslint-disable-next-line no-console
+      console.warn("Pending organisation completion failed:", result.message);
+      navigate({ to: "/admin", replace: true });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, sessionEmail, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -49,23 +93,33 @@ function Login() {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
       setSubmitting(false);
-      // Generic — don't reveal whether the email exists.
       setError(GENERIC_AUTH_ERROR);
       return;
     }
-    // If a pending organisation signup is waiting (e.g. user just confirmed
-    // their email), complete it now so they land directly in the admin.
-    if (readPendingOrganisationSignup()) {
-      const result = await completePendingOrganisationSignup();
-      if (!result.ok && result.code !== "no_pending") {
-        // Non-fatal — NoAccessScreen will offer a retry button.
-        // eslint-disable-next-line no-console
-        console.warn("Pending organisation completion failed:", result.message);
-      }
-    }
+    // The authenticated effect above takes over from here (pending-signup
+    // completion + redirect or mismatch screen).
     setSubmitting(false);
+  };
+
+  const handleMismatchSignOut = async () => {
+    setMismatchBusy(true);
+    await signOut();
+    setMismatch(null);
+    setMismatchBusy(false);
+  };
+
+  const handleMismatchContinue = () => {
+    setMismatch(null);
     navigate({ to: "/admin", replace: true });
   };
+
+  const handleMismatchCancelPending = () => {
+    clearPendingOrganisationSignup();
+    setMismatch(null);
+    navigate({ to: "/admin", replace: true });
+  };
+
+
 
   const handleReset = async (e: FormEvent) => {
     e.preventDefault();
@@ -76,7 +130,7 @@ function Login() {
       return;
     }
     setResetSubmitting(true);
-    const redirectTo = `${window.location.origin}/admin/update-password`;
+    const redirectTo = authUrl("/admin/update-password");
     await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo });
     setResetSubmitting(false);
     // Generic confirmation — never reveal whether the email exists.
@@ -85,18 +139,58 @@ function Login() {
     );
   };
 
+  if (mismatch) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-sidebar p-4">
+        <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm">
+          <GetStampdLogo variant="blue" size="md" caption="Account mismatch" />
+          <h1 className="mt-4 text-lg font-semibold">Wrong account signed in</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You're currently signed in as{" "}
+            <span className="font-medium text-foreground">{mismatch.currentEmail || "another account"}</span>,
+            but this organisation signup was created for{" "}
+            <span className="font-medium text-foreground">{mismatch.pendingEmail}</span>.
+            Sign out and sign in with the correct account to finish creating the organisation.
+          </p>
+          <div className="mt-6 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleMismatchSignOut}
+              disabled={mismatchBusy}
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+              Sign out and continue
+            </button>
+            <button
+              type="button"
+              onClick={handleMismatchContinue}
+              className="inline-flex h-10 items-center justify-center rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
+            >
+              Go to admin as {mismatch.currentEmail || "current user"}
+            </button>
+            <button
+              type="button"
+              onClick={handleMismatchCancelPending}
+              className="inline-flex h-9 items-center justify-center text-xs text-muted-foreground hover:underline"
+            >
+              Cancel pending organisation signup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-sidebar p-4">
       <div className="w-full max-w-sm rounded-2xl border bg-card p-8 shadow-sm">
         <GetStampdLogo variant="blue" size="md" caption="Event admin sign in" />
 
-
-
-
         <p className="mt-4 text-xs text-muted-foreground">
           Restricted to authorised event and organisation administrators. Visitor accounts cannot
           sign in here.
         </p>
+
 
         {!showReset ? (
           <>

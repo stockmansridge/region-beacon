@@ -29,7 +29,6 @@ export function NoAccessScreen({ email }: { email: string | null }) {
     setError(null);
     const result = await completePendingOrganisationSignup();
     if (result.ok) {
-      // Full reload so admin access + agency context re-fetch cleanly.
       window.location.assign("/admin/events");
       return;
     }
@@ -38,8 +37,14 @@ export function NoAccessScreen({ email }: { email: string | null }) {
       clearPendingOrganisationSignup();
       setPending(null);
     }
+    if (result.code === "email_mismatch") {
+      // Force them to sign out — only the correct account can complete this.
+      setError(result.message);
+      return;
+    }
     setError(result.message);
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-sidebar p-4">

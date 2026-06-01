@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { GetStampdLogo, GetStampdMark } from "@/components/brand";
 import { Mail, LifeBuoy, ShieldCheck, Sparkles } from "lucide-react";
 import { useTenantSubdomain } from "@/lib/tenant-host";
+import { authUrl } from "@/lib/auth-redirect";
 import { LivePublicPage } from "./live.$subdomain.index";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,21 +53,22 @@ function ComingSoon() {
           <GetStampdLogo variant="blue" size="md" wordmarkClassName="text-white" />
         </Link>
         <div className="flex items-center gap-2">
-          <Link
-            to="/signup"
+          <a
+            href={authUrl("/signup")}
             className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
           >
             <Sparkles className="h-4 w-4" />
             Create organisation
-          </Link>
-          <Link
-            to="/admin/login"
+          </a>
+          <a
+            href={authUrl("/admin/login")}
             className="inline-flex h-9 items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 text-sm font-medium text-white hover:bg-white/10"
           >
             <ShieldCheck className="h-4 w-4" />
             Admin login
-          </Link>
+          </a>
         </div>
+
       </header>
 
       <main className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-6 pb-24 pt-16 text-center sm:pt-28">
@@ -85,13 +88,14 @@ function ComingSoon() {
         </p>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Link
-            to="/signup"
+          <a
+            href={authUrl("/signup")}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
           >
             <Sparkles className="h-4 w-4" />
             Create your organisation
-          </Link>
+          </a>
+
           <Link
             to="/contact"
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-5 text-sm font-semibold text-white hover:bg-white/10"
