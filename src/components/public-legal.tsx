@@ -153,6 +153,7 @@ export function ExternalLinkOnly({
 export function LocalLegalPage({
   subdomain,
   eventName,
+  eventId,
   title,
   body,
   version,
@@ -160,6 +161,7 @@ export function LocalLegalPage({
 }: {
   subdomain: string;
   eventName: string;
+  eventId?: string | null;
   title: string;
   body: string;
   version: string | null;
@@ -167,7 +169,7 @@ export function LocalLegalPage({
 }) {
   const effective = effectiveAt ? new Date(effectiveAt) : null;
   return (
-    <PublicLegalShell subdomain={subdomain} eventName={eventName}>
+    <PublicLegalShell subdomain={subdomain} eventName={eventName} eventId={eventId}>
 
       <p className="text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
         {eventName}
