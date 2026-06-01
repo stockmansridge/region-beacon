@@ -147,7 +147,15 @@ function TenantEventPage() {
   const venueLabels = resolveVenueLabels(event);
 
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+    <EventPaletteScope
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
+      primaryColor={event.primary_color ?? null}
+      accentColor={event.accent_color ?? null}
+      pageBackgroundColor={event.page_background_color ?? null}
+      cardBackgroundColor={event.card_background_color ?? null}
+      className="min-h-screen px-4 py-8"
+    >
       <TrailLanding
         eventName={event.name}
         venueLabelPlural={venueLabels.plural}
@@ -198,6 +206,6 @@ function TenantEventPage() {
         resolutionSource="public_event_slug"
         error={null}
       />
-    </div>
+    </EventPaletteScope>
   );
 }
