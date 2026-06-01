@@ -1018,41 +1018,53 @@ function AssetUploader({
 
   const previewClass =
     kind === "logo"
-      ? "h-28 w-28 rounded-lg"
-      : "aspect-[16/9] w-full rounded-lg";
+      ? "h-28 w-28 rounded-[12px]"
+      : "aspect-[16/9] w-full rounded-[12px]";
 
   return (
     <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-      <div className="flex items-baseline justify-between">
-        <div className="text-sm font-semibold">{label}</div>
-        <div className="text-[11px] text-muted-foreground">
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="text-base font-semibold text-[#111827]">{label}</div>
+        <div className="text-[11px] text-[#64748B]">
           PNG, JPG, WebP · max {limitMB} MB
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">{helper}</p>
+      <p className="text-sm leading-6 text-[#64748B]">{helper}</p>
 
-      <div
-        className={`relative flex items-center justify-center overflow-hidden border bg-white ${previewClass}`}
-      >
+      <div className={`rounded-[16px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-6 ${url ? "" : "text-center"}`}>
         {url ? (
-          <img
-            src={url}
-            alt={kind === "logo" ? "Event logo preview" : "Event cover preview"}
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-1 text-muted-foreground">
-            <span className="text-[10px] uppercase tracking-wider">
-              No {kind === "logo" ? "logo" : "cover image"} yet
-            </span>
+          <div className={`relative mx-auto flex items-center justify-center overflow-hidden border border-[#E6ECF4] bg-white ${previewClass}`}>
+            <img
+              src={url}
+              alt={kind === "logo" ? "Event logo preview" : "Event cover preview"}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
           </div>
+        ) : (
+          <>
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#EAF2FF] text-[#2F6FE4]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <div className="text-sm font-medium text-[#334155]">
+              No {kind === "logo" ? "logo" : "cover image"} uploaded yet
+            </div>
+            <div className="mt-1 text-xs leading-5 text-[#64748B]">
+              {helper}
+            </div>
+          </>
         )}
       </div>
 
-      {err && <div className="text-xs text-destructive">{err}</div>}
+      {err && (
+        <div className="rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">{err}</div>
+      )}
 
       <input
         ref={inputRef}
@@ -1069,7 +1081,7 @@ function AssetUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
-            className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            className="h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy
               ? "Uploading…"
@@ -1082,7 +1094,7 @@ function AssetUploader({
               type="button"
               onClick={handleRemove}
               disabled={disabled}
-              className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+              className="h-10 rounded-[10px] border border-[#FDA4AF] bg-white px-4 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {removing ? "Removing…" : `Remove ${kind === "logo" ? "logo" : "cover"}`}
             </button>
@@ -1090,7 +1102,7 @@ function AssetUploader({
         </div>
       )}
       {!canEdit && !url && (
-        <div className="text-xs text-muted-foreground">No image uploaded.</div>
+        <div className="text-xs text-[#64748B]">No image uploaded.</div>
       )}
     </div>
   );
