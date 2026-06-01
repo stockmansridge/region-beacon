@@ -422,6 +422,24 @@ function MoreSheet({
             </li>
           )}
           <li>
+            <Link to="/map" onClick={onClose} className={rowClass}>
+              <MapIcon className="h-4 w-4" />
+              Trail Map
+            </Link>
+          </li>
+          <li>
+            <Link to="/venues" onClick={onClose} className={rowClass}>
+              <MapPin className="h-4 w-4" />
+              Venues
+            </Link>
+          </li>
+          <li>
+            <Link to="/offers" onClick={onClose} className={rowClass}>
+              <Tag className="h-4 w-4" />
+              Offers
+            </Link>
+          </li>
+          <li>
             <Link to="/leaderboard" onClick={onClose} className={rowClass}>
               <Trophy className="h-4 w-4" />
               Leaderboard
