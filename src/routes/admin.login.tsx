@@ -35,10 +35,6 @@ function Login() {
     currentEmail: string;
     pendingEmail: string;
   } | null>(null);
-  const [mismatch, setMismatch] = useState<{
-    currentEmail: string;
-    pendingEmail: string;
-  } | null>(null);
   const [mismatchBusy, setMismatchBusy] = useState(false);
 
   const [showReset, setShowReset] = useState(false);
