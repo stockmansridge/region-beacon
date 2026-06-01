@@ -3038,11 +3038,20 @@ function BrandingSummary({ branding }: { branding: Branding }) {
     accent_color: branding.accent_color,
   });
   const bg = getBackground(branding.page_background_key ?? null);
+  const isCustomBg = branding.page_background_key === "custom_color";
+  const activeCardBg =
+    isCustomBg && branding.card_background_color
+      ? branding.card_background_color
+      : palette.cardBg;
+  const activePageBg =
+    isCustomBg && branding.page_background_color
+      ? branding.page_background_color
+      : palette.pageBg;
   const swatches: Array<{ label: string; value: string }> = [
     { label: "Primary", value: palette.primary },
     { label: "Accent", value: palette.accent },
-    { label: "Page bg", value: palette.pageBg },
-    { label: "Card bg", value: branding.card_background_color || palette.cardBg },
+    { label: "Page bg", value: activePageBg },
+    { label: "Card bg", value: activeCardBg },
   ];
 
   const rows: Array<[string, React.ReactNode]> = [];
