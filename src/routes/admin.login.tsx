@@ -139,18 +139,58 @@ function Login() {
     );
   };
 
+  if (mismatch) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-sidebar p-4">
+        <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm">
+          <GetStampdLogo variant="blue" size="md" caption="Account mismatch" />
+          <h1 className="mt-4 text-lg font-semibold">Wrong account signed in</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You're currently signed in as{" "}
+            <span className="font-medium text-foreground">{mismatch.currentEmail || "another account"}</span>,
+            but this organisation signup was created for{" "}
+            <span className="font-medium text-foreground">{mismatch.pendingEmail}</span>.
+            Sign out and sign in with the correct account to finish creating the organisation.
+          </p>
+          <div className="mt-6 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleMismatchSignOut}
+              disabled={mismatchBusy}
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+              Sign out and continue
+            </button>
+            <button
+              type="button"
+              onClick={handleMismatchContinue}
+              className="inline-flex h-10 items-center justify-center rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
+            >
+              Go to admin as {mismatch.currentEmail || "current user"}
+            </button>
+            <button
+              type="button"
+              onClick={handleMismatchCancelPending}
+              className="inline-flex h-9 items-center justify-center text-xs text-muted-foreground hover:underline"
+            >
+              Cancel pending organisation signup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-sidebar p-4">
       <div className="w-full max-w-sm rounded-2xl border bg-card p-8 shadow-sm">
         <GetStampdLogo variant="blue" size="md" caption="Event admin sign in" />
 
-
-
-
         <p className="mt-4 text-xs text-muted-foreground">
           Restricted to authorised event and organisation administrators. Visitor accounts cannot
           sign in here.
         </p>
+
 
         {!showReset ? (
           <>
