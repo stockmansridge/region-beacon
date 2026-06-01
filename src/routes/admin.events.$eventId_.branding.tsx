@@ -736,31 +736,41 @@ function BrandingEditor() {
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
             Live preview
           </div>
-          <LandingPreview
-            eventName={event.name}
-            primaryColor={(() => {
-              const p = getPalette(form.palette_key || null);
-              if (p) return p.primary;
-              return HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B";
-            })()}
-            accentColor={(() => {
-              const p = getPalette(form.palette_key || null);
-              if (p) return p.accent;
-              return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
-            })()}
-            fontFamily={form.font_family.trim() || undefined}
-            welcomeCopy={form.welcome_copy.trim()}
-            termsUrl={form.terms_url.trim()}
-            venueCount={venueCount}
-            logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-            heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
-            venueLabelPlural={
-              resolveVenueLabels({
-                venue_label_singular: form.venue_label_singular,
-                venue_label_plural: form.venue_label_plural,
-              }).plural
-            }
-          />
+          <EventPaletteScope
+            paletteKey={form.palette_key || null}
+            backgroundKey={form.page_background_key || null}
+            primaryColor={form.primary_color}
+            accentColor={form.accent_color}
+            pageBackgroundColor={form.page_background_color}
+            cardBackgroundColor={form.card_background_color}
+            className="rounded-2xl border p-4"
+          >
+            <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-muted, #8A7E66)" }}>
+              <span>Customer landing — live preview</span>
+              <span>Mobile</span>
+            </div>
+            <TrailLanding
+              eventName={event.name}
+              welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
+              primaryColor={(() => {
+                const p = getPalette(form.palette_key || null);
+                if (p) return p.primary;
+                return HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B";
+              })()}
+              accentColor={(() => {
+                const p = getPalette(form.palette_key || null);
+                if (p) return p.accent;
+                return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
+              })()}
+              fontFamily={form.font_family.trim() || undefined}
+              venueCount={venueCount}
+              venueLabelPlural={resolveVenueLabels({ venue_label_singular: form.venue_label_singular, venue_label_plural: form.venue_label_plural }).plural}
+              logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+              heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
+              badge="Preview"
+              termsUrl={null}
+            />
+          </EventPaletteScope>
         </div>
       </div>
     </div>
