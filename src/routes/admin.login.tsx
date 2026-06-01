@@ -219,7 +219,7 @@ function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="you@agency.com"
+                  placeholder="you@organisation.com"
                   autoComplete="email"
                 />
               </div>
@@ -283,7 +283,7 @@ function Login() {
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="you@agency.com"
+                placeholder="you@organisation.com"
                 autoComplete="email"
               />
             </div>
