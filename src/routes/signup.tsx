@@ -99,6 +99,13 @@ function SignupPage() {
     }
   }, [stage, auth.status, navigate]);
 
+  async function handleSignOutAndRestart() {
+    clearPendingOrganisationSignup();
+    await signOut();
+    // Stay on /signup; auth state will flip to unauthenticated and form renders.
+  }
+
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setTopError(null);
