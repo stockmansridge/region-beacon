@@ -120,6 +120,18 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
   }
 
   const { event, venues } = state;
+  return <LivePublicLoaded subdomain={subdomain} event={event} venues={venues} />;
+}
+
+function LivePublicLoaded({
+  subdomain,
+  event,
+  venues,
+}: {
+  subdomain: string;
+  event: PublicEvent;
+  venues: PublicVenue[];
+}) {
   const canRegister = Boolean(event.current_terms_version_id);
   const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
