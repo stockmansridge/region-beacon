@@ -309,6 +309,8 @@ function CheckinPage() {
 }
 
 function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }) {
+  const subdomain = getSubdomain();
+  const paletteKey = useEventPaletteKey(subdomain);
   if (outcome.kind === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
@@ -325,6 +327,7 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
         eventName="GetStampd"
         primaryColor={PRIMARY}
         accentColor={ACCENT}
+        paletteKey={paletteKey}
         showBottomNav={false}
       >
         <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
