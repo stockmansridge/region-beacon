@@ -112,7 +112,13 @@ function BottomNav({
     { key: "more", label: "More", icon: MoreHorizontal, to: "/demo/more" },
   ];
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E6DCC7] bg-[#F6EFE2]/95 backdrop-blur">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur"
+      style={{
+        borderColor: "var(--event-border, #E6DCC7)",
+        background: "color-mix(in srgb, var(--event-card-bg, #F6EFE2) 95%, transparent)",
+      }}
+    >
       <div className="mx-auto grid max-w-md grid-cols-5 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2">
         {items.map((it) => {
           const isActive = it.key === active;
