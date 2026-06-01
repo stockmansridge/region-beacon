@@ -141,7 +141,11 @@ function LivePublicLoaded({
   const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+    <EventPaletteScope
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
+      className="min-h-screen px-4 py-8"
+    >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
@@ -211,7 +215,7 @@ function LivePublicLoaded({
           View leaderboard →
         </Link>
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }
 
