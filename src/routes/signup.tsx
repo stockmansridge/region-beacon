@@ -170,17 +170,11 @@ function SignupPage() {
     }
 
     // 2. Create the organisation via SECURITY DEFINER RPC.
-    // eslint-disable-next-line no-console
-    console.info("[org-signup] signup: calling create_customer_agency", {
-      supabaseUrl: SUPABASE_URL,
-      argKeys: ["_agency_name", "_agency_slug"],
-      name: data.businessName,
-      slug: data.slug,
-    });
     const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
       _agency_name: data.businessName,
       _agency_slug: data.slug,
     });
+
     if (rpcErr) {
       // eslint-disable-next-line no-console
       console.warn("[org-signup] signup RPC error", {
