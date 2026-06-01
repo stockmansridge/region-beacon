@@ -705,6 +705,56 @@ function EventDetail() {
     };
   }, [agencyId, eventId, reloadKey, auth.session?.user.id, agency.status]);
 
+  // Inline-editable tabs: hydrate form state from the loaded bundle so users
+  // can edit directly inside each tab without clicking an "Edit" toggle.
+  // Only hydrates when the corresponding form is null, so in-flight edits
+  // survive background bundle refreshes after a save.
+  useEffect(() => {
+    if (!bundle || !canEdit) return;
+    if (!form) {
+      const e = bundle.event;
+      setForm({
+        name: e.name ?? "",
+        description: e.description ?? "",
+        timezone: e.timezone ?? "",
+        starts_at: toLocalInput(e.starts_at),
+        ends_at: toLocalInput(e.ends_at),
+      });
+      setIsEditing(true);
+    }
+    if (!checkinForm) {
+      setCheckinForm({
+        one_checkin_per_venue: bundle.checkin?.one_checkin_per_venue ?? true,
+        minimum_seconds_between_checkins: String(
+          bundle.checkin?.minimum_seconds_between_checkins ?? 0,
+        ),
+        allow_manual_admin_checkins: bundle.checkin?.allow_manual_admin_checkins ?? false,
+        max_checkins_per_passport_per_day:
+          bundle.checkin?.max_checkins_per_passport_per_day === null ||
+          bundle.checkin?.max_checkins_per_passport_per_day === undefined
+            ? ""
+            : String(bundle.checkin.max_checkins_per_passport_per_day),
+      });
+      setIsEditingCheckin(true);
+    }
+    if (!lbForm) {
+      const lb = bundle.leaderboard;
+      const mode = (lb?.display_mode ?? "first_name_last_initial") as LeaderboardDisplayMode;
+      setLbForm({
+        is_enabled: lb?.is_enabled ?? false,
+        display_mode: (LEADERBOARD_DISPLAY_MODES as readonly string[]).includes(mode)
+          ? mode
+          : "first_name_last_initial",
+        show_first_name: lb?.show_first_name ?? true,
+        show_last_initial: lb?.show_last_initial ?? true,
+        show_visit_count: lb?.show_visit_count ?? false,
+        hide_below_checkins: String(lb?.hide_below_checkins ?? 0),
+        allow_visitor_opt_out: lb?.allow_visitor_opt_out ?? true,
+      });
+      setIsEditingLeaderboard(true);
+    }
+  }, [bundle, canEdit, form, checkinForm, lbForm]);
+
   function startEdit() {
     if (!bundle) return;
     const e = bundle.event;
