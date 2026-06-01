@@ -2274,9 +2274,9 @@ function EventDetail() {
               </div>
             )}
             {venueEditingId !== null && venueForm && (
-              <div ref={venueEditorRef} className="mb-4 space-y-5 rounded-lg border bg-muted/20 p-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold">
+              <div ref={venueEditorRef} className="mb-5 space-y-5 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 className="text-base font-semibold text-[#111827]">
                     {venueEditingId === "new" ? "New venue" : "Edit venue details"}
                   </h4>
                   <div className="flex items-center gap-2">
@@ -2284,29 +2284,29 @@ function EventDetail() {
                       type="button"
                       onClick={cancelVenueEdit}
                       disabled={venueSaving}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                      className="h-10 rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Cancel
+                      Discard changes
                     </button>
                     <button
                       type="button"
                       onClick={saveVenue}
                       disabled={venueSaving}
-                      className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                      className="h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {venueSaving ? "Saving…" : "Save"}
                     </button>
                   </div>
                 </div>
                 {(venueValidationError || venueSaveError) && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                     {venueValidationError ?? venueSaveError}
                   </div>
                 )}
 
                 {venueEditingId === "new" ? (
                   <div className="space-y-4">
-                    <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+                    <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
                       <strong>Step 1 of 2.</strong> Name the venue and pin its location. You can add description, images, contact details, and QR after this step.
                     </div>
                     <Field label="Venue name" required>
