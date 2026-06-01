@@ -304,6 +304,7 @@ function PassportView({
   token: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [supportCopied, setSupportCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
   const hostname = typeof window !== "undefined" ? window.location.hostname : "";
@@ -328,6 +329,41 @@ function PassportView({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
+    }
+  }
+
+  async function copySupportDetails() {
+    const eventId = passport.event_id;
+    let savedPassportFound = false;
+    if (eventId && typeof localStorage !== "undefined") {
+      try {
+        savedPassportFound = localStorage.getItem(`gs.passport.${eventId}`) !== null;
+      } catch {
+        savedPassportFound = false;
+      }
+    }
+    const report = {
+      timestamp: new Date().toISOString(),
+      route: "/passport/$token",
+      hostname,
+      event_id: eventId,
+      saved_passport_key_checked: eventId ? `gs.passport.${eventId}` : null,
+      saved_passport_found: savedPassportFound,
+      passport_validation_status: "valid",
+      stamp_rpc_status: stamps.status,
+      stamp_rpc_error: stamps.error,
+      stamp_row_count: stamps.rowCount,
+      stamped_row_count: stamps.stampedRowCount,
+      venue_count: stamps.totalVenueCount,
+      first_stamp_row_field_names: stamps.firstRowFieldNames,
+      matched_visited_venue_id_count: stamps.visitedVenueIds.size,
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+      setSupportCopied(true);
+      setTimeout(() => setSupportCopied(false), 2000);
+    } catch {
+      setSupportCopied(false);
     }
   }
 
@@ -517,6 +553,16 @@ function PassportView({
             <strong>Save this link.</strong> It is the only way back into your
             passport on a new device. Anyone with it can view your passport.
           </div>
+          <button
+            type="button"
+            onClick={copySupportDetails}
+            className="mt-3 h-9 w-full rounded-full border border-[#E6DCC7] bg-[#F6EFE2] text-xs font-semibold tracking-wide text-[#3D372C]"
+          >
+            {supportCopied ? "Copied support details" : "Copy support details"}
+          </button>
+          <p className="mt-2 text-[10px] leading-snug text-[#8A7E66]">
+            Support details exclude your full passport link and visitor details.
+          </p>
         </section>
 
         <div className="mt-6 flex justify-center">
