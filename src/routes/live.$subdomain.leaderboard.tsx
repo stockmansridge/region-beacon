@@ -26,15 +26,26 @@ type LeaderboardRow = {
   event_found: boolean | null;
 };
 
+type SupportDetails = {
+  hostname: string;
+  subdomain: string;
+  rpc_error_code: string | null;
+  rpc_error_message: string | null;
+  rpc_error_details: string | null;
+  rpc_error_hint: string | null;
+  row_count: number;
+  first_row_event_found: boolean | null;
+  first_row_is_enabled: boolean | null;
+};
+
 type State =
   | { kind: "loading" }
-  | { kind: "not_found" }
+  | { kind: "not_found"; support: SupportDetails }
   | { kind: "disabled" }
   | { kind: "ready"; rows: LeaderboardRow[] };
 
 export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
-
 
   useEffect(() => {
     let cancelled = false;
@@ -47,24 +58,51 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
       );
       if (cancelled) return;
 
-      if (error) {
-        setState({ kind: "not_found" });
-        return;
-      }
       const rows = (data ?? []) as LeaderboardRow[];
+      const firstFound = rows[0]?.event_found ?? null;
+      const firstEnabled = rows[0]?.is_enabled ?? null;
 
-      if (rows.length === 0 || rows[0].event_found === false) {
-        setState({ kind: "not_found" });
+      const buildSupport = (): SupportDetails => ({
+        hostname:
+          typeof window !== "undefined" ? window.location.hostname : host,
+        subdomain,
+        rpc_error_code: (error as { code?: string } | null)?.code ?? null,
+        rpc_error_message: error?.message ?? null,
+        rpc_error_details:
+          (error as { details?: string } | null)?.details ?? null,
+        rpc_error_hint: (error as { hint?: string } | null)?.hint ?? null,
+        row_count: rows.length,
+        first_row_event_found: firstFound,
+        first_row_is_enabled: firstEnabled,
+      });
+
+      // Hard RPC failure → not_found with support details.
+      if (error) {
+        setState({ kind: "not_found", support: buildSupport() });
         return;
       }
+
+      // Explicit not-found sentinel from the RPC:
+      //   rows.length === 1 AND event_found === false.
+      // An empty result set (rows.length === 0) means the event IS live
+      // and the leaderboard IS enabled — just no qualifying entries yet —
+      // so it must fall through to the "ready" empty state, NOT not_found.
+      if (rows.length === 1 && firstFound === false) {
+        setState({ kind: "not_found", support: buildSupport() });
+        return;
+      }
+
+      // Explicit disabled sentinel: event_found = true, is_enabled = false,
+      // display_name = null.
       if (
         rows.length === 1 &&
-        rows[0].is_enabled === false &&
+        firstEnabled === false &&
         rows[0].display_name === null
       ) {
         setState({ kind: "disabled" });
         return;
       }
+
       const dataRows = rows.filter(
         (r) => r.display_name !== null && r.rank !== null,
       );
@@ -89,10 +127,13 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
         )}
 
         {state.kind === "not_found" && (
-          <EmptyState
-            title="Event not live yet"
-            body="This leaderboard isn't available right now. Please check back closer to the event, or contact the organiser for details."
-          />
+          <>
+            <EmptyState
+              title="Event not live yet"
+              body="This leaderboard isn't available right now. Please check back closer to the event, or contact the organiser for details."
+            />
+            <SupportDetailsBlock details={state.support} />
+          </>
         )}
 
         {state.kind === "disabled" && (
@@ -104,7 +145,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
         {state.kind === "ready" && state.rows.length === 0 && (
           <EmptyState
-            title="No check-ins yet"
+            title="No leaderboard entries yet"
             body="As soon as visitors start collecting stamps they'll appear here."
           />
         )}
@@ -258,5 +299,41 @@ function PrivacyNote() {
       Names are shown according to the organiser's privacy settings. We never
       publish email, phone, postcode, or full names.
     </p>
+  );
+}
+
+function SupportDetailsBlock({ details }: { details: SupportDetails }) {
+  const [copied, setCopied] = useState(false);
+  const text = JSON.stringify(details, null, 2);
+  return (
+    <div className="mx-auto mt-4 max-w-md rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4 text-left">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A7E66]">
+          Support details
+        </p>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(text);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            } catch {
+              // ignore clipboard failure
+            }
+          }}
+          className="rounded-full border border-[#E6DCC7] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all text-[10px] leading-snug text-[#3D372C]">
+        {text}
+      </pre>
+      <p className="mt-2 text-[10px] text-[#8A7E66]">
+        If this keeps happening, paste these details to the organiser. No
+        personal data is included.
+      </p>
+    </div>
   );
 }
