@@ -107,6 +107,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
         eventName={event?.name}
         primaryColor={event?.primary_color}
         accentColor={event?.accent_color}
+        eventId={event?.event_id ?? null}
       />
       <div className="mx-auto max-w-md">
         <div className="mb-6">
