@@ -25,6 +25,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { PUBLIC_TENANT_ROOT_DOMAIN, tenantHost, tenantUrl } from "@/lib/domains";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticCopyButton } from "@/components/diagnostic-panel";
+import { resolveEventPalette } from "@/lib/event-palettes";
+import { getBackground } from "@/lib/event-backgrounds";
 
 type LoadDiagnostic = {
   step: string;
@@ -64,6 +66,10 @@ type Branding = {
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
+  palette_key: string | null;
+  page_background_key: string | null;
+  page_background_color: string | null;
+  card_background_color: string | null;
 };
 
 type Domain = {
@@ -401,7 +407,7 @@ function EventDetail() {
           await Promise.all([
             supabase
               .from("event_branding")
-              .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url")
+              .select("*")
               .eq("event_id", event.id)
               .eq("agency_id", agencyId)
               .maybeSingle(),
@@ -1674,22 +1680,7 @@ function EventDetail() {
               </Link>
             </div>
             {branding ? (
-              <DefList
-                rows={[
-                  ["Primary colour", <ColorSwatch key="p" value={branding.primary_color} />],
-                  ["Accent colour", <ColorSwatch key="a" value={branding.accent_color} />],
-                  ["Font family", branding.font_family ?? "—"],
-                  [
-                    "Welcome copy",
-                    branding.welcome_copy
-                      ? branding.welcome_copy.length > 140
-                        ? `${branding.welcome_copy.slice(0, 140)}…`
-                        : branding.welcome_copy
-                      : "—",
-                  ],
-                  ["Terms URL", branding.terms_url ?? "—"],
-                ]}
-              />
+              <BrandingSummary branding={branding} />
             ) : (
               <EmptyNotice>No branding configured yet.</EmptyNotice>
             )}
@@ -2843,6 +2834,79 @@ function ColorSwatch({ value }: { value: string | null }) {
       <code className="text-xs">{value}</code>
     </span>
   );
+}
+
+function BrandingSummary({ branding }: { branding: Branding }) {
+  const paletteKey = branding.palette_key ?? null;
+  const isCustomPalette = paletteKey === "custom" || (!paletteKey && (branding.primary_color || branding.accent_color));
+  const palette = resolveEventPalette({
+    palette_key: paletteKey,
+    primary_color: branding.primary_color,
+    accent_color: branding.accent_color,
+  });
+  const bg = getBackground(branding.page_background_key ?? null);
+  const swatches: Array<{ label: string; value: string }> = [
+    { label: "Primary", value: palette.primary },
+    { label: "Accent", value: palette.accent },
+    { label: "Page bg", value: palette.pageBg },
+    { label: "Card bg", value: branding.card_background_color || palette.cardBg },
+  ];
+
+  const rows: Array<[string, React.ReactNode]> = [];
+  rows.push([
+    "Colour palette",
+    isCustomPalette ? (
+      <span>Custom</span>
+    ) : (
+      <span>{palette.label}</span>
+    ),
+  ]);
+  rows.push([
+    "Palette preview",
+    <span key="sw" className="inline-flex flex-wrap items-center gap-3">
+      {swatches.map((s) => (
+        <span key={s.label} className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-block h-4 w-4 rounded border"
+            style={{ backgroundColor: s.value }}
+            aria-hidden
+          />
+          <span className="text-xs text-muted-foreground">{s.label}</span>
+        </span>
+      ))}
+    </span>,
+  ]);
+  if (isCustomPalette) {
+    rows.push(["Primary colour", <ColorSwatch key="p" value={branding.primary_color} />]);
+    rows.push(["Accent colour", <ColorSwatch key="a" value={branding.accent_color} />]);
+  } else if (paletteKey) {
+    rows.push([
+      "Source colours",
+      <span className="text-xs text-muted-foreground">
+        Primary &amp; accent are generated from the selected palette.
+      </span>,
+    ]);
+  }
+  rows.push([
+    "Page background",
+    branding.page_background_key === "custom_color" && branding.page_background_color
+      ? (
+        <span className="inline-flex items-center gap-2">
+          <span>Custom colour</span>
+          <ColorSwatch value={branding.page_background_color} />
+        </span>
+      )
+      : bg
+        ? <span>{bg.label}</span>
+        : <span className="text-muted-foreground">Default</span>,
+  ]);
+  if (branding.card_background_color) {
+    rows.push(["Card background", <ColorSwatch key="cbg" value={branding.card_background_color} />]);
+  }
+  rows.push(["Logo", branding.logo_path ? "Uploaded" : "—"]);
+  rows.push(["Cover image", branding.cover_path ? "Uploaded" : "—"]);
+
+  return <DefList rows={rows} />;
 }
 
 function EmptyNotice({ children }: { children: React.ReactNode }) {
