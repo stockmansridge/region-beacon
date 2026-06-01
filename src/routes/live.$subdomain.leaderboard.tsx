@@ -301,3 +301,39 @@ function PrivacyNote() {
     </p>
   );
 }
+
+function SupportDetailsBlock({ details }: { details: SupportDetails }) {
+  const [copied, setCopied] = useState(false);
+  const text = JSON.stringify(details, null, 2);
+  return (
+    <div className="mx-auto mt-4 max-w-md rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4 text-left">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A7E66]">
+          Support details
+        </p>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(text);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            } catch {
+              // ignore clipboard failure
+            }
+          }}
+          className="rounded-full border border-[#E6DCC7] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all text-[10px] leading-snug text-[#3D372C]">
+        {text}
+      </pre>
+      <p className="mt-2 text-[10px] text-[#8A7E66]">
+        If this keeps happening, paste these details to the organiser. No
+        personal data is included.
+      </p>
+    </div>
+  );
+}
