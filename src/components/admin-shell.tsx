@@ -194,10 +194,6 @@ export function AdminShell({
                 <div className="text-xs text-[#94A3B8]">Event admin</div>
               </div>
             </div>
-                <div className="text-sm font-semibold text-white">GetStampd</div>
-                <div className="text-xs text-[#94A3B8]">Event admin</div>
-              </div>
-            </div>
           </div>
           <nav className="flex-1 space-y-1.5 px-4">
             <NavLinks />
