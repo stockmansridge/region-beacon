@@ -76,25 +76,29 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
       // Fetch offer_summary per venue via the detail RPC in parallel.
       // The list RPC does not currently project offer_summary; a SQL draft
       // exists to extend it for a single round-trip.
-      const detailResults = await Promise.all(
-        venues.map((v) =>
-          supabase
-            .rpc("get_public_venue_by_domain", {
-              _hostname: host,
-              _venue_id: v.venue_id,
-            })
-            .then(({ data }) => {
+      const detailResults: Array<{ venue: VenueRow; offer_summary: string | null }> =
+        await Promise.all(
+          venues.map(async (v) => {
+            try {
+              const { data } = await supabase.rpc("get_public_venue_by_domain", {
+                _hostname: host,
+                _venue_id: v.venue_id,
+              });
               const row = (data?.[0] ?? null) as { offer_summary: string | null } | null;
               return { venue: v, offer_summary: row?.offer_summary ?? null };
-            })
-            .catch(() => ({ venue: v, offer_summary: null as string | null })),
-        ),
-      );
+            } catch {
+              return { venue: v, offer_summary: null };
+            }
+          }),
+        );
       if (cancelled) return;
 
       const offers: OfferVenue[] = detailResults
-        .filter((r) => typeof r.offer_summary === "string" && r.offer_summary.trim().length > 0)
-        .map((r) => ({ ...r.venue, offer_summary: (r.offer_summary as string).trim() }));
+        .filter(
+          (r): r is { venue: VenueRow; offer_summary: string } =>
+            typeof r.offer_summary === "string" && r.offer_summary.trim().length > 0,
+        )
+        .map((r) => ({ ...r.venue, offer_summary: r.offer_summary.trim() }));
 
       const evt = (evtData?.[0] ?? null) as EventRow | null;
       setState({ kind: "ready", event: evt, offers });

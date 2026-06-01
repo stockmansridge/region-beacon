@@ -48,6 +48,7 @@ import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
 import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
+import { Route as LiveSubdomainOffersRouteImport } from './routes/live.$subdomain.offers'
 import { Route as LiveSubdomainMapRouteImport } from './routes/live.$subdomain.map'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
@@ -256,6 +257,11 @@ const LiveSubdomainPrivacyRoute = LiveSubdomainPrivacyRouteImport.update({
   path: '/live/$subdomain/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiveSubdomainOffersRoute = LiveSubdomainOffersRouteImport.update({
+  id: '/live/$subdomain/offers',
+  path: '/live/$subdomain/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveSubdomainMapRoute = LiveSubdomainMapRouteImport.update({
   id: '/live/$subdomain/map',
   path: '/live/$subdomain/map',
@@ -365,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
+  '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/admin/events/': typeof AdminEventsIndexRoute
@@ -417,6 +424,7 @@ export interface FileRoutesByTo {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
+  '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/admin/events': typeof AdminEventsIndexRoute
@@ -471,6 +479,7 @@ export interface FileRoutesById {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
+  '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/admin/events/': typeof AdminEventsIndexRoute
@@ -526,6 +535,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
+    | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/admin/events/'
@@ -578,6 +588,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
+    | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/admin/events'
@@ -631,6 +642,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
+    | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/admin/events/'
@@ -676,6 +688,7 @@ export interface RootRouteChildren {
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
   LiveSubdomainMapRoute: typeof LiveSubdomainMapRoute
+  LiveSubdomainOffersRoute: typeof LiveSubdomainOffersRoute
   LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
   LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
@@ -959,6 +972,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/live/$subdomain/offers': {
+      id: '/live/$subdomain/offers'
+      path: '/live/$subdomain/offers'
+      fullPath: '/live/$subdomain/offers'
+      preLoaderRoute: typeof LiveSubdomainOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/map': {
       id: '/live/$subdomain/map'
       path: '/live/$subdomain/map'
@@ -1133,6 +1153,7 @@ const rootRouteChildren: RootRouteChildren = {
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
   LiveSubdomainMapRoute: LiveSubdomainMapRoute,
+  LiveSubdomainOffersRoute: LiveSubdomainOffersRoute,
   LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
   LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
