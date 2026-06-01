@@ -1,4 +1,12 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
+
+function supabaseProjectRef(): string {
+  try {
+    return new URL(SUPABASE_URL).hostname.split(".")[0] ?? "(unknown)";
+  } catch {
+    return "(unparseable)";
+  }
+}
 
 export const PENDING_ORG_SIGNUP_KEY = "getstampd:pending-organisation-signup";
 const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
