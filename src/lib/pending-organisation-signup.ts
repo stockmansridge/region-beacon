@@ -121,13 +121,6 @@ export function isOrganisationSignupServerSetupError(message: string): boolean {
  */
 export async function completePendingOrganisationSignup(): Promise<CompletePendingResult> {
   const pending = readPendingOrganisationSignup();
-  // eslint-disable-next-line no-console
-  console.info(
-    "[org-signup] pending lookup",
-    pending
-      ? { hasPending: true, pendingEmail: pending.email, businessName: pending.businessName, source: pending.source }
-      : { hasPending: false, origin: typeof window !== "undefined" ? window.location.origin : "(ssr)" },
-  );
   if (!pending) {
     return { ok: false, code: "no_pending", message: "No pending organisation signup found." };
   }
@@ -146,14 +139,9 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
   const currentEmail = (userRes.user.email ?? "").toLowerCase().trim();
   const pendingEmail = (pending.email ?? "").toLowerCase().trim();
 
-  // eslint-disable-next-line no-console
-  console.info("[org-signup] auth check", { currentEmail, pendingEmail, match: currentEmail === pendingEmail });
-
   // Wrong-session protection: don't attach a new organisation to a different
   // existing user.
   if (pendingEmail && currentEmail && currentEmail !== pendingEmail) {
-    // eslint-disable-next-line no-console
-    console.warn("[org-signup] email mismatch — refusing to complete");
     return {
       ok: false,
       code: "email_mismatch",
@@ -173,8 +161,6 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     .limit(1);
 
   if (!existingErr && existing && existing.length > 0) {
-    // eslint-disable-next-line no-console
-    console.info("[org-signup] user already has org membership; clearing pending");
     clearPendingOrganisationSignup();
     return { ok: true, alreadyHadOrganisation: true };
   }
@@ -183,30 +169,17 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     _agency_name: pending.businessName,
     _agency_slug: pending.organisationUrlName,
   };
-  // eslint-disable-next-line no-console
-  console.info("[org-signup] calling create_customer_agency RPC", {
-    supabaseUrl: SUPABASE_URL,
-    projectRef: supabaseProjectRef(),
-    rpc: "create_customer_agency",
-    argKeys: Object.keys(rpcArgs),
-    name: pending.businessName,
-    slug: pending.organisationUrlName,
-  });
   const { error: rpcErr } = await supabase.rpc("create_customer_agency", rpcArgs);
-  // eslint-disable-next-line no-console
-  console.info(
-    "[org-signup] RPC response",
-    rpcErr
-      ? {
-          projectRef: supabaseProjectRef(),
-          rpc: "create_customer_agency",
-          errorCode: rpcErr.code,
-          errorMessage: rpcErr.message,
-          details: (rpcErr as { details?: string }).details,
-          hint: (rpcErr as { hint?: string }).hint,
-        }
-      : { ok: true, projectRef: supabaseProjectRef() },
-  );
+  if (rpcErr) {
+    // eslint-disable-next-line no-console
+    console.warn("[org-signup] create_customer_agency failed", {
+      projectRef: supabaseProjectRef(),
+      code: rpcErr.code,
+      message: rpcErr.message,
+    });
+  }
+
+
 
 
   if (rpcErr) {
