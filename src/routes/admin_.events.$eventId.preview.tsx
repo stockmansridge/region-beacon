@@ -99,7 +99,7 @@ function EventPreview() {
       const [brandingRes, venuesRes, termsRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, logo_path, cover_path")
+          .select("primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, logo_path, cover_path, palette_key, page_background_key, page_background_color, card_background_color")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
