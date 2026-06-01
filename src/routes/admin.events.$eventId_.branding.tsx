@@ -1092,15 +1092,24 @@ function PaletteSelector({
 function BackgroundSelector({
   value,
   paletteKey,
+  primaryColor,
+  accentColor,
   onChange,
   disabled,
 }: {
   value: string;
   paletteKey: string;
+  primaryColor?: string;
+  accentColor?: string;
   onChange: (key: string) => void;
   disabled?: boolean;
 }) {
-  const palette = getPaletteOrDefault(paletteKey || null);
+  const palette = (() => {
+    if (paletteKey === "custom" || (!paletteKey && (primaryColor || accentColor))) {
+      return buildCustomPalette(primaryColor ?? null, accentColor ?? null);
+    }
+    return getPaletteOrDefault(paletteKey || null);
+  })();
   const selected = getBackground(value || null);
   return (
     <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
