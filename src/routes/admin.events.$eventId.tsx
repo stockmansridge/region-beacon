@@ -3102,7 +3102,7 @@ function BrandingSummary({ branding }: { branding: Branding }) {
         ? <span>{bg.label}</span>
         : <span className="text-muted-foreground">Default</span>,
   ]);
-  if (branding.card_background_color) {
+  if (isCustomBg && branding.card_background_color) {
     rows.push(["Card background", <ColorSwatch key="cbg" value={branding.card_background_color} />]);
   }
   rows.push(["Logo", branding.logo_path ? "Uploaded" : "—"]);
