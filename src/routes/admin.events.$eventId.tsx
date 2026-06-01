@@ -1638,7 +1638,7 @@ function EventDetail() {
 
       />
 
-      <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs">
+      <div className="-mt-2 mb-1 flex flex-wrap items-center gap-2 pb-1 text-xs">
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
         >
