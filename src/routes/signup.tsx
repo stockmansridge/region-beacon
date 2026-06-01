@@ -149,7 +149,7 @@ function SignupPage() {
       password: data.password,
       options: {
         data: { full_name: data.fullName },
-        emailRedirectTo: window.location.origin + "/admin/login",
+        emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
       },
     });
 
