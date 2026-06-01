@@ -73,7 +73,10 @@ function TenantEventPage() {
           "get_public_event_by_agency_and_slug",
           { _sub: agencySlug, _event_slug: eventSlug },
         );
-        if (!error) evt = (data?.[0] ?? null) as PublicEvent | null;
+        if (!error) {
+          const raw = (data?.[0] ?? null) as PublicEvent | null;
+          evt = raw ? applyPaletteToEvent(raw) : null;
+        }
       } catch {
         evt = null;
       }
