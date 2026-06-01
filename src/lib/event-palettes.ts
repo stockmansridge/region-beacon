@@ -214,6 +214,8 @@ export function applyPaletteToEvent<
     accent_color: string | null;
   },
 >(event: T): T {
+  // For 'custom' palette_key, keep event.primary_color/accent_color as-is.
+  if (event.palette_key === "custom") return event;
   const palette = getPalette(event.palette_key ?? null);
   if (!palette) return event;
   return {
