@@ -30,6 +30,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showCompleteSignupBanner, setShowCompleteSignupBanner] = useState(false);
   const [mismatch, setMismatch] = useState<{
     currentEmail: string;
     pendingEmail: string;
@@ -46,6 +47,12 @@ function Login() {
   // URL after consuming the email confirmation link.
   useEffect(() => {
     cleanAuthUrlFragments();
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("complete_signup") === "1") {
+        setShowCompleteSignupBanner(true);
+      }
+    }
   }, []);
 
   // If authenticated, decide whether to auto-complete pending signup,
@@ -190,6 +197,15 @@ function Login() {
           Restricted to authorised event and organisation administrators. Visitor accounts cannot
           sign in here.
         </p>
+
+        {showCompleteSignupBanner && (
+          <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-foreground">
+            <strong className="font-semibold">Email confirmed.</strong> Sign in to finish creating
+            your organisation.
+          </div>
+        )}
+
+
 
 
         {!showReset ? (

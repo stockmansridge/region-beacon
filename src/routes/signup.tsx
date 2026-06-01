@@ -228,29 +228,12 @@ function SignupPage() {
         </Link>
 
         {auth.status === "authenticated" && stage !== "check-email" && stage !== "done" ? (
-          <div className="rounded-2xl border bg-card p-8 shadow-sm">
-            <h1 className="text-xl font-semibold">You're already signed in</h1>
-            <p className="mt-3 text-sm text-muted-foreground">
-              You're currently signed in as{" "}
-              <strong>{auth.email ?? "another account"}</strong>. To create a new
-              organisation under a different email, sign out first.
-            </p>
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-              <Link
-                to="/admin"
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
-              >
-                Continue to admin
-              </Link>
-              <button
-                type="button"
-                onClick={handleSignOutAndRestart}
-                className="inline-flex h-10 items-center justify-center rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
-              >
-                Sign out and create a new organisation
-              </button>
-            </div>
-          </div>
+          <AuthenticatedRecoveryForm
+            email={auth.email ?? ""}
+            onSignOut={handleSignOutAndRestart}
+            onCreated={() => navigate({ to: "/admin", replace: true })}
+          />
+
         ) : stage === "check-email" ? (
           <div className="rounded-2xl border bg-card p-8 shadow-sm">
             <h1 className="text-xl font-semibold">Check your email</h1>
@@ -423,3 +406,135 @@ function Field({
     </div>
   );
 }
+
+function AuthenticatedRecoveryForm({
+  email,
+  onSignOut,
+  onCreated,
+}: {
+  email: string;
+  onSignOut: () => void | Promise<void>;
+  onCreated: () => void;
+}) {
+  const [businessName, setBusinessName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugDirty, setSlugDirty] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const computedSlug = slugDirty ? slug : slugifyName(businessName);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setFieldErrors({});
+    const errs: Record<string, string> = {};
+    if (!businessName.trim()) errs.businessName = "Organisation name is required.";
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(computedSlug) || computedSlug.length < 2) {
+      errs.slug = "Use lowercase letters, numbers and hyphens (min 2 chars).";
+    }
+    if (Object.keys(errs).length) {
+      setFieldErrors(errs);
+      return;
+    }
+    setBusy(true);
+    // eslint-disable-next-line no-console
+    console.info("[org-signup] recovery: calling create_customer_agency", {
+      name: businessName.trim(),
+      slug: computedSlug,
+    });
+    const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
+      _agency_name: businessName.trim(),
+      _agency_slug: computedSlug,
+    });
+    setBusy(false);
+    if (rpcErr) {
+      const msg = rpcErr.message || "";
+      // eslint-disable-next-line no-console
+      console.warn("[org-signup] recovery RPC error", msg);
+      if (/agency_slug_taken/i.test(msg)) {
+        setFieldErrors({ slug: "That Organisation URL name is already taken." });
+      } else if (/invalid_agency_slug/i.test(msg)) {
+        setFieldErrors({ slug: "Organisation URL name is invalid." });
+      } else if (/invalid_agency_name/i.test(msg)) {
+        setFieldErrors({ businessName: "Organisation name is invalid." });
+      } else {
+        setError(msg || "Could not create organisation.");
+      }
+      return;
+    }
+    clearPendingOrganisationSignup();
+    onCreated();
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card p-8 shadow-sm">
+      <h1 className="text-xl font-semibold">Create your organisation</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        You're signed in as <strong>{email || "this account"}</strong>. Enter your
+        organisation details to finish setup, or sign out to use a different email.
+      </p>
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <Field label="Organisation name" error={fieldErrors.businessName}>
+          <input
+            type="text"
+            value={businessName}
+            onChange={(e) => {
+              setBusinessName(e.target.value);
+              if (!slugDirty) setSlug(slugifyName(e.target.value));
+            }}
+            maxLength={200}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+          />
+        </Field>
+        <Field
+          label="Organisation URL name"
+          hint="Lowercase letters, numbers and hyphens."
+          error={fieldErrors.slug}
+        >
+          <div className="flex items-center overflow-hidden rounded-md border bg-background">
+            <span className="px-3 text-xs text-muted-foreground">getstampd.com.au/w/</span>
+            <input
+              type="text"
+              value={computedSlug}
+              onChange={(e) => {
+                setSlugDirty(true);
+                setSlug(e.target.value.toLowerCase());
+              }}
+              maxLength={60}
+              className="h-10 flex-1 border-0 bg-transparent px-2 text-sm font-mono focus:outline-none"
+              placeholder="acme-tours"
+            />
+          </div>
+        </Field>
+        {error && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={busy}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+        >
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+          Create organisation
+        </button>
+      </form>
+      <div className="mt-4 flex items-center justify-between text-xs">
+        <Link to="/admin" className="text-muted-foreground hover:text-foreground">
+          Continue to admin
+        </Link>
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          Sign out and use a different email
+        </button>
+      </div>
+    </div>
+  );
+}
+
