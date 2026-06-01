@@ -338,21 +338,21 @@ function EventDetail() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-
-
-
+  const [basicsSaveSuccess, setBasicsSaveSuccess] = useState(false);
 
   const [isEditingCheckin, setIsEditingCheckin] = useState(false);
   const [checkinForm, setCheckinForm] = useState<CheckinEditForm | null>(null);
   const [checkinSaving, setCheckinSaving] = useState(false);
   const [checkinSaveError, setCheckinSaveError] = useState<string | null>(null);
   const [checkinValidationError, setCheckinValidationError] = useState<string | null>(null);
+  const [checkinSaveSuccess, setCheckinSaveSuccess] = useState(false);
 
   const [isEditingLeaderboard, setIsEditingLeaderboard] = useState(false);
   const [lbForm, setLbForm] = useState<LeaderboardEditForm | null>(null);
   const [lbSaving, setLbSaving] = useState(false);
   const [lbSaveError, setLbSaveError] = useState<string | null>(null);
   const [lbValidationError, setLbValidationError] = useState<string | null>(null);
+  const [lbSaveSuccess, setLbSaveSuccess] = useState(false);
 
   // Venue editor: "new" = creating, string = editing existing id, null = closed.
   const [venueEditingId, setVenueEditingId] = useState<string | "new" | null>(null);
@@ -705,6 +705,56 @@ function EventDetail() {
     };
   }, [agencyId, eventId, reloadKey, auth.session?.user.id, agency.status]);
 
+  // Inline-editable tabs: hydrate form state from the loaded bundle so users
+  // can edit directly inside each tab without clicking an "Edit" toggle.
+  // Only hydrates when the corresponding form is null, so in-flight edits
+  // survive background bundle refreshes after a save.
+  useEffect(() => {
+    if (!bundle || !canEdit) return;
+    if (!form) {
+      const e = bundle.event;
+      setForm({
+        name: e.name ?? "",
+        description: e.description ?? "",
+        timezone: e.timezone ?? "",
+        starts_at: toLocalInput(e.starts_at),
+        ends_at: toLocalInput(e.ends_at),
+      });
+      setIsEditing(true);
+    }
+    if (!checkinForm) {
+      setCheckinForm({
+        one_checkin_per_venue: bundle.checkin?.one_checkin_per_venue ?? true,
+        minimum_seconds_between_checkins: String(
+          bundle.checkin?.minimum_seconds_between_checkins ?? 0,
+        ),
+        allow_manual_admin_checkins: bundle.checkin?.allow_manual_admin_checkins ?? false,
+        max_checkins_per_passport_per_day:
+          bundle.checkin?.max_checkins_per_passport_per_day === null ||
+          bundle.checkin?.max_checkins_per_passport_per_day === undefined
+            ? ""
+            : String(bundle.checkin.max_checkins_per_passport_per_day),
+      });
+      setIsEditingCheckin(true);
+    }
+    if (!lbForm) {
+      const lb = bundle.leaderboard;
+      const mode = (lb?.display_mode ?? "first_name_last_initial") as LeaderboardDisplayMode;
+      setLbForm({
+        is_enabled: lb?.is_enabled ?? false,
+        display_mode: (LEADERBOARD_DISPLAY_MODES as readonly string[]).includes(mode)
+          ? mode
+          : "first_name_last_initial",
+        show_first_name: lb?.show_first_name ?? true,
+        show_last_initial: lb?.show_last_initial ?? true,
+        show_visit_count: lb?.show_visit_count ?? false,
+        hide_below_checkins: String(lb?.hide_below_checkins ?? 0),
+        allow_visitor_opt_out: lb?.allow_visitor_opt_out ?? true,
+      });
+      setIsEditingLeaderboard(true);
+    }
+  }, [bundle, canEdit, form, checkinForm, lbForm]);
+
   function startEdit() {
     if (!bundle) return;
     const e = bundle.event;
@@ -764,8 +814,8 @@ function EventDetail() {
       setSaveError("Could not save changes. Please try again.");
       return;
     }
-    setIsEditing(false);
-    setForm(null);
+    setBasicsSaveSuccess(true);
+    window.setTimeout(() => setBasicsSaveSuccess(false), 2500);
     setReloadKey((k) => k + 1);
   }
 
@@ -853,8 +903,8 @@ function EventDetail() {
       setCheckinSaveError("Could not save check-in settings. Please try again.");
       return;
     }
-    setIsEditingCheckin(false);
-    setCheckinForm(null);
+    setCheckinSaveSuccess(true);
+    window.setTimeout(() => setCheckinSaveSuccess(false), 2500);
     setReloadKey((k) => k + 1);
   }
 
@@ -932,8 +982,8 @@ function EventDetail() {
       setLbSaveError("Could not save leaderboard settings. Please try again.");
       return;
     }
-    setIsEditingLeaderboard(false);
-    setLbForm(null);
+    setLbSaveSuccess(true);
+    window.setTimeout(() => setLbSaveSuccess(false), 2500);
     setReloadKey((k) => k + 1);
   }
 
@@ -1561,90 +1611,54 @@ function EventDetail() {
     <>
       <PageHeader
         title={event.name}
-        description={
-          isEditing
-            ? `Editing basics · status: ${event.status}`
-            : undefined
-        }
+        description={undefined}
         actions={
-          isEditing ? (
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Link
+              to="/admin/events/$eventId/preview"
+              params={{ eventId: bundle.event.id }}
+              target="_blank"
+              className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+            >
+              Preview customer page
+            </Link>
+            {canEdit && (
               <button
                 type="button"
-                onClick={cancelEdit}
-                disabled={saving}
-                className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                onClick={archiveEvent}
+                disabled={deleting}
+                title="Archive this event (soft delete). Existing records are preserved."
+                className="inline-flex h-9 items-center rounded-lg border border-destructive/40 bg-destructive/5 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
               >
-                Cancel
+                {deleting ? "Archiving…" : "Archive event"}
               </button>
-              <button
-                type="button"
-                onClick={saveEdit}
-                disabled={saving}
-                className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-              >
-                {saving ? "Saving…" : "Save"}
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                to="/admin/events/$eventId/preview"
-                params={{ eventId: bundle.event.id }}
-                target="_blank"
-                className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
-              >
-                Preview customer page
-              </Link>
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={startEdit}
-                  className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
-                >
-                  Edit basics
-                </button>
-              )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={archiveEvent}
-                  disabled={deleting}
-                  title="Archive this event (soft delete). Existing records are preserved."
-                  className="inline-flex h-9 items-center rounded-lg border border-destructive/40 bg-destructive/5 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                >
-                  {deleting ? "Archiving…" : "Archive event"}
-                </button>
-              )}
-            </div>
-          )
+            )}
+          </div>
         }
 
       />
 
-      {!isEditing && (
-        <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs">
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
+      <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs">
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
+        >
+          {statusLabel}
+        </span>
+        {activeSubdomain ? (
+          <a
+            href={`https://${activeSubdomain}.getstampd.com.au`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
           >
-            {statusLabel}
+            Live at {activeSubdomain}.getstampd.com.au
+          </a>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-700 ring-1 ring-amber-200">
+            Public address not claimed
           </span>
-          {activeSubdomain ? (
-            <a
-              href={`https://${activeSubdomain}.getstampd.com.au`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
-            >
-              Live at {activeSubdomain}.getstampd.com.au
-            </a>
-          ) : (
-            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-700 ring-1 ring-amber-200">
-              Public address not claimed
-            </span>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       <details className="group rounded-xl border bg-card">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
@@ -1765,6 +1779,29 @@ function EventDetail() {
                 <p className="text-xs text-muted-foreground">
                   Internal event URL name, public event code, and status remain read-only here.
                 </p>
+                {basicsSaveSuccess && (
+                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    Basics saved.
+                  </div>
+                )}
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    disabled={saving}
+                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Discard changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEdit}
+                    disabled={saving}
+                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                </div>
               </div>
             ) : (
               <DefList
@@ -1980,7 +2017,7 @@ function EventDetail() {
                     disabled={checkinSaving}
                     className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
                   >
-                    Cancel
+                    Discard changes
                   </button>
                   <button
                     type="button"
