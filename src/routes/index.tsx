@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GetStampdLogo, GetStampdMark } from "@/components/brand";
-import { Mail, LifeBuoy, ShieldCheck } from "lucide-react";
+import { Mail, LifeBuoy, ShieldCheck, Sparkles } from "lucide-react";
 import { useTenantSubdomain } from "@/lib/tenant-host";
 import { LivePublicPage } from "./live.$subdomain.index";
 
