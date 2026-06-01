@@ -1769,7 +1769,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Public address" id="section-public-address">
+          <Section title="Public address" id="section-public-address" tab="overview">
             <PublicAddressCard
               agencyId={agencyId}
               eventId={event.id}
