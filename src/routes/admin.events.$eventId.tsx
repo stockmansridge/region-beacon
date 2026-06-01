@@ -2980,13 +2980,13 @@ function Section({
     <section
       id={id}
       hidden={isHidden}
-      className="scroll-mt-24 rounded-xl border bg-card p-6"
+      className="scroll-mt-24 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]"
     >
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <h3 className="text-base font-semibold text-[#111827]">{title}</h3>
       {description && (
-        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        <p className="mt-1 text-sm leading-6 text-[#64748B]">{description}</p>
       )}
-      <div className="mt-4">{children}</div>
+      <div className="mt-5">{children}</div>
     </section>
   );
 }
