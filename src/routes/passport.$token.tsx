@@ -11,10 +11,6 @@ import {
   type PassportStampVenue,
 } from "@/lib/passport-stamps";
 
-import {
-  DEFAULT_VENUE_LABEL_PLURAL,
-  DEFAULT_VENUE_LABEL_SINGULAR,
-} from "@/lib/venue-labels";
 import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
 import { PoweredByGetStampd } from "@/components/brand";
 
@@ -70,13 +66,7 @@ function PassportPage() {
     (async () => {
       setState({ kind: "loading" });
 
-      const [passportRes, stampsRes] = await Promise.all([
-        supabase.rpc("get_passport_by_token", { _raw_token: token }),
-        // New RPC — may not exist yet on staging. Failures are non-fatal.
-        supabase.rpc("get_passport_stamps_by_token" as never, {
-          _raw_token: token,
-        } as never),
-      ]);
+      const passportRes = await supabase.rpc("get_passport_by_token", { _raw_token: token });
 
       if (cancelled) return;
 
@@ -120,24 +110,8 @@ function PassportPage() {
         }
       }
 
-      let stamps: StampsSummary | null = null;
-      const stampRows = ((stampsRes as { data?: StampRow[] | null }).data ??
-        null) as StampRow[] | null;
-      if (!(stampsRes as { error?: unknown }).error && stampRows && stampRows.length > 0) {
-        const first = stampRows[0];
-        stamps = {
-          eventName: first.event_name,
-          labelSingular:
-            first.venue_label_singular?.trim() || DEFAULT_VENUE_LABEL_SINGULAR,
-          labelPlural:
-            first.venue_label_plural?.trim() || DEFAULT_VENUE_LABEL_PLURAL,
-          totalVenues: first.total_venues ?? stampRows.length,
-          stampedCount:
-            first.stamped_count ??
-            stampRows.filter((s) => s.is_stamped).length,
-          venues: stampRows,
-        };
-      }
+      const stamps = await loadPassportStampState(token);
+      if (cancelled) return;
 
       // Event name fallback: stamps RPC > passports.events lookup (best-effort).
       let eventName: string | null = stamps?.eventName ?? null;
