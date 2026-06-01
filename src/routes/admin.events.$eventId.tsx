@@ -2834,6 +2834,79 @@ function ColorSwatch({ value }: { value: string | null }) {
   );
 }
 
+function BrandingSummary({ branding }: { branding: Branding }) {
+  const paletteKey = branding.palette_key ?? null;
+  const isCustomPalette = paletteKey === "custom" || (!paletteKey && (branding.primary_color || branding.accent_color));
+  const palette = resolveEventPalette({
+    palette_key: paletteKey,
+    primary_color: branding.primary_color,
+    accent_color: branding.accent_color,
+  });
+  const bg = getBackground(branding.page_background_key ?? null);
+  const swatches: Array<{ label: string; value: string }> = [
+    { label: "Primary", value: palette.primary },
+    { label: "Accent", value: palette.accent },
+    { label: "Page bg", value: palette.pageBg },
+    { label: "Card bg", value: branding.card_background_color || palette.cardBg },
+  ];
+
+  const rows: Array<[string, React.ReactNode]> = [];
+  rows.push([
+    "Colour palette",
+    isCustomPalette ? (
+      <span>Custom</span>
+    ) : (
+      <span>{palette.label}</span>
+    ),
+  ]);
+  rows.push([
+    "Palette preview",
+    <span key="sw" className="inline-flex flex-wrap items-center gap-3">
+      {swatches.map((s) => (
+        <span key={s.label} className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-block h-4 w-4 rounded border"
+            style={{ backgroundColor: s.value }}
+            aria-hidden
+          />
+          <span className="text-xs text-muted-foreground">{s.label}</span>
+        </span>
+      ))}
+    </span>,
+  ]);
+  if (isCustomPalette) {
+    rows.push(["Primary colour", <ColorSwatch key="p" value={branding.primary_color} />]);
+    rows.push(["Accent colour", <ColorSwatch key="a" value={branding.accent_color} />]);
+  } else if (paletteKey) {
+    rows.push([
+      "Source colours",
+      <span className="text-xs text-muted-foreground">
+        Primary &amp; accent are generated from the selected palette.
+      </span>,
+    ]);
+  }
+  rows.push([
+    "Page background",
+    branding.page_background_key === "custom_color" && branding.page_background_color
+      ? (
+        <span className="inline-flex items-center gap-2">
+          <span>Custom colour</span>
+          <ColorSwatch value={branding.page_background_color} />
+        </span>
+      )
+      : bg
+        ? <span>{bg.label}</span>
+        : <span className="text-muted-foreground">Default</span>,
+  ]);
+  if (branding.card_background_color) {
+    rows.push(["Card background", <ColorSwatch key="cbg" value={branding.card_background_color} />]);
+  }
+  rows.push(["Logo", branding.logo_path ? "Uploaded" : "—"]);
+  rows.push(["Cover image", branding.cover_path ? "Uploaded" : "—"]);
+
+  return <DefList rows={rows} />;
+}
+
 function EmptyNotice({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
