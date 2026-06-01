@@ -11,6 +11,16 @@ import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { matchRootDomain, tenantHost } from "@/lib/domains";
+import {
+  EMPTY_CURRENT_EVENT_PASSPORT,
+  resolveCurrentEventPassport,
+  type CurrentEventPassportResult,
+} from "@/lib/use-current-event-passport";
+import {
+  EMPTY_PASSPORT_STAMP_STATE,
+  loadPassportStampState,
+  type PassportStampState,
+} from "@/lib/passport-stamps";
 
 export const Route = createFileRoute("/live/$subdomain/map")({
   head: () => ({ meta: [{ title: "Trail Map" }] }),
@@ -75,13 +85,8 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapDiag, setMapDiag] = useState<MapDiagnostics>(INITIAL_DIAG);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const [hasPassport, setHasPassport] = useState(false);
-  const [stampDiag, setStampDiag] = useState<{
-    savedPassportKey: string | null;
-    savedPassportFound: boolean;
-    stampRpcError: string | null;
-    stampRowCount: number;
-  }>({ savedPassportKey: null, savedPassportFound: false, stampRpcError: null, stampRowCount: 0 });
+  const [passportState, setPassportState] = useState<CurrentEventPassportResult>(EMPTY_CURRENT_EVENT_PASSPORT);
+  const [stampState, setStampState] = useState<PassportStampState>(EMPTY_PASSPORT_STAMP_STATE);
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<VenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
