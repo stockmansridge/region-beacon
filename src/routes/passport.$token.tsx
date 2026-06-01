@@ -394,6 +394,7 @@ function PassportView({
         eventName={eventName ?? "Your passport"}
         primaryColor={PRIMARY}
         accentColor={ACCENT}
+        paletteKey={paletteKey}
         showBottomNav={false}
         topLeft={
           <span
