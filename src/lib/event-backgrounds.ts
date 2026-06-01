@@ -22,7 +22,11 @@ export type EventBackgroundKey =
   | "soft_gradient"
   | "festival_glow"
   | "country_texture"
-  | "dark_premium";
+  | "dark_premium"
+  | "soft_green_tint"
+  | "pale_blue"
+  | "soft_gold"
+  | "custom_color";
 
 export type EventBackground = {
   key: EventBackgroundKey;
@@ -188,6 +192,37 @@ export const EVENT_BACKGROUNDS: ReadonlyArray<EventBackground> = [
         backgroundImage: `radial-gradient(circle at 30% 30%, ${rgba(p.accent, 0.5)}, transparent 70%)`,
       };
     },
+  },
+  {
+    key: "soft_green_tint",
+    label: "Soft green tint",
+    description: "Pale green wash — gentle, vineyard-friendly.",
+    build: () => ({ backgroundColor: "#EEF4EC" }),
+    swatch: () => ({ backgroundColor: "#EEF4EC" }),
+  },
+  {
+    key: "pale_blue",
+    label: "Pale blue",
+    description: "Cool light blue surface.",
+    build: () => ({ backgroundColor: "#EAF1F7" }),
+    swatch: () => ({ backgroundColor: "#EAF1F7" }),
+  },
+  {
+    key: "soft_gold",
+    label: "Soft gold",
+    description: "Warm pale gold surface.",
+    build: () => ({ backgroundColor: "#F6EFD9" }),
+    swatch: () => ({ backgroundColor: "#F6EFD9" }),
+  },
+  {
+    key: "custom_color",
+    label: "Custom colour",
+    description: "Pick your own hex page background (and optional card colour).",
+    build: () => ({ backgroundColor: "#FFFFFF" }),
+    swatch: () => ({
+      backgroundImage:
+        "linear-gradient(135deg, #fde68a 0%, #f9a8d4 50%, #93c5fd 100%)",
+    }),
   },
 ];
 

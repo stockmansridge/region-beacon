@@ -230,7 +230,12 @@ export function PublicEventNav({
       {/* Top header: event name + desktop inline nav */}
       <nav
         aria-label="Event navigation"
-        className="mx-auto mt-3 flex w-full max-w-5xl items-center justify-between rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]/90 px-4 py-3 shadow-sm backdrop-blur"
+        className="mx-auto mt-3 flex w-full max-w-5xl items-center justify-between rounded-2xl border px-4 py-3 shadow-sm backdrop-blur"
+        style={{
+          borderColor: "var(--event-border, #E6DCC7)",
+          background:
+            "color-mix(in srgb, var(--event-card-bg, #FBF5E8) 90%, transparent)",
+        }}
       >
         <Link
           to="/"
@@ -249,8 +254,13 @@ export function PublicEventNav({
       {/* Fixed bottom mobile nav: Passport / Trail Map / Venues / More */}
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E6DCC7] bg-[#FBF5E8]/95 backdrop-blur md:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          borderColor: "var(--event-border, #E6DCC7)",
+          background:
+            "color-mix(in srgb, var(--event-card-bg, #FBF5E8) 95%, transparent)",
+        }}
       >
         <ul className="mx-auto flex h-14 max-w-md items-stretch">
           <BottomItem active={isActive("passport")} accent={accent} primary={primary}>
@@ -380,8 +390,12 @@ function MoreSheet({
     >
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-[#E6DCC7] bg-[#FBF5E8] p-4 shadow-xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+        className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t p-4 shadow-xl"
+        style={{
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)",
+          borderColor: "var(--event-border, #E6DCC7)",
+          background: "var(--event-card-bg, #FBF5E8)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">

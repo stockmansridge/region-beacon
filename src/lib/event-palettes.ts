@@ -16,7 +16,10 @@ export type EventPaletteKey =
   | "festival_bright"
   | "premium_wine"
   | "coastal_trail"
-  | "orchard_country";
+  | "orchard_country"
+  | "custom";
+
+export const CUSTOM_PALETTE_KEY: EventPaletteKey = "custom";
 
 export type EventPalette = {
   key: EventPaletteKey;
@@ -137,6 +140,48 @@ export const EVENT_PALETTES: ReadonlyArray<EventPalette> = [
   },
 ];
 
+/**
+ * Build a runtime palette from custom primary/accent hex inputs. Surface
+ * colours are derived from the classic_vineyard palette so cards/text
+ * stay readable when an event picks the Custom option.
+ */
+export function buildCustomPalette(
+  primaryHex: string | null | undefined,
+  accentHex: string | null | undefined,
+): EventPalette {
+  const base = EVENT_PALETTES[0];
+  return {
+    ...base,
+    key: "custom" as EventPaletteKey,
+    label: "Custom",
+    description: "Custom brand colours",
+    primary: primaryHex && /^#[0-9A-Fa-f]{6}$/.test(primaryHex) ? primaryHex : base.primary,
+    accent: accentHex && /^#[0-9A-Fa-f]{6}$/.test(accentHex) ? accentHex : base.accent,
+    visitedStamp: primaryHex && /^#[0-9A-Fa-f]{6}$/.test(primaryHex) ? primaryHex : base.visitedStamp,
+    pinDefault: accentHex && /^#[0-9A-Fa-f]{6}$/.test(accentHex) ? accentHex : base.pinDefault,
+  };
+}
+
+/**
+ * Resolve the active palette for an event row. Honours palette_key when
+ * it matches a curated palette; falls back to a custom palette built
+ * from primary_color/accent_color when palette_key is 'custom' or null.
+ */
+export function resolveEventPalette(input: {
+  palette_key?: string | null;
+  primary_color?: string | null;
+  accent_color?: string | null;
+}): EventPalette {
+  if (input.palette_key && input.palette_key !== "custom") {
+    const p = getPalette(input.palette_key);
+    if (p) return p;
+  }
+  if (input.palette_key === "custom" || input.primary_color || input.accent_color) {
+    return buildCustomPalette(input.primary_color ?? null, input.accent_color ?? null);
+  }
+  return getPaletteOrDefault(null);
+}
+
 export const DEFAULT_PALETTE_KEY: EventPaletteKey = "classic_vineyard";
 
 const PALETTE_INDEX: Record<string, EventPalette> = Object.fromEntries(
@@ -169,6 +214,8 @@ export function applyPaletteToEvent<
     accent_color: string | null;
   },
 >(event: T): T {
+  // For 'custom' palette_key, keep event.primary_color/accent_color as-is.
+  if (event.palette_key === "custom") return event;
   const palette = getPalette(event.palette_key ?? null);
   if (!palette) return event;
   return {

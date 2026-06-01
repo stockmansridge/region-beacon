@@ -69,11 +69,15 @@ export function PublicLegalShell({
   activeOverride?: "home" | "join" | "venues" | "leaderboard";
   children: React.ReactNode;
 }) {
-  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
+  const b = useEventBrandingKeys(subdomain);
   return (
     <EventPaletteScope
-      paletteKey={paletteKey}
-      backgroundKey={backgroundKey}
+      paletteKey={b.paletteKey}
+      backgroundKey={b.backgroundKey}
+      primaryColor={b.primaryColor}
+      accentColor={b.accentColor}
+      pageBackgroundColor={b.pageBackgroundColor}
+      cardBackgroundColor={b.cardBackgroundColor}
       className="min-h-screen px-4 py-4"
     >
       <div className="mx-auto max-w-5xl">
