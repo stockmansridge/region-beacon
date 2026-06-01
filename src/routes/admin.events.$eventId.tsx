@@ -1828,6 +1828,27 @@ function EventDetail() {
             />
           </Section>
 
+          <Section title="Marketing assets" id="section-marketing" tab="overview" description="Printable poster with a QR code linking to your public event page.">
+            <AdminEventPoster
+              canEdit={canEdit}
+              event={{
+                name: event.name,
+                slug: event.slug,
+                public_slug: event.public_slug,
+                description: event.description,
+                starts_at: event.starts_at,
+                ends_at: event.ends_at,
+                timezone: event.timezone,
+              }}
+              branding={branding}
+              logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+              coverUrl={getEventAssetPublicUrl(branding?.cover_path)}
+              activePublicSubdomain={activeSubdomain}
+            />
+          </Section>
+
+
+
           <Section title="Terms & privacy" id="section-terms" tab="terms">
             {terms ? (
               <>
