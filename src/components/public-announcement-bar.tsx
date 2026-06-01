@@ -98,7 +98,7 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
     const k = dismissKeyFor(a);
     next.add(k);
     setDismissed(next);
-    console.info("[announcement] dismissed", { subdomain, key: k });
+    
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(
