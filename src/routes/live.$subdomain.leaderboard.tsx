@@ -134,7 +134,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   }, [subdomain]);
 
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8 sm:py-12">
+    <EventPaletteScope paletteKey={paletteKey} className="min-h-screen px-4 py-8 sm:py-12">
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav subdomain={subdomain} eventId={eventId} activeOverride="leaderboard" />
       <div className="mx-auto max-w-xl">
@@ -185,7 +185,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
           </Link>
         </div>
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }
 
