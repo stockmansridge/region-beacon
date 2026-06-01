@@ -543,7 +543,7 @@ function AssetField({
         <p className="mt-2 text-xs text-muted-foreground">{helpText}</p>
         {!canEdit && (
           <p className="mt-1 text-xs text-muted-foreground">
-            Only agency owners and admins can change images.
+            Only organisation owners and admins can change images.
           </p>
         )}
       </div>
