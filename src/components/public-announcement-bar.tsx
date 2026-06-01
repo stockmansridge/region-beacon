@@ -80,35 +80,25 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
         return;
       }
       const list = (data ?? []) as PublicAnnouncement[];
-      console.info("[announcement] loaded", {
-        host,
-        count: list.length,
-        active: list.filter((r) => (r.message ?? "").trim()).length,
-      });
       setRows(list);
     })();
+
     return () => {
       cancelled = true;
     };
   }, [subdomain]);
 
   const visible = useMemo(() => {
-    const out = rows.filter((r) => (r.message ?? "").trim() && !dismissed.has(dismissKeyFor(r)));
-    if (rows.length > 0 && out.length === 0) {
-      console.info("[announcement] all hidden by dismissal", {
-        total: rows.length,
-        dismissedKeys: Array.from(dismissed),
-      });
-    }
-    return out;
+    return rows.filter((r) => (r.message ?? "").trim() && !dismissed.has(dismissKeyFor(r)));
   }, [rows, dismissed]);
+
 
   function dismiss(a: PublicAnnouncement) {
     const next = new Set(dismissed);
     const k = dismissKeyFor(a);
     next.add(k);
     setDismissed(next);
-    console.info("[announcement] dismissed", { subdomain, key: k });
+    
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(

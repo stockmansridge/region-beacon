@@ -152,7 +152,7 @@ function EventPreview() {
         <div className="w-full max-w-md rounded-2xl border bg-card p-8 text-center">
           <h1 className="text-lg font-semibold">Not found</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This event does not belong to your selected agency, or it does not exist.
+            This event does not belong to your selected organisation, or it does not exist.
           </p>
           <Link
             to="/admin/events"

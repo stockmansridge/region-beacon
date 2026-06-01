@@ -119,9 +119,8 @@ export default {
       return handleWorkerHealth(request);
     }
 
-    console.log("[ssr] request", { host, pathname: url.pathname, classification });
-
     try {
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response, {

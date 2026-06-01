@@ -300,14 +300,14 @@ function BrandingEditor() {
       .eq("agency_id", agencyId)
       .maybeSingle();
 
-    console.info("[branding-save] precheck", {
-      event_id: bundle.event.id,
-      agency_id: agencyId,
-      existingFound: Boolean(existing),
-      existingErrorCode: existingErr?.code ?? null,
-      existingErrorMessage: existingErr?.message ?? null,
-      payloadKeys: Object.keys(fullPayload),
-    });
+    if (existingErr) {
+      // eslint-disable-next-line no-console
+      console.warn("[branding-save] precheck failed", {
+        code: existingErr.code,
+        message: existingErr.message,
+      });
+    }
+
 
     async function writeRow(payload: Record<string, unknown>, mode: "update" | "insert") {
       if (!bundle) return { row: null, error: { message: "Internal error." } as any };
@@ -354,22 +354,15 @@ function BrandingEditor() {
       }
     }
 
-    console.info("[branding-save] write", {
-      mode,
-      ok: !writeErr,
-      errorCode: (writeErr as any)?.code ?? null,
-      errorMessage: writeErr?.message ?? null,
-      errorDetails: (writeErr as any)?.details ?? null,
-      errorHint: (writeErr as any)?.hint ?? null,
-      saved: savedRow
-        ? {
-            palette_key: (savedRow as any).palette_key,
-            page_background_key: (savedRow as any).page_background_key,
-            page_background_color: (savedRow as any).page_background_color,
-            card_background_color: (savedRow as any).card_background_color,
-          }
-        : null,
-    });
+    if (writeErr) {
+      // eslint-disable-next-line no-console
+      console.warn("[branding-save] write failed", {
+        mode,
+        code: (writeErr as any)?.code ?? null,
+        message: writeErr.message ?? null,
+      });
+    }
+
 
     if (writeErr) {
       setSaving(false);
