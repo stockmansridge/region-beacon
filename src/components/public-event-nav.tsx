@@ -25,6 +25,7 @@ export function PublicEventNav({
   canRegister = true,
   activeOverride,
   passportHref: passportHrefOverride,
+  eventId,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -37,13 +38,15 @@ export function PublicEventNav({
   activeOverride?: ActiveTarget | "join";
   /** Explicit passport href override; if omitted, derived from localStorage. */
   passportHref?: string;
+  /** Current public event id for event-scoped saved passport lookup. */
+  eventId?: string | null;
 }) {
   void subdomain;
   const primary = primaryColor ?? "#1F3D2B";
   const accent = accentColor ?? "#B5572A";
   const location = useLocation();
   const pathname = location.pathname;
-  const { passportHref: derivedPassportHref } = useCurrentEventPassport();
+  const { passportHref: derivedPassportHref } = useCurrentEventPassport(eventId);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
   const [moreOpen, setMoreOpen] = useState(false);
 

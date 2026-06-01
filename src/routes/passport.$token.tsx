@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { classifyHost } from "@/components/host-router";
-
 import {
-  DEFAULT_VENUE_LABEL_PLURAL,
-  DEFAULT_VENUE_LABEL_SINGULAR,
-} from "@/lib/venue-labels";
+  EMPTY_PASSPORT_STAMP_STATE,
+  loadPassportStampState,
+  type PassportStampState,
+  type PassportStampVenue,
+} from "@/lib/passport-stamps";
+
 import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
 import { PoweredByGetStampd } from "@/components/brand";
 
@@ -33,32 +35,6 @@ type PassportRow = {
   checkin_count: number | null;
 };
 
-type StampRow = {
-  passport_id: string;
-  event_id: string | null;
-  event_name: string | null;
-  venue_label_singular: string | null;
-  venue_label_plural: string | null;
-  total_venues: number | null;
-  stamped_count: number | null;
-  venue_id: string;
-  venue_name: string | null;
-  venue_logo_path: string | null;
-  venue_cover_path: string | null;
-  order_index: number | null;
-  is_stamped: boolean | null;
-  checked_in_at: string | null;
-};
-
-type StampsSummary = {
-  eventName: string | null;
-  labelSingular: string;
-  labelPlural: string;
-  totalVenues: number;
-  stampedCount: number;
-  venues: StampRow[];
-};
-
 type LookupDiagnostics = {
   rpc: string;
   zero_rows: boolean;
@@ -75,7 +51,7 @@ type LoadState =
       kind: "ready";
       passport: PassportRow;
       eventName: string | null;
-      stamps: StampsSummary | null;
+      stamps: PassportStampState;
     };
 
 const PRIMARY = "#1F3D2B";
@@ -90,13 +66,7 @@ function PassportPage() {
     (async () => {
       setState({ kind: "loading" });
 
-      const [passportRes, stampsRes] = await Promise.all([
-        supabase.rpc("get_passport_by_token", { _raw_token: token }),
-        // New RPC — may not exist yet on staging. Failures are non-fatal.
-        supabase.rpc("get_passport_stamps_by_token" as never, {
-          _raw_token: token,
-        } as never),
-      ]);
+      const passportRes = await supabase.rpc("get_passport_by_token", { _raw_token: token });
 
       if (cancelled) return;
 
@@ -140,24 +110,8 @@ function PassportPage() {
         }
       }
 
-      let stamps: StampsSummary | null = null;
-      const stampRows = ((stampsRes as { data?: StampRow[] | null }).data ??
-        null) as StampRow[] | null;
-      if (!(stampsRes as { error?: unknown }).error && stampRows && stampRows.length > 0) {
-        const first = stampRows[0];
-        stamps = {
-          eventName: first.event_name,
-          labelSingular:
-            first.venue_label_singular?.trim() || DEFAULT_VENUE_LABEL_SINGULAR,
-          labelPlural:
-            first.venue_label_plural?.trim() || DEFAULT_VENUE_LABEL_PLURAL,
-          totalVenues: first.total_venues ?? stampRows.length,
-          stampedCount:
-            first.stamped_count ??
-            stampRows.filter((s) => s.is_stamped).length,
-          venues: stampRows,
-        };
-      }
+      const stamps = await loadPassportStampState(token);
+      if (cancelled) return;
 
       // Event name fallback: stamps RPC > passports.events lookup (best-effort).
       let eventName: string | null = stamps?.eventName ?? null;
@@ -346,10 +300,11 @@ function PassportView({
 }: {
   passport: PassportRow;
   eventName: string | null;
-  stamps: StampsSummary | null;
+  stamps: PassportStampState;
   token: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [supportCopied, setSupportCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
   const hostname = typeof window !== "undefined" ? window.location.hostname : "";
@@ -358,13 +313,11 @@ function PassportView({
     return cls.kind === "tenant" ? cls.subdomain : null;
   }, [hostname]);
 
-  const labelSingular = stamps?.labelSingular ?? DEFAULT_VENUE_LABEL_SINGULAR;
-  const labelPlural = stamps?.labelPlural ?? DEFAULT_VENUE_LABEL_PLURAL;
+  const labelSingular = stamps.labelSingular;
+  const labelPlural = stamps.labelPlural;
 
-  // Prefer the authoritative stamps RPC counts; fall back to passport.checkin_count.
-  const stampedCount =
-    stamps?.stampedCount ?? passport.checkin_count ?? 0;
-  const totalVenues = stamps?.totalVenues ?? 0;
+  const stampedCount = stamps.visitedCount || passport.checkin_count || 0;
+  const totalVenues = stamps.totalVenueCount;
   const goal = totalVenues > 0 ? totalVenues : Math.max(stampedCount, 1);
   const pct = Math.min(100, Math.round((stampedCount / goal) * 100));
 
@@ -376,6 +329,41 @@ function PassportView({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
+    }
+  }
+
+  async function copySupportDetails() {
+    const eventId = passport.event_id;
+    let savedPassportFound = false;
+    if (eventId && typeof localStorage !== "undefined") {
+      try {
+        savedPassportFound = localStorage.getItem(`gs.passport.${eventId}`) !== null;
+      } catch {
+        savedPassportFound = false;
+      }
+    }
+    const report = {
+      timestamp: new Date().toISOString(),
+      route: "/passport/$token",
+      hostname,
+      event_id: eventId,
+      saved_passport_key_checked: eventId ? `gs.passport.${eventId}` : null,
+      saved_passport_found: savedPassportFound,
+      passport_validation_status: "valid",
+      stamp_rpc_status: stamps.status,
+      stamp_rpc_error: stamps.error,
+      stamp_row_count: stamps.rowCount,
+      stamped_row_count: stamps.stampedRowCount,
+      venue_count: stamps.totalVenueCount,
+      first_stamp_row_field_names: stamps.firstRowFieldNames,
+      matched_visited_venue_id_count: stamps.visitedVenueIds.size,
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+      setSupportCopied(true);
+      setTimeout(() => setSupportCopied(false), 2000);
+    } catch {
+      setSupportCopied(false);
     }
   }
 
@@ -396,6 +384,7 @@ function PassportView({
             accentColor={ACCENT}
             activeOverride="passport"
             passportHref={passportUrl}
+            eventId={passport.event_id}
           />
         </div>
       )}
@@ -502,7 +491,7 @@ function PassportView({
 
         {/* Stamp grid */}
         <StampGrid
-          venues={stamps?.venues ?? []}
+          venues={stamps.allVenues}
           labelSingular={labelSingular}
           labelPlural={labelPlural}
         />
@@ -564,6 +553,16 @@ function PassportView({
             <strong>Save this link.</strong> It is the only way back into your
             passport on a new device. Anyone with it can view your passport.
           </div>
+          <button
+            type="button"
+            onClick={copySupportDetails}
+            className="mt-3 h-9 w-full rounded-full border border-[#E6DCC7] bg-[#F6EFE2] text-xs font-semibold tracking-wide text-[#3D372C]"
+          >
+            {supportCopied ? "Copied support details" : "Copy support details"}
+          </button>
+          <p className="mt-2 text-[10px] leading-snug text-[#8A7E66]">
+            Support details exclude your full passport link and visitor details.
+          </p>
         </section>
 
         <div className="mt-6 flex justify-center">
@@ -581,7 +580,7 @@ function StampGrid({
   labelSingular,
   labelPlural,
 }: {
-  venues: StampRow[];
+  venues: PassportStampVenue[];
   labelSingular: string;
   labelPlural: string;
 }) {
@@ -624,7 +623,7 @@ function StampGrid({
   );
 }
 
-function StampCell({ venue }: { venue: StampRow }) {
+function StampCell({ venue }: { venue: PassportStampVenue }) {
   const stamped = !!venue.is_stamped;
   const when = venue.checked_in_at
     ? new Date(venue.checked_in_at).toLocaleDateString(undefined, {

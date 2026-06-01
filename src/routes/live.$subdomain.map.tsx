@@ -11,6 +11,16 @@ import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { matchRootDomain, tenantHost } from "@/lib/domains";
+import {
+  EMPTY_CURRENT_EVENT_PASSPORT,
+  resolveCurrentEventPassport,
+  type CurrentEventPassportResult,
+} from "@/lib/use-current-event-passport";
+import {
+  EMPTY_PASSPORT_STAMP_STATE,
+  loadPassportStampState,
+  type PassportStampState,
+} from "@/lib/passport-stamps";
 
 export const Route = createFileRoute("/live/$subdomain/map")({
   head: () => ({ meta: [{ title: "Trail Map" }] }),
@@ -75,16 +85,12 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapDiag, setMapDiag] = useState<MapDiagnostics>(INITIAL_DIAG);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const [hasPassport, setHasPassport] = useState(false);
-  const [stampDiag, setStampDiag] = useState<{
-    savedPassportKey: string | null;
-    savedPassportFound: boolean;
-    stampRpcError: string | null;
-    stampRowCount: number;
-  }>({ savedPassportKey: null, savedPassportFound: false, stampRpcError: null, stampRowCount: 0 });
+  const [passportState, setPassportState] = useState<CurrentEventPassportResult>(EMPTY_CURRENT_EVENT_PASSPORT);
+  const [stampState, setStampState] = useState<PassportStampState>(EMPTY_PASSPORT_STAMP_STATE);
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<VenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const hasPassport = passportState.hasPassport;
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -109,50 +115,14 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       setEvent(evt);
       setLoading(false);
 
-      // Load passport stamps if a saved passport exists for this event.
-      if (evt?.event_id && typeof localStorage !== "undefined") {
-        const key = `gs.passport.${evt.event_id}`;
-        let savedFound = false;
-        let stampRpcError: string | null = null;
-        let stampRowCount = 0;
-        try {
-          const raw = localStorage.getItem(key);
-          if (raw) {
-            const parsed = JSON.parse(raw) as { access_token?: string };
-            if (parsed?.access_token) {
-              savedFound = true;
-              setHasPassport(true);
-              const { data: stampsData, error: stampsErr } = await supabase.rpc(
-                "get_passport_stamps_by_token" as never,
-                { _raw_token: parsed.access_token } as never,
-              );
-              if (cancelled) return;
-              if (stampsErr) {
-                stampRpcError =
-                  (stampsErr as { message?: string }).message ?? "rpc error";
-              }
-              const rows = (stampsData ?? []) as Array<{
-                venue_id: string | null;
-                is_stamped: boolean | null;
-              }>;
-              stampRowCount = rows.length;
-              const visited = new Set<string>();
-              for (const s of rows) {
-                if (s.venue_id && s.is_stamped) visited.add(String(s.venue_id));
-              }
-              setVisitedIds(visited);
-            }
-          }
-        } catch (e) {
-          stampRpcError = e instanceof Error ? e.message : String(e);
-        }
-        setStampDiag({
-          savedPassportKey: key,
-          savedPassportFound: savedFound,
-          stampRpcError,
-          stampRowCount,
-        });
-      }
+      const passport = await resolveCurrentEventPassport(evt?.event_id ?? null);
+      if (cancelled) return;
+      setPassportState(passport);
+
+      const stamps = await loadPassportStampState(passport.token);
+      if (cancelled) return;
+      setStampState(stamps);
+      setVisitedIds(stamps.visitedVenueIds);
     })();
     return () => {
       cancelled = true;
@@ -422,22 +392,28 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       pageUrl: href,
       hostname,
       subdomain,
-      route: "/live/$subdomain/map",
+      route: "/map",
       hostnameLooksAllowed: isAllowedLooking,
       eventId: event?.event_id ?? null,
       venueCount: venues.length,
       venueCountWithLatLng: geoVenues.length,
-      savedPassportKey: stampDiag.savedPassportKey,
-      savedPassportFound: stampDiag.savedPassportFound,
-      stampRpcError: stampDiag.stampRpcError,
-      stampRowCount: stampDiag.stampRowCount,
+      savedPassportKey: passportState.savedPassportKey,
+      savedPassportFound: passportState.savedPassportFound,
+      passportValidationStatus: passportState.validationStatus,
+      passportValidationError: passportState.validationError,
+      staleCleared: passportState.staleCleared,
+      stampRpcStatus: stampState.status,
+      stampRpcError: stampState.error,
+      stampRowCount: stampState.rowCount,
+      stampedRowCount: stampState.stampedRowCount,
+      firstStampRowFieldNames: stampState.firstRowFieldNames,
       matchedVisitedVenueCount: visitedCount,
       fallbackListRendered: Boolean(mapError),
       mapError,
       mapkit: mapDiag,
     };
     return JSON.stringify(report, null, 2);
-  }, [subdomain, event?.event_id, venues.length, geoVenues.length, mapError, mapDiag, stampDiag, visitedCount]);
+  }, [subdomain, event?.event_id, venues.length, geoVenues.length, mapError, mapDiag, passportState, stampState, visitedCount]);
 
   if (loading) {
     return (
@@ -457,6 +433,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         primaryColor={event?.primary_color}
         accentColor={event?.accent_color}
         activeOverride="map"
+        eventId={event?.event_id ?? null}
       />
 
       <div className="mx-auto mt-4 max-w-5xl">
@@ -603,10 +580,36 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
           </div>
         )}
 
+        <MapSupportDetails buildReport={buildSupportReport} />
+
         <div className="mt-6 flex justify-center">
           <PoweredByGetStampd variant="trail" />
         </div>
       </div>
+    </div>
+  );
+}
+
+function MapSupportDetails({ buildReport }: { buildReport: () => string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(buildReport());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <div className="mt-4 flex justify-center">
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3D372C]"
+      >
+        {copied ? "Copied support details" : "Copy support details"}
+      </button>
     </div>
   );
 }
