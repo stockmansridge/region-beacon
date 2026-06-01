@@ -2654,7 +2654,20 @@ function EventDetail() {
               </div>
             )}
             {venues.length === 0 ? (
-              <EmptyNotice>No venues yet.</EmptyNotice>
+              <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
+                No venues have been added yet. Add the first venue so visitors have somewhere to check in during this event.
+                {canEdit && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={startCreateVenue}
+                      className="mt-4 h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5]"
+                    >
+                      Add first venue
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="overflow-hidden rounded-[14px] border border-[#E6ECF4] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.035)]">
                 <table className="w-full text-sm">
