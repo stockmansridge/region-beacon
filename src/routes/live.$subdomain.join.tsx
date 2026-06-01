@@ -889,6 +889,8 @@ function InfoScreen({
       eventName={event.name}
       primaryColor={primary}
       accentColor={event.accent_color ?? "#B5572A"}
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
       topLeft={
         <Link
           to="/"
