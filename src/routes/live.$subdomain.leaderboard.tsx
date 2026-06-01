@@ -49,6 +49,8 @@ type State =
 export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [eventId, setEventId] = useState<string | null>(null);
+  const paletteKey = useEventPaletteKey(subdomain);
+
 
   useEffect(() => {
     let cancelled = false;
