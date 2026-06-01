@@ -932,8 +932,8 @@ function EventDetail() {
       setLbSaveError("Could not save leaderboard settings. Please try again.");
       return;
     }
-    setIsEditingLeaderboard(false);
-    setLbForm(null);
+    setLbSaveSuccess(true);
+    window.setTimeout(() => setLbSaveSuccess(false), 2500);
     setReloadKey((k) => k + 1);
   }
 
