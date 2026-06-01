@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
 import { PoweredByGetStampd } from "@/components/brand";
 import { classifyHost } from "@/components/host-router";
+import { useEventPaletteKey } from "@/lib/use-event-palette";
 
 export const Route = createFileRoute("/checkin/$qrToken")({
   head: () => ({ meta: [{ title: "Check in — GetStampd" }] }),
