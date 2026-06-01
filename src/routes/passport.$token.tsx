@@ -313,6 +313,7 @@ function PassportView({
     const cls = classifyHost(hostname);
     return cls.kind === "tenant" ? cls.subdomain : null;
   }, [hostname]);
+  const paletteKey = useEventPaletteKey(subdomain);
 
   const labelSingular = stamps.labelSingular;
   const labelPlural = stamps.labelPlural;
