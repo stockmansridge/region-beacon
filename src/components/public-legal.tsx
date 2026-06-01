@@ -57,11 +57,13 @@ export function useLegal(subdomain: string): LoadState {
 export function PublicLegalShell({
   subdomain,
   eventName,
+  eventId,
   activeOverride,
   children,
 }: {
   subdomain: string;
   eventName?: string | null;
+  eventId?: string | null;
   activeOverride?: "home" | "join" | "venues" | "leaderboard";
   children: React.ReactNode;
 }) {
@@ -72,6 +74,7 @@ export function PublicLegalShell({
           subdomain={subdomain}
           eventName={eventName ?? "Event"}
           activeOverride={activeOverride}
+          eventId={eventId ?? null}
         />
       </div>
       <div className="mx-auto mt-6 max-w-2xl">
