@@ -1,12 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
+import { authUrl, cleanAuthUrlFragments } from "@/lib/auth-redirect";
 import {
   readPendingOrganisationSignup,
   completePendingOrganisationSignup,
+  clearPendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
+
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({ meta: [{ title: "Admin sign in" }] }),
