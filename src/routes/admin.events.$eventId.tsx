@@ -1670,9 +1670,11 @@ function EventDetail() {
         );
       })()}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Section title="Basics">
+      <EventTabBar active={activeTab} onChange={setActiveTab} />
+
+      <EventTabContext.Provider value={activeTab}>
+        <div className="space-y-6">
+          <Section title="Basics" tab="details">
             {isEditing && form ? (
               <div className="space-y-4">
                 {(validationError || saveError) && (
