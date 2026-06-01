@@ -532,56 +532,128 @@ function BrandingEditor() {
             disabled={!canEdit || saving}
           />
 
+          {/* Custom brand colours — only active when palette is unset or "custom" */}
+          {(() => {
+            const isCurated =
+              !!form.palette_key && form.palette_key !== "custom";
+            const customActive = !isCurated;
+            return (
+              <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+                <div>
+                  <div className="text-sm font-semibold">Custom brand colours</div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {isCurated
+                      ? "These overrides are inactive while a curated palette is selected. Switch the palette to Custom (or clear it) to use your own hex colours."
+                      : "Used as the primary button colour and accent across the public pages. Leave blank to fall back to the GetStampd defaults."}
+                  </p>
+                </div>
+                <Field label="Primary button colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.primary_color) ? form.primary_color : "#1F3D2B"}
+                      onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                      disabled={!canEdit || saving || !customActive}
+                      className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.primary_color}
+                      onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                      placeholder="#1F3D2B"
+                      disabled={!canEdit || saving || !customActive}
+                      maxLength={7}
+                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+                <Field label="Accent colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.accent_color) ? form.accent_color : "#B5572A"}
+                      onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
+                      disabled={!canEdit || saving || !customActive}
+                      className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.accent_color}
+                      onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
+                      placeholder="#B5572A"
+                      disabled={!canEdit || saving || !customActive}
+                      maxLength={7}
+                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+              </div>
+            );
+          })()}
+
           <BackgroundSelector
             value={form.page_background_key}
             paletteKey={form.palette_key}
+            primaryColor={form.primary_color}
+            accentColor={form.accent_color}
             onChange={(key) => setForm({ ...form, page_background_key: key })}
             disabled={!canEdit || saving}
           />
 
-
-
-          <Field label="Primary colour">
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={HEX_RE.test(form.primary_color) ? form.primary_color : "#000000"}
-                onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-                disabled={!canEdit || saving}
-                className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
-              />
-              <input
-                type="text"
-                value={form.primary_color}
-                onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-                placeholder="#7A1F2B"
-                disabled={!canEdit || saving}
-                maxLength={7}
-                className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
-              />
+          {/* Custom background hex inputs — visible when custom_color is selected */}
+          {form.page_background_key === "custom_color" && (
+            <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+              <div>
+                <div className="text-sm font-semibold">Custom background colour</div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Pick a hex page background, and optionally a card background.
+                  Requires the database migration in{" "}
+                  <code>migrations-draft-event-background/03_custom_background_colors.sql</code>{" "}
+                  to be applied.
+                </p>
+              </div>
+              <Field label="Page background colour">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
+                    onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
+                    disabled={!canEdit || saving}
+                    className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={form.page_background_color}
+                    onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
+                    placeholder="#F6EFE2"
+                    disabled={!canEdit || saving}
+                    maxLength={7}
+                    className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                  />
+                </div>
+              </Field>
+              <Field label="Card background colour (optional)">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
+                    onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
+                    disabled={!canEdit || saving}
+                    className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={form.card_background_color}
+                    onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
+                    placeholder="#FBF5E8"
+                    disabled={!canEdit || saving}
+                    maxLength={7}
+                    className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                  />
+                </div>
+              </Field>
             </div>
-          </Field>
-
-          <Field label="Accent colour">
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={HEX_RE.test(form.accent_color) ? form.accent_color : "#000000"}
-                onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
-                disabled={!canEdit || saving}
-                className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
-              />
-              <input
-                type="text"
-                value={form.accent_color}
-                onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
-                placeholder="#E8C547"
-                disabled={!canEdit || saving}
-                maxLength={7}
-                className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
-              />
-            </div>
-          </Field>
+          )}
 
           <Field label="Font family">
             <input
@@ -609,16 +681,9 @@ function BrandingEditor() {
             </div>
           </Field>
 
-          <Field label="Terms URL">
-            <input
-              type="text"
-              value={form.terms_url}
-              onChange={(e) => setForm({ ...form, terms_url: e.target.value })}
-              placeholder="https://…"
-              disabled={!canEdit || saving}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
-            />
-          </Field>
+          {/* Terms URL removed from Branding — Terms & Privacy are managed
+              in the main event Terms & Privacy section. The existing
+              terms_url value is preserved in the database and on save. */}
 
           {/* ============== Customer wording ============== */}
           <div className="space-y-3 rounded-md border bg-muted/20 p-3">
