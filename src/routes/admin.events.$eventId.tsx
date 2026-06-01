@@ -1739,7 +1739,7 @@ function EventDetail() {
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     maxLength={200}
                   />
                 </Field>
@@ -1757,7 +1757,7 @@ function EventDetail() {
                     value={form.timezone}
                     onChange={(e) => setForm({ ...form, timezone: e.target.value })}
                     placeholder="e.g. Europe/London"
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     maxLength={64}
                   />
                 </Field>
@@ -1767,7 +1767,7 @@ function EventDetail() {
                       type="datetime-local"
                       value={form.starts_at}
                       onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                   <Field label="Ends at">
@@ -1775,24 +1775,24 @@ function EventDetail() {
                       type="datetime-local"
                       value={form.ends_at}
                       onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs leading-5 text-[#64748B]">
                   Internal event URL name, public event code, and status remain read-only here.
                 </p>
                 {basicsSaveSuccess && (
-                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm text-[#047857]">
                     Basics saved.
                   </div>
                 )}
-                <div className="flex items-center justify-end gap-2 pt-1">
+                <div className="flex items-center justify-end gap-3 border-t border-[#E6ECF4] pt-5">
                   <button
                     type="button"
                     onClick={cancelEdit}
                     disabled={saving}
-                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
                   >
                     Discard changes
                   </button>
@@ -1800,9 +1800,9 @@ function EventDetail() {
                     type="button"
                     onClick={saveEdit}
                     disabled={saving}
-                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {saving ? "Saving…" : "Save"}
+                    {saving ? "Saving…" : "Save changes"}
                   </button>
                 </div>
               </div>
@@ -2012,63 +2012,62 @@ function EventDetail() {
 
           <Section title="Check-in settings" tab="checkin">
             {canEdit && isEditingCheckin && checkinForm ? (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {(checkinValidationError || checkinSaveError) && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                     {checkinValidationError ?? checkinSaveError}
                   </div>
                 )}
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ToggleRow
+                    title="One check-in per venue"
+                    description="Each visitor counts once per venue, regardless of how many times they scan."
                     checked={checkinForm.one_checkin_per_venue}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, one_checkin_per_venue: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setCheckinForm({ ...checkinForm, one_checkin_per_venue: v })}
                   />
-                  <span className="text-sm">One check-in per venue</span>
-                </label>
-                <Field label="Minimum seconds between check-ins" required>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={checkinForm.minimum_seconds_between_checkins}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, minimum_seconds_between_checkins: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <ToggleRow
+                    title="Allow manual admin check-ins"
+                    description="Lets admins record a check-in without the visitor scanning."
                     checked={checkinForm.allow_manual_admin_checkins}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, allow_manual_admin_checkins: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setCheckinForm({ ...checkinForm, allow_manual_admin_checkins: v })}
                   />
-                  <span className="text-sm">Allow manual admin check-ins</span>
-                </label>
-                <Field label="Max check-ins per passport per day">
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={checkinForm.max_checkins_per_passport_per_day}
-                    onChange={(e) => setCheckinForm({ ...checkinForm, max_checkins_per_passport_per_day: e.target.value })}
-                    placeholder="Leave blank for unlimited"
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                  <p className="text-xs text-muted-foreground">Leave blank for unlimited.</p>
-                </Field>
+                </div>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <Field label="Minimum seconds between check-ins" required>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={checkinForm.minimum_seconds_between_checkins}
+                      onChange={(e) => setCheckinForm({ ...checkinForm, minimum_seconds_between_checkins: e.target.value })}
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="text-xs leading-5 text-[#64748B]">Throttles rapid re-scans at the same venue.</p>
+                  </Field>
+                  <Field label="Max check-ins per passport per day">
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={checkinForm.max_checkins_per_passport_per_day}
+                      onChange={(e) => setCheckinForm({ ...checkinForm, max_checkins_per_passport_per_day: e.target.value })}
+                      placeholder="Leave blank for unlimited"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="text-xs leading-5 text-[#64748B]">Leave blank for unlimited.</p>
+                  </Field>
+                </div>
                 {checkinSaveSuccess && (
-                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm text-[#047857]">
                     Check-in settings saved.
                   </div>
                 )}
-                <div className="flex items-center justify-end gap-2 pt-1">
+                <div className="flex items-center justify-end gap-3 border-t border-[#E6ECF4] pt-5">
                   <button
                     type="button"
                     onClick={cancelEditCheckin}
                     disabled={checkinSaving}
-                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
                   >
                     Discard changes
                   </button>
@@ -2076,9 +2075,9 @@ function EventDetail() {
                     type="button"
                     onClick={saveEditCheckin}
                     disabled={checkinSaving}
-                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {checkinSaving ? "Saving…" : "Save"}
+                    {checkinSaving ? "Saving…" : "Save changes"}
                   </button>
                 </div>
               </div>
@@ -2113,99 +2112,83 @@ function EventDetail() {
               </Link>
             </div>
             {canEdit && isEditingLeaderboard && lbForm ? (
-              <div className="space-y-4">
-                <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  Public leaderboard display is privacy-limited. Visitor email, mobile, postcode,
-                  and full name are never shown. Default display is first name + last initial.
-                </p>
+              <div className="space-y-5">
                 {(lbValidationError || lbSaveError) && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                     {lbValidationError ?? lbSaveError}
                   </div>
                 )}
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ToggleRow
+                    title="Public leaderboard enabled"
+                    description="Visitors can see the public leaderboard for this event."
                     checked={lbForm.is_enabled}
-                    onChange={(e) => setLbForm({ ...lbForm, is_enabled: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, is_enabled: v })}
                   />
-                  <span className="text-sm">Public leaderboard enabled</span>
-                </label>
-                <Field label="Display mode" required>
-                  <select
-                    value={lbForm.display_mode}
-                    onChange={(e) =>
-                      setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
-                    }
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  >
-                    <option value="first_name_last_initial">First name + last initial</option>
-                    <option value="first_name_only">First name only</option>
-                    <option value="alias_only">Alias only</option>
-                    <option value="anonymous">Anonymous</option>
-                  </select>
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <Field label="Display mode" required>
+                    <select
+                      value={lbForm.display_mode}
+                      onChange={(e) =>
+                        setLbForm({ ...lbForm, display_mode: e.target.value as LeaderboardDisplayMode })
+                      }
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    >
+                      <option value="first_name_last_initial">First name + last initial</option>
+                      <option value="first_name_only">First name only</option>
+                      <option value="alias_only">Alias only</option>
+                      <option value="anonymous">Anonymous</option>
+                    </select>
+                  </Field>
+                  <ToggleRow
+                    title="Show first name"
                     checked={lbForm.show_first_name}
-                    onChange={(e) => setLbForm({ ...lbForm, show_first_name: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, show_first_name: v })}
                   />
-                  <span className="text-sm">Show first name</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <ToggleRow
+                    title="Show last initial"
                     checked={lbForm.show_last_initial}
-                    onChange={(e) => setLbForm({ ...lbForm, show_last_initial: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, show_last_initial: v })}
                   />
-                  <span className="text-sm">Show last initial</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <ToggleRow
+                    title="Show visit count"
                     checked={lbForm.show_visit_count}
-                    onChange={(e) => setLbForm({ ...lbForm, show_visit_count: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, show_visit_count: v })}
                   />
-                  <span className="text-sm">Show visit count</span>
-                </label>
-                <Field label="Hide below check-ins" required>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={lbForm.hide_below_checkins}
-                    onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Visitors below this number of check-ins are hidden from the public leaderboard.
-                  </p>
-                </Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <Field label="Hide below check-ins" required>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={lbForm.hide_below_checkins}
+                      onChange={(e) => setLbForm({ ...lbForm, hide_below_checkins: e.target.value })}
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="text-xs leading-5 text-[#64748B]">
+                      Visitors below this number of check-ins are hidden.
+                    </p>
+                  </Field>
+                  <ToggleRow
+                    title="Allow visitors to opt out"
+                    description="Lets visitors hide themselves from the public leaderboard."
                     checked={lbForm.allow_visitor_opt_out}
-                    onChange={(e) => setLbForm({ ...lbForm, allow_visitor_opt_out: e.target.checked })}
-                    className="h-4 w-4 rounded border"
+                    onChange={(v) => setLbForm({ ...lbForm, allow_visitor_opt_out: v })}
                   />
-                  <span className="text-sm">Allow visitors to opt out</span>
-                </label>
+                </div>
+                <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-[#334155]">
+                  Privacy: email, mobile, postcode, and full name are never displayed
+                  publicly. Default display is first name + last initial.
+                </div>
                 {lbSaveSuccess && (
-                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm text-[#047857]">
                     Leaderboard settings saved.
                   </div>
                 )}
-                <div className="flex items-center justify-end gap-2 pt-1">
+                <div className="flex items-center justify-end gap-3 border-t border-[#E6ECF4] pt-5">
                   <button
                     type="button"
                     onClick={cancelEditLeaderboard}
                     disabled={lbSaving}
-                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
                   >
                     Discard changes
                   </button>
@@ -2213,9 +2196,9 @@ function EventDetail() {
                     type="button"
                     onClick={saveEditLeaderboard}
                     disabled={lbSaving}
-                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {lbSaving ? "Saving…" : "Save"}
+                    {lbSaving ? "Saving…" : "Save changes"}
                   </button>
                 </div>
               </div>
@@ -2326,7 +2309,7 @@ function EventDetail() {
                         value={venueForm.name}
                         onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
                         placeholder="e.g. Riverbank Cellar Door"
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                     </Field>
                     <div className="space-y-2">
@@ -2352,7 +2335,7 @@ function EventDetail() {
                         value={venueForm.address}
                         onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
                         placeholder="Set automatically from the map, or enter manually"
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
                         Coordinates are saved from the map and shown later in the Location section.
@@ -2378,7 +2361,7 @@ function EventDetail() {
                       maxLength={150}
                       value={venueForm.name}
                       onChange={(e) => setVenueForm({ ...venueForm, name: e.target.value })}
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
@@ -2391,7 +2374,7 @@ function EventDetail() {
                             status: e.target.value === "inactive" ? "inactive" : "active",
                           })
                         }
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       >
                         <option value="active">active</option>
                         <option value="inactive">inactive</option>
@@ -2404,7 +2387,7 @@ function EventDetail() {
                         step={1}
                         value={venueForm.order_index}
                         onChange={(e) => setVenueForm({ ...venueForm, order_index: e.target.value })}
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                     </Field>
                   </div>
@@ -2552,7 +2535,7 @@ function EventDetail() {
                       value={venueForm.website_url}
                       onChange={(e) => setVenueForm({ ...venueForm, website_url: e.target.value })}
                       placeholder="https://example.com"
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">Must start with https://</p>
                   </Field>
@@ -2564,7 +2547,7 @@ function EventDetail() {
                       value={venueForm.phone}
                       onChange={(e) => setVenueForm({ ...venueForm, phone: e.target.value })}
                       placeholder="+61 400 000 000"
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                 </FormSection>
@@ -2577,7 +2560,7 @@ function EventDetail() {
                       value={venueForm.address}
                       onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
                       placeholder="e.g. 123 Main St, Sydney NSW 2000"
-                      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
@@ -2589,7 +2572,7 @@ function EventDetail() {
                         max={90}
                         value={venueForm.lat}
                         onChange={(e) => setVenueForm({ ...venueForm, lat: e.target.value })}
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                     </Field>
                     <Field label="Longitude">
@@ -2600,7 +2583,7 @@ function EventDetail() {
                         max={180}
                         value={venueForm.lng}
                         onChange={(e) => setVenueForm({ ...venueForm, lng: e.target.value })}
-                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                       />
                     </Field>
                   </div>
@@ -2996,11 +2979,11 @@ function Section({
 
 function DefList({ rows }: { rows: Array<[string, React.ReactNode]> }) {
   return (
-    <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[max-content_1fr]">
+    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-[180px_1fr]">
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
-          <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{k}</dt>
-          <dd className="text-sm break-words">{v}</dd>
+          <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">{k}</dt>
+          <dd className="break-words text-sm font-medium text-[#111827]">{v}</dd>
         </div>
       ))}
     </dl>
@@ -3096,7 +3079,7 @@ function BrandingSummary({ branding }: { branding: Branding }) {
 
 function EmptyNotice({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+    <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm leading-6 text-[#475569]">
       {children}
     </div>
   );
@@ -3491,15 +3474,73 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <label className="block space-y-2">
+      <span className="block text-sm font-medium text-[#334155]">
         {label}
-        {required ? <span className="ml-1 text-destructive">*</span> : null}
+        {required ? <span className="ml-1 text-[#E11D48]">*</span> : null}
       </span>
       {children}
     </label>
   );
 }
+
+function ToggleRow({
+  title,
+  description,
+  checked,
+  onChange,
+  disabled,
+}: {
+  title: string;
+  description?: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      className={
+        "flex items-center justify-between gap-4 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] px-4 py-3 " +
+        (disabled ? "opacity-60" : "cursor-pointer hover:bg-white")
+      }
+    >
+      <span className="space-y-1">
+        <span className="block text-sm font-medium text-[#111827]">{title}</span>
+        {description && (
+          <span className="block text-xs leading-5 text-[#64748B]">{description}</span>
+        )}
+      </span>
+      <span
+        role="switch"
+        aria-checked={checked}
+        onClick={(e) => {
+          if (disabled) return;
+          e.preventDefault();
+          onChange(!checked);
+        }}
+        className={
+          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " +
+          (checked ? "bg-[#2F6FE4]" : "bg-[#CBD5E1]")
+        }
+      >
+        <span
+          className={
+            "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform " +
+            (checked ? "translate-x-[22px]" : "translate-x-0.5")
+          }
+        />
+        <input
+          type="checkbox"
+          className="sr-only"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+      </span>
+    </label>
+  );
+}
+
 
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
