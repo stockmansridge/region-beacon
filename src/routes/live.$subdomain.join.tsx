@@ -776,6 +776,8 @@ function SuccessScreen({
       eventName={event.name}
       primaryColor={primary}
       accentColor={accent}
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
       topLeft={
         <Link
           to="/"
