@@ -216,20 +216,20 @@ function Events() {
       />
 
       {error && (
-        <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
           {error}
         </div>
       )}
-      <div className="overflow-hidden rounded-xl border bg-card">
+      <div className="overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">Event</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Public address</th>
-              <th className="px-4 py-3 font-medium">Dates</th>
-              <th className="px-4 py-3 font-medium">Venues</th>
-              <th className="px-4 py-3 font-medium">Go-live</th>
+          <thead>
+            <tr className="bg-[#F8FAFC] text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">
+              <th className="px-4 py-3">Event</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Public address</th>
+              <th className="px-4 py-3">Dates</th>
+              <th className="px-4 py-3">Venues</th>
+              <th className="px-4 py-3">Go-live</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
