@@ -230,7 +230,12 @@ export function PublicEventNav({
       {/* Top header: event name + desktop inline nav */}
       <nav
         aria-label="Event navigation"
-        className="mx-auto mt-3 flex w-full max-w-5xl items-center justify-between rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]/90 px-4 py-3 shadow-sm backdrop-blur"
+        className="mx-auto mt-3 flex w-full max-w-5xl items-center justify-between rounded-2xl border px-4 py-3 shadow-sm backdrop-blur"
+        style={{
+          borderColor: "var(--event-border, #E6DCC7)",
+          background:
+            "color-mix(in srgb, var(--event-card-bg, #FBF5E8) 90%, transparent)",
+        }}
       >
         <Link
           to="/"
