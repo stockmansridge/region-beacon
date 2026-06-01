@@ -4,6 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { classifyHost } from "@/components/host-router";
+import {
+  EMPTY_PASSPORT_STAMP_STATE,
+  loadPassportStampState,
+  type PassportStampState,
+  type PassportStampVenue,
+} from "@/lib/passport-stamps";
 
 import {
   DEFAULT_VENUE_LABEL_PLURAL,
@@ -33,32 +39,6 @@ type PassportRow = {
   checkin_count: number | null;
 };
 
-type StampRow = {
-  passport_id: string;
-  event_id: string | null;
-  event_name: string | null;
-  venue_label_singular: string | null;
-  venue_label_plural: string | null;
-  total_venues: number | null;
-  stamped_count: number | null;
-  venue_id: string;
-  venue_name: string | null;
-  venue_logo_path: string | null;
-  venue_cover_path: string | null;
-  order_index: number | null;
-  is_stamped: boolean | null;
-  checked_in_at: string | null;
-};
-
-type StampsSummary = {
-  eventName: string | null;
-  labelSingular: string;
-  labelPlural: string;
-  totalVenues: number;
-  stampedCount: number;
-  venues: StampRow[];
-};
-
 type LookupDiagnostics = {
   rpc: string;
   zero_rows: boolean;
@@ -75,7 +55,7 @@ type LoadState =
       kind: "ready";
       passport: PassportRow;
       eventName: string | null;
-      stamps: StampsSummary | null;
+      stamps: PassportStampState;
     };
 
 const PRIMARY = "#1F3D2B";
