@@ -47,12 +47,23 @@ function Login() {
     }
     setSubmitting(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
     if (signInError) {
+      setSubmitting(false);
       // Generic — don't reveal whether the email exists.
       setError(GENERIC_AUTH_ERROR);
       return;
     }
+    // If a pending organisation signup is waiting (e.g. user just confirmed
+    // their email), complete it now so they land directly in the admin.
+    if (readPendingOrganisationSignup()) {
+      const result = await completePendingOrganisationSignup();
+      if (!result.ok && result.code !== "no_pending") {
+        // Non-fatal — NoAccessScreen will offer a retry button.
+        // eslint-disable-next-line no-console
+        console.warn("Pending organisation completion failed:", result.message);
+      }
+    }
+    setSubmitting(false);
     navigate({ to: "/admin", replace: true });
   };
 
