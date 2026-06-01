@@ -88,6 +88,7 @@ export function TrailShell({
           venueLabelPlural={venueLabelPlural}
         />
       )}
+      </div>
     </EventPaletteScope>
   );
 }
