@@ -50,6 +50,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   const [manual, setManual] = useState("");
   const [hasPassport, setHasPassport] = useState<boolean | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
+  const [paletteKey, setPaletteKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -58,9 +59,10 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       const host = tenantHost(subdomain);
       const { data } = await supabase.rpc("get_public_event_by_domain", { _hostname: host });
       if (cancelled) return;
-      const evt = (data?.[0] ?? null) as { event_id?: string } | null;
+      const evt = (data?.[0] ?? null) as { event_id?: string; palette_key?: string | null } | null;
       const eid = evt?.event_id ?? null;
       setEventId(eid);
+      setPaletteKey(evt?.palette_key ?? null);
       if (eid && typeof localStorage !== "undefined") {
         const raw = localStorage.getItem(`gs.passport.${eid}`);
         setHasPassport(!!raw);
