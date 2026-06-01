@@ -62,6 +62,7 @@ export function PublicEventNav({
     if (target === "map") return pathname === "/map";
     if (target === "venues")
       return pathname === "/venues" || pathname.startsWith("/venues/");
+    if (target === "offers") return pathname === "/offers";
     if (target === "leaderboard") return pathname === "/leaderboard";
     return false;
   };
