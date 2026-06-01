@@ -2656,9 +2656,9 @@ function EventDetail() {
             {venues.length === 0 ? (
               <EmptyNotice>No venues yet.</EmptyNotice>
             ) : (
-              <div className="overflow-hidden rounded-lg border">
+              <div className="overflow-hidden rounded-[14px] border border-[#E6ECF4] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.035)]">
                 <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <thead className="bg-[#F8FAFC] text-left text-xs uppercase tracking-wider text-[#64748B]">
                     <tr>
                       <th className="px-3 py-2 font-medium">#</th>
                       <th className="px-3 py-2 font-medium">Name</th>
@@ -2768,7 +2768,7 @@ function EventDetail() {
                                       type="button"
                                       onClick={() => copyQrLink(v.id)}
                                       disabled={isBusy}
-                                      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
                                     </button>
@@ -2776,7 +2776,7 @@ function EventDetail() {
                                       href={built.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
                                     >
                                       Open
                                     </a>
@@ -2794,7 +2794,7 @@ function EventDetail() {
                                       type="button"
                                       onClick={() => generateOrRotateQr(v.id, true)}
                                       disabled={isBusy}
-                                      className="inline-flex h-7 items-center rounded-md border border-amber-500/40 bg-background px-2 text-xs font-medium text-amber-700 hover:bg-amber-500/5 disabled:opacity-50 dark:text-amber-400"
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#FDBA74] bg-white px-3.5 text-sm font-semibold text-[#B45309] hover:bg-[#FFF7ED] disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       {isBusy ? "Working…" : "Rotate QR"}
                                     </button>
@@ -2841,7 +2841,7 @@ function EventDetail() {
                                             saveQrEntryValue(v.id, draft ?? "1")
                                           }
                                           disabled={saving}
-                                          className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                          className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                           {saving ? "Saving…" : "Save"}
                                         </button>
@@ -2876,7 +2876,7 @@ function EventDetail() {
                                   type="button"
                                   onClick={() => generateOrRotateQr(v.id, false)}
                                   disabled={isBusy}
-                                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                  className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   {isBusy ? "Generating…" : "Generate QR"}
                                 </button>
@@ -2890,7 +2890,7 @@ function EventDetail() {
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); startEditVenue(v); }}
                                   disabled={venueEditingId !== null || venueArchivingId !== null}
-                                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                                  className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   Edit details
                                 </button>
@@ -2898,7 +2898,7 @@ function EventDetail() {
                                   type="button"
                                   onClick={() => archiveVenue(v.id)}
                                   disabled={venueEditingId !== null || venueArchivingId !== null}
-                                  className="inline-flex h-7 items-center rounded-md border border-destructive/40 bg-background px-2 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
+                                  className="inline-flex h-9 items-center rounded-[10px] border border-[#FDA4AF] bg-white px-3.5 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   {venueArchivingId === v.id ? "Archiving…" : "Archive"}
                                 </button>
@@ -4089,9 +4089,9 @@ function PublicAddressCard({
       )}
 
       {otherDomains.length > 0 && (
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-[14px] border border-[#E6ECF4] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.035)]">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
+            <thead className="bg-[#F8FAFC] text-left text-xs uppercase tracking-wider text-[#64748B]">
               <tr>
                 <th className="px-3 py-2 font-medium">Subdomain</th>
                 <th className="px-3 py-2 font-medium">Custom</th>
@@ -4527,7 +4527,7 @@ function CopyLinkButton({ url, label = "Copy link" }: { url: string; label?: str
           toast.error("Could not copy");
         }
       }}
-      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+      className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
     >
       {copied ? "Copied" : label}
     </button>
@@ -4540,7 +4540,7 @@ function OpenLinkButton({ href, label = "Open" }: { href: string; label?: string
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+      className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
     >
       {label}
     </a>
@@ -4551,7 +4551,7 @@ function AnchorButton({ href, label }: { href: string; label: string }) {
   return (
     <a
       href={href}
-      className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+      className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
     >
       {label}
     </a>
