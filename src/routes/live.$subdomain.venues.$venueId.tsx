@@ -283,6 +283,6 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           <div className="mt-8 flex justify-center"><PoweredByGetStampd variant="trail" /></div>
         </div>
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }
