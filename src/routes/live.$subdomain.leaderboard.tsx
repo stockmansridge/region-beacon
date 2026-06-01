@@ -46,6 +46,22 @@ type State =
 
 export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [eventId, setEventId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const host = tenantHost(subdomain);
+      const { data } = await supabase.rpc("resolve_event_by_host", {
+        _hostname: host,
+      });
+      const row = (data?.[0] ?? null) as { event_id?: string | null } | null;
+      if (!cancelled) setEventId(row?.event_id ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [subdomain]);
 
   useEffect(() => {
     let cancelled = false;
