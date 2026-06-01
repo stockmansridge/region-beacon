@@ -31,6 +31,7 @@ import {
   type EventBackgroundKey,
   getBackground,
 } from "@/lib/event-backgrounds";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
