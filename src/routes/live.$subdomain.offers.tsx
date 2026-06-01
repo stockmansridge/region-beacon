@@ -100,7 +100,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
   if (state.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
         Loading…
       </div>
     );
@@ -112,7 +112,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
   const { event, offers } = state;
   const labels = resolveVenueLabels(event ?? {});
-  const accent = event?.primary_color ?? "#1F3D2B";
+  const accent = event?.primary_color ?? "var(--event-primary,#1F3D2B)";
 
   return (
     <EventPaletteScope
@@ -132,24 +132,24 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         <div className="mb-6">
           <Link
             to="/"
-            className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
+            className="text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
           >
             ← Back
           </Link>
-          <h1 className="mt-3 font-trail-serif text-3xl font-semibold text-[#1F3D2B]">
+          <h1 className="mt-3 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
             Offers
           </h1>
-          <p className="mt-1 text-sm text-[#3D372C]">
+          <p className="mt-1 text-sm text-[var(--event-body,#3D372C)]">
             Special offers from {labels.plural.toLowerCase()} on this trail.
           </p>
         </div>
 
         {offers.length === 0 ? (
-          <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center text-sm text-[#3D372C]">
+          <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
             <p>No offers have been listed yet.</p>
             <Link
               to="/venues"
-              className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
+              className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
             >
               Browse {labels.plural.toLowerCase()} →
             </Link>
@@ -167,21 +167,21 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
               return (
                 <li
                   key={vid}
-                  className="overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] shadow-sm"
+                  className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm"
                 >
                   <Link
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
-                    className="flex items-stretch gap-3 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F3D2B]"
+                    className="flex items-stretch gap-3 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
                     aria-label={`View ${v.name ?? "venue"} details`}
                   >
                     <Thumb path={v.logo_path ?? v.cover_path} />
                     <div className="flex min-w-0 flex-1 flex-col justify-center">
-                      <p className="truncate font-trail-serif text-lg font-semibold text-[#1F3D2B]">
+                      <p className="truncate font-trail-serif text-lg font-semibold text-[var(--event-primary,#1F3D2B)]">
                         {v.name ?? "Unnamed"}
                       </p>
                       {v.address && (
-                        <p className="mt-0.5 truncate text-[11px] text-[#8A7E66]">
+                        <p className="mt-0.5 truncate text-[11px] text-[var(--event-muted,#8A7E66)]">
                           {v.address}
                         </p>
                       )}
@@ -194,14 +194,14 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                       ›
                     </span>
                   </Link>
-                  <div className="border-t border-[#E6DCC7] bg-white/40 px-4 py-3">
+                  <div className="border-t border-[var(--event-border,#E6DCC7)] bg-white/40 px-4 py-3">
                     <p
                       className="text-[10px] font-semibold uppercase tracking-[0.22em]"
                       style={{ color: accent }}
                     >
                       Offer
                     </p>
-                    <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[#3D372C]">
+                    <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
                       {v.offer_summary}
                     </p>
                     {directionsUrl && (
@@ -209,7 +209,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                         href={directionsUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-3 inline-block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1F3D2B] underline-offset-4 hover:underline"
+                        className="mt-3 inline-block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
                       >
                         Directions →
                       </a>
@@ -232,10 +232,10 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 function Thumb({ path }: { path: string | null }) {
   const url = getVenueAssetPublicUrl(path);
   if (!url) {
-    return <div className="h-16 w-16 flex-shrink-0 rounded-xl bg-[#1F3D2B]/10" />;
+    return <div className="h-16 w-16 flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />;
   }
   return (
-    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[#1F3D2B]/10">
+    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10">
       <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
     </div>
   );
@@ -243,13 +243,13 @@ function Thumb({ path }: { path: string | null }) {
 
 function NotLiveYet() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6">
-      <div className="mx-auto max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#1F3D2B]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
+      <div className="mx-auto max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
+        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           Event not live yet
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
           This passport experience isn't available right now. Please check back
           closer to the event, or contact the organiser for details.
         </p>

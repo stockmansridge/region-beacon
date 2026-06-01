@@ -116,19 +116,19 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} /></div>
       <div className="mx-auto max-w-md px-4 pt-4">
-        <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           Scan venue QR
         </h1>
-        <p className="mt-2 text-sm text-[#3D372C]">
+        <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]">
           Point your camera at the QR code on display at the venue to collect your stamp.
         </p>
 
         {hasPassport === false && eventId && (
-          <div className="mt-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-sm text-[#3D372C]">
+          <div className="mt-4 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm text-[var(--event-body,#3D372C)]">
             You'll need a passport before you can collect stamps.
             <Link
               to="/join"
-              className="ml-2 font-semibold text-[#1F3D2B] underline underline-offset-4"
+              className="ml-2 font-semibold text-[var(--event-primary,#1F3D2B)] underline underline-offset-4"
             >
               Start your passport →
             </Link>
@@ -137,8 +137,8 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
 
         <div className="mt-5">
           {err.kind === "permission" || err.kind === "unsupported" ? (
-            <div className="rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 text-sm text-[#3D372C]">
-              <p className="font-semibold text-[#1F3D2B]">
+            <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 text-sm text-[var(--event-body,#3D372C)]">
+              <p className="font-semibold text-[var(--event-primary,#1F3D2B)]">
                 {err.kind === "permission" ? "Camera access was blocked." : "Camera not supported."}
               </p>
               <p className="mt-2">
@@ -148,7 +148,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
               </p>
               <Link
                 to="/venues"
-                className="mt-4 inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
+                className="mt-4 inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
               >
                 ← Back to venues
               </Link>
@@ -159,18 +159,18 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
         </div>
 
         {err.kind === "invalid" && (
-          <div className="mt-3 rounded-xl border border-[#E6DCC7] bg-[#FBF5E8] px-3 py-2 text-xs text-[#3D372C]">
+          <div className="mt-3 rounded-xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-2 text-xs text-[var(--event-body,#3D372C)]">
             {err.message}
           </div>
         )}
         {err.kind === "error" && (
-          <div className="mt-3 rounded-xl border border-[#E6DCC7] bg-[#FBF5E8] px-3 py-2 text-xs text-[#3D372C]">
+          <div className="mt-3 rounded-xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-2 text-xs text-[var(--event-body,#3D372C)]">
             Scanner error. {err.message}
           </div>
         )}
 
-        <details className="mt-5 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-xs text-[#3D372C]">
-          <summary className="cursor-pointer font-semibold text-[#1F3D2B]">
+        <details className="mt-5 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-xs text-[var(--event-body,#3D372C)]">
+          <summary className="cursor-pointer font-semibold text-[var(--event-primary,#1F3D2B)]">
             Trouble scanning?
           </summary>
           <div className="mt-3 space-y-2">
@@ -180,12 +180,12 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
               value={manual}
               onChange={(e) => setManual(e.target.value)}
               placeholder="https://…/checkin/<token>"
-              className="w-full rounded-lg border border-[#E6DCC7] bg-white px-3 py-2 text-sm text-[#3D372C]"
+              className="w-full rounded-lg border border-[var(--event-border,#E6DCC7)] bg-white px-3 py-2 text-sm text-[var(--event-body,#3D372C)]"
             />
             <button
               type="button"
               onClick={tryManual}
-              className="rounded-full bg-[#1F3D2B] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#FBF5E8]"
+              className="rounded-full bg-[var(--event-primary,#1F3D2B)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-card-bg,#FBF5E8)]"
             >
               Go
             </button>
@@ -198,7 +198,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
                   setTimeout(() => setCopied(false), 1500);
                 } catch { /* ignore */ }
               }}
-              className="ml-2 rounded-full border border-[#1F3D2B] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#1F3D2B]"
+              className="ml-2 rounded-full border border-[var(--event-primary,#1F3D2B)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-primary,#1F3D2B)]"
             >
               {copied ? "Copied" : "Copy support details"}
             </button>

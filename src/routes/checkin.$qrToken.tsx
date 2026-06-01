@@ -313,7 +313,7 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
   const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
   if (outcome.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
         Recording your stamp…
       </div>
     );
@@ -336,7 +336,7 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
             className="relative h-[420px] w-full"
             style={{ background: `linear-gradient(160deg, ${PRIMARY} 0%, #14271C 100%)` }}
           >
-            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[#F6EFE2]">
+            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-page-bg,#F6EFE2)]">
               <div
                 className="flex h-20 w-20 items-center justify-center rounded-full border-2"
                 style={{
@@ -357,7 +357,7 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
                 {title}
               </h1>
               {outcome.venueName && (
-                <p className="mt-1 text-base text-[#F6EFE2]/90">{outcome.venueName}</p>
+                <p className="mt-1 text-base text-[var(--event-page-bg,#F6EFE2)]/90">{outcome.venueName}</p>
               )}
             </div>
           </div>
@@ -367,7 +367,7 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
           <Link
             to="/passport/$token"
             params={{ token: outcome.passportToken }}
-            className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+            className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
             style={{ backgroundColor: PRIMARY }}
           >
             View my passport
@@ -469,24 +469,24 @@ function CheckinFailureCard({
     otherPassports.length > 0 ? otherPassports[0].access_token! : null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6 py-10">
-      <div className="mx-auto w-full max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#1F3D2B]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">{title}</h1>
-        <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">{body}</p>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6 py-10">
+      <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
+        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">{title}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{body}</p>
 
         <div className="mt-6 flex flex-col gap-2">
           {outcome.kind === "no_passport_for_event" ? (
             <>
               <a
                 href={joinHref}
-                className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
               >
                 Create passport for this trail
               </a>
               <a
                 href="/"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-[#1F3D2B]/30 bg-transparent text-sm font-semibold tracking-wide text-[#1F3D2B]"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 bg-transparent text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
               >
                 Back to trail home
               </a>
@@ -494,7 +494,7 @@ function CheckinFailureCard({
                 <Link
                   to="/passport/$token"
                   params={{ token: otherPassportToken }}
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-transparent text-xs font-medium tracking-wide text-[#3D372C] underline underline-offset-2"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-transparent text-xs font-medium tracking-wide text-[var(--event-body,#3D372C)] underline underline-offset-2"
                 >
                   Open saved passport from another trail
                 </Link>
@@ -504,13 +504,13 @@ function CheckinFailureCard({
             <>
               <a
                 href="/passport"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-[#1F3D2B] text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
               >
                 Open my passport
               </a>
               <a
                 href="/"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-[#1F3D2B]/30 bg-transparent text-sm font-semibold tracking-wide text-[#1F3D2B]"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 bg-transparent text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
               >
                 Back to home
               </a>
@@ -519,7 +519,7 @@ function CheckinFailureCard({
           <button
             type="button"
             onClick={copySupport}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#1F3D2B]/20 bg-transparent text-xs font-medium tracking-wide text-[#3D372C] hover:bg-[#1F3D2B]/5"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--event-primary,#1F3D2B)]/20 bg-transparent text-xs font-medium tracking-wide text-[var(--event-body,#3D372C)] hover:bg-[var(--event-primary,#1F3D2B)]/5"
           >
             <Copy className="h-3.5 w-3.5" />
             {copied ? "Copied support details" : "Copy support details"}

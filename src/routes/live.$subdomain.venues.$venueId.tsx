@@ -103,7 +103,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
   if (state.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
         Loading…
       </div>
     );
@@ -111,17 +111,17 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
   if (state.kind === "not_found") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] px-6">
-        <div className="mx-auto max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
-          <h1 className="font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
+        <div className="mx-auto max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
+          <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
             Venue not found
           </h1>
-          <p className="mt-3 text-sm text-[#3D372C]">
+          <p className="mt-3 text-sm text-[var(--event-body,#3D372C)]">
             This venue isn't available right now.
           </p>
           <Link
             to="/venues"
-            className="mt-6 inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
+            className="mt-6 inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
           >
             ← All venues
           </Link>
@@ -139,7 +139,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} /></div>
       <div className="mx-auto max-w-md">
-        <div className="relative aspect-[3/1] w-full overflow-hidden bg-[#1F3D2B]/10">
+        <div className="relative aspect-[3/1] w-full overflow-hidden bg-[var(--event-primary,#1F3D2B)]/10">
           {coverUrl ? (
             <img
               src={coverUrl}
@@ -149,7 +149,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           ) : null}
           <Link
             to="/venues"
-            className="absolute left-3 top-3 rounded-full bg-[#F6EFE2]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[#1F3D2B] shadow"
+            className="absolute left-3 top-3 rounded-full bg-[var(--event-page-bg,#F6EFE2)]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] shadow"
           >
             ← Back
           </Link>
@@ -157,7 +157,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
         <div className="px-4">
           <div className="-mt-10 flex items-end gap-3">
-            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border-4 border-[#F6EFE2] bg-[#FBF5E8] shadow">
+            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border-4 border-[var(--event-page-bg,#F6EFE2)] bg-[var(--event-card-bg,#FBF5E8)] shadow">
               {logoUrl ? (
                 <img
                   src={logoUrl}
@@ -165,19 +165,19 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="grid h-full w-full place-items-center font-trail-serif text-2xl font-semibold text-[#1F3D2B]">
+                <div className="grid h-full w-full place-items-center font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
                   {venue.name.slice(0, 1).toUpperCase()}
                 </div>
               )}
             </div>
           </div>
 
-          <h1 className="mt-4 font-trail-serif text-3xl font-semibold text-[#1F3D2B]">
+          <h1 className="mt-4 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
             {venue.name}
           </h1>
 
           {visited.kind === "visited" && (
-            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#1F3D2B] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#FBF5E8]">
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--event-primary,#1F3D2B)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-card-bg,#FBF5E8)]">
               ✓ Visited
               {visited.at && (
                 <span className="font-normal normal-case tracking-normal opacity-80">
@@ -187,36 +187,36 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             </div>
           )}
           {visited.kind === "not_visited" && (
-            <div className="mt-2 inline-flex items-center rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-[#8A7E66]">
+            <div className="mt-2 inline-flex items-center rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-[var(--event-muted,#8A7E66)]">
               Not visited yet
             </div>
           )}
           {visited.kind === "no_passport" && (
-            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-3 py-1 text-[11px] font-medium text-[#3D372C]">
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-1 text-[11px] font-medium text-[var(--event-body,#3D372C)]">
               <span>Create a passport to track visited venues</span>
-              <Link to="/join" className="font-semibold text-[#1F3D2B] underline underline-offset-2">
+              <Link to="/join" className="font-semibold text-[var(--event-primary,#1F3D2B)] underline underline-offset-2">
                 Start
               </Link>
             </div>
           )}
 
           {venue.address && (
-            <p className="mt-3 text-sm text-[#8A7E66]">📍 {venue.address}</p>
+            <p className="mt-3 text-sm text-[var(--event-muted,#8A7E66)]">📍 {venue.address}</p>
           )}
 
 
           {venue.description && (
-            <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[#3D372C]">
+            <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-body,#3D372C)]">
               {venue.description}
             </p>
           )}
 
           {venue.offer_summary && (
-            <div className="mt-5 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8A7E66]">
+            <div className="mt-5 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
                 About their offer
               </div>
-              <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[#3D372C]">
+              <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-body,#3D372C)]">
                 {venue.offer_summary}
               </p>
             </div>
@@ -235,7 +235,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                   href={directionsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-sm font-medium text-[#1F3D2B] shadow-sm transition hover:border-[#1F3D2B]/40"
+                  className="flex items-center justify-between rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm font-medium text-[var(--event-primary,#1F3D2B)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/40"
                 >
                   <span>Get directions (Apple Maps)</span>
                   <span aria-hidden>↗</span>
@@ -247,7 +247,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                 href={venue.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-sm font-medium text-[#1F3D2B] shadow-sm transition hover:border-[#1F3D2B]/40"
+                className="flex items-center justify-between rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm font-medium text-[var(--event-primary,#1F3D2B)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/40"
               >
                 <span>Visit website</span>
                 <span aria-hidden>↗</span>
@@ -256,7 +256,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             {venue.phone && (
               <a
                 href={`tel:${venue.phone.replace(/\s+/g, "")}`}
-                className="flex items-center justify-between rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-sm font-medium text-[#1F3D2B] shadow-sm transition hover:border-[#1F3D2B]/40"
+                className="flex items-center justify-between rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm font-medium text-[var(--event-primary,#1F3D2B)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/40"
               >
                 <span>Call {venue.phone}</span>
                 <span aria-hidden>›</span>
@@ -273,8 +273,8 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
           <Link
             to="/scan"
-            className="mt-6 flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-center text-sm font-semibold text-[#F6EFE2] shadow transition hover:opacity-95"
-            style={{ backgroundColor: "#1F3D2B" }}
+            className="mt-6 flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-center text-sm font-semibold text-[var(--event-page-bg,#F6EFE2)] shadow transition hover:opacity-95"
+            style={{ backgroundColor: "var(--event-primary,#1F3D2B)" }}
           >
             <span aria-hidden>📷</span>
             Scan venue QR to collect your stamp
