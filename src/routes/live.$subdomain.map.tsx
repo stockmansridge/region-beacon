@@ -114,50 +114,14 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       setEvent(evt);
       setLoading(false);
 
-      // Load passport stamps if a saved passport exists for this event.
-      if (evt?.event_id && typeof localStorage !== "undefined") {
-        const key = `gs.passport.${evt.event_id}`;
-        let savedFound = false;
-        let stampRpcError: string | null = null;
-        let stampRowCount = 0;
-        try {
-          const raw = localStorage.getItem(key);
-          if (raw) {
-            const parsed = JSON.parse(raw) as { access_token?: string };
-            if (parsed?.access_token) {
-              savedFound = true;
-              setHasPassport(true);
-              const { data: stampsData, error: stampsErr } = await supabase.rpc(
-                "get_passport_stamps_by_token" as never,
-                { _raw_token: parsed.access_token } as never,
-              );
-              if (cancelled) return;
-              if (stampsErr) {
-                stampRpcError =
-                  (stampsErr as { message?: string }).message ?? "rpc error";
-              }
-              const rows = (stampsData ?? []) as Array<{
-                venue_id: string | null;
-                is_stamped: boolean | null;
-              }>;
-              stampRowCount = rows.length;
-              const visited = new Set<string>();
-              for (const s of rows) {
-                if (s.venue_id && s.is_stamped) visited.add(String(s.venue_id));
-              }
-              setVisitedIds(visited);
-            }
-          }
-        } catch (e) {
-          stampRpcError = e instanceof Error ? e.message : String(e);
-        }
-        setStampDiag({
-          savedPassportKey: key,
-          savedPassportFound: savedFound,
-          stampRpcError,
-          stampRowCount,
-        });
-      }
+      const passport = await resolveCurrentEventPassport(evt?.event_id ?? null);
+      if (cancelled) return;
+      setPassportState(passport);
+
+      const stamps = await loadPassportStampState(passport.token);
+      if (cancelled) return;
+      setStampState(stamps);
+      setVisitedIds(stamps.visitedVenueIds);
     })();
     return () => {
       cancelled = true;
