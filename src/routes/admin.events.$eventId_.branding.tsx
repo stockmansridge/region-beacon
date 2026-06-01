@@ -212,7 +212,7 @@ function BrandingEditor() {
     };
   }, [agency.status, agencyId, eventId, reloadKey]);
 
-  async function onSave() {
+  async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
 
     const primary_color = form.primary_color.trim();
@@ -256,6 +256,7 @@ function BrandingEditor() {
 
     setValidationError(null);
     setSaveError(null);
+    setSaveSuccess(null);
     setSaving(true);
 
     const palette_key = form.palette_key.trim();
@@ -274,7 +275,7 @@ function BrandingEditor() {
       return;
     }
 
-    const basePayload = {
+    const fullPayload: Record<string, unknown> = {
       primary_color: primary_color || null,
       accent_color: accent_color || null,
       font_family: font_family || null,
@@ -284,50 +285,132 @@ function BrandingEditor() {
       venue_label_plural,
       palette_key: palette_key || null,
       page_background_key: page_background_key || null,
-    };
-    const extendedPayload = {
-      ...basePayload,
       page_background_color: page_background_color || null,
       card_background_color: card_background_color || null,
     };
 
-    async function attemptSave(payload: Record<string, unknown>) {
-      if (!bundle) return { message: "Internal error." } as { message: string };
-      if (bundle.hasBranding) {
-        const { error: upErr } = await supabase
+    const SELECT_COLS =
+      "logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color";
+
+    // 1. Re-check existence from the DB (don't rely on stale bundle.hasBranding).
+    const { data: existing, error: existingErr } = await supabase
+      .from("event_branding")
+      .select("event_id, agency_id")
+      .eq("event_id", bundle.event.id)
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+
+    console.info("[branding-save] precheck", {
+      event_id: bundle.event.id,
+      agency_id: agencyId,
+      existingFound: Boolean(existing),
+      existingErrorCode: existingErr?.code ?? null,
+      existingErrorMessage: existingErr?.message ?? null,
+      payloadKeys: Object.keys(fullPayload),
+    });
+
+    async function writeRow(payload: Record<string, unknown>, mode: "update" | "insert") {
+      if (!bundle) return { row: null, error: { message: "Internal error." } as any };
+      if (mode === "update") {
+        const { data, error } = await supabase
           .from("event_branding")
           .update(payload)
           .eq("event_id", bundle.event.id)
-          .eq("agency_id", agencyId!);
-        return upErr ?? null;
+          .eq("agency_id", agencyId!)
+          .select(SELECT_COLS)
+          .maybeSingle();
+        return { row: data, error };
       }
-      const { error: inErr } = await supabase
+      const { data, error } = await supabase
         .from("event_branding")
-        .insert({ agency_id: agencyId!, event_id: bundle.event.id, ...payload });
-      return inErr ?? null;
+        .insert({ agency_id: agencyId!, event_id: bundle.event.id, ...payload })
+        .select(SELECT_COLS)
+        .maybeSingle();
+      return { row: data, error };
     }
 
-    let error = await attemptSave(extendedPayload);
-    if (error && /(page_background_color|card_background_color)/i.test(error.message)) {
-      // Custom background columns not yet migrated. Save remaining fields
-      // and surface a friendly hint.
-      error = await attemptSave(basePayload);
-      if (!error && (page_background_color || card_background_color)) {
+    const mode: "update" | "insert" = existing ? "update" : "insert";
+    let payload = fullPayload;
+    let { row: savedRow, error: writeErr } = await writeRow(payload, mode);
+
+    // Fallback if custom background columns are missing on the production DB
+    // (migration 03 not yet applied). Retry without those keys so the rest persists.
+    if (
+      writeErr &&
+      /(page_background_color|card_background_color)/i.test(writeErr.message ?? "")
+    ) {
+      console.warn("[branding-save] custom-background columns missing, retrying without", {
+        message: writeErr.message,
+      });
+      const { page_background_color: _pbc, card_background_color: _cbc, ...rest } = fullPayload;
+      payload = rest;
+      const retry = await writeRow(payload, mode);
+      savedRow = retry.row;
+      writeErr = retry.error;
+      if (!writeErr && (page_background_color || card_background_color)) {
         setSaveError(
-          "Saved core branding. Custom hex background colours require the database migration in supabase/migrations-draft-event-background/03_custom_background_colors.sql to be applied.",
+          "Saved core branding. Custom hex background colours require the database migration in supabase/migrations-draft-event-background/03_custom_background_colors.sql.",
         );
-        setSaving(false);
-        setReloadKey((k) => k + 1);
-        return;
       }
     }
 
-    setSaving(false);
-    if (error) {
-      setSaveError("Could not save branding changes. Please try again.");
+    console.info("[branding-save] write", {
+      mode,
+      ok: !writeErr,
+      errorCode: (writeErr as any)?.code ?? null,
+      errorMessage: writeErr?.message ?? null,
+      errorDetails: (writeErr as any)?.details ?? null,
+      errorHint: (writeErr as any)?.hint ?? null,
+      saved: savedRow
+        ? {
+            palette_key: (savedRow as any).palette_key,
+            page_background_key: (savedRow as any).page_background_key,
+            page_background_color: (savedRow as any).page_background_color,
+            card_background_color: (savedRow as any).card_background_color,
+          }
+        : null,
+    });
+
+    if (writeErr) {
+      setSaving(false);
+      setSaveError("Branding could not be saved. Please try again or contact support.");
       return;
     }
-    setReloadKey((k) => k + 1);
+
+    if (!savedRow) {
+      // Update returned no rows — likely an RLS / scope mismatch.
+      setSaving(false);
+      setSaveError(
+        "Branding could not be saved (no row affected). Please reload the page and try again.",
+      );
+      return;
+    }
+
+    // Reload local state from the verified saved row, not from the form.
+    const saved = savedRow as Branding;
+    setBundle((b) =>
+      b ? { ...b, branding: saved, hasBranding: true } : b,
+    );
+    setForm({
+      primary_color: saved.primary_color ?? "",
+      accent_color: saved.accent_color ?? "",
+      font_family: saved.font_family ?? "",
+      welcome_copy: saved.welcome_copy ?? "",
+      terms_url: saved.terms_url ?? "",
+      venue_label_singular: saved.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
+      venue_label_plural: saved.venue_label_plural ?? DEFAULT_VENUE_LABEL_PLURAL,
+      palette_key: saved.palette_key ?? "",
+      page_background_key: saved.page_background_key ?? "",
+      page_background_color: saved.page_background_color ?? "",
+      card_background_color: saved.card_background_color ?? "",
+    });
+
+    setSaving(false);
+    if (!saveError) setSaveSuccess("Branding saved.");
+
+    if (opts?.returnAfter) {
+      navigate({ to: "/admin/events/$eventId", params: { eventId } });
+    }
   }
 
   async function persistAssetPath(
