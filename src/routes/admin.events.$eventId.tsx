@@ -2178,8 +2178,8 @@ function EventDetail() {
               canEdit={canEdit}
             />
           </Section>
-        </aside>
-      </div>
+
+
 
           <Section
             id="section-venues"
