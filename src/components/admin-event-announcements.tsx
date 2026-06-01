@@ -295,18 +295,20 @@ export function AdminEventAnnouncements({
           )}
           <div className="space-y-3">
             <label className="block">
-              <span className="text-xs font-medium">Title <span className="text-destructive">*</span></span>
+              <span className="text-xs font-medium">Title (optional, internal only)</span>
               <input
                 type="text"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 maxLength={120}
                 className="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm"
+                placeholder="Used in admin only — not shown to visitors"
               />
               <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                {form.title.length}/120
+                {form.title.length}/120 — visitors see only the Message below.
               </span>
             </label>
+
             <label className="block">
               <span className="text-xs font-medium">Message <span className="text-destructive">*</span></span>
               <textarea
