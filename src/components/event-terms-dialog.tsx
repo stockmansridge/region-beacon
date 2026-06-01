@@ -265,7 +265,7 @@ export function EventTermsDialog({
                 maxLength={40}
                 value={versionLabel}
                 onChange={(e) => setVersionLabel(e.target.value)}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                 placeholder="1.0"
               />
             </Field>
@@ -274,7 +274,7 @@ export function EventTermsDialog({
                 type="datetime-local"
                 value={effectiveAt}
                 onChange={(e) => setEffectiveAt(e.target.value)}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
               />
             </Field>
           </div>
@@ -288,7 +288,7 @@ export function EventTermsDialog({
                   maxLength={2000}
                   value={termsUrl}
                   onChange={(e) => setTermsUrl(e.target.value)}
-                  className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                   placeholder="https://example.com/terms"
                 />
               </Field>
@@ -299,19 +299,19 @@ export function EventTermsDialog({
                   maxLength={2000}
                   value={privacyUrl}
                   onChange={(e) => setPrivacyUrl(e.target.value)}
-                  className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                   placeholder="https://example.com/privacy"
                 />
               </Field>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[#FDBA74] bg-[#FFF7ED] px-4 py-3">
                 <p className="text-xs text-amber-900">{LEGAL_DEFAULT_DISCLAIMER}</p>
                 <button
                   type="button"
                   onClick={loadDefaults}
-                  className="inline-flex h-8 items-center rounded-lg border border-amber-400 bg-white px-3 text-xs font-medium text-amber-900 hover:bg-amber-100"
+                  className="h-9 rounded-[10px] border border-[#FDBA74] bg-white px-3.5 text-sm font-semibold text-[#B45309] hover:bg-[#FFF7ED]"
                 >
                   Load default templates
                 </button>
@@ -323,7 +323,7 @@ export function EventTermsDialog({
                   maxLength={LEGAL_LIMITS.titleMax}
                   value={termsTitle}
                   onChange={(e) => setTermsTitle(e.target.value)}
-                  className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                 />
               </Field>
               <Field
@@ -335,7 +335,7 @@ export function EventTermsDialog({
                   value={termsBody}
                   onChange={(e) => setTermsBody(e.target.value)}
                   rows={10}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono"
+                  className="min-h-[140px] w-full rounded-[12px] border border-[#D9E2EF] bg-white px-3 py-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                 />
               </Field>
               <Field label="Privacy title" hint={`Max ${LEGAL_LIMITS.titleMax} characters`}>
@@ -344,7 +344,7 @@ export function EventTermsDialog({
                   maxLength={LEGAL_LIMITS.titleMax}
                   value={privacyTitle}
                   onChange={(e) => setPrivacyTitle(e.target.value)}
-                  className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                 />
               </Field>
               <Field
@@ -356,14 +356,14 @@ export function EventTermsDialog({
                   value={privacyBody}
                   onChange={(e) => setPrivacyBody(e.target.value)}
                   rows={10}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono"
+                  className="min-h-[140px] w-full rounded-[12px] border border-[#D9E2EF] bg-white px-3 py-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                 />
               </Field>
             </div>
           )}
 
           {error && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
               {error}
             </div>
           )}
@@ -374,7 +374,7 @@ export function EventTermsDialog({
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={saving}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            className="h-10 rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel
           </button>
@@ -382,7 +382,7 @@ export function EventTermsDialog({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            className="h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save & activate"}
           </button>
