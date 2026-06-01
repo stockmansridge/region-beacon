@@ -198,6 +198,8 @@ function BrandingEditor() {
         venue_label_plural: branding?.venue_label_plural ?? DEFAULT_VENUE_LABEL_PLURAL,
         palette_key: branding?.palette_key ?? "",
         page_background_key: branding?.page_background_key ?? "",
+        page_background_color: branding?.page_background_color ?? "",
+        card_background_color: branding?.card_background_color ?? "",
       });
       setState("ready");
     })();
