@@ -154,6 +154,12 @@ function Login() {
                 {submitting ? "Signing in…" : "Sign in"}
               </button>
             </form>
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              New here?{" "}
+              <Link to="/signup" className="font-medium text-primary hover:underline">
+                Create your organisation
+              </Link>
+            </p>
           </>
         ) : (
           <form className="mt-6 space-y-4" onSubmit={handleReset}>
