@@ -103,6 +103,7 @@ function BrandingEditor() {
     terms_url: "",
     venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
     venue_label_plural: DEFAULT_VENUE_LABEL_PLURAL,
+    palette_key: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -139,7 +140,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -180,6 +181,7 @@ function BrandingEditor() {
         terms_url: branding?.terms_url ?? "",
         venue_label_singular: branding?.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
         venue_label_plural: branding?.venue_label_plural ?? DEFAULT_VENUE_LABEL_PLURAL,
+        palette_key: branding?.palette_key ?? "",
       });
       setState("ready");
     })();
