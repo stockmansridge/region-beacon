@@ -3096,7 +3096,7 @@ function BrandingSummary({ branding }: { branding: Branding }) {
 
 function EmptyNotice({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+    <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm leading-6 text-[#475569]">
       {children}
     </div>
   );
