@@ -16,7 +16,10 @@ export type EventPaletteKey =
   | "festival_bright"
   | "premium_wine"
   | "coastal_trail"
-  | "orchard_country";
+  | "orchard_country"
+  | "custom";
+
+export const CUSTOM_PALETTE_KEY: EventPaletteKey = "custom";
 
 export type EventPalette = {
   key: EventPaletteKey;
