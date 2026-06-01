@@ -246,147 +246,165 @@ export function AdminEventRewards({
   }
 
   if (rules === null) {
-    return <div className="text-xs text-muted-foreground">Loading reward tiers…</div>;
+    return (
+      <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 text-sm text-[#64748B] shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+        Loading reward tiers…
+      </div>
+    );
   }
   if (loadError) {
     return (
-      <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+      <div className="rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
         {loadError}
       </div>
     );
   }
 
+  const inputClass =
+    "h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  const labelClass = "text-sm font-medium text-[#334155]";
+  const helperClass = "text-xs leading-5 text-[#64748B]";
+
   return (
-    <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">
-        Reward rules affect tier display on the public leaderboard and visitor
-        passport progress. They do not change existing check-ins. Day 1 supports
-        the <span className="font-medium">min_checkins</span> rule type only —
-        award a tier when a passport has reached a stamp threshold.
-      </p>
+    <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold text-[#111827]">Reward tiers</h3>
+          <p className="text-sm leading-6 text-[#64748B]">
+            Reward tiers control the ladder shown on the public leaderboard and
+            visitor passport. They do not change existing check-ins.
+          </p>
+        </div>
+      </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-md border border-dashed bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
-          No active reward tiers configured. Visitors will see the default
-          Bronze (3) / Silver (5) / Gold (up to 8) ladder until tiers are
-          added here.
+        <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
+          No reward tiers configured yet. Visitors will see the default Bronze /
+          Silver / Gold ladder until custom tiers are added.
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_110px_90px_auto] items-center gap-2 px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            <div>Label</div>
-            <div>Threshold</div>
-            <div>Active</div>
-            <div className="sr-only">Actions</div>
-          </div>
+        <div className="space-y-3">
           {rows.map((row) => (
             <div
               key={row.key}
-              className="grid grid-cols-[1fr_110px_90px_auto] items-center gap-2 rounded-md border bg-background p-2"
+              className="rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
             >
-              <input
-                type="text"
-                value={row.label}
-                maxLength={LabelMax}
-                disabled={!canEdit}
-                onChange={(e) => updateRow(row.key, "label", e.target.value)}
-                placeholder="Bronze"
-                className="h-9 rounded-md border bg-background px-3 text-sm disabled:opacity-60"
-              />
-              <input
-                type="number"
-                min={1}
-                step={1}
-                value={row.threshold}
-                disabled={!canEdit}
-                onChange={(e) => updateRow(row.key, "threshold", e.target.value)}
-                placeholder="3"
-                className="h-9 rounded-md border bg-background px-3 text-sm disabled:opacity-60"
-              />
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={row.is_active}
-                  disabled={!canEdit}
-                  onChange={(e) => updateRow(row.key, "is_active", e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <span className={row.is_active ? "text-foreground" : "text-muted-foreground"}>
-                  {row.is_active ? "On" : "Off"}
-                </span>
-              </label>
+              <div className="grid gap-4 md:grid-cols-3">
+                <label className="space-y-2">
+                  <span className={labelClass}>Tier name</span>
+                  <input
+                    type="text"
+                    value={row.label}
+                    maxLength={LabelMax}
+                    disabled={!canEdit}
+                    onChange={(e) => updateRow(row.key, "label", e.target.value)}
+                    placeholder="Bronze"
+                    className={inputClass}
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className={labelClass}>Minimum check-ins</span>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={row.threshold}
+                    disabled={!canEdit}
+                    onChange={(e) => updateRow(row.key, "threshold", e.target.value)}
+                    placeholder="3"
+                    className={inputClass}
+                  />
+                </label>
+                <div className="space-y-2">
+                  <span className={labelClass}>Status</span>
+                  <div className="flex h-10 items-center justify-between gap-3 rounded-[10px] border border-[#D9E2EF] bg-white px-3">
+                    <span className={helperClass}>
+                      {row.is_active ? "Active" : "Inactive"}
+                    </span>
+                    <label className="inline-flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={row.is_active}
+                        disabled={!canEdit}
+                        onChange={(e) => updateRow(row.key, "is_active", e.target.checked)}
+                        className="h-4 w-4 accent-[#2F6FE4]"
+                      />
+                      <span className="text-xs font-medium text-[#334155]">
+                        {row.is_active ? "On" : "Off"}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
               {canEdit && row.id === null && (
-                <button
-                  type="button"
-                  onClick={() => removeRow(row.key)}
-                  className="inline-flex h-8 items-center rounded-md border bg-background px-2 text-xs text-muted-foreground hover:bg-muted"
-                >
-                  Remove
-                </button>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeRow(row.key)}
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#FDA4AF] bg-white px-3 text-xs font-semibold text-[#E11D48] hover:bg-[#FFF1F2]"
+                  >
+                    Remove
+                  </button>
+                </div>
               )}
-              {canEdit && row.id !== null && (
-                <span className="text-[11px] text-muted-foreground">
-                  Saved
-                </span>
-              )}
-              {!canEdit && <span />}
             </div>
           ))}
         </div>
       )}
 
       {otherRules.length > 0 && (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Other rule types:</span>{" "}
+        <div className="mt-4 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] px-4 py-3 text-xs text-[#64748B]">
+          <span className="font-medium text-[#111827]">Other rule types:</span>{" "}
           {otherRules
             .map((r) => `${r.reward_label ?? r.name} (${r.rule_type}${r.is_active ? "" : ", off"})`)
             .join(", ")}
-          . Editing of <code>all_venues</code> / <code>specific_set</code> rules
-          is not in the Day 1 editor.
+          .
         </div>
       )}
 
       {formError && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <div className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
           {formError}
         </div>
       )}
 
       {canEdit ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={addRow}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
-          >
-            Add tier
-          </button>
-          <button
-            type="button"
-            onClick={loadDefaults}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
-          >
-            Load default tiers
-          </button>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#E6ECF4] pt-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={addRow}
+              className="h-10 rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
+            >
+              Add tier
+            </button>
+            <button
+              type="button"
+              onClick={loadDefaults}
+              className="h-10 rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
+            >
+              Load default tiers
+            </button>
+          </div>
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="ml-auto inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            className="h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save reward tiers"}
           </button>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">
-          Only platform, agency owner, or agency admin roles can edit reward tiers.
+        <p className={`mt-4 ${helperClass}`}>
+          Only platform, organisation owner, or organisation admin roles can edit reward tiers.
         </p>
       )}
 
-      <div className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-        <span className="font-medium text-foreground">Prize draw rules</span> —
-        Prize draw rules are coming next. Current prize draw uses configured
-        backend rules where available.
+      <div className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
+        <span className="font-medium text-[#111827]">Prize draw rules</span> —
+        Prize draw rules are configured by backend rules where available. Public
+        reward tiers only affect visitor-facing progress and leaderboard display.
       </div>
     </div>
   );

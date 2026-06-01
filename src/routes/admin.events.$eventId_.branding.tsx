@@ -510,21 +510,21 @@ function BrandingEditor() {
   const { event, branding, venueCount } = bundle;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-5 p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          <div className="text-xs uppercase tracking-wider text-[#64748B]">
             Customer landing page
           </div>
-          <h1 className="mt-1 text-2xl font-semibold">{event.name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="rounded-full border bg-muted/40 px-2 py-0.5">
+          <h1 className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-[#111827]">{event.name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#64748B]">
+            <span className="rounded-full border border-[#D9E2EF] bg-white px-2.5 py-0.5">
               Status: {event.status}
             </span>
-            <span className="rounded-full border bg-muted/40 px-2 py-0.5">
+            <span className="rounded-full border border-[#D9E2EF] bg-white px-2.5 py-0.5">
               Slug: {event.public_slug ?? "—"}
             </span>
-            <span className="rounded-full border bg-muted/40 px-2 py-0.5">
+            <span className="rounded-full border border-[#D9E2EF] bg-white px-2.5 py-0.5">
               {primaryDomain
                 ? `${primaryDomain.public_subdomain ?? primaryDomain.custom_domain ?? "—"} · ${primaryDomain.status}`
                 : "No domain configured"}
@@ -535,7 +535,7 @@ function BrandingEditor() {
           <Link
             to="/admin/events/$eventId"
             params={{ eventId }}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
           >
             ← Back to event
           </Link>
@@ -543,7 +543,7 @@ function BrandingEditor() {
             to="/admin/events/$eventId/preview"
             params={{ eventId }}
             target="_blank"
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
           >
             Open full preview
           </Link>
@@ -551,7 +551,7 @@ function BrandingEditor() {
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
             title="Discard unsaved changes and return to the event"
           >
             Discard changes
@@ -562,7 +562,7 @@ function BrandingEditor() {
                 type="button"
                 onClick={() => onSave()}
                 disabled={saving}
-                className="inline-flex h-9 items-center rounded-lg border border-primary bg-background px-4 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-50"
+                className="inline-flex h-10 items-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save"}
               </button>
@@ -570,7 +570,7 @@ function BrandingEditor() {
                 type="button"
                 onClick={() => onSave({ returnAfter: true })}
                 disabled={saving}
-                className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save & return to event"}
               </button>
@@ -582,24 +582,25 @@ function BrandingEditor() {
       </div>
 
       {!canEdit && (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          You have view-only access. Only agency owners, agency admins, and platform admins can edit branding.
+        <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-[#334155]">
+          You have view-only access. Only organisation owners, organisation admins, and platform admins can edit branding.
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
         {/* ============== Form ============== */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {(validationError || saveError) && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
               {validationError ?? saveError}
             </div>
           )}
           {saveSuccess && !saveError && !validationError && (
-            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
+            <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm text-[#047857]">
               {saveSuccess}
             </div>
           )}
+
 
 
           <AssetUploader
@@ -607,7 +608,7 @@ function BrandingEditor() {
             currentPath={branding?.logo_path ?? null}
             canEdit={canEdit}
             onUpload={async (file) => {
-              if (!agencyId) return "Select an agency before uploading.";
+              if (!agencyId) return "Select an organisation before uploading.";
               const res = await uploadEventAsset({
                 agencyId,
                 eventId: event.id,
@@ -624,7 +625,7 @@ function BrandingEditor() {
             currentPath={branding?.cover_path ?? null}
             canEdit={canEdit}
             onUpload={async (file) => {
-              if (!agencyId) return "Select an agency before uploading.";
+              if (!agencyId) return "Select an organisation before uploading.";
               const res = await uploadEventAsset({
                 agencyId,
                 eventId: event.id,
@@ -649,7 +650,7 @@ function BrandingEditor() {
               !!form.palette_key && form.palette_key !== "custom";
             const customActive = !isCurated;
             return (
-              <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+              <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
                 <div>
                   <div className="text-sm font-semibold">Custom brand colours</div>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -665,7 +666,7 @@ function BrandingEditor() {
                       value={HEX_RE.test(form.primary_color) ? form.primary_color : "#1F3D2B"}
                       onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
                       disabled={!canEdit || saving || !customActive}
-                      className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <input
                       type="text"
@@ -674,7 +675,7 @@ function BrandingEditor() {
                       placeholder="#1F3D2B"
                       disabled={!canEdit || saving || !customActive}
                       maxLength={7}
-                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </Field>
@@ -685,7 +686,7 @@ function BrandingEditor() {
                       value={HEX_RE.test(form.accent_color) ? form.accent_color : "#B5572A"}
                       onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
                       disabled={!canEdit || saving || !customActive}
-                      className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <input
                       type="text"
@@ -694,7 +695,7 @@ function BrandingEditor() {
                       placeholder="#B5572A"
                       disabled={!canEdit || saving || !customActive}
                       maxLength={7}
-                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </Field>
@@ -713,7 +714,7 @@ function BrandingEditor() {
 
           {/* Custom background hex inputs — visible when custom_color is selected */}
           {form.page_background_key === "custom_color" && (
-            <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+            <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
               <div>
                 <div className="text-sm font-semibold">Custom background colour</div>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -730,7 +731,7 @@ function BrandingEditor() {
                     value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
                     onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
                     disabled={!canEdit || saving}
-                    className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <input
                     type="text"
@@ -739,7 +740,7 @@ function BrandingEditor() {
                     placeholder="#F6EFE2"
                     disabled={!canEdit || saving}
                     maxLength={7}
-                    className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
               </Field>
@@ -750,7 +751,7 @@ function BrandingEditor() {
                     value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
                     onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
                     disabled={!canEdit || saving}
-                    className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <input
                     type="text"
@@ -759,7 +760,7 @@ function BrandingEditor() {
                     placeholder="#FBF5E8"
                     disabled={!canEdit || saving}
                     maxLength={7}
-                    className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
               </Field>
@@ -774,7 +775,7 @@ function BrandingEditor() {
               placeholder="e.g. Inter, system-ui"
               disabled={!canEdit || saving}
               maxLength={100}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
           </Field>
 
@@ -784,7 +785,7 @@ function BrandingEditor() {
               onChange={(e) => setForm({ ...form, welcome_copy: e.target.value })}
               disabled={!canEdit || saving}
               maxLength={1000}
-              className="min-h-28 w-full rounded-md border bg-background p-2 text-sm disabled:opacity-50"
+              className="min-h-28 w-full rounded-[10px] border border-[#D9E2EF] bg-white p-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="A short welcome message for your visitors."
             />
             <div className="mt-1 text-right text-xs text-muted-foreground">
@@ -797,7 +798,7 @@ function BrandingEditor() {
               terms_url value is preserved in the database and on save. */}
 
           {/* ============== Customer wording ============== */}
-          <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+          <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
             <div>
               <div className="text-sm font-semibold">Customer wording</div>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -817,7 +818,7 @@ function BrandingEditor() {
                 placeholder="Venue"
                 disabled={!canEdit || saving}
                 maxLength={VENUE_LABEL_MAX}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
               <div className="mt-1 text-right text-xs text-muted-foreground">
                 {form.venue_label_singular.length}/{VENUE_LABEL_MAX}
@@ -832,7 +833,7 @@ function BrandingEditor() {
                 placeholder="Venues"
                 disabled={!canEdit || saving}
                 maxLength={VENUE_LABEL_MAX}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
               <div className="mt-1 text-right text-xs text-muted-foreground">
                 {form.venue_label_plural.length}/{VENUE_LABEL_MAX}
@@ -842,9 +843,14 @@ function BrandingEditor() {
         </div>
 
         {/* ============== Preview ============== */}
-        <div className="space-y-2">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Live preview
+        <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+          <div className="mb-3 flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-base font-semibold text-[#111827]">Live preview</h3>
+              <p className="text-sm leading-6 text-[#64748B]">
+                Preview how the public event page will use this branding.
+              </p>
+            </div>
           </div>
           <EventPaletteScope
             paletteKey={form.palette_key || null}
@@ -853,7 +859,7 @@ function BrandingEditor() {
             accentColor={form.accent_color}
             pageBackgroundColor={form.page_background_color}
             cardBackgroundColor={form.card_background_color}
-            className="rounded-2xl border p-4"
+            className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
           >
             <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-muted, #8A7E66)" }}>
               <span>Customer landing — live preview</span>
@@ -889,8 +895,8 @@ function BrandingEditor() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+    <label className="block space-y-2">
+      <span className="text-sm font-medium text-[#334155]">{label}</span>
       {children}
     </label>
   );
@@ -898,9 +904,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function ReadOnlyField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">{children}</div>
+    <div className="space-y-2">
+      <div className="text-sm font-medium text-[#334155]">{label}</div>
+      <div className="rounded-[10px] border border-[#D9E2EF] bg-[#F8FAFC] px-3 py-2 text-sm text-[#111827]">{children}</div>
     </div>
   );
 }
@@ -1012,41 +1018,53 @@ function AssetUploader({
 
   const previewClass =
     kind === "logo"
-      ? "h-28 w-28 rounded-lg"
-      : "aspect-[16/9] w-full rounded-lg";
+      ? "h-28 w-28 rounded-[12px]"
+      : "aspect-[16/9] w-full rounded-[12px]";
 
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-      <div className="flex items-baseline justify-between">
-        <div className="text-sm font-semibold">{label}</div>
-        <div className="text-[11px] text-muted-foreground">
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="text-base font-semibold text-[#111827]">{label}</div>
+        <div className="text-[11px] text-[#64748B]">
           PNG, JPG, WebP · max {limitMB} MB
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">{helper}</p>
+      <p className="text-sm leading-6 text-[#64748B]">{helper}</p>
 
-      <div
-        className={`relative flex items-center justify-center overflow-hidden border bg-white ${previewClass}`}
-      >
+      <div className={`rounded-[16px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-6 ${url ? "" : "text-center"}`}>
         {url ? (
-          <img
-            src={url}
-            alt={kind === "logo" ? "Event logo preview" : "Event cover preview"}
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-1 text-muted-foreground">
-            <span className="text-[10px] uppercase tracking-wider">
-              No {kind === "logo" ? "logo" : "cover image"} yet
-            </span>
+          <div className={`relative mx-auto flex items-center justify-center overflow-hidden border border-[#E6ECF4] bg-white ${previewClass}`}>
+            <img
+              src={url}
+              alt={kind === "logo" ? "Event logo preview" : "Event cover preview"}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
           </div>
+        ) : (
+          <>
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#EAF2FF] text-[#2F6FE4]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <div className="text-sm font-medium text-[#334155]">
+              No {kind === "logo" ? "logo" : "cover image"} uploaded yet
+            </div>
+            <div className="mt-1 text-xs leading-5 text-[#64748B]">
+              {helper}
+            </div>
+          </>
         )}
       </div>
 
-      {err && <div className="text-xs text-destructive">{err}</div>}
+      {err && (
+        <div className="rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">{err}</div>
+      )}
 
       <input
         ref={inputRef}
@@ -1063,7 +1081,7 @@ function AssetUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
-            className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            className="h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy
               ? "Uploading…"
@@ -1076,7 +1094,7 @@ function AssetUploader({
               type="button"
               onClick={handleRemove}
               disabled={disabled}
-              className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+              className="h-10 rounded-[10px] border border-[#FDA4AF] bg-white px-4 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {removing ? "Removing…" : `Remove ${kind === "logo" ? "logo" : "cover"}`}
             </button>
@@ -1084,7 +1102,7 @@ function AssetUploader({
         </div>
       )}
       {!canEdit && !url && (
-        <div className="text-xs text-muted-foreground">No image uploaded.</div>
+        <div className="text-xs text-[#64748B]">No image uploaded.</div>
       )}
     </div>
   );
@@ -1105,7 +1123,7 @@ function PaletteSelector({
 }) {
   const selected = getPalette(value || null);
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex items-baseline justify-between">
         <div className="text-sm font-semibold">Colour palette</div>
         {selected && !disabled && (
@@ -1254,7 +1272,7 @@ function BackgroundSelector({
   })();
   const selected = getBackground(value || null);
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex items-baseline justify-between">
         <div className="text-sm font-semibold">Page background</div>
         {selected && !disabled && (
