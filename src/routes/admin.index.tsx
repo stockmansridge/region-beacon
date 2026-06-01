@@ -100,29 +100,31 @@ function Dashboard() {
         }
       />
       {error && (
-        <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
           {error}
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {items.map(({ label, value, icon: Icon, to, ariaLabel }) => (
           <Link
             key={label}
             to={to}
             aria-label={ariaLabel}
             title={ariaLabel}
-            className="group block rounded-xl border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-accent hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="group block rounded-[16px] border border-[#D9E2EF] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.045)] transition hover:border-[#2F6FE4]/40 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6FE4]/30"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground group-hover:text-foreground">
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">
                 {label}
               </span>
-              <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+              <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#EAF2FF] text-[#2F6FE4]">
+                <Icon className="h-5 w-5" />
+              </span>
             </div>
-            <div className="mt-3 text-2xl font-semibold">
+            <div className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[#111827]">
               {loading || value === undefined ? "…" : value}
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="mt-1 text-sm text-[#64748B]">
               {loading ? "Loading…" : "Live"}
             </div>
           </Link>

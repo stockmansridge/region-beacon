@@ -207,7 +207,7 @@ function Events() {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+              className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5]"
             >
               Add event
             </button>
@@ -216,20 +216,20 @@ function Events() {
       />
 
       {error && (
-        <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
           {error}
         </div>
       )}
-      <div className="overflow-hidden rounded-xl border bg-card">
+      <div className="overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">Event</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Public address</th>
-              <th className="px-4 py-3 font-medium">Dates</th>
-              <th className="px-4 py-3 font-medium">Venues</th>
-              <th className="px-4 py-3 font-medium">Go-live</th>
+          <thead>
+            <tr className="bg-[#F8FAFC] text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">
+              <th className="px-4 py-3">Event</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Public address</th>
+              <th className="px-4 py-3">Dates</th>
+              <th className="px-4 py-3">Venues</th>
+              <th className="px-4 py-3">Go-live</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
@@ -268,10 +268,10 @@ function Events() {
                       ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
                       : "bg-muted text-muted-foreground";
                 return (
-                  <tr key={e.id} className="border-t">
-                    <td className="px-4 py-3 font-medium">{e.name}</td>
+                  <tr key={e.id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                    <td className="px-4 py-3 font-medium text-[#111827]">{e.name}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{e.status}</span>
+                      <span className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-medium text-[#475569]">{e.status}</span>
                     </td>
                     <td className="px-4 py-3">
                       {hasSubdomain ? (
@@ -312,7 +312,7 @@ function Events() {
                             href={`https://${domain!.public_subdomain}.${SUBDOMAIN_ROOT}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-sm text-muted-foreground hover:underline"
+                            className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
                           >
                             Preview
                           </a>
@@ -320,7 +320,7 @@ function Events() {
                         <Link
                           to="/admin/events/$eventId"
                           params={{ eventId: e.id }}
-                          className="text-sm font-medium text-primary hover:underline"
+                          className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
                         >
                           Setup
                         </Link>
@@ -589,7 +589,7 @@ function CreateEventDialog({
               value={form.name}
               onChange={(e) => onNameChange(e.target.value)}
               maxLength={200}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               placeholder="Summer Food Trail 2026"
             />
           </Field>
@@ -606,7 +606,7 @@ function CreateEventDialog({
                 setForm((f) => ({ ...f, slug: e.target.value, slugDirty: true }))
               }
               maxLength={80}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm font-mono"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               placeholder="summer-food-trail-2026"
             />
           </Field>
@@ -617,7 +617,7 @@ function CreateEventDialog({
               value={form.timezone}
               onChange={(e) => update("timezone", e.target.value)}
               maxLength={64}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm font-mono"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               placeholder="Australia/Sydney"
             />
           </Field>
@@ -628,7 +628,7 @@ function CreateEventDialog({
                 type="datetime-local"
                 value={form.starts_at}
                 onChange={(e) => update("starts_at", e.target.value)}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               />
             </Field>
             <Field label="Ends at">
@@ -636,7 +636,7 @@ function CreateEventDialog({
                 type="datetime-local"
                 value={form.ends_at}
                 onChange={(e) => update("ends_at", e.target.value)}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               />
             </Field>
           </div>
@@ -647,23 +647,23 @@ function CreateEventDialog({
               onChange={(e) => update("description", e.target.value)}
               maxLength={2000}
               rows={3}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="min-h-[96px] w-full rounded-[12px] border border-[#D9E2EF] bg-white px-3 py-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
               placeholder="Short summary of the event."
             />
           </Field>
 
           {validationError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
               {validationError}
             </div>
           )}
           {saveError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
               {saveError}
             </div>
           )}
           {childWarning && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+            <div className="rounded-[12px] border border-[#FDBA74] bg-[#FFF7ED] px-4 py-3 text-sm leading-6 text-[#B45309]">
               {childWarning}
             </div>
           )}
@@ -674,7 +674,7 @@ function CreateEventDialog({
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={saving}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
           >
             Cancel
           </button>
@@ -682,7 +682,7 @@ function CreateEventDialog({
             type="button"
             onClick={handleCreate}
             disabled={saving}
-            className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:opacity-50"
           >
             {saving ? "Creating…" : "Create draft event"}
           </button>
@@ -704,13 +704,13 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-sm font-medium">
+    <label className="block space-y-2">
+      <span className="text-sm font-medium text-[#334155]">
         {label}
-        {required && <span className="ml-0.5 text-destructive">*</span>}
+        {required && <span className="ml-0.5 text-[#E11D48]">*</span>}
       </span>
       {children}
-      {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
+      {hint && <span className="block text-xs leading-5 text-[#64748B]">{hint}</span>}
     </label>
   );
 }

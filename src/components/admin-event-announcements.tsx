@@ -270,7 +270,7 @@ export function AdminEventAnnouncements({
           <button
             type="button"
             onClick={startNew}
-            className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+            className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-xs font-semibold text-[#111827] hover:bg-[#F8FAFC]"
           >
             New announcement
           </button>
@@ -278,7 +278,7 @@ export function AdminEventAnnouncements({
       </div>
 
       {error && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
           {error}
         </div>
       )}
@@ -289,7 +289,7 @@ export function AdminEventAnnouncements({
             {editingId === "new" ? "New announcement" : "Edit announcement"}
           </div>
           {formError && (
-            <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            <div className="mb-3 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
               {formError}
             </div>
           )}
