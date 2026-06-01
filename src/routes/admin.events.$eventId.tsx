@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { AdminEventAnnouncements } from "@/components/admin-event-announcements";
@@ -232,6 +232,72 @@ function fromLocalInput(s: string): string | null {
   return isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+type EventTabKey =
+  | "overview"
+  | "details"
+  | "branding"
+  | "venues"
+  | "checkin"
+  | "leaderboard"
+  | "terms"
+  | "analytics";
+
+const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
+  { key: "overview", label: "Overview" },
+  { key: "details", label: "Details" },
+  { key: "branding", label: "Branding" },
+  { key: "venues", label: "Venues" },
+  { key: "checkin", label: "Check-in" },
+  { key: "leaderboard", label: "Leaderboard" },
+  { key: "terms", label: "Terms & privacy" },
+  { key: "analytics", label: "Analytics" },
+];
+
+function readTabFromHash(): EventTabKey {
+  if (typeof window === "undefined") return "overview";
+  const m = window.location.hash.match(/tab=([a-z]+)/i);
+  const key = m?.[1] as EventTabKey | undefined;
+  return EVENT_TABS.some((t) => t.key === key) ? (key as EventTabKey) : "overview";
+}
+
+const EventTabContext = createContext<EventTabKey>("overview");
+
+function EventTabBar({
+  active,
+  onChange,
+}: {
+  active: EventTabKey;
+  onChange: (next: EventTabKey) => void;
+}) {
+  return (
+    <div className="-mx-1 overflow-x-auto">
+      <div role="tablist" className="flex min-w-max gap-1 border-b px-1">
+        {EVENT_TABS.map((t) => {
+          const isActive = t.key === active;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onChange(t.key)}
+              className={
+                "relative h-9 whitespace-nowrap rounded-t-md px-3 text-sm font-medium transition " +
+                (isActive
+                  ? "bg-card text-foreground border border-b-0"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 function EventDetail() {
   const { eventId } = Route.useParams();
   const agency = useAgencyContext();
@@ -247,6 +313,22 @@ function EventDetail() {
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [activeTab, setActiveTabRaw] = useState<EventTabKey>(() => readTabFromHash());
+  const setActiveTab = (next: EventTabKey) => {
+    setActiveTabRaw(next);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.hash = `tab=${next}`;
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
+  useEffect(() => {
+    const onHash = () => setActiveTabRaw(readTabFromHash());
+    if (typeof window !== "undefined") {
+      window.addEventListener("hashchange", onHash);
+      return () => window.removeEventListener("hashchange", onHash);
+    }
+  }, []);
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
@@ -1588,9 +1670,11 @@ function EventDetail() {
         );
       })()}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Section title="Basics">
+      <EventTabBar active={activeTab} onChange={setActiveTab} />
+
+      <EventTabContext.Provider value={activeTab}>
+        <div className="space-y-6">
+          <Section title="Basics" tab="details">
             {isEditing && form ? (
               <div className="space-y-4">
                 {(validationError || saveError) && (
@@ -1666,7 +1750,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Branding" id="section-branding">
+          <Section title="Branding" id="section-branding" tab="branding">
             <p className="mb-4 text-sm text-muted-foreground">
               Branding is now edited side-by-side with a live preview of the customer landing page.
             </p>
@@ -1687,7 +1771,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Public address" id="section-public-address">
+          <Section title="Public address" id="section-public-address" tab="overview">
             <PublicAddressCard
               agencyId={agencyId}
               eventId={event.id}
@@ -1701,18 +1785,15 @@ function EventDetail() {
             />
           </Section>
 
-          <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages.">
+          <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages." tab="overview">
             <AdminEventAnnouncements
               eventId={event.id}
               agencyId={event.agency_id}
               canEdit={canEdit}
             />
           </Section>
-        </div>
 
-
-        <aside className="space-y-4">
-          <Section title="Terms & privacy" id="section-terms">
+          <Section title="Terms & privacy" id="section-terms" tab="terms">
             {terms ? (
               <>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -1833,7 +1914,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Check-in settings">
+          <Section title="Check-in settings" tab="checkin">
             {isEditingCheckin && checkinForm ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-end gap-2">
@@ -1934,7 +2015,7 @@ function EventDetail() {
             )}
           </Section>
 
-          <Section title="Leaderboard" id="section-leaderboard">
+          <Section title="Leaderboard" id="section-leaderboard" tab="leaderboard">
             {isEditingLeaderboard && lbForm ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-end gap-2">
@@ -2089,20 +2170,21 @@ function EventDetail() {
             )}
           </Section>
 
-          <Section title="Reward tiers" id="section-rewards">
+          <Section title="Reward tiers" id="section-rewards" tab="leaderboard">
             <AdminEventRewards
               agencyId={event.agency_id}
               eventId={event.id}
               canEdit={canEdit}
             />
           </Section>
-        </aside>
-      </div>
+
+
 
           <Section
             id="section-venues"
             title="Venues for this event"
             description="Add and manage the venues/stops that visitors can collect stamps from for this event."
+            tab="venues"
           >
             {canEdit && venueEditingId === null && (
               <div className="mb-4 flex justify-end">
@@ -2783,6 +2865,21 @@ function EventDetail() {
               </div>
             )}
           </Section>
+
+          <Section title="Analytics" id="section-analytics" tab="analytics">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Event analytics live on a dedicated dashboard. Open it to view
+              visitor counts, check-ins, top venues and CSV exports.
+            </p>
+            <Link
+              to="/admin/analytics"
+              className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+            >
+              Open analytics dashboard
+            </Link>
+          </Section>
+        </div>
+      </EventTabContext.Provider>
     </>
   );
 }
@@ -2792,14 +2889,22 @@ function Section({
   description,
   children,
   id,
+  tab,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
   id?: string;
+  tab?: EventTabKey;
 }) {
+  const active = useContext(EventTabContext);
+  const isHidden = tab !== undefined && tab !== active;
   return (
-    <section id={id} className="scroll-mt-24 rounded-xl border bg-card p-6">
+    <section
+      id={id}
+      hidden={isHidden}
+      className="scroll-mt-24 rounded-xl border bg-card p-6"
+    >
       <h3 className="text-sm font-semibold">{title}</h3>
       {description && (
         <p className="mt-1 text-xs text-muted-foreground">{description}</p>
