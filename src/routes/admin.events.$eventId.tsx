@@ -2171,7 +2171,7 @@ function EventDetail() {
             )}
           </Section>
 
-          <Section title="Reward tiers" id="section-rewards">
+          <Section title="Reward tiers" id="section-rewards" tab="leaderboard">
             <AdminEventRewards
               agencyId={event.agency_id}
               eventId={event.id}
