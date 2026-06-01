@@ -268,10 +268,10 @@ function Events() {
                       ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
                       : "bg-muted text-muted-foreground";
                 return (
-                  <tr key={e.id} className="border-t">
-                    <td className="px-4 py-3 font-medium">{e.name}</td>
+                  <tr key={e.id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                    <td className="px-4 py-3 font-medium text-[#111827]">{e.name}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{e.status}</span>
+                      <span className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-medium text-[#475569]">{e.status}</span>
                     </td>
                     <td className="px-4 py-3">
                       {hasSubdomain ? (
