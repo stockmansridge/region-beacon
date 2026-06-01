@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { signOut } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import {
