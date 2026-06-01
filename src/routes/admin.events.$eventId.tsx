@@ -2700,9 +2700,9 @@ function EventDetail() {
                             }
                           }}
                           className={
-                            "border-t align-top " +
+                            "border-t border-[#E6ECF4] align-top " +
                             (canEdit && venueEditingId === null && venueArchivingId === null
-                              ? "cursor-pointer transition-colors hover:bg-muted/40"
+                              ? "cursor-pointer transition-colors hover:bg-[#F8FAFC]"
                               : "")
                           }
                           title={canEdit && venueEditingId === null ? "Open venue details" : undefined}
@@ -2812,7 +2812,7 @@ function EventDetail() {
                                       {isBusy ? "Working…" : "Rotate QR"}
                                     </button>
                                   </div>
-                                  <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed bg-muted/20 px-2 py-1.5">
+                                  <div className="flex flex-wrap items-center gap-2 rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-3 py-2">
                                     <label
                                       htmlFor={`entry-value-${v.id}`}
                                       className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
@@ -2838,7 +2838,7 @@ function EventDetail() {
                                           return next;
                                         });
                                       }}
-                                      className="h-7 w-16 rounded-md border bg-background px-2 text-xs"
+                                      className="h-10 w-20 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
                                     />
                                     {(() => {
                                       const draft = qrEntryDraft.get(v.id);
