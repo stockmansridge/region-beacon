@@ -127,10 +127,13 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
         )}
 
         {state.kind === "not_found" && (
-          <EmptyState
-            title="Event not live yet"
-            body="This leaderboard isn't available right now. Please check back closer to the event, or contact the organiser for details."
-          />
+          <>
+            <EmptyState
+              title="Event not live yet"
+              body="This leaderboard isn't available right now. Please check back closer to the event, or contact the organiser for details."
+            />
+            <SupportDetailsBlock details={state.support} />
+          </>
         )}
 
         {state.kind === "disabled" && (
@@ -142,7 +145,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
         {state.kind === "ready" && state.rows.length === 0 && (
           <EmptyState
-            title="No check-ins yet"
+            title="No leaderboard entries yet"
             body="As soon as visitors start collecting stamps they'll appear here."
           />
         )}
