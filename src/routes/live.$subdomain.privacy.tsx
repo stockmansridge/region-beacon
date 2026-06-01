@@ -32,6 +32,7 @@ export function PrivacyPage({ subdomain }: { subdomain: string }) {
       <LocalLegalPage
         subdomain={subdomain}
         eventName={row.event_name}
+        eventId={row.event_id}
         title={row.privacy_title || "Privacy Policy"}
         body={row.privacy_body}
         version={row.privacy_version}
@@ -46,6 +47,7 @@ export function PrivacyPage({ subdomain }: { subdomain: string }) {
         url={row.privacy_url}
         title="Privacy Policy"
         eventName={row.event_name}
+        eventId={row.event_id}
       />
     );
   }
