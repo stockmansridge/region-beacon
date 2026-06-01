@@ -471,6 +471,14 @@ function BrandingEditor() {
             onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
           />
 
+          <PaletteSelector
+            value={form.palette_key}
+            onChange={(key) => setForm({ ...form, palette_key: key })}
+            disabled={!canEdit || saving}
+          />
+
+
+
           <Field label="Primary colour">
             <div className="flex items-center gap-2">
               <input
