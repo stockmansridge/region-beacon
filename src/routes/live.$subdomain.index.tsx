@@ -8,6 +8,7 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
+import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
@@ -120,6 +121,7 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
 
   const { event, venues } = state;
   const canRegister = Boolean(event.current_terms_version_id);
+  const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
@@ -148,7 +150,15 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
         venueNames={venues.map((v) => v.name)}
         termsUrl={event.terms_url}
         primaryCta={
-          canRegister ? (
+          passportHref ? (
+            <a
+              href={passportHref}
+              className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+              style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
+            >
+              View my passport
+            </a>
+          ) : canRegister ? (
             <Link
               to="/join"
               className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
