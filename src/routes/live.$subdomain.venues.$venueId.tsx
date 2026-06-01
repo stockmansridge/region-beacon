@@ -135,7 +135,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
   const logoUrl = getVenueAssetPublicUrl(venue.logo_path);
 
   return (
-    <div className="min-h-screen bg-[#F6EFE2] pb-12">
+    <EventPaletteScope paletteKey={state.paletteKey} className="min-h-screen pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} /></div>
       <div className="mx-auto max-w-md">
