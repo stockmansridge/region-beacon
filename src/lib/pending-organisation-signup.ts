@@ -95,6 +95,13 @@ export type CompletePendingResult =
       pendingEmail?: string;
     };
 
+export const ORG_SIGNUP_SERVER_SETUP_ERROR =
+  "We could not create the organisation because the server setup is incomplete. Please contact support.";
+
+export function isOrganisationSignupServerSetupError(message: string): boolean {
+  return /PGRST202|schema cache|Could not find the function|function .* does not exist/i.test(message);
+}
+
 /**
  * Completes pending organisation signup for the currently authenticated user.
  * Safe to call multiple times — if the user already has a membership, this
@@ -204,12 +211,11 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
         message: "Permission denied creating organisation. Please contact support.",
       };
     }
-    if (/Could not find the function|function .* does not exist/i.test(msg)) {
+    if (isOrganisationSignupServerSetupError(msg)) {
       return {
         ok: false,
         code: "rpc_missing",
-        message:
-          "Self-service organisation creation is not enabled on this environment. Please contact support.",
+        message: ORG_SIGNUP_SERVER_SETUP_ERROR,
       };
     }
     return { ok: false, code: "rpc_error", message: msg || "Could not create organisation." };
