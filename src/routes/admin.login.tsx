@@ -198,6 +198,15 @@ function Login() {
           sign in here.
         </p>
 
+        {showCompleteSignupBanner && (
+          <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-foreground">
+            <strong className="font-semibold">Email confirmed.</strong> Sign in to finish creating
+            your organisation.
+          </div>
+        )}
+
+
+
 
         {!showReset ? (
           <>
