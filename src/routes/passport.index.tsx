@@ -1,46 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { resolveCurrentEventPassport, resolveEventIdFromHost } from "@/lib/use-current-event-passport";
 
 export const Route = createFileRoute("/passport/")({
   head: () => ({ meta: [{ title: "My passport" }] }),
   component: PassportIndex,
 });
-
-type StoredPassport = {
-  passport_id?: string;
-  access_token?: string;
-  event_id?: string;
-  subdomain?: string;
-  created_at?: string;
-};
-
-function readMostRecentPassport(): StoredPassport | null {
-  if (typeof localStorage === "undefined") return null;
-  let best: StoredPassport | null = null;
-  let bestAt = 0;
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key || !key.startsWith("gs.passport.")) continue;
-      const raw = localStorage.getItem(key);
-      if (!raw) continue;
-      try {
-        const parsed = JSON.parse(raw) as StoredPassport;
-        if (!parsed?.access_token) continue;
-        const at = parsed.created_at ? Date.parse(parsed.created_at) : 0;
-        if (!best || at > bestAt) {
-          best = parsed;
-          bestAt = at;
-        }
-      } catch {
-        // skip malformed entries
-      }
-    }
-  } catch {
-    return null;
-  }
-  return best;
-}
 
 function PassportIndex() {
   const navigate = useNavigate();
@@ -48,18 +13,26 @@ function PassportIndex() {
   const [subdomain, setSubdomain] = useState<string | null>(null);
 
   useEffect(() => {
-    const found = readMostRecentPassport();
-    if (found?.access_token) {
-      navigate({
-        to: "/passport/$token",
-        params: { token: found.access_token },
-        replace: true,
-      });
-      setState("found");
-      return;
-    }
-    setSubdomain(null);
-    setState("missing");
+    let cancelled = false;
+    (async () => {
+      const eventId = await resolveEventIdFromHost();
+      const resolved = await resolveCurrentEventPassport(eventId);
+      if (cancelled) return;
+      if (resolved.token) {
+        navigate({
+          to: "/passport/$token",
+          params: { token: resolved.token },
+          replace: true,
+        });
+        setState("found");
+        return;
+      }
+      setSubdomain(null);
+      setState("missing");
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
   if (state !== "missing") {
