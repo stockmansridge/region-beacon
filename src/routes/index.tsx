@@ -86,8 +86,15 @@ function ComingSoon() {
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
-            to="/contact"
+            to="/signup"
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+          >
+            <Sparkles className="h-4 w-4" />
+            Create your organisation
+          </Link>
+          <Link
+            to="/contact"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-5 text-sm font-semibold text-white hover:bg-white/10"
           >
             <Mail className="h-4 w-4" />
             Contact us
