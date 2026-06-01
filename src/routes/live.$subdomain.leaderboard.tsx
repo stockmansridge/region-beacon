@@ -132,7 +132,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   return (
     <div className="min-h-screen bg-[#F6EFE2] px-4 py-8 sm:py-12">
       <PublicAnnouncementBar subdomain={subdomain} />
-      <PublicEventNav subdomain={subdomain} />
+      <PublicEventNav subdomain={subdomain} eventId={eventId} activeOverride="leaderboard" />
       <div className="mx-auto max-w-xl">
         <Header subdomain={subdomain} />
 
