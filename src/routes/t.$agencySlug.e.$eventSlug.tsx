@@ -6,6 +6,8 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
 import { HostDiagnostic } from "@/components/host-diagnostic";
+import { EventPaletteScope } from "@/components/event-palette-scope";
+import { applyPaletteToEvent } from "@/lib/event-palettes";
 
 export const Route = createFileRoute("/t/$agencySlug/e/$eventSlug")({
   head: () => ({
