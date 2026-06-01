@@ -131,9 +131,14 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
   const currentEmail = (userRes.user.email ?? "").toLowerCase().trim();
   const pendingEmail = (pending.email ?? "").toLowerCase().trim();
 
+  // eslint-disable-next-line no-console
+  console.info("[org-signup] auth check", { currentEmail, pendingEmail, match: currentEmail === pendingEmail });
+
   // Wrong-session protection: don't attach a new organisation to a different
   // existing user.
   if (pendingEmail && currentEmail && currentEmail !== pendingEmail) {
+    // eslint-disable-next-line no-console
+    console.warn("[org-signup] email mismatch — refusing to complete");
     return {
       ok: false,
       code: "email_mismatch",
@@ -144,7 +149,6 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     };
   }
 
-
   // If the user already has a membership, just clear and succeed.
   const { data: existing, error: existingErr } = await supabase
     .from("agency_members")
@@ -154,14 +158,21 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     .limit(1);
 
   if (!existingErr && existing && existing.length > 0) {
+    // eslint-disable-next-line no-console
+    console.info("[org-signup] user already has org membership; clearing pending");
     clearPendingOrganisationSignup();
     return { ok: true, alreadyHadOrganisation: true };
   }
 
+  // eslint-disable-next-line no-console
+  console.info("[org-signup] calling create_customer_agency RPC", { name: pending.businessName, slug: pending.organisationUrlName });
   const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
     _agency_name: pending.businessName,
     _agency_slug: pending.organisationUrlName,
   });
+  // eslint-disable-next-line no-console
+  console.info("[org-signup] RPC response", rpcErr ? { error: rpcErr.message, code: rpcErr.code } : { ok: true });
+
 
   if (rpcErr) {
     const msg = rpcErr.message || "";
