@@ -1779,20 +1779,20 @@ function EventDetail() {
                     />
                   </Field>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs leading-5 text-[#64748B]">
                   Internal event URL name, public event code, and status remain read-only here.
                 </p>
                 {basicsSaveSuccess && (
-                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm text-[#047857]">
                     Basics saved.
                   </div>
                 )}
-                <div className="flex items-center justify-end gap-2 pt-1">
+                <div className="flex items-center justify-end gap-3 border-t border-[#E6ECF4] pt-5">
                   <button
                     type="button"
                     onClick={cancelEdit}
                     disabled={saving}
-                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
                   >
                     Discard changes
                   </button>
@@ -1800,9 +1800,9 @@ function EventDetail() {
                     type="button"
                     onClick={saveEdit}
                     disabled={saving}
-                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {saving ? "Saving…" : "Save"}
+                    {saving ? "Saving…" : "Save changes"}
                   </button>
                 </div>
               </div>
