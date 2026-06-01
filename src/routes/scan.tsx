@@ -203,6 +203,6 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
           </div>
         </details>
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }
