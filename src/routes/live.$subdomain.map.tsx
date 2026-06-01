@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getMapkitToken, type MapkitDiag } from "@/lib/mapkit.functions";
 import { loadMapKitScript } from "@/lib/mapkit-loader";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
@@ -49,6 +50,7 @@ type EventRow = {
   primary_color: string | null;
   accent_color: string | null;
   palette_key?: string | null;
+  page_background_key?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
 };
@@ -428,7 +430,11 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
 
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-6">
+    <EventPaletteScope
+      paletteKey={event?.palette_key ?? null}
+      backgroundKey={event?.page_background_key ?? null}
+      className="min-h-screen px-4 py-6"
+    >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
@@ -589,7 +595,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
           <PoweredByGetStampd variant="trail" />
         </div>
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }
 

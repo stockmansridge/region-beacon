@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrailShell } from "@/components/trail-shell";
 import { PoweredByGetStampd } from "@/components/brand";
 import { classifyHost } from "@/components/host-router";
-import { useEventPaletteKey } from "@/lib/use-event-palette";
+import { useEventBrandingKeys } from "@/lib/use-event-palette";
 
 export const Route = createFileRoute("/checkin/$qrToken")({
   head: () => ({ meta: [{ title: "Check in — GetStampd" }] }),
@@ -310,7 +310,7 @@ function CheckinPage() {
 
 function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }) {
   const subdomain = getSubdomain();
-  const paletteKey = useEventPaletteKey(subdomain);
+  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
   if (outcome.kind === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
@@ -328,6 +328,7 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
         primaryColor={PRIMARY}
         accentColor={ACCENT}
         paletteKey={paletteKey}
+        backgroundKey={backgroundKey}
         showBottomNav={false}
       >
         <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">

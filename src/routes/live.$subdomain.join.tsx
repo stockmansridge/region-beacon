@@ -40,6 +40,7 @@ type PublicEvent = {
   primary_color: string | null;
   accent_color: string | null;
   palette_key?: string | null;
+  page_background_key?: string | null;
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
@@ -415,6 +416,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         eventName={event.name}
       primaryColor={primary}
       accentColor={accent}
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
       topLeft={
         <Link
           to="/"
@@ -773,6 +776,8 @@ function SuccessScreen({
       eventName={event.name}
       primaryColor={primary}
       accentColor={accent}
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
       topLeft={
         <Link
           to="/"
@@ -884,6 +889,8 @@ function InfoScreen({
       eventName={event.name}
       primaryColor={primary}
       accentColor={event.accent_color ?? "#B5572A"}
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
       topLeft={
         <Link
           to="/"

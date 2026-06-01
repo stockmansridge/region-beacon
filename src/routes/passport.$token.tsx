@@ -13,7 +13,7 @@ import {
 
 import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
 import { PoweredByGetStampd } from "@/components/brand";
-import { useEventPaletteKey } from "@/lib/use-event-palette";
+import { useEventBrandingKeys } from "@/lib/use-event-palette";
 
 export const Route = createFileRoute("/passport/$token")({
   head: () => ({ meta: [{ title: "My passport" }] }),
@@ -313,7 +313,7 @@ function PassportView({
     const cls = classifyHost(hostname);
     return cls.kind === "tenant" ? cls.subdomain : null;
   }, [hostname]);
-  const paletteKey = useEventPaletteKey(subdomain);
+  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
 
   const labelSingular = stamps.labelSingular;
   const labelPlural = stamps.labelPlural;
@@ -395,6 +395,7 @@ function PassportView({
         primaryColor={PRIMARY}
         accentColor={ACCENT}
         paletteKey={paletteKey}
+        backgroundKey={backgroundKey}
         showBottomNav={false}
         topLeft={
           <span

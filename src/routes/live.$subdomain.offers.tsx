@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
@@ -38,6 +39,7 @@ type EventRow = {
   primary_color: string | null;
   accent_color: string | null;
   palette_key?: string | null;
+  page_background_key?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
 };
@@ -113,7 +115,11 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
   const accent = event?.primary_color ?? "#1F3D2B";
 
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+    <EventPaletteScope
+      paletteKey={event?.palette_key ?? null}
+      backgroundKey={event?.page_background_key ?? null}
+      className="min-h-screen px-4 py-8"
+    >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
@@ -219,7 +225,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
           <PoweredByGetStampd variant="trail" />
         </div>
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }
 

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
@@ -40,6 +41,7 @@ type PublicEvent = {
   primary_color: string | null;
   accent_color: string | null;
   palette_key?: string | null;
+  page_background_key?: string | null;
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
@@ -139,7 +141,11 @@ function LivePublicLoaded({
   const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-8">
+    <EventPaletteScope
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
+      className="min-h-screen px-4 py-8"
+    >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
@@ -209,7 +215,7 @@ function LivePublicLoaded({
           View leaderboard →
         </Link>
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }
 

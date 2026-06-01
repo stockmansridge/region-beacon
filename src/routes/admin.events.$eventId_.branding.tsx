@@ -23,7 +23,13 @@ import {
   EVENT_PALETTES,
   type EventPaletteKey,
   getPalette,
+  getPaletteOrDefault,
 } from "@/lib/event-palettes";
+import {
+  EVENT_BACKGROUNDS,
+  type EventBackgroundKey,
+  getBackground,
+} from "@/lib/event-backgrounds";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
@@ -50,6 +56,7 @@ type Branding = {
   venue_label_singular: string | null;
   venue_label_plural: string | null;
   palette_key: string | null;
+  page_background_key: string | null;
 };
 
 type Domain = {
@@ -77,6 +84,7 @@ type Form = {
   venue_label_singular: string;
   venue_label_plural: string;
   palette_key: string;
+  page_background_key: string;
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
@@ -104,6 +112,7 @@ function BrandingEditor() {
     venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
     venue_label_plural: DEFAULT_VENUE_LABEL_PLURAL,
     palette_key: "",
+    page_background_key: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -140,7 +149,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -182,6 +191,7 @@ function BrandingEditor() {
         venue_label_singular: branding?.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
         venue_label_plural: branding?.venue_label_plural ?? DEFAULT_VENUE_LABEL_PLURAL,
         palette_key: branding?.palette_key ?? "",
+        page_background_key: branding?.page_background_key ?? "",
       });
       setState("ready");
     })();
@@ -238,6 +248,7 @@ function BrandingEditor() {
     setSaving(true);
 
     const palette_key = form.palette_key.trim();
+    const page_background_key = form.page_background_key.trim();
     const payload = {
       primary_color: primary_color || null,
       accent_color: accent_color || null,
@@ -247,6 +258,7 @@ function BrandingEditor() {
       venue_label_singular,
       venue_label_plural,
       palette_key: palette_key || null,
+      page_background_key: page_background_key || null,
     };
 
     let error: { message: string } | null = null;
@@ -474,6 +486,13 @@ function BrandingEditor() {
           <PaletteSelector
             value={form.palette_key}
             onChange={(key) => setForm({ ...form, palette_key: key })}
+            disabled={!canEdit || saving}
+          />
+
+          <BackgroundSelector
+            value={form.page_background_key}
+            paletteKey={form.palette_key}
+            onChange={(key) => setForm({ ...form, page_background_key: key })}
             disabled={!canEdit || saving}
           />
 
@@ -957,5 +976,99 @@ function PaletteSelector({
     </div>
   );
 }
+
+// ============================================================================
+// BackgroundSelector
+// ============================================================================
+
+function BackgroundSelector({
+  value,
+  paletteKey,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  paletteKey: string;
+  onChange: (key: string) => void;
+  disabled?: boolean;
+}) {
+  const palette = getPaletteOrDefault(paletteKey || null);
+  const selected = getBackground(value || null);
+  return (
+    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+      <div className="flex items-baseline justify-between">
+        <div className="text-sm font-semibold">Page background</div>
+        {selected && !disabled && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Choose the page background used behind the public event pages. This is
+        independent of the colour palette and falls back to a clean light
+        background when unset.
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {EVENT_BACKGROUNDS.map((bg) => {
+          const active = bg.key === value;
+          return (
+            <button
+              key={bg.key}
+              type="button"
+              onClick={() => onChange(bg.key as EventBackgroundKey)}
+              disabled={disabled}
+              className={`flex items-stretch gap-3 rounded-lg border p-2 text-left transition disabled:opacity-50 ${
+                active
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                  : "border-border hover:bg-muted/40"
+              }`}
+            >
+              <span
+                className="block h-14 w-16 flex-shrink-0 rounded border"
+                style={bg.swatch(palette)}
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">{bg.label}</span>
+                <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                  {bg.description}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {selected && (
+        <div
+          className="mt-2 rounded-lg p-3 text-xs"
+          style={{
+            ...selected.build(palette),
+            color: palette.bodyText,
+            border: `1px solid ${palette.border}`,
+          }}
+        >
+          <div
+            className="mb-1 font-semibold"
+            style={{ color: palette.heading }}
+          >
+            {selected.label} preview
+          </div>
+          <div
+            className="rounded p-2"
+            style={{ background: palette.cardBg, color: palette.bodyText }}
+          >
+            Sample card on this background — confirms cards stay readable.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 
