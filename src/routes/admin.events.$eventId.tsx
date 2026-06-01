@@ -405,7 +405,7 @@ function EventDetail() {
           await Promise.all([
             supabase
               .from("event_branding")
-              .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url")
+              .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, palette_key, page_background_key, page_background_color, card_background_color")
               .eq("event_id", event.id)
               .eq("agency_id", agencyId)
               .maybeSingle(),
