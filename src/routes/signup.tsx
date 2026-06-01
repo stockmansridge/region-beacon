@@ -8,10 +8,11 @@ import { TestEnvBanner } from "@/components/test-env-banner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { authUrl } from "@/lib/auth-redirect";
 import { signOut } from "@/hooks/use-auth";
-
+import {
   savePendingOrganisationSignup,
   clearPendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
+
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
