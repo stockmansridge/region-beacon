@@ -1,8 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
+import {
+  readPendingOrganisationSignup,
+  completePendingOrganisationSignup,
+} from "@/lib/pending-organisation-signup";
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({ meta: [{ title: "Admin sign in" }] }),
@@ -43,12 +47,23 @@ function Login() {
     }
     setSubmitting(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
     if (signInError) {
+      setSubmitting(false);
       // Generic — don't reveal whether the email exists.
       setError(GENERIC_AUTH_ERROR);
       return;
     }
+    // If a pending organisation signup is waiting (e.g. user just confirmed
+    // their email), complete it now so they land directly in the admin.
+    if (readPendingOrganisationSignup()) {
+      const result = await completePendingOrganisationSignup();
+      if (!result.ok && result.code !== "no_pending") {
+        // Non-fatal — NoAccessScreen will offer a retry button.
+        // eslint-disable-next-line no-console
+        console.warn("Pending organisation completion failed:", result.message);
+      }
+    }
+    setSubmitting(false);
     navigate({ to: "/admin", replace: true });
   };
 
@@ -139,6 +154,12 @@ function Login() {
                 {submitting ? "Signing in…" : "Sign in"}
               </button>
             </form>
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              New here?{" "}
+              <Link to="/signup" className="font-medium text-primary hover:underline">
+                Create your organisation
+              </Link>
+            </p>
           </>
         ) : (
           <form className="mt-6 space-y-4" onSubmit={handleReset}>
