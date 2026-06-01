@@ -407,14 +407,14 @@ function ModeOption({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+      className={`rounded-[12px] border px-4 py-3 text-left text-sm transition ${
         active
-          ? "border-primary bg-primary/5 ring-1 ring-primary"
-          : "border-border bg-background hover:bg-muted"
+          ? "border-[#2F6FE4] bg-[#EAF2FF] ring-1 ring-[#2F6FE4]"
+          : "border-[#D9E2EF] bg-white hover:bg-[#F8FAFC]"
       }`}
     >
-      <div className="font-medium">{title}</div>
-      <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>
+      <div className="font-semibold text-[#111827]">{title}</div>
+      <div className="mt-1 text-xs leading-5 text-[#64748B]">{hint}</div>
     </button>
   );
 }
@@ -429,10 +429,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-xs font-medium text-foreground">{label}</span>
+    <label className="block space-y-2">
+      <span className="text-sm font-medium text-[#334155]">{label}</span>
       {children}
-      {hint && <span className="block text-[11px] text-muted-foreground">{hint}</span>}
+      {hint && <span className="block text-xs leading-5 text-[#64748B]">{hint}</span>}
     </label>
   );
 }
