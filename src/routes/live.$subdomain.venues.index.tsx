@@ -38,7 +38,7 @@ type EventRow = {
   name: string;
   primary_color: string | null;
   accent_color: string | null;
-  palette_key?: string \| null;
+  palette_key?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
 };
