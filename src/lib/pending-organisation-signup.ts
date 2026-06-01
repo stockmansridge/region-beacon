@@ -1,4 +1,12 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
+
+function supabaseProjectRef(): string {
+  try {
+    return new URL(SUPABASE_URL).hostname.split(".")[0] ?? "(unknown)";
+  } catch {
+    return "(unparseable)";
+  }
+}
 
 export const PENDING_ORG_SIGNUP_KEY = "getstampd:pending-organisation-signup";
 const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
@@ -171,14 +179,34 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     return { ok: true, alreadyHadOrganisation: true };
   }
 
-  // eslint-disable-next-line no-console
-  console.info("[org-signup] calling create_customer_agency RPC", { name: pending.businessName, slug: pending.organisationUrlName });
-  const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
+  const rpcArgs = {
     _agency_name: pending.businessName,
     _agency_slug: pending.organisationUrlName,
-  });
+  };
   // eslint-disable-next-line no-console
-  console.info("[org-signup] RPC response", rpcErr ? { error: rpcErr.message, code: rpcErr.code } : { ok: true });
+  console.info("[org-signup] calling create_customer_agency RPC", {
+    supabaseUrl: SUPABASE_URL,
+    projectRef: supabaseProjectRef(),
+    rpc: "create_customer_agency",
+    argKeys: Object.keys(rpcArgs),
+    name: pending.businessName,
+    slug: pending.organisationUrlName,
+  });
+  const { error: rpcErr } = await supabase.rpc("create_customer_agency", rpcArgs);
+  // eslint-disable-next-line no-console
+  console.info(
+    "[org-signup] RPC response",
+    rpcErr
+      ? {
+          projectRef: supabaseProjectRef(),
+          rpc: "create_customer_agency",
+          errorCode: rpcErr.code,
+          errorMessage: rpcErr.message,
+          details: (rpcErr as { details?: string }).details,
+          hint: (rpcErr as { hint?: string }).hint,
+        }
+      : { ok: true, projectRef: supabaseProjectRef() },
+  );
 
 
   if (rpcErr) {
