@@ -6,7 +6,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
 import { TestEnvBanner } from "@/components/test-env-banner";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import {
+import { authUrl } from "@/lib/auth-redirect";
+import { signOut } from "@/hooks/use-auth";
+
   savePendingOrganisationSignup,
   clearPendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
