@@ -1,5 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { tenantHost } from "@/lib/domains";
+
+/**
+ * Compact public announcement bar for /live/$subdomain pages.
+ *
+ * Display contract (per product spec):
+ *  - Message only. No title, no tone chip, no "Read more" toggle.
+ *  - Mobile: 2-line clamp; desktop: up to 3 lines but still compact.
+ *  - Simple × dismiss. Dismissal is keyed to the event subdomain AND the
+ *    message content, so changing the message re-shows it on every browser.
+ *  - Dismissals persist in localStorage (best-effort; silent if unavailable).
+ *
+ * Data source:
+ *  - SECURITY DEFINER RPC `public.get_public_event_announcements_by_domain`
+ *    keyed by hostname `<subdomain>.getstampd.com.au`. The RPC enforces the
+ *    publishing gate and active/window filters, and returns only safe public
+ *    columns (no PII, no ids).
+ */
 
 type Tone = "info" | "success" | "warning" | "urgent";
 
@@ -11,45 +29,27 @@ type PublicAnnouncement = {
   link_url: string | null;
 };
 
-const TONE_STYLES: Record<Tone, { wrap: string; chip: string; btn: string }> = {
-  info: {
-    wrap: "border-blue-300 bg-blue-50 text-blue-900",
-    chip: "bg-blue-600 text-white",
-    btn: "border-blue-700/30 text-blue-900 hover:bg-blue-100",
-  },
-  success: {
-    wrap: "border-emerald-300 bg-emerald-50 text-emerald-900",
-    chip: "bg-emerald-600 text-white",
-    btn: "border-emerald-700/30 text-emerald-900 hover:bg-emerald-100",
-  },
-  warning: {
-    wrap: "border-amber-300 bg-amber-50 text-amber-900",
-    chip: "bg-amber-500 text-white",
-    btn: "border-amber-700/30 text-amber-900 hover:bg-amber-100",
-  },
-  urgent: {
-    wrap: "border-red-300 bg-red-50 text-red-900",
-    chip: "bg-red-600 text-white",
-    btn: "border-red-700/30 text-red-900 hover:bg-red-100",
-  },
+const TONE_SURFACE: Record<Tone, string> = {
+  info: "border-[#BFDBFE] bg-[#EFF6FF] text-[#1E40AF]",
+  success: "border-[#86EFAC] bg-[#ECFDF5] text-[#047857]",
+  warning: "border-[#FDBA74] bg-[#FFF7ED] text-[#B45309]",
+  urgent: "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]",
 };
 
 function normaliseTone(t: PublicAnnouncement["tone"]): Tone {
   return t === "success" || t === "warning" || t === "urgent" ? t : "info";
 }
 
-// Stable key for dismissal — content-based so a changed message re-appears.
-// Persisted in localStorage so dismissal sticks across sessions for the same
-// message version, scoped per subdomain (event).
-function keyOf(a: PublicAnnouncement): string {
-  return `${normaliseTone(a.tone)}|${a.message ?? ""}|${a.link_url ?? ""}`;
+// Dismissal key: content-based so a message edit re-appears for visitors.
+// Scoped per-subdomain via the storage key prefix below.
+function dismissKeyFor(a: PublicAnnouncement): string {
+  return `${normaliseTone(a.tone)}|${(a.message ?? "").trim()}|${a.link_url ?? ""}`;
 }
 
-const STORAGE_PREFIX = "pa_dismissed_v2:";
+const STORAGE_PREFIX = "pa_dismissed_v3:";
 
 export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
   const [rows, setRows] = useState<PublicAnnouncement[]>([]);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -63,19 +63,28 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const host = `${subdomain}.getstampd.com.au`;
+      const host = tenantHost(subdomain);
       const { data, error } = await supabase.rpc(
         "get_public_event_announcements_by_domain",
         { _hostname: host },
       );
       if (cancelled) return;
       if (error) {
-        console.warn("[announcement] rpc error", error.message);
+        // Diagnostic only — never logs secrets.
+        console.warn("[announcement] rpc error", {
+          host,
+          code: error.code,
+          message: error.message,
+        });
         setRows([]);
         return;
       }
       const list = (data ?? []) as PublicAnnouncement[];
-      console.info("[announcement] loaded", { host, count: list.length });
+      console.info("[announcement] loaded", {
+        host,
+        count: list.length,
+        active: list.filter((r) => (r.message ?? "").trim()).length,
+      });
       setRows(list);
     })();
     return () => {
@@ -83,15 +92,23 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
     };
   }, [subdomain]);
 
-  const visible = useMemo(
-    () => rows.filter((r) => (r.message ?? "").trim() && !dismissed.has(keyOf(r))),
-    [rows, dismissed],
-  );
+  const visible = useMemo(() => {
+    const out = rows.filter((r) => (r.message ?? "").trim() && !dismissed.has(dismissKeyFor(r)));
+    if (rows.length > 0 && out.length === 0) {
+      console.info("[announcement] all hidden by dismissal", {
+        total: rows.length,
+        dismissedKeys: Array.from(dismissed),
+      });
+    }
+    return out;
+  }, [rows, dismissed]);
 
   function dismiss(a: PublicAnnouncement) {
     const next = new Set(dismissed);
-    next.add(keyOf(a));
+    const k = dismissKeyFor(a);
+    next.add(k);
     setDismissed(next);
+    console.info("[announcement] dismissed", { subdomain, key: k });
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(
@@ -99,83 +116,53 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
           JSON.stringify(Array.from(next)),
         );
       } catch {
-        // localStorage may be unavailable (private mode); fail silent.
+        // private mode / quota; fail silent
       }
     }
-  }
-
-  function toggleExpanded(k: string) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(k)) next.delete(k);
-      else next.add(k);
-      return next;
-    });
   }
 
   if (visible.length === 0) return null;
 
   return (
     <div
-      className="mx-auto w-full max-w-2xl space-y-2 px-4 pt-3"
+      className="mx-auto w-full max-w-2xl space-y-2 px-3 pt-3 sm:px-4"
       role="region"
       aria-label="Event announcements"
     >
       {visible.map((a, idx) => {
         const tone = normaliseTone(a.tone);
-        const s = TONE_STYLES[tone];
+        const surface = TONE_SURFACE[tone];
         const safeHref =
           a.link_url && /^https:\/\//i.test(a.link_url) ? a.link_url : null;
-        const k = keyOf(a);
-        const isExpanded = expanded.has(k);
         const message = (a.message ?? "").trim();
-        // Heuristic: 2 lines at ~40-50 chars per mobile line ~= 90 chars.
-        const isLong = message.length > 90;
+        const k = dismissKeyFor(a);
         return (
           <div
             key={`${k}-${idx}`}
-            className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-xs shadow-sm ${s.wrap}`}
+            className={`flex items-start gap-3 rounded-[12px] border px-3 py-2.5 text-sm leading-snug shadow-sm sm:px-4 ${surface}`}
           >
-            <span
-              className={`mt-0.5 inline-flex flex-shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${s.chip}`}
-            >
-              {tone}
-            </span>
             <div className="min-w-0 flex-1">
-              <p
-                className={`leading-snug ${isExpanded ? "" : "line-clamp-2"}`}
-              >
+              <p className="line-clamp-2 break-words sm:line-clamp-3">
                 {message}
               </p>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                {isLong && (
-                  <button
-                    type="button"
-                    onClick={() => toggleExpanded(k)}
-                    className="text-[11px] font-medium underline underline-offset-2 opacity-80 hover:opacity-100"
-                  >
-                    {isExpanded ? "Show less" : "Read more"}
-                  </button>
-                )}
-                {safeHref && (
-                  <a
-                    href={safeHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex h-7 items-center rounded-full border bg-white/60 px-3 text-[11px] font-medium ${s.btn}`}
-                  >
-                    {a.link_label ?? "Learn more"} ↗
-                  </a>
-                )}
-              </div>
+              {safeHref && (
+                <a
+                  href={safeHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center text-xs font-medium underline underline-offset-2 opacity-80 hover:opacity-100"
+                >
+                  {a.link_label ?? "Learn more"} ↗
+                </a>
+              )}
             </div>
             <button
               type="button"
               onClick={() => dismiss(a)}
               aria-label="Dismiss announcement"
-              className="ml-auto inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-current/70 hover:bg-black/5"
+              className="-mr-1 inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-current/70 hover:bg-black/5"
             >
-              ×
+              <span aria-hidden className="text-base leading-none">×</span>
             </button>
           </div>
         );
