@@ -130,7 +130,7 @@ function Login() {
       return;
     }
     setResetSubmitting(true);
-    const redirectTo = `${window.location.origin}/admin/update-password`;
+    const redirectTo = authUrl("/admin/update-password");
     await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo });
     setResetSubmitting(false);
     // Generic confirmation — never reveal whether the email exists.
