@@ -533,7 +533,7 @@ function StampGrid({
   labelSingular,
   labelPlural,
 }: {
-  venues: StampRow[];
+  venues: PassportStampVenue[];
   labelSingular: string;
   labelPlural: string;
 }) {
@@ -576,7 +576,7 @@ function StampGrid({
   );
 }
 
-function StampCell({ venue }: { venue: StampRow }) {
+function StampCell({ venue }: { venue: PassportStampVenue }) {
   const stamped = !!venue.is_stamped;
   const when = venue.checked_in_at
     ? new Date(venue.checked_in_at).toLocaleDateString(undefined, {
