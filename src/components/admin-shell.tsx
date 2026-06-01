@@ -186,10 +186,14 @@ export function AdminShell({
         <aside className="hidden w-[260px] shrink-0 flex-col border-r border-[#10233A] bg-[#071527] lg:flex">
           <div className="px-5 py-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#2F6FE4] text-white shadow-sm">
-                <GetStampdLogo variant="blue" size="sm" iconOnly />
+              <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#2F6FE4] text-base font-bold text-white shadow-sm">
+                G
               </div>
               <div className="min-w-0">
+                <div className="text-sm font-semibold text-white">GetStampd</div>
+                <div className="text-xs text-[#94A3B8]">Event admin</div>
+              </div>
+            </div>
                 <div className="text-sm font-semibold text-white">GetStampd</div>
                 <div className="text-xs text-[#94A3B8]">Event admin</div>
               </div>
