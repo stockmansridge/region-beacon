@@ -405,7 +405,7 @@ function EventDetail() {
       setDiagnostic({
         step: "agency-context",
         message:
-          "No agency is selected for the current session. Switch to an agency in the workspace switcher before opening this event.",
+          "No organisation is selected for the current session. Switch to an organisation in the workspace switcher before opening this event.",
         code: "NO_AGENCY",
       });
       setState("error");
