@@ -23,7 +23,13 @@ import {
   EVENT_PALETTES,
   type EventPaletteKey,
   getPalette,
+  getPaletteOrDefault,
 } from "@/lib/event-palettes";
+import {
+  EVENT_BACKGROUNDS,
+  type EventBackgroundKey,
+  getBackground,
+} from "@/lib/event-backgrounds";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
@@ -50,6 +56,7 @@ type Branding = {
   venue_label_singular: string | null;
   venue_label_plural: string | null;
   palette_key: string | null;
+  page_background_key: string | null;
 };
 
 type Domain = {
@@ -77,6 +84,7 @@ type Form = {
   venue_label_singular: string;
   venue_label_plural: string;
   palette_key: string;
+  page_background_key: string;
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
@@ -104,6 +112,7 @@ function BrandingEditor() {
     venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
     venue_label_plural: DEFAULT_VENUE_LABEL_PLURAL,
     palette_key: "",
+    page_background_key: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -140,7 +149,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -182,6 +191,7 @@ function BrandingEditor() {
         venue_label_singular: branding?.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
         venue_label_plural: branding?.venue_label_plural ?? DEFAULT_VENUE_LABEL_PLURAL,
         palette_key: branding?.palette_key ?? "",
+        page_background_key: branding?.page_background_key ?? "",
       });
       setState("ready");
     })();
@@ -238,6 +248,7 @@ function BrandingEditor() {
     setSaving(true);
 
     const palette_key = form.palette_key.trim();
+    const page_background_key = form.page_background_key.trim();
     const payload = {
       primary_color: primary_color || null,
       accent_color: accent_color || null,
@@ -247,6 +258,7 @@ function BrandingEditor() {
       venue_label_singular,
       venue_label_plural,
       palette_key: palette_key || null,
+      page_background_key: page_background_key || null,
     };
 
     let error: { message: string } | null = null;
