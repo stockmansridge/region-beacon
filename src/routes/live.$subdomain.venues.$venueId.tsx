@@ -39,7 +39,7 @@ type VenueRow = {
 type State =
   | { kind: "loading" }
   | { kind: "not_found" }
-  | { kind: "ready"; venue: VenueRow; eventId: string | null };
+  | { kind: "ready"; venue: VenueRow; eventId: string | null; paletteKey: string | null };
 
 type VisitedState =
   | { kind: "none" }
