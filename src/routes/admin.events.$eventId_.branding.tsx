@@ -489,6 +489,13 @@ function BrandingEditor() {
             disabled={!canEdit || saving}
           />
 
+          <BackgroundSelector
+            value={form.page_background_key}
+            paletteKey={form.palette_key}
+            onChange={(key) => setForm({ ...form, page_background_key: key })}
+            disabled={!canEdit || saving}
+          />
+
 
 
           <Field label="Primary colour">
