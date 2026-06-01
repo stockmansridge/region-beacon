@@ -24,6 +24,7 @@ import {
   type EventPaletteKey,
   getPalette,
   getPaletteOrDefault,
+  buildCustomPalette,
 } from "@/lib/event-palettes";
 import {
   EVENT_BACKGROUNDS,
