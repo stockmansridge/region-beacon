@@ -51,6 +51,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   const [hasPassport, setHasPassport] = useState<boolean | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
   const [paletteKey, setPaletteKey] = useState<string | null>(null);
+  const [backgroundKey, setBackgroundKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -59,10 +60,11 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       const host = tenantHost(subdomain);
       const { data } = await supabase.rpc("get_public_event_by_domain", { _hostname: host });
       if (cancelled) return;
-      const evt = (data?.[0] ?? null) as { event_id?: string; palette_key?: string | null } | null;
+      const evt = (data?.[0] ?? null) as { event_id?: string; palette_key?: string | null; page_background_key?: string | null } | null;
       const eid = evt?.event_id ?? null;
       setEventId(eid);
       setPaletteKey(evt?.palette_key ?? null);
+      setBackgroundKey(evt?.page_background_key ?? null);
       if (eid && typeof localStorage !== "undefined") {
         const raw = localStorage.getItem(`gs.passport.${eid}`);
         setHasPassport(!!raw);
@@ -110,7 +112,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   };
 
   return (
-    <EventPaletteScope paletteKey={paletteKey} className="min-h-screen pb-12">
+    <EventPaletteScope paletteKey={paletteKey} backgroundKey={backgroundKey} className="min-h-screen pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} /></div>
       <div className="mx-auto max-w-md px-4 pt-4">
