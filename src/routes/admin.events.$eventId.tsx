@@ -1915,7 +1915,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Check-in settings">
+          <Section title="Check-in settings" tab="checkin">
             {isEditingCheckin && checkinForm ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-end gap-2">
