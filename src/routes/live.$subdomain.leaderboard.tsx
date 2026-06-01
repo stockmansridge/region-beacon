@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { tenantHost } from "@/lib/domains";
+import { EventPaletteScope } from "@/components/event-palette-scope";
+import { useEventPaletteKey } from "@/lib/use-event-palette";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard" }] }),
