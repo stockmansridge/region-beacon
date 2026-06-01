@@ -164,14 +164,14 @@ function Login() {
               type="button"
               onClick={handleMismatchSignOut}
               disabled={mismatchBusy}
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:opacity-60"
             >
               Sign out and continue
             </button>
             <button
               type="button"
               onClick={handleMismatchContinue}
-              className="inline-flex h-10 items-center justify-center rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
+              className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
             >
               Go to admin as {mismatch.currentEmail || "current user"}
             </button>
@@ -199,7 +199,7 @@ function Login() {
         </p>
 
         {showCompleteSignupBanner && (
-          <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-foreground">
+          <div className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-xs leading-5 text-[#334155]">
             <strong className="font-semibold">Email confirmed.</strong> Sign in to finish creating
             your organisation.
           </div>
@@ -218,7 +218,7 @@ function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="h-11 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
                   placeholder="you@organisation.com"
                   autoComplete="email"
                 />
@@ -243,7 +243,7 @@ function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="h-11 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
@@ -251,7 +251,7 @@ function Login() {
               {error && (
                 <p
                   role="alert"
-                  className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                  className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-xs leading-5 text-[#B91C1C]"
                 >
                   {error}
                 </p>
@@ -259,7 +259,7 @@ function Login() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+                className="flex h-11 w-full items-center justify-center rounded-[10px] bg-[#2F6FE4] text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:opacity-60"
               >
                 {submitting ? "Signing in…" : "Sign in"}
               </button>
@@ -282,7 +282,7 @@ function Login() {
                 required
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="h-11 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
                 placeholder="you@organisation.com"
                 autoComplete="email"
               />
@@ -290,20 +290,20 @@ function Login() {
             {resetError && (
               <p
                 role="alert"
-                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-xs leading-5 text-[#B91C1C]"
               >
                 {resetError}
               </p>
             )}
             {resetMessage && (
-              <p className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-foreground">
+              <p className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-xs leading-5 text-[#334155]">
                 {resetMessage}
               </p>
             )}
             <button
               type="submit"
               disabled={resetSubmitting}
-              className="flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center rounded-[10px] bg-[#2F6FE4] text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:opacity-60"
             >
               {resetSubmitting ? "Sending…" : "Send reset link"}
             </button>

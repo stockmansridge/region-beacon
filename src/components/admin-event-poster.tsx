@@ -74,7 +74,7 @@ export function AdminEventPoster({
   }
 
   return (
-    <section className="rounded-xl border bg-card p-6">
+    <section className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">Event poster</h3>
@@ -87,13 +87,13 @@ export function AdminEventPoster({
           type="button"
           onClick={onDownload}
           disabled={!hasActiveSubdomain || busy}
-          className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? "Generating…" : "Download poster PDF"}
         </button>
       </div>
 
-      <div className="mt-3 rounded-md border bg-muted/30 px-3 py-2 text-xs">
+      <div className="mt-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] px-4 py-3 text-xs leading-5 text-[#334155]">
         {hasActiveSubdomain ? (
           <>
             <span className="font-medium text-muted-foreground">QR target: </span>
