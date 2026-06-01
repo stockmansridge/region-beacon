@@ -232,6 +232,72 @@ function fromLocalInput(s: string): string | null {
   return isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+type EventTabKey =
+  | "overview"
+  | "details"
+  | "branding"
+  | "venues"
+  | "checkin"
+  | "leaderboard"
+  | "terms"
+  | "analytics";
+
+const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
+  { key: "overview", label: "Overview" },
+  { key: "details", label: "Details" },
+  { key: "branding", label: "Branding" },
+  { key: "venues", label: "Venues" },
+  { key: "checkin", label: "Check-in" },
+  { key: "leaderboard", label: "Leaderboard" },
+  { key: "terms", label: "Terms & privacy" },
+  { key: "analytics", label: "Analytics" },
+];
+
+function readTabFromHash(): EventTabKey {
+  if (typeof window === "undefined") return "overview";
+  const m = window.location.hash.match(/tab=([a-z]+)/i);
+  const key = m?.[1] as EventTabKey | undefined;
+  return EVENT_TABS.some((t) => t.key === key) ? (key as EventTabKey) : "overview";
+}
+
+const EventTabContext = createContext<EventTabKey>("overview");
+
+function EventTabBar({
+  active,
+  onChange,
+}: {
+  active: EventTabKey;
+  onChange: (next: EventTabKey) => void;
+}) {
+  return (
+    <div className="-mx-1 overflow-x-auto">
+      <div role="tablist" className="flex min-w-max gap-1 border-b px-1">
+        {EVENT_TABS.map((t) => {
+          const isActive = t.key === active;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onChange(t.key)}
+              className={
+                "relative h-9 whitespace-nowrap rounded-t-md px-3 text-sm font-medium transition " +
+                (isActive
+                  ? "bg-card text-foreground border border-b-0"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 function EventDetail() {
   const { eventId } = Route.useParams();
   const agency = useAgencyContext();
