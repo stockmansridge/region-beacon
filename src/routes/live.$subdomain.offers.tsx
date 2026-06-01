@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
@@ -35,6 +36,7 @@ type EventRow = {
   name: string;
   primary_color: string | null;
   accent_color: string | null;
+  palette_key?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
 };
@@ -100,7 +102,8 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         )
         .map((r) => ({ ...r.venue, offer_summary: r.offer_summary.trim() }));
 
-      const evt = (evtData?.[0] ?? null) as EventRow | null;
+      const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
+      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
       setState({ kind: "ready", event: evt, offers });
     })();
     return () => {

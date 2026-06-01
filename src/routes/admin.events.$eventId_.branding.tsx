@@ -19,6 +19,11 @@ import {
   uploadEventAsset,
   type EventAssetKind,
 } from "@/lib/event-assets";
+import {
+  EVENT_PALETTES,
+  type EventPaletteKey,
+  getPalette,
+} from "@/lib/event-palettes";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
@@ -44,6 +49,7 @@ type Branding = {
   terms_url: string | null;
   venue_label_singular: string | null;
   venue_label_plural: string | null;
+  palette_key: string | null;
 };
 
 type Domain = {
@@ -70,6 +76,7 @@ type Form = {
   terms_url: string;
   venue_label_singular: string;
   venue_label_plural: string;
+  palette_key: string;
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
@@ -96,6 +103,7 @@ function BrandingEditor() {
     terms_url: "",
     venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
     venue_label_plural: DEFAULT_VENUE_LABEL_PLURAL,
+    palette_key: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -132,7 +140,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -173,6 +181,7 @@ function BrandingEditor() {
         terms_url: branding?.terms_url ?? "",
         venue_label_singular: branding?.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
         venue_label_plural: branding?.venue_label_plural ?? DEFAULT_VENUE_LABEL_PLURAL,
+        palette_key: branding?.palette_key ?? "",
       });
       setState("ready");
     })();
@@ -228,6 +237,7 @@ function BrandingEditor() {
     setSaveError(null);
     setSaving(true);
 
+    const palette_key = form.palette_key.trim();
     const payload = {
       primary_color: primary_color || null,
       accent_color: accent_color || null,
@@ -236,6 +246,7 @@ function BrandingEditor() {
       terms_url: terms_url || null,
       venue_label_singular,
       venue_label_plural,
+      palette_key: palette_key || null,
     };
 
     let error: { message: string } | null = null;
@@ -460,6 +471,14 @@ function BrandingEditor() {
             onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
           />
 
+          <PaletteSelector
+            value={form.palette_key}
+            onChange={(key) => setForm({ ...form, palette_key: key })}
+            disabled={!canEdit || saving}
+          />
+
+
+
           <Field label="Primary colour">
             <div className="flex items-center gap-2">
               <input
@@ -591,8 +610,16 @@ function BrandingEditor() {
           </div>
           <LandingPreview
             eventName={event.name}
-            primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B"}
-            accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A"}
+            primaryColor={(() => {
+              const p = getPalette(form.palette_key || null);
+              if (p) return p.primary;
+              return HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B";
+            })()}
+            accentColor={(() => {
+              const p = getPalette(form.palette_key || null);
+              if (p) return p.accent;
+              return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
+            })()}
             fontFamily={form.font_family.trim() || undefined}
             welcomeCopy={form.welcome_copy.trim()}
             termsUrl={form.terms_url.trim()}
@@ -814,4 +841,121 @@ function AssetUploader({
     </div>
   );
 }
+
+// ============================================================================
+// PaletteSelector
+// ============================================================================
+
+function PaletteSelector({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (key: string) => void;
+  disabled?: boolean;
+}) {
+  const selected = getPalette(value || null);
+  return (
+    <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+      <div className="flex items-baseline justify-between">
+        <div className="text-sm font-semibold">Colour palette</div>
+        {selected && !disabled && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Pick a curated palette to colour the public event pages. When set, the
+        palette overrides the primary &amp; accent colours below. Leave unset to
+        keep the GetStampd default look (or your own primary/accent hex codes).
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {EVENT_PALETTES.map((p) => {
+          const active = p.key === value;
+          return (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => onChange(p.key as EventPaletteKey)}
+              disabled={disabled}
+              className={`flex items-start gap-3 rounded-lg border p-2 text-left transition disabled:opacity-50 ${
+                active
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                  : "border-border hover:bg-muted/40"
+              }`}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span
+                  className="block h-5 w-10 rounded"
+                  style={{ background: p.primary }}
+                  aria-hidden
+                />
+                <span
+                  className="block h-5 w-10 rounded"
+                  style={{ background: p.accent }}
+                  aria-hidden
+                />
+                <span
+                  className="block h-5 w-10 rounded border"
+                  style={{ background: p.pageBg, borderColor: p.border }}
+                  aria-hidden
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium">{p.label}</div>
+                <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                  {p.description}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {selected && (
+        <div
+          className="mt-2 rounded-lg p-3 text-xs"
+          style={{
+            background: selected.cardBg,
+            color: selected.bodyText,
+            border: `1px solid ${selected.border}`,
+          }}
+        >
+          <div
+            className="mb-1 font-semibold"
+            style={{ color: selected.heading }}
+          >
+            {selected.label} preview
+          </div>
+          <div style={{ color: selected.mutedText }}>
+            Sample card · Body text · Muted line
+          </div>
+          <div className="mt-2 flex gap-2">
+            <span
+              className="rounded-full px-3 py-1 text-[11px] font-semibold"
+              style={{
+                background: selected.primary,
+                color: selected.primaryForeground,
+              }}
+            >
+              Primary
+            </span>
+            <span
+              className="rounded-full px-3 py-1 text-[11px] font-semibold"
+              style={{ background: selected.accent, color: "#fff" }}
+            >
+              Accent
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
