@@ -1790,11 +1790,8 @@ function EventDetail() {
               canEdit={canEdit}
             />
           </Section>
-        </div>
 
-
-        <aside className="space-y-4">
-          <Section title="Terms & privacy" id="section-terms">
+          <Section title="Terms & privacy" id="section-terms" tab="terms">
             {terms ? (
               <>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
