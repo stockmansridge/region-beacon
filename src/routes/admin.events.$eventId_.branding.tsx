@@ -117,6 +117,8 @@ function BrandingEditor() {
     venue_label_plural: DEFAULT_VENUE_LABEL_PLURAL,
     palette_key: "",
     page_background_key: "",
+    page_background_color: "",
+    card_background_color: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
