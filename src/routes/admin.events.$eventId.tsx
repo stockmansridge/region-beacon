@@ -3501,6 +3501,64 @@ function Field({
   );
 }
 
+function ToggleRow({
+  title,
+  description,
+  checked,
+  onChange,
+  disabled,
+}: {
+  title: string;
+  description?: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      className={
+        "flex items-center justify-between gap-4 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] px-4 py-3 " +
+        (disabled ? "opacity-60" : "cursor-pointer hover:bg-white")
+      }
+    >
+      <span className="space-y-1">
+        <span className="block text-sm font-medium text-[#111827]">{title}</span>
+        {description && (
+          <span className="block text-xs leading-5 text-[#64748B]">{description}</span>
+        )}
+      </span>
+      <span
+        role="switch"
+        aria-checked={checked}
+        onClick={(e) => {
+          if (disabled) return;
+          e.preventDefault();
+          onChange(!checked);
+        }}
+        className={
+          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " +
+          (checked ? "bg-[#2F6FE4]" : "bg-[#CBD5E1]")
+        }
+      >
+        <span
+          className={
+            "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform " +
+            (checked ? "translate-x-[22px]" : "translate-x-0.5")
+          }
+        />
+        <input
+          type="checkbox"
+          className="sr-only"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+      </span>
+    </label>
+  );
+}
+
+
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
