@@ -80,7 +80,6 @@ function formatRange(starts_at: string | null, ends_at: string | null): string |
 function validate(form: FormState): string | null {
   const title = form.title.trim();
   const message = form.message.trim();
-  if (!title) return "Title is required.";
   if (title.length > 120) return "Title must be 120 characters or fewer.";
   if (!message) return "Message is required.";
   if (message.length > 300) return "Message must be 300 characters or fewer.";
@@ -97,6 +96,7 @@ function validate(form: FormState): string | null {
   }
   return null;
 }
+
 
 export function AdminEventAnnouncements({
   eventId,
@@ -178,11 +178,17 @@ export function AdminEventAnnouncements({
     }
     setSaving(true);
     setFormError(null);
+    const trimmedMessage = form.message.trim();
+    const trimmedTitle = form.title.trim();
+    // Public display hides the title; keep DB NOT NULL satisfied by falling
+    // back to a short slice of the message.
+    const titleForDb =
+      trimmedTitle || trimmedMessage.slice(0, 60) || "Announcement";
     const payload = {
       agency_id: agencyId,
       event_id: eventId,
-      title: form.title.trim(),
-      message: form.message.trim(),
+      title: titleForDb,
+      message: trimmedMessage,
       tone: form.tone,
       link_label: form.link_label.trim() || null,
       link_url: form.link_url.trim() || null,
@@ -190,6 +196,7 @@ export function AdminEventAnnouncements({
       ends_at: fromLocalInput(form.ends_at),
       is_active: form.is_active,
     };
+
     if (editingId === "new") {
       const { error: err } = await supabase
         .from("event_announcements")
@@ -288,18 +295,20 @@ export function AdminEventAnnouncements({
           )}
           <div className="space-y-3">
             <label className="block">
-              <span className="text-xs font-medium">Title <span className="text-destructive">*</span></span>
+              <span className="text-xs font-medium">Title (optional, internal only)</span>
               <input
                 type="text"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 maxLength={120}
                 className="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm"
+                placeholder="Used in admin only — not shown to visitors"
               />
               <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                {form.title.length}/120
+                {form.title.length}/120 — visitors see only the Message below.
               </span>
             </label>
+
             <label className="block">
               <span className="text-xs font-medium">Message <span className="text-destructive">*</span></span>
               <textarea
