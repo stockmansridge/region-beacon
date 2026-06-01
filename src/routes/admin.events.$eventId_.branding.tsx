@@ -843,9 +843,14 @@ function BrandingEditor() {
         </div>
 
         {/* ============== Preview ============== */}
-        <div className="space-y-2">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Live preview
+        <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+          <div className="mb-3 flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-base font-semibold text-[#111827]">Live preview</h3>
+              <p className="text-sm leading-6 text-[#64748B]">
+                Preview how the public event page will use this branding.
+              </p>
+            </div>
           </div>
           <EventPaletteScope
             paletteKey={form.palette_key || null}
@@ -854,7 +859,7 @@ function BrandingEditor() {
             accentColor={form.accent_color}
             pageBackgroundColor={form.page_background_color}
             cardBackgroundColor={form.card_background_color}
-            className="rounded-2xl border p-4"
+            className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
           >
             <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-muted, #8A7E66)" }}>
               <span>Customer landing — live preview</span>
@@ -890,8 +895,8 @@ function BrandingEditor() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+    <label className="block space-y-2">
+      <span className="text-sm font-medium text-[#334155]">{label}</span>
       {children}
     </label>
   );
@@ -899,9 +904,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function ReadOnlyField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">{children}</div>
+    <div className="space-y-2">
+      <div className="text-sm font-medium text-[#334155]">{label}</div>
+      <div className="rounded-[10px] border border-[#D9E2EF] bg-[#F8FAFC] px-3 py-2 text-sm text-[#111827]">{children}</div>
     </div>
   );
 }
