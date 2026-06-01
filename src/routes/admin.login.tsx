@@ -25,11 +25,16 @@ function isValidEmail(value: string) {
 
 function Login() {
   const navigate = useNavigate();
-  const { status } = useAuth();
+  const { status, email: sessionEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [mismatch, setMismatch] = useState<{
+    currentEmail: string;
+    pendingEmail: string;
+  } | null>(null);
+  const [mismatchBusy, setMismatchBusy] = useState(false);
 
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -37,9 +42,45 @@ function Login() {
   const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [resetSubmitting, setResetSubmitting] = useState(false);
 
+  // Strip any access_token/refresh_token/code fragments Supabase left in the
+  // URL after consuming the email confirmation link.
   useEffect(() => {
-    if (status === "authenticated") navigate({ to: "/admin", replace: true });
-  }, [status, navigate]);
+    cleanAuthUrlFragments();
+  }, []);
+
+  // If authenticated, decide whether to auto-complete pending signup,
+  // show a mismatch screen, or just continue to /admin.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    (async () => {
+      const pending = readPendingOrganisationSignup();
+      if (!pending) {
+        navigate({ to: "/admin", replace: true });
+        return;
+      }
+      const result = await completePendingOrganisationSignup();
+      if (cancelled) return;
+      if (result.ok) {
+        navigate({ to: "/admin", replace: true });
+        return;
+      }
+      if (result.code === "email_mismatch") {
+        setMismatch({
+          currentEmail: result.currentEmail ?? sessionEmail ?? "",
+          pendingEmail: result.pendingEmail ?? pending.email,
+        });
+        return;
+      }
+      // Non-fatal — let user continue; NoAccessScreen will offer a retry.
+      // eslint-disable-next-line no-console
+      console.warn("Pending organisation completion failed:", result.message);
+      navigate({ to: "/admin", replace: true });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, sessionEmail, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -52,23 +93,33 @@ function Login() {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
       setSubmitting(false);
-      // Generic — don't reveal whether the email exists.
       setError(GENERIC_AUTH_ERROR);
       return;
     }
-    // If a pending organisation signup is waiting (e.g. user just confirmed
-    // their email), complete it now so they land directly in the admin.
-    if (readPendingOrganisationSignup()) {
-      const result = await completePendingOrganisationSignup();
-      if (!result.ok && result.code !== "no_pending") {
-        // Non-fatal — NoAccessScreen will offer a retry button.
-        // eslint-disable-next-line no-console
-        console.warn("Pending organisation completion failed:", result.message);
-      }
-    }
+    // The authenticated effect above takes over from here (pending-signup
+    // completion + redirect or mismatch screen).
     setSubmitting(false);
+  };
+
+  const handleMismatchSignOut = async () => {
+    setMismatchBusy(true);
+    await signOut();
+    setMismatch(null);
+    setMismatchBusy(false);
+  };
+
+  const handleMismatchContinue = () => {
+    setMismatch(null);
     navigate({ to: "/admin", replace: true });
   };
+
+  const handleMismatchCancelPending = () => {
+    clearPendingOrganisationSignup();
+    setMismatch(null);
+    navigate({ to: "/admin", replace: true });
+  };
+
+
 
   const handleReset = async (e: FormEvent) => {
     e.preventDefault();
