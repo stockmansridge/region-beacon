@@ -8,6 +8,7 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { matchRootDomain } from "@/lib/domains";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 
 export const Route = createFileRoute("/scan")({
   head: () => ({ meta: [{ title: "Scan venue QR" }] }),
