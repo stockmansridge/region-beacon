@@ -55,8 +55,8 @@ type LoadState =
       stamps: PassportStampState;
     };
 
-const PRIMARY = "var(--event-primary,#1F3D2B)";
-const ACCENT = "var(--event-accent,#B5572A)";
+const PRIMARY = "#1F3D2B";
+const ACCENT = "#B5572A";
 
 function PassportPage() {
   const { token } = Route.useParams();
