@@ -733,16 +733,16 @@ function Sparkline({ data }: { data: number[] }) {
 function FunnelBars({ rows }: { rows: Array<{ label: string; count: number }> }) {
   const max = Math.max(...rows.map((r) => r.count), 1);
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {rows.map((r) => (
         <div key={r.label}>
-          <div className="mb-0.5 flex justify-between text-xs">
-            <span className="text-muted-foreground">{r.label}</span>
-            <span className="font-medium">{r.count}</span>
+          <div className="mb-1 flex justify-between text-sm">
+            <span className="text-[#64748B]">{r.label}</span>
+            <span className="font-medium text-[#111827]">{r.count}</span>
           </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-[#EEF2F7]">
             <div
-              className="h-full bg-primary"
+              className="h-full rounded-full bg-[#2F6FE4]"
               style={{ width: `${(r.count / max) * 100}%` }}
             />
           </div>
