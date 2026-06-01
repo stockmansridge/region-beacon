@@ -77,7 +77,8 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
       }
 
       const venues = rows.filter((r) => r.event_found !== false && r.venue_id);
-      const evt = (evtData?.[0] ?? null) as EventRow | null;
+      const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
+      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
       setState({ kind: "ready", event: evt, venues });
     })();
     return () => {

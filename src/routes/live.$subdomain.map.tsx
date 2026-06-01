@@ -113,7 +113,8 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         (r) => r.event_found !== false && r.venue_id,
       );
       setVenues(rows);
-      const evt = (evtData?.[0] ?? null) as EventRow | null;
+      const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
+      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
       setEvent(evt);
       setLoading(false);
 

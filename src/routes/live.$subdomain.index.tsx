@@ -89,7 +89,8 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
         { _hostname: host },
       );
       if (cancelled) return;
-      const evt = (evtData?.[0] ?? null) as PublicEvent | null;
+      const evtRaw = ((evtData?.[0] ?? null) as PublicEvent | null);
+      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
       if (evtErr || !evt) {
         setState({ kind: "not_found" });
         return;

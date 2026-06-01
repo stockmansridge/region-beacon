@@ -102,7 +102,8 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         )
         .map((r) => ({ ...r.venue, offer_summary: r.offer_summary.trim() }));
 
-      const evt = (evtData?.[0] ?? null) as EventRow | null;
+      const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
+      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
       setState({ kind: "ready", event: evt, offers });
     })();
     return () => {
