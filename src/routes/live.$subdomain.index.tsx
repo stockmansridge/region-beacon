@@ -150,7 +150,15 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
         venueNames={venues.map((v) => v.name)}
         termsUrl={event.terms_url}
         primaryCta={
-          canRegister ? (
+          passportHref ? (
+            <a
+              href={passportHref}
+              className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+              style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
+            >
+              View my passport
+            </a>
+          ) : canRegister ? (
             <Link
               to="/join"
               className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
