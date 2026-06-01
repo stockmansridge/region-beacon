@@ -1055,6 +1055,27 @@ function PaletteSelector({
             </button>
           );
         })}
+        {/* Custom palette card */}
+        <button
+          type="button"
+          onClick={() => onChange("custom")}
+          disabled={disabled}
+          className={`flex items-start gap-3 rounded-lg border p-2 text-left transition disabled:opacity-50 ${
+            value === "custom"
+              ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+              : "border-border hover:bg-muted/40"
+          }`}
+        >
+          <div className="flex h-[68px] w-10 items-center justify-center rounded border text-xl" aria-hidden>
+            🎨
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium">Custom</div>
+            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+              Use your own primary &amp; accent hex colours (set below).
+            </div>
+          </div>
+        </button>
       </div>
       {selected && (
         <div
