@@ -1890,18 +1890,21 @@ function EventDetail() {
 
 
           <Section title="Terms & privacy" id="section-terms" tab="terms">
+            <div className="mb-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
+              These terms are shown to visitors before they join the event passport. Keep them clear, concise, and specific to this event.
+            </div>
             {terms ? (
               <>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]">
+                    <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
                     Active
                   </span>
                   {canEdit && (
                     <button
                       type="button"
                       onClick={() => setTermsDialogOpen(true)}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                      className="h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5]"
                     >
                       Update terms & privacy
                     </button>
@@ -1928,7 +1931,7 @@ function EventDetail() {
                                 href={terms.terms_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-primary underline-offset-2 hover:underline break-all"
+                                className="text-[#2F6FE4] underline-offset-2 hover:underline break-all"
                               >
                                 {terms.terms_url}
                               </a>
@@ -1945,7 +1948,7 @@ function EventDetail() {
                                 href={terms.privacy_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-primary underline-offset-2 hover:underline break-all"
+                                className="text-[#2F6FE4] underline-offset-2 hover:underline break-all"
                               >
                                 {terms.privacy_url}
                               </a>
@@ -1959,9 +1962,9 @@ function EventDetail() {
                 />
               </>
             ) : (
-              <div className="rounded-md border border-amber-300/60 bg-amber-50 px-3 py-3 text-sm text-amber-900">
-                <div className="font-medium">Terms & privacy not configured</div>
-                <p className="mt-1 text-xs text-amber-800">
+              <div className="rounded-[12px] border border-[#FDBA74] bg-[#FFF7ED] px-4 py-3 text-sm leading-6 text-[#B45309]">
+                <div className="font-semibold text-[#B45309]">Terms & privacy not configured</div>
+                <p className="mt-1 text-sm leading-6 text-[#B45309]/90">
                   Visitor registration on the public join page is blocked until an active
                   terms version is set for this event.
                 </p>
@@ -1969,12 +1972,12 @@ function EventDetail() {
                   <button
                     type="button"
                     onClick={() => setTermsDialogOpen(true)}
-                    className="mt-2 inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+                    className="mt-3 h-10 rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5]"
                   >
                     Configure terms & privacy
                   </button>
                 ) : (
-                  <p className="mt-2 text-xs text-amber-800">
+                  <p className="mt-2 text-xs leading-5 text-[#B45309]">
                     Ask an organisation admin or owner to configure terms.
                   </p>
                 )}
