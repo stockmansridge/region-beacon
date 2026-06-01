@@ -764,8 +764,8 @@ function EventDetail() {
       setSaveError("Could not save changes. Please try again.");
       return;
     }
-    setIsEditing(false);
-    setForm(null);
+    setBasicsSaveSuccess(true);
+    window.setTimeout(() => setBasicsSaveSuccess(false), 2500);
     setReloadKey((k) => k + 1);
   }
 
