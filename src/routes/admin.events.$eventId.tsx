@@ -64,6 +64,10 @@ type Branding = {
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
+  palette_key: string | null;
+  page_background_key: string | null;
+  page_background_color: string | null;
+  card_background_color: string | null;
 };
 
 type Domain = {
