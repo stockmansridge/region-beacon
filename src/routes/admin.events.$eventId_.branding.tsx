@@ -57,6 +57,8 @@ type Branding = {
   venue_label_plural: string | null;
   palette_key: string | null;
   page_background_key: string | null;
+  page_background_color: string | null;
+  card_background_color: string | null;
 };
 
 type Domain = {
@@ -85,6 +87,8 @@ type Form = {
   venue_label_plural: string;
   palette_key: string;
   page_background_key: string;
+  page_background_color: string;
+  card_background_color: string;
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
