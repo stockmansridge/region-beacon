@@ -531,7 +531,14 @@ function BrandingEditor() {
             </span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/admin/events/$eventId"
+            params={{ eventId }}
+            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+          >
+            ← Back to event
+          </Link>
           <Link
             to="/admin/events/$eventId/preview"
             params={{ eventId }}
@@ -545,20 +552,32 @@ function BrandingEditor() {
             onClick={onCancel}
             disabled={saving}
             className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            title="Discard unsaved changes and return to the event"
           >
-            Cancel
+            Discard changes
           </button>
           {canEdit && (
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={saving}
-              className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              {saving ? "Saving…" : "Save"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => onSave()}
+                disabled={saving}
+                className="inline-flex h-9 items-center rounded-lg border border-primary bg-background px-4 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onSave({ returnAfter: true })}
+                disabled={saving}
+                className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save & return to event"}
+              </button>
+            </>
           )}
         </div>
+
 
       </div>
 
