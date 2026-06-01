@@ -37,6 +37,12 @@ type PublicEvent = {
   current_terms_version_id: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
+  // Optional — only present once the public RPC is extended to surface
+  // palette/background fields. The route stays safe when they're missing.
+  palette_key?: string | null;
+  page_background_key?: string | null;
+  page_background_color?: string | null;
+  card_background_color?: string | null;
 };
 
 type PublicVenue = {
