@@ -2996,11 +2996,11 @@ function Section({
 
 function DefList({ rows }: { rows: Array<[string, React.ReactNode]> }) {
   return (
-    <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[max-content_1fr]">
+    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-[180px_1fr]">
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
-          <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{k}</dt>
-          <dd className="text-sm break-words">{v}</dd>
+          <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">{k}</dt>
+          <dd className="break-words text-sm font-medium text-[#111827]">{v}</dd>
         </div>
       ))}
     </dl>
