@@ -2874,14 +2874,22 @@ function Section({
   description,
   children,
   id,
+  tab,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
   id?: string;
+  tab?: EventTabKey;
 }) {
+  const active = useContext(EventTabContext);
+  const isHidden = tab !== undefined && tab !== active;
   return (
-    <section id={id} className="scroll-mt-24 rounded-xl border bg-card p-6">
+    <section
+      id={id}
+      hidden={isHidden}
+      className="scroll-mt-24 rounded-xl border bg-card p-6"
+    >
       <h3 className="text-sm font-semibold">{title}</h3>
       {description && (
         <p className="mt-1 text-xs text-muted-foreground">{description}</p>
