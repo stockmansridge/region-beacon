@@ -6,6 +6,8 @@ import { useAgencyContext } from "@/hooks/use-agency-context";
 import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { EventPaletteScope } from "@/components/event-palette-scope";
+import { applyPaletteToEvent } from "@/lib/event-palettes";
 
 export const Route = createFileRoute("/admin_/events/$eventId/preview")({
   head: () => ({ meta: [{ title: "Event preview" }] }),
