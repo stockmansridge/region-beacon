@@ -450,17 +450,11 @@ function AuthenticatedRecoveryForm({
       return;
     }
     setBusy(true);
-    // eslint-disable-next-line no-console
-    console.info("[org-signup] recovery: calling create_customer_agency", {
-      supabaseUrl: SUPABASE_URL,
-      argKeys: ["_agency_name", "_agency_slug"],
-      name: businessName.trim(),
-      slug: computedSlug,
-    });
     const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
       _agency_name: businessName.trim(),
       _agency_slug: computedSlug,
     });
+
     setBusy(false);
     if (rpcErr) {
       const msg = rpcErr.message || "";
