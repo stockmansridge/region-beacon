@@ -853,8 +853,8 @@ function EventDetail() {
       setCheckinSaveError("Could not save check-in settings. Please try again.");
       return;
     }
-    setIsEditingCheckin(false);
-    setCheckinForm(null);
+    setCheckinSaveSuccess(true);
+    window.setTimeout(() => setCheckinSaveSuccess(false), 2500);
     setReloadKey((k) => k + 1);
   }
 
