@@ -157,7 +157,7 @@ export function useCurrentEventPassport(eventIdOverride?: string | null): {
   };
 }
 
-async function resolveEventIdFromHost(): Promise<string | null> {
+export async function resolveEventIdFromHost(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   try {
     const { data } = await supabase.rpc("resolve_event_by_host", {
