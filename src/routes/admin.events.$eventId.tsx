@@ -2282,7 +2282,7 @@ function EventDetail() {
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
-                        What visitors can expect — tasting offer, discount, bonus stamp, etc. {venueForm.offer_summary.length}/800
+                        Shown on the venue page and the public Offers page. Tasting offer, discount, bonus stamp, etc. {venueForm.offer_summary.length}/800
                       </p>
                     </Field>
                   ) : (

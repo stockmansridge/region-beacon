@@ -15,6 +15,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as OffersRouteImport } from './routes/offers'
 import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
@@ -48,6 +49,7 @@ import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
 import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
+import { Route as LiveSubdomainOffersRouteImport } from './routes/live.$subdomain.offers'
 import { Route as LiveSubdomainMapRouteImport } from './routes/live.$subdomain.map'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
@@ -89,6 +91,11 @@ const ScanRoute = ScanRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersRoute = OffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketingPreviewRoute = MarketingPreviewRouteImport.update({
@@ -256,6 +263,11 @@ const LiveSubdomainPrivacyRoute = LiveSubdomainPrivacyRouteImport.update({
   path: '/live/$subdomain/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiveSubdomainOffersRoute = LiveSubdomainOffersRouteImport.update({
+  id: '/live/$subdomain/offers',
+  path: '/live/$subdomain/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveSubdomainMapRoute = LiveSubdomainMapRouteImport.update({
   id: '/live/$subdomain/map',
   path: '/live/$subdomain/map',
@@ -331,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
+  '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
@@ -365,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
+  '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/admin/events/': typeof AdminEventsIndexRoute
@@ -383,6 +397,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
+  '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
@@ -417,6 +432,7 @@ export interface FileRoutesByTo {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
+  '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/admin/events': typeof AdminEventsIndexRoute
@@ -437,6 +453,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
+  '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
@@ -471,6 +488,7 @@ export interface FileRoutesById {
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
+  '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/admin/events/': typeof AdminEventsIndexRoute
@@ -492,6 +510,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/map'
     | '/marketing-preview'
+    | '/offers'
     | '/privacy'
     | '/scan'
     | '/signup'
@@ -526,6 +545,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
+    | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/admin/events/'
@@ -544,6 +564,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/map'
     | '/marketing-preview'
+    | '/offers'
     | '/privacy'
     | '/scan'
     | '/signup'
@@ -578,6 +599,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
+    | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/admin/events'
@@ -597,6 +619,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/map'
     | '/marketing-preview'
+    | '/offers'
     | '/privacy'
     | '/scan'
     | '/signup'
@@ -631,6 +654,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
+    | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
     | '/admin/events/'
@@ -651,6 +675,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   MapRoute: typeof MapRoute
   MarketingPreviewRoute: typeof MarketingPreviewRoute
+  OffersRoute: typeof OffersRoute
   PrivacyRoute: typeof PrivacyRoute
   ScanRoute: typeof ScanRoute
   SignupRoute: typeof SignupRoute
@@ -676,6 +701,7 @@ export interface RootRouteChildren {
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
   LiveSubdomainMapRoute: typeof LiveSubdomainMapRoute
+  LiveSubdomainOffersRoute: typeof LiveSubdomainOffersRoute
   LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
   LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
@@ -726,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers': {
+      id: '/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof OffersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marketing-preview': {
@@ -959,6 +992,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/live/$subdomain/offers': {
+      id: '/live/$subdomain/offers'
+      path: '/live/$subdomain/offers'
+      fullPath: '/live/$subdomain/offers'
+      preLoaderRoute: typeof LiveSubdomainOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/map': {
       id: '/live/$subdomain/map'
       path: '/live/$subdomain/map'
@@ -1108,6 +1148,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   MapRoute: MapRoute,
   MarketingPreviewRoute: MarketingPreviewRoute,
+  OffersRoute: OffersRoute,
   PrivacyRoute: PrivacyRoute,
   ScanRoute: ScanRoute,
   SignupRoute: SignupRoute,
@@ -1133,6 +1174,7 @@ const rootRouteChildren: RootRouteChildren = {
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
   LiveSubdomainMapRoute: LiveSubdomainMapRoute,
+  LiveSubdomainOffersRoute: LiveSubdomainOffersRoute,
   LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
   LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,

@@ -1,9 +1,9 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 
-type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "leaderboard" | "more";
+type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "offers" | "leaderboard" | "more";
 
 /**
  * Public event navigation.
@@ -62,6 +62,7 @@ export function PublicEventNav({
     if (target === "map") return pathname === "/map";
     if (target === "venues")
       return pathname === "/venues" || pathname.startsWith("/venues/");
+    if (target === "offers") return pathname === "/offers";
     if (target === "leaderboard") return pathname === "/leaderboard";
     return false;
   };
@@ -164,6 +165,18 @@ export function PublicEventNav({
       ),
     },
     {
+      key: "offers",
+      node: (
+        <Link
+          to="/offers"
+          className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+          style={{ color: primary }}
+        >
+          Offers
+        </Link>
+      ),
+    },
+    {
       key: "leaderboard",
       node: (
         <Link
@@ -208,6 +221,7 @@ export function PublicEventNav({
   const moreActive =
     isActive("home") ||
     isActive("leaderboard") ||
+    isActive("offers") ||
     pathname === "/terms" ||
     pathname === "/privacy";
 
@@ -408,6 +422,24 @@ function MoreSheet({
               )}
             </li>
           )}
+          <li>
+            <Link to="/map" onClick={onClose} className={rowClass}>
+              <MapIcon className="h-4 w-4" />
+              Trail Map
+            </Link>
+          </li>
+          <li>
+            <Link to="/venues" onClick={onClose} className={rowClass}>
+              <MapPin className="h-4 w-4" />
+              Venues
+            </Link>
+          </li>
+          <li>
+            <Link to="/offers" onClick={onClose} className={rowClass}>
+              <Tag className="h-4 w-4" />
+              Offers
+            </Link>
+          </li>
           <li>
             <Link to="/leaderboard" onClick={onClose} className={rowClass}>
               <Trophy className="h-4 w-4" />
