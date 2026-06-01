@@ -271,7 +271,7 @@ function EventTabBar({
 }) {
   return (
     <div className="-mx-1 overflow-x-auto">
-      <div role="tablist" className="flex min-w-max gap-1 border-b px-1">
+      <div role="tablist" className="flex min-w-max gap-1 px-1">
         {EVENT_TABS.map((t) => {
           const isActive = t.key === active;
           return (
@@ -282,10 +282,10 @@ function EventTabBar({
               aria-selected={isActive}
               onClick={() => onChange(t.key)}
               className={
-                "relative h-9 whitespace-nowrap rounded-t-md px-3 text-sm font-medium transition " +
+                "relative h-9 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition " +
                 (isActive
-                  ? "bg-card text-foreground border border-b-0"
-                  : "text-muted-foreground hover:text-foreground")
+                  ? "bg-card text-foreground ring-1 ring-border shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground")
               }
             >
               {t.label}
@@ -1638,7 +1638,7 @@ function EventDetail() {
 
       />
 
-      <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs">
+      <div className="-mt-2 mb-1 flex flex-wrap items-center gap-2 pb-1 text-xs">
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ring-1 ${statusPillClass}`}
         >
@@ -2008,26 +2008,8 @@ function EventDetail() {
 
 
           <Section title="Check-in settings" tab="checkin">
-            {isEditingCheckin && checkinForm ? (
+            {canEdit && isEditingCheckin && checkinForm ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={cancelEditCheckin}
-                    disabled={checkinSaving}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                  >
-                    Discard changes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveEditCheckin}
-                    disabled={checkinSaving}
-                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                  >
-                    {checkinSaving ? "Saving…" : "Save"}
-                  </button>
-                </div>
                 {(checkinValidationError || checkinSaveError) && (
                   <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                     {checkinValidationError ?? checkinSaveError}
@@ -2073,62 +2055,62 @@ function EventDetail() {
                   />
                   <p className="text-xs text-muted-foreground">Leave blank for unlimited.</p>
                 </Field>
-              </div>
-            ) : (
-              <>
-                {canEdit && (
-                  <div className="mb-4 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={startEditCheckin}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                    >
-                      Edit check-in settings
-                    </button>
+                {checkinSaveSuccess && (
+                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    Check-in settings saved.
                   </div>
                 )}
-                {checkin ? (
-                  <DefList
-                    rows={[
-                      ["One per venue", checkin.one_checkin_per_venue ? "yes" : "no"],
-                      ["Min seconds between", String(checkin.minimum_seconds_between_checkins)],
-                      ["Allow manual admin", checkin.allow_manual_admin_checkins ? "yes" : "no"],
-                      [
-                        "Max per passport/day",
-                        checkin.max_checkins_per_passport_per_day === null
-                          ? "unlimited"
-                          : String(checkin.max_checkins_per_passport_per_day),
-                      ],
-                    ]}
-                  />
-                ) : (
-                  <EmptyNotice>No check-in settings.</EmptyNotice>
-                )}
-              </>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={cancelEditCheckin}
+                    disabled={checkinSaving}
+                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Discard changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditCheckin}
+                    disabled={checkinSaving}
+                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {checkinSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
+            ) : checkin ? (
+              <DefList
+                rows={[
+                  ["One per venue", checkin.one_checkin_per_venue ? "yes" : "no"],
+                  ["Min seconds between", String(checkin.minimum_seconds_between_checkins)],
+                  ["Allow manual admin", checkin.allow_manual_admin_checkins ? "yes" : "no"],
+                  [
+                    "Max per passport/day",
+                    checkin.max_checkins_per_passport_per_day === null
+                      ? "unlimited"
+                      : String(checkin.max_checkins_per_passport_per_day),
+                  ],
+                ]}
+              />
+            ) : (
+              <EmptyNotice>No check-in settings.</EmptyNotice>
             )}
           </Section>
 
+
           <Section title="Leaderboard" id="section-leaderboard" tab="leaderboard">
-            {isEditingLeaderboard && lbForm ? (
+            <div className="mb-4 flex flex-wrap justify-end gap-2">
+              <Link
+                to="/admin/events/$eventId/leaderboard"
+                params={{ eventId: bundle.event.id }}
+                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+              >
+                Open leaderboard
+              </Link>
+            </div>
+            {canEdit && isEditingLeaderboard && lbForm ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={cancelEditLeaderboard}
-                    disabled={lbSaving}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveEditLeaderboard}
-                    disabled={lbSaving}
-                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                  >
-                    {lbSaving ? "Saving…" : "Save"}
-                  </button>
-                </div>
                 <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   Public leaderboard display is privacy-limited. Visitor email, mobile, postcode,
                   and full name are never shown. Default display is first name + last initial.
@@ -2210,58 +2192,60 @@ function EventDetail() {
                   />
                   <span className="text-sm">Allow visitors to opt out</span>
                 </label>
-              </div>
-            ) : (
-              <>
-                <div className="mb-4 flex flex-wrap justify-end gap-2">
-                  <Link
-                    to="/admin/events/$eventId/leaderboard"
-                    params={{ eventId: bundle.event.id }}
-                    className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                  >
-                    Open leaderboard
-                  </Link>
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={startEditLeaderboard}
-                      className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-                    >
-                      Edit leaderboard settings
-                    </button>
-                  )}
-                </div>
-                {leaderboard ? (
-                  <>
-                    {!leaderboard.is_enabled && (
-                      <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                        Public leaderboard is disabled for this event.
-                      </div>
-                    )}
-                    <DefList
-                      rows={[
-                        ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
-                        ["Display mode", leaderboard.display_mode],
-                        ["Show first name", leaderboard.show_first_name ? "yes" : "no"],
-                        ["Show last initial", leaderboard.show_last_initial ? "yes" : "no"],
-                        ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
-                        ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
-                        ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
-                      ]}
-                    />
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      Privacy: email, mobile, postcode, and full name are never displayed publicly.
-                      Default display is first name + last initial.
-                    </p>
-                  </>
-                ) : (
-                  <EmptyNotice>
-                    No leaderboard settings. Public leaderboard is disabled by default.
-                  </EmptyNotice>
+                {lbSaveSuccess && (
+                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    Leaderboard settings saved.
+                  </div>
                 )}
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={cancelEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Discard changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditLeaderboard}
+                    disabled={lbSaving}
+                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {lbSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
+            ) : leaderboard ? (
+              <>
+                {!leaderboard.is_enabled && (
+                  <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    Public leaderboard is disabled for this event.
+                  </div>
+                )}
+                <DefList
+                  rows={[
+                    ["Enabled", leaderboard.is_enabled ? "yes" : "no"],
+                    ["Display mode", leaderboard.display_mode],
+                    ["Show first name", leaderboard.show_first_name ? "yes" : "no"],
+                    ["Show last initial", leaderboard.show_last_initial ? "yes" : "no"],
+                    ["Show visit count", leaderboard.show_visit_count ? "yes" : "no"],
+                    ["Hide below check-ins", String(leaderboard.hide_below_checkins)],
+                    ["Allow visitor opt-out", leaderboard.allow_visitor_opt_out ? "yes" : "no"],
+                  ]}
+                />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Privacy: email, mobile, postcode, and full name are never displayed publicly.
+                  Default display is first name + last initial.
+                </p>
               </>
+            ) : (
+              <EmptyNotice>
+                No leaderboard settings. Public leaderboard is disabled by default.
+              </EmptyNotice>
             )}
           </Section>
+
 
           <Section title="Reward tiers" id="section-rewards" tab="leaderboard">
             <AdminEventRewards
