@@ -33,6 +33,10 @@ type Branding = {
   venue_label_plural: string | null;
   logo_path: string | null;
   cover_path: string | null;
+  palette_key: string | null;
+  page_background_key: string | null;
+  page_background_color: string | null;
+  card_background_color: string | null;
 };
 
 type Venue = { id: string; name: string };
