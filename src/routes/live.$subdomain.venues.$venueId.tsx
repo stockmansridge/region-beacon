@@ -73,8 +73,8 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         setState({ kind: "not_found" });
         return;
       }
-      const evt = (evtData?.[0] ?? null) as { event_id?: string } | null;
-      setState({ kind: "ready", venue: row, eventId: evt?.event_id ?? null });
+      const evt = (evtData?.[0] ?? null) as { event_id?: string; palette_key?: string | null } | null;
+      setState({ kind: "ready", venue: row, eventId: evt?.event_id ?? null, paletteKey: evt?.palette_key ?? null });
 
       if (!evt?.event_id) return;
       try {
