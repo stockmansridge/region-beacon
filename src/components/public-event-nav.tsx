@@ -254,8 +254,13 @@ export function PublicEventNav({
       {/* Fixed bottom mobile nav: Passport / Trail Map / Venues / More */}
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E6DCC7] bg-[#FBF5E8]/95 backdrop-blur md:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          borderColor: "var(--event-border, #E6DCC7)",
+          background:
+            "color-mix(in srgb, var(--event-card-bg, #FBF5E8) 95%, transparent)",
+        }}
       >
         <ul className="mx-auto flex h-14 max-w-md items-stretch">
           <BottomItem active={isActive("passport")} accent={accent} primary={primary}>
