@@ -1750,7 +1750,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Branding" id="section-branding">
+          <Section title="Branding" id="section-branding" tab="branding">
             <p className="mb-4 text-sm text-muted-foreground">
               Branding is now edited side-by-side with a live preview of the customer landing page.
             </p>
