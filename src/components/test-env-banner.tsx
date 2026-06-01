@@ -5,8 +5,8 @@
  */
 export function TestEnvBanner({ note }: { note?: string }) {
   return (
-    <div className="border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-[11px] font-medium uppercase tracking-wider text-amber-900">
-      Test environment · Public testing · Payments not active yet
+    <div className="flex h-7 items-center justify-center border-b border-[#FED7AA] bg-[#FFF7ED] px-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9A3412]">
+      <span>Test environment · Public testing · Payments not active yet</span>
       {note ? <span className="ml-2 normal-case tracking-normal">— {note}</span> : null}
     </div>
   );
