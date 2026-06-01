@@ -6,6 +6,8 @@ import { tenantHost } from "@/lib/domains";
 import { LegalBody } from "@/components/legal-body";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
+import { EventPaletteScope } from "@/components/event-palette-scope";
+import { useEventPaletteKey } from "@/lib/use-event-palette";
 
 
 export type LegalRow = {
@@ -67,8 +69,9 @@ export function PublicLegalShell({
   activeOverride?: "home" | "join" | "venues" | "leaderboard";
   children: React.ReactNode;
 }) {
+  const paletteKey = useEventPaletteKey(subdomain);
   return (
-    <div className="min-h-screen bg-[#F6EFE2] px-4 py-4">
+    <EventPaletteScope paletteKey={paletteKey} className="min-h-screen px-4 py-4">
       <div className="mx-auto max-w-5xl">
         <PublicEventNav
           subdomain={subdomain}
@@ -93,7 +96,7 @@ export function PublicLegalShell({
         </div>
 
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }
 

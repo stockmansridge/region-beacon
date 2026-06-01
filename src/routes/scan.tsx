@@ -8,6 +8,7 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { matchRootDomain } from "@/lib/domains";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 
 export const Route = createFileRoute("/scan")({
   head: () => ({ meta: [{ title: "Scan venue QR" }] }),
@@ -49,6 +50,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   const [manual, setManual] = useState("");
   const [hasPassport, setHasPassport] = useState<boolean | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
+  const [paletteKey, setPaletteKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -57,9 +59,10 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       const host = tenantHost(subdomain);
       const { data } = await supabase.rpc("get_public_event_by_domain", { _hostname: host });
       if (cancelled) return;
-      const evt = (data?.[0] ?? null) as { event_id?: string } | null;
+      const evt = (data?.[0] ?? null) as { event_id?: string; palette_key?: string | null } | null;
       const eid = evt?.event_id ?? null;
       setEventId(eid);
+      setPaletteKey(evt?.palette_key ?? null);
       if (eid && typeof localStorage !== "undefined") {
         const raw = localStorage.getItem(`gs.passport.${eid}`);
         setHasPassport(!!raw);
@@ -107,7 +110,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6EFE2] pb-12">
+    <EventPaletteScope paletteKey={paletteKey} className="min-h-screen pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} /></div>
       <div className="mx-auto max-w-md px-4 pt-4">
@@ -200,6 +203,6 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
           </div>
         </details>
       </div>
-    </div>
+    </EventPaletteScope>
   );
 }

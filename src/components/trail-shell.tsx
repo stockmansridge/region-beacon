@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ReactNode } from "react";
 import { Stamp, Map as MapIcon, Wine, Gift, MoreHorizontal } from "lucide-react";
 import { DEFAULT_VENUE_LABEL_PLURAL } from "@/lib/venue-labels";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 
 type NavKey = "passport" | "map" | "wineries" | "rewards" | "more";
 
@@ -17,6 +18,7 @@ export function TrailShell({
   topLeft,
   contentClassName = "",
   venueLabelPlural = DEFAULT_VENUE_LABEL_PLURAL,
+  paletteKey = null,
 }: {
   children: ReactNode;
   eventName?: string;
@@ -29,6 +31,7 @@ export function TrailShell({
   topLeft?: ReactNode;
   contentClassName?: string;
   venueLabelPlural?: string;
+  paletteKey?: string | null;
 }) {
   const initials = (monogram ?? eventName ?? "EP")
     .split(/\s+/)
@@ -39,7 +42,7 @@ export function TrailShell({
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-trail-cream text-[#2A2620]">
+    <EventPaletteScope paletteKey={paletteKey} className="min-h-screen text-[#2A2620]">
       <header className="sticky top-0 z-40 border-b border-[#E6DCC7] bg-[#F6EFE2]/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -71,7 +74,7 @@ export function TrailShell({
           venueLabelPlural={venueLabelPlural}
         />
       )}
-    </div>
+    </EventPaletteScope>
   );
 }
 

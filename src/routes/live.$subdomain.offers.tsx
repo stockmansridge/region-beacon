@@ -25,6 +25,7 @@ type VenueRow = {
   address: string | null;
   logo_path: string | null;
   cover_path: string | null;
+  offer_summary: string | null;
   lat: number | null;
   lng: number | null;
   order_index: number | null;
@@ -75,32 +76,16 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
       }
       const venues = rows.filter((r) => r.event_found !== false && r.venue_id);
 
-      // Fetch offer_summary per venue via the detail RPC in parallel.
-      // The list RPC does not currently project offer_summary; a SQL draft
-      // exists to extend it for a single round-trip.
-      const detailResults: Array<{ venue: VenueRow; offer_summary: string | null }> =
-        await Promise.all(
-          venues.map(async (v) => {
-            try {
-              const { data } = await supabase.rpc("get_public_venue_by_domain", {
-                _hostname: host,
-                _venue_id: v.venue_id,
-              });
-              const row = (data?.[0] ?? null) as { offer_summary: string | null } | null;
-              return { venue: v, offer_summary: row?.offer_summary ?? null };
-            } catch {
-              return { venue: v, offer_summary: null };
-            }
-          }),
-        );
-      if (cancelled) return;
-
-      const offers: OfferVenue[] = detailResults
+      // Single round-trip: offer_summary is now projected by
+      // get_public_venues_by_domain (migration
+      // supabase/migrations-draft-public-offers/01_extend_get_public_venues_by_domain_offer_summary.sql).
+      const offers: OfferVenue[] = venues
         .filter(
-          (r): r is { venue: VenueRow; offer_summary: string } =>
-            typeof r.offer_summary === "string" && r.offer_summary.trim().length > 0,
+          (v): v is VenueRow & { offer_summary: string } =>
+            typeof v.offer_summary === "string" &&
+            v.offer_summary.trim().length > 0,
         )
-        .map((r) => ({ ...r.venue, offer_summary: r.offer_summary.trim() }));
+        .map((v) => ({ ...v, offer_summary: v.offer_summary!.trim() }));
 
       const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
       const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
