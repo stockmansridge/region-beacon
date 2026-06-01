@@ -695,14 +695,16 @@ function Stat({
   icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">
           {label}
         </span>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#EAF2FF] text-[#2F6FE4]">
+          <Icon className="h-5 w-5" />
+        </span>
       </div>
-      <div className="mt-2 text-2xl font-semibold">{value}</div>
+      <div className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[#111827]">{value}</div>
     </div>
   );
 }
