@@ -47,6 +47,12 @@ function Login() {
   // URL after consuming the email confirmation link.
   useEffect(() => {
     cleanAuthUrlFragments();
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("complete_signup") === "1") {
+        setShowCompleteSignupBanner(true);
+      }
+    }
   }, []);
 
   // If authenticated, decide whether to auto-complete pending signup,
