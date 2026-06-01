@@ -268,7 +268,7 @@ function LeaderboardPage() {
           <Link
             to="/admin/events/$eventId"
             params={{ eventId }}
-            className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
           >
             Back to event
           </Link>
@@ -276,7 +276,7 @@ function LeaderboardPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <section className="rounded-xl border bg-card p-6 lg:col-span-1">
+        <section className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)] lg:col-span-1">
           <h3 className="text-sm font-semibold">Settings summary</h3>
           <dl className="mt-3 space-y-2 text-sm">
             <KV k="Enabled" v={settings?.is_enabled ? "yes" : "no"} />
@@ -284,14 +284,14 @@ function LeaderboardPage() {
             <KV k="Hide below" v={String(settings?.hide_below_checkins ?? 1)} />
             <KV k="Show visit count" v={settings?.show_visit_count ? "yes" : "no"} />
           </dl>
-          <p className="mt-4 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+          <p className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-xs leading-5 text-[#334155]">
             Privacy: email, mobile, postcode and full name are never shown
             publicly. This admin preview uses the same display rules and
             adds tier + points computed from snapshotted check-in values.
           </p>
         </section>
 
-        <section className="rounded-xl border bg-card p-6 lg:col-span-2">
+        <section className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)] lg:col-span-2">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Preview</h3>
             <span className="text-xs text-muted-foreground">Read-only · admin view</span>
@@ -302,12 +302,12 @@ function LeaderboardPage() {
           ) : error ? (
             <p className="mt-6 text-sm text-destructive">{error}</p>
           ) : rows.length === 0 ? (
-            <div className="mt-6 rounded-md border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+            <div className="mt-6 rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-6 text-center text-sm text-[#475569]">
               No check-ins yet. The leaderboard will populate once visitors
               start collecting stamps.
             </div>
           ) : (
-            <div className="mt-4 overflow-hidden rounded-md border">
+            <div className="mt-4 overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
@@ -476,14 +476,14 @@ function PrizeDrawSection({
   if (!canAdmin) return null;
 
   return (
-    <section className="mt-6 rounded-xl border bg-card p-6">
+    <section className="mt-6 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Prize draw</h3>
         <span className="text-xs text-muted-foreground">Admin · uses RPC</span>
       </div>
 
       {rules.length === 0 ? (
-        <div className="mt-4 rounded-md border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+        <div className="mt-4 rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-6 text-center text-sm text-[#475569]">
           <p className="font-medium text-foreground">Prize rules setup coming soon</p>
           <p className="mt-1 text-xs">
             No active prize rules are configured for this event yet. Once an
@@ -500,7 +500,7 @@ function PrizeDrawSection({
             <select
               value={selectedRuleId ?? ""}
               onChange={(e) => setSelectedRuleId(e.currentTarget.value)}
-              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
             >
               {rules.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -510,7 +510,7 @@ function PrizeDrawSection({
               ))}
             </select>
 
-            <div className="rounded-md border bg-muted/30 p-3 text-xs">
+            <div className="rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] px-4 py-3 text-xs leading-5 text-[#334155]">
               {poolLoading ? (
                 <p className="text-muted-foreground">Loading pool…</p>
               ) : poolError ? (
@@ -539,14 +539,14 @@ function PrizeDrawSection({
               value={seed}
               onChange={(e) => setSeed(e.currentTarget.value)}
               placeholder="leave empty to auto-generate"
-              className="h-9 w-full rounded-md border bg-background px-2 font-mono text-xs"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 font-mono text-xs text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none"
             />
 
             <button
               type="button"
               onClick={draw}
               disabled={drawing || !pool || pool.length === 0}
-              className="inline-flex h-9 items-center rounded-md border bg-foreground px-4 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:opacity-50"
             >
               {drawing ? "Drawing…" : "Draw winner"}
             </button>
@@ -557,7 +557,7 @@ function PrizeDrawSection({
 
           <div>
             {winner ? (
-              <div className="rounded-md border bg-success/5 p-4">
+              <div className="rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] px-4 py-3 text-sm leading-6 text-[#047857]">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Winner
                 </p>
@@ -587,7 +587,7 @@ function PrizeDrawSection({
                 </p>
               </div>
             ) : (
-              <div className="rounded-md border border-dashed bg-muted/30 p-4 text-center text-xs text-muted-foreground">
+              <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-center text-xs text-[#475569]">
                 Select a prize rule and click <strong>Draw winner</strong>.
               </div>
             )}
@@ -600,7 +600,7 @@ function PrizeDrawSection({
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Previous draws
           </h4>
-          <div className="mt-2 overflow-hidden rounded-md border">
+          <div className="mt-2 overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white">
             <table className="w-full text-xs">
               <thead className="bg-muted/40 text-left uppercase tracking-wider text-muted-foreground">
                 <tr>
