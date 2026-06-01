@@ -1779,6 +1779,29 @@ function EventDetail() {
                 <p className="text-xs text-muted-foreground">
                   Internal event URL name, public event code, and status remain read-only here.
                 </p>
+                {basicsSaveSuccess && (
+                  <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    Basics saved.
+                  </div>
+                )}
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    disabled={saving}
+                    className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Discard changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEdit}
+                    disabled={saving}
+                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                </div>
               </div>
             ) : (
               <DefList
