@@ -1,9 +1,9 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 
-type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "leaderboard" | "more";
+type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "offers" | "leaderboard" | "more";
 
 /**
  * Public event navigation.
