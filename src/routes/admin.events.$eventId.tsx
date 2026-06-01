@@ -1783,7 +1783,7 @@ function EventDetail() {
             />
           </Section>
 
-          <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages.">
+          <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages." tab="overview">
             <AdminEventAnnouncements
               eventId={event.id}
               agencyId={event.agency_id}
