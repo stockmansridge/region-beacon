@@ -666,7 +666,7 @@ function BrandingEditor() {
                       value={HEX_RE.test(form.primary_color) ? form.primary_color : "#1F3D2B"}
                       onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
                       disabled={!canEdit || saving || !customActive}
-                      className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <input
                       type="text"
@@ -675,7 +675,7 @@ function BrandingEditor() {
                       placeholder="#1F3D2B"
                       disabled={!canEdit || saving || !customActive}
                       maxLength={7}
-                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </Field>
@@ -686,7 +686,7 @@ function BrandingEditor() {
                       value={HEX_RE.test(form.accent_color) ? form.accent_color : "#B5572A"}
                       onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
                       disabled={!canEdit || saving || !customActive}
-                      className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <input
                       type="text"
@@ -695,7 +695,7 @@ function BrandingEditor() {
                       placeholder="#B5572A"
                       disabled={!canEdit || saving || !customActive}
                       maxLength={7}
-                      className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </Field>
@@ -731,7 +731,7 @@ function BrandingEditor() {
                     value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
                     onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
                     disabled={!canEdit || saving}
-                    className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <input
                     type="text"
@@ -740,7 +740,7 @@ function BrandingEditor() {
                     placeholder="#F6EFE2"
                     disabled={!canEdit || saving}
                     maxLength={7}
-                    className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
               </Field>
@@ -751,7 +751,7 @@ function BrandingEditor() {
                     value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
                     onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
                     disabled={!canEdit || saving}
-                    className="h-9 w-12 rounded-md border bg-background disabled:opacity-50"
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <input
                     type="text"
@@ -760,7 +760,7 @@ function BrandingEditor() {
                     placeholder="#FBF5E8"
                     disabled={!canEdit || saving}
                     maxLength={7}
-                    className="h-9 flex-1 rounded-md border bg-background px-3 text-sm font-mono disabled:opacity-50"
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
               </Field>
@@ -775,7 +775,7 @@ function BrandingEditor() {
               placeholder="e.g. Inter, system-ui"
               disabled={!canEdit || saving}
               maxLength={100}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
           </Field>
 
@@ -785,7 +785,7 @@ function BrandingEditor() {
               onChange={(e) => setForm({ ...form, welcome_copy: e.target.value })}
               disabled={!canEdit || saving}
               maxLength={1000}
-              className="min-h-28 w-full rounded-md border bg-background p-2 text-sm disabled:opacity-50"
+              className="min-h-28 w-full rounded-[10px] border border-[#D9E2EF] bg-white p-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="A short welcome message for your visitors."
             />
             <div className="mt-1 text-right text-xs text-muted-foreground">
@@ -818,7 +818,7 @@ function BrandingEditor() {
                 placeholder="Venue"
                 disabled={!canEdit || saving}
                 maxLength={VENUE_LABEL_MAX}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
               <div className="mt-1 text-right text-xs text-muted-foreground">
                 {form.venue_label_singular.length}/{VENUE_LABEL_MAX}
@@ -833,7 +833,7 @@ function BrandingEditor() {
                 placeholder="Venues"
                 disabled={!canEdit || saving}
                 maxLength={VENUE_LABEL_MAX}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
               <div className="mt-1 text-right text-xs text-muted-foreground">
                 {form.venue_label_plural.length}/{VENUE_LABEL_MAX}
