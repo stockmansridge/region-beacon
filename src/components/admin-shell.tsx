@@ -137,9 +137,6 @@ export function AdminShell({
 
   return (
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#071527]">
-      <div className="shrink-0">
-        <TestEnvBanner />
-      </div>
 
       {/* Mobile top bar (< lg) */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#E6ECF4] bg-white px-4 lg:hidden">
