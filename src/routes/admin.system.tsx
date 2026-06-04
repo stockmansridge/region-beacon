@@ -892,6 +892,11 @@ function OrganisationDetailDrawer({
     }
     const sub = subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null);
     setSubscription(sub);
+    const stripeCustomer =
+      billingRes.error || !billingRes.data
+        ? null
+        : ((billingRes.data as { stripe_customer_id: string | null }).stripe_customer_id ?? null);
+    setStripeCustomerId(stripeCustomer);
     setPlanForm({
       plan_code: normalizePlanCode(sub?.plan_code ?? "free"),
       status: sub?.status && sub.status !== "none" ? sub.status : "active",
