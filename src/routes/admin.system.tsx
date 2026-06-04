@@ -8,6 +8,7 @@ import {
   CreditCard,
   Settings2,
   LayoutDashboard,
+  LifeBuoy,
   Search,
   ExternalLink,
   Copy,
@@ -506,6 +507,8 @@ function SystemAdmin() {
         </p>
       </header>
 
+      <SupportTicketsAlert onOpen={() => setTab("support")} />
+
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-[12px] bg-white p-1 ring-1 ring-[#E6ECF4]">
           <TabsTrigger value="overview" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
@@ -519,6 +522,9 @@ function SystemAdmin() {
           </TabsTrigger>
           <TabsTrigger value="events" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
             <Calendar className="h-4 w-4" /> Events
+          </TabsTrigger>
+          <TabsTrigger value="support" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
+            <LifeBuoy className="h-4 w-4" /> Support tickets
           </TabsTrigger>
           <TabsTrigger value="audit" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
             <ScrollText className="h-4 w-4" /> Audit logs
@@ -542,6 +548,7 @@ function SystemAdmin() {
           <TabsContent value="events">
             <EventsSection filter={eventsFilter} setFilter={setEventsFilter} />
           </TabsContent>
+          <TabsContent value="support"><SupportTicketsSection /></TabsContent>
           <TabsContent value="audit"><AuditSection /></TabsContent>
           <TabsContent value="billing"><BillingSection /></TabsContent>
           <TabsContent value="settings"><SettingsSection /></TabsContent>
@@ -2470,5 +2477,402 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </div>
       {children}
     </div>
+  );
+}
+
+// -------- Support tickets -------------------------------------------------
+
+type SupportTicketCounts = {
+  open_count: number;
+  urgent_open_count: number;
+};
+
+function SupportTicketsAlert({ onOpen }: { onOpen: () => void }) {
+  const [counts, setCounts] = useState<SupportTicketCounts | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.rpc(
+        "system_admin_support_ticket_counts",
+      );
+      if (cancelled) return;
+      if (error || !data) {
+        setCounts(null);
+        return;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      setCounts({
+        open_count: Number(row?.open_count ?? 0),
+        urgent_open_count: Number(row?.urgent_open_count ?? 0),
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!counts || counts.open_count <= 0) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3 text-left text-sm text-[#9A3412] hover:bg-[#FFEDD5]"
+    >
+      <span className="flex items-center gap-2">
+        <LifeBuoy className="h-4 w-4" />
+        <span className="font-semibold">
+          {counts.open_count} open support ticket{counts.open_count === 1 ? "" : "s"} requiring attention
+          {counts.urgent_open_count > 0
+            ? ` (${counts.urgent_open_count} urgent)`
+            : ""}
+        </span>
+      </span>
+      <span className="text-xs font-medium uppercase tracking-wide">
+        View tickets →
+      </span>
+    </button>
+  );
+}
+
+type SupportTicketRow = {
+  id: string;
+  organisation_id: string | null;
+  organisation_name: string | null;
+  submitted_by: string;
+  submitted_by_email: string | null;
+  subject: string;
+  description: string;
+  category: string;
+  priority: string;
+  status: string;
+  page_url: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  closed_at: string | null;
+};
+
+const TICKET_STATUSES = [
+  "new",
+  "open",
+  "in_progress",
+  "waiting_on_user",
+  "resolved",
+  "closed",
+] as const;
+
+const TICKET_PRIORITIES = ["low", "normal", "high", "urgent"] as const;
+
+function SupportTicketsSection() {
+  const [rows, setRows] = useState<SupportTicketRow[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selected, setSelected] = useState<SupportTicketRow | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase.rpc(
+      "system_admin_support_tickets",
+      {
+        p_status: statusFilter === "all" ? null : statusFilter,
+        p_limit: 200,
+      },
+    );
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+      setRows([]);
+      return;
+    }
+    setRows((data ?? []) as SupportTicketRow[]);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-[#0F172A]">Support tickets</h2>
+          <p className="text-xs text-[#64748B]">
+            All tickets across all organisations.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {TICKET_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s.replace(/_/g, " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            type="button"
+            onClick={load}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border bg-white px-3 text-sm hover:bg-[#F8FAFC]"
+          >
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-[12px] border border-[#E6ECF4] bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Status</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Subject</TableHead>
+              <TableHead>Organisation</TableHead>
+              <TableHead>Submitted by</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Updated</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && (rows === null || rows.length === 0) ? (
+              <TableRow>
+                <TableCell colSpan={9} className="py-10 text-center text-sm text-[#64748B]">
+                  Loading tickets…
+                </TableCell>
+              </TableRow>
+            ) : rows && rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="py-10 text-center text-sm text-[#64748B]">
+                  No tickets match the current filter.
+                </TableCell>
+              </TableRow>
+            ) : (
+              (rows ?? []).map((t) => (
+                <TableRow key={t.id}>
+                  <TableCell><TicketStatusBadge value={t.status} /></TableCell>
+                  <TableCell><TicketPriorityBadge value={t.priority} /></TableCell>
+                  <TableCell className="max-w-[280px] truncate font-medium">
+                    {t.subject}
+                  </TableCell>
+                  <TableCell className="max-w-[180px] truncate">
+                    {t.organisation_name ?? "—"}
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate text-xs text-[#475569]">
+                    {t.submitted_by_email ?? t.submitted_by.slice(0, 8)}
+                  </TableCell>
+                  <TableCell className="text-xs">{t.category.replace(/_/g, " ")}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs text-[#64748B]">
+                    {new Date(t.created_at).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-xs text-[#64748B]">
+                    {new Date(t.updated_at).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => setSelected(t)}
+                      className="inline-flex h-8 items-center justify-center rounded-md border bg-white px-3 text-xs font-medium hover:bg-[#F8FAFC]"
+                    >
+                      View
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <SupportTicketSheet
+        ticket={selected}
+        onClose={() => setSelected(null)}
+        onSaved={() => {
+          setSelected(null);
+          load();
+        }}
+      />
+    </div>
+  );
+}
+
+function TicketStatusBadge({ value }: { value: string }) {
+  const tone: Record<string, string> = {
+    new: "bg-[#EAF2FF] text-[#1F56C5]",
+    open: "bg-[#EAF2FF] text-[#1F56C5]",
+    in_progress: "bg-[#FFF7ED] text-[#9A3412]",
+    waiting_on_user: "bg-[#FEF3C7] text-[#92400E]",
+    resolved: "bg-[#DCFCE7] text-[#166534]",
+    closed: "bg-[#F1F5F9] text-[#475569]",
+  };
+  return (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone[value] ?? "bg-[#F1F5F9] text-[#475569]"}`}>
+      {value.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function TicketPriorityBadge({ value }: { value: string }) {
+  const tone: Record<string, string> = {
+    low: "bg-[#F1F5F9] text-[#475569]",
+    normal: "bg-[#EAF2FF] text-[#1F56C5]",
+    high: "bg-[#FFF7ED] text-[#9A3412]",
+    urgent: "bg-[#FEE2E2] text-[#991B1B]",
+  };
+  return (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone[value] ?? "bg-[#F1F5F9] text-[#475569]"}`}>
+      {value}
+    </span>
+  );
+}
+
+function SupportTicketSheet({
+  ticket,
+  onClose,
+  onSaved,
+}: {
+  ticket: SupportTicketRow | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [status, setStatus] = useState<string>("new");
+  const [priority, setPriority] = useState<string>("normal");
+  const [notes, setNotes] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!ticket) return;
+    setStatus(ticket.status);
+    setPriority(ticket.priority);
+    setNotes(ticket.admin_notes ?? "");
+  }, [ticket]);
+
+  const save = async () => {
+    if (!ticket) return;
+    setSaving(true);
+    const { error } = await supabase.rpc("system_admin_update_support_ticket", {
+      p_id: ticket.id,
+      p_status: status,
+      p_priority: priority,
+      p_admin_notes: notes || null,
+    });
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Ticket updated");
+    onSaved();
+  };
+
+  return (
+    <Sheet open={!!ticket} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent side="right" className="w-full max-w-lg overflow-y-auto">
+        {ticket && (
+          <>
+            <SheetHeader>
+              <SheetTitle className="pr-6 text-base">{ticket.subject}</SheetTitle>
+              <SheetDescription>
+                {ticket.organisation_name ?? "No organisation"} ·{" "}
+                {ticket.submitted_by_email ?? ticket.submitted_by.slice(0, 8)}
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-4 space-y-4 text-sm">
+              <div className="rounded-md border bg-[#F8FAFC] p-3 text-xs text-[#475569]">
+                <div><span className="font-medium text-[#0F172A]">Category:</span> {ticket.category.replace(/_/g, " ")}</div>
+                <div><span className="font-medium text-[#0F172A]">Created:</span> {new Date(ticket.created_at).toLocaleString()}</div>
+                <div><span className="font-medium text-[#0F172A]">Updated:</span> {new Date(ticket.updated_at).toLocaleString()}</div>
+                {ticket.page_url && (
+                  <div className="break-all">
+                    <span className="font-medium text-[#0F172A]">Page:</span> {ticket.page_url}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+                  Description
+                </div>
+                <div className="whitespace-pre-wrap rounded-md border bg-white p-3 text-sm text-[#0F172A]">
+                  {ticket.description}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-[#0F172A]">Status</label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {TICKET_STATUSES.map((s) => (
+                        <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-[#0F172A]">Priority</label>
+                  <Select value={priority} onValueChange={setPriority}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {TICKET_PRIORITIES.map((p) => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-[#0F172A]">Admin notes</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={5}
+                  className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
+                  placeholder="Internal notes only — not visible to the submitter."
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex h-9 items-center justify-center rounded-lg border bg-white px-4 text-sm font-medium hover:bg-[#F8FAFC]"
+                  disabled={saving}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={save}
+                  disabled={saving}
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#2F6FE4] px-4 text-sm font-semibold text-white hover:bg-[#1F56C5] disabled:opacity-60"
+                >
+                  {saving ? "Saving…" : "Save changes"}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }

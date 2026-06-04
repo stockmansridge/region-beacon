@@ -4,7 +4,7 @@ import { z } from "zod";
 import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
-import { TestEnvBanner } from "@/components/test-env-banner";
+
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { authUrl } from "@/lib/auth-redirect";
 import { signOut } from "@/hooks/use-auth";
@@ -214,7 +214,7 @@ function SignupPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <TestEnvBanner />
+      
       <header className="border-b">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center">
@@ -269,8 +269,7 @@ function SignupPage() {
             <div>
               <h1 className="text-xl font-semibold">Create your organisation</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Start setting up your first GetStampd event. Free to test —
-                payments and live publishing are not active during public testing.
+                Start setting up your first GetStampd event.
               </p>
             </div>
 
@@ -374,8 +373,7 @@ function SignupPage() {
                 className="mt-0.5 h-4 w-4"
               />
               <span>
-                I agree to the GetStampd platform terms and acknowledge this is a
-                public test environment.
+                I agree to the GetStampd platform terms.
               </span>
             </label>
             {fieldErrors.acceptTerms && (

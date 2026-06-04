@@ -1,12 +1,13 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard, Bug, Menu } from "lucide-react";
+import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard, Bug, Menu, LifeBuoy } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
-import { TestEnvBanner } from "@/components/test-env-banner";
+
 import { useDiagnosticsEnabled } from "@/lib/diagnostics";
 import { Switch } from "@/components/ui/switch";
 import { formatRoleLabel } from "@/lib/role-labels";
+import { ContactSupportDialog } from "@/components/contact-support-dialog";
 import {
   Sheet,
   SheetContent,
@@ -25,6 +26,7 @@ export function AdminShell({
   children,
   email,
   role,
+  agencyId,
   agencyName,
   agencyRole,
   ambiguousAgency,
@@ -33,6 +35,7 @@ export function AdminShell({
   children?: ReactNode;
   email?: string | null;
   role?: string | null;
+  agencyId?: string | null;
   agencyName?: string | null;
   agencyRole?: string | null;
   ambiguousAgency?: boolean;
@@ -41,6 +44,7 @@ export function AdminShell({
   const navigate = useNavigate();
   const [diagnosticsEnabled, setDiagnosticsEnabled] = useDiagnosticsEnabled();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/admin/login", replace: true });
@@ -126,6 +130,13 @@ export function AdminShell({
           />
         </label>
       )}
+      <button
+        type="button"
+        onClick={() => setSupportOpen(true)}
+        className={footerLinkClass}
+      >
+        <LifeBuoy className="h-4 w-4 text-[#94A3B8]" /> Contact support
+      </button>
       <button type="button" className={footerLinkClass}>
         <Settings className="h-4 w-4 text-[#94A3B8]" /> Settings
       </button>
@@ -137,9 +148,11 @@ export function AdminShell({
 
   return (
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#071527]">
-      <div className="shrink-0">
-        <TestEnvBanner />
-      </div>
+      <ContactSupportDialog
+        open={supportOpen}
+        onOpenChange={setSupportOpen}
+        organisationId={agencyId ?? null}
+      />
 
       {/* Mobile top bar (< lg) */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#E6ECF4] bg-white px-4 lg:hidden">

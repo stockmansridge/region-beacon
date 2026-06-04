@@ -98,6 +98,7 @@ function AdminLayout() {
     <AdminShell
       email={email}
       role={access.primaryRole}
+      agencyId={agency.selected?.id ?? null}
       agencyName={agency.selected?.name ?? null}
       agencyRole={agency.selected?.role ?? null}
       ambiguousAgency={agency.ambiguousSelection}
