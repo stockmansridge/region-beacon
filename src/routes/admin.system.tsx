@@ -2570,7 +2570,7 @@ function SupportTicketsSection() {
   const [rows, setRows] = useState<SupportTicketRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("open");
   const [selected, setSelected] = useState<SupportTicketRow | null>(null);
 
   const load = useCallback(async () => {
@@ -2589,7 +2589,10 @@ function SupportTicketsSection() {
       setRows([]);
       return;
     }
-    setRows((data ?? []) as SupportTicketRow[]);
+    const sorted = ((data ?? []) as SupportTicketRow[]).sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+    setRows(sorted);
   }, [statusFilter]);
 
   useEffect(() => {
