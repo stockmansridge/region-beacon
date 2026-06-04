@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Check,
-  ChevronDown,
   Sparkles,
   Stamp,
 } from "lucide-react";

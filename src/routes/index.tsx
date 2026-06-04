@@ -20,7 +20,6 @@ import {
 import { useTenantSubdomain } from "@/lib/tenant-host";
 import { authUrl } from "@/lib/auth-redirect";
 import { LivePublicPage } from "./live.$subdomain.index";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import heroWine from "@/assets/hero-wine-trail.jpg";
 import heroMarket from "@/assets/hero-market.jpg";
