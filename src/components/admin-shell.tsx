@@ -137,9 +137,6 @@ export function AdminShell({
       >
         <LifeBuoy className="h-4 w-4 text-[#94A3B8]" /> Contact support
       </button>
-      <button type="button" className={footerLinkClass}>
-        <Settings className="h-4 w-4 text-[#94A3B8]" /> Settings
-      </button>
       <button type="button" onClick={handleSignOut} className={footerLinkClass}>
         <LogOut className="h-4 w-4 text-[#94A3B8]" /> Sign out
       </button>
