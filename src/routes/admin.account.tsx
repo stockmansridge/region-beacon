@@ -640,6 +640,12 @@ function AccountPage() {
           <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs">
             {lastCheckoutError}
           </div>
+          {isPlatformAdmin && (
+            <StripeServerEnvStatusPanel
+              loading={envCheckLoading}
+              result={envCheckResult}
+            />
+          )}
           <button
             type="button"
             onClick={() => setLastCheckoutError(null)}
@@ -678,46 +684,8 @@ function AccountPage() {
               mono
             />
           </dl>
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={handleEnvCheck}
-              disabled={envCheckLoading}
-              className="inline-flex h-8 items-center rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-300"
-            >
-              {envCheckLoading ? "Checking…" : "Check Stripe server env"}
-            </button>
-          </div>
-          {envCheckResult && (
-            <div className="mt-3 space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span>
-                  <span className="text-muted-foreground">Status:</span>{" "}
-                  <span className="font-mono">{envCheckResult.status}</span>
-                </span>
-                <span>
-                  <span className="text-muted-foreground">Content-Type:</span>{" "}
-                  <span className="font-mono">{envCheckResult.contentType ?? "—"}</span>
-                </span>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Body text:</div>
-                <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border bg-background p-2 font-mono text-[10px]">
-                  {envCheckResult.bodyText}
-                </pre>
-              </div>
-              {envCheckResult.parsed !== null && (
-                <div>
-                  <div className="text-muted-foreground">Parsed JSON:</div>
-                  <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border bg-background p-2 font-mono text-[10px]">
-                    {JSON.stringify(envCheckResult.parsed, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
           <p className="mt-2 text-[10px] text-muted-foreground">
-            No secrets are shown. Values are local to this page.
+            No secrets are shown. Server configuration status appears under checkout failures.
           </p>
         </div>
       )}
