@@ -21,12 +21,14 @@ export const Route = createFileRoute("/api/admin/stripe-env-check")({
         );
 
         let asUser: ReturnType<typeof getSupabaseAsUser>;
+        let userId: string;
         try {
           asUser = getSupabaseAsUser(accessToken);
           const { data: userRes, error: userErr } = await asUser.auth.getUser();
           if (userErr || !userRes?.user) {
             return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
           }
+          userId = userRes.user.id;
         } catch {
           return Response.json(
             { ok: false, error: "Could not verify sign-in session." },
@@ -37,6 +39,7 @@ export const Route = createFileRoute("/api/admin/stripe-env-check")({
         const { data: roles, error: rolesErr } = await asUser
           .from("user_roles")
           .select("role")
+          .eq("user_id", userId)
           .eq("role", "platform_admin");
         if (rolesErr) {
           console.error("[stripe-env-check] role lookup failed", { error: rolesErr.message });
