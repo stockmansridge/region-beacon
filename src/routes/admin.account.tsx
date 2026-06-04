@@ -115,13 +115,6 @@ type StripeEdgeEnvCheckResult = {
 
 type StripeCheckoutResult = { ok: true; url: string } | { ok: false; error: string };
 
-const STRIPE_PRICE_ENV_BY_PLAN: Record<"starter" | "growth" | "regional" | "pro_region", StripeEnvSecretName> = {
-  starter: "STRIPE_PRICE_STARTER",
-  growth: "STRIPE_PRICE_GROWTH",
-  regional: "STRIPE_PRICE_REGIONAL",
-  pro_region: "STRIPE_PRICE_PRO_REGION",
-};
-
 
 function AccountPage() {
   const auth = useAuth();
@@ -596,7 +589,7 @@ function AccountPage() {
             {lastCheckoutError}
           </div>
           {isPlatformAdmin && (
-            <StripeServerEnvStatusPanel
+            <StripeEdgeEnvStatusPanel
               loading={envCheckLoading}
               result={envCheckResult}
             />
@@ -624,7 +617,7 @@ function AccountPage() {
           >
             {envCheckLoading ? "Checking…" : "Check Supabase Stripe secrets"}
           </button>
-          <StripeServerEnvStatusPanel loading={envCheckLoading} result={envCheckResult} />
+          <StripeEdgeEnvStatusPanel loading={envCheckLoading} result={envCheckResult} />
         </div>
       )}
 
@@ -801,7 +794,7 @@ function AccountPage() {
   );
 }
 
-function StripeServerEnvStatusPanel({
+function StripeEdgeEnvStatusPanel({
   loading,
   result,
 }: {
