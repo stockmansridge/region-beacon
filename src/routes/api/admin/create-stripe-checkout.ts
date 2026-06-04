@@ -15,6 +15,8 @@ const PAID_PLAN_CODES = new Set<string>([
   "pro_region",
 ]);
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function jsonResponse(body: CheckoutResponse, status = 200) {
   return Response.json(body, { status });
 }
@@ -54,6 +56,9 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
             { ok: false, error: "Missing agency_id or plan_code." },
             400,
           );
+        }
+        if (!UUID_RE.test(agencyId)) {
+          return jsonResponse({ ok: false, error: "Invalid agency_id." }, 400);
         }
         if (!PAID_PLAN_CODES.has(planCode)) {
           return jsonResponse({ ok: false, error: "Invalid paid plan." }, 400);
