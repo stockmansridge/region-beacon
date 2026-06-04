@@ -832,11 +832,13 @@ function OrganisationDetailDrawer({
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [users, setUsers] = useState<UserRow[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [idCopied, setIdCopied] = useState(false);
 
   useEffect(() => {
     if (!org) return;
     let cancelled = false;
     setLoading(true);
+    setIdCopied(false);
     (async () => {
       const [ev, us] = await Promise.all([
         supabase.rpc("system_admin_events"),
@@ -849,6 +851,13 @@ function OrganisationDetailDrawer({
     })();
     return () => { cancelled = true; };
   }, [org]);
+
+  const handleCopyId = async () => {
+    if (!org) return;
+    await copyToClipboard(org.agency_id);
+    setIdCopied(true);
+    setTimeout(() => setIdCopied(false), 1500);
+  };
 
   return (
     <Sheet open={!!org} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -866,7 +875,36 @@ function OrganisationDetailDrawer({
               </SheetDescription>
             </SheetHeader>
 
-            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+            <div className="mt-5">
+              <div className="flex items-start justify-between gap-3 rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
+                    Organisation ID
+                  </div>
+                  <code className="mt-1 block break-all text-xs text-[#0F172A]">
+                    {org.agency_id}
+                  </code>
+                  <p className="mt-1 text-[11px] text-[#64748B]">
+                    Use this ID for Supabase diagnostics, plan-limit checks, support, and platform admin troubleshooting.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                  title="Copy organisation ID"
+                >
+                  {idCopied ? (
+                    <CheckCircle2 className="h-3 w-3 text-[#16A34A]" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
+                  {idCopied ? "Copied" : "Copy ID"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <KV label="Owner" value={org.owner_email ?? "—"} />
               <KV label="Status" value={<span>{statusPill(org.status)}</span>} />
               <KV label="Members" value={fmtNum(org.member_count)} />
@@ -878,6 +916,18 @@ function OrganisationDetailDrawer({
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                onClick={handleCopyId}
+              >
+                {idCopied ? (
+                  <CheckCircle2 className="h-3 w-3 text-[#16A34A]" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+                {idCopied ? "Copied" : "Copy ID"}
+              </button>
               {org.slug ? (
                 <button
                   type="button"
