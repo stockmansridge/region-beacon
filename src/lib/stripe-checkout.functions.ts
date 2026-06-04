@@ -24,8 +24,14 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
   .inputValidator((input) => InputSchema.parse(input))
   .handler(async ({ data }) => {
     // 0. Env presence checks first — surface clear, actionable errors.
-    const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
-      .process?.env ?? {};
+    const env = process.env;
+    console.log("[stripe-checkout] env presence", {
+      STRIPE_SECRET_KEY: Boolean(env.STRIPE_SECRET_KEY),
+      STRIPE_PRICE_STARTER: Boolean(env.STRIPE_PRICE_STARTER),
+      GETSTAMPD_SUPABASE_URL: Boolean(env.GETSTAMPD_SUPABASE_URL),
+      GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY: Boolean(env.GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY),
+      GETSTAMPD_SUPABASE_PUBLISHABLE_KEY: Boolean(env.GETSTAMPD_SUPABASE_PUBLISHABLE_KEY),
+    });
     const missingEnv: string[] = [];
     if (!env.STRIPE_SECRET_KEY) missingEnv.push("STRIPE_SECRET_KEY");
     if (
