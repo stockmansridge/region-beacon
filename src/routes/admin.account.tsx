@@ -121,6 +121,8 @@ function AccountPage() {
   const [upgradeTableMissing, setUpgradeTableMissing] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<PricingPlan | null>(null);
   const [checkoutPlanCode, setCheckoutPlanCode] = useState<string | null>(null);
+  const [lastCheckoutError, setLastCheckoutError] = useState<string | null>(null);
+  const [hasAccessToken, setHasAccessToken] = useState<boolean | null>(null);
   const [checkoutBanner, setCheckoutBanner] = useState<
     { tone: "success" | "warn"; message: string } | null
   >(null);
