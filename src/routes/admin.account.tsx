@@ -8,6 +8,15 @@ import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useAuth } from "@/hooks/use-auth";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { formatRoleLabel } from "@/lib/role-labels";
+import {
+  GETSTAMPD_PRICING_PLANS,
+  formatVenueLimit,
+  getNextPlanAfter,
+  getNextPlanForVenueCount,
+  getPlanByCode,
+  getVenueUsageMessage,
+  type PricingPlan,
+} from "@/lib/getstampd-pricing";
 
 export const Route = createFileRoute("/admin/account")({
   head: () => ({ meta: [{ title: "Account & Billing" }] }),
@@ -17,7 +26,7 @@ export const Route = createFileRoute("/admin/account")({
 const ALLOWED_ROLES = new Set(["agency_owner", "agency_admin"]);
 
 const COMING_SOON_HELP =
-  "Payments are coming soon. You can continue setting up and previewing your event.";
+  "Online billing is coming soon. You can continue setting up and testing GetStampd.";
 
 type EventRow = {
   id: string;
@@ -79,6 +88,7 @@ function AccountPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
+  const [venueCount, setVenueCount] = useState<number>(0);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
@@ -87,7 +97,7 @@ function AccountPage() {
       if (!agencyId) return;
       setLoading(true);
       setError(null);
-      const [evRes, domRes, baRes, subRes] = await Promise.all([
+      const [evRes, domRes, baRes, subRes, venueRes] = await Promise.all([
         supabase
           .from("events")
           .select("id, name, status")
@@ -112,6 +122,11 @@ function AccountPage() {
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("venues")
+          .select("id", { count: "exact", head: true })
+          .eq("agency_id", agencyId)
+          .is("deleted_at", null),
       ]);
       if (signal?.cancelled) return;
       if (evRes.error) {
@@ -124,6 +139,7 @@ function AccountPage() {
       setDomains(domRes.error ? [] : ((domRes.data ?? []) as DomainRow[]));
       setBillingAccount(baRes.error ? null : ((baRes.data ?? null) as BillingAccountRow | null));
       setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
+      setVenueCount(venueRes.error ? 0 : (venueRes.count ?? 0));
 
       const eventIds = eventRows.map((e) => e.id);
       if (eventIds.length > 0) {
@@ -195,11 +211,41 @@ function AccountPage() {
     activationByEvent.set(a.event_id, a);
   }
 
-  const planLabel = subscription?.plan_code ?? (subscription ? "—" : "No plan");
+  const currentPlan = getPlanByCode(subscription?.plan_code);
   const subStatus = subscription?.status ?? "none";
   const periodEnd = subscription?.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString()
     : null;
+
+  const venueUsageMessage = getVenueUsageMessage(venueCount, currentPlan);
+  const nextPlan =
+    getNextPlanAfter(currentPlan.code) ?? getNextPlanForVenueCount(venueCount);
+  const limit = currentPlan.venueLimit;
+  let venueNotice: { tone: "info" | "warn" | "danger"; message: string } | null = null;
+  if (limit !== null) {
+    if (venueCount > limit) {
+      venueNotice = {
+        tone: "danger",
+        message: `This organisation is over the ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` Upgrade to ${nextPlan.name} or higher.` : ""
+        }`,
+      };
+    } else if (venueCount >= limit) {
+      venueNotice = {
+        tone: "warn",
+        message: `You have reached the ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` Upgrade to ${nextPlan.name} to add more venues.` : ""
+        }`,
+      };
+    } else if (limit - venueCount <= 1) {
+      venueNotice = {
+        tone: "info",
+        message: `You are close to your ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` ${nextPlan.name} includes ${formatVenueLimit(nextPlan.venueLimit).toLowerCase()}.` : ""
+        }`,
+      };
+    }
+  }
 
   const formatActivation = (a: ActivationRow | undefined) => {
     if (!a) return "Not activated";
@@ -263,7 +309,11 @@ function AccountPage() {
         </Card>
 
         <Card title="Plan">
-          <Row label="Current plan" value={planLabel} />
+          <Row label="Current plan" value={currentPlan.name} />
+          <Row label="Venue usage" value={venueUsageMessage} />
+          <Row label="Venue limit" value={formatVenueLimit(currentPlan.venueLimit)} />
+          <Row label="Events" value={currentPlan.events} />
+          <Row label="Passports" value={currentPlan.passports} />
           <Row label="Subscription status" value={subStatus} />
           {periodEnd && <Row label="Current period ends" value={periodEnd} />}
           {subscription?.cancel_at_period_end && (
@@ -278,17 +328,45 @@ function AccountPage() {
             value={billingAccount?.stripe_customer_id ?? "Not linked"}
             mono
           />
-          <p className="mt-3 text-sm text-muted-foreground">
-            Billing is not connected yet.
-          </p>
+          {venueNotice && (
+            <div
+              className={`mt-3 rounded-md border px-3 py-2 text-xs ${
+                venueNotice.tone === "danger"
+                  ? "border-destructive/40 bg-destructive/5 text-destructive"
+                  : venueNotice.tone === "warn"
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                    : "border-sky-500/40 bg-sky-500/10 text-sky-800 dark:text-sky-300"
+              }`}
+            >
+              {venueNotice.message}
+            </div>
+          )}
           <div className="mt-4 flex flex-wrap gap-2">
-            <DisabledButton label="Start subscription" />
-            <DisabledButton label="Manage billing" />
+            <DisabledButton label="View plans" />
+            <DisabledButton label="Upgrade plan" />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">{COMING_SOON_HELP}</p>
         </Card>
 
       </div>
+
+      <section className="mt-8">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">Plans based on number of venues</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Start free with up to 5 venues. Upgrade when your trail grows.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {GETSTAMPD_PRICING_PLANS.map((plan) => (
+            <PricingCard
+              key={plan.code}
+              plan={plan}
+              isCurrent={plan.code === currentPlan.code}
+            />
+          ))}
+        </div>
+      </section>
 
       <div className="mt-6 rounded-xl border bg-card">
         <div className="border-b px-5 py-4">
@@ -402,6 +480,44 @@ function AccountPage() {
         </div>
       </div>
     </>
+  );
+}
+
+function PricingCard({ plan, isCurrent }: { plan: PricingPlan; isCurrent: boolean }) {
+  const recommended = plan.recommended === true;
+  return (
+    <div
+      className={`relative flex h-full flex-col rounded-xl border bg-card p-5 ${
+        recommended ? "border-primary ring-2 ring-primary/40" : ""
+      }`}
+    >
+      {recommended && (
+        <span className="absolute -top-2 right-4 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+          Recommended
+        </span>
+      )}
+      {isCurrent && (
+        <span className="absolute -top-2 left-4 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+          Current plan
+        </span>
+      )}
+      <div className="mb-3">
+        <h3 className="text-base font-semibold">{plan.name}</h3>
+        <p className="mt-1 text-sm font-medium text-foreground">
+          {formatVenueLimit(plan.venueLimit)}
+        </p>
+        <p className="mt-1 text-lg font-semibold">{plan.price}</p>
+      </div>
+      <ul className="mb-4 space-y-1 text-sm text-muted-foreground">
+        <li>{plan.events}</li>
+        <li>{plan.passports}</li>
+        <li>{plan.support}</li>
+      </ul>
+      <div className="mt-auto">
+        <DisabledButton label={plan.cta} />
+        <p className="mt-2 text-[11px] text-muted-foreground">{COMING_SOON_HELP}</p>
+      </div>
+    </div>
   );
 }
 
