@@ -46,11 +46,18 @@ function Dashboard() {
       // Per-table count queries scoped to the selected agency. RLS enforces tenancy;
       // the explicit agency_id filter keeps the query well-formed and indexed.
       const head = { count: "exact" as const, head: true };
-      const [events, venues, checkins, visitors] = await Promise.all([
+      const [events, venues, checkins, visitors, subRes] = await Promise.all([
         supabase.from("events").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("venues").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("checkins").select("id", head).eq("agency_id", agencyId),
         supabase.from("visitors").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
+        supabase
+          .from("agency_subscriptions")
+          .select("id, plan_code, status")
+          .eq("agency_id", agencyId)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       if (cancelled) return;
@@ -66,6 +73,7 @@ function Dashboard() {
         checkins: checkins.count ?? 0,
         visitors: visitors.count ?? 0,
       });
+      setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
       setLoading(false);
     })();
 
