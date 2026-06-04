@@ -196,10 +196,7 @@ function AccountPage() {
         if (!result.ok) {
           console.error("[checkout] server returned error", result.error);
           setLastCheckoutError(result.error);
-          toast.error(
-            result.error +
-              " You can submit an upgrade request below as a fallback.",
-          );
+          toast.error(result.error + " You can submit an upgrade request below as a fallback.");
           setCheckoutPlanCode(null);
           return;
         }
