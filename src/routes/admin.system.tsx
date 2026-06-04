@@ -1120,6 +1120,24 @@ function OrganisationDetailDrawer({
                         No subscription row. Effective plan is Free.
                       </div>
                     )}
+                    <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-[#0F172A] sm:grid-cols-2">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">
+                          Stripe customer
+                        </div>
+                        <code className="break-all text-[11px] text-[#0F172A]">
+                          {stripeCustomerId ?? "—"}
+                        </code>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">
+                          Stripe subscription
+                        </div>
+                        <code className="break-all text-[11px] text-[#0F172A]">
+                          {subscription?.stripe_subscription_id ?? "—"}
+                        </code>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="rounded-[10px] border border-[#FCD34D] bg-[#FFFBEB] p-3">
