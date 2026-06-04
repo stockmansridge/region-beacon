@@ -4,6 +4,14 @@ import { Calendar, MapPin, QrCode, Users } from "lucide-react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import {
+  getPlanByCode,
+  getVenueUsageMessage,
+  getNextPlanAfter,
+  getNextPlanForVenueCount,
+  formatVenueLimit,
+} from "@/lib/getstampd-pricing";
+
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Admin dashboard" }] }),
