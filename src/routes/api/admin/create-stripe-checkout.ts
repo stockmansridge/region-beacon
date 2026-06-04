@@ -35,6 +35,7 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+       try {
         let body: { agency_id?: unknown; plan_code?: unknown };
         try {
           body = await request.json();
