@@ -123,6 +123,24 @@ type EventRow = {
   activation_status: string | null;
 };
 
+type PlanLimits = {
+  plan_code: string | null;
+  venue_limit: number | null;
+  active_event_limit: number | null;
+  passport_limit: number | null;
+};
+
+type SubscriptionRow = {
+  id: string;
+  plan_code: string | null;
+  status: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  trial_ends_at: string | null;
+  updated_at: string | null;
+};
+
 type AuditRow = {
   id: string;
   created_at: string;
