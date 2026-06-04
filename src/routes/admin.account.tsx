@@ -95,6 +95,37 @@ type ActivationRow = {
   expires_at: string | null;
 };
 
+const STRIPE_ENV_SECRET_NAMES = [
+  "STRIPE_SECRET_KEY",
+  "STRIPE_PRICE_STARTER",
+  "STRIPE_PRICE_GROWTH",
+  "STRIPE_PRICE_REGIONAL",
+  "STRIPE_PRICE_PRO_REGION",
+  "STRIPE_WEBHOOK_SECRET",
+  "GETSTAMPD_SUPABASE_URL",
+  "GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY",
+  "GETSTAMPD_SUPABASE_PUBLISHABLE_KEY",
+] as const;
+
+type StripeEnvSecretName = (typeof STRIPE_ENV_SECRET_NAMES)[number];
+
+type StripeEnvCheckJson = {
+  ok?: boolean;
+  error?: string;
+  secrets?: Partial<Record<StripeEnvSecretName, boolean>>;
+  hostname?: string;
+  environment?: string;
+  allSecretsFalse?: boolean;
+  message?: string | null;
+};
+
+type StripeEnvCheckResult = {
+  status: number;
+  contentType: string | null;
+  bodyText: string;
+  parsed: StripeEnvCheckJson | null;
+};
+
 
 function AccountPage() {
   const auth = useAuth();
@@ -127,12 +158,7 @@ function AccountPage() {
 
   // Stripe env-check diagnostic (platform-admin only)
   const [envCheckLoading, setEnvCheckLoading] = useState(false);
-  const [envCheckResult, setEnvCheckResult] = useState<{
-    status: number;
-    contentType: string | null;
-    bodyText: string;
-    parsed: unknown;
-  } | null>(null);
+  const [envCheckResult, setEnvCheckResult] = useState<StripeEnvCheckResult | null>(null);
 
   // Read ?checkout=success | cancelled once on mount and clean the URL.
   useEffect(() => {
@@ -257,9 +283,9 @@ function AccountPage() {
         },
       });
       const bodyText = await response.text();
-      let parsed: unknown = null;
+      let parsed: StripeEnvCheckJson | null = null;
       try {
-        parsed = JSON.parse(bodyText);
+        parsed = JSON.parse(bodyText) as StripeEnvCheckJson;
       } catch {
         // leave parsed as null if body is not JSON
       }
@@ -281,6 +307,11 @@ function AccountPage() {
       setEnvCheckLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!access.isPlatformAdmin || !lastCheckoutError) return;
+    void handleEnvCheck();
+  }, [access.isPlatformAdmin, lastCheckoutError, handleEnvCheck]);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
@@ -609,6 +640,12 @@ function AccountPage() {
           <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs">
             {lastCheckoutError}
           </div>
+          {isPlatformAdmin && (
+            <StripeServerEnvStatusPanel
+              loading={envCheckLoading}
+              result={envCheckResult}
+            />
+          )}
           <button
             type="button"
             onClick={() => setLastCheckoutError(null)}
@@ -647,46 +684,8 @@ function AccountPage() {
               mono
             />
           </dl>
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={handleEnvCheck}
-              disabled={envCheckLoading}
-              className="inline-flex h-8 items-center rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-300"
-            >
-              {envCheckLoading ? "Checking…" : "Check Stripe server env"}
-            </button>
-          </div>
-          {envCheckResult && (
-            <div className="mt-3 space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span>
-                  <span className="text-muted-foreground">Status:</span>{" "}
-                  <span className="font-mono">{envCheckResult.status}</span>
-                </span>
-                <span>
-                  <span className="text-muted-foreground">Content-Type:</span>{" "}
-                  <span className="font-mono">{envCheckResult.contentType ?? "—"}</span>
-                </span>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Body text:</div>
-                <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border bg-background p-2 font-mono text-[10px]">
-                  {envCheckResult.bodyText}
-                </pre>
-              </div>
-              {envCheckResult.parsed !== null && (
-                <div>
-                  <div className="text-muted-foreground">Parsed JSON:</div>
-                  <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border bg-background p-2 font-mono text-[10px]">
-                    {JSON.stringify(envCheckResult.parsed, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
           <p className="mt-2 text-[10px] text-muted-foreground">
-            No secrets are shown. Values are local to this page.
+            No secrets are shown. Server configuration status appears under checkout failures.
           </p>
         </div>
       )}
@@ -861,6 +860,65 @@ function AccountPage() {
         </div>
       </div>
     </>
+  );
+}
+
+function StripeServerEnvStatusPanel({
+  loading,
+  result,
+}: {
+  loading: boolean;
+  result: StripeEnvCheckResult | null;
+}) {
+  const parsed = result?.parsed ?? null;
+  const secrets = parsed?.secrets ?? {};
+  const allSecretsFalse = parsed?.allSecretsFalse === true;
+
+  return (
+    <div className="mt-4 rounded-lg border border-destructive/30 bg-background p-4 text-foreground">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold">Server configuration status</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Platform-admin diagnostic. Secret values are never shown.
+          </p>
+        </div>
+        <span className="rounded-full border bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
+          {loading ? "checking" : result ? `HTTP ${result.status}` : "waiting"}
+        </span>
+      </div>
+
+      {loading && <div className="mt-3 text-xs text-muted-foreground">Checking server runtime…</div>}
+
+      {result && (
+        <>
+          <dl className="mt-3 grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+            {STRIPE_ENV_SECRET_NAMES.map((name) => (
+              <DiagRow
+                key={name}
+                label={`${name} present`}
+                value={String(secrets[name] === true)}
+                mono
+              />
+            ))}
+            <DiagRow label="Current hostname" value={parsed?.hostname ?? "—"} mono />
+            <DiagRow label="Detected environment" value={parsed?.environment ?? "unknown"} />
+          </dl>
+
+          {allSecretsFalse && (
+            <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
+              This deployed environment cannot see Lovable Cloud secrets. Check that the secrets are attached to this environment and republish.
+            </div>
+          )}
+
+          {!parsed && (
+            <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+              Env check did not return JSON. HTTP {result.status}. Body starts: {result.bodyText.slice(0, 300)}
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

@@ -4,7 +4,7 @@
 // module that the browser can reach at module scope.
 
 import Stripe from "stripe";
-import process from "node:process";
+import { readServerEnv } from "@/lib/server-env.server";
 
 export type PaidPlanCode = "starter" | "growth" | "regional" | "pro_region";
 
@@ -20,7 +20,7 @@ export function isPaidPlanCode(code: string): code is PaidPlanCode {
 }
 
 export function getStripeClient(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = readServerEnv("STRIPE_SECRET_KEY");
   if (!key) {
     throw new Error(
       "Stripe is not configured. Set STRIPE_SECRET_KEY in Lovable Cloud secrets.",
@@ -33,10 +33,10 @@ export function getStripeClient(): Stripe {
 
 export function getPriceIdForPlan(plan: PaidPlanCode): string {
   const map: Record<PaidPlanCode, string | undefined> = {
-    starter: process.env.STRIPE_PRICE_STARTER,
-    growth: process.env.STRIPE_PRICE_GROWTH,
-    regional: process.env.STRIPE_PRICE_REGIONAL,
-    pro_region: process.env.STRIPE_PRICE_PRO_REGION,
+    starter: readServerEnv("STRIPE_PRICE_STARTER"),
+    growth: readServerEnv("STRIPE_PRICE_GROWTH"),
+    regional: readServerEnv("STRIPE_PRICE_REGIONAL"),
+    pro_region: readServerEnv("STRIPE_PRICE_PRO_REGION"),
   };
   const id = map[plan];
   if (!id) {
@@ -48,7 +48,7 @@ export function getPriceIdForPlan(plan: PaidPlanCode): string {
 }
 
 export function getWebhookSecret(): string {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const secret = readServerEnv("STRIPE_WEBHOOK_SECRET");
   if (!secret) {
     throw new Error(
       "Stripe webhook is not configured. Set STRIPE_WEBHOOK_SECRET in Lovable Cloud secrets.",
