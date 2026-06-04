@@ -77,6 +77,9 @@ export const GETSTAMPD_PLANS: PricingPlan[] = [
   },
 ];
 
+// Alias for clarity in consumers that expect "pricing plans" naming.
+export const GETSTAMPD_PRICING_PLANS = GETSTAMPD_PLANS;
+
 const PLAN_ORDER: string[] = GETSTAMPD_PLANS.map((p) => p.code);
 
 /**
