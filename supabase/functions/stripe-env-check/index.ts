@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 serve((req) => {
@@ -22,6 +23,6 @@ serve((req) => {
       SUPABASE_URL: Boolean(Deno.env.get("SUPABASE_URL")),
       SUPABASE_SERVICE_ROLE_KEY: Boolean(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")),
     },
-    { headers: corsHeaders },
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });
