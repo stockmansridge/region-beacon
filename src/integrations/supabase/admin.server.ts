@@ -5,6 +5,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { pickServerEnv } from "@/lib/server-env.server";
 
+const CURRENT_PROJECT_URL = "https://kyjwifumacnrpgyextzz.supabase.co";
+const CURRENT_PROJECT_PUBLISHABLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5andpZnVtYWNucnBneWV4dHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMzA4NjAsImV4cCI6MjA5NTYwNjg2MH0.VpyqPPjkKchTsCCQCyCVvy370x_QNoz_eUS8_byN__A";
+
 function pickEnv(...names: string[]): string | undefined {
   return pickServerEnv(...names);
 }
@@ -36,12 +40,12 @@ export function getSupabaseAsUser(accessToken: string): SupabaseClient {
     "GETSTAMPD_SUPABASE_URL",
     "SUPABASE_URL",
     "VITE_SUPABASE_URL",
-  );
+  ) ?? CURRENT_PROJECT_URL;
   const anonKey = pickEnv(
     "GETSTAMPD_SUPABASE_PUBLISHABLE_KEY",
     "SUPABASE_PUBLISHABLE_KEY",
     "VITE_SUPABASE_PUBLISHABLE_KEY",
-  );
+  ) ?? CURRENT_PROJECT_PUBLISHABLE_KEY;
   if (!url || !anonKey) {
     throw new Error(
       "Missing GetStampd Supabase user config. Set GETSTAMPD_SUPABASE_URL and GETSTAMPD_SUPABASE_PUBLISHABLE_KEY in Lovable Cloud secrets.",
