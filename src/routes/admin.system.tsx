@@ -1050,6 +1050,137 @@ function OrganisationDetailDrawer({
               ) : null}
             </div>
 
+            <Section title="Plan & subscription">
+              {planLoading && !planLimits ? (
+                <div className="text-xs text-[#64748B]">Loading plan…</div>
+              ) : planError ? (
+                <div className="text-xs text-[#991B1B]">{planError}</div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
+                      Effective plan
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-[#0F172A]">
+                      {getPlanByCode(planLimits?.plan_code).name}
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-[#0F172A]">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Venues</div>
+                        <div>{planLimits?.venue_limit ?? "Unlimited"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Active events</div>
+                        <div>{planLimits?.active_event_limit ?? "Unlimited"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Passports</div>
+                        <div>{planLimits?.passport_limit ?? "Unlimited"}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[10px] border border-[#E6ECF4] bg-white p-3">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
+                      Subscription row
+                    </div>
+                    {subscription ? (
+                      <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-[#0F172A]">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Plan code</div>
+                          <div>{subscription.plan_code ?? "—"}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Status</div>
+                          <div>{statusPill(subscription.status)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Period end</div>
+                          <div>{fmtDate(subscription.current_period_end)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Trial ends</div>
+                          <div>{fmtDate(subscription.trial_ends_at)}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-1 text-xs text-[#64748B]">
+                        No subscription row. Effective plan is Free.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-[10px] border border-[#FCD34D] bg-[#FFFBEB] p-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400E]">
+                      Platform admin manual plan control
+                    </div>
+                    <p className="mt-1 text-[11px] text-[#92400E]">
+                      Manual plan changes are for platform-admin testing and early customer management. Stripe billing will replace this later.
+                    </p>
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <div>
+                        <label className="text-[11px] font-medium text-[#0F172A]">Plan</label>
+                        <Select
+                          value={planForm.plan_code}
+                          onValueChange={(v) => setPlanForm((f) => ({ ...f, plan_code: v }))}
+                        >
+                          <SelectTrigger className="mt-1 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">Free</SelectItem>
+                            <SelectItem value="starter">Starter</SelectItem>
+                            <SelectItem value="growth">Growth</SelectItem>
+                            <SelectItem value="regional">Regional</SelectItem>
+                            <SelectItem value="pro_region">Pro Region</SelectItem>
+                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-medium text-[#0F172A]">Status</label>
+                        <Select
+                          value={planForm.status}
+                          onValueChange={(v) => setPlanForm((f) => ({ ...f, status: v }))}
+                        >
+                          <SelectTrigger className="mt-1 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">active</SelectItem>
+                            <SelectItem value="trialing">trialing</SelectItem>
+                            <SelectItem value="comp">comp</SelectItem>
+                            <SelectItem value="past_due">past_due</SelectItem>
+                            <SelectItem value="cancelled">cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSavePlan}
+                        disabled={saving}
+                        className="inline-flex items-center gap-1 rounded-[8px] bg-[#1F56C5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1A48A8] disabled:opacity-60"
+                      >
+                        {saving ? "Saving…" : "Save plan"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => org && loadPlan(org.agency_id)}
+                        disabled={planLoading}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-3 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC] disabled:opacity-60"
+                      >
+                        <RefreshCw className="h-3 w-3" /> Refresh plan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Section>
+
+
+
             <Section title={`Events (${events?.length ?? 0})`}>
               {loading && !events ? (
                 <div className="text-xs text-[#64748B]">Loading…</div>
