@@ -8,6 +8,15 @@ import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useAuth } from "@/hooks/use-auth";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { formatRoleLabel } from "@/lib/role-labels";
+import {
+  GETSTAMPD_PRICING_PLANS,
+  formatVenueLimit,
+  getNextPlanAfter,
+  getNextPlanForVenueCount,
+  getPlanByCode,
+  getVenueUsageMessage,
+  type PricingPlan,
+} from "@/lib/getstampd-pricing";
 
 export const Route = createFileRoute("/admin/account")({
   head: () => ({ meta: [{ title: "Account & Billing" }] }),
@@ -17,7 +26,7 @@ export const Route = createFileRoute("/admin/account")({
 const ALLOWED_ROLES = new Set(["agency_owner", "agency_admin"]);
 
 const COMING_SOON_HELP =
-  "Payments are coming soon. You can continue setting up and previewing your event.";
+  "Online billing is coming soon. You can continue setting up and testing GetStampd.";
 
 type EventRow = {
   id: string;
