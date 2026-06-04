@@ -232,7 +232,8 @@ function AccountPage() {
           },
         );
         if (invokeError || !result?.ok) {
-          const msg = invokeError?.message || result?.error || "Stripe Checkout failed.";
+          let msg = invokeError?.message || "Stripe Checkout failed.";
+          if (result && !result.ok) msg = result.error;
           console.error("[checkout] edge function returned error", msg);
           setLastCheckoutError(msg);
           toast.error(msg + " You can submit an upgrade request below as a fallback.");
@@ -255,53 +256,17 @@ function AccountPage() {
     setEnvCheckLoading(true);
     setEnvCheckResult(null);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) {
-        setEnvCheckResult({
-          status: 0,
-          contentType: null,
-          bodyText: "No access token. Please sign in again.",
-          parsed: null,
-        });
-        return;
-      }
-      const response = await fetch("/api/admin/stripe-env-check", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const bodyText = await response.text();
-      let parsed: StripeEnvCheckJson | null = null;
-      try {
-        parsed = JSON.parse(bodyText) as StripeEnvCheckJson;
-      } catch {
-        // leave parsed as null if body is not JSON
-      }
-      setEnvCheckResult({
-        status: response.status,
-        contentType: response.headers.get("content-type"),
-        bodyText,
-        parsed,
-      });
+      const { data, error: invokeError } = await supabase.functions.invoke<StripeEdgeEnvCheckResult>(
+        "stripe-env-check",
+      );
+      setEnvCheckResult(data ?? { ok: false, error: invokeError?.message ?? "Env check failed." });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setEnvCheckResult({
-        status: 0,
-        contentType: null,
-        bodyText: msg,
-        parsed: null,
-      });
+      setEnvCheckResult({ ok: false, error: msg });
     } finally {
       setEnvCheckLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (!access.isPlatformAdmin || !lastCheckoutError) return;
-    void handleEnvCheck();
-  }, [access.isPlatformAdmin, lastCheckoutError, handleEnvCheck]);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
