@@ -142,7 +142,7 @@ function Header() {
           <span className="font-serif text-xl font-semibold text-[#1F2417]">GetStampd</span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm font-medium text-[#1F2417]/80 lg:flex">
-          <Link to="/" hash="how-it-works" className="hover:text-[#8A1538]">How it works</Link>
+          <a href="/#how-it-works" className="hover:text-[#8A1538]">How it works</a>
           <Link to="/demo" className="hover:text-[#8A1538]">Demo</Link>
           <Link to="/pricing" className="text-[#8A1538]">Pricing</Link>
         </nav>
