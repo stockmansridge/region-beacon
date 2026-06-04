@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 type PaidPlanCode = "starter" | "growth" | "regional" | "pro_region";
@@ -19,7 +20,10 @@ const PRICE_ENV_BY_PLAN: Record<PaidPlanCode, string> = {
 };
 
 function json(body: unknown, status = 200) {
-  return Response.json(body, { status, headers: corsHeaders });
+  return Response.json(body, {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 function getEnv(name: string): string | null {
