@@ -97,7 +97,7 @@ function AccountPage() {
       if (!agencyId) return;
       setLoading(true);
       setError(null);
-      const [evRes, domRes, baRes, subRes] = await Promise.all([
+      const [evRes, domRes, baRes, subRes, venueRes] = await Promise.all([
         supabase
           .from("events")
           .select("id, name, status")
@@ -122,6 +122,11 @@ function AccountPage() {
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("venues")
+          .select("id", { count: "exact", head: true })
+          .eq("agency_id", agencyId)
+          .is("deleted_at", null),
       ]);
       if (signal?.cancelled) return;
       if (evRes.error) {
