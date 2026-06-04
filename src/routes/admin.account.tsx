@@ -309,7 +309,11 @@ function AccountPage() {
         </Card>
 
         <Card title="Plan">
-          <Row label="Current plan" value={planLabel} />
+          <Row label="Current plan" value={currentPlan.name} />
+          <Row label="Venue usage" value={venueUsageMessage} />
+          <Row label="Venue limit" value={formatVenueLimit(currentPlan.venueLimit)} />
+          <Row label="Events" value={currentPlan.events} />
+          <Row label="Passports" value={currentPlan.passports} />
           <Row label="Subscription status" value={subStatus} />
           {periodEnd && <Row label="Current period ends" value={periodEnd} />}
           {subscription?.cancel_at_period_end && (
@@ -324,17 +328,45 @@ function AccountPage() {
             value={billingAccount?.stripe_customer_id ?? "Not linked"}
             mono
           />
-          <p className="mt-3 text-sm text-muted-foreground">
-            Billing is not connected yet.
-          </p>
+          {venueNotice && (
+            <div
+              className={`mt-3 rounded-md border px-3 py-2 text-xs ${
+                venueNotice.tone === "danger"
+                  ? "border-destructive/40 bg-destructive/5 text-destructive"
+                  : venueNotice.tone === "warn"
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                    : "border-sky-500/40 bg-sky-500/10 text-sky-800 dark:text-sky-300"
+              }`}
+            >
+              {venueNotice.message}
+            </div>
+          )}
           <div className="mt-4 flex flex-wrap gap-2">
-            <DisabledButton label="Start subscription" />
-            <DisabledButton label="Manage billing" />
+            <DisabledButton label="View plans" />
+            <DisabledButton label="Upgrade plan" />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">{COMING_SOON_HELP}</p>
         </Card>
 
       </div>
+
+      <section className="mt-8">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">Plans based on number of venues</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Start free with up to 5 venues. Upgrade when your trail grows.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {GETSTAMPD_PRICING_PLANS.map((plan) => (
+            <PricingCard
+              key={plan.code}
+              plan={plan}
+              isCurrent={plan.code === currentPlan.code}
+            />
+          ))}
+        </div>
+      </section>
 
       <div className="mt-6 rounded-xl border bg-card">
         <div className="border-b px-5 py-4">
