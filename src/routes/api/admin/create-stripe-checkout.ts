@@ -196,17 +196,16 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
             });
           }
 
-          const saveCustomer = billingAccount
-            ? admin
+          const { error: saveCustomerErr } = billingAccount
+            ? await admin
                 .from("agency_billing_accounts")
                 .update({ stripe_customer_id: stripeCustomerId })
                 .eq("id", billingAccount.id)
-            : admin.from("agency_billing_accounts").insert({
+            : await admin.from("agency_billing_accounts").insert({
                 agency_id: agencyId,
                 stripe_customer_id: stripeCustomerId,
                 billing_email: userEmail,
               });
-          const { error: saveCustomerErr } = await saveCustomer;
           if (saveCustomerErr) {
             logErr("billing", "stripe customer save failed", {
               error: saveCustomerErr.message,
