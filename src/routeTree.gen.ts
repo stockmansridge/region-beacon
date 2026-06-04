@@ -15,6 +15,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
 import { Route as MapRouteImport } from './routes/map'
@@ -91,6 +92,11 @@ const ScanRoute = ScanRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffersRoute = OffersRouteImport.update({
@@ -344,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
@@ -398,6 +405,7 @@ export interface FileRoutesByTo {
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
@@ -454,6 +462,7 @@ export interface FileRoutesById {
   '/map': typeof MapRoute
   '/marketing-preview': typeof MarketingPreviewRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
@@ -511,6 +520,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/marketing-preview'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/scan'
     | '/signup'
@@ -565,6 +575,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/marketing-preview'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/scan'
     | '/signup'
@@ -620,6 +631,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/marketing-preview'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/scan'
     | '/signup'
@@ -676,6 +688,7 @@ export interface RootRouteChildren {
   MapRoute: typeof MapRoute
   MarketingPreviewRoute: typeof MarketingPreviewRoute
   OffersRoute: typeof OffersRoute
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ScanRoute: typeof ScanRoute
   SignupRoute: typeof SignupRoute
@@ -752,6 +765,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offers': {
@@ -1149,6 +1169,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapRoute: MapRoute,
   MarketingPreviewRoute: MarketingPreviewRoute,
   OffersRoute: OffersRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ScanRoute: ScanRoute,
   SignupRoute: SignupRoute,
