@@ -2352,7 +2352,7 @@ function BillingSection() {
                         </TableCell>
                       </TableRow>
                     ) : null}
-                  </>
+                  </Fragment>
                 );
               })
             )}
