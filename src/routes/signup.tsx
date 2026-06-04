@@ -268,9 +268,7 @@ function SignupPage() {
           >
             <div>
               <h1 className="text-xl font-semibold">Create your organisation</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Start setting up your first GetStampd event. Free to test —
-                payments and live publishing are not active during public testing.
+                Start setting up your first GetStampd event.
               </p>
             </div>
 
