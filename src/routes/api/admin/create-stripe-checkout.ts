@@ -183,14 +183,11 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
             stripeCustomerId = customer.id;
           } catch (err) {
             logErr("stripe", "customer create failed", {
-              error: err instanceof Error ? err.message : String(err),
+              error_type: err instanceof Error ? err.name : typeof err,
             });
             return jsonResponse({
               ok: false,
-              error:
-                err instanceof Error
-                  ? `Stripe customer create failed: ${err.message}`
-                  : "Stripe customer create failed.",
+              error: "Stripe customer create failed. Check Stripe configuration and try again.",
             });
           }
 
@@ -297,14 +294,11 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
           return jsonResponse({ ok: true, url: session.url });
         } catch (err) {
           logErr("stripe", "checkout create failed", {
-            error: err instanceof Error ? err.message : String(err),
+            error_type: err instanceof Error ? err.name : typeof err,
           });
           return jsonResponse({
             ok: false,
-            error:
-              err instanceof Error
-                ? `Stripe Checkout create failed: ${err.message}`
-                : "Stripe Checkout create failed.",
+            error: "Stripe Checkout create failed. Check Stripe configuration and try again.",
           });
         }
       },
