@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard, Bug, Menu } from "lucide-react";
+import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard, Bug, Menu, LifeBuoy } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
@@ -7,6 +7,7 @@ import { GetStampdLogo } from "@/components/brand";
 import { useDiagnosticsEnabled } from "@/lib/diagnostics";
 import { Switch } from "@/components/ui/switch";
 import { formatRoleLabel } from "@/lib/role-labels";
+import { ContactSupportDialog } from "@/components/contact-support-dialog";
 import {
   Sheet,
   SheetContent,
