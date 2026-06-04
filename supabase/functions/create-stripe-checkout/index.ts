@@ -129,7 +129,10 @@ serve(async (req) => {
       return json({ ok: false, error: "You don't have permission to manage billing for this organisation." }, 403);
     }
 
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-04-10" });
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: "2024-04-10",
+      httpClient: Stripe.createFetchHttpClient(),
+    });
 
     const { data: billingAccount, error: billingErr } = await admin
       .from("agency_billing_accounts")
