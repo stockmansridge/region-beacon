@@ -120,6 +120,89 @@ function AccountPage() {
   const [upgradeRequests, setUpgradeRequests] = useState<UpgradeRequestRow[] | null>(null);
   const [upgradeTableMissing, setUpgradeTableMissing] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<PricingPlan | null>(null);
+  const [checkoutPlanCode, setCheckoutPlanCode] = useState<string | null>(null);
+  const [checkoutBanner, setCheckoutBanner] = useState<
+    { tone: "success" | "warn"; message: string } | null
+  >(null);
+
+  const checkoutFn = useServerFn(createStripeCheckout);
+
+  // Read ?checkout=success | cancelled once on mount and clean the URL.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get("checkout");
+    if (v === "success") {
+      setCheckoutBanner({
+        tone: "success",
+        message: "Payment received. Your plan will update shortly.",
+      });
+    } else if (v === "cancelled") {
+      setCheckoutBanner({
+        tone: "warn",
+        message: "Checkout was cancelled. Your plan was not changed.",
+      });
+    }
+    if (v) {
+      params.delete("checkout");
+      const search = params.toString();
+      const url =
+        window.location.pathname + (search ? `?${search}` : "") + window.location.hash;
+      window.history.replaceState(null, "", url);
+    }
+  }, []);
+
+  const handleCheckout = useCallback(
+    async (plan: PricingPlan) => {
+      if (!agencyId) {
+        toast.error("Select an organisation first.");
+        return;
+      }
+      const planCode = plan.code;
+      if (
+        planCode !== "starter" &&
+        planCode !== "growth" &&
+        planCode !== "regional" &&
+        planCode !== "pro_region"
+      ) {
+        return;
+      }
+      setCheckoutPlanCode(planCode);
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) {
+          toast.error("Please sign in again to continue.");
+          setCheckoutPlanCode(null);
+          return;
+        }
+        const result = await checkoutFn({
+          data: {
+            agency_id: agencyId,
+            plan_code: planCode,
+            access_token: accessToken,
+            origin: window.location.origin,
+          },
+        });
+        if (!result.ok) {
+          toast.error(
+            result.error +
+              " You can submit an upgrade request below as a fallback.",
+          );
+          setCheckoutPlanCode(null);
+          return;
+        }
+        window.location.assign(result.url);
+      } catch (err) {
+        console.error("[checkout] failed", err);
+        toast.error(
+          "Could not open Stripe Checkout. Please try the upgrade request flow.",
+        );
+        setCheckoutPlanCode(null);
+      }
+    },
+    [agencyId, checkoutFn],
+  );
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
