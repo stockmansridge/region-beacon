@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useAuth } from "@/hooks/use-auth";
@@ -147,6 +147,17 @@ function AccountPage() {
   // Temporary Supabase Edge Function env-check diagnostic (platform-admin only)
   const [envCheckLoading, setEnvCheckLoading] = useState(false);
   const [envCheckResult, setEnvCheckResult] = useState<StripeEdgeEnvCheckResult | null>(null);
+
+  // Direct-fetch reachability diagnostic (platform-admin only)
+  const [directFetchLoading, setDirectFetchLoading] = useState(false);
+  const [directFetchResult, setDirectFetchResult] = useState<{
+    url: string;
+    status: number | null;
+    contentType: string | null;
+    bodyText: string;
+    parsedJson: unknown;
+    fetchError: string | null;
+  } | null>(null);
 
   // Read ?checkout=success | cancelled once on mount and clean the URL.
   useEffect(() => {
