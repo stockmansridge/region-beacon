@@ -26,9 +26,9 @@ export function getStripeClient(): Stripe {
       "Stripe is not configured. Set STRIPE_SECRET_KEY in Lovable Cloud secrets.",
     );
   }
-  // Cast to the SDK's apiVersion type without pinning it here; Stripe SDK
-  // upgrades change the literal but the wire format is stable.
-  return new Stripe(key, { apiVersion: "2024-09-30.acacia" as unknown as Stripe.StripeConfig["apiVersion"] });
+  // apiVersion literal differs between SDK upgrades; cast to satisfy TS
+  // without pinning. The wire format is stable across minor versions.
+  return new Stripe(key, { apiVersion: "2024-09-30.acacia" as never });
 }
 
 export function getPriceIdForPlan(plan: PaidPlanCode): string {
