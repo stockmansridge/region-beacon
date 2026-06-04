@@ -115,6 +115,9 @@ function AccountPage() {
   const [error, setError] = useState<string | null>(null);
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [venueCount, setVenueCount] = useState<number>(0);
+  const [upgradeRequests, setUpgradeRequests] = useState<UpgradeRequestRow[] | null>(null);
+  const [upgradeTableMissing, setUpgradeTableMissing] = useState(false);
+  const [upgradePlan, setUpgradePlan] = useState<PricingPlan | null>(null);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
