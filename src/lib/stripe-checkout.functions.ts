@@ -23,7 +23,8 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
   .inputValidator((input) => InputSchema.parse(input))
   .handler(async ({ data }) => {
     // 0. Env presence checks first — surface clear, actionable errors.
-    const process = (await import("node:process")).default;
+    const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+      .process?.env ?? {};
     const missingEnv: string[] = [];
     if (!process.env.STRIPE_SECRET_KEY) missingEnv.push("STRIPE_SECRET_KEY");
     if (!process.env.SUPABASE_URL && !process.env.VITE_SUPABASE_URL) {
