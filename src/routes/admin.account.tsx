@@ -614,34 +614,17 @@ function AccountPage() {
       {isPlatformAdmin && (
         <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-xs">
           <div className="mb-2 font-semibold text-amber-800 dark:text-amber-300">
-            Stripe checkout diagnostics (platform admin)
+            Supabase Stripe secrets (platform admin)
           </div>
-          <dl className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-            <DiagRow label="Selected plan code" value={checkoutPlanCode ?? "—"} />
-            <DiagRow label="Organisation id" value={agencyId ?? "—"} mono />
-            <DiagRow
-              label="Supabase access token"
-              value={
-                hasAccessToken === null
-                  ? "not checked"
-                  : hasAccessToken
-                    ? "present"
-                    : "missing"
-              }
-            />
-            <DiagRow
-              label="Checkout loading"
-              value={checkoutPlanCode ? "yes" : "no"}
-            />
-            <DiagRow
-              label="Last checkout error"
-              value={lastCheckoutError ?? "—"}
-              mono
-            />
-          </dl>
-          <p className="mt-2 text-[10px] text-muted-foreground">
-            No secrets are shown. Server configuration status appears under checkout failures.
-          </p>
+          <button
+            type="button"
+            onClick={handleEnvCheck}
+            disabled={envCheckLoading}
+            className="inline-flex h-8 items-center rounded-lg border border-amber-500/40 bg-background px-3 text-xs font-medium text-amber-800 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-300"
+          >
+            {envCheckLoading ? "Checking…" : "Check Supabase Stripe secrets"}
+          </button>
+          <StripeServerEnvStatusPanel loading={envCheckLoading} result={envCheckResult} />
         </div>
       )}
 
@@ -823,27 +806,27 @@ function StripeServerEnvStatusPanel({
   result,
 }: {
   loading: boolean;
-  result: StripeEnvCheckResult | null;
+  result: StripeEdgeEnvCheckResult | null;
 }) {
-  const parsed = result?.parsed ?? null;
-  const secrets = parsed?.secrets ?? {};
-  const allSecretsFalse = parsed?.allSecretsFalse === true;
+  const allSecretsFalse = result
+    ? STRIPE_ENV_SECRET_NAMES.every((name) => result[name] !== true)
+    : false;
 
   return (
     <div className="mt-4 rounded-lg border border-destructive/30 bg-background p-4 text-foreground">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold">Server configuration status</div>
+          <div className="text-sm font-semibold">Edge Function secret status</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Platform-admin diagnostic. Secret values are never shown.
+            Boolean results only. Secret values are never shown.
           </p>
         </div>
         <span className="rounded-full border bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
-          {loading ? "checking" : result ? `HTTP ${result.status}` : "waiting"}
+          {loading ? "checking" : result ? "checked" : "waiting"}
         </span>
       </div>
 
-      {loading && <div className="mt-3 text-xs text-muted-foreground">Checking server runtime…</div>}
+      {loading && <div className="mt-3 text-xs text-muted-foreground">Checking Supabase Edge Function…</div>}
 
       {result && (
         <>
@@ -852,23 +835,21 @@ function StripeServerEnvStatusPanel({
               <DiagRow
                 key={name}
                 label={`${name} present`}
-                value={String(secrets[name] === true)}
+                value={String(result[name] === true)}
                 mono
               />
             ))}
-            <DiagRow label="Current hostname" value={parsed?.hostname ?? "—"} mono />
-            <DiagRow label="Detected environment" value={parsed?.environment ?? "unknown"} />
           </dl>
 
           {allSecretsFalse && (
             <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
-              This deployed environment cannot see Lovable Cloud secrets. Check that the secrets are attached to this environment and republish.
+              Supabase Edge Function cannot see Stripe secrets. Add the secrets to Supabase and redeploy the functions.
             </div>
           )}
 
-          {!parsed && (
+          {result.error && (
             <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
-              Env check did not return JSON. HTTP {result.status}. Body starts: {result.bodyText.slice(0, 300)}
+              {result.error}
             </div>
           )}
         </>
