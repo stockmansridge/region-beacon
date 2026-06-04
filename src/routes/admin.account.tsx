@@ -139,6 +139,7 @@ function AccountPage() {
       setDomains(domRes.error ? [] : ((domRes.data ?? []) as DomainRow[]));
       setBillingAccount(baRes.error ? null : ((baRes.data ?? null) as BillingAccountRow | null));
       setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
+      setVenueCount(venueRes.error ? 0 : (venueRes.count ?? 0));
 
       const eventIds = eventRows.map((e) => e.id);
       if (eventIds.length > 0) {
