@@ -283,9 +283,9 @@ function AccountPage() {
         },
       });
       const bodyText = await response.text();
-      let parsed: unknown = null;
+      let parsed: StripeEnvCheckJson | null = null;
       try {
-        parsed = JSON.parse(bodyText);
+        parsed = JSON.parse(bodyText) as StripeEnvCheckJson;
       } catch {
         // leave parsed as null if body is not JSON
       }
@@ -307,6 +307,11 @@ function AccountPage() {
       setEnvCheckLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!access.isPlatformAdmin || !lastCheckoutError) return;
+    void handleEnvCheck();
+  }, [access.isPlatformAdmin, lastCheckoutError, handleEnvCheck]);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
