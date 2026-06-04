@@ -483,6 +483,44 @@ function AccountPage() {
   );
 }
 
+function PricingCard({ plan, isCurrent }: { plan: PricingPlan; isCurrent: boolean }) {
+  const recommended = plan.recommended === true;
+  return (
+    <div
+      className={`relative flex h-full flex-col rounded-xl border bg-card p-5 ${
+        recommended ? "border-primary ring-2 ring-primary/40" : ""
+      }`}
+    >
+      {recommended && (
+        <span className="absolute -top-2 right-4 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+          Recommended
+        </span>
+      )}
+      {isCurrent && (
+        <span className="absolute -top-2 left-4 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+          Current plan
+        </span>
+      )}
+      <div className="mb-3">
+        <h3 className="text-base font-semibold">{plan.name}</h3>
+        <p className="mt-1 text-sm font-medium text-foreground">
+          {formatVenueLimit(plan.venueLimit)}
+        </p>
+        <p className="mt-1 text-lg font-semibold">{plan.price}</p>
+      </div>
+      <ul className="mb-4 space-y-1 text-sm text-muted-foreground">
+        <li>{plan.events}</li>
+        <li>{plan.passports}</li>
+        <li>{plan.support}</li>
+      </ul>
+      <div className="mt-auto">
+        <DisabledButton label={plan.cta} />
+        <p className="mt-2 text-[11px] text-muted-foreground">{COMING_SOON_HELP}</p>
+      </div>
+    </div>
+  );
+}
+
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border bg-card p-5">
