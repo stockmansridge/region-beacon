@@ -95,6 +95,37 @@ type ActivationRow = {
   expires_at: string | null;
 };
 
+const STRIPE_ENV_SECRET_NAMES = [
+  "STRIPE_SECRET_KEY",
+  "STRIPE_PRICE_STARTER",
+  "STRIPE_PRICE_GROWTH",
+  "STRIPE_PRICE_REGIONAL",
+  "STRIPE_PRICE_PRO_REGION",
+  "STRIPE_WEBHOOK_SECRET",
+  "GETSTAMPD_SUPABASE_URL",
+  "GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY",
+  "GETSTAMPD_SUPABASE_PUBLISHABLE_KEY",
+] as const;
+
+type StripeEnvSecretName = (typeof STRIPE_ENV_SECRET_NAMES)[number];
+
+type StripeEnvCheckJson = {
+  ok?: boolean;
+  error?: string;
+  secrets?: Partial<Record<StripeEnvSecretName, boolean>>;
+  hostname?: string;
+  environment?: string;
+  allSecretsFalse?: boolean;
+  message?: string | null;
+};
+
+type StripeEnvCheckResult = {
+  status: number;
+  contentType: string | null;
+  bodyText: string;
+  parsed: StripeEnvCheckJson | null;
+};
+
 
 function AccountPage() {
   const auth = useAuth();
@@ -127,12 +158,7 @@ function AccountPage() {
 
   // Stripe env-check diagnostic (platform-admin only)
   const [envCheckLoading, setEnvCheckLoading] = useState(false);
-  const [envCheckResult, setEnvCheckResult] = useState<{
-    status: number;
-    contentType: string | null;
-    bodyText: string;
-    parsed: unknown;
-  } | null>(null);
+  const [envCheckResult, setEnvCheckResult] = useState<StripeEnvCheckResult | null>(null);
 
   // Read ?checkout=success | cancelled once on mount and clean the URL.
   useEffect(() => {
