@@ -16,12 +16,14 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { useAuth } from "@/hooks/use-auth";
 import { formatRoleLabel } from "@/lib/role-labels";
 import { RESERVED_SUBDOMAINS } from "@/lib/reserved-subdomains";
+import { getPlanByCode, normalizePlanCode } from "@/lib/getstampd-pricing";
 import {
   Tabs,
   TabsContent,
@@ -119,6 +121,24 @@ type EventRow = {
   checkin_count: number;
   last_checkin_at: string | null;
   activation_status: string | null;
+};
+
+type PlanLimits = {
+  plan_code: string | null;
+  venue_limit: number | null;
+  active_event_limit: number | null;
+  passport_limit: number | null;
+};
+
+type SubscriptionRow = {
+  id: string;
+  plan_code: string | null;
+  status: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  trial_ends_at: string | null;
+  updated_at: string | null;
 };
 
 type AuditRow = {
@@ -833,12 +853,53 @@ function OrganisationDetailDrawer({
   const [users, setUsers] = useState<UserRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
+  const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [planForm, setPlanForm] = useState<{ plan_code: string; status: string }>({
+    plan_code: "free",
+    status: "active",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const loadPlan = useCallback(async (agencyId: string) => {
+    setPlanLoading(true);
+    setPlanError(null);
+    const [limitsRes, subRes] = await Promise.all([
+      supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
+      supabase
+        .from("agency_subscriptions")
+        .select(
+          "id, plan_code, status, current_period_start, current_period_end, cancel_at_period_end, trial_ends_at, updated_at",
+        )
+        .eq("agency_id", agencyId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (limitsRes.error) {
+      setPlanError(limitsRes.error.message);
+      setPlanLimits(null);
+    } else {
+      setPlanLimits((limitsRes.data ?? null) as PlanLimits | null);
+    }
+    const sub = subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null);
+    setSubscription(sub);
+    setPlanForm({
+      plan_code: normalizePlanCode(sub?.plan_code ?? "free"),
+      status: sub?.status && sub.status !== "none" ? sub.status : "active",
+    });
+    setPlanLoading(false);
+  }, []);
 
   useEffect(() => {
     if (!org) return;
     let cancelled = false;
     setLoading(true);
     setIdCopied(false);
+    setPlanLimits(null);
+    setSubscription(null);
     (async () => {
       const [ev, us] = await Promise.all([
         supabase.rpc("system_admin_events"),
@@ -849,8 +910,47 @@ function OrganisationDetailDrawer({
       setUsers(((us.data ?? []) as UserRow[]).filter((u) => u.agency_id === org.agency_id));
       setLoading(false);
     })();
+    loadPlan(org.agency_id);
     return () => { cancelled = true; };
-  }, [org]);
+  }, [org, loadPlan]);
+
+  const handleSavePlan = async () => {
+    if (!org) return;
+    setSaving(true);
+    const nowIso = new Date().toISOString();
+    let err: { message: string } | null = null;
+    if (subscription?.id) {
+      const { error } = await supabase
+        .from("agency_subscriptions")
+        .update({
+          plan_code: planForm.plan_code,
+          status: planForm.status,
+          updated_at: nowIso,
+        })
+        .eq("id", subscription.id);
+      err = error;
+    } else {
+      const periodEnd = new Date();
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      const { error } = await supabase.from("agency_subscriptions").insert({
+        agency_id: org.agency_id,
+        plan_code: planForm.plan_code,
+        status: planForm.status,
+        current_period_start: nowIso,
+        current_period_end: periodEnd.toISOString(),
+        cancel_at_period_end: false,
+        updated_at: nowIso,
+      });
+      err = error;
+    }
+    setSaving(false);
+    if (err) {
+      toast.error(`Could not save plan: ${err.message}`);
+      return;
+    }
+    toast.success("Plan updated.");
+    await loadPlan(org.agency_id);
+  };
 
   const handleCopyId = async () => {
     if (!org) return;
@@ -858,6 +958,7 @@ function OrganisationDetailDrawer({
     setIdCopied(true);
     setTimeout(() => setIdCopied(false), 1500);
   };
+
 
   return (
     <Sheet open={!!org} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -948,6 +1049,137 @@ function OrganisationDetailDrawer({
                 </a>
               ) : null}
             </div>
+
+            <Section title="Plan & subscription">
+              {planLoading && !planLimits ? (
+                <div className="text-xs text-[#64748B]">Loading plan…</div>
+              ) : planError ? (
+                <div className="text-xs text-[#991B1B]">{planError}</div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
+                      Effective plan
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-[#0F172A]">
+                      {getPlanByCode(planLimits?.plan_code).name}
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-[#0F172A]">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Venues</div>
+                        <div>{planLimits?.venue_limit ?? "Unlimited"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Active events</div>
+                        <div>{planLimits?.active_event_limit ?? "Unlimited"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Passports</div>
+                        <div>{planLimits?.passport_limit ?? "Unlimited"}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[10px] border border-[#E6ECF4] bg-white p-3">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
+                      Subscription row
+                    </div>
+                    {subscription ? (
+                      <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-[#0F172A]">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Plan code</div>
+                          <div>{subscription.plan_code ?? "—"}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Status</div>
+                          <div>{statusPill(subscription.status)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Period end</div>
+                          <div>{fmtDate(subscription.current_period_end)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-[#64748B]">Trial ends</div>
+                          <div>{fmtDate(subscription.trial_ends_at)}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-1 text-xs text-[#64748B]">
+                        No subscription row. Effective plan is Free.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-[10px] border border-[#FCD34D] bg-[#FFFBEB] p-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400E]">
+                      Platform admin manual plan control
+                    </div>
+                    <p className="mt-1 text-[11px] text-[#92400E]">
+                      Manual plan changes are for platform-admin testing and early customer management. Stripe billing will replace this later.
+                    </p>
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <div>
+                        <label className="text-[11px] font-medium text-[#0F172A]">Plan</label>
+                        <Select
+                          value={planForm.plan_code}
+                          onValueChange={(v) => setPlanForm((f) => ({ ...f, plan_code: v }))}
+                        >
+                          <SelectTrigger className="mt-1 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">Free</SelectItem>
+                            <SelectItem value="starter">Starter</SelectItem>
+                            <SelectItem value="growth">Growth</SelectItem>
+                            <SelectItem value="regional">Regional</SelectItem>
+                            <SelectItem value="pro_region">Pro Region</SelectItem>
+                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-medium text-[#0F172A]">Status</label>
+                        <Select
+                          value={planForm.status}
+                          onValueChange={(v) => setPlanForm((f) => ({ ...f, status: v }))}
+                        >
+                          <SelectTrigger className="mt-1 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">active</SelectItem>
+                            <SelectItem value="trialing">trialing</SelectItem>
+                            <SelectItem value="comp">comp</SelectItem>
+                            <SelectItem value="past_due">past_due</SelectItem>
+                            <SelectItem value="cancelled">cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSavePlan}
+                        disabled={saving}
+                        className="inline-flex items-center gap-1 rounded-[8px] bg-[#1F56C5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1A48A8] disabled:opacity-60"
+                      >
+                        {saving ? "Saving…" : "Save plan"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => org && loadPlan(org.agency_id)}
+                        disabled={planLoading}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-3 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC] disabled:opacity-60"
+                      >
+                        <RefreshCw className="h-3 w-3" /> Refresh plan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Section>
+
+
 
             <Section title={`Events (${events?.length ?? 0})`}>
               {loading && !events ? (
