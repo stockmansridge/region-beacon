@@ -26,21 +26,21 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
     const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
       .process?.env ?? {};
     const missingEnv: string[] = [];
-    if (!process.env.STRIPE_SECRET_KEY) missingEnv.push("STRIPE_SECRET_KEY");
-    if (!process.env.SUPABASE_URL && !process.env.VITE_SUPABASE_URL) {
+    if (!env.STRIPE_SECRET_KEY) missingEnv.push("STRIPE_SECRET_KEY");
+    if (!env.SUPABASE_URL && !env.VITE_SUPABASE_URL) {
       missingEnv.push("SUPABASE_URL");
     }
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
       missingEnv.push("SUPABASE_SERVICE_ROLE_KEY");
     }
     if (
-      !process.env.SUPABASE_PUBLISHABLE_KEY &&
-      !process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      !env.SUPABASE_PUBLISHABLE_KEY &&
+      !env.VITE_SUPABASE_PUBLISHABLE_KEY
     ) {
       missingEnv.push("SUPABASE_PUBLISHABLE_KEY");
     }
     const priceEnvName = `STRIPE_PRICE_${data.plan_code.toUpperCase()}`;
-    if (!process.env[priceEnvName]) missingEnv.push(priceEnvName);
+    if (!env[priceEnvName]) missingEnv.push(priceEnvName);
 
     if (missingEnv.length > 0) {
       logErr("config", "missing environment variables", { missing: missingEnv });
