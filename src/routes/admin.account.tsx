@@ -272,6 +272,50 @@ function AccountPage() {
     }
   }, []);
 
+  const handleDirectFetchEnvCheck = useCallback(async () => {
+    setDirectFetchLoading(true);
+    setDirectFetchResult(null);
+    const url = `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/stripe-env-check`;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token ?? "";
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+      const contentType = res.headers.get("content-type");
+      const bodyText = await res.text();
+      let parsedJson: unknown = null;
+      try {
+        parsedJson = JSON.parse(bodyText);
+      } catch {
+        parsedJson = null;
+      }
+      setDirectFetchResult({
+        url,
+        status: res.status,
+        contentType,
+        bodyText,
+        parsedJson,
+        fetchError: null,
+      });
+    } catch (err) {
+      setDirectFetchResult({
+        url,
+        status: null,
+        contentType: null,
+        bodyText: "",
+        parsedJson: null,
+        fetchError: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setDirectFetchLoading(false);
+    }
+  }, []);
+
   const isPlatformAdmin = access.isPlatformAdmin;
 
   const loadAll = useCallback(
