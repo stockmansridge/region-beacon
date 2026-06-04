@@ -867,16 +867,21 @@ function OrganisationDetailDrawer({
   const loadPlan = useCallback(async (agencyId: string) => {
     setPlanLoading(true);
     setPlanError(null);
-    const [limitsRes, subRes] = await Promise.all([
+    const [limitsRes, subRes, billingRes] = await Promise.all([
       supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
       supabase
         .from("agency_subscriptions")
         .select(
-          "id, plan_code, status, current_period_start, current_period_end, cancel_at_period_end, trial_ends_at, updated_at",
+          "id, plan_code, status, current_period_start, current_period_end, cancel_at_period_end, trial_ends_at, updated_at, stripe_subscription_id",
         )
         .eq("agency_id", agencyId)
         .order("updated_at", { ascending: false })
         .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("agency_billing_accounts")
+        .select("stripe_customer_id")
+        .eq("agency_id", agencyId)
         .maybeSingle(),
     ]);
     if (limitsRes.error) {
