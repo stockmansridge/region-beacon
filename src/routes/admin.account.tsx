@@ -88,6 +88,7 @@ function AccountPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
+  const [venueCount, setVenueCount] = useState<number>(0);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
