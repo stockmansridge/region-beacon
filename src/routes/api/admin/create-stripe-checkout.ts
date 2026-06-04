@@ -258,14 +258,13 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
             });
           }
         } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
           logErr("stripe", "price retrieve failed", {
             plan: planCode,
-            error: message,
+            error_type: err instanceof Error ? err.name : typeof err,
           });
           return jsonResponse({
             ok: false,
-            error: `Stripe could not load the ${planCode} price. Check that ${priceEnvName} matches your STRIPE_SECRET_KEY mode (test vs live). Stripe said: ${message}`,
+            error: `Stripe could not load the ${planCode} price. Check that ${priceEnvName} matches your STRIPE_SECRET_KEY mode (test vs live).`,
           });
         }
 
