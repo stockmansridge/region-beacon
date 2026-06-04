@@ -9,6 +9,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { formatRoleLabel } from "@/lib/role-labels";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   GETSTAMPD_PRICING_PLANS,
   formatVenueLimit,
   getNextPlanAfter,
@@ -27,6 +35,24 @@ const ALLOWED_ROLES = new Set(["agency_owner", "agency_admin"]);
 
 const COMING_SOON_HELP =
   "Online billing is coming soon. You can continue setting up and testing GetStampd.";
+
+const UPGRADE_CTA_HELP =
+  "Online billing is coming soon. For now, submit an upgrade request and we'll activate your plan manually.";
+
+type UpgradeRequestRow = {
+  id: string;
+  requested_plan_code: string;
+  requested_plan_name: string;
+  status: string;
+  message: string | null;
+  created_at: string;
+};
+
+function isMissingTableError(err: { code?: string; message?: string } | null | undefined) {
+  if (!err) return false;
+  if (err.code === "42P01" || err.code === "PGRST205" || err.code === "PGRST204") return true;
+  return /relation .* does not exist|could not find the table/i.test(err.message ?? "");
+}
 
 type EventRow = {
   id: string;
@@ -89,6 +115,9 @@ function AccountPage() {
   const [error, setError] = useState<string | null>(null);
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [venueCount, setVenueCount] = useState<number>(0);
+  const [upgradeRequests, setUpgradeRequests] = useState<UpgradeRequestRow[] | null>(null);
+  const [upgradeTableMissing, setUpgradeTableMissing] = useState(false);
+  const [upgradePlan, setUpgradePlan] = useState<PricingPlan | null>(null);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
@@ -166,6 +195,32 @@ function AccountPage() {
       signal.cancelled = true;
     };
   }, [canView, agencyId, loadAll]);
+
+  const loadUpgradeRequests = useCallback(async () => {
+    if (!agencyId) return;
+    const { data, error: reqErr } = await supabase
+      .from("upgrade_requests" as never)
+      .select("id, requested_plan_code, requested_plan_name, status, message, created_at")
+      .eq("agency_id", agencyId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (reqErr) {
+      if (isMissingTableError(reqErr)) {
+        setUpgradeTableMissing(true);
+        setUpgradeRequests([]);
+        return;
+      }
+      setUpgradeRequests([]);
+      return;
+    }
+    setUpgradeTableMissing(false);
+    setUpgradeRequests((data ?? []) as UpgradeRequestRow[]);
+  }, [agencyId]);
+
+  useEffect(() => {
+    if (!canView || !agencyId) return;
+    void loadUpgradeRequests();
+  }, [canView, agencyId, loadUpgradeRequests]);
 
   const runManualActivation = useCallback(
     async (
@@ -363,10 +418,69 @@ function AccountPage() {
               key={plan.code}
               plan={plan}
               isCurrent={plan.code === currentPlan.code}
+              onRequest={() => setUpgradePlan(plan)}
             />
           ))}
         </div>
       </section>
+
+      {upgradeRequests && upgradeRequests.length > 0 && !upgradeTableMissing && (
+        <section className="mt-8">
+          <div className="mb-3">
+            <h2 className="text-lg font-semibold">Upgrade requests</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Recent plan upgrade requests for this organisation.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-5 py-3 font-medium">Requested plan</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 font-medium">Created</th>
+                  <th className="px-5 py-3 font-medium">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {upgradeRequests.map((r) => (
+                  <tr key={r.id} className="border-t">
+                    <td className="px-5 py-3 font-medium">{r.requested_plan_name}</td>
+                    <td className="px-5 py-3">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {r.message
+                        ? r.message.length > 80
+                          ? `${r.message.slice(0, 80)}…`
+                          : r.message
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      <UpgradeRequestDialog
+        plan={upgradePlan}
+        agencyId={agencyId}
+        defaultEmail={auth.email ?? ""}
+        userId={auth.session?.user.id ?? null}
+        onClose={() => setUpgradePlan(null)}
+        onSubmitted={() => {
+          setUpgradePlan(null);
+          void loadUpgradeRequests();
+        }}
+      />
+
 
       <div className="mt-6 rounded-xl border bg-card">
         <div className="border-b px-5 py-4">
@@ -483,7 +597,15 @@ function AccountPage() {
   );
 }
 
-function PricingCard({ plan, isCurrent }: { plan: PricingPlan; isCurrent: boolean }) {
+function PricingCard({
+  plan,
+  isCurrent,
+  onRequest,
+}: {
+  plan: PricingPlan;
+  isCurrent: boolean;
+  onRequest: () => void;
+}) {
   const recommended = plan.recommended === true;
   return (
     <div
@@ -514,10 +636,156 @@ function PricingCard({ plan, isCurrent }: { plan: PricingPlan; isCurrent: boolea
         <li>{plan.support}</li>
       </ul>
       <div className="mt-auto">
-        <DisabledButton label={plan.cta} />
-        <p className="mt-2 text-[11px] text-muted-foreground">{COMING_SOON_HELP}</p>
+        <button
+          type="button"
+          onClick={onRequest}
+          className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+        >
+          {isCurrent ? `Request ${plan.name} (current)` : plan.cta}
+        </button>
+        <p className="mt-2 text-[11px] text-muted-foreground">{UPGRADE_CTA_HELP}</p>
       </div>
     </div>
+  );
+}
+
+function UpgradeRequestDialog({
+  plan,
+  agencyId,
+  defaultEmail,
+  userId,
+  onClose,
+  onSubmitted,
+}: {
+  plan: PricingPlan | null;
+  agencyId: string | null;
+  defaultEmail: string;
+  userId: string | null;
+  onClose: () => void;
+  onSubmitted: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState(defaultEmail);
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (plan) {
+      setName("");
+      setEmail(defaultEmail);
+      setMessage("");
+    }
+  }, [plan, defaultEmail]);
+
+  const onSubmit = async () => {
+    if (!plan || !agencyId) return;
+    setSubmitting(true);
+    const { error: insErr } = await supabase
+      .from("upgrade_requests" as never)
+      .insert({
+        agency_id: agencyId,
+        requested_plan_code: plan.code,
+        requested_plan_name: plan.name,
+        contact_name: name.trim() || null,
+        contact_email: email.trim() || null,
+        message: message.trim() || null,
+        created_by: userId,
+      } as never);
+    setSubmitting(false);
+    if (insErr) {
+      if (isMissingTableError(insErr)) {
+        toast.error("Upgrade requests are not enabled yet. Please contact support.");
+        onClose();
+        return;
+      }
+      toast.error(`Could not send request: ${insErr.message}`);
+      return;
+    }
+    toast.success("Upgrade request sent. We'll review it and contact you shortly.");
+    onSubmitted();
+  };
+
+  return (
+    <Dialog open={plan !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Request plan upgrade</DialogTitle>
+          <DialogDescription>
+            Submit an upgrade request and we'll activate your plan manually.
+          </DialogDescription>
+        </DialogHeader>
+        {plan && (
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+              <div className="font-semibold">{plan.name}</div>
+              <div className="mt-1 text-muted-foreground">{plan.price}</div>
+              <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                <li>{formatVenueLimit(plan.venueLimit)}</li>
+                <li>{plan.events}</li>
+                <li>{plan.passports}</li>
+              </ul>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                Contact name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={120}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                placeholder="Your name"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                Contact email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={255}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                Message / notes
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                maxLength={1000}
+                rows={4}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                placeholder="Tell us about your venues, timing, or any questions."
+              />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="inline-flex h-9 items-center rounded-md border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={submitting || !agencyId}
+            className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {submitting ? "Sending…" : "Send request"}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
