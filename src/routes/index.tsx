@@ -75,7 +75,7 @@ function Landing() {
         <GetStampdMark variant="blue" size="lg" className="mb-6" />
 
         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-cyan-200">
-          Coming soon
+          Event passport platform
         </span>
 
         <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl">
