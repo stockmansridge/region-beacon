@@ -214,7 +214,7 @@ function SignupPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <TestEnvBanner />
+      
       <header className="border-b">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center">
