@@ -1148,6 +1148,36 @@ function EventDetail() {
     let error: { message: string } | null = null;
     let newVenueId: string | null = null;
     if (venueEditingId === "new") {
+      // Venue creation guard: check organisation plan limit before inserting.
+      const [subRes, countRes] = await Promise.all([
+        supabase
+          .from("agency_subscriptions")
+          .select("id, plan_code, status")
+          .eq("agency_id", agencyId)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("venues")
+          .select("id", { count: "exact", head: true })
+          .eq("agency_id", agencyId)
+          .is("deleted_at", null),
+      ]);
+
+      const plan = getPlanByCode(subRes.data?.plan_code);
+      const activeVenueCount = countRes.count ?? 0;
+      const venueLimit = plan.venueLimit;
+
+      if (venueLimit !== null && activeVenueCount >= venueLimit) {
+        setVenueSaving(false);
+        const nextPlan = getNextPlanAfter(plan.code);
+        const nextName = nextPlan?.name ?? "a higher plan";
+        setVenueValidationError(
+          `Your ${plan.name} plan includes up to ${venueLimit} venues. Upgrade to ${nextName} to add more venues.`
+        );
+        return;
+      }
+
       const { data: insData, error: inErr } = await supabase
         .from("venues")
         .insert({
