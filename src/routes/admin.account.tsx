@@ -517,6 +517,8 @@ function AccountPage() {
               key={plan.code}
               plan={plan}
               isCurrent={plan.code === currentPlan.code}
+              isCheckoutLoading={checkoutPlanCode === plan.code}
+              onCheckout={() => handleCheckout(plan)}
               onRequest={() => setUpgradePlan(plan)}
             />
           ))}
