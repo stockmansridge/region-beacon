@@ -125,6 +125,15 @@ function AccountPage() {
     { tone: "success" | "warn"; message: string } | null
   >(null);
 
+  // Stripe env-check diagnostic (platform-admin only)
+  const [envCheckLoading, setEnvCheckLoading] = useState(false);
+  const [envCheckResult, setEnvCheckResult] = useState<{
+    status: number;
+    contentType: string | null;
+    bodyText: string;
+    parsed: unknown;
+  } | null>(null);
+
   // Read ?checkout=success | cancelled once on mount and clean the URL.
   useEffect(() => {
     if (typeof window === "undefined") return;
