@@ -835,12 +835,53 @@ function OrganisationDetailDrawer({
   const [users, setUsers] = useState<UserRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
+  const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [planForm, setPlanForm] = useState<{ plan_code: string; status: string }>({
+    plan_code: "free",
+    status: "active",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const loadPlan = useCallback(async (agencyId: string) => {
+    setPlanLoading(true);
+    setPlanError(null);
+    const [limitsRes, subRes] = await Promise.all([
+      supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
+      supabase
+        .from("agency_subscriptions")
+        .select(
+          "id, plan_code, status, current_period_start, current_period_end, cancel_at_period_end, trial_ends_at, updated_at",
+        )
+        .eq("agency_id", agencyId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (limitsRes.error) {
+      setPlanError(limitsRes.error.message);
+      setPlanLimits(null);
+    } else {
+      setPlanLimits((limitsRes.data ?? null) as PlanLimits | null);
+    }
+    const sub = subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null);
+    setSubscription(sub);
+    setPlanForm({
+      plan_code: normalizePlanCode(sub?.plan_code ?? "free"),
+      status: sub?.status && sub.status !== "none" ? sub.status : "active",
+    });
+    setPlanLoading(false);
+  }, []);
 
   useEffect(() => {
     if (!org) return;
     let cancelled = false;
     setLoading(true);
     setIdCopied(false);
+    setPlanLimits(null);
+    setSubscription(null);
     (async () => {
       const [ev, us] = await Promise.all([
         supabase.rpc("system_admin_events"),
@@ -851,8 +892,47 @@ function OrganisationDetailDrawer({
       setUsers(((us.data ?? []) as UserRow[]).filter((u) => u.agency_id === org.agency_id));
       setLoading(false);
     })();
+    loadPlan(org.agency_id);
     return () => { cancelled = true; };
-  }, [org]);
+  }, [org, loadPlan]);
+
+  const handleSavePlan = async () => {
+    if (!org) return;
+    setSaving(true);
+    const nowIso = new Date().toISOString();
+    let err: { message: string } | null = null;
+    if (subscription?.id) {
+      const { error } = await supabase
+        .from("agency_subscriptions")
+        .update({
+          plan_code: planForm.plan_code,
+          status: planForm.status,
+          updated_at: nowIso,
+        })
+        .eq("id", subscription.id);
+      err = error;
+    } else {
+      const periodEnd = new Date();
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      const { error } = await supabase.from("agency_subscriptions").insert({
+        agency_id: org.agency_id,
+        plan_code: planForm.plan_code,
+        status: planForm.status,
+        current_period_start: nowIso,
+        current_period_end: periodEnd.toISOString(),
+        cancel_at_period_end: false,
+        updated_at: nowIso,
+      });
+      err = error;
+    }
+    setSaving(false);
+    if (err) {
+      toast.error(`Could not save plan: ${err.message}`);
+      return;
+    }
+    toast.success("Plan updated.");
+    await loadPlan(org.agency_id);
+  };
 
   const handleCopyId = async () => {
     if (!org) return;
@@ -860,6 +940,7 @@ function OrganisationDetailDrawer({
     setIdCopied(true);
     setTimeout(() => setIdCopied(false), 1500);
   };
+
 
   return (
     <Sheet open={!!org} onOpenChange={(o) => { if (!o) onClose(); }}>
