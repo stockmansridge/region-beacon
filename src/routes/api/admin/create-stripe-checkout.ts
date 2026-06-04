@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import process from "node:process";
 import type Stripe from "stripe";
+import { hasServerEnv } from "@/lib/server-env.server";
 
 type PaidPlanCode = "starter" | "growth" | "regional" | "pro_region";
 
@@ -63,18 +63,17 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
           );
         }
 
-        const env = process.env;
         const priceEnvName = `STRIPE_PRICE_${planCode.toUpperCase()}`;
         const missingEnv: string[] = [];
-        if (!env.STRIPE_SECRET_KEY) missingEnv.push("STRIPE_SECRET_KEY");
-        if (!env.GETSTAMPD_SUPABASE_URL) missingEnv.push("GETSTAMPD_SUPABASE_URL");
-        if (!env.GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY) {
+        if (!hasServerEnv("STRIPE_SECRET_KEY")) missingEnv.push("STRIPE_SECRET_KEY");
+        if (!hasServerEnv("GETSTAMPD_SUPABASE_URL")) missingEnv.push("GETSTAMPD_SUPABASE_URL");
+        if (!hasServerEnv("GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY")) {
           missingEnv.push("GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY");
         }
-        if (!env.GETSTAMPD_SUPABASE_PUBLISHABLE_KEY) {
+        if (!hasServerEnv("GETSTAMPD_SUPABASE_PUBLISHABLE_KEY")) {
           missingEnv.push("GETSTAMPD_SUPABASE_PUBLISHABLE_KEY");
         }
-        if (!env[priceEnvName]) missingEnv.push(priceEnvName);
+        if (!hasServerEnv(priceEnvName)) missingEnv.push(priceEnvName);
 
         if (missingEnv.length > 0) {
           logErr("config", "missing environment variables", { missing: missingEnv });
