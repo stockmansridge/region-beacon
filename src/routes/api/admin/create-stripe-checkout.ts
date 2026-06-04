@@ -293,6 +293,21 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
             error: "Stripe Checkout create failed. Check Stripe configuration and try again.",
           });
         }
+       } catch (err) {
+         console.error("[stripe-checkout-api] unhandled", {
+           error: err instanceof Error ? err.message : String(err),
+           stack: err instanceof Error ? err.stack : undefined,
+         });
+         return jsonResponse(
+           {
+             ok: false,
+             error: err instanceof Error
+               ? `Unhandled checkout API error: ${err.message}`
+               : "Unhandled checkout API error.",
+           },
+           500,
+         );
+       }
       },
     },
   },
