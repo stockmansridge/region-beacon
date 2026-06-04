@@ -428,6 +428,20 @@ function AccountPage() {
         </div>
       )}
 
+      {checkoutBanner && (
+        <div
+          className={`mb-4 rounded-md border px-4 py-3 text-sm ${
+            checkoutBanner.tone === "success"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+          }`}
+        >
+          {checkoutBanner.message}
+        </div>
+      )}
+
+
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Organisation">
           <OrganisationNameEditor
