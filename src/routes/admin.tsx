@@ -34,7 +34,20 @@ function AdminLayout() {
 
   if (authStatus === "unauthenticated") return <Outlet />;
 
-  if (authStatus === "loading" || access.status === "loading" || agency.status === "loading") {
+  // Treat any non-terminal state as loading so we never flash the
+  // "No organisation" recovery card while auth / access / agency queries
+  // are still resolving (e.g. after a token refresh or hard reload).
+  const isResolving =
+    authStatus === "loading" ||
+    access.status === "loading" ||
+    agency.status === "loading" ||
+    // access resolved authorized but agency context hasn't caught up yet
+    (access.status === "authorized" &&
+      access.memberships.length > 0 &&
+      agency.selected === null &&
+      agency.status !== "error");
+
+  if (isResolving) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-sidebar">
         <div className="text-sm text-muted-foreground">Loading…</div>
@@ -43,6 +56,15 @@ function AdminLayout() {
   }
 
   if (access.status === "unauthorized") return <NoAccessScreen email={email} />;
+
+  // Only show the "No organisation" recovery card when access is fully
+  // resolved AND the user genuinely has no memberships. This avoids the
+  // 1–2s flash when navigating into Account & Billing.
+  const showNoAgency =
+    agency.status === "no-agency" &&
+    access.status === "authorized" &&
+    access.memberships.length === 0 &&
+    agency.selected === null;
 
   return (
     <AdminShell
@@ -53,7 +75,7 @@ function AdminLayout() {
       ambiguousAgency={agency.ambiguousSelection}
       isPlatformAdmin={access.isPlatformAdmin}
     >
-      {agency.status === "no-agency" ? (
+      {showNoAgency ? (
         <NoAgencyState
           isPlatformAdmin={agency.isPlatformAdmin}
           onSignOut={async () => {
