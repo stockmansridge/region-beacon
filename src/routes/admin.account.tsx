@@ -533,6 +533,56 @@ function AccountPage() {
         </div>
       </section>
 
+      {lastCheckoutError && (
+        <div className="mt-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="font-semibold">Stripe Checkout failed</div>
+          <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs">
+            {lastCheckoutError}
+          </div>
+          <button
+            type="button"
+            onClick={() => setLastCheckoutError(null)}
+            className="mt-2 text-xs underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {isPlatformAdmin && (
+        <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-xs">
+          <div className="mb-2 font-semibold text-amber-800 dark:text-amber-300">
+            Stripe checkout diagnostics (platform admin)
+          </div>
+          <dl className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+            <DiagRow label="Selected plan code" value={checkoutPlanCode ?? "—"} />
+            <DiagRow label="Organisation id" value={agencyId ?? "—"} mono />
+            <DiagRow
+              label="Supabase access token"
+              value={
+                hasAccessToken === null
+                  ? "not checked"
+                  : hasAccessToken
+                    ? "present"
+                    : "missing"
+              }
+            />
+            <DiagRow
+              label="Checkout loading"
+              value={checkoutPlanCode ? "yes" : "no"}
+            />
+            <DiagRow
+              label="Last checkout error"
+              value={lastCheckoutError ?? "—"}
+              mono
+            />
+          </dl>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            No secrets are shown. Values are local to this page.
+          </p>
+        </div>
+      )}
+
       {upgradeRequests && upgradeRequests.length > 0 && !upgradeTableMissing && (
         <section className="mt-8">
           <div className="mb-3">
