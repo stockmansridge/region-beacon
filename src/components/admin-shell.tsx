@@ -130,6 +130,13 @@ export function AdminShell({
           />
         </label>
       )}
+      <button
+        type="button"
+        onClick={() => setSupportOpen(true)}
+        className={footerLinkClass}
+      >
+        <LifeBuoy className="h-4 w-4 text-[#94A3B8]" /> Contact support
+      </button>
       <button type="button" className={footerLinkClass}>
         <Settings className="h-4 w-4 text-[#94A3B8]" /> Settings
       </button>
@@ -141,6 +148,11 @@ export function AdminShell({
 
   return (
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#071527]">
+      <ContactSupportDialog
+        open={supportOpen}
+        onOpenChange={setSupportOpen}
+        organisationId={agencyId ?? null}
+      />
 
       {/* Mobile top bar (< lg) */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#E6ECF4] bg-white px-4 lg:hidden">
