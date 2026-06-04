@@ -56,10 +56,9 @@ export const Route = createFileRoute("/api/admin/stripe-env-check")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const envStatus = buildEnvStatus(request);
         const accessToken = getBearerToken(request);
         if (!accessToken) {
-          return Response.json({ ok: false, error: "Not signed in.", ...envStatus }, { status: 401 });
+          return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
         }
 
         const { getSupabaseAsUser } = await import("@/integrations/supabase/admin.server");
@@ -75,7 +74,7 @@ export const Route = createFileRoute("/api/admin/stripe-env-check")({
           userId = userRes.user.id;
         } catch {
           return Response.json(
-            { ok: false, error: "Could not verify sign-in session.", ...envStatus },
+            { ok: false, error: "Could not verify sign-in session." },
             { status: 401 },
           );
         }
@@ -97,7 +96,7 @@ export const Route = createFileRoute("/api/admin/stripe-env-check")({
           return Response.json({ ok: false, error: "Forbidden." }, { status: 403 });
         }
 
-        return Response.json({ ok: true, ...envStatus });
+        return Response.json({ ok: true, ...buildEnvStatus(request) });
       },
     },
   },
