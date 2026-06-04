@@ -102,28 +102,24 @@ const STRIPE_ENV_SECRET_NAMES = [
   "STRIPE_PRICE_REGIONAL",
   "STRIPE_PRICE_PRO_REGION",
   "STRIPE_WEBHOOK_SECRET",
-  "GETSTAMPD_SUPABASE_URL",
-  "GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY",
-  "GETSTAMPD_SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
 
 type StripeEnvSecretName = (typeof STRIPE_ENV_SECRET_NAMES)[number];
 
-type StripeEnvCheckJson = {
+type StripeEdgeEnvCheckResult = {
   ok?: boolean;
   error?: string;
-  secrets?: Partial<Record<StripeEnvSecretName, boolean>>;
-  hostname?: string;
-  environment?: string;
-  allSecretsFalse?: boolean;
-  message?: string | null;
-};
+} & Partial<Record<StripeEnvSecretName, boolean>>;
 
-type StripeEnvCheckResult = {
-  status: number;
-  contentType: string | null;
-  bodyText: string;
-  parsed: StripeEnvCheckJson | null;
+type StripeCheckoutResult = { ok: true; url: string } | { ok: false; error: string };
+
+const STRIPE_PRICE_ENV_BY_PLAN: Record<"starter" | "growth" | "regional" | "pro_region", StripeEnvSecretName> = {
+  starter: "STRIPE_PRICE_STARTER",
+  growth: "STRIPE_PRICE_GROWTH",
+  regional: "STRIPE_PRICE_REGIONAL",
+  pro_region: "STRIPE_PRICE_PRO_REGION",
 };
 
 
