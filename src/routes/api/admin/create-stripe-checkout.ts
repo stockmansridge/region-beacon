@@ -216,6 +216,14 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
           }
         }
 
+        if (!stripeCustomerId) {
+          logErr("stripe", "customer id unavailable after create/reuse");
+          return jsonResponse({
+            ok: false,
+            error: "Could not prepare Stripe customer details. Please try again.",
+          });
+        }
+
         let priceId: string;
         try {
           priceId = getPriceIdForPlan(planCode as PaidPlanCode);
