@@ -701,13 +701,59 @@ function AccountPage() {
 function PricingCard({
   plan,
   isCurrent,
+  isCheckoutLoading,
+  onCheckout,
   onRequest,
 }: {
   plan: PricingPlan;
   isCurrent: boolean;
+  isCheckoutLoading: boolean;
+  onCheckout: () => void;
   onRequest: () => void;
 }) {
   const recommended = plan.recommended === true;
+  const isPaid =
+    plan.code === "starter" ||
+    plan.code === "growth" ||
+    plan.code === "regional" ||
+    plan.code === "pro_region";
+  const isEnterprise = plan.code === "enterprise";
+  const isFree = plan.code === "free";
+
+  let label: string;
+  let onClick: (() => void) | undefined;
+  let disabled = false;
+  let helpText: string;
+
+  if (isCurrent) {
+    label = "Current plan";
+    onClick = undefined;
+    disabled = true;
+    helpText = "This is your active plan.";
+  } else if (isCheckoutLoading) {
+    label = "Opening Stripe…";
+    onClick = undefined;
+    disabled = true;
+    helpText = "Redirecting to Stripe Checkout…";
+  } else if (isPaid) {
+    label = plan.cta;
+    onClick = onCheckout;
+    helpText = "Pay securely with Stripe. Activation is automatic.";
+  } else if (isEnterprise) {
+    label = plan.cta;
+    onClick = onRequest;
+    helpText = "We'll reach out to scope your Enterprise plan.";
+  } else if (isFree) {
+    label = "Free plan";
+    onClick = undefined;
+    disabled = true;
+    helpText = "Downgrades aren't self-serve yet. Contact support if you need to step down.";
+  } else {
+    label = plan.cta;
+    onClick = onRequest;
+    helpText = UPGRADE_CTA_HELP;
+  }
+
   return (
     <div
       className={`relative flex h-full flex-col rounded-xl border bg-card p-5 ${
@@ -739,15 +785,13 @@ function PricingCard({
       <div className="mt-auto">
         <button
           type="button"
-          onClick={isCurrent ? undefined : onRequest}
-          disabled={isCurrent}
+          onClick={onClick}
+          disabled={disabled}
           className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:opacity-60"
         >
-          {isCurrent ? "Current plan" : plan.cta}
+          {label}
         </button>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          {isCurrent ? "This is your active plan." : UPGRADE_CTA_HELP}
-        </p>
+        <p className="mt-2 text-[11px] text-muted-foreground">{helpText}</p>
       </div>
     </div>
   );
