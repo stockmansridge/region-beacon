@@ -182,7 +182,7 @@ function AccountPage() {
           method: "POST",
           headers: {
             "content-type": "application/json",
-            authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             agency_id: agencyId,
