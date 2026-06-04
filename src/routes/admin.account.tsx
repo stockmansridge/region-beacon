@@ -125,6 +125,15 @@ function AccountPage() {
     { tone: "success" | "warn"; message: string } | null
   >(null);
 
+  // Stripe env-check diagnostic (platform-admin only)
+  const [envCheckLoading, setEnvCheckLoading] = useState(false);
+  const [envCheckResult, setEnvCheckResult] = useState<{
+    status: number;
+    contentType: string | null;
+    bodyText: string;
+    parsed: unknown;
+  } | null>(null);
+
   // Read ?checkout=success | cancelled once on mount and clean the URL.
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -211,6 +220,53 @@ function AccountPage() {
     },
     [agencyId],
   );
+
+  const handleEnvCheck = useCallback(async () => {
+    setEnvCheckLoading(true);
+    setEnvCheckResult(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        setEnvCheckResult({
+          status: 0,
+          contentType: null,
+          bodyText: "No access token. Please sign in again.",
+          parsed: null,
+        });
+        return;
+      }
+      const response = await fetch("/api/admin/stripe-env-check", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const bodyText = await response.text();
+      let parsed: unknown = null;
+      try {
+        parsed = JSON.parse(bodyText);
+      } catch {
+        // leave parsed as null if body is not JSON
+      }
+      setEnvCheckResult({
+        status: response.status,
+        contentType: response.headers.get("content-type"),
+        bodyText,
+        parsed,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setEnvCheckResult({
+        status: 0,
+        contentType: null,
+        bodyText: msg,
+        parsed: null,
+      });
+    } finally {
+      setEnvCheckLoading(false);
+    }
+  }, []);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
@@ -577,6 +633,44 @@ function AccountPage() {
               mono
             />
           </dl>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={handleEnvCheck}
+              disabled={envCheckLoading}
+              className="inline-flex h-8 items-center rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-300"
+            >
+              {envCheckLoading ? "Checking…" : "Check Stripe server env"}
+            </button>
+          </div>
+          {envCheckResult && (
+            <div className="mt-3 space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <span>
+                  <span className="text-muted-foreground">Status:</span>{" "}
+                  <span className="font-mono">{envCheckResult.status}</span>
+                </span>
+                <span>
+                  <span className="text-muted-foreground">Content-Type:</span>{" "}
+                  <span className="font-mono">{envCheckResult.contentType ?? "—"}</span>
+                </span>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Body text:</div>
+                <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border bg-background p-2 font-mono text-[10px]">
+                  {envCheckResult.bodyText}
+                </pre>
+              </div>
+              {envCheckResult.parsed !== null && (
+                <div>
+                  <div className="text-muted-foreground">Parsed JSON:</div>
+                  <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border bg-background p-2 font-mono text-[10px]">
+                    {JSON.stringify(envCheckResult.parsed, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
           <p className="mt-2 text-[10px] text-muted-foreground">
             No secrets are shown. Values are local to this page.
           </p>
