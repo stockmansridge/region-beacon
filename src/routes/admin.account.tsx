@@ -9,6 +9,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { formatRoleLabel } from "@/lib/role-labels";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   GETSTAMPD_PRICING_PLANS,
   formatVenueLimit,
   getNextPlanAfter,
@@ -27,6 +35,24 @@ const ALLOWED_ROLES = new Set(["agency_owner", "agency_admin"]);
 
 const COMING_SOON_HELP =
   "Online billing is coming soon. You can continue setting up and testing GetStampd.";
+
+const UPGRADE_CTA_HELP =
+  "Online billing is coming soon. For now, submit an upgrade request and we'll activate your plan manually.";
+
+type UpgradeRequestRow = {
+  id: string;
+  requested_plan_code: string;
+  requested_plan_name: string;
+  status: string;
+  message: string | null;
+  created_at: string;
+};
+
+function isMissingTableError(err: { code?: string; message?: string } | null | undefined) {
+  if (!err) return false;
+  if (err.code === "42P01" || err.code === "PGRST205" || err.code === "PGRST204") return true;
+  return /relation .* does not exist|could not find the table/i.test(err.message ?? "");
+}
 
 type EventRow = {
   id: string;
