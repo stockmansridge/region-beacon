@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   Users,
@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   AlertCircle,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAccess } from "@/hooks/use-admin-access";
@@ -43,6 +44,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/admin/system")({
   head: () => ({ meta: [{ title: "System Admin — GetStampd" }] }),
@@ -128,6 +136,26 @@ type AuditRow = {
   target_id: string | null;
   metadata: unknown;
 };
+
+// -------- Filter / drilldown state ----------------------------------------
+
+type EventsFilter = {
+  status: "all" | "draft" | "published" | "ended" | "archived";
+  recent: "all" | "24h" | "7d";
+  sort: "default" | "checkins" | "passports" | "recent";
+};
+
+type OrgsFilter = {
+  status: "all" | "active" | "suspended" | string;
+  sort: "default" | "venues" | "passports" | "checkins";
+};
+
+const DEFAULT_EVENTS_FILTER: EventsFilter = {
+  status: "all",
+  recent: "all",
+  sort: "default",
+};
+const DEFAULT_ORGS_FILTER: OrgsFilter = { status: "all", sort: "default" };
 
 // -------- Helpers ---------------------------------------------------------
 
@@ -215,13 +243,18 @@ function StatCard({
   label,
   value,
   hint,
+  onClick,
+  title,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  onClick?: () => void;
+  title?: string;
 }) {
-  return (
-    <Card>
+  const interactive = !!onClick;
+  const content = (
+    <>
       <div className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
         {label}
       </div>
@@ -231,8 +264,21 @@ function StatCard({
       {hint ? (
         <div className="mt-1 text-xs text-[#64748B]">{hint}</div>
       ) : null}
-    </Card>
+    </>
   );
+  if (interactive) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        className="text-left rounded-[16px] border border-[#E6ECF4] bg-white p-5 transition hover:border-[#9CC0FF] hover:shadow-sm hover:bg-[#F8FBFF] focus:outline-none focus:ring-2 focus:ring-[#9CC0FF] cursor-pointer"
+      >
+        {content}
+      </button>
+    );
+  }
+  return <Card>{content}</Card>;
 }
 
 function EmptyState({
@@ -297,12 +343,117 @@ async function copyToClipboard(text: string) {
   }
 }
 
+function FilterChip({
+  label,
+  onClear,
+}: {
+  label: string;
+  onClear: () => void;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#EAF2FF] px-3 py-1 text-xs font-medium text-[#1F56C5]">
+      <span>Filtered: {label}</span>
+      <button
+        type="button"
+        onClick={onClear}
+        className="rounded-full p-0.5 hover:bg-[#D6E4FB]"
+        title="Clear filter"
+        aria-label="Clear filter"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+// -------- Hash state ------------------------------------------------------
+
+type HashState = {
+  tab: string;
+  eventsFilter: EventsFilter;
+  orgsFilter: OrgsFilter;
+};
+
+function parseHash(): Partial<HashState> {
+  if (typeof window === "undefined") return {};
+  const raw = window.location.hash.replace(/^#/, "");
+  if (!raw) return {};
+  const params = new URLSearchParams(raw);
+  const tab = params.get("tab") ?? undefined;
+  const ev: Partial<EventsFilter> = {};
+  const status = params.get("status");
+  if (status) ev.status = status as EventsFilter["status"];
+  const recent = params.get("recent");
+  if (recent) ev.recent = recent as EventsFilter["recent"];
+  const sort = params.get("sort");
+  if (sort) ev.sort = sort as EventsFilter["sort"];
+  const orgStatus = params.get("orgStatus");
+  const orgSort = params.get("orgSort");
+  return {
+    tab,
+    eventsFilter: Object.keys(ev).length
+      ? { ...DEFAULT_EVENTS_FILTER, ...ev }
+      : undefined,
+    orgsFilter:
+      orgStatus || orgSort
+        ? {
+            ...DEFAULT_ORGS_FILTER,
+            status: (orgStatus as OrgsFilter["status"]) ?? "all",
+            sort: (orgSort as OrgsFilter["sort"]) ?? "default",
+          }
+        : undefined,
+  };
+}
+
+function writeHash(state: HashState) {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams();
+  if (state.tab && state.tab !== "overview") params.set("tab", state.tab);
+  if (state.eventsFilter.status !== "all") params.set("status", state.eventsFilter.status);
+  if (state.eventsFilter.recent !== "all") params.set("recent", state.eventsFilter.recent);
+  if (state.eventsFilter.sort !== "default") params.set("sort", state.eventsFilter.sort);
+  if (state.orgsFilter.status !== "all") params.set("orgStatus", state.orgsFilter.status);
+  if (state.orgsFilter.sort !== "default") params.set("orgSort", state.orgsFilter.sort);
+  const next = params.toString();
+  const url = next ? `#${next}` : window.location.pathname + window.location.search;
+  window.history.replaceState(null, "", next ? `${window.location.pathname}${window.location.search}#${next}` : url);
+}
+
 // -------- Main component --------------------------------------------------
 
 function SystemAdmin() {
   const access = useAdminAccess();
   const { email } = useAuth();
-  const [tab, setTab] = useState<string>("overview");
+
+  const initial = useRef<Partial<HashState> | null>(null);
+  if (initial.current === null) initial.current = parseHash();
+
+  const [tab, setTab] = useState<string>(initial.current.tab ?? "overview");
+  const [eventsFilter, setEventsFilter] = useState<EventsFilter>(
+    initial.current.eventsFilter ?? DEFAULT_EVENTS_FILTER,
+  );
+  const [orgsFilter, setOrgsFilter] = useState<OrgsFilter>(
+    initial.current.orgsFilter ?? DEFAULT_ORGS_FILTER,
+  );
+
+  useEffect(() => {
+    writeHash({ tab, eventsFilter, orgsFilter });
+  }, [tab, eventsFilter, orgsFilter]);
+
+  const goToEvents = useCallback(
+    (patch: Partial<EventsFilter>) => {
+      setEventsFilter({ ...DEFAULT_EVENTS_FILTER, ...patch });
+      setTab("events");
+    },
+    [],
+  );
+  const goToOrgs = useCallback(
+    (patch: Partial<OrgsFilter>) => {
+      setOrgsFilter({ ...DEFAULT_ORGS_FILTER, ...patch });
+      setTab("orgs");
+    },
+    [],
+  );
 
   if (access.status === "loading") {
     return (
@@ -360,10 +511,16 @@ function SystemAdmin() {
         </TabsList>
 
         <div className="mt-5">
-          <TabsContent value="overview"><OverviewSection /></TabsContent>
-          <TabsContent value="orgs"><OrganisationsSection /></TabsContent>
+          <TabsContent value="overview">
+            <OverviewSection goToEvents={goToEvents} goToOrgs={goToOrgs} />
+          </TabsContent>
+          <TabsContent value="orgs">
+            <OrganisationsSection filter={orgsFilter} setFilter={setOrgsFilter} />
+          </TabsContent>
           <TabsContent value="users"><UsersSection /></TabsContent>
-          <TabsContent value="events"><EventsSection /></TabsContent>
+          <TabsContent value="events">
+            <EventsSection filter={eventsFilter} setFilter={setEventsFilter} />
+          </TabsContent>
           <TabsContent value="audit"><AuditSection /></TabsContent>
           <TabsContent value="billing"><BillingSection /></TabsContent>
           <TabsContent value="settings"><SettingsSection /></TabsContent>
@@ -375,7 +532,13 @@ function SystemAdmin() {
 
 // -------- Overview --------------------------------------------------------
 
-function OverviewSection() {
+function OverviewSection({
+  goToEvents,
+  goToOrgs,
+}: {
+  goToEvents: (patch: Partial<EventsFilter>) => void;
+  goToOrgs: (patch: Partial<OrgsFilter>) => void;
+}) {
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -413,30 +576,70 @@ function OverviewSection() {
         label="Organisations"
         value={data.total_organisations}
         hint={`${fmtNum(data.active_organisations)} active · ${fmtNum(data.organisations_this_month)} this month`}
+        onClick={() => goToOrgs({})}
+        title="View all organisations"
       />
       <StatCard
-        label="Events"
+        label="Active organisations"
+        value={data.active_organisations}
+        onClick={() => goToOrgs({ status: "active" })}
+        title="Filter organisations by active"
+      />
+      <StatCard
+        label="Total events"
         value={data.total_events}
         hint={`${fmtNum(data.published_events)} published · ${fmtNum(data.draft_events)} draft`}
-      />
-      <StatCard label="Venues" value={data.total_venues} />
-      <StatCard label="Visitor passports" value={data.total_passports} />
-      <StatCard
-        label="Check-ins (all time)"
-        value={data.total_checkins}
-      />
-      <StatCard
-        label="Check-ins (24h)"
-        value={data.checkins_24h}
-      />
-      <StatCard
-        label="Check-ins (7d)"
-        value={data.checkins_7d}
+        onClick={() => goToEvents({})}
+        title="View all events"
       />
       <StatCard
         label="Published events"
         value={data.published_events}
-        hint={`${fmtNum(data.draft_events)} drafts`}
+        onClick={() => goToEvents({ status: "published" })}
+        title="Filter events by published"
+      />
+      <StatCard
+        label="Draft events"
+        value={data.draft_events}
+        onClick={() => goToEvents({ status: "draft" })}
+        title="Filter events by draft"
+      />
+      <StatCard
+        label="Venues"
+        value={data.total_venues}
+        hint="Across all organisations"
+        onClick={() => goToOrgs({ sort: "venues" })}
+        title="Sort organisations by venue count"
+      />
+      <StatCard
+        label="Visitor passports"
+        value={data.total_passports}
+        onClick={() => goToEvents({ sort: "passports" })}
+        title="Sort events by passport count"
+      />
+      <StatCard
+        label="Check-ins (all time)"
+        value={data.total_checkins}
+        onClick={() => goToEvents({ sort: "checkins" })}
+        title="Sort events by check-in count"
+      />
+      <StatCard
+        label="Check-ins (24h)"
+        value={data.checkins_24h}
+        onClick={() => goToEvents({ recent: "24h", sort: "recent" })}
+        title="Events with check-ins in the last 24 hours"
+      />
+      <StatCard
+        label="Check-ins (7d)"
+        value={data.checkins_7d}
+        onClick={() => goToEvents({ recent: "7d", sort: "recent" })}
+        title="Events with check-ins in the last 7 days"
+      />
+      <StatCard
+        label="New orgs this month"
+        value={data.organisations_this_month}
+        onClick={() => goToOrgs({})}
+        title="View all organisations"
       />
     </div>
   );
@@ -444,12 +647,19 @@ function OverviewSection() {
 
 // -------- Organisations ---------------------------------------------------
 
-function OrganisationsSection() {
+function OrganisationsSection({
+  filter,
+  setFilter,
+}: {
+  filter: OrgsFilter;
+  setFilter: (f: OrgsFilter) => void;
+}) {
   const [rows, setRows] = useState<OrganisationRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [selected, setSelected] = useState<OrganisationRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -471,19 +681,38 @@ function OrganisationsSection() {
   const filtered = useMemo(() => {
     if (!rows) return [];
     const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter(
-      (r) =>
+    let list = rows.filter((r) => {
+      if (filter.status !== "all" && (r.status ?? "") !== filter.status) return false;
+      if (!needle) return true;
+      return (
         r.name.toLowerCase().includes(needle) ||
         (r.slug ?? "").toLowerCase().includes(needle) ||
-        (r.owner_email ?? "").toLowerCase().includes(needle),
-    );
-  }, [rows, q]);
+        (r.owner_email ?? "").toLowerCase().includes(needle)
+      );
+    });
+    if (filter.sort === "venues") list = [...list].sort((a, b) => b.venue_count - a.venue_count);
+    else if (filter.sort === "passports") list = [...list].sort((a, b) => b.passport_count - a.passport_count);
+    else if (filter.sort === "checkins") list = [...list].sort((a, b) => b.checkin_count - a.checkin_count);
+    return list;
+  }, [rows, q, filter]);
 
   if (error) return <ErrorBanner message={error} onRetry={load} />;
 
+  const hasActiveFilter = filter.status !== "all" || filter.sort !== "default";
+  const chipLabel =
+    filter.status !== "all" && filter.sort !== "default"
+      ? `${filter.status} · sorted by ${filter.sort}`
+      : filter.status !== "all"
+        ? `${filter.status} organisations`
+        : `sorted by ${filter.sort}`;
+
   return (
     <div className="space-y-3">
+      {hasActiveFilter ? (
+        <div className="flex items-center gap-2">
+          <FilterChip label={chipLabel} onClear={() => setFilter(DEFAULT_ORGS_FILTER)} />
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
@@ -494,7 +723,17 @@ function OrganisationsSection() {
             className="pl-9"
           />
         </div>
-        <div className="text-xs text-[#64748B]">
+        <Select value={filter.status} onValueChange={(v) => setFilter({ ...filter, status: v as OrgsFilter["status"] })}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="ml-auto text-xs text-[#64748B]">
           {rows ? `${fmtNum(filtered.length)} of ${fmtNum(rows.length)}` : ""}
         </div>
       </div>
@@ -526,7 +765,11 @@ function OrganisationsSection() {
               </TableRow>
             ) : (
               filtered.map((r) => (
-                <TableRow key={r.agency_id}>
+                <TableRow
+                  key={r.agency_id}
+                  className="cursor-pointer hover:bg-[#F8FBFF]"
+                  onClick={() => setSelected(r)}
+                >
                   <TableCell>
                     <div className="font-medium text-[#0F172A]">{r.name}</div>
                     <div className="text-xs text-[#64748B]">{r.slug ?? "—"}</div>
@@ -546,7 +789,7 @@ function OrganisationsSection() {
                   <TableCell className="text-right text-sm">{fmtNum(r.checkin_count)}</TableCell>
                   <TableCell>{statusPill(r.status)}</TableCell>
                   <TableCell className="text-sm text-[#64748B]">{fmtDate(r.created_at)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     {r.slug ? (
                       <button
                         type="button"
@@ -573,7 +816,143 @@ function OrganisationsSection() {
           </TableBody>
         </Table>
       </Card>
+
+      <OrganisationDetailDrawer org={selected} onClose={() => setSelected(null)} />
     </div>
+  );
+}
+
+function OrganisationDetailDrawer({
+  org,
+  onClose,
+}: {
+  org: OrganisationRow | null;
+  onClose: () => void;
+}) {
+  const [events, setEvents] = useState<EventRow[] | null>(null);
+  const [users, setUsers] = useState<UserRow[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!org) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const [ev, us] = await Promise.all([
+        supabase.rpc("system_admin_events"),
+        supabase.rpc("system_admin_users"),
+      ]);
+      if (cancelled) return;
+      setEvents(((ev.data ?? []) as EventRow[]).filter((e) => e.agency_id === org.agency_id));
+      setUsers(((us.data ?? []) as UserRow[]).filter((u) => u.agency_id === org.agency_id));
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [org]);
+
+  return (
+    <Sheet open={!!org} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+        {org ? (
+          <>
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-[#1F56C5]" />
+                {org.name}
+              </SheetTitle>
+              <SheetDescription>
+                {org.slug ? <code className="rounded bg-[#F1F5F9] px-1.5 py-0.5 text-[11px]">{org.slug}</code> : "No slug"}
+                {" · "}Created {fmtDate(org.created_at)}
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <KV label="Owner" value={org.owner_email ?? "—"} />
+              <KV label="Status" value={<span>{statusPill(org.status)}</span>} />
+              <KV label="Members" value={fmtNum(org.member_count)} />
+              <KV label="Events" value={`${fmtNum(org.event_count)} (${fmtNum(org.published_event_count)} live)`} />
+              <KV label="Venues" value={fmtNum(org.venue_count)} />
+              <KV label="Passports" value={fmtNum(org.passport_count)} />
+              <KV label="Check-ins" value={fmtNum(org.checkin_count)} />
+              <KV label="Billing email" value={org.billing_email ?? "—"} />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {org.slug ? (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                  onClick={() => copyToClipboard(org.slug!)}
+                >
+                  <Copy className="h-3 w-3" /> Copy slug
+                </button>
+              ) : null}
+              {org.slug ? (
+                <a
+                  href={`https://${org.slug}.getstampd.com.au`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                >
+                  <ExternalLink className="h-3 w-3" /> Open tenant
+                </a>
+              ) : null}
+            </div>
+
+            <Section title={`Events (${events?.length ?? 0})`}>
+              {loading && !events ? (
+                <div className="text-xs text-[#64748B]">Loading…</div>
+              ) : !events || events.length === 0 ? (
+                <div className="text-xs text-[#64748B]">No events.</div>
+              ) : (
+                <ul className="divide-y divide-[#EEF2F7]">
+                  {events.map((e) => (
+                    <li key={e.event_id} className="flex items-center justify-between py-2 text-sm">
+                      <div>
+                        <div className="font-medium text-[#0F172A]">{e.event_name}</div>
+                        <div className="text-[11px] text-[#64748B]">
+                          {fmtNum(e.checkin_count)} check-ins · {fmtNum(e.passport_count)} passports
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {statusPill(e.status)}
+                        <Link
+                          to="/admin/events/$eventId"
+                          params={{ eventId: e.event_id }}
+                          className="text-xs font-medium text-[#1F56C5] hover:underline"
+                        >
+                          Open
+                        </Link>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
+
+            <Section title={`Members (${users?.length ?? 0})`}>
+              {loading && !users ? (
+                <div className="text-xs text-[#64748B]">Loading…</div>
+              ) : !users || users.length === 0 ? (
+                <div className="text-xs text-[#64748B]">No members.</div>
+              ) : (
+                <ul className="divide-y divide-[#EEF2F7]">
+                  {users.map((u, i) => (
+                    <li key={`${u.user_id ?? u.invited_email}-${i}`} className="flex items-center justify-between py-2 text-sm">
+                      <div>
+                        <div className="text-[#0F172A]">{u.email ?? u.invited_email ?? "—"}</div>
+                        <div className="text-[11px] text-[#64748B]">{formatRoleLabel(u.role)}</div>
+                      </div>
+                      {u.accepted_at ? statusPill("active") : statusPill("draft")}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
+          </>
+        ) : null}
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -586,6 +965,7 @@ function UsersSection() {
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<string>("all");
   const [role, setRole] = useState<string>("all");
+  const [selected, setSelected] = useState<UserRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -696,7 +1076,11 @@ function UsersSection() {
                       ? "active"
                       : "pending invite";
                 return (
-                  <TableRow key={`${r.user_id ?? r.invited_email ?? "row"}-${r.role}-${idx}`}>
+                  <TableRow
+                    key={`${r.user_id ?? r.invited_email ?? "row"}-${r.role}-${idx}`}
+                    className="cursor-pointer hover:bg-[#F8FBFF]"
+                    onClick={() => setSelected(r)}
+                  >
                     <TableCell className="text-sm text-[#0F172A]">
                       {r.email ?? r.invited_email ?? "—"}
                     </TableCell>
@@ -721,19 +1105,96 @@ function UsersSection() {
           </TableBody>
         </Table>
       </Card>
+
+      <UserDetailDrawer user={selected} allRows={rows} onClose={() => setSelected(null)} />
     </div>
+  );
+}
+
+function UserDetailDrawer({
+  user,
+  allRows,
+  onClose,
+}: {
+  user: UserRow | null;
+  allRows: UserRow[] | null;
+  onClose: () => void;
+}) {
+  const memberships = useMemo(() => {
+    if (!user || !allRows) return [];
+    const key = user.user_id ?? user.invited_email;
+    if (!key) return [];
+    return allRows.filter((r) => (r.user_id ?? r.invited_email) === key);
+  }, [user, allRows]);
+
+  return (
+    <Sheet open={!!user} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        {user ? (
+          <>
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-[#1F56C5]" />
+                {user.email ?? user.invited_email ?? "Unknown user"}
+              </SheetTitle>
+              <SheetDescription>
+                {formatRoleLabel(user.role)}
+                {user.scope === "platform" ? " · Platform" : ""}
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <KV label="Status" value={user.accepted_at || user.scope === "platform" ? statusPill("active") : statusPill("draft")} />
+              <KV label="Scope" value={user.scope} />
+              <KV label="Organisation" value={user.agency_name ?? "—"} />
+              <KV label="Invited" value={fmtDate(user.invited_at)} />
+              <KV label="Joined" value={fmtDate(user.accepted_at)} />
+              <KV label="Created" value={fmtDate(user.created_at)} />
+            </div>
+
+            <Section title={`All memberships (${memberships.length})`}>
+              {memberships.length === 0 ? (
+                <div className="text-xs text-[#64748B]">No additional memberships.</div>
+              ) : (
+                <ul className="divide-y divide-[#EEF2F7]">
+                  {memberships.map((m, i) => (
+                    <li key={i} className="flex items-center justify-between py-2 text-sm">
+                      <div>
+                        <div className="text-[#0F172A]">{m.agency_name ?? "— (platform)"}</div>
+                        <div className="text-[11px] text-[#64748B]">{formatRoleLabel(m.role)}</div>
+                      </div>
+                      {m.accepted_at || m.scope === "platform" ? statusPill("active") : statusPill("draft")}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
+
+            <div className="mt-4 text-[11px] text-[#94A3B8]">
+              Inspect-only. Role and membership mutations are not available from this view.
+            </div>
+          </>
+        ) : null}
+      </SheetContent>
+    </Sheet>
   );
 }
 
 // -------- Events ----------------------------------------------------------
 
-function EventsSection() {
+function EventsSection({
+  filter,
+  setFilter,
+}: {
+  filter: EventsFilter;
+  setFilter: (f: EventsFilter) => void;
+}) {
   const [rows, setRows] = useState<EventRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState<string>("all");
   const [agencyId, setAgencyId] = useState<string>("all");
+  const [selected, setSelected] = useState<EventRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -762,9 +1223,19 @@ function EventsSection() {
   const filtered = useMemo(() => {
     if (!rows) return [];
     const needle = q.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (status !== "all" && r.status !== status) return false;
+    const now = Date.now();
+    const recentMs =
+      filter.recent === "24h" ? 24 * 60 * 60 * 1000
+      : filter.recent === "7d" ? 7 * 24 * 60 * 60 * 1000
+      : null;
+
+    let list = rows.filter((r) => {
+      if (filter.status !== "all" && r.status !== filter.status) return false;
       if (agencyId !== "all" && r.agency_id !== agencyId) return false;
+      if (recentMs !== null) {
+        if (!r.last_checkin_at) return false;
+        if (now - new Date(r.last_checkin_at).getTime() > recentMs) return false;
+      }
       if (!needle) return true;
       return (
         r.event_name.toLowerCase().includes(needle) ||
@@ -772,7 +1243,18 @@ function EventsSection() {
         (r.public_slug ?? "").toLowerCase().includes(needle)
       );
     });
-  }, [rows, q, status, agencyId]);
+
+    if (filter.sort === "checkins") list = [...list].sort((a, b) => b.checkin_count - a.checkin_count);
+    else if (filter.sort === "passports") list = [...list].sort((a, b) => b.passport_count - a.passport_count);
+    else if (filter.sort === "recent") {
+      list = [...list].sort((a, b) => {
+        const at = a.last_checkin_at ? new Date(a.last_checkin_at).getTime() : 0;
+        const bt = b.last_checkin_at ? new Date(b.last_checkin_at).getTime() : 0;
+        return bt - at;
+      });
+    }
+    return list;
+  }, [rows, q, filter, agencyId]);
 
   const publicUrlFor = (r: EventRow) => {
     if (!r.public_slug || !r.agency_slug) return null;
@@ -781,8 +1263,26 @@ function EventsSection() {
 
   if (error) return <ErrorBanner message={error} onRetry={load} />;
 
+  const chips: { label: string; clear: () => void }[] = [];
+  if (filter.status !== "all") chips.push({ label: `${filter.status} events`, clear: () => setFilter({ ...filter, status: "all" }) });
+  if (filter.recent !== "all") chips.push({ label: `check-ins last ${filter.recent}`, clear: () => setFilter({ ...filter, recent: "all" }) });
+  if (filter.sort !== "default") chips.push({ label: `sorted by ${filter.sort}`, clear: () => setFilter({ ...filter, sort: "default" }) });
+
   return (
     <div className="space-y-3">
+      {chips.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {chips.map((c, i) => <FilterChip key={i} label={c.label} onClear={c.clear} />)}
+          <button
+            type="button"
+            onClick={() => setFilter(DEFAULT_EVENTS_FILTER)}
+            className="text-xs text-[#1F56C5] hover:underline"
+          >
+            Clear all
+          </button>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
@@ -793,7 +1293,7 @@ function EventsSection() {
             className="pl-9"
           />
         </div>
-        <Select value={status} onValueChange={setStatus}>
+        <Select value={filter.status} onValueChange={(v) => setFilter({ ...filter, status: v as EventsFilter["status"] })}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -814,6 +1314,16 @@ function EventsSection() {
             {orgOptions.map(([id, name]) => (
               <SelectItem key={id} value={id}>{name}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={filter.recent} onValueChange={(v) => setFilter({ ...filter, recent: v as EventsFilter["recent"] })}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Recent activity" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any time</SelectItem>
+            <SelectItem value="24h">Check-ins last 24h</SelectItem>
+            <SelectItem value="7d">Check-ins last 7d</SelectItem>
           </SelectContent>
         </Select>
         <div className="ml-auto text-xs text-[#64748B]">
@@ -849,7 +1359,11 @@ function EventsSection() {
               filtered.map((r) => {
                 const publicUrl = publicUrlFor(r);
                 return (
-                  <TableRow key={r.event_id}>
+                  <TableRow
+                    key={r.event_id}
+                    className="cursor-pointer hover:bg-[#F8FBFF]"
+                    onClick={() => setSelected(r)}
+                  >
                     <TableCell>
                       <div className="font-medium text-[#0F172A]">{r.event_name}</div>
                       <div className="text-xs text-[#64748B]">
@@ -872,7 +1386,7 @@ function EventsSection() {
                     <TableCell className="text-sm text-[#64748B]">
                       {fmtDateTime(r.last_checkin_at)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         <Link
                           to="/admin/events/$eventId"
@@ -912,7 +1426,83 @@ function EventsSection() {
           </TableBody>
         </Table>
       </Card>
+
+      <EventDetailDrawer
+        event={selected}
+        publicUrl={selected ? publicUrlFor(selected) : null}
+        onClose={() => setSelected(null)}
+      />
     </div>
+  );
+}
+
+function EventDetailDrawer({
+  event,
+  publicUrl,
+  onClose,
+}: {
+  event: EventRow | null;
+  publicUrl: string | null;
+  onClose: () => void;
+}) {
+  return (
+    <Sheet open={!!event} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        {event ? (
+          <>
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-[#1F56C5]" />
+                {event.event_name}
+              </SheetTitle>
+              <SheetDescription>{event.agency_name}</SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <KV label="Status" value={statusPill(event.status)} />
+              <KV label="Activation" value={event.activation_status ? statusPill(event.activation_status) : "—"} />
+              <KV label="Starts" value={fmtDate(event.starts_at)} />
+              <KV label="Ends" value={fmtDate(event.ends_at)} />
+              <KV label="Created" value={fmtDate(event.created_at)} />
+              <KV label="Last check-in" value={fmtDateTime(event.last_checkin_at)} />
+              <KV label="Venues" value={fmtNum(event.venue_count)} />
+              <KV label="Passports" value={fmtNum(event.passport_count)} />
+              <KV label="Check-ins" value={fmtNum(event.checkin_count)} />
+              <KV label="Public slug" value={event.public_slug ?? "—"} />
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link
+                to="/admin/events/$eventId"
+                params={{ eventId: event.event_id }}
+                className="inline-flex items-center gap-1 rounded-[8px] bg-[#1F56C5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1849A8]"
+              >
+                Open event admin
+              </Link>
+              {publicUrl ? (
+                <>
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-3 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                  >
+                    <ExternalLink className="h-3 w-3" /> Open public event
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(publicUrl)}
+                    className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-3 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                  >
+                    <Copy className="h-3 w-3" /> Copy public URL
+                  </button>
+                </>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -923,6 +1513,7 @@ function AuditSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tableMissing, setTableMissing] = useState(false);
+  const [selected, setSelected] = useState<AuditRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -962,40 +1553,112 @@ function AuditSection() {
   }
 
   return (
-    <Card className="overflow-hidden p-0">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-[#F8FAFC]">
-            <TableHead>Time</TableHead>
-            <TableHead>Actor</TableHead>
-            <TableHead>Action</TableHead>
-            <TableHead>Organisation</TableHead>
-            <TableHead>Event</TableHead>
-            <TableHead>Target</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((r) => (
-            <TableRow key={r.id}>
-              <TableCell className="text-xs text-[#64748B]">{fmtDateTime(r.created_at)}</TableCell>
-              <TableCell className="text-sm text-[#0F172A]">
-                {r.actor_email ?? r.actor_user_id ?? "—"}
-                {r.actor_role ? (
-                  <div className="text-[11px] text-[#64748B]">{formatRoleLabel(r.actor_role)}</div>
-                ) : null}
-              </TableCell>
-              <TableCell className="text-sm font-medium text-[#0F172A]">{r.action}</TableCell>
-              <TableCell className="text-sm text-[#64748B]">{r.agency_name ?? "—"}</TableCell>
-              <TableCell className="text-sm text-[#64748B]">{r.event_name ?? "—"}</TableCell>
-              <TableCell className="text-xs text-[#64748B]">
-                {r.target_table ? `${r.target_table}` : "—"}
-                {r.target_id ? <div className="truncate">{r.target_id}</div> : null}
-              </TableCell>
+    <>
+      <Card className="overflow-hidden p-0">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-[#F8FAFC]">
+              <TableHead>Time</TableHead>
+              <TableHead>Actor</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Organisation</TableHead>
+              <TableHead>Event</TableHead>
+              <TableHead>Target</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow
+                key={r.id}
+                className="cursor-pointer hover:bg-[#F8FBFF]"
+                onClick={() => setSelected(r)}
+              >
+                <TableCell className="text-xs text-[#64748B]">{fmtDateTime(r.created_at)}</TableCell>
+                <TableCell className="text-sm text-[#0F172A]">
+                  {r.actor_email ?? r.actor_user_id ?? "—"}
+                  {r.actor_role ? (
+                    <div className="text-[11px] text-[#64748B]">{formatRoleLabel(r.actor_role)}</div>
+                  ) : null}
+                </TableCell>
+                <TableCell className="text-sm font-medium text-[#0F172A]">{r.action}</TableCell>
+                <TableCell className="text-sm text-[#64748B]">{r.agency_name ?? "—"}</TableCell>
+                <TableCell className="text-sm text-[#64748B]">{r.event_name ?? "—"}</TableCell>
+                <TableCell className="text-xs text-[#64748B]">
+                  {r.target_table ? `${r.target_table}` : "—"}
+                  {r.target_id ? <div className="truncate">{r.target_id}</div> : null}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+
+      <AuditDetailDrawer entry={selected} onClose={() => setSelected(null)} />
+    </>
+  );
+}
+
+function AuditDetailDrawer({
+  entry,
+  onClose,
+}: {
+  entry: AuditRow | null;
+  onClose: () => void;
+}) {
+  // Defensive redaction of any obvious secret-like keys before display.
+  const safeMetadata = useMemo(() => {
+    if (!entry) return null;
+    const meta = entry.metadata;
+    if (!meta || typeof meta !== "object") return meta;
+    const SECRET_KEYS = /token|secret|password|api[_-]?key|service[_-]?role/i;
+    const redact = (obj: unknown): unknown => {
+      if (Array.isArray(obj)) return obj.map(redact);
+      if (obj && typeof obj === "object") {
+        const out: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+          out[k] = SECRET_KEYS.test(k) ? "[redacted]" : redact(v);
+        }
+        return out;
+      }
+      return obj;
+    };
+    return redact(meta);
+  }, [entry]);
+
+  return (
+    <Sheet open={!!entry} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        {entry ? (
+          <>
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <ScrollText className="h-5 w-5 text-[#1F56C5]" />
+                {entry.action}
+              </SheetTitle>
+              <SheetDescription>{fmtDateTime(entry.created_at)}</SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <KV label="Actor" value={entry.actor_email ?? entry.actor_user_id ?? "—"} />
+              <KV label="Actor role" value={formatRoleLabel(entry.actor_role)} />
+              <KV label="Organisation" value={entry.agency_name ?? "—"} />
+              <KV label="Event" value={entry.event_name ?? "—"} />
+              <KV label="Target table" value={entry.target_table ?? "—"} />
+              <KV label="Target id" value={entry.target_id ?? "—"} />
+            </div>
+
+            <Section title="Metadata">
+              <pre className="max-h-[40vh] overflow-auto rounded-[8px] bg-[#0F172A] p-3 text-[11px] leading-snug text-[#E2E8F0]">
+{JSON.stringify(safeMetadata ?? {}, null, 2)}
+              </pre>
+              <div className="mt-2 text-[11px] text-[#94A3B8]">
+                Secret-like fields (token, secret, password, api_key) are redacted on display.
+              </div>
+            </Section>
+          </>
+        ) : null}
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -1067,6 +1730,30 @@ function SettingsSection() {
           <code className="mx-1 rounded bg-[#F1F5F9] px-1.5 py-0.5">src/lib/reserved-subdomains.ts</code>.
         </div>
       </Card>
+    </div>
+  );
+}
+
+// -------- Small presentation helpers --------------------------------------
+
+function KV({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">
+        {label}
+      </div>
+      <div className="mt-0.5 text-sm text-[#0F172A]">{value}</div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-6">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+        {title}
+      </div>
+      {children}
     </div>
   );
 }
