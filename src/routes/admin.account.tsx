@@ -147,14 +147,13 @@ function AccountPage() {
   const [upgradePlan, setUpgradePlan] = useState<PricingPlan | null>(null);
   const [checkoutPlanCode, setCheckoutPlanCode] = useState<string | null>(null);
   const [lastCheckoutError, setLastCheckoutError] = useState<string | null>(null);
-  const [hasAccessToken, setHasAccessToken] = useState<boolean | null>(null);
   const [checkoutBanner, setCheckoutBanner] = useState<
     { tone: "success" | "warn"; message: string } | null
   >(null);
 
-  // Stripe env-check diagnostic (platform-admin only)
+  // Temporary Supabase Edge Function env-check diagnostic (platform-admin only)
   const [envCheckLoading, setEnvCheckLoading] = useState(false);
-  const [envCheckResult, setEnvCheckResult] = useState<StripeEnvCheckResult | null>(null);
+  const [envCheckResult, setEnvCheckResult] = useState<StripeEdgeEnvCheckResult | null>(null);
 
   // Read ?checkout=success | cancelled once on mount and clean the URL.
   useEffect(() => {
@@ -199,49 +198,44 @@ function AccountPage() {
       setCheckoutPlanCode(planCode);
       setLastCheckoutError(null);
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
-        setHasAccessToken(Boolean(accessToken));
-        if (!accessToken) {
-          const msg = "No Supabase access token found. Please sign in again.";
+        const envCheck = await supabase.functions.invoke<StripeEdgeEnvCheckResult>(
+          "stripe-env-check",
+        );
+        if (envCheck.error) {
+          const msg = envCheck.error.message || "Could not check Supabase Stripe secrets.";
           setLastCheckoutError(msg);
           toast.error(msg);
           setCheckoutPlanCode(null);
           return;
         }
-        const response = await fetch("/api/admin/create-stripe-checkout", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            agency_id: agencyId,
-            plan_code: planCode,
-          }),
-        });
-        const bodyText = await response.text();
-        const contentType = response.headers.get("content-type") ?? "";
-        let result: { ok: true; url: string } | { ok: false; error: string };
-        if (contentType.includes("application/json")) {
-          try {
-            result = JSON.parse(bodyText) as typeof result;
-          } catch {
-            result = {
-              ok: false,
-              error: `Checkout API returned invalid JSON. HTTP ${response.status}. Body starts: ${bodyText.slice(0, 300)}`,
-            };
-          }
-        } else {
-          result = {
-            ok: false,
-            error: `Checkout API returned non-JSON response. HTTP ${response.status}. Body starts: ${bodyText.slice(0, 300)}`,
-          };
+        const envData = envCheck.data;
+        const priceEnvName = STRIPE_PRICE_ENV_BY_PLAN[planCode];
+        const missing = ["STRIPE_SECRET_KEY", priceEnvName]
+          .filter((name) => envData?.[name as StripeEnvSecretName] !== true);
+        if (missing.length > 0) {
+          const msg = `Supabase Stripe secrets are missing: ${missing.join(", ")}.`;
+          setEnvCheckResult(envData ?? { ok: false, error: msg });
+          setLastCheckoutError(msg);
+          toast.error(msg);
+          setCheckoutPlanCode(null);
+          return;
         }
-        if (!result.ok) {
-          console.error("[checkout] server returned error", result.error);
-          setLastCheckoutError(result.error);
-          toast.error(result.error + " You can submit an upgrade request below as a fallback.");
+
+        const { data: result, error: invokeError } = await supabase.functions.invoke<StripeCheckoutResult>(
+          "create-stripe-checkout",
+          {
+            body: {
+              agency_id: agencyId,
+              plan_code: planCode,
+              origin: window.location.origin,
+            },
+          },
+        );
+        if (invokeError || !result?.ok) {
+          const msg = invokeError?.message || result?.error || "Stripe Checkout failed.";
+          console.error("[checkout] edge function returned error", msg);
+          setLastCheckoutError(msg);
+          toast.error(msg + " You can submit an upgrade request below as a fallback.");
           setCheckoutPlanCode(null);
           return;
         }
