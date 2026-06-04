@@ -221,6 +221,53 @@ function AccountPage() {
     [agencyId],
   );
 
+  const handleEnvCheck = useCallback(async () => {
+    setEnvCheckLoading(true);
+    setEnvCheckResult(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        setEnvCheckResult({
+          status: 0,
+          contentType: null,
+          bodyText: "No access token. Please sign in again.",
+          parsed: null,
+        });
+        return;
+      }
+      const response = await fetch("/api/admin/stripe-env-check", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const bodyText = await response.text();
+      let parsed: unknown = null;
+      try {
+        parsed = JSON.parse(bodyText);
+      } catch {
+        // leave parsed as null if body is not JSON
+      }
+      setEnvCheckResult({
+        status: response.status,
+        contentType: response.headers.get("content-type"),
+        bodyText,
+        parsed,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setEnvCheckResult({
+        status: 0,
+        contentType: null,
+        bodyText: msg,
+        parsed: null,
+      });
+    } finally {
+      setEnvCheckLoading(false);
+    }
+  }, []);
+
   const isPlatformAdmin = access.isPlatformAdmin;
 
   const loadAll = useCallback(
