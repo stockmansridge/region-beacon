@@ -673,6 +673,61 @@ function AccountPage() {
             {envCheckLoading ? "Checking…" : "Check Supabase Stripe secrets"}
           </button>
           <StripeEdgeEnvStatusPanel loading={envCheckLoading} result={envCheckResult} />
+
+          <div className="mt-4 border-t border-amber-500/30 pt-3">
+            <div className="mb-2 font-semibold text-amber-800 dark:text-amber-300">
+              Direct fetch reachability (platform admin)
+            </div>
+            <p className="mb-2 text-muted-foreground">
+              Bypasses supabase.functions.invoke. Calls the Edge Function URL directly so the real
+              HTTP status, headers, and body are visible.
+            </p>
+            <button
+              type="button"
+              onClick={handleDirectFetchEnvCheck}
+              disabled={directFetchLoading}
+              className="inline-flex h-8 items-center rounded-lg border border-amber-500/40 bg-background px-3 text-xs font-medium text-amber-800 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-300"
+            >
+              {directFetchLoading ? "Fetching…" : "Direct fetch stripe-env-check"}
+            </button>
+            {directFetchResult && (
+              <div className="mt-3 space-y-2 rounded-lg border bg-background p-3 text-foreground">
+                <DiagRow label="Request URL" value={directFetchResult.url} mono />
+                <DiagRow
+                  label="HTTP status"
+                  value={directFetchResult.status === null ? "(no response)" : String(directFetchResult.status)}
+                  mono
+                />
+                <DiagRow
+                  label="content-type"
+                  value={directFetchResult.contentType ?? "(none)"}
+                  mono
+                />
+                {directFetchResult.fetchError && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-destructive">
+                    <div className="font-semibold">Fetch error</div>
+                    <div className="mt-1 break-words font-mono text-[11px]">
+                      {directFetchResult.fetchError}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div className="text-[11px] font-semibold text-muted-foreground">Raw body</div>
+                  <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-muted/40 p-2 font-mono text-[11px]">
+                    {directFetchResult.bodyText || "(empty)"}
+                  </pre>
+                </div>
+                {directFetchResult.parsedJson !== null && (
+                  <div>
+                    <div className="text-[11px] font-semibold text-muted-foreground">Parsed JSON</div>
+                    <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-muted/40 p-2 font-mono text-[11px]">
+                      {JSON.stringify(directFetchResult.parsedJson, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
