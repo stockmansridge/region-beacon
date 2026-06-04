@@ -51,7 +51,10 @@ serve(async (req) => {
     return new Response("Missing Stripe signature", { status: 400 });
   }
 
-  const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-04-10" });
+  const stripe = new Stripe(stripeSecretKey, {
+    apiVersion: "2024-04-10",
+    httpClient: Stripe.createFetchHttpClient(),
+  });
   const rawBody = await req.text();
   let event: Stripe.Event;
   try {
