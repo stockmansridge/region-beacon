@@ -209,9 +209,9 @@ function AccountPage() {
           return;
         }
         const envData = envCheck.data;
-        const priceEnvName = STRIPE_PRICE_ENV_BY_PLAN[planCode];
-        const missing = ["STRIPE_SECRET_KEY", priceEnvName]
-          .filter((name) => envData?.[name as StripeEnvSecretName] !== true);
+        const missing = STRIPE_ENV_SECRET_NAMES.filter(
+          (name) => name.startsWith("STRIPE_") && envData?.[name] !== true,
+        );
         if (missing.length > 0) {
           const msg = `Supabase Stripe secrets are missing: ${missing.join(", ")}.`;
           setEnvCheckResult(envData ?? { ok: false, error: msg });
