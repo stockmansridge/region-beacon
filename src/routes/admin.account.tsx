@@ -863,6 +863,65 @@ function AccountPage() {
   );
 }
 
+function StripeServerEnvStatusPanel({
+  loading,
+  result,
+}: {
+  loading: boolean;
+  result: StripeEnvCheckResult | null;
+}) {
+  const parsed = result?.parsed ?? null;
+  const secrets = parsed?.secrets ?? {};
+  const allSecretsFalse = parsed?.allSecretsFalse === true;
+
+  return (
+    <div className="mt-4 rounded-lg border border-destructive/30 bg-background p-4 text-foreground">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold">Server configuration status</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Platform-admin diagnostic. Secret values are never shown.
+          </p>
+        </div>
+        <span className="rounded-full border bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
+          {loading ? "checking" : result ? `HTTP ${result.status}` : "waiting"}
+        </span>
+      </div>
+
+      {loading && <div className="mt-3 text-xs text-muted-foreground">Checking server runtime…</div>}
+
+      {result && (
+        <>
+          <dl className="mt-3 grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+            {STRIPE_ENV_SECRET_NAMES.map((name) => (
+              <DiagRow
+                key={name}
+                label={`${name} present`}
+                value={String(secrets[name] === true)}
+                mono
+              />
+            ))}
+            <DiagRow label="Current hostname" value={parsed?.hostname ?? "—"} mono />
+            <DiagRow label="Detected environment" value={parsed?.environment ?? "unknown"} />
+          </dl>
+
+          {allSecretsFalse && (
+            <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
+              This deployed environment cannot see Lovable Cloud secrets. Check that the secrets are attached to this environment and republish.
+            </div>
+          )}
+
+          {!parsed && (
+            <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+              Env check did not return JSON. HTTP {result.status}. Body starts: {result.bodyText.slice(0, 300)}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function PricingCard({
   plan,
   isCurrent,
