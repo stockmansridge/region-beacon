@@ -102,29 +102,18 @@ const STRIPE_ENV_SECRET_NAMES = [
   "STRIPE_PRICE_REGIONAL",
   "STRIPE_PRICE_PRO_REGION",
   "STRIPE_WEBHOOK_SECRET",
-  "GETSTAMPD_SUPABASE_URL",
-  "GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY",
-  "GETSTAMPD_SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
 
 type StripeEnvSecretName = (typeof STRIPE_ENV_SECRET_NAMES)[number];
 
-type StripeEnvCheckJson = {
+type StripeEdgeEnvCheckResult = {
   ok?: boolean;
   error?: string;
-  secrets?: Partial<Record<StripeEnvSecretName, boolean>>;
-  hostname?: string;
-  environment?: string;
-  allSecretsFalse?: boolean;
-  message?: string | null;
-};
+} & Partial<Record<StripeEnvSecretName, boolean>>;
 
-type StripeEnvCheckResult = {
-  status: number;
-  contentType: string | null;
-  bodyText: string;
-  parsed: StripeEnvCheckJson | null;
-};
+type StripeCheckoutResult = { ok: true; url: string } | { ok: false; error: string };
 
 
 function AccountPage() {
@@ -151,14 +140,13 @@ function AccountPage() {
   const [upgradePlan, setUpgradePlan] = useState<PricingPlan | null>(null);
   const [checkoutPlanCode, setCheckoutPlanCode] = useState<string | null>(null);
   const [lastCheckoutError, setLastCheckoutError] = useState<string | null>(null);
-  const [hasAccessToken, setHasAccessToken] = useState<boolean | null>(null);
   const [checkoutBanner, setCheckoutBanner] = useState<
     { tone: "success" | "warn"; message: string } | null
   >(null);
 
-  // Stripe env-check diagnostic (platform-admin only)
+  // Temporary Supabase Edge Function env-check diagnostic (platform-admin only)
   const [envCheckLoading, setEnvCheckLoading] = useState(false);
-  const [envCheckResult, setEnvCheckResult] = useState<StripeEnvCheckResult | null>(null);
+  const [envCheckResult, setEnvCheckResult] = useState<StripeEdgeEnvCheckResult | null>(null);
 
   // Read ?checkout=success | cancelled once on mount and clean the URL.
   useEffect(() => {
@@ -203,49 +191,45 @@ function AccountPage() {
       setCheckoutPlanCode(planCode);
       setLastCheckoutError(null);
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
-        setHasAccessToken(Boolean(accessToken));
-        if (!accessToken) {
-          const msg = "No Supabase access token found. Please sign in again.";
+        const envCheck = await supabase.functions.invoke<StripeEdgeEnvCheckResult>(
+          "stripe-env-check",
+        );
+        if (envCheck.error) {
+          const msg = envCheck.error.message || "Could not check Supabase Stripe secrets.";
           setLastCheckoutError(msg);
           toast.error(msg);
           setCheckoutPlanCode(null);
           return;
         }
-        const response = await fetch("/api/admin/create-stripe-checkout", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            agency_id: agencyId,
-            plan_code: planCode,
-          }),
-        });
-        const bodyText = await response.text();
-        const contentType = response.headers.get("content-type") ?? "";
-        let result: { ok: true; url: string } | { ok: false; error: string };
-        if (contentType.includes("application/json")) {
-          try {
-            result = JSON.parse(bodyText) as typeof result;
-          } catch {
-            result = {
-              ok: false,
-              error: `Checkout API returned invalid JSON. HTTP ${response.status}. Body starts: ${bodyText.slice(0, 300)}`,
-            };
-          }
-        } else {
-          result = {
-            ok: false,
-            error: `Checkout API returned non-JSON response. HTTP ${response.status}. Body starts: ${bodyText.slice(0, 300)}`,
-          };
+        const envData = envCheck.data;
+        const missing = STRIPE_ENV_SECRET_NAMES.filter(
+          (name) => name.startsWith("STRIPE_") && envData?.[name] !== true,
+        );
+        if (missing.length > 0) {
+          const msg = `Supabase Stripe secrets are missing: ${missing.join(", ")}.`;
+          setEnvCheckResult(envData ?? { ok: false, error: msg });
+          setLastCheckoutError(msg);
+          toast.error(msg);
+          setCheckoutPlanCode(null);
+          return;
         }
-        if (!result.ok) {
-          console.error("[checkout] server returned error", result.error);
-          setLastCheckoutError(result.error);
-          toast.error(result.error + " You can submit an upgrade request below as a fallback.");
+
+        const { data: result, error: invokeError } = await supabase.functions.invoke<StripeCheckoutResult>(
+          "create-stripe-checkout",
+          {
+            body: {
+              agency_id: agencyId,
+              plan_code: planCode,
+              origin: window.location.origin,
+            },
+          },
+        );
+        if (invokeError || !result?.ok) {
+          let msg = invokeError?.message || "Stripe Checkout failed.";
+          if (result && !result.ok) msg = result.error;
+          console.error("[checkout] edge function returned error", msg);
+          setLastCheckoutError(msg);
+          toast.error(msg + " You can submit an upgrade request below as a fallback.");
           setCheckoutPlanCode(null);
           return;
         }
@@ -265,53 +249,17 @@ function AccountPage() {
     setEnvCheckLoading(true);
     setEnvCheckResult(null);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) {
-        setEnvCheckResult({
-          status: 0,
-          contentType: null,
-          bodyText: "No access token. Please sign in again.",
-          parsed: null,
-        });
-        return;
-      }
-      const response = await fetch("/api/admin/stripe-env-check", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const bodyText = await response.text();
-      let parsed: StripeEnvCheckJson | null = null;
-      try {
-        parsed = JSON.parse(bodyText) as StripeEnvCheckJson;
-      } catch {
-        // leave parsed as null if body is not JSON
-      }
-      setEnvCheckResult({
-        status: response.status,
-        contentType: response.headers.get("content-type"),
-        bodyText,
-        parsed,
-      });
+      const { data, error: invokeError } = await supabase.functions.invoke<StripeEdgeEnvCheckResult>(
+        "stripe-env-check",
+      );
+      setEnvCheckResult(data ?? { ok: false, error: invokeError?.message ?? "Env check failed." });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setEnvCheckResult({
-        status: 0,
-        contentType: null,
-        bodyText: msg,
-        parsed: null,
-      });
+      setEnvCheckResult({ ok: false, error: msg });
     } finally {
       setEnvCheckLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (!access.isPlatformAdmin || !lastCheckoutError) return;
-    void handleEnvCheck();
-  }, [access.isPlatformAdmin, lastCheckoutError, handleEnvCheck]);
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
@@ -641,7 +589,7 @@ function AccountPage() {
             {lastCheckoutError}
           </div>
           {isPlatformAdmin && (
-            <StripeServerEnvStatusPanel
+            <StripeEdgeEnvStatusPanel
               loading={envCheckLoading}
               result={envCheckResult}
             />
@@ -659,34 +607,17 @@ function AccountPage() {
       {isPlatformAdmin && (
         <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-xs">
           <div className="mb-2 font-semibold text-amber-800 dark:text-amber-300">
-            Stripe checkout diagnostics (platform admin)
+            Supabase Stripe secrets (platform admin)
           </div>
-          <dl className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-            <DiagRow label="Selected plan code" value={checkoutPlanCode ?? "—"} />
-            <DiagRow label="Organisation id" value={agencyId ?? "—"} mono />
-            <DiagRow
-              label="Supabase access token"
-              value={
-                hasAccessToken === null
-                  ? "not checked"
-                  : hasAccessToken
-                    ? "present"
-                    : "missing"
-              }
-            />
-            <DiagRow
-              label="Checkout loading"
-              value={checkoutPlanCode ? "yes" : "no"}
-            />
-            <DiagRow
-              label="Last checkout error"
-              value={lastCheckoutError ?? "—"}
-              mono
-            />
-          </dl>
-          <p className="mt-2 text-[10px] text-muted-foreground">
-            No secrets are shown. Server configuration status appears under checkout failures.
-          </p>
+          <button
+            type="button"
+            onClick={handleEnvCheck}
+            disabled={envCheckLoading}
+            className="inline-flex h-8 items-center rounded-lg border border-amber-500/40 bg-background px-3 text-xs font-medium text-amber-800 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-300"
+          >
+            {envCheckLoading ? "Checking…" : "Check Supabase Stripe secrets"}
+          </button>
+          <StripeEdgeEnvStatusPanel loading={envCheckLoading} result={envCheckResult} />
         </div>
       )}
 
@@ -863,32 +794,32 @@ function AccountPage() {
   );
 }
 
-function StripeServerEnvStatusPanel({
+function StripeEdgeEnvStatusPanel({
   loading,
   result,
 }: {
   loading: boolean;
-  result: StripeEnvCheckResult | null;
+  result: StripeEdgeEnvCheckResult | null;
 }) {
-  const parsed = result?.parsed ?? null;
-  const secrets = parsed?.secrets ?? {};
-  const allSecretsFalse = parsed?.allSecretsFalse === true;
+  const allSecretsFalse = result
+    ? STRIPE_ENV_SECRET_NAMES.every((name) => result[name] !== true)
+    : false;
 
   return (
     <div className="mt-4 rounded-lg border border-destructive/30 bg-background p-4 text-foreground">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold">Server configuration status</div>
+          <div className="text-sm font-semibold">Edge Function secret status</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Platform-admin diagnostic. Secret values are never shown.
+            Boolean results only. Secret values are never shown.
           </p>
         </div>
         <span className="rounded-full border bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
-          {loading ? "checking" : result ? `HTTP ${result.status}` : "waiting"}
+          {loading ? "checking" : result ? "checked" : "waiting"}
         </span>
       </div>
 
-      {loading && <div className="mt-3 text-xs text-muted-foreground">Checking server runtime…</div>}
+      {loading && <div className="mt-3 text-xs text-muted-foreground">Checking Supabase Edge Function…</div>}
 
       {result && (
         <>
@@ -897,23 +828,21 @@ function StripeServerEnvStatusPanel({
               <DiagRow
                 key={name}
                 label={`${name} present`}
-                value={String(secrets[name] === true)}
+                value={String(result[name] === true)}
                 mono
               />
             ))}
-            <DiagRow label="Current hostname" value={parsed?.hostname ?? "—"} mono />
-            <DiagRow label="Detected environment" value={parsed?.environment ?? "unknown"} />
           </dl>
 
           {allSecretsFalse && (
             <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
-              This deployed environment cannot see Lovable Cloud secrets. Check that the secrets are attached to this environment and republish.
+              Supabase Edge Function cannot see Stripe secrets. Add the secrets to Supabase and redeploy the functions.
             </div>
           )}
 
-          {!parsed && (
+          {result.error && (
             <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
-              Env check did not return JSON. HTTP {result.status}. Body starts: {result.bodyText.slice(0, 300)}
+              {result.error}
             </div>
           )}
         </>
