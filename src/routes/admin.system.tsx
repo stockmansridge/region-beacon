@@ -8,6 +8,7 @@ import {
   CreditCard,
   Settings2,
   LayoutDashboard,
+  LifeBuoy,
   Search,
   ExternalLink,
   Copy,
