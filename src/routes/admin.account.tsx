@@ -198,10 +198,24 @@ function AccountPage() {
             plan_code: planCode,
           }),
         });
-        const result = (await response.json().catch(() => ({
-          ok: false,
-          error: "Stripe Checkout returned an invalid response.",
-        }))) as { ok: true; url: string } | { ok: false; error: string };
+        const bodyText = await response.text();
+        const contentType = response.headers.get("content-type") ?? "";
+        let result: { ok: true; url: string } | { ok: false; error: string };
+        if (contentType.includes("application/json")) {
+          try {
+            result = JSON.parse(bodyText) as typeof result;
+          } catch {
+            result = {
+              ok: false,
+              error: `Checkout API returned invalid JSON. HTTP ${response.status}. Body starts: ${bodyText.slice(0, 300)}`,
+            };
+          }
+        } else {
+          result = {
+            ok: false,
+            error: `Checkout API returned non-JSON response. HTTP ${response.status}. Body starts: ${bodyText.slice(0, 300)}`,
+          };
+        }
         if (!result.ok) {
           console.error("[checkout] server returned error", result.error);
           setLastCheckoutError(result.error);
