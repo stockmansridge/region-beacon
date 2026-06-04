@@ -43,14 +43,18 @@ export function useAgencyContext(): AgencyContext {
       // Terminal non-loading state — admin route handles unauth/unauthorized
       // before reading agency context. Critically, do NOT set status back to
       // "loading" here or the admin shell stays stuck on the loading screen.
-      setState({
-        status: "no-agency",
-        isPlatformAdmin: false,
-        agencies: [],
-        selected: null,
-        ambiguousSelection: false,
-        error: null,
-      });
+      setState((prev) =>
+        prev.status === "ready"
+          ? prev // keep last known organisation context during transient auth refreshes
+          : {
+              status: "no-agency",
+              isPlatformAdmin: false,
+              agencies: [],
+              selected: null,
+              ambiguousSelection: false,
+              error: null,
+            },
+      );
       return;
     }
 
