@@ -73,16 +73,28 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             }
           }
 
+          // Stripe SDK v18+ moved current_period_* off Subscription and onto
+          // each subscription item. Use the first item as the period source
+          // since GetStampd plans are single-line subscriptions.
+          const firstItem = sub.items?.data?.[0] as
+            | (Stripe.SubscriptionItem & {
+                current_period_start?: number;
+                current_period_end?: number;
+              })
+            | undefined;
+          const periodStart = firstItem?.current_period_start ?? null;
+          const periodEnd = firstItem?.current_period_end ?? null;
+
           const row = {
             agency_id: agencyId,
             plan_code: planCode,
             status: mapSubscriptionStatus(sub.status),
             stripe_subscription_id: sub.id,
-            current_period_start: sub.current_period_start
-              ? new Date(sub.current_period_start * 1000).toISOString()
+            current_period_start: periodStart
+              ? new Date(periodStart * 1000).toISOString()
               : null,
-            current_period_end: sub.current_period_end
-              ? new Date(sub.current_period_end * 1000).toISOString()
+            current_period_end: periodEnd
+              ? new Date(periodEnd * 1000).toISOString()
               : null,
             cancel_at_period_end: sub.cancel_at_period_end ?? false,
             trial_ends_at: sub.trial_end
