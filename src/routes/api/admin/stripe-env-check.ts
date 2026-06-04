@@ -16,9 +16,7 @@ export const Route = createFileRoute("/api/admin/stripe-env-check")({
           return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
         }
 
-        const { getSupabaseAsUser } = await import(
-          "@/integrations/supabase/admin.server"
-        );
+        const { getSupabaseAsUser } = await import("@/integrations/supabase/admin.server");
 
         let asUser: ReturnType<typeof getSupabaseAsUser>;
         let userId: string;
@@ -62,12 +60,8 @@ export const Route = createFileRoute("/api/admin/stripe-env-check")({
           STRIPE_PRICE_PRO_REGION: Boolean(env.STRIPE_PRICE_PRO_REGION),
           STRIPE_WEBHOOK_SECRET: Boolean(env.STRIPE_WEBHOOK_SECRET),
           GETSTAMPD_SUPABASE_URL: Boolean(env.GETSTAMPD_SUPABASE_URL),
-          GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY: Boolean(
-            env.GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY,
-          ),
-          GETSTAMPD_SUPABASE_PUBLISHABLE_KEY: Boolean(
-            env.GETSTAMPD_SUPABASE_PUBLISHABLE_KEY,
-          ),
+          GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY: Boolean(env.GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY),
+          GETSTAMPD_SUPABASE_PUBLISHABLE_KEY: Boolean(env.GETSTAMPD_SUPABASE_PUBLISHABLE_KEY),
         });
       },
     },
