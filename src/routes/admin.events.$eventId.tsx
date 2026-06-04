@@ -27,6 +27,10 @@ import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics
 import { DiagnosticCopyButton } from "@/components/diagnostic-panel";
 import { resolveEventPalette } from "@/lib/event-palettes";
 import { getBackground } from "@/lib/event-backgrounds";
+import {
+  getPlanByCode,
+  getNextPlanAfter,
+} from "@/lib/getstampd-pricing";
 
 type LoadDiagnostic = {
   step: string;
