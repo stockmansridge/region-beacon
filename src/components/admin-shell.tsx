@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Shield, CreditCard, Bug, Menu, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Calendar, BarChart3, LogOut, Shield, CreditCard, Bug, Menu, LifeBuoy } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
@@ -136,9 +136,6 @@ export function AdminShell({
         className={footerLinkClass}
       >
         <LifeBuoy className="h-4 w-4 text-[#94A3B8]" /> Contact support
-      </button>
-      <button type="button" className={footerLinkClass}>
-        <Settings className="h-4 w-4 text-[#94A3B8]" /> Settings
       </button>
       <button type="button" onClick={handleSignOut} className={footerLinkClass}>
         <LogOut className="h-4 w-4 text-[#94A3B8]" /> Sign out
