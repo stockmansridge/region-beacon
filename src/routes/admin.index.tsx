@@ -4,6 +4,14 @@ import { Calendar, MapPin, QrCode, Users } from "lucide-react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import {
+  getPlanByCode,
+  getVenueUsageMessage,
+  getNextPlanAfter,
+  getNextPlanForVenueCount,
+  formatVenueLimit,
+} from "@/lib/getstampd-pricing";
+
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Admin dashboard" }] }),
@@ -13,12 +21,20 @@ export const Route = createFileRoute("/admin/")({
 
 type Counts = { events: number; venues: number; checkins: number; visitors: number };
 
+type SubscriptionRow = {
+  id: string;
+  plan_code: string | null;
+  status: string;
+};
+
 function Dashboard() {
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
   const [counts, setCounts] = useState<Counts | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!agencyId) return;
@@ -30,11 +46,18 @@ function Dashboard() {
       // Per-table count queries scoped to the selected agency. RLS enforces tenancy;
       // the explicit agency_id filter keeps the query well-formed and indexed.
       const head = { count: "exact" as const, head: true };
-      const [events, venues, checkins, visitors] = await Promise.all([
+      const [events, venues, checkins, visitors, subRes] = await Promise.all([
         supabase.from("events").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("venues").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("checkins").select("id", head).eq("agency_id", agencyId),
         supabase.from("visitors").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
+        supabase
+          .from("agency_subscriptions")
+          .select("id, plan_code, status")
+          .eq("agency_id", agencyId)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       if (cancelled) return;
@@ -50,6 +73,7 @@ function Dashboard() {
         checkins: checkins.count ?? 0,
         visitors: visitors.count ?? 0,
       });
+      setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
       setLoading(false);
     })();
 
@@ -89,6 +113,39 @@ function Dashboard() {
     },
   ];
 
+  const currentPlan = getPlanByCode(subscription?.plan_code);
+  const venueCount = counts?.venues ?? 0;
+  const venueUsageMessage = getVenueUsageMessage(venueCount, currentPlan);
+  const nextPlan =
+    getNextPlanAfter(currentPlan.code) ?? getNextPlanForVenueCount(venueCount);
+  const limit = currentPlan.venueLimit;
+
+  let venueNotice: { tone: "info" | "warn" | "danger"; message: string } | null = null;
+  if (limit !== null) {
+    if (venueCount > limit) {
+      venueNotice = {
+        tone: "danger",
+        message: `This organisation is over the ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` Upgrade to ${nextPlan.name} or higher.` : ""
+        }`,
+      };
+    } else if (venueCount >= limit) {
+      venueNotice = {
+        tone: "warn",
+        message: `You have reached the ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` Upgrade to ${nextPlan.name} to add more venues.` : ""
+        }`,
+      };
+    } else if (limit - venueCount <= 1) {
+      venueNotice = {
+        tone: "info",
+        message: `You are close to your ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` ${nextPlan.name} includes ${formatVenueLimit(nextPlan.venueLimit).toLowerCase()}.` : ""
+        }`,
+      };
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -99,6 +156,50 @@ function Dashboard() {
             : "Overview of your white-label event passports."
         }
       />
+
+      {/* Venue usage plan banner */}
+      {agencyId && (
+        <div className="mb-5 rounded-[12px] border border-[#D9E2EF] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:flex sm:items-center sm:justify-between sm:gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="inline-flex items-center rounded-full bg-[#EAF2FF] px-2.5 py-0.5 text-xs font-semibold text-[#2F6FE4]">
+                {currentPlan.name}
+              </span>
+              <span className="text-[#64748B]">{venueUsageMessage}</span>
+            </div>
+            {venueNotice && (
+              <div
+                className={`mt-2 rounded-md border px-3 py-2 text-xs ${
+                  venueNotice.tone === "danger"
+                    ? "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]"
+                    : venueNotice.tone === "warn"
+                      ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                      : "border-sky-500/40 bg-sky-500/10 text-sky-800 dark:text-sky-300"
+                }`}
+              >
+                {venueNotice.message}
+              </div>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
+            <Link
+              to="/admin/account"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-[#D9E2EF] bg-white px-4 text-sm font-medium text-[#111827] hover:bg-[#F8FAFC]"
+            >
+              View plans
+            </Link>
+            <button
+              type="button"
+              disabled
+              title="Online billing is coming soon. You can continue setting up and testing GetStampd."
+              className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-lg border bg-[#F1F5F9] px-4 text-sm font-medium text-[#64748B] opacity-70"
+            >
+              Upgrade plan
+            </button>
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="mb-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
           {error}
