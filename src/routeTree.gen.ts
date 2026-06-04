@@ -56,6 +56,8 @@ import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as ApiAdminStripeEnvCheckRouteImport } from './routes/api/admin/stripe-env-check'
+import { Route as ApiAdminCreateStripeCheckoutRouteImport } from './routes/api/admin/create-stripe-checkout'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
 import { Route as LiveSubdomainVenuesIndexRouteImport } from './routes/live.$subdomain.venues.index'
 import { Route as TAgencySlugEEventSlugRouteImport } from './routes/t.$agencySlug.e.$eventSlug'
@@ -300,6 +302,17 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   path: '/api/public/stripe-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminStripeEnvCheckRoute = ApiAdminStripeEnvCheckRouteImport.update({
+  id: '/api/admin/stripe-env-check',
+  path: '/api/admin/stripe-env-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminCreateStripeCheckoutRoute =
+  ApiAdminCreateStripeCheckoutRouteImport.update({
+    id: '/api/admin/create-stripe-checkout',
+    path: '/api/admin/create-stripe-checkout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
   id: '/events/$eventId',
   path: '/events/$eventId',
@@ -379,6 +392,8 @@ export interface FileRoutesByFullPath {
   '/passport/': typeof PassportIndexRoute
   '/venues/': typeof VenuesIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/api/admin/create-stripe-checkout': typeof ApiAdminCreateStripeCheckoutRoute
+  '/api/admin/stripe-env-check': typeof ApiAdminStripeEnvCheckRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
@@ -434,6 +449,8 @@ export interface FileRoutesByTo {
   '/passport': typeof PassportIndexRoute
   '/venues': typeof VenuesIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/api/admin/create-stripe-checkout': typeof ApiAdminCreateStripeCheckoutRoute
+  '/api/admin/stripe-env-check': typeof ApiAdminStripeEnvCheckRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
@@ -491,6 +508,8 @@ export interface FileRoutesById {
   '/passport/': typeof PassportIndexRoute
   '/venues/': typeof VenuesIndexRoute
   '/admin/events/$eventId': typeof AdminEventsEventIdRoute
+  '/api/admin/create-stripe-checkout': typeof ApiAdminCreateStripeCheckoutRoute
+  '/api/admin/stripe-env-check': typeof ApiAdminStripeEnvCheckRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
@@ -549,6 +568,8 @@ export interface FileRouteTypes {
     | '/passport/'
     | '/venues/'
     | '/admin/events/$eventId'
+    | '/api/admin/create-stripe-checkout'
+    | '/api/admin/stripe-env-check'
     | '/api/public/stripe-webhook'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
@@ -604,6 +625,8 @@ export interface FileRouteTypes {
     | '/passport'
     | '/venues'
     | '/admin/events/$eventId'
+    | '/api/admin/create-stripe-checkout'
+    | '/api/admin/stripe-env-check'
     | '/api/public/stripe-webhook'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
@@ -660,6 +683,8 @@ export interface FileRouteTypes {
     | '/passport/'
     | '/venues/'
     | '/admin/events/$eventId'
+    | '/api/admin/create-stripe-checkout'
+    | '/api/admin/stripe-env-check'
     | '/api/public/stripe-webhook'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
@@ -709,6 +734,8 @@ export interface RootRouteChildren {
   DemoIndexRoute: typeof DemoIndexRoute
   PassportIndexRoute: typeof PassportIndexRoute
   VenuesIndexRoute: typeof VenuesIndexRoute
+  ApiAdminCreateStripeCheckoutRoute: typeof ApiAdminCreateStripeCheckoutRoute
+  ApiAdminStripeEnvCheckRoute: typeof ApiAdminStripeEnvCheckRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
@@ -1054,6 +1081,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/stripe-env-check': {
+      id: '/api/admin/stripe-env-check'
+      path: '/api/admin/stripe-env-check'
+      fullPath: '/api/admin/stripe-env-check'
+      preLoaderRoute: typeof ApiAdminStripeEnvCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/create-stripe-checkout': {
+      id: '/api/admin/create-stripe-checkout'
+      path: '/api/admin/create-stripe-checkout'
+      fullPath: '/api/admin/create-stripe-checkout'
+      preLoaderRoute: typeof ApiAdminCreateStripeCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/events/$eventId': {
       id: '/admin/events/$eventId'
       path: '/events/$eventId'
@@ -1190,6 +1231,8 @@ const rootRouteChildren: RootRouteChildren = {
   DemoIndexRoute: DemoIndexRoute,
   PassportIndexRoute: PassportIndexRoute,
   VenuesIndexRoute: VenuesIndexRoute,
+  ApiAdminCreateStripeCheckoutRoute: ApiAdminCreateStripeCheckoutRoute,
+  ApiAdminStripeEnvCheckRoute: ApiAdminStripeEnvCheckRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,

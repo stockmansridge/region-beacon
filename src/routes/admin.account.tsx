@@ -6,8 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useAuth } from "@/hooks/use-auth";
-import { useServerFn } from "@tanstack/react-start";
-import { createStripeCheckout } from "@/lib/stripe-checkout.functions";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { formatRoleLabel } from "@/lib/role-labels";
 import {
@@ -127,8 +125,6 @@ function AccountPage() {
     { tone: "success" | "warn"; message: string } | null
   >(null);
 
-  const checkoutFn = useServerFn(createStripeCheckout);
-
   // Read ?checkout=success | cancelled once on mount and clean the URL.
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -182,21 +178,25 @@ function AccountPage() {
           setCheckoutPlanCode(null);
           return;
         }
-        const result = await checkoutFn({
-          data: {
+        const response = await fetch("/api/admin/create-stripe-checkout", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
             agency_id: agencyId,
             plan_code: planCode,
-            access_token: accessToken,
-            origin: window.location.origin,
-          },
+          }),
         });
+        const result = (await response.json().catch(() => ({
+          ok: false,
+          error: "Stripe Checkout returned an invalid response.",
+        }))) as { ok: true; url: string } | { ok: false; error: string };
         if (!result.ok) {
           console.error("[checkout] server returned error", result.error);
           setLastCheckoutError(result.error);
-          toast.error(
-            result.error +
-              " You can submit an upgrade request below as a fallback.",
-          );
+          toast.error(result.error + " You can submit an upgrade request below as a fallback.");
           setCheckoutPlanCode(null);
           return;
         }
@@ -209,7 +209,7 @@ function AccountPage() {
         setCheckoutPlanCode(null);
       }
     },
-    [agencyId, checkoutFn],
+    [agencyId],
   );
 
   const isPlatformAdmin = access.isPlatformAdmin;
