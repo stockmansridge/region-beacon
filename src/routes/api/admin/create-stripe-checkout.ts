@@ -4,16 +4,9 @@ import type Stripe from "stripe";
 
 type PaidPlanCode = "starter" | "growth" | "regional" | "pro_region";
 
-type CheckoutResponse =
-  | { ok: true; url: string }
-  | { ok: false; error: string };
+type CheckoutResponse = { ok: true; url: string } | { ok: false; error: string };
 
-const PAID_PLAN_CODES = new Set<string>([
-  "starter",
-  "growth",
-  "regional",
-  "pro_region",
-]);
+const PAID_PLAN_CODES = new Set<string>(["starter", "growth", "regional", "pro_region"]);
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -52,10 +45,7 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
         const agencyId = typeof body.agency_id === "string" ? body.agency_id : "";
         const planCode = typeof body.plan_code === "string" ? body.plan_code : "";
         if (!agencyId || !planCode) {
-          return jsonResponse(
-            { ok: false, error: "Missing agency_id or plan_code." },
-            400,
-          );
+          return jsonResponse({ ok: false, error: "Missing agency_id or plan_code." }, 400);
         }
         if (!UUID_RE.test(agencyId)) {
           return jsonResponse({ ok: false, error: "Invalid agency_id." }, 400);
@@ -94,9 +84,8 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
         }
 
         const { getStripeClient, getPriceIdForPlan } = await import("@/lib/stripe.server");
-        const { getSupabaseAdmin, getSupabaseAsUser } = await import(
-          "@/integrations/supabase/admin.server"
-        );
+        const { getSupabaseAdmin, getSupabaseAsUser } =
+          await import("@/integrations/supabase/admin.server");
 
         let userId: string;
         let userEmail: string | null;
@@ -146,9 +135,7 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
 
         const isPlatformAdmin = (roles ?? []).some((r) => r.role === "platform_admin");
         const isAgencyAdmin = (members ?? []).some(
-          (m) =>
-            m.accepted_at != null &&
-            (m.role === "agency_owner" || m.role === "agency_admin"),
+          (m) => m.accepted_at != null && (m.role === "agency_owner" || m.role === "agency_admin"),
         );
         if (!isPlatformAdmin && !isAgencyAdmin) {
           logErr("permission", "user lacks owner/admin role for agency", {
