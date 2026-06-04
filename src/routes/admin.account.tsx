@@ -170,11 +170,15 @@ function AccountPage() {
         return;
       }
       setCheckoutPlanCode(planCode);
+      setLastCheckoutError(null);
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData.session?.access_token;
+        setHasAccessToken(Boolean(accessToken));
         if (!accessToken) {
-          toast.error("Please sign in again to continue.");
+          const msg = "No Supabase access token found. Please sign in again.";
+          setLastCheckoutError(msg);
+          toast.error(msg);
           setCheckoutPlanCode(null);
           return;
         }
@@ -187,6 +191,8 @@ function AccountPage() {
           },
         });
         if (!result.ok) {
+          console.error("[checkout] server returned error", result.error);
+          setLastCheckoutError(result.error);
           toast.error(
             result.error +
               " You can submit an upgrade request below as a fallback.",
@@ -196,10 +202,10 @@ function AccountPage() {
         }
         window.location.assign(result.url);
       } catch (err) {
-        console.error("[checkout] failed", err);
-        toast.error(
-          "Could not open Stripe Checkout. Please try the upgrade request flow.",
-        );
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[checkout] threw", err);
+        setLastCheckoutError(msg);
+        toast.error(`Could not open Stripe Checkout: ${msg}`);
         setCheckoutPlanCode(null);
       }
     },
