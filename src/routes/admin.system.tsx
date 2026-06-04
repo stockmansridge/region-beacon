@@ -139,6 +139,7 @@ type SubscriptionRow = {
   cancel_at_period_end: boolean | null;
   trial_ends_at: string | null;
   updated_at: string | null;
+  stripe_subscription_id: string | null;
 };
 
 type AuditRow = {
@@ -855,6 +856,7 @@ function OrganisationDetailDrawer({
   const [idCopied, setIdCopied] = useState(false);
   const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
   const [planForm, setPlanForm] = useState<{ plan_code: string; status: string }>({
@@ -866,16 +868,21 @@ function OrganisationDetailDrawer({
   const loadPlan = useCallback(async (agencyId: string) => {
     setPlanLoading(true);
     setPlanError(null);
-    const [limitsRes, subRes] = await Promise.all([
+    const [limitsRes, subRes, billingRes] = await Promise.all([
       supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
       supabase
         .from("agency_subscriptions")
         .select(
-          "id, plan_code, status, current_period_start, current_period_end, cancel_at_period_end, trial_ends_at, updated_at",
+          "id, plan_code, status, current_period_start, current_period_end, cancel_at_period_end, trial_ends_at, updated_at, stripe_subscription_id",
         )
         .eq("agency_id", agencyId)
         .order("updated_at", { ascending: false })
         .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("agency_billing_accounts")
+        .select("stripe_customer_id")
+        .eq("agency_id", agencyId)
         .maybeSingle(),
     ]);
     if (limitsRes.error) {
@@ -886,6 +893,11 @@ function OrganisationDetailDrawer({
     }
     const sub = subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null);
     setSubscription(sub);
+    const stripeCustomer =
+      billingRes.error || !billingRes.data
+        ? null
+        : ((billingRes.data as { stripe_customer_id: string | null }).stripe_customer_id ?? null);
+    setStripeCustomerId(stripeCustomer);
     setPlanForm({
       plan_code: normalizePlanCode(sub?.plan_code ?? "free"),
       status: sub?.status && sub.status !== "none" ? sub.status : "active",
@@ -1108,6 +1120,24 @@ function OrganisationDetailDrawer({
                         No subscription row. Effective plan is Free.
                       </div>
                     )}
+                    <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-[#0F172A] sm:grid-cols-2">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">
+                          Stripe customer
+                        </div>
+                        <code className="break-all text-[11px] text-[#0F172A]">
+                          {stripeCustomerId ?? "—"}
+                        </code>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-[#64748B]">
+                          Stripe subscription
+                        </div>
+                        <code className="break-all text-[11px] text-[#0F172A]">
+                          {subscription?.stripe_subscription_id ?? "—"}
+                        </code>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="rounded-[10px] border border-[#FCD34D] bg-[#FFFBEB] p-3">

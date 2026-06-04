@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useAuth } from "@/hooks/use-auth";
+import { useServerFn } from "@tanstack/react-start";
+import { createStripeCheckout } from "@/lib/stripe-checkout.functions";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { formatRoleLabel } from "@/lib/role-labels";
 import {
@@ -118,6 +120,89 @@ function AccountPage() {
   const [upgradeRequests, setUpgradeRequests] = useState<UpgradeRequestRow[] | null>(null);
   const [upgradeTableMissing, setUpgradeTableMissing] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<PricingPlan | null>(null);
+  const [checkoutPlanCode, setCheckoutPlanCode] = useState<string | null>(null);
+  const [checkoutBanner, setCheckoutBanner] = useState<
+    { tone: "success" | "warn"; message: string } | null
+  >(null);
+
+  const checkoutFn = useServerFn(createStripeCheckout);
+
+  // Read ?checkout=success | cancelled once on mount and clean the URL.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get("checkout");
+    if (v === "success") {
+      setCheckoutBanner({
+        tone: "success",
+        message: "Payment received. Your plan will update shortly.",
+      });
+    } else if (v === "cancelled") {
+      setCheckoutBanner({
+        tone: "warn",
+        message: "Checkout was cancelled. Your plan was not changed.",
+      });
+    }
+    if (v) {
+      params.delete("checkout");
+      const search = params.toString();
+      const url =
+        window.location.pathname + (search ? `?${search}` : "") + window.location.hash;
+      window.history.replaceState(null, "", url);
+    }
+  }, []);
+
+  const handleCheckout = useCallback(
+    async (plan: PricingPlan) => {
+      if (!agencyId) {
+        toast.error("Select an organisation first.");
+        return;
+      }
+      const planCode = plan.code;
+      if (
+        planCode !== "starter" &&
+        planCode !== "growth" &&
+        planCode !== "regional" &&
+        planCode !== "pro_region"
+      ) {
+        return;
+      }
+      setCheckoutPlanCode(planCode);
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) {
+          toast.error("Please sign in again to continue.");
+          setCheckoutPlanCode(null);
+          return;
+        }
+        const result = await checkoutFn({
+          data: {
+            agency_id: agencyId,
+            plan_code: planCode,
+            access_token: accessToken,
+            origin: window.location.origin,
+          },
+        });
+        if (!result.ok) {
+          toast.error(
+            result.error +
+              " You can submit an upgrade request below as a fallback.",
+          );
+          setCheckoutPlanCode(null);
+          return;
+        }
+        window.location.assign(result.url);
+      } catch (err) {
+        console.error("[checkout] failed", err);
+        toast.error(
+          "Could not open Stripe Checkout. Please try the upgrade request flow.",
+        );
+        setCheckoutPlanCode(null);
+      }
+    },
+    [agencyId, checkoutFn],
+  );
 
   const isPlatformAdmin = access.isPlatformAdmin;
 
@@ -343,6 +428,20 @@ function AccountPage() {
         </div>
       )}
 
+      {checkoutBanner && (
+        <div
+          className={`mb-4 rounded-md border px-4 py-3 text-sm ${
+            checkoutBanner.tone === "success"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+          }`}
+        >
+          {checkoutBanner.message}
+        </div>
+      )}
+
+
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Organisation">
           <OrganisationNameEditor
@@ -418,6 +517,8 @@ function AccountPage() {
               key={plan.code}
               plan={plan}
               isCurrent={plan.code === currentPlan.code}
+              isCheckoutLoading={checkoutPlanCode === plan.code}
+              onCheckout={() => handleCheckout(plan)}
               onRequest={() => setUpgradePlan(plan)}
             />
           ))}
@@ -600,13 +701,59 @@ function AccountPage() {
 function PricingCard({
   plan,
   isCurrent,
+  isCheckoutLoading,
+  onCheckout,
   onRequest,
 }: {
   plan: PricingPlan;
   isCurrent: boolean;
+  isCheckoutLoading: boolean;
+  onCheckout: () => void;
   onRequest: () => void;
 }) {
   const recommended = plan.recommended === true;
+  const isPaid =
+    plan.code === "starter" ||
+    plan.code === "growth" ||
+    plan.code === "regional" ||
+    plan.code === "pro_region";
+  const isEnterprise = plan.code === "enterprise";
+  const isFree = plan.code === "free";
+
+  let label: string;
+  let onClick: (() => void) | undefined;
+  let disabled = false;
+  let helpText: string;
+
+  if (isCurrent) {
+    label = "Current plan";
+    onClick = undefined;
+    disabled = true;
+    helpText = "This is your active plan.";
+  } else if (isCheckoutLoading) {
+    label = "Opening Stripe…";
+    onClick = undefined;
+    disabled = true;
+    helpText = "Redirecting to Stripe Checkout…";
+  } else if (isPaid) {
+    label = plan.cta;
+    onClick = onCheckout;
+    helpText = "Pay securely with Stripe. Activation is automatic.";
+  } else if (isEnterprise) {
+    label = plan.cta;
+    onClick = onRequest;
+    helpText = "We'll reach out to scope your Enterprise plan.";
+  } else if (isFree) {
+    label = "Free plan";
+    onClick = undefined;
+    disabled = true;
+    helpText = "Downgrades aren't self-serve yet. Contact support if you need to step down.";
+  } else {
+    label = plan.cta;
+    onClick = onRequest;
+    helpText = UPGRADE_CTA_HELP;
+  }
+
   return (
     <div
       className={`relative flex h-full flex-col rounded-xl border bg-card p-5 ${
@@ -638,15 +785,13 @@ function PricingCard({
       <div className="mt-auto">
         <button
           type="button"
-          onClick={isCurrent ? undefined : onRequest}
-          disabled={isCurrent}
+          onClick={onClick}
+          disabled={disabled}
           className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:opacity-60"
         >
-          {isCurrent ? "Current plan" : plan.cta}
+          {label}
         </button>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          {isCurrent ? "This is your active plan." : UPGRADE_CTA_HELP}
-        </p>
+        <p className="mt-2 text-[11px] text-muted-foreground">{helpText}</p>
       </div>
     </div>
   );
