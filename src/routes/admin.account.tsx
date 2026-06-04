@@ -196,6 +196,32 @@ function AccountPage() {
     };
   }, [canView, agencyId, loadAll]);
 
+  const loadUpgradeRequests = useCallback(async () => {
+    if (!agencyId) return;
+    const { data, error: reqErr } = await supabase
+      .from("upgrade_requests" as never)
+      .select("id, requested_plan_code, requested_plan_name, status, message, created_at")
+      .eq("agency_id", agencyId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (reqErr) {
+      if (isMissingTableError(reqErr)) {
+        setUpgradeTableMissing(true);
+        setUpgradeRequests([]);
+        return;
+      }
+      setUpgradeRequests([]);
+      return;
+    }
+    setUpgradeTableMissing(false);
+    setUpgradeRequests((data ?? []) as UpgradeRequestRow[]);
+  }, [agencyId]);
+
+  useEffect(() => {
+    if (!canView || !agencyId) return;
+    void loadUpgradeRequests();
+  }, [canView, agencyId, loadUpgradeRequests]);
+
   const runManualActivation = useCallback(
     async (
       eventId: string,
