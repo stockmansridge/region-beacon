@@ -211,11 +211,41 @@ function AccountPage() {
     activationByEvent.set(a.event_id, a);
   }
 
-  const planLabel = subscription?.plan_code ?? (subscription ? "—" : "No plan");
+  const currentPlan = getPlanByCode(subscription?.plan_code);
   const subStatus = subscription?.status ?? "none";
   const periodEnd = subscription?.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString()
     : null;
+
+  const venueUsageMessage = getVenueUsageMessage(venueCount, currentPlan);
+  const nextPlan =
+    getNextPlanAfter(currentPlan.code) ?? getNextPlanForVenueCount(venueCount);
+  const limit = currentPlan.venueLimit;
+  let venueNotice: { tone: "info" | "warn" | "danger"; message: string } | null = null;
+  if (limit !== null) {
+    if (venueCount > limit) {
+      venueNotice = {
+        tone: "danger",
+        message: `This organisation is over the ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` Upgrade to ${nextPlan.name} or higher.` : ""
+        }`,
+      };
+    } else if (venueCount >= limit) {
+      venueNotice = {
+        tone: "warn",
+        message: `You have reached the ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` Upgrade to ${nextPlan.name} to add more venues.` : ""
+        }`,
+      };
+    } else if (limit - venueCount <= 1) {
+      venueNotice = {
+        tone: "info",
+        message: `You are close to your ${currentPlan.name} plan venue limit.${
+          nextPlan ? ` ${nextPlan.name} includes ${formatVenueLimit(nextPlan.venueLimit).toLowerCase()}.` : ""
+        }`,
+      };
+    }
+  }
 
   const formatActivation = (a: ActivationRow | undefined) => {
     if (!a) return "Not activated";
