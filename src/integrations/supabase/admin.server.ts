@@ -14,11 +14,18 @@ function pickEnv(...names: string[]): string | undefined {
 }
 
 export function getSupabaseAdmin(): SupabaseClient {
-  const url = pickEnv("SUPABASE_URL", "VITE_SUPABASE_URL");
-  const serviceKey = pickEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const url = pickEnv(
+    "GETSTAMPD_SUPABASE_URL",
+    "SUPABASE_URL",
+    "VITE_SUPABASE_URL",
+  );
+  const serviceKey = pickEnv(
+    "GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+  );
   if (!url || !serviceKey) {
     throw new Error(
-      "Supabase admin not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+      "Missing GetStampd Supabase server config. Set GETSTAMPD_SUPABASE_URL and GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY in Lovable Cloud secrets.",
     );
   }
   return createClient(url, serviceKey, {
@@ -29,10 +36,20 @@ export function getSupabaseAdmin(): SupabaseClient {
 // Auth-aware client that runs as the signed-in user (RLS applies). Used to
 // validate the caller's identity and agency membership inside server fns.
 export function getSupabaseAsUser(accessToken: string): SupabaseClient {
-  const url = pickEnv("SUPABASE_URL", "VITE_SUPABASE_URL");
-  const anonKey = pickEnv("SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_PUBLISHABLE_KEY");
+  const url = pickEnv(
+    "GETSTAMPD_SUPABASE_URL",
+    "SUPABASE_URL",
+    "VITE_SUPABASE_URL",
+  );
+  const anonKey = pickEnv(
+    "GETSTAMPD_SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+  );
   if (!url || !anonKey) {
-    throw new Error("Supabase URL or publishable key not configured.");
+    throw new Error(
+      "Missing GetStampd Supabase user config. Set GETSTAMPD_SUPABASE_URL and GETSTAMPD_SUPABASE_PUBLISHABLE_KEY in Lovable Cloud secrets.",
+    );
   }
   return createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
