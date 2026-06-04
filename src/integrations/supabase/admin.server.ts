@@ -3,14 +3,10 @@
 // the browser bundle.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import process from "node:process";
+import { pickServerEnv } from "@/lib/server-env.server";
 
 function pickEnv(...names: string[]): string | undefined {
-  for (const n of names) {
-    const v = process.env[n];
-    if (v) return v;
-  }
-  return undefined;
+  return pickServerEnv(...names);
 }
 
 export function getSupabaseAdmin(): SupabaseClient {
