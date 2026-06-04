@@ -14,33 +14,96 @@ const InputSchema = z.object({
   origin: z.string().url(),
 });
 
+function logErr(stage: string, msg: string, extra?: Record<string, unknown>) {
+  // Plain, non-secret server logs to make diagnosis easy without exposing values.
+  console.error(`[stripe-checkout] ${stage}: ${msg}`, extra ?? {});
+}
+
 export const createStripeCheckout = createServerFn({ method: "POST" })
   .inputValidator((input) => InputSchema.parse(input))
   .handler(async ({ data }) => {
+    // 0. Env presence checks first — surface clear, actionable errors.
+    const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+      .process?.env ?? {};
+    const missingEnv: string[] = [];
+    if (!env.STRIPE_SECRET_KEY) missingEnv.push("STRIPE_SECRET_KEY");
+    if (!env.SUPABASE_URL && !env.VITE_SUPABASE_URL) {
+      missingEnv.push("SUPABASE_URL");
+    }
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+      missingEnv.push("SUPABASE_SERVICE_ROLE_KEY");
+    }
+    if (
+      !env.SUPABASE_PUBLISHABLE_KEY &&
+      !env.VITE_SUPABASE_PUBLISHABLE_KEY
+    ) {
+      missingEnv.push("SUPABASE_PUBLISHABLE_KEY");
+    }
+    const priceEnvName = `STRIPE_PRICE_${data.plan_code.toUpperCase()}`;
+    if (!env[priceEnvName]) missingEnv.push(priceEnvName);
+
+    if (missingEnv.length > 0) {
+      logErr("config", "missing environment variables", { missing: missingEnv });
+      return {
+        ok: false as const,
+        error: `Server is missing configuration: ${missingEnv.join(", ")}. Set these in Lovable Cloud secrets and republish.`,
+      };
+    }
+
     const { getStripeClient, getPriceIdForPlan } = await import("./stripe.server");
     const { getSupabaseAdmin, getSupabaseAsUser } = await import(
       "@/integrations/supabase/admin.server"
     );
 
     // 1. Verify caller identity.
-    const asUser = getSupabaseAsUser(data.access_token);
-    const { data: userRes, error: userErr } = await asUser.auth.getUser();
-    if (userErr || !userRes?.user) {
-      return { ok: false as const, error: "Not signed in. Please sign in and try again." };
+    let userId: string;
+    let userEmail: string | null;
+    try {
+      const asUser = getSupabaseAsUser(data.access_token);
+      const { data: userRes, error: userErr } = await asUser.auth.getUser();
+      if (userErr || !userRes?.user) {
+        logErr("auth", "getUser failed", { error: userErr?.message });
+        return {
+          ok: false as const,
+          error: "Not signed in. Please sign in and try again.",
+        };
+      }
+      userId = userRes.user.id;
+      userEmail = userRes.user.email ?? null;
+    } catch (err) {
+      logErr("auth", "supabase client init failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return {
+        ok: false as const,
+        error:
+          err instanceof Error
+            ? `Supabase auth init failed: ${err.message}`
+            : "Supabase auth init failed.",
+      };
     }
-    const userId = userRes.user.id;
-    const userEmail = userRes.user.email ?? null;
 
     // 2. Verify agency membership (owner/admin) or platform admin.
     const admin = getSupabaseAdmin();
-    const [{ data: roles }, { data: members }] = await Promise.all([
-      admin.from("user_roles").select("role").eq("user_id", userId),
-      admin
-        .from("agency_members")
-        .select("role, accepted_at")
-        .eq("user_id", userId)
-        .eq("agency_id", data.agency_id),
-    ]);
+    const [{ data: roles, error: rolesErr }, { data: members, error: membersErr }] =
+      await Promise.all([
+        admin.from("user_roles").select("role").eq("user_id", userId),
+        admin
+          .from("agency_members")
+          .select("role, accepted_at")
+          .eq("user_id", userId)
+          .eq("agency_id", data.agency_id),
+      ]);
+    if (rolesErr || membersErr) {
+      logErr("permission", "lookup failed", {
+        roles_error: rolesErr?.message,
+        members_error: membersErr?.message,
+      });
+      return {
+        ok: false as const,
+        error: "Could not verify your permissions. Please try again.",
+      };
+    }
     const isPlatformAdmin = (roles ?? []).some((r) => r.role === "platform_admin");
     const isAgencyAdmin = (members ?? []).some(
       (m) =>
@@ -48,6 +111,10 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
         (m.role === "agency_owner" || m.role === "agency_admin"),
     );
     if (!isPlatformAdmin && !isAgencyAdmin) {
+      logErr("permission", "user lacks owner/admin role for agency", {
+        user_id: userId,
+        agency_id: data.agency_id,
+      });
       return {
         ok: false as const,
         error: "You don't have permission to manage billing for this organisation.",
@@ -64,11 +131,24 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
 
     let stripeCustomerId = billingAccount?.stripe_customer_id ?? null;
     if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
-        email: billingAccount?.billing_email ?? userEmail ?? undefined,
-        metadata: { agency_id: data.agency_id },
-      });
-      stripeCustomerId = customer.id;
+      try {
+        const customer = await stripe.customers.create({
+          email: billingAccount?.billing_email ?? userEmail ?? undefined,
+          metadata: { agency_id: data.agency_id },
+        });
+        stripeCustomerId = customer.id;
+      } catch (err) {
+        logErr("stripe", "customer create failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return {
+          ok: false as const,
+          error:
+            err instanceof Error
+              ? `Stripe customer create failed: ${err.message}`
+              : "Stripe customer create failed.",
+        };
+      }
       if (billingAccount) {
         await admin
           .from("agency_billing_accounts")
@@ -83,17 +163,60 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
       }
     }
 
-    // 4. Create Checkout Session.
+    // 4. Resolve price id.
     let priceId: string;
     try {
       priceId = getPriceIdForPlan(data.plan_code);
     } catch (err) {
+      logErr("config", "price id missing", {
+        plan: data.plan_code,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return {
         ok: false as const,
         error: err instanceof Error ? err.message : "Stripe price not configured.",
       };
     }
 
+    // 5. Pre-flight: verify the price exists and is recurring (so we catch
+    //    "No such price" or mode mismatch before checkout.sessions.create
+    //    returns a less specific error).
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      if (!price.active) {
+        logErr("stripe", "price is not active", { plan: data.plan_code, price_id: priceId });
+        return {
+          ok: false as const,
+          error: `Stripe price for ${data.plan_code} is inactive. Update the price in Stripe or change the price ID secret.`,
+        };
+      }
+      if (price.type !== "recurring") {
+        logErr("stripe", "price is not recurring", {
+          plan: data.plan_code,
+          price_id: priceId,
+          type: price.type,
+        });
+        return {
+          ok: false as const,
+          error: `Stripe price for ${data.plan_code} is not a recurring (subscription) price. Use a subscription price ID.`,
+        };
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logErr("stripe", "price retrieve failed", {
+        plan: data.plan_code,
+        price_id: priceId,
+        error: message,
+      });
+      // Common: "No such price" — usually means the secret key mode (test/live)
+      // doesn't match the price's mode, or the ID is wrong.
+      return {
+        ok: false as const,
+        error: `Stripe could not load the ${data.plan_code} price (${priceId}). Check that ${priceEnvName} matches your STRIPE_SECRET_KEY mode (test vs live). Stripe said: ${message}`,
+      };
+    }
+
+    // 6. Create Checkout Session.
     try {
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -116,17 +239,16 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
         allow_promotion_codes: true,
       });
       if (!session.url) {
+        logErr("stripe", "checkout session returned no url");
         return { ok: false as const, error: "Stripe did not return a checkout URL." };
       }
       return { ok: true as const, url: session.url };
     } catch (err) {
-      console.error("[stripe-checkout] create session failed", err);
+      const message = err instanceof Error ? err.message : String(err);
+      logErr("stripe", "checkout session create failed", { error: message });
       return {
         ok: false as const,
-        error:
-          err instanceof Error
-            ? err.message
-            : "Could not create Stripe checkout session.",
+        error: `Stripe checkout session create failed: ${message}`,
       };
     }
   });

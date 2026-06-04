@@ -121,6 +121,8 @@ function AccountPage() {
   const [upgradeTableMissing, setUpgradeTableMissing] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<PricingPlan | null>(null);
   const [checkoutPlanCode, setCheckoutPlanCode] = useState<string | null>(null);
+  const [lastCheckoutError, setLastCheckoutError] = useState<string | null>(null);
+  const [hasAccessToken, setHasAccessToken] = useState<boolean | null>(null);
   const [checkoutBanner, setCheckoutBanner] = useState<
     { tone: "success" | "warn"; message: string } | null
   >(null);
@@ -168,11 +170,15 @@ function AccountPage() {
         return;
       }
       setCheckoutPlanCode(planCode);
+      setLastCheckoutError(null);
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData.session?.access_token;
+        setHasAccessToken(Boolean(accessToken));
         if (!accessToken) {
-          toast.error("Please sign in again to continue.");
+          const msg = "No Supabase access token found. Please sign in again.";
+          setLastCheckoutError(msg);
+          toast.error(msg);
           setCheckoutPlanCode(null);
           return;
         }
@@ -185,6 +191,8 @@ function AccountPage() {
           },
         });
         if (!result.ok) {
+          console.error("[checkout] server returned error", result.error);
+          setLastCheckoutError(result.error);
           toast.error(
             result.error +
               " You can submit an upgrade request below as a fallback.",
@@ -194,10 +202,10 @@ function AccountPage() {
         }
         window.location.assign(result.url);
       } catch (err) {
-        console.error("[checkout] failed", err);
-        toast.error(
-          "Could not open Stripe Checkout. Please try the upgrade request flow.",
-        );
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[checkout] threw", err);
+        setLastCheckoutError(msg);
+        toast.error(`Could not open Stripe Checkout: ${msg}`);
         setCheckoutPlanCode(null);
       }
     },
@@ -524,6 +532,56 @@ function AccountPage() {
           ))}
         </div>
       </section>
+
+      {lastCheckoutError && (
+        <div className="mt-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="font-semibold">Stripe Checkout failed</div>
+          <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs">
+            {lastCheckoutError}
+          </div>
+          <button
+            type="button"
+            onClick={() => setLastCheckoutError(null)}
+            className="mt-2 text-xs underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {isPlatformAdmin && (
+        <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-xs">
+          <div className="mb-2 font-semibold text-amber-800 dark:text-amber-300">
+            Stripe checkout diagnostics (platform admin)
+          </div>
+          <dl className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+            <DiagRow label="Selected plan code" value={checkoutPlanCode ?? "—"} />
+            <DiagRow label="Organisation id" value={agencyId ?? "—"} mono />
+            <DiagRow
+              label="Supabase access token"
+              value={
+                hasAccessToken === null
+                  ? "not checked"
+                  : hasAccessToken
+                    ? "present"
+                    : "missing"
+              }
+            />
+            <DiagRow
+              label="Checkout loading"
+              value={checkoutPlanCode ? "yes" : "no"}
+            />
+            <DiagRow
+              label="Last checkout error"
+              value={lastCheckoutError ?? "—"}
+              mono
+            />
+          </dl>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            No secrets are shown. Values are local to this page.
+          </p>
+        </div>
+      )}
 
       {upgradeRequests && upgradeRequests.length > 0 && !upgradeTableMissing && (
         <section className="mt-8">
@@ -1212,6 +1270,15 @@ function OrganisationSlugEditor({
           {saving ? "Saving…" : "Save URL name"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function DiagRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-start gap-2 border-b border-amber-500/10 py-1 last:border-0">
+      <dt className="min-w-[140px] text-muted-foreground">{label}</dt>
+      <dd className={`flex-1 break-all ${mono ? "font-mono" : ""}`}>{value}</dd>
     </div>
   );
 }
