@@ -139,6 +139,7 @@ type SubscriptionRow = {
   cancel_at_period_end: boolean | null;
   trial_ends_at: string | null;
   updated_at: string | null;
+  stripe_subscription_id: string | null;
 };
 
 type AuditRow = {
