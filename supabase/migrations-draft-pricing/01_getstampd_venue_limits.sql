@@ -24,7 +24,7 @@ begin
   from public.agency_subscriptions s
   where s.agency_id = _agency_id
     and s.status in ('active', 'trialing', 'comp')
-  order by s.created_at desc
+  order by s.updated_at desc
   limit 1;
 
   -- Normalise plan code (accept pro-region and pro_region; unknown -> free).
