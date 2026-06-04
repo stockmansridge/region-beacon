@@ -136,11 +136,13 @@ export function AdminShell({
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#071527]">
-      <TestEnvBanner />
+    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#071527]">
+      <div className="shrink-0">
+        <TestEnvBanner />
+      </div>
 
       {/* Mobile top bar (< lg) */}
-      <header className="flex h-14 items-center justify-between border-b border-[#E6ECF4] bg-white px-4 lg:hidden">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#E6ECF4] bg-white px-4 lg:hidden">
         <div className="flex min-w-0 items-center gap-3">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -152,16 +154,16 @@ export function AdminShell({
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 bg-[#071527] p-0 text-[#CBD5E1]">
-              <SheetHeader className="border-b border-[#10233A] px-5 py-4 text-left">
+            <SheetContent side="left" className="flex w-72 flex-col bg-[#071527] p-0 text-[#CBD5E1]">
+              <SheetHeader className="shrink-0 border-b border-[#10233A] px-5 py-4 text-left">
                 <SheetTitle className="text-white">
                   <GetStampdLogo variant="blue" size="md" caption="Event admin" />
                 </SheetTitle>
               </SheetHeader>
-              <nav className="flex-1 space-y-1.5 px-4 py-4">
+              <nav className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 py-4">
                 <NavLinks />
               </nav>
-              <div className="border-t border-[#10233A] px-4 py-4">
+              <div className="shrink-0 border-t border-[#10233A] px-4 py-4">
                 <div className="mb-3 px-3 text-xs text-[#94A3B8]">
                   <div className="font-medium text-white">
                     {agencyName ?? email ?? "—"}
@@ -181,10 +183,10 @@ export function AdminShell({
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Desktop sidebar */}
-        <aside className="hidden w-[260px] shrink-0 flex-col border-r border-[#10233A] bg-[#071527] lg:flex">
-          <div className="px-5 py-6">
+        <aside className="hidden w-[260px] shrink-0 flex-col overflow-hidden border-r border-[#10233A] bg-[#071527] lg:flex">
+          <div className="shrink-0 px-5 py-6">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#2F6FE4] text-base font-bold text-white shadow-sm">
                 G
@@ -195,17 +197,17 @@ export function AdminShell({
               </div>
             </div>
           </div>
-          <nav className="flex-1 space-y-1.5 px-4">
+          <nav className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4">
             <NavLinks />
           </nav>
-          <div className="mt-auto space-y-1.5 px-4 py-5">
+          <div className="shrink-0 space-y-1.5 px-4 py-5">
             <FooterControls />
           </div>
         </aside>
 
         {/* Main column */}
-        <div className="flex min-w-0 flex-1 flex-col bg-[#F5F7FB] text-[#111827]">
-          <header className="hidden h-[72px] items-center justify-between border-b border-[#E6ECF4] bg-white px-8 lg:flex">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#F5F7FB] text-[#111827]">
+          <header className="hidden h-[72px] shrink-0 items-center justify-between border-b border-[#E6ECF4] bg-white px-8 lg:flex">
             <div>
               <div className="text-xs font-medium text-[#64748B]">
                 {agencyName ? "Organisation workspace" : "Signed in as"}
@@ -243,9 +245,9 @@ export function AdminShell({
               </div>
             </div>
           </header>
-          <div className="flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+          <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
             <div className="space-y-5">{children ?? <Outlet />}</div>
-          </div>
+          </main>
         </div>
       </div>
     </div>
