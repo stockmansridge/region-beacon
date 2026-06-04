@@ -1273,3 +1273,12 @@ function OrganisationSlugEditor({
     </div>
   );
 }
+
+function DiagRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-start gap-2 border-b border-amber-500/10 py-1 last:border-0">
+      <dt className="min-w-[140px] text-muted-foreground">{label}</dt>
+      <dd className={`flex-1 break-all ${mono ? "font-mono" : ""}`}>{value}</dd>
+    </div>
+  );
+}
