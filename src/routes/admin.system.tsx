@@ -856,6 +856,7 @@ function OrganisationDetailDrawer({
   const [idCopied, setIdCopied] = useState(false);
   const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
   const [planForm, setPlanForm] = useState<{ plan_code: string; status: string }>({
