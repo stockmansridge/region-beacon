@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import process from "node:process";
 
 function getBearerToken(request: Request): string | null {
   const header = request.headers.get("authorization") ?? "";
