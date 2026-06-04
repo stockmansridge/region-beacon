@@ -9,17 +9,17 @@ import { LivePublicPage } from "./live.$subdomain.index";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GetStampd — Coming soon" },
+      { title: "GetStampd — Digital passports for real-world experiences" },
       {
         name: "description",
         content:
-          "GetStampd — digital passports for real-world experiences. Coming soon.",
+          "GetStampd creates branded QR passport trails for tourism regions, festivals and event organisers. No app download required.",
       },
-      { property: "og:title", content: "GetStampd — Coming soon" },
+      { property: "og:title", content: "GetStampd" },
       {
         property: "og:description",
         content:
-          "Digital passports for real-world experiences. Launching soon — sign up to be notified.",
+          "Digital passports for real-world experiences. Branded QR trails for tourism regions, festivals and event organisers.",
       },
       { property: "og:type", content: "website" },
       { name: "robots", content: "index, follow" },
@@ -31,11 +31,11 @@ export const Route = createFileRoute("/")({
 function IndexRoute() {
   const subdomain = useTenantSubdomain();
   if (subdomain) return <LivePublicPage subdomain={subdomain} />;
-  return <ComingSoon />;
+  return <Landing />;
 }
 
 
-function ComingSoon() {
+function Landing() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
       {/* ambient blue glows */}
