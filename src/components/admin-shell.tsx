@@ -26,6 +26,7 @@ export function AdminShell({
   children,
   email,
   role,
+  agencyId,
   agencyName,
   agencyRole,
   ambiguousAgency,
@@ -34,6 +35,7 @@ export function AdminShell({
   children?: ReactNode;
   email?: string | null;
   role?: string | null;
+  agencyId?: string | null;
   agencyName?: string | null;
   agencyRole?: string | null;
   ambiguousAgency?: boolean;
@@ -42,6 +44,7 @@ export function AdminShell({
   const navigate = useNavigate();
   const [diagnosticsEnabled, setDiagnosticsEnabled] = useDiagnosticsEnabled();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/admin/login", replace: true });
