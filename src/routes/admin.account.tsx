@@ -597,7 +597,15 @@ function AccountPage() {
   );
 }
 
-function PricingCard({ plan, isCurrent }: { plan: PricingPlan; isCurrent: boolean }) {
+function PricingCard({
+  plan,
+  isCurrent,
+  onRequest,
+}: {
+  plan: PricingPlan;
+  isCurrent: boolean;
+  onRequest: () => void;
+}) {
   const recommended = plan.recommended === true;
   return (
     <div
@@ -628,10 +636,156 @@ function PricingCard({ plan, isCurrent }: { plan: PricingPlan; isCurrent: boolea
         <li>{plan.support}</li>
       </ul>
       <div className="mt-auto">
-        <DisabledButton label={plan.cta} />
-        <p className="mt-2 text-[11px] text-muted-foreground">{COMING_SOON_HELP}</p>
+        <button
+          type="button"
+          onClick={onRequest}
+          className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+        >
+          {isCurrent ? `Request ${plan.name} (current)` : plan.cta}
+        </button>
+        <p className="mt-2 text-[11px] text-muted-foreground">{UPGRADE_CTA_HELP}</p>
       </div>
     </div>
+  );
+}
+
+function UpgradeRequestDialog({
+  plan,
+  agencyId,
+  defaultEmail,
+  userId,
+  onClose,
+  onSubmitted,
+}: {
+  plan: PricingPlan | null;
+  agencyId: string | null;
+  defaultEmail: string;
+  userId: string | null;
+  onClose: () => void;
+  onSubmitted: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState(defaultEmail);
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (plan) {
+      setName("");
+      setEmail(defaultEmail);
+      setMessage("");
+    }
+  }, [plan, defaultEmail]);
+
+  const onSubmit = async () => {
+    if (!plan || !agencyId) return;
+    setSubmitting(true);
+    const { error: insErr } = await supabase
+      .from("upgrade_requests" as never)
+      .insert({
+        agency_id: agencyId,
+        requested_plan_code: plan.code,
+        requested_plan_name: plan.name,
+        contact_name: name.trim() || null,
+        contact_email: email.trim() || null,
+        message: message.trim() || null,
+        created_by: userId,
+      } as never);
+    setSubmitting(false);
+    if (insErr) {
+      if (isMissingTableError(insErr)) {
+        toast.error("Upgrade requests are not enabled yet. Please contact support.");
+        onClose();
+        return;
+      }
+      toast.error(`Could not send request: ${insErr.message}`);
+      return;
+    }
+    toast.success("Upgrade request sent. We'll review it and contact you shortly.");
+    onSubmitted();
+  };
+
+  return (
+    <Dialog open={plan !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Request plan upgrade</DialogTitle>
+          <DialogDescription>
+            Submit an upgrade request and we'll activate your plan manually.
+          </DialogDescription>
+        </DialogHeader>
+        {plan && (
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+              <div className="font-semibold">{plan.name}</div>
+              <div className="mt-1 text-muted-foreground">{plan.price}</div>
+              <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                <li>{formatVenueLimit(plan.venueLimit)}</li>
+                <li>{plan.events}</li>
+                <li>{plan.passports}</li>
+              </ul>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                Contact name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={120}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                placeholder="Your name"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                Contact email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={255}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                Message / notes
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                maxLength={1000}
+                rows={4}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                placeholder="Tell us about your venues, timing, or any questions."
+              />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="inline-flex h-9 items-center rounded-md border bg-background px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={submitting || !agencyId}
+            className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {submitting ? "Sending…" : "Send request"}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
