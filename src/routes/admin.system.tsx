@@ -2216,9 +2216,8 @@ function BillingSection() {
                 const org = agencies[r.agency_id];
                 const isOpen = expanded === r.id;
                 return (
-                  <>
+                  <Fragment key={r.id}>
                     <TableRow
-                      key={r.id}
                       className="cursor-pointer"
                       onClick={() => setExpanded((id) => (id === r.id ? null : r.id))}
                     >
