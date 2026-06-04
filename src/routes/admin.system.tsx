@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   Users,
@@ -1946,20 +1946,423 @@ function AuditDetailDrawer({
 
 // -------- Billing --------------------------------------------------------
 
+type UpgradeRequestRow = {
+  id: string;
+  agency_id: string;
+  requested_plan_code: string;
+  requested_plan_name: string;
+  contact_name: string | null;
+  contact_email: string | null;
+  message: string | null;
+  status: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
+type AgencyLookup = {
+  agency_id: string;
+  name: string;
+  slug: string | null;
+};
+
+const UPGRADE_STATUSES = [
+  "new",
+  "reviewing",
+  "approved",
+  "activated",
+  "declined",
+  "cancelled",
+] as const;
+
+type UpgradeStatus = (typeof UPGRADE_STATUSES)[number];
+
+function upgradeStatusPill(status: string) {
+  const map: Record<string, string> = {
+    new: "bg-[#EAF2FF] text-[#1F56C5]",
+    reviewing: "bg-[#FEF3C7] text-[#92400E]",
+    approved: "bg-[#DCFCE7] text-[#166534]",
+    activated: "bg-[#DCFCE7] text-[#166534]",
+    declined: "bg-[#FEE2E2] text-[#991B1B]",
+    cancelled: "bg-[#E2E8F0] text-[#475569]",
+  };
+  const cls = map[status] ?? "bg-[#F1F5F9] text-[#475569]";
+  return (
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}
+    >
+      {status}
+    </span>
+  );
+}
+
 function BillingSection() {
+  const [requests, setRequests] = useState<UpgradeRequestRow[] | null>(null);
+  const [agencies, setAgencies] = useState<Record<string, AgencyLookup>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tableMissing, setTableMissing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | UpgradeStatus>("all");
+  const [q, setQ] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [selectedOrg, setSelectedOrg] = useState<OrganisationRow | null>(null);
+  const [orgLoadingId, setOrgLoadingId] = useState<string | null>(null);
+  const orgCacheRef = useRef<OrganisationRow[] | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error: reqErr } = await supabase
+      .from("upgrade_requests" as never)
+      .select(
+        "id, agency_id, requested_plan_code, requested_plan_name, contact_name, contact_email, message, status, created_by, created_at, updated_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (reqErr) {
+      const code = (reqErr as { code?: string }).code;
+      const msg = (reqErr as { message?: string }).message ?? "";
+      if (
+        code === "42P01" ||
+        code === "PGRST205" ||
+        code === "PGRST204" ||
+        /relation .* does not exist|could not find the table/i.test(msg)
+      ) {
+        setTableMissing(true);
+        setRequests([]);
+        setLoading(false);
+        return;
+      }
+      setError(msg || "Failed to load upgrade requests");
+      setLoading(false);
+      return;
+    }
+    setTableMissing(false);
+    const rows = (data ?? []) as UpgradeRequestRow[];
+    setRequests(rows);
+
+    const agencyIds = Array.from(new Set(rows.map((r) => r.agency_id)));
+    if (agencyIds.length > 0) {
+      const { data: agencyData } = await supabase
+        .from("agencies")
+        .select("id, name, slug")
+        .in("id", agencyIds);
+      const lookup: Record<string, AgencyLookup> = {};
+      for (const a of (agencyData ?? []) as { id: string; name: string; slug: string | null }[]) {
+        lookup[a.id] = { agency_id: a.id, name: a.name, slug: a.slug };
+      }
+      setAgencies(lookup);
+    } else {
+      setAgencies({});
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    if (!requests) return [];
+    const needle = q.trim().toLowerCase();
+    return requests.filter((r) => {
+      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (!needle) return true;
+      const org = agencies[r.agency_id];
+      return (
+        (org?.name ?? "").toLowerCase().includes(needle) ||
+        (org?.slug ?? "").toLowerCase().includes(needle) ||
+        (r.contact_email ?? "").toLowerCase().includes(needle) ||
+        (r.requested_plan_name ?? "").toLowerCase().includes(needle) ||
+        (r.requested_plan_code ?? "").toLowerCase().includes(needle)
+      );
+    });
+  }, [requests, statusFilter, q, agencies]);
+
+  const updateStatus = async (row: UpgradeRequestRow, next: UpgradeStatus) => {
+    setSavingId(row.id);
+    const nowIso = new Date().toISOString();
+    const { error: updErr } = await supabase
+      .from("upgrade_requests" as never)
+      .update({ status: next, updated_at: nowIso } as never)
+      .eq("id", row.id);
+    setSavingId(null);
+    if (updErr) {
+      toast.error(updErr.message || "Failed to update request");
+      return;
+    }
+    toast.success(`Marked ${next}`);
+    setRequests((prev) =>
+      prev
+        ? prev.map((r) =>
+            r.id === row.id ? { ...r, status: next, updated_at: nowIso } : r,
+          )
+        : prev,
+    );
+  };
+
+  const openOrganisation = async (agencyId: string) => {
+    setOrgLoadingId(agencyId);
+    try {
+      if (!orgCacheRef.current) {
+        const { data, error: orgErr } = await supabase.rpc(
+          "system_admin_organisations",
+        );
+        if (orgErr) {
+          toast.error(
+            isMissingFn(orgErr) ? MISSING_RPC_HINT : orgErr.message,
+          );
+          return;
+        }
+        orgCacheRef.current = (data ?? []) as OrganisationRow[];
+      }
+      const match = orgCacheRef.current.find((o) => o.agency_id === agencyId);
+      if (!match) {
+        toast.error("Organisation not found");
+        return;
+      }
+      setSelectedOrg(match);
+    } finally {
+      setOrgLoadingId(null);
+    }
+  };
+
+  if (tableMissing) {
+    return (
+      <div className="space-y-4">
+        <EmptyState
+          title="Upgrade requests table not installed"
+          message="Apply supabase/migrations-draft-pricing/02_upgrade_requests.sql in the Supabase SQL editor to enable the upgrade request inbox."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-[12px] border border-[#FED7AA] bg-[#FFF7ED] p-4 text-sm text-[#9A3412]">
-        <div className="font-semibold">Payments are not active</div>
+        <div className="font-semibold">Manual plan activations</div>
         <div className="mt-1 text-xs">
-          The platform is in test mode. Stripe activations are not collecting
-          live charges. Once billing is enabled, organisations and event
-          activations will appear here.
+          Stripe is not active. Review upgrade requests below, then activate the
+          plan manually from the organisation drawer.
         </div>
       </div>
-      <EmptyState
-        title="Billing dashboard coming soon"
-        message="Per-organisation plans, invoices and event activations will be wired in once Stripe is live. The Events tab already surfaces any event_activations.status that exists."
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+            <Input
+              placeholder="Search organisation, contact or plan"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as "all" | UpgradeStatus)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {UPGRADE_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <button
+          type="button"
+          onClick={load}
+          className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+        >
+          <RefreshCw className="h-3 w-3" /> Refresh
+        </button>
+      </div>
+
+      {error ? <ErrorBanner message={error} onRetry={load} /> : null}
+
+      <Card className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Requested plan</TableHead>
+              <TableHead>Organisation</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Message</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <LoadingRow cols={7} />
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="py-8 text-center text-sm text-[#64748B]">
+                  No upgrade requests match these filters.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((r) => {
+                const org = agencies[r.agency_id];
+                const isOpen = expanded === r.id;
+                return (
+                  <Fragment key={r.id}>
+                    <TableRow
+                      className="cursor-pointer"
+                      onClick={() => setExpanded((id) => (id === r.id ? null : r.id))}
+                    >
+                      <TableCell className="text-sm font-medium text-[#0F172A]">
+                        {r.requested_plan_name}
+                        <div className="text-[11px] text-[#64748B]">{r.requested_plan_code}</div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {org ? (
+                          <>
+                            <div className="font-medium text-[#0F172A]">{org.name}</div>
+                            {org.slug ? (
+                              <div className="text-[11px] text-[#64748B]">{org.slug}</div>
+                            ) : null}
+                          </>
+                        ) : (
+                          <span className="text-[11px] text-[#64748B]">{r.agency_id}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-[#0F172A]">
+                        {r.contact_email ?? "—"}
+                        {r.contact_name ? (
+                          <div className="text-[11px] text-[#64748B]">{r.contact_name}</div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>{upgradeStatusPill(r.status)}</TableCell>
+                      <TableCell className="text-sm text-[#64748B]">{fmtDate(r.created_at)}</TableCell>
+                      <TableCell className="max-w-[240px] truncate text-xs text-[#64748B]">
+                        {r.message ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-wrap justify-end gap-1">
+                          <button
+                            type="button"
+                            disabled={orgLoadingId === r.agency_id}
+                            onClick={() => openOrganisation(r.agency_id)}
+                            className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC] disabled:opacity-60"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            {orgLoadingId === r.agency_id ? "Opening…" : "Open"}
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {isOpen ? (
+                      <TableRow key={`${r.id}-detail`} className="bg-[#F8FAFC]">
+                        <TableCell colSpan={7} className="p-4">
+                          <div className="grid gap-4 lg:grid-cols-2">
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                <KV label="Requested plan" value={`${r.requested_plan_name} (${r.requested_plan_code})`} />
+                                <KV label="Status" value={upgradeStatusPill(r.status)} />
+                                <KV label="Contact name" value={r.contact_name ?? "—"} />
+                                <KV label="Contact email" value={r.contact_email ?? "—"} />
+                                <KV label="Created" value={fmtDateTime(r.created_at)} />
+                                <KV label="Updated" value={fmtDateTime(r.updated_at)} />
+                              </div>
+                              <div>
+                                <div className="text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">
+                                  Organisation ID
+                                </div>
+                                <div className="mt-1 flex items-center gap-2">
+                                  <code className="rounded bg-white px-2 py-1 text-xs text-[#0F172A]">
+                                    {r.agency_id}
+                                  </code>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      await copyToClipboard(r.agency_id);
+                                      setCopied(r.id);
+                                      setTimeout(
+                                        () => setCopied((c) => (c === r.id ? null : c)),
+                                        1500,
+                                      );
+                                    }}
+                                    className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                                  >
+                                    {copied === r.id ? (
+                                      <CheckCircle2 className="h-3 w-3 text-[#16A34A]" />
+                                    ) : (
+                                      <Copy className="h-3 w-3" />
+                                    )}
+                                    {copied === r.id ? "Copied" : "Copy ID"}
+                                  </button>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">
+                                  Message
+                                </div>
+                                <div className="mt-1 whitespace-pre-wrap rounded-[10px] border border-[#E6ECF4] bg-white p-3 text-sm text-[#0F172A]">
+                                  {r.message?.trim() ? r.message : "No message provided."}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              <div className="text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">
+                                Update status
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {(["reviewing", "approved", "activated", "declined"] as UpgradeStatus[]).map(
+                                  (s) => (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      disabled={savingId === r.id || r.status === s}
+                                      onClick={() => updateStatus(r, s)}
+                                      className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1.5 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC] disabled:opacity-60"
+                                    >
+                                      Mark {s}
+                                    </button>
+                                  ),
+                                )}
+                              </div>
+                              <div className="rounded-[10px] border border-[#E6ECF4] bg-white p-3 text-xs text-[#64748B]">
+                                Activating a plan does not change the subscription
+                                automatically. Use the organisation drawer to set
+                                the plan and status manually.
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => openOrganisation(r.agency_id)}
+                                disabled={orgLoadingId === r.agency_id}
+                                className="inline-flex items-center gap-1 rounded-[8px] border border-[#1F56C5] bg-[#1F56C5] px-2.5 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-60"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                {orgLoadingId === r.agency_id ? "Opening…" : "Open organisation"}
+                              </button>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                  </Fragment>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      <OrganisationDetailDrawer
+        org={selectedOrg}
+        onClose={() => setSelectedOrg(null)}
       />
     </div>
   );
