@@ -21,12 +21,20 @@ export const Route = createFileRoute("/admin/")({
 
 type Counts = { events: number; venues: number; checkins: number; visitors: number };
 
+type SubscriptionRow = {
+  id: string;
+  plan_code: string | null;
+  status: string;
+};
+
 function Dashboard() {
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
   const [counts, setCounts] = useState<Counts | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!agencyId) return;
