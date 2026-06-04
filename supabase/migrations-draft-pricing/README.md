@@ -9,6 +9,12 @@ limits beyond the front-end soft guard.
 
 - `01_getstampd_venue_limits.sql` — creates `get_agency_plan_limits()` and the
   `enforce_agency_venue_limit()` trigger on `public.venues`.
+- `02_upgrade_requests.sql` — creates `public.upgrade_requests` table for the
+  customer-facing upgrade request flow (Account & Billing → "Request plan
+  upgrade"). Reviewed manually by platform admins; does not touch
+  `agency_subscriptions` or billing. RLS lets org owners/admins insert and
+  read their own organisation's requests; platform admins can read and update
+  all rows.
 
 ## What it does
 
