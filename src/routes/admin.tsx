@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AdminShell } from "@/components/admin-shell";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { useAuth, signOut } from "@/hooks/use-auth";
@@ -22,6 +22,23 @@ function AdminLayout() {
   const location = useLocation();
   const isPublicAdminPath = PUBLIC_ADMIN_PATHS.has(location.pathname);
 
+  // "Latched positive" verdicts. Once we've successfully observed an
+  // authorized session and a selected organisation for this user, we keep
+  // rendering the normal admin shell even if a downstream query briefly
+  // re-enters a loading / empty state (token refresh, navigation refetch,
+  // tab focus, etc.). This is the source-of-truth fix for the
+  // "No organisation yet" flash on login and route changes.
+  const hasEverBeenAuthorized = useRef(false);
+  const hasEverHadSelectedAgency = useRef(false);
+  if (access.status === "authorized") hasEverBeenAuthorized.current = true;
+  if (agency.selected !== null) hasEverHadSelectedAgency.current = true;
+  // Reset latches when the user signs out so a different user logging in
+  // on the same tab gets a clean verdict.
+  if (authStatus === "unauthenticated") {
+    hasEverBeenAuthorized.current = false;
+    hasEverHadSelectedAgency.current = false;
+  }
+
   useEffect(() => {
     if (authStatus === "unauthenticated" && !isPublicAdminPath) {
       navigate({ to: "/admin/login", replace: true });
@@ -34,20 +51,40 @@ function AdminLayout() {
 
   if (authStatus === "unauthenticated") return <Outlet />;
 
-  // Treat any non-terminal state as loading so we never flash the
-  // "No organisation" recovery card while auth / access / agency queries
-  // are still resolving (e.g. after a token refresh or hard reload).
-  const isResolving =
+  // Bootstrap state: positively true only after every dependent query has
+  // completed at least once. We never trust a "null/empty" intermediate
+  // value as proof of "no organisation".
+  const isBootstrapping =
     authStatus === "loading" ||
     access.status === "loading" ||
     agency.status === "loading" ||
-    // access resolved authorized but agency context hasn't caught up yet
+    // access says authorized with memberships, but agency context hasn't
+    // resolved a selection yet — wait for it.
     (access.status === "authorized" &&
       access.memberships.length > 0 &&
       agency.selected === null &&
       agency.status !== "error");
 
-  if (isResolving) {
+  // Confirmed no-access: only after access has resolved to "unauthorized"
+  // AND we've never previously seen a positive verdict for this session.
+  const confirmedUnauthorized =
+    !isBootstrapping &&
+    access.status === "unauthorized" &&
+    !hasEverBeenAuthorized.current;
+
+  // Confirmed no-organisation: user is positively authorized, agency
+  // context has positively resolved, the user truly has zero memberships,
+  // is not a platform admin with a selection, and we've never previously
+  // observed a selected agency in this session.
+  const confirmedNoAgency =
+    !isBootstrapping &&
+    access.status === "authorized" &&
+    agency.status === "no-agency" &&
+    access.memberships.length === 0 &&
+    agency.selected === null &&
+    !hasEverHadSelectedAgency.current;
+
+  if (isBootstrapping) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-sidebar">
         <div className="text-sm text-muted-foreground">Loading…</div>
@@ -55,16 +92,7 @@ function AdminLayout() {
     );
   }
 
-  if (access.status === "unauthorized") return <NoAccessScreen email={email} />;
-
-  // Only show the "No organisation" recovery card when access is fully
-  // resolved AND the user genuinely has no memberships. This avoids the
-  // 1–2s flash when navigating into Account & Billing.
-  const showNoAgency =
-    agency.status === "no-agency" &&
-    access.status === "authorized" &&
-    access.memberships.length === 0 &&
-    agency.selected === null;
+  if (confirmedUnauthorized) return <NoAccessScreen email={email} />;
 
   return (
     <AdminShell
@@ -75,7 +103,7 @@ function AdminLayout() {
       ambiguousAgency={agency.ambiguousSelection}
       isPlatformAdmin={access.isPlatformAdmin}
     >
-      {showNoAgency ? (
+      {confirmedNoAgency ? (
         <NoAgencyState
           isPlatformAdmin={agency.isPlatformAdmin}
           onSignOut={async () => {
