@@ -373,8 +373,7 @@ function SignupPage() {
                 className="mt-0.5 h-4 w-4"
               />
               <span>
-                I agree to the GetStampd platform terms and acknowledge this is a
-                public test environment.
+                I agree to the GetStampd platform terms.
               </span>
             </label>
             {fieldErrors.acceptTerms && (
