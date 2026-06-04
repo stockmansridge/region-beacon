@@ -27,17 +27,25 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
       .process?.env ?? {};
     const missingEnv: string[] = [];
     if (!env.STRIPE_SECRET_KEY) missingEnv.push("STRIPE_SECRET_KEY");
-    if (!env.SUPABASE_URL && !env.VITE_SUPABASE_URL) {
-      missingEnv.push("SUPABASE_URL");
-    }
-    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-      missingEnv.push("SUPABASE_SERVICE_ROLE_KEY");
+    if (
+      !env.GETSTAMPD_SUPABASE_URL &&
+      !env.SUPABASE_URL &&
+      !env.VITE_SUPABASE_URL
+    ) {
+      missingEnv.push("GETSTAMPD_SUPABASE_URL");
     }
     if (
+      !env.GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY &&
+      !env.SUPABASE_SERVICE_ROLE_KEY
+    ) {
+      missingEnv.push("GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY");
+    }
+    if (
+      !env.GETSTAMPD_SUPABASE_PUBLISHABLE_KEY &&
       !env.SUPABASE_PUBLISHABLE_KEY &&
       !env.VITE_SUPABASE_PUBLISHABLE_KEY
     ) {
-      missingEnv.push("SUPABASE_PUBLISHABLE_KEY");
+      missingEnv.push("GETSTAMPD_SUPABASE_PUBLISHABLE_KEY");
     }
     const priceEnvName = `STRIPE_PRICE_${data.plan_code.toUpperCase()}`;
     if (!env[priceEnvName]) missingEnv.push(priceEnvName);
