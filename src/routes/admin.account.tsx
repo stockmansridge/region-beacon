@@ -418,10 +418,69 @@ function AccountPage() {
               key={plan.code}
               plan={plan}
               isCurrent={plan.code === currentPlan.code}
+              onRequest={() => setUpgradePlan(plan)}
             />
           ))}
         </div>
       </section>
+
+      {upgradeRequests && upgradeRequests.length > 0 && !upgradeTableMissing && (
+        <section className="mt-8">
+          <div className="mb-3">
+            <h2 className="text-lg font-semibold">Upgrade requests</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Recent plan upgrade requests for this organisation.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-5 py-3 font-medium">Requested plan</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 font-medium">Created</th>
+                  <th className="px-5 py-3 font-medium">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {upgradeRequests.map((r) => (
+                  <tr key={r.id} className="border-t">
+                    <td className="px-5 py-3 font-medium">{r.requested_plan_name}</td>
+                    <td className="px-5 py-3">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {r.message
+                        ? r.message.length > 80
+                          ? `${r.message.slice(0, 80)}…`
+                          : r.message
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      <UpgradeRequestDialog
+        plan={upgradePlan}
+        agencyId={agencyId}
+        defaultEmail={auth.email ?? ""}
+        userId={auth.session?.user.id ?? null}
+        onClose={() => setUpgradePlan(null)}
+        onSubmitted={() => {
+          setUpgradePlan(null);
+          void loadUpgradeRequests();
+        }}
+      />
+
 
       <div className="mt-6 rounded-xl border bg-card">
         <div className="border-b px-5 py-4">
