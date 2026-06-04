@@ -638,12 +638,15 @@ function PricingCard({
       <div className="mt-auto">
         <button
           type="button"
-          onClick={onRequest}
-          className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+          onClick={isCurrent ? undefined : onRequest}
+          disabled={isCurrent}
+          className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:opacity-60"
         >
-          {isCurrent ? `Request ${plan.name} (current)` : plan.cta}
+          {isCurrent ? "Current plan" : plan.cta}
         </button>
-        <p className="mt-2 text-[11px] text-muted-foreground">{UPGRADE_CTA_HELP}</p>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {isCurrent ? "This is your active plan." : UPGRADE_CTA_HELP}
+        </p>
       </div>
     </div>
   );
