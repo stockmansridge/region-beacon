@@ -507,6 +507,8 @@ function SystemAdmin() {
         </p>
       </header>
 
+      <SupportTicketsAlert onOpen={() => setTab("support")} />
+
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-[12px] bg-white p-1 ring-1 ring-[#E6ECF4]">
           <TabsTrigger value="overview" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
@@ -520,6 +522,9 @@ function SystemAdmin() {
           </TabsTrigger>
           <TabsTrigger value="events" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
             <Calendar className="h-4 w-4" /> Events
+          </TabsTrigger>
+          <TabsTrigger value="support" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
+            <LifeBuoy className="h-4 w-4" /> Support tickets
           </TabsTrigger>
           <TabsTrigger value="audit" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
             <ScrollText className="h-4 w-4" /> Audit logs
@@ -543,6 +548,7 @@ function SystemAdmin() {
           <TabsContent value="events">
             <EventsSection filter={eventsFilter} setFilter={setEventsFilter} />
           </TabsContent>
+          <TabsContent value="support"><SupportTicketsSection /></TabsContent>
           <TabsContent value="audit"><AuditSection /></TabsContent>
           <TabsContent value="billing"><BillingSection /></TabsContent>
           <TabsContent value="settings"><SettingsSection /></TabsContent>
