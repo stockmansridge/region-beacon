@@ -241,7 +241,7 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
         try {
           const price = await stripe.prices.retrieve(priceId);
           if (!price.active) {
-            logErr("stripe", "price is not active", { plan: planCode, price_id: priceId });
+            logErr("stripe", "price is not active", { plan: planCode });
             return jsonResponse({
               ok: false,
               error: `Stripe price for ${planCode} is inactive. Update the price in Stripe or change the price ID secret.`,
@@ -250,7 +250,6 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
           if (price.type !== "recurring") {
             logErr("stripe", "price is not recurring", {
               plan: planCode,
-              price_id: priceId,
               type: price.type,
             });
             return jsonResponse({
@@ -262,12 +261,11 @@ export const Route = createFileRoute("/api/admin/create-stripe-checkout")({
           const message = err instanceof Error ? err.message : String(err);
           logErr("stripe", "price retrieve failed", {
             plan: planCode,
-            price_id: priceId,
             error: message,
           });
           return jsonResponse({
             ok: false,
-            error: `Stripe could not load the ${planCode} price (${priceId}). Check that ${priceEnvName} matches your STRIPE_SECRET_KEY mode (test vs live). Stripe said: ${message}`,
+            error: `Stripe could not load the ${planCode} price. Check that ${priceEnvName} matches your STRIPE_SECRET_KEY mode (test vs live). Stripe said: ${message}`,
           });
         }
 
