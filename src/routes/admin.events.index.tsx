@@ -31,7 +31,10 @@ type EventRow = {
   ends_at: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 };
+
+type EventFilter = "active" | "archived" | "all";
 
 type DomainInfo = {
   public_subdomain: string | null;
