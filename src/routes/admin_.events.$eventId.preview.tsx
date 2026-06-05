@@ -122,7 +122,7 @@ function EventPreview() {
           .maybeSingle();
       }
 
-      const [venuesRes, termsRes] = await Promise.all([
+      const [venuesRes, termsRes, domainsRes] = await Promise.all([
         supabase
           .from("venues")
           .select("id, name")
@@ -140,6 +140,13 @@ function EventPreview() {
               .eq("agency_id", agencyId)
               .maybeSingle()
           : Promise.resolve({ data: null, error: null }),
+        supabase
+          .from("event_domains")
+          .select("public_subdomain, status, domain_type, is_primary")
+          .eq("event_id", event.id)
+          .eq("agency_id", agencyId)
+          .eq("domain_type", "event_subdomain")
+          .eq("status", "active"),
       ]);
 
       if (cancelled) return;
@@ -148,6 +155,15 @@ function EventPreview() {
         return;
       }
 
+      const domains = (domainsRes.data ?? []) as Array<{
+        public_subdomain: string | null;
+        is_primary: boolean | null;
+      }>;
+      const activeSubdomain =
+        domains.find((d) => d.is_primary)?.public_subdomain ??
+        domains[0]?.public_subdomain ??
+        null;
+
       const branding = (brandingRes.data ?? null) as Branding | null;
       setBundle({
         event: event as EventRow,
@@ -155,6 +171,7 @@ function EventPreview() {
         venues: (venuesRes.data ?? []) as Venue[],
         termsUrl: (termsRes.data as { terms_url?: string } | null)?.terms_url ?? branding?.terms_url ?? null,
         privacyUrl: (termsRes.data as { privacy_url?: string } | null)?.privacy_url ?? null,
+        activeSubdomain,
       });
       setState("ready");
     })();
