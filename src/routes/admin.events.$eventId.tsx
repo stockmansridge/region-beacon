@@ -1334,7 +1334,9 @@ function EventDetail() {
       description: description === "" ? null : description,
       website_url: website === "" ? null : website,
       phone: phone === "" ? null : phone,
+      points_value: Math.max(0, Math.floor(Number(venueForm.points_value) || 0)),
     };
+
     if (bundle.offerSupported) {
       patch.offer_summary = offerSummary === "" ? null : offerSummary;
     }
