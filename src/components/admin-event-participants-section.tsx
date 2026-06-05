@@ -303,6 +303,8 @@ export function AdminEventParticipantsSection({
             onClick={handleExportBonusClaimsCsv}
             className="inline-flex h-9 items-center rounded-md border border-[#D9E2EF] bg-white px-3 text-sm font-medium text-[#1F56C5] hover:bg-[#F4F7FB] disabled:cursor-not-allowed disabled:opacity-50"
             title="Export one row per bonus code claim as CSV"
+          >
+            {exportingClaims ? "Exporting…" : "Export bonus claims CSV"}
           </button>
           <button
             type="button"
