@@ -50,6 +50,9 @@ type Outcome =
       venueName: string | null;
       passportToken: string;
       isNew: boolean;
+      pointsAwarded: number;
+      pointsAlreadyAwarded: boolean;
+      totalPoints: number;
     }
   | { kind: "qr_invalid"; diag: FailureDiagnostics }
   | { kind: "event_not_live"; diag: FailureDiagnostics }
