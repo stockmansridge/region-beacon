@@ -112,6 +112,27 @@ function Events() {
 
   const [open, setOpen] = useState(false);
 
+  // Always-fresh status indicators: refetch when the tab/window regains
+  // focus or becomes visible again (e.g. returning from an event detail
+  // page in another tab, or unminimising the browser). Mount-time refetch
+  // is already handled by the useEffect below, so navigating back to this
+  // route from /admin/events/$eventId also reloads.
+  useEffect(() => {
+    function bump() {
+      setReloadKey((k) => k + 1);
+    }
+    function onVisibility() {
+      if (document.visibilityState === "visible") bump();
+    }
+    window.addEventListener("focus", bump);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", bump);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+
   useEffect(() => {
     if (!agencyId) return;
     let cancelled = false;
