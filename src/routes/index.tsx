@@ -474,7 +474,7 @@ function Landing() {
                 href={authUrl("/signup")}
                 className="inline-flex h-12 items-center gap-2 rounded-full bg-[#8A1538] px-7 text-sm font-semibold text-white shadow-md shadow-[#8A1538]/20 transition hover:-translate-y-0.5 hover:bg-[#6f1029] hover:shadow-lg"
               >
-                Start collecting <ArrowRight className="h-4 w-4" />
+                Start here for free <ArrowRight className="h-4 w-4" />
               </a>
               <Link
                 to="/demo"
@@ -483,7 +483,11 @@ function Landing() {
                 <Play className="h-4 w-4" /> Watch demo
               </Link>
             </div>
-            <p className="mt-5 text-xs font-medium text-[#666666]">No app download required · Works on any modern phone</p>
+            <p className="mt-5 max-w-xl text-sm leading-relaxed text-[#666666]">
+              Create your free GetStampd account, explore the platform, and build your first digital stamp experience before upgrading.
+            </p>
+            <p className="mt-2 text-xs font-medium text-[#666666]">No payment required · No app download required · Works on any modern phone</p>
+
           </div>
 
           {/* Phone with adventure pass card behind */}
