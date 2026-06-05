@@ -26,6 +26,26 @@ function makeDraftKey(): string {
   return `new-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function formatSupabaseError(error: any) {
+  if (!error) return "Unknown FAQ save error";
+
+  const parts = [
+    error.message,
+    error.details,
+    error.hint,
+    error.code ? `Code: ${error.code}` : null,
+    error.name ? `Name: ${error.name}` : null,
+  ].filter(Boolean);
+
+  return parts.length > 0
+    ? parts.join(" | ")
+    : JSON.stringify(error, null, 2);
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export function EventFaqSection({
   agencyId,
   eventId,
@@ -44,6 +64,11 @@ export function EventFaqSection({
   const [reloadKey, setReloadKey] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const eventIdSaveError = !eventId
+    ? "Cannot save FAQ entries because the event id is missing."
+    : !isUuid(eventId)
+      ? "Cannot save FAQ entries because the event id is invalid."
+      : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -96,50 +121,57 @@ export function EventFaqSection({
 
   async function saveAll() {
     if (!canEdit) return;
+    if (eventIdSaveError) {
+      setSaveError(eventIdSaveError);
+      toast.error("Could not save FAQ entries", { description: eventIdSaveError });
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     try {
-      const cleaned = drafts
+      const cleanedEntries = drafts
         .map((d) => ({ ...d, question: d.question.trim(), answer: d.answer.trim() }))
         .filter((d) => d.question.length > 0 || d.answer.length > 0);
 
-      for (const d of cleaned) {
+      for (const d of cleanedEntries) {
         if (!d.question || !d.answer) {
           setSaveError("Every entry needs both a question and an answer.");
-          setSaving(false);
           return;
         }
         if (d.question.length > 500) {
           setSaveError("Questions must be 500 characters or fewer.");
-          setSaving(false);
           return;
         }
         if (d.answer.length > 5000) {
           setSaveError("Answers must be 5000 characters or fewer.");
-          setSaving(false);
           return;
         }
       }
 
+      console.log("[FAQ SAVE] starting", {
+        eventId,
+        entries: drafts,
+        cleanedEntries,
+      });
+
       const { data, error } = await supabase.rpc("save_event_faq_entries", {
         p_event_id: eventId,
-        p_entries: cleaned.map((d, i) => ({
-          question: d.question,
-          answer: d.answer,
-          order_index: i,
+        p_entries: cleanedEntries.map((entry, index) => ({
+          question: entry.question.trim(),
+          answer: entry.answer.trim(),
+          order_index: index,
         })),
       });
 
+      console.log("[FAQ SAVE] rpc result", { data, error });
+
       if (error) {
-        console.error("FAQ save failed", error);
-        const detail =
-          (error as { message?: string }).message ||
-          (error as { details?: string }).details ||
-          (error as { hint?: string }).hint ||
-          (error as { code?: string }).code ||
-          "Could not save FAQ entries.";
-        setSaveError(detail);
-        toast.error(detail);
+        const message = formatSupabaseError(error);
+
+        console.error("[FAQ SAVE] failed", error);
+
+        setSaveError(message);
+        toast.error("Could not save FAQ entries", { description: message });
         return;
       }
 
@@ -155,14 +187,12 @@ export function EventFaqSection({
       toast.success("FAQ entries saved.");
       setReloadKey((k) => k + 1);
     } catch (e) {
-      console.error("FAQ save failed", e);
-      const msg =
-        (e as { message?: string })?.message ||
-        (e as { details?: string })?.details ||
-        (e as { hint?: string })?.hint ||
-        "Could not save FAQ entries.";
-      setSaveError(msg);
-      toast.error(msg);
+      const message = formatSupabaseError(e);
+
+      console.error("[FAQ SAVE] failed", e);
+
+      setSaveError(message);
+      toast.error("Could not save FAQ entries", { description: message });
     } finally {
       setSaving(false);
     }
@@ -261,7 +291,7 @@ export function EventFaqSection({
               <button
                 type="button"
                 onClick={saveAll}
-                disabled={saving}
+                disabled={saving || Boolean(eventIdSaveError)}
                 className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save changes"}
@@ -269,9 +299,9 @@ export function EventFaqSection({
             </div>
           )}
 
-          {saveError && (
+          {(saveError || eventIdSaveError) && (
             <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-              {saveError}
+              {saveError || eventIdSaveError}
             </div>
           )}
         </>

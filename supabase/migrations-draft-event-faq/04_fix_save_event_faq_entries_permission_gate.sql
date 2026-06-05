@@ -1,6 +1,7 @@
--- Admin RPC to save FAQ entries for an event in a single transaction.
--- Uses SECURITY DEFINER to bypass RLS once the caller has been verified
--- by the same helper used by event setup RLS: platform admin or agency admin.
+-- Re-apply save_event_faq_entries with the same agency permission helper used
+-- by working event setup saves. This fixes the earlier role/status mismatch:
+-- GetStampd uses agency_owner / agency_admin plus accepted_at, not owner/admin
+-- plus a status column.
 
 create or replace function public.save_event_faq_entries(
   p_event_id uuid,
