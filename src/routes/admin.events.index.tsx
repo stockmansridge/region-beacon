@@ -113,39 +113,13 @@ function Events() {
 
   const [open, setOpen] = useState(false);
 
-  // Always-fresh status indicators. The Events list shows live status pills
-  // (Public Website Status, Archived/Active, public address, commercial
-  // activation) that can change from other routes (event detail / setup) or
-  // even other tabs. We aggressively refetch on:
-  //   - mount / route re-entry (the data-loading useEffect below, which
-  //     also reruns whenever `reloadKey` bumps)
-  //   - window focus (returning to this tab)
-  //   - document visibility change (unminimise / tab switch back)
-  //   - pageshow (browser back / bfcache restore — focus does NOT fire here)
-  // We also call router.invalidate() so any other route data tied to this
-  // page is re-resolved.
-  useEffect(() => {
-    function bump() {
-      setReloadKey((k) => k + 1);
-      // Best-effort: re-run any router loaders for the current match.
-      try { router.invalidate(); } catch (_e) { /* noop */ }
-    }
-    function onVisibility() {
-      if (document.visibilityState === "visible") bump();
-    }
-    function onPageShow(e: PageTransitionEvent) {
-      // Fires on initial load AND on bfcache restore (back/forward nav).
-      if (e.persisted) bump();
-    }
-    window.addEventListener("focus", bump);
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pageshow", onPageShow);
-    return () => {
-      window.removeEventListener("focus", bump);
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pageshow", onPageShow);
-    };
-  }, [router]);
+  // Refetch the Events list on mount / route re-entry (the data-loading
+  // useEffect below reruns whenever `reloadKey` bumps, and the component
+  // remounts when the user navigates back to /admin/events). We intentionally
+  // do NOT attach window focus / visibilitychange / pageshow listeners here:
+  // screenshot/snipping tools and ordinary window focus changes would
+  // otherwise trigger visible reloads. Users can hit the Refresh button if
+  // they want a manual refetch without leaving the page.
 
 
 
@@ -402,17 +376,17 @@ function Events() {
                     </td>
                     <td className="px-4 py-3">
                       {isArchived ? (
-                        <span className="rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-2.5 py-1 text-xs font-semibold text-[#475569]">
-                          Archived
+                        <span className="rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#475569]">
+                          ARCHIVED
                         </span>
                       ) : (
                         <span className={
-                          "rounded-full px-2.5 py-1 text-xs font-medium " +
+                          "rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide " +
                           (e.status === "published"
                             ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                             : "bg-[#F1F5F9] text-[#475569]")
                         }>
-                          {e.status}
+                          {(e.status ?? "").toUpperCase()}
                         </span>
                       )}
                     </td>
