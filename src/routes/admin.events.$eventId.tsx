@@ -1621,7 +1621,7 @@ function EventDetail() {
     if (!agencyId) return;
     if (
       !window.confirm(
-        "Disable this venue?\n\nThis venue will no longer count toward your venue limit and cannot be selected for new events. Existing events, check-ins, QR codes, and historical reporting will remain intact.\n\nAfter disabling, you can permanently delete this venue from the Disabled tab if it has no linked event or check-in history.",
+        "Disable this venue?\n\nThis venue will no longer count toward your venue limit and cannot be selected for new events. Existing events, check-ins, QR codes, and historical reporting will remain intact.",
       )
     ) {
       return;
@@ -3107,12 +3107,6 @@ function EventDetail() {
                             ? disabledVenues.length
                             : venues.length;
                       const selected = venueFilter === opt;
-                      const label =
-                        opt === "active"
-                          ? "Active"
-                          : opt === "disabled"
-                            ? "Disabled / Archived"
-                            : "All";
                       return (
                         <button
                           key={opt}
@@ -3125,16 +3119,11 @@ function EventDetail() {
                               : "text-[#475569] hover:bg-[#F1F5F9]")
                           }
                         >
-                          {label} ({count})
+                          {opt} ({count})
                         </button>
                       );
                     })}
                   </div>
-                  {venueFilter === "disabled" && (
-                    <p className="mb-3 text-sm text-[#64748B]">
-                      Disabled venues do not count toward your venue limit. You can reactivate them, or permanently delete them if they have no linked history.
-                    </p>
-                  )}
             {venues.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
                 No venues have been added yet. Add the first venue so visitors have somewhere to check in during this event.
@@ -3150,19 +3139,311 @@ function EventDetail() {
                   </div>
                 )}
               </div>
-            ) : visibleVenues.length === 0 ? (
-              <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-8 text-center text-sm text-[#475569]">
-                {venueFilter === "disabled"
-                  ? "No disabled venues yet. Disabled venues will appear here and will not count toward your venue limit."
-                  : venueFilter === "active"
-                    ? "No active venues."
-                    : "No venues."}
-              </div>
             ) : (
               <div className="overflow-hidden rounded-[14px] border border-[#E6ECF4] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.035)]">
                 <table className="w-full text-sm">
                   <thead className="bg-[#F8FAFC] text-left text-xs uppercase tracking-wider text-[#64748B]">
-...
+                    <tr>
+                      <th className="px-3 py-2 font-medium">#</th>
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">Address</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                      <th className="px-3 py-2 font-medium">Active QR</th>
+                      <th className="px-3 py-2 font-medium">Issued</th>
+                      {canEdit && <th className="px-3 py-2 font-medium">QR link</th>}
+                      {canEdit && <th className="px-3 py-2 font-medium">QR controls</th>}
+                      {canEdit && <th className="px-3 py-2 font-medium">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleVenues.map((v) => {
+                      const qr = qrByVenue.get(v.id);
+                      const hasActiveQr = !!qr;
+                      const isBusy = qrActionVenueId === v.id;
+                      const token = qr?.token ?? null;
+                      const built = token ? buildCheckinUrl(token) : null;
+                      return (
+                        <tr
+                          key={v.id}
+                          onClick={() => {
+                            if (canEdit && venueEditingId === null && venueArchivingId === null && v.deleted_at == null) {
+                              startEditVenue(v);
+                            }
+                          }}
+                          className={
+                            "border-t border-[#E6ECF4] align-top " +
+                            (v.deleted_at != null ? "bg-[#F8FAFC]/60 " : "") +
+                            (canEdit && venueEditingId === null && venueArchivingId === null && v.deleted_at == null
+                              ? "cursor-pointer transition-colors hover:bg-[#F8FAFC]"
+                              : "")
+                          }
+                          title={canEdit && venueEditingId === null && v.deleted_at == null ? "Open venue details" : undefined}
+                        >
+                          <td className="px-3 py-2 text-muted-foreground">{v.order_index}</td>
+                          <td className="px-3 py-2 font-medium">
+                            {canEdit && v.deleted_at == null ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (venueEditingId === null && venueArchivingId === null) {
+                                    startEditVenue(v);
+                                  }
+                                }}
+                                disabled={venueEditingId !== null || venueArchivingId !== null}
+                                className="text-left font-medium text-foreground underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:no-underline"
+                              >
+                                {v.name}
+                              </button>
+                            ) : (
+                              <span className={v.deleted_at != null ? "text-[#64748B]" : undefined}>{v.name}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground">{v.address ?? "—"}</td>
+                          <td className="px-3 py-2">
+                            {v.deleted_at != null ? (
+                              <span className="inline-flex items-center rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-1 text-xs font-semibold text-[#475569]">
+                                Disabled
+                              </span>
+                            ) : (
+                              <span className={
+                                v.status === "active"
+                                  ? "inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]"
+                                  : "inline-flex items-center rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-1 text-xs font-semibold text-[#475569]"
+                              }>{v.status}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">
+                            {hasActiveQr ? (
+                              <span className="inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]">
+                                {qr!.status}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full border border-[#FDBA74] bg-[#FFF7ED] px-3 py-1 text-xs font-semibold text-[#B45309]">none</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
+                          {canEdit && (
+                            <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
+                              {!hasActiveQr ? (
+                                <span className="text-xs text-muted-foreground/70">No QR yet</span>
+                              ) : !built ? (
+                                <span className="text-xs text-muted-foreground/70">—</span>
+                              ) : built.isFallback ? (
+                                <div className="space-y-1.5">
+                                  <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                                    Public address required before QR link can be shown.
+                                  </p>
+                                  <Link
+                                    to="/admin/events/$eventId"
+                                    params={{ eventId: event.id }}
+                                    hash="section-public-address"
+                                    className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted"
+                                  >
+                                    Set public address
+                                  </Link>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-1.5">
+                                  <a
+                                    href={built.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono text-[11px] break-all text-primary underline-offset-2 hover:underline"
+                                    title={built.url}
+                                  >
+                                    {built.url.replace(/^https?:\/\//, "")}
+                                  </a>
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => copyQrLink(v.id)}
+                                      disabled={isBusy}
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
+                                    </button>
+                                    <a
+                                      href={built.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
+                                    >
+                                      Open
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+                          )}
+                          {canEdit && (
+                            <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
+                              {hasActiveQr ? (
+                                <div className="flex flex-col gap-1.5">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => generateOrRotateQr(v.id, true)}
+                                      disabled={isBusy}
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#FDBA74] bg-white px-3.5 text-sm font-semibold text-[#B45309] hover:bg-[#FFF7ED] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {isBusy ? "Working…" : "Rotate QR"}
+                                    </button>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2 rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-3 py-2">
+                                    <label
+                                      htmlFor={`entry-value-${v.id}`}
+                                      className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                                    >
+                                      Stamp value
+                                    </label>
+                                    <input
+                                      id={`entry-value-${v.id}`}
+                                      type="number"
+                                      min={1}
+                                      max={100}
+                                      step={1}
+                                      inputMode="numeric"
+                                      value={
+                                        qrEntryDraft.get(v.id) ??
+                                        String(qr!.entry_value ?? 1)
+                                      }
+                                      onChange={(e) => {
+                                        const val = e.currentTarget.value;
+                                        setQrEntryDraft((m) => {
+                                          const next = new Map(m);
+                                          next.set(v.id, val);
+                                          return next;
+                                        });
+                                      }}
+                                      className="h-10 w-20 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                                    />
+                                    {(() => {
+                                      const draft = qrEntryDraft.get(v.id);
+                                      const dirty =
+                                        draft !== undefined &&
+                                        draft !== String(qr!.entry_value ?? 1);
+                                      const saving = qrEntrySavingId === v.id;
+                                      if (!dirty && !saving) return null;
+                                      return (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            saveQrEntryValue(v.id, draft ?? "1")
+                                          }
+                                          disabled={saving}
+                                          className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          {saving ? "Saving…" : "Save"}
+                                        </button>
+                                      );
+                                    })()}
+                                    <span className="basis-full text-[10px] leading-tight text-muted-foreground">
+                                      Changes apply to future scans only. Existing check-ins keep the value earned at scan time.
+                                    </span>
+                                  </div>
+                                  {built && (
+                                    <QrPreview
+                                      value={built.url}
+                                      downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+                                      poster={{
+                                        eventName: event.name,
+                                        venueName: v.name,
+                                        logoUrl: getEventAssetPublicUrl(branding?.logo_path),
+                                        primaryColor: branding?.primary_color ?? null,
+                                        accentColor: branding?.accent_color ?? null,
+                                        offerSummary: offerSummaryByVenue.get(v.id) ?? null,
+                                        entryValue: qr?.entry_value ?? null,
+                                        filename: posterFilename(
+                                          event.public_slug ?? event.slug,
+                                          v.name,
+                                        ),
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => generateOrRotateQr(v.id, false)}
+                                  disabled={isBusy}
+                                  className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {isBusy ? "Generating…" : "Generate QR"}
+                                </button>
+                              )}
+                            </td>
+                          )}
+                          {canEdit && (
+                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); startEditVenue(v); }}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null || v.deleted_at != null}
+                                  className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  Edit details
+                                </button>
+                                {v.deleted_at == null ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => disableVenue(v.id)}
+                                    disabled={venueEditingId !== null || venueArchivingId !== null}
+                                    className="inline-flex h-9 items-center rounded-[10px] border border-[#FDA4AF] bg-white px-3.5 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {venueArchivingId === v.id ? "Disabling…" : "Disable venue"}
+                                  </button>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => reactivateVenue(v.id)}
+                                      disabled={venueEditingId !== null || venueArchivingId !== null}
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#86EFAC] bg-white px-3.5 text-sm font-semibold text-[#047857] hover:bg-[#ECFDF5] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {venueArchivingId === v.id ? "Working…" : "Reactivate venue"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => hardDeleteVenue(v.id)}
+                                      disabled={venueEditingId !== null || venueArchivingId !== null}
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#E11D48] bg-[#E11D48] px-3.5 text-sm font-semibold text-white hover:bg-[#BE123C] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {venueArchivingId === v.id ? "Deleting…" : "Delete permanently"}
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {qrActionError && canEdit && (
+                  <div className="border-t bg-destructive/5 px-3 py-2 text-xs text-destructive space-y-1">
+                    <p>{qrActionError}</p>
+                    {qrSupportDetails && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={copyQrSupportDetails}
+                          className="inline-flex h-6 items-center rounded-md border border-destructive/40 bg-background px-2 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                        >
+                          {qrSupportCopied ? "Copied" : "Copy support details"}
+                        </button>
+                        <details className="text-[11px] text-destructive/80">
+                          <summary className="cursor-pointer">Show details</summary>
+                          <pre className="mt-1 max-h-48 overflow-auto rounded bg-destructive/5 p-2 text-[10px] leading-snug text-destructive">
+{qrSupportDetails}
+                          </pre>
+                        </details>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <p className="border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   {canEdit
                     ? "Rotating a QR invalidates the previous code immediately. Visitor redemption and poster downloads are not wired yet."
