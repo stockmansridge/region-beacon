@@ -1282,8 +1282,6 @@ function EventDetail() {
       return;
     }
     const website = normalizeWebsiteUrl(venueForm.website_url) ?? "";
-      return;
-    }
     const phone = venueForm.phone.trim();
     if (phone.length > 40) {
       setVenueValidationError("Phone must be 40 characters or fewer.");
