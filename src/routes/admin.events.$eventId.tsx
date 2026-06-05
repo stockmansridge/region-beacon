@@ -130,7 +130,10 @@ type Venue = {
   phone: string | null;
   logo_path: string | null;
   cover_path: string | null;
+  deleted_at: string | null;
 };
+
+type VenueFilter = "active" | "disabled" | "all";
 
 type QrSummary = {
   venue_id: string;
