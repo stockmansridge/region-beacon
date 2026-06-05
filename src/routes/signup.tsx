@@ -83,7 +83,9 @@ function SignupPage() {
   const [businessName, setBusinessName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugDirty, setSlugDirty] = useState(false);
+  const [experienceType, setExperienceType] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [topError, setTopError] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("form");
