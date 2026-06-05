@@ -614,7 +614,7 @@ function EventDetail() {
             supabase
               .from("venues")
               .select(
-                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path, deleted_at",
+                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path, deleted_at, points_value",
               )
               .eq("event_id", event.id)
               .eq("agency_id", agencyId)
