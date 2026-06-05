@@ -47,6 +47,7 @@ type Bundle = {
   venues: Venue[];
   termsUrl: string | null;
   privacyUrl: string | null;
+  activeSubdomain: string | null;
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
