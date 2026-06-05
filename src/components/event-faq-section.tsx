@@ -182,8 +182,8 @@ export function EventFaqSection({
         rows.map((r) => ({
           key: r.id,
           id: r.id,
-          question: d.question,
-          answer: d.answer,
+          question: r.question,
+          answer: r.answer,
         })),
       );
       toast.success("FAQ entries saved.");
