@@ -178,10 +178,10 @@ function PricingPage() {
           <Sparkles className="h-3.5 w-3.5" /> Pricing
         </span>
         <h1 className="mt-5 font-serif text-4xl font-semibold leading-tight tracking-tight text-[#1F2417] sm:text-5xl">
-          Simple pricing for every tourism experience
+          Simple pricing for every trail, event, and destination
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-[#666666] sm:text-lg">
-          Whether you're running a wine trail, a market event, a town-wide campaign or a regional tourism program, GetStampd helps visitors engage, explore and return.
+          Launch digital stamp trails for events, markets, tourism campaigns, and destination experiences. Start small, then scale as your programme grows.
         </p>
       </section>
 
