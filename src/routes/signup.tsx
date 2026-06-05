@@ -408,8 +408,12 @@ function SignupPage() {
               className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {stage === "submitting" && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create organisation
+              Create free account
             </button>
+            <p className="text-center text-xs text-muted-foreground">
+              No payment required. Upgrade when you&rsquo;re ready.
+            </p>
+
           </form>
         )}
       </main>
