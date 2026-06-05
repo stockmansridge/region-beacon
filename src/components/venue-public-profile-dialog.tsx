@@ -245,7 +245,7 @@ export function VenuePublicProfileDialog({
     setSaving(true);
     const patch: Record<string, string | null> = {
       description: description.trim() ? description.trim() : null,
-      website_url: website.trim() ? website.trim() : null,
+      website_url: normalizeWebsiteUrl(website),
       phone: phone.trim() ? phone.trim() : null,
     };
     if (offerSupported) {
