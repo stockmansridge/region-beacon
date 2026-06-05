@@ -255,13 +255,13 @@ function FreeAccountCard() {
           </div>
           <ul className="space-y-2.5 text-sm text-[#1F2417]">
             {[
-              "Create your GetStampd account",
-              "Build your first draft trail or event",
-              "Add sample stops, stalls or locations",
-              "Preview the visitor mobile pass",
-              "Test digital stamp collection",
-              "Try QR code check-ins",
-              "Set up sample rewards",
+              "1 active trail or campaign",
+              "Up to 5 venues / stops",
+              "Up to 250 passports",
+              "Basic digital passport",
+              "Custom branding basics",
+              "QR code check-ins",
+              "Self-serve setup",
               "Explore the organiser dashboard",
             ].map((f) => (
               <li key={f} className="flex items-start gap-2">
