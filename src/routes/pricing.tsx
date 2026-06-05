@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { authUrl } from "@/lib/auth-redirect";
 import { cn } from "@/lib/utils";
-import { getPlanByCode } from "@/lib/getstampd-pricing";
 import {
   Accordion,
   AccordionContent,
@@ -23,13 +22,13 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "Simple pricing for every trail, event, and destination. Launch digital stamp trails for wineries, markets, festivals, regions and destinations.",
+          "Start with a free GetStampd account, then upgrade to Starter, Growth or Enterprise when you're ready to launch your digital stamp trails publicly.",
       },
-      { property: "og:title", content: "GetStampd Pricing" },
+      { property: "og:title", content: "GetStampd Pricing — Start free, upgrade when you're ready" },
       {
         property: "og:description",
         content:
-          "Starter, Growth, Regional and Pro Region plans for trails, events and tourism campaigns.",
+          "Free account plus Starter, Growth and Enterprise plans for trails, events and tourism campaigns.",
       },
       { property: "og:url", content: "https://getstampd.com.au/pricing" },
       { name: "robots", content: "index, follow" },
@@ -54,67 +53,83 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-
-// Public plans pulled from the GetStampd pricing config (single source of
-// truth shared with the in-product upgrade flow and Stripe checkout).
-const PUBLIC_PLAN_CODES = ["starter", "growth", "regional", "pro_region"] as const;
-
-const PLAN_COPY: Record<(typeof PUBLIC_PLAN_CODES)[number], {
+type Plan = {
+  code: string;
+  name: string;
   desc: string;
+  price: string;
+  cadence: string;
+  billed: string;
+  features: string[];
   cta: string;
-  highlight?: boolean;
+  href: string;
+  highlight: boolean;
   badge?: string;
-  salesAssisted?: boolean;
-}> = {
-  starter: {
-    desc: "For single venues or small operators getting started with GetStampd.",
-    cta: "Start with Starter",
+};
+
+const PLANS: Plan[] = [
+  {
+    code: "starter",
+    name: "Starter",
+    desc: "For small live trails, events and local experiences.",
+    price: "$49",
+    cadence: " / month",
+    billed: "Billed annually",
+    features: [
+      "Launch 1 active trail or event",
+      "Up to 1,000 participants",
+      "Custom branding",
+      "Basic analytics",
+      "Email support",
+    ],
+    cta: "Upgrade to Starter",
+    href: authUrl("/signup?plan=starter"),
+    highlight: false,
   },
-  growth: {
-    desc: "For venues, producers and operators growing repeat visits and customer engagement.",
+  {
+    code: "growth",
+    name: "Growth",
+    desc: "For growing destinations, markets and tourism campaigns.",
+    price: "$149",
+    cadence: " / month",
+    billed: "Billed annually",
+    features: [
+      "Up to 10 active trails/events",
+      "Up to 10,000 participants",
+      "Advanced analytics",
+      "Reward tracking",
+      "Priority email support",
+    ],
     cta: "Upgrade to Growth",
+    href: authUrl("/signup?plan=growth"),
     highlight: true,
     badge: "Most popular",
   },
-  regional: {
-    desc: "For trails, tourism groups, events and multi-venue regional programs.",
-    cta: "Choose Regional",
-  },
-  pro_region: {
-    desc: "For larger regions, destination programs and advanced multi-operator loyalty experiences.",
-    cta: "Choose Pro Region",
-  },
-};
-
-const PLANS = PUBLIC_PLAN_CODES.map((code) => {
-  const plan = getPlanByCode(code);
-  const copy = PLAN_COPY[code];
-  const [priceMain, priceCadence] = plan.price.includes("/")
-    ? [plan.price.split("/")[0], `/${plan.price.split("/").slice(1).join("/")}`]
-    : [plan.price, ""];
-  return {
-    code: plan.code,
-    name: plan.name,
-    desc: copy.desc,
-    price: priceMain,
-    cadence: priceCadence,
-    billed: priceCadence ? "Billed annually" : "",
+  {
+    code: "enterprise",
+    name: "Enterprise",
+    desc: "For tourism boards, regions and large multi-location programs.",
+    price: "Custom",
+    cadence: "",
+    billed: "Let's talk",
     features: [
-      `Up to ${plan.venueLimit} venues for QR check-ins`,
-      plan.events,
-      plan.passports,
-      "Custom-branded digital passes & rewards",
-      "Trail, campaign and venue dashboards",
-      plan.support,
+      "Unlimited trails/events",
+      "Unlimited participants",
+      "Multi-destination programs",
+      "Custom integrations",
+      "Dedicated account manager",
     ],
-    cta: copy.cta,
-    href: copy.salesAssisted ? "/contact" : authUrl(`/signup?plan=${plan.code}`),
-    highlight: copy.highlight ?? false,
-    badge: copy.badge,
-  };
-});
+    cta: "Contact sales",
+    href: "/contact",
+    highlight: false,
+  },
+];
 
 const FAQS = [
+  {
+    q: "Do I need to pay anything to get started?",
+    a: "No. You can create a free GetStampd account, build a draft trail or event, and preview the visitor experience before choosing a paid plan.",
+  },
   {
     q: "Can GetStampd be branded for our destination, trail or campaign?",
     a: "Yes. Each trail, campaign or pass can be customized with your imagery, logo, colours and reward structure.",
@@ -177,11 +192,69 @@ function Header() {
             href={authUrl("/signup")}
             className="inline-flex h-10 items-center rounded-full bg-[#8A1538] px-5 text-sm font-semibold text-white hover:bg-[#6f1029]"
           >
-            Start now
+            Start here for free
           </a>
         </div>
       </div>
     </header>
+  );
+}
+
+function FreeAccountCard() {
+  return (
+    <div className="relative">
+      <div className="mb-4 flex items-center justify-center gap-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#8A1538]">
+        <span className="hidden sm:inline">New to GetStampd?</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8A1538] px-3 py-1 text-white shadow-sm">
+          <Sparkles className="h-3 w-3" /> Start here
+        </span>
+        <ArrowRight className="h-4 w-4 rotate-90 text-[#8A1538]" />
+      </div>
+      <div className="relative rounded-3xl border-2 border-[#8A1538] bg-gradient-to-br from-[#FBF5E8] to-[#F8F3EA] p-8 shadow-xl shadow-[#8A1538]/10 ring-1 ring-[#C8A24A]/40">
+        <span className="absolute right-6 top-6 inline-flex items-center gap-1.5 rounded-full bg-[#C8A24A] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1F2417] shadow-sm">
+          <Stamp className="h-3 w-3" /> You&rsquo;re here
+        </span>
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div>
+            <h3 className="font-serif text-3xl font-semibold text-[#1F2417]">Free Account</h3>
+            <p className="mt-3 text-[#666666]">
+              Perfect for exploring GetStampd and setting up your first digital stamp experience.
+            </p>
+            <div className="mt-5 flex items-baseline gap-2">
+              <span className="font-serif text-5xl font-semibold text-[#1F2417]">$0</span>
+              <span className="text-sm font-medium uppercase tracking-wider text-[#C8A24A]">Free to start</span>
+            </div>
+            <p className="mt-4 text-sm text-[#666666]">
+              Upgrade when you&rsquo;re ready to launch publicly or grow your experience.
+            </p>
+            <a
+              href={authUrl("/signup?plan=free")}
+              className="mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-[#8A1538] px-7 text-sm font-semibold text-white shadow-md shadow-[#8A1538]/20 transition hover:-translate-y-0.5 hover:bg-[#6f1029] hover:shadow-lg"
+            >
+              Start here for free <ArrowRight className="h-4 w-4" />
+            </a>
+            <p className="mt-3 text-xs font-medium text-[#666666]">No payment required to begin.</p>
+          </div>
+          <ul className="space-y-2.5 text-sm text-[#1F2417]">
+            {[
+              "Create your GetStampd account",
+              "Build your first draft trail or event",
+              "Add sample stops, stalls or locations",
+              "Preview the visitor mobile pass",
+              "Test digital stamp collection",
+              "Try QR code check-ins",
+              "Set up sample rewards",
+              "Explore the organiser dashboard",
+            ].map((f) => (
+              <li key={f} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#687642]" />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -191,21 +264,110 @@ function PricingPage() {
       <Header />
 
       {/* Hero */}
-      <section className="mx-auto max-w-4xl px-5 pb-12 pt-20 text-center sm:px-8 sm:pt-28">
+      <section className="mx-auto max-w-4xl px-5 pb-10 pt-20 text-center sm:px-8 sm:pt-28">
         <span className="inline-flex items-center gap-2 rounded-full bg-[#8A1538]/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8A1538]">
           <Sparkles className="h-3.5 w-3.5" /> Pricing
         </span>
         <h1 className="mt-5 font-serif text-4xl font-semibold leading-tight tracking-tight text-[#1F2417] sm:text-5xl">
-          Pricing that grows with your venue, campaign or region
+          Start with a free GetStampd account
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-[#666666] sm:text-lg">
-          Choose the GetStampd plan that fits how you want to run QR check-ins, rewards, trails and regional loyalty experiences.
+          Create your account, explore the platform, build your first digital stamp experience and see how visitors collect stamps before you choose a paid plan.
         </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <a
+            href={authUrl("/signup?plan=free")}
+            className="inline-flex h-12 items-center gap-2 rounded-full bg-[#8A1538] px-7 text-sm font-semibold text-white shadow-md shadow-[#8A1538]/20 hover:-translate-y-0.5 hover:bg-[#6f1029] hover:shadow-lg transition"
+          >
+            Start here for free <ArrowRight className="h-4 w-4" />
+          </a>
+          <a
+            href="#paid-plans"
+            className="inline-flex h-12 items-center gap-2 rounded-full border-2 border-[#1F2417]/15 bg-white px-6 text-sm font-semibold text-[#1F2417] hover:border-[#8A1538] hover:text-[#8A1538] transition"
+          >
+            View paid plans
+          </a>
+        </div>
       </section>
 
-      {/* Cards */}
-      <section className="mx-auto max-w-7xl px-5 pb-24 sm:px-8">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Free account spotlight */}
+      <section className="mx-auto max-w-5xl px-5 pb-10 sm:px-8">
+        <FreeAccountCard />
+      </section>
+
+      {/* What you get panel */}
+      <section className="mx-auto max-w-5xl px-5 pb-16 sm:px-8">
+        <div className="rounded-3xl border border-[#C8A24A]/40 bg-white p-8 shadow-sm sm:p-10">
+          <div className="text-center">
+            <h2 className="font-serif text-2xl font-semibold text-[#1F2417] sm:text-3xl">
+              What you get with your free account
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-[#666666]">
+              Your free GetStampd account gives you a hands-on way to explore how digital stamp trails work from both the organiser and visitor perspective.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="font-serif text-lg font-semibold text-[#1F2417]">Build your first experience</h3>
+              <ul className="mt-4 space-y-2.5 text-sm text-[#1F2417]">
+                {[
+                  "Create a draft trail, event or tourism pass",
+                  "Add sample locations, stalls or checkpoints",
+                  "Add your logo, colours and imagery",
+                  "Create sample rewards and offers",
+                  "Preview the mobile visitor pass",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#687642]" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-serif text-lg font-semibold text-[#1F2417]">Test the visitor journey</h3>
+              <ul className="mt-4 space-y-2.5 text-sm text-[#1F2417]">
+                {[
+                  "Try QR code stamp collection",
+                  "See how visitors collect stamps",
+                  "Track sample progress",
+                  "Preview reward unlocks",
+                  "Explore the organiser dashboard",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#687642]" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <p className="mt-8 rounded-xl bg-[#F8F3EA] p-4 text-center text-sm text-[#666666]">
+            Free accounts are ideal for planning, testing and previewing your GetStampd experience. Upgrade when you&rsquo;re ready to launch publicly, invite visitors or run a larger campaign.
+          </p>
+
+          <div className="mt-6 text-center">
+            <a
+              href={authUrl("/signup?plan=free")}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-[#8A1538] px-7 text-sm font-semibold text-white shadow-md shadow-[#8A1538]/20 hover:-translate-y-0.5 hover:bg-[#6f1029] hover:shadow-lg transition"
+            >
+              Start here for free <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Paid Plans */}
+      <section id="paid-plans" className="mx-auto max-w-7xl px-5 pb-24 sm:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A1538]">Upgrade paths</p>
+          <h2 className="mt-2 font-serif text-3xl font-semibold text-[#1F2417] sm:text-4xl">
+            Ready to launch publicly? Choose a paid plan.
+          </h2>
+        </div>
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {PLANS.map((p) => (
             <div
               key={p.code}
@@ -316,16 +478,16 @@ function PricingPage() {
       {/* CTA */}
       <section className="bg-[#32391F] py-20 text-center text-[#F8F3EA]">
         <div className="mx-auto max-w-2xl px-5 sm:px-8">
-          <h2 className="font-serif text-3xl font-semibold sm:text-4xl">Ready to launch your first trail?</h2>
+          <h2 className="font-serif text-3xl font-semibold sm:text-4xl">Ready to start your first trail?</h2>
           <p className="mt-4 text-[#F8F3EA]/80">
-            Set up a branded digital stamp trail in minutes — no app required for your visitors.
+            Create your free account and start building — no payment required to begin.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <a
-              href={authUrl("/signup")}
+              href={authUrl("/signup?plan=free")}
               className="inline-flex h-12 items-center gap-2 rounded-full bg-[#C8A24A] px-7 text-sm font-semibold text-[#1F2417] hover:bg-[#b78f3a]"
             >
-              Start now <ArrowRight className="h-4 w-4" />
+              Start here for free <ArrowRight className="h-4 w-4" />
             </a>
             <Link
               to="/demo"
