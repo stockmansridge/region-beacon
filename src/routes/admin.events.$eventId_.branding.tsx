@@ -239,10 +239,7 @@ function BrandingEditor() {
       setValidationError("Welcome copy must be 1000 characters or fewer.");
       return;
     }
-    if (terms_url && !terms_url.startsWith("https://")) {
-      setValidationError("Terms URL must start with https://.");
-      return;
-    }
+    // Terms URL is normalised by normalizeWebsiteUrl above.
     const singularErr = validateVenueLabel(venue_label_singular, "Singular venue label");
     if (singularErr) {
       setValidationError(singularErr);
