@@ -227,7 +227,9 @@ type VenueEditForm = {
   phone: string;
   logo_path: string | null;
   cover_path: string | null;
+  points_value: string;
 };
+
 
 type VenueSaveDebug = {
   route: string;
