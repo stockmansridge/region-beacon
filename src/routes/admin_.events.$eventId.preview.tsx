@@ -260,7 +260,7 @@ function EventPreview() {
       className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
       style={{ backgroundColor: primaryColor }}
     >
-      Start passport · Preview only
+      Start passport · publish event to enable
     </button>
   );
 
