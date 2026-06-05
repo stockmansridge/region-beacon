@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { authUrl } from "@/lib/auth-redirect";
 import { cn } from "@/lib/utils";
+import { getPlanByCode } from "@/lib/getstampd-pricing";
 import {
   Accordion,
   AccordionContent,
