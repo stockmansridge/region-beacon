@@ -1687,6 +1687,37 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  async function runForceDeleteVenue() {
+    const venueId = forceDeleteVenueId;
+    if (!venueId) return;
+    if (forceDeleteConfirm !== "DELETE VENUE AND HISTORY") {
+      setForceDeleteError(
+        'Type "DELETE VENUE AND HISTORY" exactly to confirm.',
+      );
+      return;
+    }
+    setForceDeleteBusy(true);
+    setForceDeleteError(null);
+    const { error } = await supabase.rpc("force_delete_venue", {
+      p_venue_id: venueId,
+      p_confirm_text: forceDeleteConfirm,
+    });
+    setForceDeleteBusy(false);
+    if (error) {
+      const msg =
+        [error.message, (error as { details?: string }).details, (error as { hint?: string }).hint]
+          .filter(Boolean)
+          .join(" — ") || "Force delete failed.";
+      setForceDeleteError(msg);
+      toast.error(msg);
+      return;
+    }
+    setForceDeleteVenueId(null);
+    setForceDeleteConfirm("");
+    toast.success("Venue and linked history permanently deleted.");
+    setReloadKey((k) => k + 1);
+  }
+
   async function archiveEvent() {
     if (!agencyId || !bundle) return;
     if (
