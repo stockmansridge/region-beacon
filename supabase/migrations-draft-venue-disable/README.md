@@ -69,3 +69,13 @@ drop function if exists public._can_manage_agency_venue(uuid);
 
 Disabled venues remain in `public.venues` with `deleted_at` set and are
 unaffected by the rollback.
+
+## 03_force_delete_venue.sql
+
+Adds `public.force_delete_venue(p_venue_id uuid, p_confirm_text text)`.
+
+- **Platform-admin only** (guarded with `public.is_platform_admin(auth.uid())`).
+- Rejects unless `p_confirm_text = 'DELETE VENUE AND HISTORY'` (exact match).
+- Destructive: discovers every public-schema table with a FK to `public.venues(id)` via `information_schema` (same introspection used in `02_hard_delete_venue_strict.sql`) and `DELETE`s the matching rows in each — currently `checkins`, `venue_qr_codes`, `venue_offers`, plus any future FK tables automatically — then deletes the venue row.
+- `RAISE NOTICE` records `venue=<id> agency=<id> by=<auth.uid()> deleted=[table=N, ...]` for an audit breadcrumb.
+- The safe `hard_delete_venue` RPC is **unchanged** and remains the only path for normal organisation admins.
