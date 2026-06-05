@@ -42,11 +42,27 @@ export const Route = createFileRoute("/")({
           "Launch beautiful, branded digital stamp trails for trails, events and destinations.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://getstampd.com.au/" },
       { name: "robots", content: "index, follow" },
+    ],
+    links: [{ rel: "canonical", href: "https://getstampd.com.au/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "GetStampd",
+          url: "https://getstampd.com.au",
+          description:
+            "Digital stamp trails for wineries, markets, tourism groups and events.",
+        }),
+      },
     ],
   }),
   component: IndexRoute,
 });
+
 
 function IndexRoute() {
   const subdomain = useTenantSubdomain();

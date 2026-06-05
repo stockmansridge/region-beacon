@@ -9,10 +9,18 @@ export const Route = createFileRoute("/contact")({
         name: "description",
         content: "Contact the GetStampd team for sales, partnerships and general enquiries.",
       },
+      { property: "og:title", content: "Contact GetStampd" },
+      {
+        property: "og:description",
+        content: "Talk to the GetStampd team about trails, events and tourism campaigns.",
+      },
+      { property: "og:url", content: "https://getstampd.com.au/contact" },
     ],
+    links: [{ rel: "canonical", href: "https://getstampd.com.au/contact" }],
   }),
   component: ContactPage,
 });
+
 
 const CONTACT = {
   email: "jonathan@stockmansridge.com.au",
