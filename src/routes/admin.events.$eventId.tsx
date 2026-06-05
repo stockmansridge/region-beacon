@@ -3605,6 +3605,18 @@ function EventDetail() {
           </Section>
 
           <Section
+            title="Participants"
+            id="section-participants"
+            tab="participants"
+            description="Passport stamps and points awarded to each participant in this event."
+          >
+            <AdminEventParticipantsSection
+              eventId={event.id}
+              canView={canEdit || agency.selected?.role === "agency_member"}
+            />
+          </Section>
+
+          <Section
             title="Bonus Codes"
             id="section-bonus-codes"
             tab="bonuscodes"
