@@ -4708,7 +4708,9 @@ function PublicAddressCard({
       .eq("status", "pending");
     setReleasing(false);
     if (error) {
-      setReleaseError(`Could not release subdomain: ${error.message}`);
+      const msg = `Could not release subdomain: ${error.message}`;
+      setReleaseError(msg);
+      toast.error(msg);
       return;
     }
     onChanged();
