@@ -2159,6 +2159,16 @@ function EventDetail() {
         )}
       </div>
 
+      {event.deleted_at != null && (
+        <div className="mt-3 rounded-[12px] border border-[#CBD5E1] bg-[#F1F5F9] px-4 py-3 text-sm leading-6 text-[#475569]">
+          This event is <span className="font-semibold">archived</span> and does not count toward your active
+          event limit. All venues, passports, check-ins and reports are preserved. Use{" "}
+          <span className="font-semibold">Unarchive event</span> above to bring it back as a draft (subject to
+          your plan&apos;s active event limit).
+        </div>
+      )}
+
+
       <details className="group rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
           <span className="flex flex-col gap-0.5">
