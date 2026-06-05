@@ -34,10 +34,18 @@ export const Route = createFileRoute("/demo/")({
         content:
           "Preview the customer experience of a regional wine trail digital passport — collect stamps at every cellar door and unlock rewards.",
       },
+      { property: "og:title", content: "See GetStampd in action — demo trail" },
+      {
+        property: "og:description",
+        content: "A live demo of a regional wine trail passport powered by GetStampd.",
+      },
+      { property: "og:url", content: "https://getstampd.com.au/demo" },
     ],
+    links: [{ rel: "canonical", href: "https://getstampd.com.au/demo" }],
   }),
   component: DemoLanding,
 });
+
 
 function DemoLanding() {
   return (

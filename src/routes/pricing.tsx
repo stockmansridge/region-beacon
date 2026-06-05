@@ -29,13 +29,16 @@ export const Route = createFileRoute("/pricing")({
       {
         property: "og:description",
         content:
-          "Pilot, Launch and Destination Programme plans for trails, events and tourism campaigns.",
+          "Starter, Growth, Regional and Pro Region plans for trails, events and tourism campaigns.",
       },
+      { property: "og:url", content: "https://getstampd.com.au/pricing" },
       { name: "robots", content: "index, follow" },
     ],
+    links: [{ rel: "canonical", href: "https://getstampd.com.au/pricing" }],
   }),
   component: PricingPage,
 });
+
 
 // Public plans pulled from the GetStampd pricing config (single source of
 // truth shared with the in-product upgrade flow and Stripe checkout).
