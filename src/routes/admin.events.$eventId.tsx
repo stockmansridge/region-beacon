@@ -517,7 +517,6 @@ function EventDetail() {
           )
           .eq("id", eventId)
           .eq("agency_id", agencyId)
-          .is("deleted_at", null)
           .maybeSingle();
 
         if (cancelled) return;
