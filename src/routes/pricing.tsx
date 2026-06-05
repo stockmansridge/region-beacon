@@ -98,12 +98,12 @@ const PLANS = [
 
 const FAQS = [
   {
-    q: "Can GetStampd be branded for our destination or event?",
-    a: "Yes. Each trail, event or pass can be customized with your imagery, logo, colours and reward structure.",
+    q: "Can GetStampd be branded for our destination, trail or campaign?",
+    a: "Yes. Each trail, campaign or pass can be customized with your imagery, logo, colours and reward structure.",
   },
   {
     q: "How do visitors collect stamps?",
-    a: "Visitors join a trail or event, then collect stamps by scanning QR codes, checking in at locations or completing participating activities.",
+    a: "Visitors join a trail or campaign, then collect stamps by scanning QR codes, checking in at locations or completing participating activities.",
   },
   {
     q: "Can we use GetStampd for markets and stall events?",
@@ -114,8 +114,8 @@ const FAQS = [
     a: "GetStampd is designed to be simple and mobile-friendly so visitors can join and collect stamps with minimal friction.",
   },
   {
-    q: "Can we track participation?",
-    a: "Yes. Organizers can view participation, stamp collection and reward engagement through a simple dashboard.",
+    q: "Can we track participation across multiple trails?",
+    a: "Yes. Organizers can view participation, stamp collection and reward engagement across all campaigns through a simple dashboard.",
   },
 ];
 
