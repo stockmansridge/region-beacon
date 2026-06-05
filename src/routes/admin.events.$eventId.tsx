@@ -60,6 +60,7 @@ type EventRow = {
   created_at: string;
   updated_at: string;
   current_terms_version_id: string | null;
+  deleted_at: string | null;
 };
 
 type Branding = {
