@@ -21,6 +21,7 @@ import { useTenantSubdomain } from "@/lib/tenant-host";
 import { authUrl } from "@/lib/auth-redirect";
 import { LivePublicPage } from "./live.$subdomain.index";
 import { cn } from "@/lib/utils";
+import { getPlanByCode } from "@/lib/getstampd-pricing";
 import heroWine from "@/assets/hero-wine-trail.jpg";
 import heroMarket from "@/assets/hero-market.jpg";
 import heroGroup from "@/assets/hero-tourism-group.jpg";
@@ -353,65 +354,64 @@ const STEPS = [
   { n: 4, icon: Gift, title: "Unlock rewards", body: "Redeem rewards, discounts and offers as you collect more stamps." },
 ];
 
-const PLANS = [
-  {
-    name: "Pilot",
-    desc: "For small organisations testing GetStampd.",
-    price: "Free",
-    cadence: "",
-    billed: "Start free",
-    features: [
-      "1 active trail or campaign",
-      "Up to 5 venues / stops",
-      "Limited passport volume",
-      "Basic digital passport",
-      "Self-serve setup",
-      "Basic support",
-    ],
-    cta: "Start a pilot",
-    href: authUrl("/signup"),
-    highlight: false,
+// Public marketing plans — sourced from the same pricing config used by
+// the GetStampd tool & Stripe checkout (see src/lib/getstampd-pricing.ts).
+const PUBLIC_PLAN_CODES = ["starter", "growth", "regional", "pro_region"] as const;
+
+const PLAN_COPY: Record<(typeof PUBLIC_PLAN_CODES)[number], {
+  desc: string;
+  cta: string;
+  highlight?: boolean;
+  badge?: string;
+  salesAssisted?: boolean;
+}> = {
+  starter: {
+    desc: "For single venues or small operators getting started with GetStampd.",
+    cta: "Start with Starter",
   },
-  {
-    name: "Launch",
-    badge: "Most popular",
-    desc: "The main paid option for running branded stamp trails and events.",
-    price: "From $990",
-    cadence: " per campaign",
-    billed: "Pricing scales with your programme",
-    features: [
-      "Multiple venues / stops",
-      "Higher passport volume",
-      "Custom-branded digital passport",
-      "QR codes for participating venues",
-      "Campaign dashboard",
-      "Analytics and reporting",
-      "Support for setup and launch",
-    ],
-    cta: "Launch a trail",
-    href: authUrl("/signup"),
+  growth: {
+    desc: "For venues, producers and operators growing repeat visits and customer engagement.",
+    cta: "Upgrade to Growth",
     highlight: true,
+    badge: "Most popular",
   },
-  {
-    name: "Destination Programme",
-    desc: "For tourism boards, councils, regions, DMOs, and multi-destination programmes.",
-    price: "Custom",
-    cadence: "",
-    billed: "Let's talk",
+  regional: {
+    desc: "For trails, tourism groups, events and multi-venue regional programs.",
+    cta: "Choose Regional",
+  },
+  pro_region: {
+    desc: "For larger regions, destination programs and advanced multi-operator loyalty experiences.",
+    cta: "Choose Pro Region",
+  },
+};
+
+const PLANS = PUBLIC_PLAN_CODES.map((code) => {
+  const plan = getPlanByCode(code);
+  const copy = PLAN_COPY[code];
+  const [priceMain, priceCadence] = plan.price.includes("/")
+    ? [plan.price.split("/")[0], `/${plan.price.split("/").slice(1).join("/")}`]
+    : [plan.price, ""];
+  return {
+    code: plan.code,
+    name: plan.name,
+    desc: copy.desc,
+    price: priceMain,
+    cadence: priceCadence,
+    billed: priceCadence ? "Billed annually" : "",
     features: [
-      "Multiple trails or campaigns",
-      "Large or unlimited venue count",
-      "Custom passport volume",
-      "Multi-destination setup",
-      "Partner / venue onboarding",
-      "Advanced reporting",
-      "Dedicated account support",
+      `Up to ${plan.venueLimit} venues for QR check-ins`,
+      plan.events,
+      plan.passports,
+      "Custom-branded digital passes & rewards",
+      "Trail, campaign and venue dashboards",
+      plan.support,
     ],
-    cta: "Talk to us",
-    href: "/contact",
-    highlight: false,
-  },
-] as const;
+    cta: copy.cta,
+    href: copy.salesAssisted ? "/contact" : authUrl(`/signup?plan=${plan.code}`),
+    highlight: copy.highlight ?? false,
+    badge: copy.badge,
+  };
+});
 
 function Landing() {
   return (
@@ -574,17 +574,17 @@ function Landing() {
       {/* PRICING PREVIEW */}
       <section className="bg-white py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <div className="mx-auto max-w-3xl text-center">
             <h2 className="font-serif text-4xl font-semibold tracking-tight text-[#1F2417]">
-              Simple pricing for every trail, event, and destination
+              Pricing that grows with your venue, campaign or region
             </h2>
             <p className="mt-4 text-[#666666]">
-              Launch digital stamp trails for events, markets, tourism campaigns, and destination experiences. Start small, then scale as your programme grows.
+              Choose the GetStampd plan that fits how you want to run QR check-ins, rewards, trails and regional loyalty experiences.
             </p>
           </div>
-          <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((p) => (
-              <PricingCard key={p.name} plan={p} />
+              <PricingCard key={p.code} plan={p} />
             ))}
           </div>
 
@@ -684,7 +684,7 @@ function PricingCard({ plan }: { plan: (typeof PLANS)[number] }) {
           : "border-[#1F2417]/10 shadow-sm hover:shadow-lg",
       )}
     >
-      {"badge" in plan && plan.badge && (
+      {plan.badge && (
         <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#8A1538] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-md">
           <Sparkles className="h-3 w-3" /> {plan.badge}
         </span>
