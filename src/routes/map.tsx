@@ -4,7 +4,7 @@ import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
 
 export const Route = createFileRoute("/map")({
-  head: () => ({ meta: [{ title: "Trail Map" }] }),
+  head: () => ({ meta: [{ title: "Trail Map — GetStampd" }] }),
   component: MapCleanRoute,
 });
 

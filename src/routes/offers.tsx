@@ -4,7 +4,7 @@ import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
 
 export const Route = createFileRoute("/offers")({
-  head: () => ({ meta: [{ title: "Offers" }] }),
+  head: () => ({ meta: [{ title: "Offers — GetStampd" }] }),
   component: OffersCleanRoute,
 });
 

@@ -4,7 +4,7 @@ import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
 
 export const Route = createFileRoute("/leaderboard")({
-  head: () => ({ meta: [{ title: "Leaderboard" }] }),
+  head: () => ({ meta: [{ title: "Leaderboard — GetStampd" }] }),
   component: LeaderboardCleanRoute,
 });
 
