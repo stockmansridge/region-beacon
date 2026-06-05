@@ -1,6 +1,6 @@
 -- Admin RPC to save FAQ entries for an event in a single transaction.
 -- Uses SECURITY DEFINER to bypass RLS once the caller has been verified
--- as a platform admin or an accepted owner/admin of the event's agency.
+-- by the same helper used by event setup RLS: platform admin or agency admin.
 
 create or replace function public.save_event_faq_entries(
   p_event_id uuid,
@@ -34,14 +34,7 @@ begin
 
   if not (
     public.is_platform_admin(v_user_id)
-    or exists (
-      select 1
-        from public.agency_members am
-       where am.agency_id = v_agency_id
-         and am.user_id = v_user_id
-         and am.status = 'accepted'
-         and am.role in ('owner', 'admin')
-    )
+    or public.is_agency_admin(v_user_id, v_agency_id)
   ) then
     raise exception 'You do not have permission to manage FAQ entries for this event';
   end if;
