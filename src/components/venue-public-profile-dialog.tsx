@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,83 @@ const OFFER_MAX = 800;
 const PHONE_MAX = 40;
 const ACCEPT_ATTR = VENUE_ASSET_ALLOWED_MIME.join(",");
 
+type VenueProfileSaveDebug = {
+  route: string;
+  action: "update" | "validation" | "exception";
+  payloadKeys: string[];
+  venueId: string | null;
+  eventId: string;
+  agencyId: string | null;
+  message: string;
+  details?: string | null;
+  hint?: string | null;
+  code?: string | null;
+  httpStatus?: number | null;
+  httpStatusText?: string | null;
+  matchedRows?: number | null;
+};
+
+function formatVenueProfileSaveFailure(debug: VenueProfileSaveDebug) {
+  const parts = [debug.message];
+  if (debug.details) parts.push(`Details: ${debug.details}`);
+  if (debug.hint) parts.push(`Hint: ${debug.hint}`);
+  if (debug.code) parts.push(`Code: ${debug.code}`);
+  if (debug.httpStatus) parts.push(`HTTP ${debug.httpStatus}${debug.httpStatusText ? ` ${debug.httpStatusText}` : ""}`);
+  if (debug.matchedRows === 0) parts.push("Matched rows: 0");
+  return parts.join("\n");
+}
+
+function venueProfileDebugFromError(args: {
+  action: VenueProfileSaveDebug["action"];
+  payloadKeys: string[];
+  venueId: string | null;
+  eventId: string;
+  agencyId: string | null;
+  error: unknown;
+  httpStatus?: number | null;
+  httpStatusText?: string | null;
+  matchedRows?: number | null;
+}): VenueProfileSaveDebug {
+  const err = args.error as {
+    message?: unknown;
+    details?: unknown;
+    hint?: unknown;
+    code?: unknown;
+    status?: unknown;
+    statusText?: unknown;
+  } | null;
+  return {
+    route: "client handleSave in src/components/venue-public-profile-dialog.tsx",
+    action: args.action,
+    payloadKeys: args.payloadKeys,
+    venueId: args.venueId,
+    eventId: args.eventId,
+    agencyId: args.agencyId,
+    message:
+      typeof err?.message === "string" && err.message.trim()
+        ? err.message
+        : typeof args.error === "string" && args.error.trim()
+          ? args.error
+          : "Venue public profile save failed without an error message from the request layer.",
+    details: typeof err?.details === "string" ? err.details : null,
+    hint: typeof err?.hint === "string" ? err.hint : null,
+    code: typeof err?.code === "string" ? err.code : null,
+    httpStatus:
+      typeof args.httpStatus === "number"
+        ? args.httpStatus
+        : typeof err?.status === "number"
+          ? err.status
+          : null,
+    httpStatusText:
+      typeof args.httpStatusText === "string"
+        ? args.httpStatusText
+        : typeof err?.statusText === "string"
+          ? err.statusText
+          : null,
+    matchedRows: args.matchedRows ?? null,
+  };
+}
+
 export function VenuePublicProfileDialog({
   open,
   onOpenChange,
@@ -78,6 +156,7 @@ export function VenuePublicProfileDialog({
   const [logoPath, setLogoPath] = useState<string | null>(venue?.logo_path ?? null);
   const [coverPath, setCoverPath] = useState<string | null>(venue?.cover_path ?? null);
   const [error, setError] = useState<string | null>(null);
+  const [saveDebug, setSaveDebug] = useState<VenueProfileSaveDebug | null>(null);
   const [saving, setSaving] = useState(false);
   const [busyKind, setBusyKind] = useState<VenueAssetKind | null>(null);
 
