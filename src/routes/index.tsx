@@ -124,7 +124,7 @@ function Header() {
             href={authUrl("/signup")}
             className="inline-flex h-10 items-center rounded-full bg-[#8A1538] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[#6f1029] transition-colors"
           >
-            Start now
+            Start here for free
           </a>
         </div>
         <button
@@ -147,11 +147,12 @@ function Header() {
             <Link to="/pricing" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 hover:bg-[#F8F3EA]">Pricing</Link>
             <div className="mt-2 flex gap-2">
               <a href={authUrl("/admin/login")} className="flex-1 rounded-full border border-[#1F2417]/15 px-4 py-2 text-center">Login</a>
-              <a href={authUrl("/signup")} className="flex-1 rounded-full bg-[#8A1538] px-4 py-2 text-center text-white">Start now</a>
+              <a href={authUrl("/signup")} className="flex-1 rounded-full bg-[#8A1538] px-4 py-2 text-center text-white">Start here for free</a>
             </div>
           </div>
         </div>
       )}
+
     </header>
   );
 }
