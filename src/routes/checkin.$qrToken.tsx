@@ -375,6 +375,20 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
               {outcome.venueName && (
                 <p className="mt-1 text-base text-[var(--event-page-bg,#F6EFE2)]/90">{outcome.venueName}</p>
               )}
+              {outcome.isNew && outcome.pointsAwarded > 0 ? (
+                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">
+                  You earned {outcome.pointsAwarded} points.
+                </p>
+              ) : !outcome.isNew ? (
+                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">
+                  This venue is already in your passport. Your points total has not changed.
+                </p>
+              ) : null}
+              {outcome.totalPoints > 0 && (
+                <p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
+                  Your total points: {outcome.totalPoints}
+                </p>
+              )}
             </div>
           </div>
         </section>
