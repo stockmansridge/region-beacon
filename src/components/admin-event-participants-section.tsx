@@ -60,6 +60,41 @@ const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantRow>> = [
   { label: "Passport ID", key: "passport_id" },
 ];
 
+type BonusClaimExportRow = {
+  passport_id: string;
+  visitor_id: string | null;
+  display_name: string;
+  email: string | null;
+  mobile: string | null;
+  award_id: string;
+  bonus_code_id: string | null;
+  bonus_code_name: string | null;
+  bonus_code_description: string | null;
+  points_awarded: number;
+  awarded_at: string;
+  bonus_code_is_active: boolean | null;
+};
+
+type BonusClaimCsvRow = BonusClaimExportRow & {
+  bonus_code_name_display: string;
+  bonus_code_status: "Active" | "Disabled" | "Unavailable";
+};
+
+const BONUS_CLAIMS_CSV_HEADERS: Array<CsvHeader<BonusClaimCsvRow>> = [
+  { label: "Participant name", key: "display_name" },
+  { label: "Email", key: "email" },
+  { label: "Mobile", key: "mobile" },
+  { label: "Bonus code name", key: "bonus_code_name_display" },
+  { label: "Bonus code description", key: "bonus_code_description" },
+  { label: "Points awarded", key: "points_awarded" },
+  { label: "Claimed at", key: "awarded_at" },
+  { label: "Bonus code status", key: "bonus_code_status" },
+  { label: "Passport ID", key: "passport_id" },
+  { label: "Award ID", key: "award_id" },
+  { label: "Visitor ID", key: "visitor_id" },
+  { label: "Bonus code ID", key: "bonus_code_id" },
+];
+
 function exportParticipantsCsv(
   rows: ParticipantRow[],
   eventName: string | null | undefined,
