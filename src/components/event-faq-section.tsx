@@ -99,12 +99,10 @@ export function EventFaqSection({
     setSaving(true);
     setSaveError(null);
     try {
-      // Trim and drop fully-empty rows before persisting.
       const cleaned = drafts
         .map((d) => ({ ...d, question: d.question.trim(), answer: d.answer.trim() }))
         .filter((d) => d.question.length > 0 || d.answer.length > 0);
 
-      // Validate that any row with content has both fields filled.
       for (const d of cleaned) {
         if (!d.question || !d.answer) {
           setSaveError("Every entry needs both a question and an answer.");
@@ -123,62 +121,46 @@ export function EventFaqSection({
         }
       }
 
-      // Load existing IDs so we know what to delete.
-      const { data: existing, error: loadErr } = await supabase
-        .from("event_faq_entries")
-        .select("id")
-        .eq("agency_id", agencyId)
-        .eq("event_id", eventId);
-      if (loadErr) throw loadErr;
-      const existingIds = new Set((existing ?? []).map((r) => r.id as string));
-      const keptIds = new Set(cleaned.filter((d) => d.id).map((d) => d.id as string));
+      const { data, error } = await supabase.rpc("save_event_faq_entries", {
+        p_event_id: eventId,
+        p_entries: cleaned.map((d, i) => ({
+          question: d.question,
+          answer: d.answer,
+          order_index: i,
+        })),
+      });
 
-      // Delete rows the admin removed.
-      const toDelete = [...existingIds].filter((id) => !keptIds.has(id));
-      if (toDelete.length > 0) {
-        const { error: delErr } = await supabase
-          .from("event_faq_entries")
-          .delete()
-          .in("id", toDelete)
-          .eq("agency_id", agencyId)
-          .eq("event_id", eventId);
-        if (delErr) throw delErr;
+      if (error) {
+        console.error("FAQ save failed", error);
+        const detail =
+          (error as { message?: string }).message ||
+          (error as { details?: string }).details ||
+          (error as { hint?: string }).hint ||
+          (error as { code?: string }).code ||
+          "Could not save FAQ entries.";
+        setSaveError(detail);
+        toast.error(detail);
+        return;
       }
 
-      // Upsert / insert in order, writing order_index from current position.
-      for (let i = 0; i < cleaned.length; i++) {
-        const d = cleaned[i];
-        if (d.id) {
-          const { error: upErr } = await supabase
-            .from("event_faq_entries")
-            .update({
-              question: d.question,
-              answer: d.answer,
-              order_index: i,
-            })
-            .eq("id", d.id)
-            .eq("agency_id", agencyId)
-            .eq("event_id", eventId);
-          if (upErr) throw upErr;
-        } else {
-          const { error: insErr } = await supabase
-            .from("event_faq_entries")
-            .insert({
-              agency_id: agencyId,
-              event_id: eventId,
-              question: d.question,
-              answer: d.answer,
-              order_index: i,
-              created_by: userId,
-            });
-          if (insErr) throw insErr;
-        }
-      }
-
+      const rows = (data ?? []) as FaqEntry[];
+      setDrafts(
+        rows.map((r) => ({
+          key: r.id,
+          id: r.id,
+          question: r.question,
+          answer: r.answer,
+        })),
+      );
       toast.success("FAQ entries saved.");
       setReloadKey((k) => k + 1);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not save FAQ entries.";
+      console.error("FAQ save failed", e);
+      const msg =
+        (e as { message?: string })?.message ||
+        (e as { details?: string })?.details ||
+        (e as { hint?: string })?.hint ||
+        "Could not save FAQ entries.";
       setSaveError(msg);
       toast.error(msg);
     } finally {
