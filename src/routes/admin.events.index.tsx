@@ -330,7 +330,7 @@ function Events() {
                 <th className="px-4 py-3">Public address</th>
                 <th className="px-4 py-3">Dates</th>
                 <th className="px-4 py-3">Venues</th>
-                <th className="px-4 py-3">Go-live</th>
+                <th className="px-4 py-3">Public website status</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
