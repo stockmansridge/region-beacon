@@ -272,7 +272,17 @@ function CheckinPage() {
       }
 
       const row = (data?.[0] ?? null) as
-        | { checkin_id: string; venue_id: string; passport_id: string; is_new: boolean }
+        | {
+            checkin_id: string;
+            venue_id: string;
+            passport_id: string;
+            is_new: boolean;
+            points_awarded?: number | null;
+            points_already_awarded?: boolean | null;
+            total_points?: number | null;
+            venue_points?: number | null;
+            bonus_points?: number | null;
+          }
         | null;
       if (!row) {
         setOutcome({
@@ -300,6 +310,9 @@ function CheckinPage() {
           venueName,
           passportToken: token,
           isNew: !!row.is_new,
+          pointsAwarded: row.points_awarded ?? 0,
+          pointsAlreadyAwarded: !!row.points_already_awarded,
+          totalPoints: row.total_points ?? 0,
         });
       }
     })();
