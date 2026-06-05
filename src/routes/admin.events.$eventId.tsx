@@ -4571,7 +4571,7 @@ function PublicAddressCard({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [releasing, setReleasing] = useState(false);
-  const [releaseError, setReleaseError] = useState<string | null>(null);
+  const [, setReleaseError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [editInput, setEditInput] = useState("");
   const [editAvailability, setEditAvailability] = useState<AvailabilityState>({ kind: "idle" });
