@@ -250,6 +250,29 @@ function PricingPage() {
         </div>
       </section>
 
+      {/* How pricing works */}
+      <section className="mx-auto max-w-4xl px-5 pb-12 sm:px-8">
+        <div className="rounded-2xl border border-[#1F2417]/8 bg-[#F8F3EA] p-8 text-center">
+          <h3 className="font-serif text-xl font-semibold text-[#1F2417]">How GetStampd pricing works</h3>
+          <p className="mt-3 text-sm text-[#666666]">
+            Pricing is based on the scope of each trail or campaign:
+          </p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: "Trails or campaigns", desc: "How many experiences you run" },
+              { label: "Venues / stops", desc: "Number of locations on each trail" },
+              { label: "Passport volume", desc: "How many visitors you expect" },
+              { label: "Support & customisation", desc: "Branding, onboarding and reporting needs" },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl bg-white p-4 text-left shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#8A1538]">{item.label}</p>
+                <p className="mt-1 text-sm text-[#666666]">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="bg-white py-24">
         <div className="mx-auto max-w-3xl px-5 sm:px-8">
