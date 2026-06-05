@@ -1097,6 +1097,7 @@ function EventDetail() {
     setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
+    setVenueSaveDebug(null);
     setVenueEditingId("new");
   }
 
@@ -1118,6 +1119,7 @@ function EventDetail() {
     setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
+    setVenueSaveDebug(null);
     setVenueEditingId(v.id);
     requestAnimationFrame(() => {
       venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1130,6 +1132,7 @@ function EventDetail() {
     setMapPickerOpen(false);
     setVenueValidationError(null);
     setVenueSaveError(null);
+    setVenueSaveDebug(null);
     // Refresh in case a venue was just created (we skipped reload then to keep
     // the editor mounted for image upload).
     setReloadKey((k) => k + 1);
@@ -2701,8 +2704,37 @@ function EventDetail() {
                   </div>
                 </div>
                 {(venueValidationError || venueSaveError) && (
-                  <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+                  <div className="whitespace-pre-wrap rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                     {venueValidationError ?? venueSaveError}
+                  </div>
+                )}
+                {venueSaveDebug && (
+                  <div className="rounded-[12px] border border-[#CBD5E1] bg-[#F8FAFC] px-4 py-3 text-xs text-[#334155]">
+                    <div className="mb-2 font-semibold text-[#111827]">Venue save diagnostic</div>
+                    <dl className="grid gap-1 sm:grid-cols-[150px_1fr]">
+                      <dt className="font-medium">Route/action</dt>
+                      <dd>{venueSaveDebug.route} / {venueSaveDebug.action}</dd>
+                      <dt className="font-medium">Payload keys</dt>
+                      <dd>{venueSaveDebug.payloadKeys.length ? venueSaveDebug.payloadKeys.join(", ") : "—"}</dd>
+                      <dt className="font-medium">Venue ID</dt>
+                      <dd className="break-all">{venueSaveDebug.venueId ?? "—"}</dd>
+                      <dt className="font-medium">Event ID</dt>
+                      <dd className="break-all">{venueSaveDebug.eventId}</dd>
+                      <dt className="font-medium">Agency ID</dt>
+                      <dd className="break-all">{venueSaveDebug.agencyId ?? "—"}</dd>
+                      <dt className="font-medium">Supabase message</dt>
+                      <dd className="whitespace-pre-wrap">{venueSaveDebug.message}</dd>
+                      <dt className="font-medium">Details</dt>
+                      <dd className="whitespace-pre-wrap">{venueSaveDebug.details ?? "—"}</dd>
+                      <dt className="font-medium">Hint</dt>
+                      <dd className="whitespace-pre-wrap">{venueSaveDebug.hint ?? "—"}</dd>
+                      <dt className="font-medium">Code</dt>
+                      <dd>{venueSaveDebug.code ?? "—"}</dd>
+                      <dt className="font-medium">HTTP</dt>
+                      <dd>{venueSaveDebug.httpStatus ? `${venueSaveDebug.httpStatus}${venueSaveDebug.httpStatusText ? ` ${venueSaveDebug.httpStatusText}` : ""}` : "—"}</dd>
+                      <dt className="font-medium">Matched rows</dt>
+                      <dd>{venueSaveDebug.matchedRows ?? "—"}</dd>
+                    </dl>
                   </div>
                 )}
 
