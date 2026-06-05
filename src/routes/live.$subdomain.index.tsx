@@ -152,11 +152,18 @@ function LivePublicLoaded({
     >
       {isAdminPreview && (
         <div
-          className="fixed left-1/2 top-3 z-50 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-amber-300 bg-amber-100/95 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-900 shadow"
-          title="Admin preview — actions here affect the real live event"
+          className="fixed left-1/2 top-3 z-50 max-w-[92vw] -translate-x-1/2 rounded-2xl border border-amber-300 bg-amber-100/95 px-4 py-2 text-[11px] text-amber-900 shadow"
+          role="status"
         >
-          <span className="h-2 w-2 rounded-full bg-amber-500" />
-          Admin preview · close tab to return
+          <div className="flex items-center gap-2 font-semibold uppercase tracking-[0.18em]">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            Admin preview
+          </div>
+          <p className="mt-1 normal-case tracking-normal text-[11px] leading-snug">
+            You are viewing the real customer page in preview mode. Navigation and
+            customer actions use the live event flow. Customer actions taken here may
+            create real passports, check-ins, and points for this event.
+          </p>
         </div>
       )}
       <PublicAnnouncementBar subdomain={subdomain} />
