@@ -327,7 +327,9 @@ type EventTabKey =
   | "details"
   | "branding"
   | "venues"
+  | "bonuscodes"
   | "checkin"
+
   | "leaderboard"
   | "terms"
   | "analytics";
