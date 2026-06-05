@@ -435,7 +435,7 @@ function EventPreview() {
           )}
 
           <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
-            Admin preview · no visitors, passports, or check-ins are created from this page
+            Admin preview · customer actions on the live site create real data
           </p>
         </div>
       </div>
