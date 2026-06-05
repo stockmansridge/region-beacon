@@ -60,7 +60,9 @@ export function BonusCodesSection({
   publicSubdomain: string | null;
   canEdit: boolean;
 }) {
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const userId = session?.user?.id ?? null;
+
   const [rows, setRows] = useState<BonusCode[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
