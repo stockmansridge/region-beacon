@@ -3025,23 +3025,44 @@ function EventDetail() {
                           )}
                           {canEdit && (
                             <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); startEditVenue(v); }}
-                                  disabled={venueEditingId !== null || venueArchivingId !== null}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null || v.deleted_at != null}
                                   className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   Edit details
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => archiveVenue(v.id)}
-                                  disabled={venueEditingId !== null || venueArchivingId !== null}
-                                  className="inline-flex h-9 items-center rounded-[10px] border border-[#FDA4AF] bg-white px-3.5 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {venueArchivingId === v.id ? "Archiving…" : "Archive"}
-                                </button>
+                                {v.deleted_at == null ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => disableVenue(v.id)}
+                                    disabled={venueEditingId !== null || venueArchivingId !== null}
+                                    className="inline-flex h-9 items-center rounded-[10px] border border-[#FDA4AF] bg-white px-3.5 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {venueArchivingId === v.id ? "Disabling…" : "Disable venue"}
+                                  </button>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => reactivateVenue(v.id)}
+                                      disabled={venueEditingId !== null || venueArchivingId !== null}
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#86EFAC] bg-white px-3.5 text-sm font-semibold text-[#047857] hover:bg-[#ECFDF5] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {venueArchivingId === v.id ? "Working…" : "Reactivate venue"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => hardDeleteVenue(v.id)}
+                                      disabled={venueEditingId !== null || venueArchivingId !== null}
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#E11D48] bg-[#E11D48] px-3.5 text-sm font-semibold text-white hover:bg-[#BE123C] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {venueArchivingId === v.id ? "Deleting…" : "Delete permanently"}
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           )}
