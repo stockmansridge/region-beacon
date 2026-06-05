@@ -169,6 +169,7 @@ export function VenuePublicProfileDialog({
     setLogoPath(venue?.logo_path ?? null);
     setCoverPath(venue?.cover_path ?? null);
     setError(null);
+    setSaveDebug(null);
     setOfferSummary("");
     setOfferSupported(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -226,12 +227,23 @@ export function VenuePublicProfileDialog({
 
   async function handleSave() {
     if (!venue || !agencyId) return;
+    const route = "client handleSave in src/components/venue-public-profile-dialog.tsx";
     const v = validate();
     if (v) {
       setError(v);
+      setSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venue.id,
+        eventId,
+        agencyId,
+        message: `Validation blocked the save before Supabase was reached: ${v}`,
+      });
       return;
     }
     setError(null);
+    setSaveDebug(null);
     setSaving(true);
     const patch: Record<string, string | null> = {
       description: description.trim() ? description.trim() : null,
@@ -241,19 +253,78 @@ export function VenuePublicProfileDialog({
     if (offerSupported) {
       patch.offer_summary = offerSummary.trim() ? offerSummary.trim() : null;
     }
-    const { error: upErr } = await supabase
-      .from("venues")
-      .update(patch)
-      .eq("id", venue.id)
-      .eq("event_id", eventId)
-      .eq("agency_id", agencyId);
-    setSaving(false);
-    if (upErr) {
-      setError(`Could not save: ${upErr.message}`);
-      return;
+    const payloadKeys = Object.keys(patch);
+    const failSave = (debug: VenueProfileSaveDebug) => {
+      console.error("[venue-public-profile-save] failed", debug);
+      const msg = formatVenueProfileSaveFailure(debug);
+      setSaveDebug(debug);
+      setError(msg);
+      toast.error(msg);
+    };
+    console.info("[venue-public-profile-save] calling Supabase update", {
+      route,
+      payloadKeys,
+      venueId: venue.id,
+      eventId,
+      agencyId,
+    });
+    try {
+      const { data: updatedVenue, error: upErr, status, statusText } = await supabase
+        .from("venues")
+        .update(patch)
+        .eq("id", venue.id)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId)
+        .select("id")
+        .maybeSingle();
+      if (upErr) {
+        failSave(venueProfileDebugFromError({
+          action: "update",
+          payloadKeys,
+          venueId: venue.id,
+          eventId,
+          agencyId,
+          error: upErr,
+          httpStatus: status,
+          httpStatusText: statusText,
+        }));
+        return;
+      }
+      if (!updatedVenue) {
+        failSave({
+          route,
+          action: "update",
+          payloadKeys,
+          venueId: venue.id,
+          eventId,
+          agencyId,
+          message: "Supabase update completed with no error, but matched 0 venue rows. The venue may be deleted, belong to another event/organisation, or be hidden by permissions.",
+          httpStatus: status,
+          httpStatusText: statusText,
+          matchedRows: 0,
+        });
+        return;
+      }
+      console.info("[venue-public-profile-save] Supabase update succeeded", {
+        route,
+        venueId: venue.id,
+        eventId,
+        agencyId,
+      });
+      onSaved();
+      onOpenChange(false);
+    } catch (exception) {
+      failSave(venueProfileDebugFromError({
+        action: "exception",
+        payloadKeys,
+        venueId: venue.id,
+        eventId,
+        agencyId,
+        error: exception,
+      }));
+    } finally {
+      setSaving(false);
     }
-    onSaved();
-    onOpenChange(false);
   }
 
   async function handleUpload(kind: VenueAssetKind, file: File) {
