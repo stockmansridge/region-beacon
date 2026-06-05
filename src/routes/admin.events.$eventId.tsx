@@ -4594,6 +4594,11 @@ function PublicAddressCard({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [releasing, setReleasing] = useState(false);
   const [releaseError, setReleaseError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editInput, setEditInput] = useState("");
+  const [editAvailability, setEditAvailability] = useState<AvailabilityState>({ kind: "idle" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const normalized = input.trim().toLowerCase();
 
