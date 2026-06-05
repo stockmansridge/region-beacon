@@ -355,35 +355,58 @@ const STEPS = [
 
 const PLANS = [
   {
-    name: "Free",
-    desc: "Try GetStampd with a small trail.",
-    price: "$0",
+    name: "Pilot",
+    desc: "For small organisations testing GetStampd.",
+    price: "Free",
     cadence: "",
-    billed: "Free forever",
-    features: ["Up to 5 venues", "1 active event", "250 passports", "Self-serve support"],
-    cta: "Start free",
+    billed: "Start free",
+    features: [
+      "1 active trail or campaign",
+      "Up to 5 venues / stops",
+      "Limited passport volume",
+      "Basic digital passport",
+      "Self-serve setup",
+      "Basic support",
+    ],
+    cta: "Start a pilot",
     href: authUrl("/signup"),
     highlight: false,
   },
   {
-    name: "Growth",
+    name: "Launch",
     badge: "Most popular",
-    desc: "For growing destinations running multiple experiences.",
-    price: "$990",
-    cadence: "/ year",
-    billed: "Billed annually",
-    features: ["Up to 25 venues", "3 active events / year", "3,000 passports / year", "Self-serve support"],
-    cta: "Upgrade to Growth",
+    desc: "The main paid option for running branded stamp trails and events.",
+    price: "From $990",
+    cadence: " per campaign",
+    billed: "Pricing scales with your programme",
+    features: [
+      "Multiple venues / stops",
+      "Higher passport volume",
+      "Custom-branded digital passport",
+      "QR codes for participating venues",
+      "Campaign dashboard",
+      "Analytics and reporting",
+      "Support for setup and launch",
+    ],
+    cta: "Launch a trail",
     href: authUrl("/signup"),
     highlight: true,
   },
   {
-    name: "Enterprise",
-    desc: "For regions and multi-destination programs.",
+    name: "Destination Programme",
+    desc: "For tourism boards, councils, regions, DMOs, and multi-destination programmes.",
     price: "Custom",
     cadence: "",
     billed: "Let's talk",
-    features: ["Unlimited venues", "Custom event volume", "Custom passports", "Dedicated account manager"],
+    features: [
+      "Multiple trails or campaigns",
+      "Large or unlimited venue count",
+      "Custom passport volume",
+      "Multi-destination setup",
+      "Partner / venue onboarding",
+      "Advanced reporting",
+      "Dedicated account support",
+    ],
     cta: "Talk to us",
     href: "/contact",
     highlight: false,
@@ -553,10 +576,10 @@ function Landing() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-serif text-4xl font-semibold tracking-tight text-[#1F2417]">
-              Simple pricing for every organization
+              Simple pricing for every trail, event, and destination
             </h2>
             <p className="mt-4 text-[#666666]">
-              Launch digital stamp trails for events, destinations, markets and tourism experiences.
+              Launch digital stamp trails for events, markets, tourism campaigns, and destination experiences. Start small, then scale as your programme grows.
             </p>
           </div>
           <div className="mt-14 grid gap-6 lg:grid-cols-3">
@@ -564,6 +587,28 @@ function Landing() {
               <PricingCard key={p.name} plan={p} />
             ))}
           </div>
+
+          {/* How pricing works */}
+          <div className="mx-auto mt-16 max-w-3xl rounded-2xl border border-[#1F2417]/8 bg-[#F8F3EA] p-8 text-center">
+            <h3 className="font-serif text-xl font-semibold text-[#1F2417]">How GetStampd pricing works</h3>
+            <p className="mt-3 text-sm text-[#666666]">
+              Pricing is based on the scope of each trail or campaign:
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { label: "Trails or campaigns", desc: "How many experiences you run" },
+                { label: "Venues / stops", desc: "Number of locations on each trail" },
+                { label: "Passport volume", desc: "How many visitors you expect" },
+                { label: "Support & customisation", desc: "Branding, onboarding and reporting needs" },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl bg-white p-4 text-left shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#8A1538]">{item.label}</p>
+                  <p className="mt-1 text-sm text-[#666666]">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="mt-10 text-center">
             <Link
               to="/pricing"

@@ -22,13 +22,13 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "Simple pricing for every tourism experience. Launch digital stamp trails for wineries, markets, festivals, regions and destinations.",
+          "Simple pricing for every trail, event, and destination. Launch digital stamp trails for wineries, markets, festivals, regions and destinations.",
       },
       { property: "og:title", content: "GetStampd Pricing" },
       {
         property: "og:description",
         content:
-          "Starter, Growth and Enterprise plans for trails, events and tourism programs.",
+          "Pilot, Launch and Destination Programme plans for trails, events and tourism campaigns.",
       },
       { name: "robots", content: "index, follow" },
     ],
@@ -38,109 +38,57 @@ export const Route = createFileRoute("/pricing")({
 
 const PLANS = [
   {
-    name: "Free",
-    desc: "Try GetStampd with a small trail.",
-    price: "$0",
+    name: "Pilot",
+    desc: "For small organisations testing GetStampd.",
+    price: "Free",
     cadence: "",
-    billed: "Free forever",
+    billed: "Start free",
     features: [
-      "Up to 5 venues",
-      "1 active event",
-      "250 passports",
-      "Self-serve support",
-      "Branded digital pass",
-      "QR check-ins",
+      "1 active trail or campaign",
+      "Up to 5 venues / stops",
+      "Limited passport volume",
+      "Basic digital passport",
+      "Self-serve setup",
+      "Basic support",
     ],
-    cta: "Start free",
+    cta: "Start a pilot",
     href: authUrl("/signup"),
     highlight: false,
   },
   {
-    name: "Starter",
-    desc: "Perfect for small events and local trails.",
-    price: "$490",
-    cadence: "/ year",
-    billed: "Billed annually",
-    features: [
-      "Up to 10 venues",
-      "1 active event",
-      "1,000 passports / year",
-      "Self-serve support",
-      "Branded digital pass",
-      "QR check-ins",
-    ],
-    cta: "Upgrade to Starter",
-    href: authUrl("/signup"),
-    highlight: false,
-  },
-  {
-    name: "Growth",
+    name: "Launch",
     badge: "Most popular",
-    desc: "For growing destinations running multiple experiences.",
-    price: "$990",
-    cadence: "/ year",
-    billed: "Billed annually",
+    desc: "The main paid option for running branded stamp trails and events.",
+    price: "From $990",
+    cadence: " per campaign",
+    billed: "Pricing scales with your programme",
     features: [
-      "Up to 25 venues",
-      "3 active events / year",
-      "3,000 passports / year",
-      "Self-serve support",
-      "Custom branding & rewards",
-      "Multi-location stamp trails",
+      "Multiple venues / stops",
+      "Higher passport volume",
+      "Custom-branded digital passport",
+      "QR codes for participating venues",
+      "Campaign dashboard",
+      "Analytics and reporting",
+      "Support for setup and launch",
     ],
-    cta: "Upgrade to Growth",
+    cta: "Launch a trail",
     href: authUrl("/signup"),
     highlight: true,
   },
   {
-    name: "Regional",
-    desc: "For regional tourism bodies and larger programs.",
-    price: "$1,990",
-    cadence: "/ year",
-    billed: "Billed annually",
-    features: [
-      "Up to 50 venues",
-      "5 active events / year",
-      "7,500 passports / year",
-      "Priority support",
-      "Custom branding & rewards",
-      "Advanced analytics",
-    ],
-    cta: "Upgrade to Regional",
-    href: authUrl("/signup"),
-    highlight: false,
-  },
-  {
-    name: "Pro Region",
-    desc: "For multi-region operators and destination marketing organisations.",
-    price: "$3,490",
-    cadence: "/ year",
-    billed: "Billed annually",
-    features: [
-      "Up to 100 venues",
-      "10 active events / year",
-      "15,000 passports / year",
-      "Priority support",
-      "Custom branding & rewards",
-      "Advanced analytics",
-    ],
-    cta: "Upgrade to Pro Region",
-    href: authUrl("/signup"),
-    highlight: false,
-  },
-  {
-    name: "Enterprise",
-    desc: "For state tourism bodies and large multi-destination programs.",
+    name: "Destination Programme",
+    desc: "For tourism boards, councils, regions, DMOs, and multi-destination programmes.",
     price: "Custom",
     cadence: "",
     billed: "Let's talk",
     features: [
-      "Unlimited venues",
-      "Custom event volume",
-      "Custom passports",
-      "Dedicated account manager",
-      "Onboarding & training",
-      "SLA & security review",
+      "Multiple trails or campaigns",
+      "Large or unlimited venue count",
+      "Custom passport volume",
+      "Multi-destination setup",
+      "Partner / venue onboarding",
+      "Advanced reporting",
+      "Dedicated account support",
     ],
     cta: "Talk to us",
     href: "/contact",
@@ -150,12 +98,12 @@ const PLANS = [
 
 const FAQS = [
   {
-    q: "Can GetStampd be branded for our destination or event?",
-    a: "Yes. Each trail, event or pass can be customized with your imagery, logo, colours and reward structure.",
+    q: "Can GetStampd be branded for our destination, trail or campaign?",
+    a: "Yes. Each trail, campaign or pass can be customized with your imagery, logo, colours and reward structure.",
   },
   {
     q: "How do visitors collect stamps?",
-    a: "Visitors join a trail or event, then collect stamps by scanning QR codes, checking in at locations or completing participating activities.",
+    a: "Visitors join a trail or campaign, then collect stamps by scanning QR codes, checking in at locations or completing participating activities.",
   },
   {
     q: "Can we use GetStampd for markets and stall events?",
@@ -166,8 +114,8 @@ const FAQS = [
     a: "GetStampd is designed to be simple and mobile-friendly so visitors can join and collect stamps with minimal friction.",
   },
   {
-    q: "Can we track participation?",
-    a: "Yes. Organizers can view participation, stamp collection and reward engagement through a simple dashboard.",
+    q: "Can we track participation across multiple trails?",
+    a: "Yes. Organizers can view participation, stamp collection and reward engagement across all campaigns through a simple dashboard.",
   },
 ];
 
@@ -230,10 +178,10 @@ function PricingPage() {
           <Sparkles className="h-3.5 w-3.5" /> Pricing
         </span>
         <h1 className="mt-5 font-serif text-4xl font-semibold leading-tight tracking-tight text-[#1F2417] sm:text-5xl">
-          Simple pricing for every tourism experience
+          Simple pricing for every trail, event, and destination
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-[#666666] sm:text-lg">
-          Whether you're running a wine trail, a market event, a town-wide campaign or a regional tourism program, GetStampd helps visitors engage, explore and return.
+          Launch digital stamp trails for events, markets, tourism campaigns, and destination experiences. Start small, then scale as your programme grows.
         </p>
       </section>
 
@@ -299,6 +247,29 @@ function PricingPage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* How pricing works */}
+      <section className="mx-auto max-w-4xl px-5 pb-12 sm:px-8">
+        <div className="rounded-2xl border border-[#1F2417]/8 bg-[#F8F3EA] p-8 text-center">
+          <h3 className="font-serif text-xl font-semibold text-[#1F2417]">How GetStampd pricing works</h3>
+          <p className="mt-3 text-sm text-[#666666]">
+            Pricing is based on the scope of each trail or campaign:
+          </p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: "Trails or campaigns", desc: "How many experiences you run" },
+              { label: "Venues / stops", desc: "Number of locations on each trail" },
+              { label: "Passport volume", desc: "How many visitors you expect" },
+              { label: "Support & customisation", desc: "Branding, onboarding and reporting needs" },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl bg-white p-4 text-left shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#8A1538]">{item.label}</p>
+                <p className="mt-1 text-sm text-[#666666]">{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
