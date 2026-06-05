@@ -240,8 +240,10 @@ export function BonusCodesSection({
 
       {!publicSubdomain && (
         <div className="rounded-md border border-[#FDBA74] bg-[#FFF7ED] px-3 py-2 text-xs text-[#9A3412]">
-          This event does not have an active public address yet. Bonus QR links
-          will use a relative path until you publish a subdomain.
+          <strong className="font-semibold">No public address yet.</strong>{" "}
+          Publish the event or activate a public domain before printing QR
+          codes — relative QR links will not work once scanned from a printed
+          poster.
         </div>
       )}
 

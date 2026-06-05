@@ -127,7 +127,11 @@ function BonusClaimPage() {
       if (!row.success) {
         const msg = row.message ?? "We couldn't claim this bonus code.";
         const lower = msg.toLowerCase();
-        if (lower.includes("not found")) {
+        if (lower.includes("not found") && lower.includes("passport")) {
+          // Stale or invalid passport token in localStorage — treat as no passport.
+          storeReturnTo(currentEventId);
+          setOutcome({ kind: "no_passport", subdomain });
+        } else if (lower.includes("not found")) {
           setOutcome({ kind: "not_found" });
         } else if (lower.includes("not currently live") || lower.includes("not live")) {
           setOutcome({ kind: "event_not_live", message: msg });
