@@ -1126,6 +1126,8 @@ function EventDetail() {
       phone: v.phone ?? "",
       logo_path: v.logo_path ?? null,
       cover_path: v.cover_path ?? null,
+      points_value: String(v.points_value ?? 0),
+
     });
     setVenueAssetError(null);
     setVenueValidationError(null);
