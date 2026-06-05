@@ -21,7 +21,7 @@ import { useTenantSubdomain } from "@/lib/tenant-host";
 import { authUrl } from "@/lib/auth-redirect";
 import { LivePublicPage } from "./live.$subdomain.index";
 import { cn } from "@/lib/utils";
-import { getPlanByCode } from "@/lib/getstampd-pricing";
+
 import heroWine from "@/assets/hero-wine-trail.jpg";
 import heroMarket from "@/assets/hero-market.jpg";
 import heroGroup from "@/assets/hero-tourism-group.jpg";
