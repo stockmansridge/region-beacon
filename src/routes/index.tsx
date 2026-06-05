@@ -684,7 +684,7 @@ function PricingCard({ plan }: { plan: (typeof PLANS)[number] }) {
           : "border-[#1F2417]/10 shadow-sm hover:shadow-lg",
       )}
     >
-      {"badge" in plan && plan.badge && (
+      {plan.badge && (
         <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#8A1538] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-md">
           <Sparkles className="h-3 w-3" /> {plan.badge}
         </span>
