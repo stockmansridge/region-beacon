@@ -11,6 +11,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
+import { CollectPointsSection } from "@/components/collect-points-section";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
@@ -200,6 +201,12 @@ function LivePublicLoaded({
           )
         }
         secondaryCta={<span />}
+      />
+      <CollectPointsSection
+        eventId={event.event_id}
+        primaryColor={event.primary_color}
+        accentColor={event.accent_color}
+        canRegister={canRegister}
       />
       <div className="mx-auto mt-6 flex max-w-md flex-col items-center gap-3 text-center">
         <Link
