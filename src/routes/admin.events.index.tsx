@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { PUBLIC_TENANT_ROOT_DOMAIN } from "@/lib/domains";
@@ -30,7 +31,10 @@ type EventRow = {
   ends_at: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 };
+
+type EventFilter = "active" | "archived" | "all";
 
 type DomainInfo = {
   public_subdomain: string | null;
@@ -103,6 +107,8 @@ function Events() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [filter, setFilter] = useState<EventFilter>("active");
+  const [unarchivingId, setUnarchivingId] = useState<string | null>(null);
 
   const [open, setOpen] = useState(false);
 
@@ -116,10 +122,9 @@ function Events() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, slug, public_slug, status, timezone, starts_at, ends_at, created_at, updated_at",
+          "id, name, slug, public_slug, status, timezone, starts_at, ends_at, created_at, updated_at, deleted_at",
         )
         .eq("agency_id", agencyId)
-        .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (cancelled) return;
@@ -197,6 +202,70 @@ function Events() {
     };
   }, [agencyId, reloadKey]);
 
+  const activeCount = useMemo(
+    () => (rows ?? []).filter((e) => e.deleted_at == null).length,
+    [rows],
+  );
+  const archivedCount = useMemo(
+    () => (rows ?? []).filter((e) => e.deleted_at != null).length,
+    [rows],
+  );
+  const visibleRows = useMemo(() => {
+    if (!rows) return [] as EventRow[];
+    if (filter === "active") return rows.filter((e) => e.deleted_at == null);
+    if (filter === "archived") return rows.filter((e) => e.deleted_at != null);
+    return rows;
+  }, [rows, filter]);
+
+  async function unarchiveEvent(eventId: string) {
+    if (!agencyId) return;
+    setUnarchivingId(eventId);
+    try {
+      // Re-check active event limit against current plan.
+      const [{ data: limits, error: limErr }, { count, error: cntErr }] = await Promise.all([
+        supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }) as unknown as Promise<{
+          data: { active_event_limit: number | null } | null;
+          error: { message: string } | null;
+        }>,
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("agency_id", agencyId)
+          .is("deleted_at", null),
+      ]);
+      if (limErr) {
+        toast.error(`Could not check plan limit: ${limErr.message}`);
+        return;
+      }
+      if (cntErr) {
+        toast.error(`Could not count active events: ${cntErr.message}`);
+        return;
+      }
+      const limit = limits?.active_event_limit ?? null;
+      const currentActive = count ?? 0;
+      if (limit !== null && currentActive >= limit) {
+        toast.error(
+          `You have reached your active event limit (${limit}). Upgrade your plan or archive another event before unarchiving this event.`,
+        );
+        return;
+      }
+      const { error: updErr } = await supabase
+        .from("events")
+        .update({ deleted_at: null, status: "draft" })
+        .eq("id", eventId)
+        .eq("agency_id", agencyId);
+      if (updErr) {
+        toast.error(`Could not unarchive event: ${updErr.message}`);
+        return;
+      }
+      toast.success("Event unarchived. It is back in the Active tab as a draft.");
+      setFilter("active");
+      setReloadKey((k) => k + 1);
+    } finally {
+      setUnarchivingId(null);
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -220,41 +289,82 @@ function Events() {
           {error}
         </div>
       )}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {(
+          [
+            { key: "active", label: "Active", count: activeCount },
+            { key: "archived", label: "Archived", count: archivedCount },
+            { key: "all", label: "All", count: (rows ?? []).length },
+          ] as const
+        ).map((t) => {
+          const isActive = filter === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFilter(t.key)}
+              className={
+                "inline-flex h-9 items-center gap-2 rounded-full border px-3 text-sm font-medium transition " +
+                (isActive
+                  ? "border-[#2F6FE4] bg-[#2F6FE4] text-white"
+                  : "border-[#D9E2EF] bg-white text-[#475569] hover:bg-[#F8FAFC]")
+              }
+            >
+              {t.label}
+              <span
+                className={
+                  "rounded-full px-2 py-0.5 text-[11px] font-semibold " +
+                  (isActive ? "bg-white/20 text-white" : "bg-[#F1F5F9] text-[#475569]")
+                }
+              >
+                {t.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {filter === "archived" && (
+        <p className="mb-3 text-sm leading-6 text-[#64748B]">
+          Archived events are preserved for history and do not count toward your active event limit. You can
+          unarchive an event if you have spare event capacity on your plan.
+        </p>
+      )}
+
       <div className="overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-[#F8FAFC] text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">
-              <th className="px-4 py-3">Event</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Public address</th>
-              <th className="px-4 py-3">Dates</th>
-              <th className="px-4 py-3">Venues</th>
-              <th className="px-4 py-3">Go-live</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  Loading events…
-                </td>
+        {loading ? (
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">Loading events…</div>
+        ) : visibleRows.length === 0 ? (
+          <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+            {filter === "archived"
+              ? "No archived events yet. Archived events will appear here and will not count toward your active event limit."
+              : filter === "active"
+                ? rows && rows.length > 0
+                  ? "No active events. Check the Archived tab, or add a new event."
+                  : "No events yet for this organisation."
+                : "No events yet for this organisation."}
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[#F8FAFC] text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">
+                <th className="px-4 py-3">Event</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Public address</th>
+                <th className="px-4 py-3">Dates</th>
+                <th className="px-4 py-3">Venues</th>
+                <th className="px-4 py-3">Go-live</th>
+                <th className="px-4 py-3" />
               </tr>
-            )}
-            {!loading && rows && rows.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  No events yet for this organisation.
-                </td>
-              </tr>
-            )}
-            {!loading &&
-              rows?.map((e) => {
+            </thead>
+            <tbody>
+              {visibleRows.map((e) => {
                 const ex = extras[e.id];
                 const domain = ex?.domain ?? null;
                 const hasSubdomain = !!domain?.public_subdomain;
                 const domainStatus = domain?.status ?? null;
                 const activation = ex?.activationStatus ?? null;
+                const isArchived = e.deleted_at != null;
                 const liveLabel =
                   activation === "active" || activation === "comp"
                     ? "Live"
@@ -268,10 +378,26 @@ function Events() {
                       ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
                       : "bg-muted text-muted-foreground";
                 return (
-                  <tr key={e.id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
-                    <td className="px-4 py-3 font-medium text-[#111827]">{e.name}</td>
+                  <tr
+                    key={e.id}
+                    className={
+                      "border-t border-[#E6ECF4] hover:bg-[#F8FAFC] " +
+                      (isArchived ? "bg-[#F8FAFC]/60" : "")
+                    }
+                  >
+                    <td className="px-4 py-3 font-medium text-[#111827]">
+                      <span className={isArchived ? "text-[#64748B]" : undefined}>{e.name}</span>
+                    </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-medium text-[#475569]">{e.status}</span>
+                      {isArchived ? (
+                        <span className="rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-2.5 py-1 text-xs font-semibold text-[#475569]">
+                          Archived
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-medium text-[#475569]">
+                          {e.status}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {hasSubdomain ? (
@@ -307,7 +433,7 @@ function Events() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        {hasSubdomain && domainStatus === "active" && (
+                        {!isArchived && hasSubdomain && domainStatus === "active" && (
                           <a
                             href={`https://${domain!.public_subdomain}.${SUBDOMAIN_ROOT}`}
                             target="_blank"
@@ -317,21 +443,45 @@ function Events() {
                             Preview
                           </a>
                         )}
-                        <Link
-                          to="/admin/events/$eventId"
-                          params={{ eventId: e.id }}
-                          className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
-                        >
-                          Setup
-                        </Link>
+                        {isArchived ? (
+                          <>
+                            <Link
+                              to="/admin/events/$eventId"
+                              params={{ eventId: e.id }}
+                              className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
+                            >
+                              View
+                            </Link>
+                            {canCreate && (
+                              <button
+                                type="button"
+                                onClick={() => unarchiveEvent(e.id)}
+                                disabled={unarchivingId === e.id}
+                                className="inline-flex h-8 items-center rounded-[8px] border border-[#2F6FE4] bg-white px-3 text-xs font-semibold text-[#2F6FE4] hover:bg-[#EFF4FF] disabled:opacity-50"
+                              >
+                                {unarchivingId === e.id ? "Unarchiving…" : "Unarchive"}
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <Link
+                            to="/admin/events/$eventId"
+                            params={{ eventId: e.id }}
+                            className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
+                          >
+                            Setup
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
                 );
               })}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        )}
       </div>
+
 
 
       {canCreate && (

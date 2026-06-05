@@ -60,6 +60,7 @@ type EventRow = {
   created_at: string;
   updated_at: string;
   current_terms_version_id: string | null;
+  deleted_at: string | null;
 };
 
 type Branding = {
@@ -513,11 +514,10 @@ function EventDetail() {
         const { data: event, error: evErr } = await supabase
           .from("events")
           .select(
-            "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id",
+            "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id, deleted_at",
           )
           .eq("id", eventId)
           .eq("agency_id", agencyId)
-          .is("deleted_at", null)
           .maybeSingle();
 
         if (cancelled) return;
@@ -1742,6 +1742,53 @@ function EventDetail() {
     navigate({ to: "/admin/events", replace: true });
   }
 
+  async function unarchiveEvent() {
+    if (!agencyId || !bundle) return;
+    setDeleting(true);
+    try {
+      const [{ data: limits, error: limErr }, { count, error: cntErr }] = await Promise.all([
+        supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }) as unknown as Promise<{
+          data: { active_event_limit: number | null } | null;
+          error: { message: string } | null;
+        }>,
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("agency_id", agencyId)
+          .is("deleted_at", null),
+      ]);
+      if (limErr) {
+        toast.error(`Could not check plan limit: ${limErr.message}`);
+        return;
+      }
+      if (cntErr) {
+        toast.error(`Could not count active events: ${cntErr.message}`);
+        return;
+      }
+      const limit = limits?.active_event_limit ?? null;
+      const currentActive = count ?? 0;
+      if (limit !== null && currentActive >= limit) {
+        toast.error(
+          `You have reached your active event limit (${limit}). Upgrade your plan or archive another event before unarchiving this event.`,
+        );
+        return;
+      }
+      const { error: updErr } = await supabase
+        .from("events")
+        .update({ deleted_at: null, status: "draft" })
+        .eq("id", bundle.event.id)
+        .eq("agency_id", agencyId);
+      if (updErr) {
+        toast.error(`Could not unarchive event: ${updErr.message}`);
+        return;
+      }
+      toast.success("Event unarchived. It is back as a draft.");
+      setReloadKey((k) => k + 1);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   /**
    * Build the check-in URL for a QR token.
    * Prefers the event's active public_subdomain domain. Falls back to the
@@ -2065,7 +2112,17 @@ function EventDetail() {
             >
               Preview customer page
             </Link>
-            {canEdit && (
+            {canEdit && (event.deleted_at != null ? (
+              <button
+                type="button"
+                onClick={unarchiveEvent}
+                disabled={deleting}
+                title="Unarchive this event. Subject to your plan's active event limit."
+                className="inline-flex h-10 items-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EFF4FF] disabled:opacity-50"
+              >
+                {deleting ? "Unarchiving…" : "Unarchive event"}
+              </button>
+            ) : (
               <button
                 type="button"
                 onClick={archiveEvent}
@@ -2075,7 +2132,7 @@ function EventDetail() {
               >
                 {deleting ? "Archiving…" : "Archive event"}
               </button>
-            )}
+            ))}
           </div>
         }
       />
@@ -2101,6 +2158,16 @@ function EventDetail() {
           </span>
         )}
       </div>
+
+      {event.deleted_at != null && (
+        <div className="mt-3 rounded-[12px] border border-[#CBD5E1] bg-[#F1F5F9] px-4 py-3 text-sm leading-6 text-[#475569]">
+          This event is <span className="font-semibold">archived</span> and does not count toward your active
+          event limit. All venues, passports, check-ins and reports are preserved. Use{" "}
+          <span className="font-semibold">Unarchive event</span> above to bring it back as a draft (subject to
+          your plan&apos;s active event limit).
+        </div>
+      )}
+
 
       <details className="group rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
