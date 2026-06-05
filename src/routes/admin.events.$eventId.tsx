@@ -1746,33 +1746,10 @@ function EventDetail() {
     if (!agencyId || !bundle) return;
     setDeleting(true);
     try {
-      const [{ data: limits, error: limErr }, { count, error: cntErr }] = await Promise.all([
-        supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }) as unknown as Promise<{
-          data: { active_event_limit: number | null } | null;
-          error: { message: string } | null;
-        }>,
-        supabase
-          .from("events")
-          .select("id", { count: "exact", head: true })
-          .eq("agency_id", agencyId)
-          .is("deleted_at", null),
-      ]);
-      if (limErr) {
-        toast.error(`Could not check plan limit: ${limErr.message}`);
-        return;
-      }
-      if (cntErr) {
-        toast.error(`Could not count active events: ${cntErr.message}`);
-        return;
-      }
-      const limit = limits?.active_event_limit ?? null;
-      const currentActive = count ?? 0;
-      if (limit !== null && currentActive >= limit) {
-        toast.error(
-          `You have reached your active event limit (${limit}). Upgrade your plan or archive another event before unarchiving this event.`,
-        );
-        return;
-      }
+      // Unarchive restores the event as a draft. It does not turn the
+      // public event on, so no live-event-limit check is required here.
+      // The limit is re-checked when the user turns the public event on
+      // from the Public Address section.
       const { error: updErr } = await supabase
         .from("events")
         .update({ deleted_at: null, status: "draft" })
@@ -1788,6 +1765,7 @@ function EventDetail() {
       setDeleting(false);
     }
   }
+
 
   /**
    * Build the check-in URL for a QR token.
@@ -2354,6 +2332,15 @@ function EventDetail() {
 
 
           <Section title="Public address" id="section-public-address" tab="overview">
+            <EventLiveToggle
+              agencyId={agencyId}
+              eventId={event.id}
+              eventStatus={event.status}
+              isArchived={event.deleted_at != null}
+              canEdit={canEdit}
+              onChanged={() => setReloadKey((k) => k + 1)}
+            />
+            <div className="h-4" />
             <PublicAddressCard
               agencyId={agencyId}
               eventId={event.id}
@@ -4584,7 +4571,12 @@ function PublicAddressCard({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [releasing, setReleasing] = useState(false);
-  const [releaseError, setReleaseError] = useState<string | null>(null);
+  const [, setReleaseError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editInput, setEditInput] = useState("");
+  const [editAvailability, setEditAvailability] = useState<AvailabilityState>({ kind: "idle" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const normalized = input.trim().toLowerCase();
 
@@ -4694,11 +4686,107 @@ function PublicAddressCard({
       .eq("status", "pending");
     setReleasing(false);
     if (error) {
-      setReleaseError(`Could not release subdomain: ${error.message}`);
+      const msg = `Could not release subdomain: ${error.message}`;
+      setReleaseError(msg);
+      toast.error(msg);
       return;
     }
     onChanged();
   }
+
+  // Debounced availability check for the edit-mode input.
+  const editNormalized = editInput.trim().toLowerCase();
+  useEffect(() => {
+    if (!editing) return;
+    setEditError(null);
+    if (!editNormalized) {
+      setEditAvailability({ kind: "idle" });
+      return;
+    }
+    if (subdomainRow && editNormalized === subdomainRow.public_subdomain) {
+      setEditAvailability({ kind: "idle" });
+      return;
+    }
+    if (editNormalized.length < 3 || editNormalized.length > 63) {
+      setEditAvailability({ kind: "invalid", message: "Must be 3–63 characters." });
+      return;
+    }
+    if (!SUBDOMAIN_RE.test(editNormalized)) {
+      setEditAvailability({
+        kind: "invalid",
+        message:
+          "Use lowercase letters, numbers, and hyphens. Cannot start or end with a hyphen.",
+      });
+      return;
+    }
+    setEditAvailability({ kind: "checking" });
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc("validate_public_subdomain", {
+        _candidate: editNormalized,
+      });
+      if (cancelled) return;
+      if (error) {
+        setEditAvailability({ kind: "error", message: "Could not check availability." });
+        return;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row?.ok) {
+        setEditAvailability({ kind: "available" });
+        return;
+      }
+      switch (row?.reason) {
+        case "length":
+          setEditAvailability({ kind: "invalid", message: "Must be 3–63 characters." });
+          break;
+        case "format":
+          setEditAvailability({ kind: "invalid", message: "Invalid format." });
+          break;
+        case "reserved":
+          setEditAvailability({ kind: "reserved" });
+          break;
+        case "taken":
+          setEditAvailability({ kind: "taken" });
+          break;
+        default:
+          setEditAvailability({ kind: "error", message: "That public address is already in use. Please choose another." });
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [editing, editNormalized, subdomainRow]);
+
+  async function handleSaveEdit() {
+    if (!subdomainRow || !agencyId) return;
+    if (editAvailability.kind !== "available") return;
+    setSavingEdit(true);
+    setEditError(null);
+    const { error } = await supabase
+      .from("event_domains")
+      .update({ public_subdomain: editNormalized })
+      .eq("id", subdomainRow.id)
+      .eq("agency_id", agencyId)
+      .eq("event_id", eventId);
+    setSavingEdit(false);
+    if (error) {
+      const msg = error.message ?? "Could not update public address.";
+      if (/duplicate|unique/i.test(msg)) {
+        setEditError("That public address is already in use. Please choose another.");
+        setEditAvailability({ kind: "taken" });
+      } else {
+        setEditError(`Could not update public address: ${msg}`);
+      }
+      return;
+    }
+    toast.success("Public address updated.");
+    setEditing(false);
+    setEditInput("");
+    setEditAvailability({ kind: "idle" });
+    onChanged();
+  }
+
 
   const previewHost = normalized && availability.kind !== "invalid"
     ? `${normalized}.getstampd.com.au`
@@ -4792,33 +4880,106 @@ function PublicAddressCard({
         <EmptyNotice>No public address claimed yet. Ask an owner or admin to reserve one.</EmptyNotice>
       )}
 
-      {subdomainRow && subdomainRow.status === "pending" && canEdit && (
-        <div className="space-y-2 rounded-md border p-3">
-          <div className="text-sm">
-            Pending reservation — will activate once billing/activation is complete.
-          </div>
-          {releaseError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {releaseError}
+      {subdomainRow && canEdit && (
+        <div className="space-y-3 rounded-md border p-3">
+          {subdomainRow.status === "pending" && (
+            <div className="text-sm">
+              Pending reservation — will activate once billing/activation is complete.
             </div>
           )}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleRelease}
-              disabled={releasing}
-              className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-            >
-              {releasing ? "Releasing…" : "Release subdomain"}
-            </button>
-          </div>
-        </div>
-      )}
+          {subdomainRow.status === "active" && (
+            <div className="text-sm text-muted-foreground">
+              Changing the public address updates the URL visitors use.
+              Existing bookmarks to the old address will stop working.
+            </div>
+          )}
 
-      {subdomainRow && subdomainRow.status === "active" && (
-        <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-          Active subdomains are read-only here.
-          {isPlatformAdmin && " Platform admins can change active domains via system admin."}
+          {!editing && (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(true);
+                  setEditInput(subdomainRow.public_subdomain ?? "");
+                  setEditAvailability({ kind: "idle" });
+                  setEditError(null);
+                }}
+                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+              >
+                Change address
+              </button>
+              {subdomainRow.status === "pending" && (
+                <button
+                  type="button"
+                  onClick={handleRelease}
+                  disabled={releasing}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  {releasing ? "Releasing…" : "Release subdomain"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {editing && (
+            <div className="space-y-3">
+              <label htmlFor="gs-subdomain-edit" className="block text-sm font-medium">
+                New public address
+              </label>
+              <div className="flex items-stretch gap-0">
+                <span className="inline-flex items-center rounded-l-md border border-r-0 bg-muted px-2 text-xs text-muted-foreground">
+                  https://
+                </span>
+                <input
+                  id="gs-subdomain-edit"
+                  type="text"
+                  value={editInput}
+                  onChange={(e) => setEditInput(e.target.value.toLowerCase())}
+                  maxLength={63}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="h-9 w-full border bg-background px-2 text-sm font-mono"
+                />
+                <span className="inline-flex items-center rounded-r-md border border-l-0 bg-muted px-2 text-xs text-muted-foreground">
+                  .getstampd.com.au
+                </span>
+              </div>
+              <AvailabilityMessage state={editAvailability} />
+              {editError && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  {editError}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(false);
+                    setEditInput("");
+                    setEditAvailability({ kind: "idle" });
+                    setEditError(null);
+                  }}
+                  disabled={savingEdit}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={savingEdit || editAvailability.kind !== "available"}
+                  className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {savingEdit ? "Saving…" : "Save new address"}
+                </button>
+              </div>
+              {isPlatformAdmin && subdomainRow.status === "active" && (
+                <p className="text-[11px] text-muted-foreground">
+                  Platform admin: this updates the live event_domains row in place. The event live/off state is preserved.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -4885,6 +5046,203 @@ function AvailabilityMessage({ state }: { state: AvailabilityState }) {
   const m = map[state.kind];
   return <div className={`text-xs ${m.cls}`}>{m.text}</div>;
 }
+
+
+function EventLiveToggle({
+  agencyId,
+  eventId,
+  eventStatus,
+  isArchived,
+  canEdit,
+  onChanged,
+}: {
+  agencyId: string | null;
+  eventId: string;
+  eventStatus: string;
+  isArchived: boolean;
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [confirmKind, setConfirmKind] = useState<"on" | "off" | null>(null);
+  const isLive = eventStatus === "published";
+
+  if (isArchived) {
+    return (
+      <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+        This event is archived. Unarchive it before you can turn the public event on or off.
+      </div>
+    );
+  }
+
+  async function turnOn() {
+    if (!agencyId) return;
+    setBusy(true);
+    try {
+      const [{ data: limits, error: limErr }, { count, error: cntErr }] = await Promise.all([
+        supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }) as unknown as Promise<{
+          data: { active_event_limit: number | null } | null;
+          error: { message: string } | null;
+        }>,
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("agency_id", agencyId)
+          .is("deleted_at", null)
+          .eq("status", "published")
+          .neq("id", eventId),
+      ]);
+      if (limErr) {
+        toast.error(`Could not check plan limit: ${limErr.message}`);
+        return;
+      }
+      if (cntErr) {
+        toast.error(`Could not count live events: ${cntErr.message}`);
+        return;
+      }
+      const limit = limits?.active_event_limit ?? null;
+      const currentLive = count ?? 0;
+      if (limit !== null && currentLive >= limit) {
+        toast.error(
+          `You have reached your live event limit (${limit}). Turn another event off, archive an event, or upgrade your plan before making this event live.`,
+        );
+        return;
+      }
+      const { error: updErr } = await supabase
+        .from("events")
+        .update({ status: "published" })
+        .eq("id", eventId)
+        .eq("agency_id", agencyId);
+      if (updErr) {
+        toast.error(`Could not turn public event on: ${updErr.message}`);
+        return;
+      }
+      toast.success("Public event is now live.");
+      setConfirmKind(null);
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function turnOff() {
+    if (!agencyId) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({ status: "draft" })
+        .eq("id", eventId)
+        .eq("agency_id", agencyId);
+      if (error) {
+        toast.error(`Could not turn public event off: ${error.message}`);
+        return;
+      }
+      toast.success("Public event turned off.");
+      setConfirmKind(null);
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-md border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <div className="text-sm font-semibold text-[#111827]">Public event is live</div>
+          <div className="text-xs text-muted-foreground">
+            {isLive
+              ? "The public event website is available to visitors at the address below."
+              : "The public event website is turned off. The event remains editable in admin and does not count toward your live event limit."}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className={
+              "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide " +
+              (isLive
+                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                : "bg-muted text-muted-foreground")
+            }
+          >
+            {isLive ? "Live" : "Off"}
+          </span>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setConfirmKind(isLive ? "off" : "on")}
+              disabled={busy}
+              className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+            >
+              {isLive ? "Turn off public event" : "Turn on public event"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {confirmKind && (
+        <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
+          {confirmKind === "off" ? (
+            <>
+              <div className="font-semibold text-[#111827]">Turn public event off?</div>
+              <p className="mt-1 text-muted-foreground">
+                This will make the event website unavailable to visitors, but it will keep the event in your admin account so you can edit it or turn it back on later.
+              </p>
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmKind(null)}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={turnOff}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center rounded-lg bg-destructive px-3 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {busy ? "Working…" : "Turn off public event"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="font-semibold text-[#111827]">Turn public event on?</div>
+              <p className="mt-1 text-muted-foreground">
+                This will make the event website available at its public address.
+                It will count toward your live event limit.
+              </p>
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmKind(null)}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={turnOn}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {busy ? "Working…" : "Turn on public event"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 
 
 function GoLivePanel({
