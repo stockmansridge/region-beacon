@@ -373,6 +373,7 @@ function EventDetail() {
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
+  const [venueFilter, setVenueFilter] = useState<VenueFilter>("active");
   const [venueAssetBusy, setVenueAssetBusy] = useState<VenueAssetKind | null>(null);
   const [venueAssetError, setVenueAssetError] = useState<string | null>(null);
   const venueEditorRef = useRef<HTMLDivElement | null>(null);
