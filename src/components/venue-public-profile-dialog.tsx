@@ -211,10 +211,8 @@ export function VenuePublicProfileDialog({
     if (offerSupported && offerSummary.length > OFFER_MAX) {
       return `Offer summary must be ${OFFER_MAX} characters or fewer.`;
     }
-    const w = website.trim();
-    if (w.length > 0 && !/^https:\/\//i.test(w)) {
-      return "Website URL must start with https://";
-    }
+    // Website URL is normalised (https:// auto-added) at save time —
+    // no protocol validation needed here.
     const p = phone.trim();
     if (p.length > PHONE_MAX) {
       return `Phone must be ${PHONE_MAX} characters or fewer.`;
