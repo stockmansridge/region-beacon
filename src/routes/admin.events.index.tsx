@@ -330,7 +330,7 @@ function Events() {
                 <th className="px-4 py-3">Public address</th>
                 <th className="px-4 py-3">Dates</th>
                 <th className="px-4 py-3">Venues</th>
-                <th className="px-4 py-3">Go-live</th>
+                <th className="px-4 py-3">Public website status</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -342,18 +342,16 @@ function Events() {
                 const domainStatus = domain?.status ?? null;
                 const activation = ex?.activationStatus ?? null;
                 const isArchived = e.deleted_at != null;
-                const liveLabel =
-                  activation === "active" || activation === "comp"
-                    ? "Live"
-                    : activation === "pending"
-                      ? "Pending"
-                      : "Not live";
-                const liveClass =
-                  activation === "active" || activation === "comp"
+                const isPublished = e.status === "published";
+                const domainActive = domainStatus === "active";
+                const activationLive = activation === "active" || activation === "comp";
+                const isLive = !isArchived && isPublished && domainActive && activationLive;
+                const liveLabel = isArchived ? "Archived" : isLive ? "Live" : "Not live";
+                const liveClass = isArchived
+                  ? "bg-[#F1F5F9] text-[#475569]"
+                  : isLive
                     ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                    : activation === "pending"
-                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                      : "bg-muted text-muted-foreground";
+                    : "bg-muted text-muted-foreground";
                 return (
                   <tr
                     key={e.id}
