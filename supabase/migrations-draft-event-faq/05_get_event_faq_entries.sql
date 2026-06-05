@@ -1,6 +1,6 @@
 -- Admin read RPC for event FAQ entries.
 -- Mirrors the permission gate used by save_event_faq_entries:
--- platform admin OR public.is_agency_admin(...) for the event's agency.
+-- platform admin OR agency admin for the event's agency.
 
 create or replace function public.get_event_faq_entries(p_event_id uuid)
 returns setof public.event_faq_entries
@@ -12,29 +12,25 @@ as $$
 declare
   v_user_id uuid := auth.uid();
   v_agency_id uuid;
-  v_is_platform_admin boolean := false;
 begin
   if v_user_id is null then
-    raise exception 'Not authenticated' using errcode = '42501';
+    raise exception 'Not authenticated';
   end if;
 
-  select agency_id into v_agency_id
-  from public.events
-  where id = p_event_id;
+  select e.agency_id
+    into v_agency_id
+    from public.events e
+   where e.id = p_event_id;
 
   if v_agency_id is null then
-    raise exception 'Event not found' using errcode = 'P0002';
+    raise exception 'Event not found';
   end if;
 
-  begin
-    select public.has_role(v_user_id, 'platform_admin'::public.app_role)
-      into v_is_platform_admin;
-  exception when others then
-    v_is_platform_admin := false;
-  end;
-
-  if not (v_is_platform_admin or public.is_agency_admin(v_agency_id)) then
-    raise exception 'Permission denied' using errcode = '42501';
+  if not (
+    public.is_platform_admin(v_user_id)
+    or public.is_agency_admin(v_user_id, v_agency_id)
+  ) then
+    raise exception 'You do not have permission to read FAQ entries for this event';
   end if;
 
   return query
