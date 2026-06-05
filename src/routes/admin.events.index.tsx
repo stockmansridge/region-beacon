@@ -122,10 +122,9 @@ function Events() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, slug, public_slug, status, timezone, starts_at, ends_at, created_at, updated_at",
+          "id, name, slug, public_slug, status, timezone, starts_at, ends_at, created_at, updated_at, deleted_at",
         )
         .eq("agency_id", agencyId)
-        .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (cancelled) return;
