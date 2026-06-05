@@ -7,6 +7,7 @@ import { AdminEventRewards } from "@/components/admin-event-rewards";
 import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
 import { BonusCodesSection } from "@/components/event-bonus-codes-section";
+import { AdminEventParticipantsSection } from "@/components/admin-event-participants-section";
 
 import {
   deleteVenueAssetSafely,
