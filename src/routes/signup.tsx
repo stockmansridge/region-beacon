@@ -152,7 +152,7 @@ function SignupPage() {
       email: data.email,
       password: data.password,
       options: {
-        data: { full_name: data.fullName },
+        data: { full_name: data.fullName, experience_type: experienceType || null },
         emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
       },
     });
