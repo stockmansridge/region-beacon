@@ -22,8 +22,9 @@ export function NonTenantNotice() {
           to="/"
           className="mt-6 inline-flex h-10 items-center rounded-md border border-white/15 bg-white/5 px-4 text-sm font-semibold text-white hover:bg-white/10"
         >
-          Home
+          Back to GetStampd home
         </Link>
+
       </div>
     </div>
   );

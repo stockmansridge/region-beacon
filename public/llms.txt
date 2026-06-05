@@ -1,0 +1,12 @@
+# GetStampd
+
+> Digital stamp trails for wineries, markets, tourism groups and events. Visitors scan QR codes, collect digital stamps and unlock rewards — no app download required.
+
+GetStampd helps tourism operators, wine trails, markets, attractions and event organizers run branded digital passport experiences. Operators set up trails or campaigns with venues/stops, visitors join via QR code, and rewards unlock as stamps are collected.
+
+## Pages
+
+- [Home](/): Overview of GetStampd and how digital stamp trails work.
+- [Pricing](/pricing): Starter, Growth, Regional and Pro Region plans for trails, events and tourism campaigns.
+- [Demo](/demo): Live demo of a regional wine trail digital passport.
+- [Contact](/contact): Sales, partnerships and general enquiries.

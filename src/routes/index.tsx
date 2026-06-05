@@ -29,7 +29,8 @@ import heroGroup from "@/assets/hero-tourism-group.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GetStampd — Discover trails, collect stamps, unlock rewards" },
+      { title: "GetStampd — Digital Stamp Trails & Rewards" },
+
       {
         name: "description",
         content:
@@ -162,21 +163,25 @@ const SLIDES = [
     img: heroWine,
     icon: Sparkles,
     title: "Wine Trails",
+    alt: "Wine glasses overlooking a vineyard at sunset — digital wine trail passport experience",
     desc: "Sip, savour and collect stamps along the way.",
   },
   {
     img: heroMarket,
     icon: Star,
     title: "Market Events",
+    alt: "Visitors browsing stalls at a vibrant local market with food and crafts",
     desc: "Explore local stalls and earn unique rewards.",
   },
   {
     img: heroGroup,
     icon: MapPin,
     title: "Tourism Groups",
+    alt: "Small tourism group exploring a regional attraction together with a guide",
     desc: "Discover together and earn more as a group.",
   },
 ];
+
 
 function HeroCarousel() {
   const [index, setIndex] = useState(0);
@@ -259,7 +264,7 @@ function SlideCard({ slide, active }: { slide: (typeof SLIDES)[number]; active: 
     >
       <img
         src={slide.img}
-        alt={slide.title}
+        alt={slide.alt}
         loading="lazy"
         width={1280}
         height={896}
