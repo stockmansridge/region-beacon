@@ -382,6 +382,9 @@ function SignupPage() {
                 <option value="festival_event">Festival or event</option>
                 <option value="other">Other</option>
               </select>
+            </Field>
+
+
 
 
             <label className="flex items-start gap-2 text-sm">
