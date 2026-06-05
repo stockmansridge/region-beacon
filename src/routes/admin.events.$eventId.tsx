@@ -31,6 +31,7 @@ import {
   getPlanByCode,
   getNextPlanAfter,
 } from "@/lib/getstampd-pricing";
+import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 
 type LoadDiagnostic = {
   step: string;
