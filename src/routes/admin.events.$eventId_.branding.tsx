@@ -219,7 +219,7 @@ function BrandingEditor() {
     const accent_color = form.accent_color.trim();
     const font_family = form.font_family.trim();
     const welcome_copy = form.welcome_copy.trim();
-    const terms_url = form.terms_url.trim();
+    const terms_url = normalizeWebsiteUrl(form.terms_url) ?? "";
     const venue_label_singular = form.venue_label_singular.trim();
     const venue_label_plural = form.venue_label_plural.trim();
 
