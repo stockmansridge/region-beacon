@@ -269,11 +269,12 @@ function SignupPage() {
             className="space-y-5 rounded-2xl border bg-card p-8 shadow-sm"
           >
             <div>
-              <h1 className="text-xl font-semibold">Create your organisation</h1>
+              <h1 className="text-xl font-semibold">Start your free GetStampd account</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Start setting up your first GetStampd event.
+                Create your free account and start building your first digital stamp trail, market event or tourism experience.
               </p>
             </div>
+
 
             {topError && (
               <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
