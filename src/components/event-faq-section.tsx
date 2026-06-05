@@ -64,6 +64,11 @@ export function EventFaqSection({
   const [reloadKey, setReloadKey] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const eventIdSaveError = !eventId
+    ? "Cannot save FAQ entries because the event id is missing."
+    : !isUuid(eventId)
+      ? "Cannot save FAQ entries because the event id is invalid."
+      : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -116,16 +121,9 @@ export function EventFaqSection({
 
   async function saveAll() {
     if (!canEdit) return;
-    if (!eventId) {
-      const message = "Cannot save FAQ entries because the event id is missing.";
-      setSaveError(message);
-      toast.error("Could not save FAQ entries", { description: message });
-      return;
-    }
-    if (!isUuid(eventId)) {
-      const message = "Cannot save FAQ entries because the event id is invalid.";
-      setSaveError(message);
-      toast.error("Could not save FAQ entries", { description: message });
+    if (eventIdSaveError) {
+      setSaveError(eventIdSaveError);
+      toast.error("Could not save FAQ entries", { description: eventIdSaveError });
       return;
     }
     setSaving(true);
@@ -293,7 +291,7 @@ export function EventFaqSection({
               <button
                 type="button"
                 onClick={saveAll}
-                disabled={saving}
+                  disabled={saving || Boolean(eventIdSaveError)}
                 className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save changes"}
@@ -301,9 +299,9 @@ export function EventFaqSection({
             </div>
           )}
 
-          {saveError && (
+          {(saveError || eventIdSaveError) && (
             <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-              {saveError}
+              {saveError || eventIdSaveError}
             </div>
           )}
         </>
