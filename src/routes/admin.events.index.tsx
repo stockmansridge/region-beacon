@@ -371,8 +371,19 @@ function Events() {
                       (isArchived ? "bg-[#F8FAFC]/60" : "")
                     }
                   >
-                    <td className="px-4 py-3 font-medium text-[#111827]">
-                      <span className={isArchived ? "text-[#64748B]" : undefined}>{e.name}</span>
+                    <td className="px-4 py-3 font-medium">
+                      <Link
+                        to="/admin/events/$eventId"
+                        params={{ eventId: e.id }}
+                        className={
+                          "rounded-sm font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6FE4] focus-visible:ring-offset-1 " +
+                          (isArchived
+                            ? "text-[#475569] hover:text-[#2F6FE4]"
+                            : "text-[#2F6FE4] hover:text-[#1F56C5]")
+                        }
+                      >
+                        {e.name}
+                      </Link>
                     </td>
                     <td className="px-4 py-3">
                       {isArchived ? (
