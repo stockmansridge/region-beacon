@@ -3181,7 +3181,7 @@ function EventDetail() {
                         >
                           <td className="px-3 py-2 text-muted-foreground">{v.order_index}</td>
                           <td className="px-3 py-2 font-medium">
-                            {canEdit ? (
+                            {canEdit && v.deleted_at == null ? (
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -3196,7 +3196,7 @@ function EventDetail() {
                                 {v.name}
                               </button>
                             ) : (
-                              v.name
+                              <span className={v.deleted_at != null ? "text-[#64748B]" : undefined}>{v.name}</span>
                             )}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{v.address ?? "—"}</td>
