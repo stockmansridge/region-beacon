@@ -2913,7 +2913,30 @@ function EventDetail() {
                       />
                     </Field>
                   </div>
+                  <Field label="Points value">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={venueForm.points_value}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === "") {
+                          setVenueForm({ ...venueForm, points_value: "0" });
+                          return;
+                        }
+                        const n = Number(raw);
+                        if (!Number.isFinite(n) || n < 0) return;
+                        setVenueForm({ ...venueForm, points_value: String(Math.floor(n)) });
+                      }}
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Points awarded when a participant scans this venue QR code. This does not affect passport stamp collection.
+                    </p>
+                  </Field>
                 </FormSection>
+
 
                 <FormSection title="Public page content">
                   <Field label="Description">
