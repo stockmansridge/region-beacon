@@ -3543,6 +3543,76 @@ function EventDetail() {
           </Section>
         </div>
       </EventTabContext.Provider>
+      {forceDeleteVenueId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => {
+            if (!forceDeleteBusy) {
+              setForceDeleteVenueId(null);
+              setForceDeleteConfirm("");
+              setForceDeleteError(null);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-[14px] border border-[#7F1D1D]/40 bg-white p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-[#7F1D1D]">
+              Force delete venue and history?
+            </h2>
+            <p className="mt-2 text-sm text-[#475569]">
+              This will permanently delete this venue and its linked check-ins,
+              QR codes, offers, and venue history. This is intended only for
+              platform-admin testing or cleanup and cannot be undone.
+            </p>
+            <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-[#64748B]">
+              Type <span className="font-mono text-[#7F1D1D]">DELETE VENUE AND HISTORY</span> to confirm
+            </label>
+            <input
+              type="text"
+              autoFocus
+              value={forceDeleteConfirm}
+              onChange={(e) => {
+                setForceDeleteConfirm(e.target.value);
+                setForceDeleteError(null);
+              }}
+              disabled={forceDeleteBusy}
+              className="mt-2 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 py-2 font-mono text-sm text-[#111827] focus:border-[#7F1D1D] focus:outline-none"
+            />
+            {forceDeleteError && (
+              <p className="mt-3 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs text-[#7F1D1D]">
+                {forceDeleteError}
+              </p>
+            )}
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setForceDeleteVenueId(null);
+                  setForceDeleteConfirm("");
+                  setForceDeleteError(null);
+                }}
+                disabled={forceDeleteBusy}
+                className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={runForceDeleteVenue}
+                disabled={
+                  forceDeleteBusy ||
+                  forceDeleteConfirm !== "DELETE VENUE AND HISTORY"
+                }
+                className="inline-flex h-9 items-center rounded-[10px] border border-[#7F1D1D] bg-[#7F1D1D] px-3.5 text-sm font-semibold text-white hover:bg-[#5B0F0F] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {forceDeleteBusy ? "Deleting…" : "Force delete permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
