@@ -4919,42 +4919,25 @@ function PublicAddressCard({
 
       {subdomainRow && canEdit && (
         <div className="space-y-3 rounded-md border p-3">
-          {subdomainRow.status === "pending" && (
-            <div className="text-sm">
-              Pending reservation — will activate once billing/activation is complete.
-            </div>
-          )}
-          {subdomainRow.status === "active" && (
-            <div className="text-sm text-muted-foreground">
-              Changing the public address updates the URL visitors use.
-              Existing bookmarks to the old address will stop working.
-            </div>
-          )}
-
-          {!editing && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
+          {!editing && subdomainRow.status === "pending" && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm">
+                Pending reservation — will activate once billing/activation is complete.
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  setEditing(true);
-                  setEditInput(subdomainRow.public_subdomain ?? "");
-                  setEditAvailability({ kind: "idle" });
-                  setEditError(null);
-                }}
-                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                onClick={handleRelease}
+                disabled={releasing}
+                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
               >
-                Change address
+                {releasing ? "Releasing…" : "Release subdomain"}
               </button>
-              {subdomainRow.status === "pending" && (
-                <button
-                  type="button"
-                  onClick={handleRelease}
-                  disabled={releasing}
-                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                >
-                  {releasing ? "Releasing…" : "Release subdomain"}
-                </button>
-              )}
+            </div>
+          )}
+          {!editing && subdomainRow.status === "active" && (
+            <div className="text-sm text-muted-foreground">
+              You can change this public address at any time using <span className="font-medium">Change address</span> above.
+              The old address will stop working after the change. Changing the address does not turn the event on or off.
             </div>
           )}
 
