@@ -178,27 +178,27 @@ function PricingPage() {
           <Sparkles className="h-3.5 w-3.5" /> Pricing
         </span>
         <h1 className="mt-5 font-serif text-4xl font-semibold leading-tight tracking-tight text-[#1F2417] sm:text-5xl">
-          Simple pricing for every trail, event, and destination
+          Pricing that grows with your venue, campaign or region
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-[#666666] sm:text-lg">
-          Launch digital stamp trails for events, markets, tourism campaigns, and destination experiences. Start small, then scale as your programme grows.
+          Choose the GetStampd plan that fits how you want to run QR check-ins, rewards, trails and regional loyalty experiences.
         </p>
       </section>
 
       {/* Cards */}
       <section className="mx-auto max-w-7xl px-5 pb-24 sm:px-8">
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((p) => (
             <div
-              key={p.name}
+              key={p.code}
               className={cn(
-                "relative flex flex-col rounded-3xl border bg-white p-10 transition-all duration-300 hover:-translate-y-1",
+                "relative flex flex-col rounded-3xl border bg-white p-8 transition-all duration-300 hover:-translate-y-1",
                 p.highlight
                   ? "border-[#8A1538] shadow-xl shadow-[#8A1538]/10 ring-1 ring-[#8A1538]"
                   : "border-[#1F2417]/10 shadow-sm hover:shadow-lg",
               )}
             >
-              {"badge" in p && p.badge && (
+              {p.badge && (
                 <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#8A1538] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-md">
                   <Sparkles className="h-3 w-3" /> {p.badge}
                 </span>
