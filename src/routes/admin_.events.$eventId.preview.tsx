@@ -260,7 +260,7 @@ function EventPreview() {
       className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
       style={{ backgroundColor: primaryColor }}
     >
-      Start passport · Preview only
+      Start passport · publish event to enable
     </button>
   );
 
@@ -320,22 +320,22 @@ function EventPreview() {
         <div className="mx-auto max-w-md px-4 py-16">
           {/* Interactive preview callout */}
           <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-xs leading-relaxed text-amber-900 shadow-sm">
-            <p className="font-semibold uppercase tracking-[0.18em]">Preview mode</p>
+            <p className="font-semibold uppercase tracking-[0.18em]">Admin preview</p>
             <p className="mt-1">
-              Preview mode lets you review the customer landing page before going live.
-              Preview actions do not create real visitors, check-ins, or points.
+              You are viewing the real customer page in preview mode. Navigation and
+              customer actions use the live event flow.
             </p>
             {canOpenLive ? (
               <p className="mt-2">
-                Your event is published. Use the buttons below to open the live customer
-                site in a new tab and walk through the full interactive journey
-                (passport, scanning, leaderboard).
+                Customer actions taken here may create real passports, check-ins, and
+                points for this event. Use the buttons below to open the live customer
+                site in a new tab.
               </p>
             ) : (
               <p className="mt-2">
-                To test the full interactive customer journey (passport, QR scanning,
-                leaderboard), claim a public address and turn the event live, then return
-                here — the preview button will open the real customer site.
+                This event must be published before the full customer journey can be
+                tested. Claim a public address and turn the event live, then return
+                here to open the real customer site.
               </p>
             )}
           </div>
@@ -435,7 +435,7 @@ function EventPreview() {
           )}
 
           <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
-            Admin preview · no visitors, passports, or check-ins are created from this page
+            Admin preview · customer actions on the live site create real data
           </p>
         </div>
       </div>
