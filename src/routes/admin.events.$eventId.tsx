@@ -3603,6 +3603,28 @@ function EventDetail() {
             })()}
           </Section>
 
+          <Section
+            title="Bonus Codes"
+            id="section-bonus-codes"
+            tab="bonuscodes"
+            description="Event-level QR codes that award points only. They do not count as venue passport stamps."
+          >
+            {agencyId ? (
+              <BonusCodesSection
+                agencyId={agencyId}
+                eventId={event.id}
+                publicSubdomain={activeSubdomain}
+                canEdit={canEdit}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Select an agency to manage bonus codes.
+              </p>
+            )}
+          </Section>
+
+
+
           <Section title="Analytics" id="section-analytics" tab="analytics">
             <p className="mb-3 text-sm text-muted-foreground">
               Event analytics live on a dedicated dashboard. Open it to view
