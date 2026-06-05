@@ -202,6 +202,70 @@ function Events() {
     };
   }, [agencyId, reloadKey]);
 
+  const activeCount = useMemo(
+    () => (rows ?? []).filter((e) => e.deleted_at == null).length,
+    [rows],
+  );
+  const archivedCount = useMemo(
+    () => (rows ?? []).filter((e) => e.deleted_at != null).length,
+    [rows],
+  );
+  const visibleRows = useMemo(() => {
+    if (!rows) return [] as EventRow[];
+    if (filter === "active") return rows.filter((e) => e.deleted_at == null);
+    if (filter === "archived") return rows.filter((e) => e.deleted_at != null);
+    return rows;
+  }, [rows, filter]);
+
+  async function unarchiveEvent(eventId: string) {
+    if (!agencyId) return;
+    setUnarchivingId(eventId);
+    try {
+      // Re-check active event limit against current plan.
+      const [{ data: limits, error: limErr }, { count, error: cntErr }] = await Promise.all([
+        supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }) as unknown as Promise<{
+          data: { active_event_limit: number | null } | null;
+          error: { message: string } | null;
+        }>,
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("agency_id", agencyId)
+          .is("deleted_at", null),
+      ]);
+      if (limErr) {
+        toast.error(`Could not check plan limit: ${limErr.message}`);
+        return;
+      }
+      if (cntErr) {
+        toast.error(`Could not count active events: ${cntErr.message}`);
+        return;
+      }
+      const limit = limits?.active_event_limit ?? null;
+      const currentActive = count ?? 0;
+      if (limit !== null && currentActive >= limit) {
+        toast.error(
+          `You have reached your active event limit (${limit}). Upgrade your plan or archive another event before unarchiving this event.`,
+        );
+        return;
+      }
+      const { error: updErr } = await supabase
+        .from("events")
+        .update({ deleted_at: null, status: "draft" })
+        .eq("id", eventId)
+        .eq("agency_id", agencyId);
+      if (updErr) {
+        toast.error(`Could not unarchive event: ${updErr.message}`);
+        return;
+      }
+      toast.success("Event unarchived. It is back in the Active tab as a draft.");
+      setFilter("active");
+      setReloadKey((k) => k + 1);
+    } finally {
+      setUnarchivingId(null);
+    }
+  }
+
   return (
     <>
       <PageHeader
