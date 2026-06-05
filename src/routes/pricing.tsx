@@ -35,7 +35,22 @@ export const Route = createFileRoute("/pricing")({
       { name: "robots", content: "index, follow" },
     ],
     links: [{ rel: "canonical", href: "https://getstampd.com.au/pricing" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: FAQS.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
+        }),
+      },
+    ],
   }),
+
   component: PricingPage,
 });
 
