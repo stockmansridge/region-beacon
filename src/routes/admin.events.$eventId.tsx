@@ -513,7 +513,7 @@ function EventDetail() {
         const { data: event, error: evErr } = await supabase
           .from("events")
           .select(
-            "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id",
+            "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id, deleted_at",
           )
           .eq("id", eventId)
           .eq("agency_id", agencyId)
