@@ -3166,21 +3166,22 @@ function EventDetail() {
                         <tr
                           key={v.id}
                           onClick={() => {
-                            if (canEdit && venueEditingId === null && venueArchivingId === null) {
+                            if (canEdit && venueEditingId === null && venueArchivingId === null && v.deleted_at == null) {
                               startEditVenue(v);
                             }
                           }}
                           className={
                             "border-t border-[#E6ECF4] align-top " +
-                            (canEdit && venueEditingId === null && venueArchivingId === null
+                            (v.deleted_at != null ? "bg-[#F8FAFC]/60 " : "") +
+                            (canEdit && venueEditingId === null && venueArchivingId === null && v.deleted_at == null
                               ? "cursor-pointer transition-colors hover:bg-[#F8FAFC]"
                               : "")
                           }
-                          title={canEdit && venueEditingId === null ? "Open venue details" : undefined}
+                          title={canEdit && venueEditingId === null && v.deleted_at == null ? "Open venue details" : undefined}
                         >
                           <td className="px-3 py-2 text-muted-foreground">{v.order_index}</td>
                           <td className="px-3 py-2 font-medium">
-                            {canEdit ? (
+                            {canEdit && v.deleted_at == null ? (
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -3195,7 +3196,7 @@ function EventDetail() {
                                 {v.name}
                               </button>
                             ) : (
-                              v.name
+                              <span className={v.deleted_at != null ? "text-[#64748B]" : undefined}>{v.name}</span>
                             )}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{v.address ?? "—"}</td>
