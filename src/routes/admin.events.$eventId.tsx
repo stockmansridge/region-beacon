@@ -1296,22 +1296,69 @@ function EventDetail() {
     // See uploadVenueImage: skip reloadKey to keep the editor mounted.
   }
 
-  async function archiveVenue(venueId: string) {
+  async function disableVenue(venueId: string) {
     if (!agencyId) return;
-    if (!window.confirm("Archive this venue? It will be hidden from the active list.")) return;
-    setVenueArchivingId(venueId);
-    setVenueArchiveError(null);
-    const { error } = await supabase
-      .from("venues")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", venueId)
-      .eq("event_id", eventId)
-      .eq("agency_id", agencyId);
-    setVenueArchivingId(null);
-    if (error) {
-      setVenueArchiveError("Could not archive venue. Please try again.");
+    if (
+      !window.confirm(
+        "Disable this venue?\n\nThis venue will no longer count toward your venue limit and cannot be selected for new events. Existing events, check-ins, QR codes, and historical reporting will remain intact.",
+      )
+    ) {
       return;
     }
+    setVenueArchivingId(venueId);
+    setVenueArchiveError(null);
+    const { error } = await supabase.rpc("disable_venue", {
+      p_venue_id: venueId,
+      p_reason: null,
+    });
+    setVenueArchivingId(null);
+    if (error) {
+      setVenueArchiveError(error.message || "Could not disable venue. Please try again.");
+      toast.error(error.message || "Could not disable venue.");
+      return;
+    }
+    toast.success("Venue disabled.");
+    setReloadKey((k) => k + 1);
+  }
+
+  async function reactivateVenue(venueId: string) {
+    if (!agencyId) return;
+    setVenueArchivingId(venueId);
+    setVenueArchiveError(null);
+    const { error } = await supabase.rpc("reactivate_venue", {
+      p_venue_id: venueId,
+    });
+    setVenueArchivingId(null);
+    if (error) {
+      setVenueArchiveError(error.message || "Could not reactivate venue.");
+      toast.error(error.message || "Could not reactivate venue.");
+      return;
+    }
+    toast.success("Venue reactivated.");
+    setReloadKey((k) => k + 1);
+  }
+
+  async function hardDeleteVenue(venueId: string) {
+    if (!agencyId) return;
+    if (
+      !window.confirm(
+        "Permanently delete this venue?\n\nThis cannot be undone. Only venues with no linked events or historical activity can be permanently deleted.",
+      )
+    ) {
+      return;
+    }
+    setVenueArchivingId(venueId);
+    setVenueArchiveError(null);
+    const { error } = await supabase.rpc("hard_delete_venue", {
+      p_venue_id: venueId,
+    });
+    setVenueArchivingId(null);
+    if (error) {
+      setVenueArchiveError(error.message || "Could not delete venue.");
+      toast.error(error.message || "Could not delete venue.");
+      return;
+    }
+    toast.success("Venue permanently deleted.");
     setReloadKey((k) => k + 1);
   }
 
