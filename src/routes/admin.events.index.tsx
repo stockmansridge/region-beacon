@@ -369,7 +369,12 @@ function Events() {
                           Archived
                         </span>
                       ) : (
-                        <span className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-medium text-[#475569]">
+                        <span className={
+                          "rounded-full px-2.5 py-1 text-xs font-medium " +
+                          (e.status === "published"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                            : "bg-[#F1F5F9] text-[#475569]")
+                        }>
                           {e.status}
                         </span>
                       )}
