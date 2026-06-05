@@ -107,6 +107,8 @@ function Events() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [filter, setFilter] = useState<EventFilter>("active");
+  const [unarchivingId, setUnarchivingId] = useState<string | null>(null);
 
   const [open, setOpen] = useState(false);
 
