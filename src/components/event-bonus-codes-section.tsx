@@ -165,7 +165,7 @@ export function BonusCodesSection({
           points_value: points,
           is_active: form.is_active,
           qr_code_token: crypto.randomUUID(),
-          created_by: user?.id ?? null,
+          created_by: userId,
         };
         const { error } = await supabase.from("event_bonus_codes").insert(payload);
         if (error) throw error;
