@@ -3434,10 +3434,14 @@ function EventDetail() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); startEditVenue(v); }}
-                                  disabled={venueEditingId !== null || venueArchivingId !== null || v.deleted_at != null}
+                                  disabled={
+                                    venueEditingId !== null ||
+                                    venueArchivingId !== null ||
+                                    (v.deleted_at != null && !agency.isPlatformAdmin)
+                                  }
                                   className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                  Edit details
+                                  {v.deleted_at != null && agency.isPlatformAdmin ? "View / edit details" : "Edit details"}
                                 </button>
                                 {v.deleted_at == null ? (
                                   <button
@@ -3466,6 +3470,21 @@ function EventDetail() {
                                     >
                                       {venueArchivingId === v.id ? "Deleting…" : "Delete permanently"}
                                     </button>
+                                    {agency.isPlatformAdmin && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setForceDeleteVenueId(v.id);
+                                          setForceDeleteConfirm("");
+                                          setForceDeleteError(null);
+                                        }}
+                                        disabled={venueEditingId !== null || venueArchivingId !== null}
+                                        title="Platform admin only: permanently delete this venue and all linked history"
+                                        className="inline-flex h-9 items-center rounded-[10px] border border-[#7F1D1D] bg-[#7F1D1D] px-3.5 text-sm font-semibold text-white hover:bg-[#5B0F0F] disabled:cursor-not-allowed disabled:opacity-50"
+                                      >
+                                        Force delete venue and history
+                                      </button>
+                                    )}
                                   </>
                                 )}
                               </div>
