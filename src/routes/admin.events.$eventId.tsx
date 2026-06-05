@@ -2806,7 +2806,7 @@ function EventDetail() {
                     </tr>
                   </thead>
                   <tbody>
-                    {venues.map((v) => {
+                    {visibleVenues.map((v) => {
                       const qr = qrByVenue.get(v.id);
                       const hasActiveQr = !!qr;
                       const isBusy = qrActionVenueId === v.id;
