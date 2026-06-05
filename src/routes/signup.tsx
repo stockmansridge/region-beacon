@@ -83,7 +83,9 @@ function SignupPage() {
   const [businessName, setBusinessName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugDirty, setSlugDirty] = useState(false);
+  const [experienceType, setExperienceType] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [topError, setTopError] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("form");
@@ -150,7 +152,7 @@ function SignupPage() {
       email: data.email,
       password: data.password,
       options: {
-        data: { full_name: data.fullName },
+        data: { full_name: data.fullName, experience_type: experienceType || null },
         emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
       },
     });
@@ -267,11 +269,12 @@ function SignupPage() {
             className="space-y-5 rounded-2xl border bg-card p-8 shadow-sm"
           >
             <div>
-              <h1 className="text-xl font-semibold">Create your organisation</h1>
+              <h1 className="text-xl font-semibold">Start your free GetStampd account</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Start setting up your first GetStampd event.
+                Create your free account and start building your first digital stamp trail, market event or tourism experience.
               </p>
             </div>
+
 
             {topError && (
               <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -365,6 +368,25 @@ function SignupPage() {
               </div>
             </Field>
 
+            <Field label="Type of experience" hint="Optional — helps us tailor your setup.">
+              <select
+                value={experienceType}
+                onChange={(e) => setExperienceType(e.target.value)}
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">Select an option…</option>
+                <option value="wine_trail">Wine trail</option>
+                <option value="market_event">Market event</option>
+                <option value="tourism_group">Tourism group</option>
+                <option value="food_trail">Food trail</option>
+                <option value="festival_event">Festival or event</option>
+                <option value="other">Other</option>
+              </select>
+            </Field>
+
+
+
+
             <label className="flex items-start gap-2 text-sm">
               <input
                 type="checkbox"
@@ -386,8 +408,12 @@ function SignupPage() {
               className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {stage === "submitting" && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create organisation
+              Create free account
             </button>
+            <p className="text-center text-xs text-muted-foreground">
+              No payment required. Upgrade when you&rsquo;re ready.
+            </p>
+
           </form>
         )}
       </main>
