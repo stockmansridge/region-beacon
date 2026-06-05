@@ -4714,6 +4714,100 @@ function PublicAddressCard({
     onChanged();
   }
 
+  // Debounced availability check for the edit-mode input.
+  const editNormalized = editInput.trim().toLowerCase();
+  useEffect(() => {
+    if (!editing) return;
+    setEditError(null);
+    if (!editNormalized) {
+      setEditAvailability({ kind: "idle" });
+      return;
+    }
+    if (subdomainRow && editNormalized === subdomainRow.public_subdomain) {
+      setEditAvailability({ kind: "idle" });
+      return;
+    }
+    if (editNormalized.length < 3 || editNormalized.length > 63) {
+      setEditAvailability({ kind: "invalid", message: "Must be 3–63 characters." });
+      return;
+    }
+    if (!SUBDOMAIN_RE.test(editNormalized)) {
+      setEditAvailability({
+        kind: "invalid",
+        message:
+          "Use lowercase letters, numbers, and hyphens. Cannot start or end with a hyphen.",
+      });
+      return;
+    }
+    setEditAvailability({ kind: "checking" });
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc("validate_public_subdomain", {
+        _candidate: editNormalized,
+      });
+      if (cancelled) return;
+      if (error) {
+        setEditAvailability({ kind: "error", message: "Could not check availability." });
+        return;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row?.ok) {
+        setEditAvailability({ kind: "available" });
+        return;
+      }
+      switch (row?.reason) {
+        case "length":
+          setEditAvailability({ kind: "invalid", message: "Must be 3–63 characters." });
+          break;
+        case "format":
+          setEditAvailability({ kind: "invalid", message: "Invalid format." });
+          break;
+        case "reserved":
+          setEditAvailability({ kind: "reserved" });
+          break;
+        case "taken":
+          setEditAvailability({ kind: "taken" });
+          break;
+        default:
+          setEditAvailability({ kind: "error", message: "That public address is already in use. Please choose another." });
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [editing, editNormalized, subdomainRow]);
+
+  async function handleSaveEdit() {
+    if (!subdomainRow || !agencyId) return;
+    if (editAvailability.kind !== "available") return;
+    setSavingEdit(true);
+    setEditError(null);
+    const { error } = await supabase
+      .from("event_domains")
+      .update({ public_subdomain: editNormalized })
+      .eq("id", subdomainRow.id)
+      .eq("agency_id", agencyId)
+      .eq("event_id", eventId);
+    setSavingEdit(false);
+    if (error) {
+      const msg = error.message ?? "Could not update public address.";
+      if (/duplicate|unique/i.test(msg)) {
+        setEditError("That public address is already in use. Please choose another.");
+        setEditAvailability({ kind: "taken" });
+      } else {
+        setEditError(`Could not update public address: ${msg}`);
+      }
+      return;
+    }
+    toast.success("Public address updated.");
+    setEditing(false);
+    setEditInput("");
+    setEditAvailability({ kind: "idle" });
+    onChanged();
+  }
+
+
   const previewHost = normalized && availability.kind !== "invalid"
     ? `${normalized}.getstampd.com.au`
     : null;
