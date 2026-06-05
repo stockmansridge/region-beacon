@@ -71,16 +71,16 @@ const PLANS: Plan[] = [
   {
     code: "starter",
     name: "Starter",
-    desc: "For small live trails, events and local experiences.",
-    price: "$49",
-    cadence: " / month",
+    desc: "For small trails, events and local experiences.",
+    price: "$490",
+    cadence: " / year",
     billed: "Billed annually",
     features: [
-      "Launch 1 active trail or event",
-      "Up to 1,000 participants",
+      "1 active trail or campaign",
+      "Up to 10 venues / stops",
+      "1,000 passports per year",
       "Custom branding",
-      "Basic analytics",
-      "Email support",
+      "Self-serve setup",
     ],
     cta: "Upgrade to Starter",
     href: authUrl("/signup?plan=starter"),
@@ -90,15 +90,15 @@ const PLANS: Plan[] = [
     code: "growth",
     name: "Growth",
     desc: "For growing destinations, markets and tourism campaigns.",
-    price: "$149",
-    cadence: " / month",
+    price: "$990",
+    cadence: " / year",
     billed: "Billed annually",
     features: [
-      "Up to 10 active trails/events",
-      "Up to 10,000 participants",
-      "Advanced analytics",
-      "Reward tracking",
-      "Priority email support",
+      "Up to 3 active trails / campaigns",
+      "Up to 25 venues / stops",
+      "3,000 passports per year",
+      "Reward tracking & analytics",
+      "Self-serve setup",
     ],
     cta: "Upgrade to Growth",
     href: authUrl("/signup?plan=growth"),
@@ -106,21 +106,39 @@ const PLANS: Plan[] = [
     badge: "Most popular",
   },
   {
-    code: "enterprise",
-    name: "Enterprise",
-    desc: "For tourism boards, regions and large multi-location programs.",
-    price: "Custom",
-    cadence: "",
-    billed: "Let's talk",
+    code: "regional",
+    name: "Regional",
+    desc: "For regions running multiple trails across many venues.",
+    price: "$1,990",
+    cadence: " / year",
+    billed: "Billed annually",
     features: [
-      "Unlimited trails/events",
-      "Unlimited participants",
-      "Multi-destination programs",
-      "Custom integrations",
-      "Dedicated account manager",
+      "Up to 5 active trails / campaigns",
+      "Up to 50 venues / stops",
+      "7,500 passports per year",
+      "Advanced reporting",
+      "Priority support",
     ],
-    cta: "Contact sales",
-    href: "/contact",
+    cta: "Upgrade to Regional",
+    href: authUrl("/signup?plan=regional"),
+    highlight: false,
+  },
+  {
+    code: "pro_region",
+    name: "Pro Region",
+    desc: "For tourism boards running large multi-trail programmes.",
+    price: "$3,490",
+    cadence: " / year",
+    billed: "Billed annually",
+    features: [
+      "Up to 10 active trails / campaigns",
+      "Up to 100 venues / stops",
+      "15,000 passports per year",
+      "Multi-trail regional loyalty",
+      "Priority support",
+    ],
+    cta: "Upgrade to Pro Region",
+    href: authUrl("/signup?plan=pro_region"),
     highlight: false,
   },
 ];
@@ -237,13 +255,13 @@ function FreeAccountCard() {
           </div>
           <ul className="space-y-2.5 text-sm text-[#1F2417]">
             {[
-              "Create your GetStampd account",
-              "Build your first draft trail or event",
-              "Add sample stops, stalls or locations",
-              "Preview the visitor mobile pass",
-              "Test digital stamp collection",
-              "Try QR code check-ins",
-              "Set up sample rewards",
+              "1 active trail or campaign",
+              "Up to 5 venues / stops",
+              "Up to 250 passports",
+              "Basic digital passport",
+              "Custom branding basics",
+              "QR code check-ins",
+              "Self-serve setup",
               "Explore the organiser dashboard",
             ].map((f) => (
               <li key={f} className="flex items-start gap-2">
@@ -367,7 +385,7 @@ function PricingPage() {
             Ready to launch publicly? Choose a paid plan.
           </h2>
         </div>
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((p) => (
             <div
               key={p.code}
