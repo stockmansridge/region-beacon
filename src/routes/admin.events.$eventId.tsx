@@ -2354,6 +2354,15 @@ function EventDetail() {
 
 
           <Section title="Public address" id="section-public-address" tab="overview">
+            <EventLiveToggle
+              agencyId={agencyId}
+              eventId={event.id}
+              eventStatus={event.status}
+              isArchived={event.deleted_at != null}
+              canEdit={canEdit}
+              onChanged={() => setReloadKey((k) => k + 1)}
+            />
+            <div className="h-4" />
             <PublicAddressCard
               agencyId={agencyId}
               eventId={event.id}
