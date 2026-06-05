@@ -141,8 +141,24 @@ function LivePublicLoaded({
   const canRegister = Boolean(event.current_terms_version_id);
   const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
+  const isAdminPreview =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("preview") === "1";
   return (
     <EventPaletteScope
+      paletteKey={event.palette_key ?? null}
+      backgroundKey={event.page_background_key ?? null}
+      className="min-h-screen px-4 py-8"
+    >
+      {isAdminPreview && (
+        <div
+          className="fixed left-1/2 top-3 z-50 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-amber-300 bg-amber-100/95 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-900 shadow"
+          title="Admin preview — actions here affect the real live event"
+        >
+          <span className="h-2 w-2 rounded-full bg-amber-500" />
+          Admin preview · close tab to return
+        </div>
+      )}
       paletteKey={event.palette_key ?? null}
       backgroundKey={event.page_background_key ?? null}
       className="min-h-screen px-4 py-8"
