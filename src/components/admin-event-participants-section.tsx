@@ -1,5 +1,12 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  downloadCsv,
+  sanitiseCsvFilename,
+  todayStamp,
+  toCsv,
+  type CsvHeader,
+} from "@/lib/csv";
 
 type ParticipantRow = {
   passport_id: string;
@@ -38,12 +45,46 @@ function formatDate(value: string | null): string {
   }
 }
 
+const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantRow>> = [
+  { label: "Participant name", key: "display_name" },
+  { label: "Email", key: "email" },
+  { label: "Mobile", key: "mobile" },
+  { label: "Passport status", key: "passport_status" },
+  { label: "Passport stamps", key: "passport_stamp_count" },
+  { label: "Total points", key: "total_points" },
+  { label: "Venue points", key: "venue_points" },
+  { label: "Bonus points", key: "bonus_points" },
+  { label: "Bonus codes claimed", key: "bonus_codes_claimed" },
+  { label: "Latest activity", key: "latest_activity_at" },
+  { label: "Registered", key: "created_at" },
+  { label: "Passport ID", key: "passport_id" },
+];
+
+function exportParticipantsCsv(
+  rows: ParticipantRow[],
+  eventName: string | null | undefined,
+  setError: (msg: string | null) => void,
+) {
+  try {
+    if (rows.length === 0) return;
+    const csv = toCsv(rows, PARTICIPANT_CSV_HEADERS);
+    const slug = sanitiseCsvFilename(eventName || "event");
+    const filename = `getstampd-${slug}-participants-${todayStamp()}.csv`;
+    downloadCsv(filename, csv);
+  } catch (err) {
+    console.error("Participant CSV export failed", err);
+    setError("Could not export participant results.");
+  }
+}
+
 export function AdminEventParticipantsSection({
   eventId,
   canView,
+  eventName,
 }: {
   eventId: string;
   canView: boolean;
+  eventName?: string | null;
 }) {
   const [rows, setRows] = useState<ParticipantRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,13 +208,28 @@ export function AdminEventParticipantsSection({
           onChange={(e) => setQuery(e.target.value)}
           className="h-9 w-full max-w-sm rounded-md border border-[#D9E2EF] bg-white px-3 text-sm outline-none focus:border-[#1F56C5]"
         />
-        <button
-          type="button"
-          onClick={() => setReloadKey((k) => k + 1)}
-          className="inline-flex h-9 items-center rounded-md border border-[#D9E2EF] bg-white px-3 text-sm font-medium text-[#1F56C5] hover:bg-[#F4F7FB]"
-        >
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={loading || rows.length === 0}
+            onClick={() => exportParticipantsCsv(rows, eventName, setError)}
+            className="inline-flex h-9 items-center rounded-md border border-[#D9E2EF] bg-white px-3 text-sm font-medium text-[#1F56C5] hover:bg-[#F4F7FB] disabled:cursor-not-allowed disabled:opacity-50"
+            title={
+              rows.length === 0
+                ? "No participant results to export yet."
+                : "Export all loaded participant rows as CSV"
+            }
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="inline-flex h-9 items-center rounded-md border border-[#D9E2EF] bg-white px-3 text-sm font-medium text-[#1F56C5] hover:bg-[#F4F7FB]"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && (

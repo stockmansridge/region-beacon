@@ -3626,6 +3626,7 @@ function EventDetail() {
             <AdminEventParticipantsSection
               eventId={event.id}
               canView={canEdit || agency.selected?.role === "agency_member"}
+              eventName={event.name}
             />
           </Section>
 
