@@ -6,6 +6,8 @@ import { AdminEventAnnouncements } from "@/components/admin-event-announcements"
 import { AdminEventRewards } from "@/components/admin-event-rewards";
 import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
+import { BonusCodesSection } from "@/components/event-bonus-codes-section";
+
 import {
   deleteVenueAssetSafely,
   getVenueAssetPublicUrl,
@@ -133,7 +135,9 @@ type Venue = {
   logo_path: string | null;
   cover_path: string | null;
   deleted_at: string | null;
+  points_value: number;
 };
+
 
 type VenueFilter = "active" | "disabled" | "all";
 
@@ -225,7 +229,9 @@ type VenueEditForm = {
   phone: string;
   logo_path: string | null;
   cover_path: string | null;
+  points_value: string;
 };
+
 
 type VenueSaveDebug = {
   route: string;
@@ -323,7 +329,9 @@ type EventTabKey =
   | "details"
   | "branding"
   | "venues"
+  | "bonuscodes"
   | "checkin"
+
   | "leaderboard"
   | "terms"
   | "analytics";
@@ -333,7 +341,9 @@ const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
   { key: "details", label: "Details" },
   { key: "branding", label: "Branding" },
   { key: "venues", label: "Venues" },
+  { key: "bonuscodes", label: "Bonus Codes" },
   { key: "checkin", label: "Check-in" },
+
   { key: "leaderboard", label: "Leaderboard" },
   { key: "terms", label: "Terms & privacy" },
   { key: "analytics", label: "Analytics" },
@@ -610,7 +620,7 @@ function EventDetail() {
             supabase
               .from("venues")
               .select(
-                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path, deleted_at",
+                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path, deleted_at, points_value",
               )
               .eq("event_id", event.id)
               .eq("agency_id", agencyId)
@@ -1098,7 +1108,9 @@ function EventDetail() {
       phone: "",
       logo_path: null,
       cover_path: null,
+      points_value: "0",
     });
+
     setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
@@ -1120,6 +1132,8 @@ function EventDetail() {
       phone: v.phone ?? "",
       logo_path: v.logo_path ?? null,
       cover_path: v.cover_path ?? null,
+      points_value: String(v.points_value ?? 0),
+
     });
     setVenueAssetError(null);
     setVenueValidationError(null);
@@ -1326,7 +1340,9 @@ function EventDetail() {
       description: description === "" ? null : description,
       website_url: website === "" ? null : website,
       phone: phone === "" ? null : phone,
+      points_value: Math.max(0, Math.floor(Number(venueForm.points_value) || 0)),
     };
+
     if (bundle.offerSupported) {
       patch.offer_summary = offerSummary === "" ? null : offerSummary;
     }
@@ -2903,7 +2919,30 @@ function EventDetail() {
                       />
                     </Field>
                   </div>
+                  <Field label="Points value">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={venueForm.points_value}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === "") {
+                          setVenueForm({ ...venueForm, points_value: "0" });
+                          return;
+                        }
+                        const n = Number(raw);
+                        if (!Number.isFinite(n) || n < 0) return;
+                        setVenueForm({ ...venueForm, points_value: String(Math.floor(n)) });
+                      }}
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Points awarded when a participant scans this venue QR code. This does not affect passport stamp collection.
+                    </p>
+                  </Field>
                 </FormSection>
+
 
                 <FormSection title="Public page content">
                   <Field label="Description">
@@ -3563,6 +3602,28 @@ function EventDetail() {
               );
             })()}
           </Section>
+
+          <Section
+            title="Bonus Codes"
+            id="section-bonus-codes"
+            tab="bonuscodes"
+            description="Event-level QR codes that award points only. They do not count as venue passport stamps."
+          >
+            {agencyId ? (
+              <BonusCodesSection
+                agencyId={agencyId}
+                eventId={event.id}
+                publicSubdomain={activeSubdomain}
+                canEdit={canEdit}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Select an agency to manage bonus codes.
+              </p>
+            )}
+          </Section>
+
+
 
           <Section title="Analytics" id="section-analytics" tab="analytics">
             <p className="mb-3 text-sm text-muted-foreground">
