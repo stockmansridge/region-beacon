@@ -133,7 +133,9 @@ type Venue = {
   logo_path: string | null;
   cover_path: string | null;
   deleted_at: string | null;
+  points_value: number;
 };
+
 
 type VenueFilter = "active" | "disabled" | "all";
 
