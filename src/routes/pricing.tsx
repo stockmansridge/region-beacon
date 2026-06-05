@@ -22,13 +22,13 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "Simple pricing for every tourism experience. Launch digital stamp trails for wineries, markets, festivals, regions and destinations.",
+          "Simple pricing for every trail, event, and destination. Launch digital stamp trails for wineries, markets, festivals, regions and destinations.",
       },
       { property: "og:title", content: "GetStampd Pricing" },
       {
         property: "og:description",
         content:
-          "Starter, Growth and Enterprise plans for trails, events and tourism programs.",
+          "Pilot, Launch and Destination Programme plans for trails, events and tourism campaigns.",
       },
       { name: "robots", content: "index, follow" },
     ],
