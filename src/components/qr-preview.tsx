@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 // qrcode is loaded lazily inside the effect — it imports `node:fs`
 // transitively, which Cloudflare Workers cannot resolve at SSR time.
 import { generateQrPosterPdf, type PosterInput } from "@/lib/qr-poster";
+import { normaliseQrUrl } from "@/lib/qr-url";
 
 type Props = {
   /** URL to encode in the QR. */
@@ -33,6 +34,7 @@ type Props = {
  * Generation happens entirely in the browser; nothing is stored or uploaded.
  */
 export function QrPreview({ value, downloadName = "qr-code", size = 160, poster }: Props) {
+  const normalisedValue = normaliseQrUrl(value);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [posterBusy, setPosterBusy] = useState(false);
@@ -42,11 +44,16 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
     let cancelled = false;
     setError(null);
     setDataUrl(null);
+    if (!normalisedValue) {
+      // Nothing to encode — show a friendly empty state instead of erroring.
+      setError("No QR value yet.");
+      return;
+    }
     // Render at 4x for a crisp downloadable PNG.
     import("qrcode")
       .then((m) => (m.default ?? m))
       .then((QRCode) =>
-        QRCode.toDataURL(value, {
+        QRCode.toDataURL(normalisedValue, {
           errorCorrectionLevel: "M",
           margin: 2,
           width: size * 4,
@@ -56,13 +63,21 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
       .then((url: string) => {
         if (!cancelled) setDataUrl(url);
       })
-      .catch(() => {
-        if (!cancelled) setError("Could not render QR code.");
+      .catch((err: unknown) => {
+        // Surface the underlying error so admins/devs can diagnose
+        // failures (e.g. capacity overflow, missing dynamic import).
+        // eslint-disable-next-line no-console
+        console.error("[qr-preview] failed to render QR", { value: normalisedValue, err });
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setError(`Could not render QR code${msg ? `: ${msg}` : "."}`);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [value, size]);
+  }, [normalisedValue, size]);
+
 
   function downloadPng() {
     if (!dataUrl) return;
