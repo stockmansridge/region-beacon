@@ -368,6 +368,22 @@ function SignupPage() {
               </div>
             </Field>
 
+            <Field label="Type of experience" hint="Optional — helps us tailor your setup.">
+              <select
+                value={experienceType}
+                onChange={(e) => setExperienceType(e.target.value)}
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">Select an option…</option>
+                <option value="wine_trail">Wine trail</option>
+                <option value="market_event">Market event</option>
+                <option value="tourism_group">Tourism group</option>
+                <option value="food_trail">Food trail</option>
+                <option value="festival_event">Festival or event</option>
+                <option value="other">Other</option>
+              </select>
+
+
             <label className="flex items-start gap-2 text-sm">
               <input
                 type="checkbox"
