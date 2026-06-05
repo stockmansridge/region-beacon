@@ -189,7 +189,7 @@ export function AdminEventAnnouncements({
       message: trimmedMessage,
       tone: form.tone,
       link_label: form.link_label.trim() || null,
-      link_url: form.link_url.trim() || null,
+      link_url: normalizeWebsiteUrl(form.link_url),
       starts_at: fromLocalInput(form.starts_at),
       ends_at: fromLocalInput(form.ends_at),
       is_active: form.is_active,
