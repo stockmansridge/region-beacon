@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { TrailLanding } from "@/components/trail-landing";
 import {
@@ -219,7 +220,7 @@ function BrandingEditor() {
     const accent_color = form.accent_color.trim();
     const font_family = form.font_family.trim();
     const welcome_copy = form.welcome_copy.trim();
-    const terms_url = form.terms_url.trim();
+    const terms_url = normalizeWebsiteUrl(form.terms_url) ?? "";
     const venue_label_singular = form.venue_label_singular.trim();
     const venue_label_plural = form.venue_label_plural.trim();
 
@@ -239,10 +240,7 @@ function BrandingEditor() {
       setValidationError("Welcome copy must be 1000 characters or fewer.");
       return;
     }
-    if (terms_url && !terms_url.startsWith("https://")) {
-      setValidationError("Terms URL must start with https://.");
-      return;
-    }
+    // Terms URL is normalised by normalizeWebsiteUrl above.
     const singularErr = validateVenueLabel(venue_label_singular, "Singular venue label");
     if (singularErr) {
       setValidationError(singularErr);

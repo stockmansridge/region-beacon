@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 
 type Tone = "info" | "success" | "warning" | "urgent";
 
@@ -85,9 +86,7 @@ function validate(form: FormState): string | null {
   if (message.length > 300) return "Message must be 300 characters or fewer.";
   if (form.link_label && form.link_label.length > 60)
     return "Link label must be 60 characters or fewer.";
-  const link_url = form.link_url.trim();
-  if (link_url && !/^https:\/\//i.test(link_url))
-    return "Link URL must start with https://";
+  // Link URL is normalised (https:// auto-added) at save time.
   if (form.starts_at && form.ends_at) {
     const a = new Date(form.starts_at).getTime();
     const b = new Date(form.ends_at).getTime();
@@ -191,7 +190,7 @@ export function AdminEventAnnouncements({
       message: trimmedMessage,
       tone: form.tone,
       link_label: form.link_label.trim() || null,
-      link_url: form.link_url.trim() || null,
+      link_url: normalizeWebsiteUrl(form.link_url),
       starts_at: fromLocalInput(form.starts_at),
       ends_at: fromLocalInput(form.ends_at),
       is_active: form.is_active,

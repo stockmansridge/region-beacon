@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 import {
   deleteVenueAssetSafely,
   getVenueAssetPublicUrl,
@@ -211,10 +212,8 @@ export function VenuePublicProfileDialog({
     if (offerSupported && offerSummary.length > OFFER_MAX) {
       return `Offer summary must be ${OFFER_MAX} characters or fewer.`;
     }
-    const w = website.trim();
-    if (w.length > 0 && !/^https:\/\//i.test(w)) {
-      return "Website URL must start with https://";
-    }
+    // Website URL is normalised (https:// auto-added) at save time —
+    // no protocol validation needed here.
     const p = phone.trim();
     if (p.length > PHONE_MAX) {
       return `Phone must be ${PHONE_MAX} characters or fewer.`;
@@ -247,7 +246,7 @@ export function VenuePublicProfileDialog({
     setSaving(true);
     const patch: Record<string, string | null> = {
       description: description.trim() ? description.trim() : null,
-      website_url: website.trim() ? website.trim() : null,
+      website_url: normalizeWebsiteUrl(website),
       phone: phone.trim() ? phone.trim() : null,
     };
     if (offerSupported) {

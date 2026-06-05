@@ -31,6 +31,7 @@ import {
   getPlanByCode,
   getNextPlanAfter,
 } from "@/lib/getstampd-pricing";
+import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 
 type LoadDiagnostic = {
   step: string;
@@ -1281,20 +1282,7 @@ function EventDetail() {
       });
       return;
     }
-    const website = venueForm.website_url.trim();
-    if (website.length > 0 && !/^https:\/\//i.test(website)) {
-      setVenueValidationError("Website URL must start with https://");
-      setVenueSaveDebug({
-        route,
-        action: "validation",
-        payloadKeys: [],
-        venueId: venueEditingId,
-        eventId,
-        agencyId,
-        message: "Validation blocked the save before Supabase was reached: website URL did not start with https://.",
-      });
-      return;
-    }
+    const website = normalizeWebsiteUrl(venueForm.website_url) ?? "";
     const phone = venueForm.phone.trim();
     if (phone.length > 40) {
       setVenueValidationError("Phone must be 40 characters or fewer.");
@@ -2332,21 +2320,14 @@ function EventDetail() {
 
 
           <Section title="Public address" id="section-public-address" tab="overview">
-            <EventLiveToggle
-              agencyId={agencyId}
-              eventId={event.id}
-              eventStatus={event.status}
-              isArchived={event.deleted_at != null}
-              canEdit={canEdit}
-              onChanged={() => setReloadKey((k) => k + 1)}
-            />
-            <div className="h-4" />
             <PublicAddressCard
               agencyId={agencyId}
               eventId={event.id}
               publicSlug={event.public_slug}
               internalSlug={event.slug}
               eventName={event.name}
+              eventStatus={event.status}
+              isArchived={event.deleted_at != null}
               domains={domains}
               canEdit={canEdit}
               isPlatformAdmin={agency.isPlatformAdmin}
@@ -4540,6 +4521,8 @@ function PublicAddressCard({
   publicSlug,
   internalSlug,
   eventName,
+  eventStatus,
+  isArchived,
   domains,
   canEdit,
   isPlatformAdmin,
@@ -4550,6 +4533,8 @@ function PublicAddressCard({
   publicSlug: string | null;
   internalSlug: string | null;
   eventName: string;
+  eventStatus: string;
+  isArchived: boolean;
   domains: Domain[];
   canEdit: boolean;
   isPlatformAdmin: boolean;
@@ -4792,27 +4777,79 @@ function PublicAddressCard({
     ? `${normalized}.getstampd.com.au`
     : null;
 
+  const isLivePublished = eventStatus === "published";
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 text-sm">
-        <div className="grid gap-1 sm:grid-cols-[160px_1fr]">
+        <div className="grid gap-2 sm:grid-cols-[180px_1fr] items-center">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Public event code</span>
           <span className="font-mono">{publicSlug ?? "—"}</span>
+
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Claimed subdomain</span>
-          <span className="font-mono">
-            {subdomainRow?.public_subdomain
-              ? `${subdomainRow.public_subdomain}.getstampd.com.au`
-              : "—"}
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="font-mono">
+              {subdomainRow?.public_subdomain
+                ? `${subdomainRow.public_subdomain}.getstampd.com.au`
+                : "—"}
+            </span>
+            {subdomainRow && canEdit && !editing && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(true);
+                  setEditInput(subdomainRow.public_subdomain ?? "");
+                  setEditAvailability({ kind: "idle" });
+                  setEditError(null);
+                }}
+                className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted"
+              >
+                Change address
+              </button>
+            )}
           </span>
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Status</span>
+
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Subdomain status</span>
           <span>
             <StatusPill status={subdomainRow?.status ?? "not_claimed"} />
           </span>
+
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Public website status</span>
+          <span className="flex flex-wrap items-center gap-2">
+            <span
+              className={
+                "rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide " +
+                (isArchived
+                  ? "bg-muted text-muted-foreground"
+                  : isLivePublished
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                    : "bg-muted text-muted-foreground")
+              }
+            >
+              {isArchived ? "Archived" : isLivePublished ? "Live" : "Not live"}
+            </span>
+            {!isArchived && canEdit && (
+              <EventLiveToggleButton
+                agencyId={agencyId}
+                eventId={eventId}
+                isLive={isLivePublished}
+                onChanged={onChanged}
+              />
+            )}
+          </span>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Pick a friendly web address for your event on <span className="font-mono">getstampd.com.au</span>.
-          You can reserve it now — it only goes live after billing/activation.
-        </p>
+        {!isArchived && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            {isLivePublished
+              ? "The public event website is available to visitors at the address above."
+              : "The public event website is turned off. The event remains editable in admin and does not count toward your live event limit."}
+          </p>
+        )}
+        {isArchived && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            This event is archived. Unarchive it before you can turn the public website on or off.
+          </p>
+        )}
       </div>
 
       {!subdomainRow && canEdit && (
@@ -4882,42 +4919,25 @@ function PublicAddressCard({
 
       {subdomainRow && canEdit && (
         <div className="space-y-3 rounded-md border p-3">
-          {subdomainRow.status === "pending" && (
-            <div className="text-sm">
-              Pending reservation — will activate once billing/activation is complete.
-            </div>
-          )}
-          {subdomainRow.status === "active" && (
-            <div className="text-sm text-muted-foreground">
-              Changing the public address updates the URL visitors use.
-              Existing bookmarks to the old address will stop working.
-            </div>
-          )}
-
-          {!editing && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
+          {!editing && subdomainRow.status === "pending" && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm">
+                Pending reservation — will activate once billing/activation is complete.
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  setEditing(true);
-                  setEditInput(subdomainRow.public_subdomain ?? "");
-                  setEditAvailability({ kind: "idle" });
-                  setEditError(null);
-                }}
-                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                onClick={handleRelease}
+                disabled={releasing}
+                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
               >
-                Change address
+                {releasing ? "Releasing…" : "Release subdomain"}
               </button>
-              {subdomainRow.status === "pending" && (
-                <button
-                  type="button"
-                  onClick={handleRelease}
-                  disabled={releasing}
-                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                >
-                  {releasing ? "Releasing…" : "Release subdomain"}
-                </button>
-              )}
+            </div>
+          )}
+          {!editing && subdomainRow.status === "active" && (
+            <div className="text-sm text-muted-foreground">
+              You can change this public address at any time using <span className="font-medium">Change address</span> above.
+              The old address will stop working after the change. Changing the address does not turn the event on or off.
             </div>
           )}
 
@@ -5048,32 +5068,19 @@ function AvailabilityMessage({ state }: { state: AvailabilityState }) {
 }
 
 
-function EventLiveToggle({
+function EventLiveToggleButton({
   agencyId,
   eventId,
-  eventStatus,
-  isArchived,
-  canEdit,
+  isLive,
   onChanged,
 }: {
   agencyId: string | null;
   eventId: string;
-  eventStatus: string;
-  isArchived: boolean;
-  canEdit: boolean;
+  isLive: boolean;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [confirmKind, setConfirmKind] = useState<"on" | "off" | null>(null);
-  const isLive = eventStatus === "published";
-
-  if (isArchived) {
-    return (
-      <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-        This event is archived. Unarchive it before you can turn the public event on or off.
-      </div>
-    );
-  }
 
   async function turnOn() {
     if (!agencyId) return;
@@ -5147,42 +5154,18 @@ function EventLiveToggle({
   }
 
   return (
-    <div className="rounded-md border p-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-0.5">
-          <div className="text-sm font-semibold text-[#111827]">Public event is live</div>
-          <div className="text-xs text-muted-foreground">
-            {isLive
-              ? "The public event website is available to visitors at the address below."
-              : "The public event website is turned off. The event remains editable in admin and does not count toward your live event limit."}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={
-              "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide " +
-              (isLive
-                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                : "bg-muted text-muted-foreground")
-            }
-          >
-            {isLive ? "Live" : "Off"}
-          </span>
-          {canEdit && (
-            <button
-              type="button"
-              onClick={() => setConfirmKind(isLive ? "off" : "on")}
-              disabled={busy}
-              className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-            >
-              {isLive ? "Turn off public event" : "Turn on public event"}
-            </button>
-          )}
-        </div>
-      </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setConfirmKind(isLive ? "off" : "on")}
+        disabled={busy}
+        className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted disabled:opacity-50"
+      >
+        {isLive ? "Turn off public event" : "Turn on public event"}
+      </button>
 
       {confirmKind && (
-        <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
+        <div className="mt-3 w-full rounded-md border bg-background p-3 text-sm">
           {confirmKind === "off" ? (
             <>
               <div className="font-semibold text-[#111827]">Turn public event off?</div>
@@ -5212,8 +5195,7 @@ function EventLiveToggle({
             <>
               <div className="font-semibold text-[#111827]">Turn public event on?</div>
               <p className="mt-1 text-muted-foreground">
-                This will make the event website available at its public address.
-                It will count toward your live event limit.
+                This will make the event website available at its public address. It will count toward your live event limit.
               </p>
               <div className="mt-3 flex justify-end gap-2">
                 <button
@@ -5237,9 +5219,12 @@ function EventLiveToggle({
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
+
+
+
 
 
 
@@ -5399,6 +5384,26 @@ function GoLivePanel({
         ) : (
           <span className="text-muted-foreground">Public address not claimed</span>
         )}
+      </div>
+
+      <div
+        className={
+          "mt-2 rounded-md border px-3 py-2 text-xs " +
+          (allPass
+            ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
+            : "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300")
+        }
+      >
+        <span className="font-semibold">Public website is {allPass ? "live" : "not live"}.</span>{" "}
+        {allPass
+          ? "Visitors can reach the public event website at the URL above."
+          : !eventPass
+            ? "Not live because event status is Draft. Turn the public event on from the Public address section above."
+            : !domainPass
+              ? primaryDomain
+                ? `Not live because public address is ${primaryDomain.status}.`
+                : "Not live because no public address is claimed."
+              : "Not live because commercial activation is inactive."}
       </div>
 
       {primarySubdomain?.public_subdomain && (
