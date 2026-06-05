@@ -1621,7 +1621,7 @@ function EventDetail() {
     if (!agencyId) return;
     if (
       !window.confirm(
-        "Disable this venue?\n\nThis venue will no longer count toward your venue limit and cannot be selected for new events. Existing events, check-ins, QR codes, and historical reporting will remain intact.",
+        "Disable this venue?\n\nThis venue will no longer count toward your venue limit and cannot be selected for new events. Existing events, check-ins, QR codes, and historical reporting will remain intact.\n\nAfter disabling, you can permanently delete this venue from the Disabled tab if it has no linked event or check-in history.",
       )
     ) {
       return;
@@ -3107,6 +3107,12 @@ function EventDetail() {
                             ? disabledVenues.length
                             : venues.length;
                       const selected = venueFilter === opt;
+                      const label =
+                        opt === "active"
+                          ? "Active"
+                          : opt === "disabled"
+                            ? "Disabled / Archived"
+                            : "All";
                       return (
                         <button
                           key={opt}
@@ -3119,11 +3125,16 @@ function EventDetail() {
                               : "text-[#475569] hover:bg-[#F1F5F9]")
                           }
                         >
-                          {opt} ({count})
+                          {label} ({count})
                         </button>
                       );
                     })}
                   </div>
+                  {venueFilter === "disabled" && (
+                    <p className="mb-3 text-sm text-[#64748B]">
+                      Disabled venues do not count toward your venue limit. You can reactivate them, or permanently delete them if they have no linked history.
+                    </p>
+                  )}
             {venues.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
                 No venues have been added yet. Add the first venue so visitors have somewhere to check in during this event.
@@ -3138,6 +3149,14 @@ function EventDetail() {
                     </button>
                   </div>
                 )}
+              </div>
+            ) : visibleVenues.length === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-8 text-center text-sm text-[#475569]">
+                {venueFilter === "disabled"
+                  ? "No disabled venues yet. Disabled venues will appear here and will not count toward your venue limit."
+                  : venueFilter === "active"
+                    ? "No active venues."
+                    : "No venues."}
               </div>
             ) : (
               <div className="overflow-hidden rounded-[14px] border border-[#E6ECF4] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.035)]">
