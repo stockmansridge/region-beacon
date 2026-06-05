@@ -21,6 +21,8 @@ type LeaderboardRow = {
   display_name: string | null;
   stamps: number | null;
   points: number | null;
+  venue_points: number | null;
+  bonus_points: number | null;
   visit_count: number | null;
   tier: string | null;
   is_completed: boolean | null;
@@ -165,8 +167,8 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
         {state.kind === "ready" && state.rows.length === 0 && (
           <EmptyState
-            title="No leaderboard entries yet"
-            body="As soon as visitors start collecting stamps they'll appear here."
+            title="No points collected yet"
+            body="Participants will appear here once they scan venue or bonus QR codes."
           />
         )}
 
@@ -199,7 +201,7 @@ function Header({ subdomain }: { subdomain: string }) {
         Leaderboard
       </h1>
       <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]/80">
-        Top stamp collectors at this event.
+        Ranked by total points. Passport stamps are still shown so you can track venue progress.
       </p>
     </div>
   );
@@ -284,6 +286,12 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
                   {stamps} {stamps === 1 ? "stamp" : "stamps"}
                 </div>
               )}
+              {(r.venue_points !== null || r.bonus_points !== null) &&
+                (r.venue_points ?? 0) + (r.bonus_points ?? 0) > 0 && (
+                  <div className="mt-0.5 text-[10px] text-[var(--event-muted,#8A7E66)]">
+                    {r.venue_points ?? 0} venue · {r.bonus_points ?? 0} bonus
+                  </div>
+                )}
             </div>
           </li>
         );

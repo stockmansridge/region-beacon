@@ -219,7 +219,7 @@ function LivePublicLoaded({
           to="/leaderboard"
           className="text-xs font-medium uppercase tracking-[0.22em] text-[#1F3D2B] underline-offset-4 hover:underline"
         >
-          View leaderboard →
+          View the points leaderboard →
         </Link>
       </div>
     </EventPaletteScope>
