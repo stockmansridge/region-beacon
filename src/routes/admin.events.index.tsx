@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
@@ -97,6 +97,7 @@ function Events() {
   const agency = useAgencyContext();
   const auth = useAuth();
   const navigate = useNavigate();
+  const router = useRouter();
   const agencyId = agency.selected?.id ?? null;
   const role = agency.selected?.role ?? null;
   const canCreate =
@@ -112,25 +113,40 @@ function Events() {
 
   const [open, setOpen] = useState(false);
 
-  // Always-fresh status indicators: refetch when the tab/window regains
-  // focus or becomes visible again (e.g. returning from an event detail
-  // page in another tab, or unminimising the browser). Mount-time refetch
-  // is already handled by the useEffect below, so navigating back to this
-  // route from /admin/events/$eventId also reloads.
+  // Always-fresh status indicators. The Events list shows live status pills
+  // (Public Website Status, Archived/Active, public address, commercial
+  // activation) that can change from other routes (event detail / setup) or
+  // even other tabs. We aggressively refetch on:
+  //   - mount / route re-entry (the data-loading useEffect below, which
+  //     also reruns whenever `reloadKey` bumps)
+  //   - window focus (returning to this tab)
+  //   - document visibility change (unminimise / tab switch back)
+  //   - pageshow (browser back / bfcache restore — focus does NOT fire here)
+  // We also call router.invalidate() so any other route data tied to this
+  // page is re-resolved.
   useEffect(() => {
     function bump() {
       setReloadKey((k) => k + 1);
+      // Best-effort: re-run any router loaders for the current match.
+      try { router.invalidate(); } catch (_e) { /* noop */ }
     }
     function onVisibility() {
       if (document.visibilityState === "visible") bump();
     }
+    function onPageShow(e: PageTransitionEvent) {
+      // Fires on initial load AND on bfcache restore (back/forward nav).
+      if (e.persisted) bump();
+    }
     window.addEventListener("focus", bump);
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       window.removeEventListener("focus", bump);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", onPageShow);
     };
-  }, []);
+  }, [router]);
+
 
 
   useEffect(() => {
