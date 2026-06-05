@@ -45,6 +45,38 @@ function formatDate(value: string | null): string {
   }
 }
 
+const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantRow>> = [
+  { label: "Participant name", key: "display_name" },
+  { label: "Email", key: "email" },
+  { label: "Mobile", key: "mobile" },
+  { label: "Passport status", key: "passport_status" },
+  { label: "Passport stamps", key: "passport_stamp_count" },
+  { label: "Total points", key: "total_points" },
+  { label: "Venue points", key: "venue_points" },
+  { label: "Bonus points", key: "bonus_points" },
+  { label: "Bonus codes claimed", key: "bonus_codes_claimed" },
+  { label: "Latest activity", key: "latest_activity_at" },
+  { label: "Registered", key: "created_at" },
+  { label: "Passport ID", key: "passport_id" },
+];
+
+function exportParticipantsCsv(
+  rows: ParticipantRow[],
+  eventName: string | null | undefined,
+  setError: (msg: string | null) => void,
+) {
+  try {
+    if (rows.length === 0) return;
+    const csv = toCsv(rows, PARTICIPANT_CSV_HEADERS);
+    const slug = sanitiseCsvFilename(eventName || "event");
+    const filename = `getstampd-${slug}-participants-${todayStamp()}.csv`;
+    downloadCsv(filename, csv);
+  } catch (err) {
+    console.error("Participant CSV export failed", err);
+    setError("Could not export participant results.");
+  }
+}
+
 export function AdminEventParticipantsSection({
   eventId,
   canView,
