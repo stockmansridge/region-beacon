@@ -94,6 +94,46 @@ export function AdminEventParticipantsSection({
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [reloadKey, setReloadKey] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [exportingClaims, setExportingClaims] = useState(false);
+
+  async function handleExportBonusClaimsCsv() {
+    setExportingClaims(true);
+    setError(null);
+    try {
+      const { data, error: rpcError } = await supabase.rpc(
+        "get_admin_event_bonus_claims_export",
+        { p_event_id: eventId },
+      );
+      if (rpcError) throw rpcError;
+      const claimRows = (data ?? []) as BonusClaimExportRow[];
+      if (claimRows.length === 0) {
+        setError("No bonus claims to export yet.");
+        return;
+      }
+      const csvRows = claimRows.map((c) => ({
+        ...c,
+        bonus_code_name_display: c.bonus_code_id
+          ? c.bonus_code_name || "Untitled bonus code"
+          : "Bonus code no longer available",
+        bonus_code_status: !c.bonus_code_id
+          ? "Unavailable"
+          : c.bonus_code_is_active
+          ? "Active"
+          : "Disabled",
+      }));
+      const csv = toCsv(csvRows, BONUS_CLAIMS_CSV_HEADERS);
+      const slug = sanitiseCsvFilename(eventName || "event");
+      downloadCsv(
+        `getstampd-${slug}-bonus-claims-${todayStamp()}.csv`,
+        csv,
+      );
+    } catch (err) {
+      console.error("Bonus claims CSV export failed", err);
+      setError("Could not export bonus claims.");
+    } finally {
+      setExportingClaims(false);
+    }
+  }
 
   useEffect(() => {
     if (!canView) {
