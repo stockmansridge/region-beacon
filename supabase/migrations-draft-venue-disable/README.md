@@ -9,6 +9,12 @@ column as the "disabled" marker.
 - `01_venue_lifecycle_rpcs.sql` — creates
   `public._can_manage_agency_venue(uuid)`, `public.disable_venue(uuid, text)`,
   `public.reactivate_venue(uuid)`, and `public.hard_delete_venue(uuid)`.
+- `02_hard_delete_venue_strict.sql` — replaces `hard_delete_venue` with a
+  schema-introspecting version that blocks deletion when ANY public-schema
+  table has a foreign key to `public.venues(id)` and holds at least one row
+  for the target venue. Future-proof: new venue-referencing tables are
+  checked automatically. Currently this covers `checkins`, `venue_qr_codes`,
+  and `venue_offers`, plus any other table added later with a `venue_id` FK.
 
 ## Why reuse `deleted_at` instead of adding `disabled_at`
 
@@ -31,9 +37,14 @@ column if the venues table already has a suitable archived/disabled field."*
 - `reactivate_venue(p_venue_id)` — idempotent for already-active venues.
   Re-checks the agency's `venue_limit` (via `get_agency_plan_limits`) before
   clearing the marker. Raises a friendly error if the org is at its limit.
-- `hard_delete_venue(p_venue_id)` — physically deletes. Blocks when any
-  `public.checkins` row references the venue. QR codes / offers cascade
-  via existing FKs.
+- `hard_delete_venue(p_venue_id)` — physically deletes. Blocks when ANY
+  table in the `public` schema with a foreign key to `public.venues(id)`
+  has at least one row referencing this venue. Dependents are discovered
+  at runtime via `information_schema`, so the check stays correct as the
+  schema evolves (current dependents: `checkins`, `venue_qr_codes`,
+  `venue_offers`). The error message is:
+  *"This venue cannot be permanently deleted because it is linked to
+  existing events or historical activity. Disable it instead."*
 
 All three RPCs:
 
