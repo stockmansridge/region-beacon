@@ -451,6 +451,10 @@ function EventDetail() {
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
+  const [forceDeleteVenueId, setForceDeleteVenueId] = useState<string | null>(null);
+  const [forceDeleteConfirm, setForceDeleteConfirm] = useState("");
+  const [forceDeleteBusy, setForceDeleteBusy] = useState(false);
+  const [forceDeleteError, setForceDeleteError] = useState<string | null>(null);
   const [venueFilter, setVenueFilter] = useState<VenueFilter>("active");
   const [venueAssetBusy, setVenueAssetBusy] = useState<VenueAssetKind | null>(null);
   const [venueAssetError, setVenueAssetError] = useState<string | null>(null);
@@ -1680,6 +1684,37 @@ function EventDetail() {
       return;
     }
     toast.success("Venue permanently deleted.");
+    setReloadKey((k) => k + 1);
+  }
+
+  async function runForceDeleteVenue() {
+    const venueId = forceDeleteVenueId;
+    if (!venueId) return;
+    if (forceDeleteConfirm !== "DELETE VENUE AND HISTORY") {
+      setForceDeleteError(
+        'Type "DELETE VENUE AND HISTORY" exactly to confirm.',
+      );
+      return;
+    }
+    setForceDeleteBusy(true);
+    setForceDeleteError(null);
+    const { error } = await supabase.rpc("force_delete_venue", {
+      p_venue_id: venueId,
+      p_confirm_text: forceDeleteConfirm,
+    });
+    setForceDeleteBusy(false);
+    if (error) {
+      const msg =
+        [error.message, (error as { details?: string }).details, (error as { hint?: string }).hint]
+          .filter(Boolean)
+          .join(" — ") || "Force delete failed.";
+      setForceDeleteError(msg);
+      toast.error(msg);
+      return;
+    }
+    setForceDeleteVenueId(null);
+    setForceDeleteConfirm("");
+    toast.success("Venue and linked history permanently deleted.");
     setReloadKey((k) => k + 1);
   }
 
@@ -3399,10 +3434,14 @@ function EventDetail() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); startEditVenue(v); }}
-                                  disabled={venueEditingId !== null || venueArchivingId !== null || v.deleted_at != null}
+                                  disabled={
+                                    venueEditingId !== null ||
+                                    venueArchivingId !== null ||
+                                    (v.deleted_at != null && !agency.isPlatformAdmin)
+                                  }
                                   className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                  Edit details
+                                  {v.deleted_at != null && agency.isPlatformAdmin ? "View / edit details" : "Edit details"}
                                 </button>
                                 {v.deleted_at == null ? (
                                   <button
@@ -3431,6 +3470,21 @@ function EventDetail() {
                                     >
                                       {venueArchivingId === v.id ? "Deleting…" : "Delete permanently"}
                                     </button>
+                                    {agency.isPlatformAdmin && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setForceDeleteVenueId(v.id);
+                                          setForceDeleteConfirm("");
+                                          setForceDeleteError(null);
+                                        }}
+                                        disabled={venueEditingId !== null || venueArchivingId !== null}
+                                        title="Platform admin only: permanently delete this venue and all linked history"
+                                        className="inline-flex h-9 items-center rounded-[10px] border border-[#7F1D1D] bg-[#7F1D1D] px-3.5 text-sm font-semibold text-white hover:bg-[#5B0F0F] disabled:cursor-not-allowed disabled:opacity-50"
+                                      >
+                                        Force delete venue and history
+                                      </button>
+                                    )}
                                   </>
                                 )}
                               </div>
@@ -3489,6 +3543,76 @@ function EventDetail() {
           </Section>
         </div>
       </EventTabContext.Provider>
+      {forceDeleteVenueId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => {
+            if (!forceDeleteBusy) {
+              setForceDeleteVenueId(null);
+              setForceDeleteConfirm("");
+              setForceDeleteError(null);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-[14px] border border-[#7F1D1D]/40 bg-white p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-[#7F1D1D]">
+              Force delete venue and history?
+            </h2>
+            <p className="mt-2 text-sm text-[#475569]">
+              This will permanently delete this venue and its linked check-ins,
+              QR codes, offers, and venue history. This is intended only for
+              platform-admin testing or cleanup and cannot be undone.
+            </p>
+            <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-[#64748B]">
+              Type <span className="font-mono text-[#7F1D1D]">DELETE VENUE AND HISTORY</span> to confirm
+            </label>
+            <input
+              type="text"
+              autoFocus
+              value={forceDeleteConfirm}
+              onChange={(e) => {
+                setForceDeleteConfirm(e.target.value);
+                setForceDeleteError(null);
+              }}
+              disabled={forceDeleteBusy}
+              className="mt-2 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 py-2 font-mono text-sm text-[#111827] focus:border-[#7F1D1D] focus:outline-none"
+            />
+            {forceDeleteError && (
+              <p className="mt-3 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs text-[#7F1D1D]">
+                {forceDeleteError}
+              </p>
+            )}
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setForceDeleteVenueId(null);
+                  setForceDeleteConfirm("");
+                  setForceDeleteError(null);
+                }}
+                disabled={forceDeleteBusy}
+                className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={runForceDeleteVenue}
+                disabled={
+                  forceDeleteBusy ||
+                  forceDeleteConfirm !== "DELETE VENUE AND HISTORY"
+                }
+                className="inline-flex h-9 items-center rounded-[10px] border border-[#7F1D1D] bg-[#7F1D1D] px-3.5 text-sm font-semibold text-white hover:bg-[#5B0F0F] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {forceDeleteBusy ? "Deleting…" : "Force delete permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
