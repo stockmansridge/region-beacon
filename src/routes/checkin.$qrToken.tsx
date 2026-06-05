@@ -50,6 +50,9 @@ type Outcome =
       venueName: string | null;
       passportToken: string;
       isNew: boolean;
+      pointsAwarded: number;
+      pointsAlreadyAwarded: boolean;
+      totalPoints: number;
     }
   | { kind: "qr_invalid"; diag: FailureDiagnostics }
   | { kind: "event_not_live"; diag: FailureDiagnostics }
@@ -269,7 +272,17 @@ function CheckinPage() {
       }
 
       const row = (data?.[0] ?? null) as
-        | { checkin_id: string; venue_id: string; passport_id: string; is_new: boolean }
+        | {
+            checkin_id: string;
+            venue_id: string;
+            passport_id: string;
+            is_new: boolean;
+            points_awarded?: number | null;
+            points_already_awarded?: boolean | null;
+            total_points?: number | null;
+            venue_points?: number | null;
+            bonus_points?: number | null;
+          }
         | null;
       if (!row) {
         setOutcome({
@@ -297,6 +310,9 @@ function CheckinPage() {
           venueName,
           passportToken: token,
           isNew: !!row.is_new,
+          pointsAwarded: row.points_awarded ?? 0,
+          pointsAlreadyAwarded: !!row.points_already_awarded,
+          totalPoints: row.total_points ?? 0,
         });
       }
     })();
@@ -358,6 +374,20 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
               </h1>
               {outcome.venueName && (
                 <p className="mt-1 text-base text-[var(--event-page-bg,#F6EFE2)]/90">{outcome.venueName}</p>
+              )}
+              {outcome.isNew && outcome.pointsAwarded > 0 ? (
+                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">
+                  You earned {outcome.pointsAwarded} points.
+                </p>
+              ) : !outcome.isNew ? (
+                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">
+                  This venue is already in your passport. Your points total has not changed.
+                </p>
+              ) : null}
+              {outcome.totalPoints > 0 && (
+                <p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
+                  Your total points: {outcome.totalPoints}
+                </p>
               )}
             </div>
           </div>
