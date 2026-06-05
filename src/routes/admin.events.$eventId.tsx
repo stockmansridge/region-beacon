@@ -5070,6 +5070,203 @@ function AvailabilityMessage({ state }: { state: AvailabilityState }) {
 }
 
 
+function EventLiveToggle({
+  agencyId,
+  eventId,
+  eventStatus,
+  isArchived,
+  canEdit,
+  onChanged,
+}: {
+  agencyId: string | null;
+  eventId: string;
+  eventStatus: string;
+  isArchived: boolean;
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [confirmKind, setConfirmKind] = useState<"on" | "off" | null>(null);
+  const isLive = eventStatus === "published";
+
+  if (isArchived) {
+    return (
+      <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+        This event is archived. Unarchive it before you can turn the public event on or off.
+      </div>
+    );
+  }
+
+  async function turnOn() {
+    if (!agencyId) return;
+    setBusy(true);
+    try {
+      const [{ data: limits, error: limErr }, { count, error: cntErr }] = await Promise.all([
+        supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }) as unknown as Promise<{
+          data: { active_event_limit: number | null } | null;
+          error: { message: string } | null;
+        }>,
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("agency_id", agencyId)
+          .is("deleted_at", null)
+          .eq("status", "published")
+          .neq("id", eventId),
+      ]);
+      if (limErr) {
+        toast.error(`Could not check plan limit: ${limErr.message}`);
+        return;
+      }
+      if (cntErr) {
+        toast.error(`Could not count live events: ${cntErr.message}`);
+        return;
+      }
+      const limit = limits?.active_event_limit ?? null;
+      const currentLive = count ?? 0;
+      if (limit !== null && currentLive >= limit) {
+        toast.error(
+          `You have reached your live event limit (${limit}). Turn another event off, archive an event, or upgrade your plan before making this event live.`,
+        );
+        return;
+      }
+      const { error: updErr } = await supabase
+        .from("events")
+        .update({ status: "published" })
+        .eq("id", eventId)
+        .eq("agency_id", agencyId);
+      if (updErr) {
+        toast.error(`Could not turn public event on: ${updErr.message}`);
+        return;
+      }
+      toast.success("Public event is now live.");
+      setConfirmKind(null);
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function turnOff() {
+    if (!agencyId) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({ status: "draft" })
+        .eq("id", eventId)
+        .eq("agency_id", agencyId);
+      if (error) {
+        toast.error(`Could not turn public event off: ${error.message}`);
+        return;
+      }
+      toast.success("Public event turned off.");
+      setConfirmKind(null);
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-md border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <div className="text-sm font-semibold text-[#111827]">Public event is live</div>
+          <div className="text-xs text-muted-foreground">
+            {isLive
+              ? "The public event website is available to visitors at the address below."
+              : "The public event website is turned off. The event remains editable in admin and does not count toward your live event limit."}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className={
+              "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide " +
+              (isLive
+                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                : "bg-muted text-muted-foreground")
+            }
+          >
+            {isLive ? "Live" : "Off"}
+          </span>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setConfirmKind(isLive ? "off" : "on")}
+              disabled={busy}
+              className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+            >
+              {isLive ? "Turn off public event" : "Turn on public event"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {confirmKind && (
+        <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
+          {confirmKind === "off" ? (
+            <>
+              <div className="font-semibold text-[#111827]">Turn public event off?</div>
+              <p className="mt-1 text-muted-foreground">
+                This will make the event website unavailable to visitors, but it will keep the event in your admin account so you can edit it or turn it back on later.
+              </p>
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmKind(null)}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={turnOff}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center rounded-lg bg-destructive px-3 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {busy ? "Working…" : "Turn off public event"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="font-semibold text-[#111827]">Turn public event on?</div>
+              <p className="mt-1 text-muted-foreground">
+                This will make the event website available at its public address.
+                It will count toward your live event limit.
+              </p>
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmKind(null)}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={turnOn}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {busy ? "Working…" : "Turn on public event"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+
+
 function GoLivePanel({
   agencyId,
   eventId,
