@@ -52,6 +52,7 @@ export function AdminEventParticipantsSection({
   const [sortKey, setSortKey] = useState<SortKey>("total_points");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [reloadKey, setReloadKey] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!canView) {
