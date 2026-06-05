@@ -332,7 +332,7 @@ type EventTabKey =
   | "venues"
   | "bonuscodes"
   | "checkin"
-
+  | "participants"
   | "leaderboard"
   | "terms"
   | "analytics";
@@ -344,7 +344,7 @@ const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
   { key: "venues", label: "Venues" },
   { key: "bonuscodes", label: "Bonus Codes" },
   { key: "checkin", label: "Check-in" },
-
+  { key: "participants", label: "Participants" },
   { key: "leaderboard", label: "Leaderboard" },
   { key: "terms", label: "Terms & privacy" },
   { key: "analytics", label: "Analytics" },
