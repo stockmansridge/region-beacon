@@ -376,17 +376,17 @@ function Events() {
                     </td>
                     <td className="px-4 py-3">
                       {isArchived ? (
-                        <span className="rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-2.5 py-1 text-xs font-semibold text-[#475569]">
-                          Archived
+                        <span className="rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#475569]">
+                          ARCHIVED
                         </span>
                       ) : (
                         <span className={
-                          "rounded-full px-2.5 py-1 text-xs font-medium " +
+                          "rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide " +
                           (e.status === "published"
                             ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                             : "bg-[#F1F5F9] text-[#475569]")
                         }>
-                          {e.status}
+                          {(e.status ?? "").toUpperCase()}
                         </span>
                       )}
                     </td>
