@@ -332,6 +332,7 @@ export function PublicEventNav({
           primary={primary}
           accent={accent}
           hasTerms={hasTerms}
+          hasFaq={hasFaq}
           hasPrivacy={hasPrivacy}
           passportHref={passportHref}
           passportLabel={passportLabel}
