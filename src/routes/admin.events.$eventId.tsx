@@ -1704,10 +1704,10 @@ function EventDetail() {
     });
     setForceDeleteBusy(false);
     if (error) {
-      const msg =
-        [error.message, (error as { details?: string }).details, (error as { hint?: string }).hint]
-          .filter(Boolean)
-          .join(" — ") || "Force delete failed.";
+      const e = error as { message?: string; details?: string; hint?: string; code?: string };
+      const parts = [e.message, e.details, e.hint].filter(Boolean) as string[];
+      const base = parts.length > 0 ? parts.join(" — ") : "Force delete failed.";
+      const msg = e.code ? `${base} [pg ${e.code}]` : base;
       setForceDeleteError(msg);
       toast.error(msg);
       return;
