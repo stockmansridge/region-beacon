@@ -2087,14 +2087,27 @@ function EventDetail() {
         description={undefined}
         actions={
           <div className="flex flex-wrap items-center gap-3">
-            <Link
-              to="/admin/events/$eventId/preview"
-              params={{ eventId: bundle.event.id }}
-              target="_blank"
-              className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F8FAFC]"
-            >
-              Preview customer page
-            </Link>
+            {event.status === "published" && activeSubdomain ? (
+              <a
+                href={tenantUrl(activeSubdomain, "/?preview=1")}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F8FAFC]"
+                title="Open the live customer site in a new tab"
+              >
+                Preview customer page
+              </a>
+            ) : (
+              <Link
+                to="/admin/events/$eventId/preview"
+                params={{ eventId: bundle.event.id }}
+                target="_blank"
+                className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F8FAFC]"
+                title="Full interactive preview becomes available after publishing the event"
+              >
+                Preview customer page
+              </Link>
+            )}
             {canEdit && (event.deleted_at != null ? (
               <button
                 type="button"
