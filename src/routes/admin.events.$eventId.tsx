@@ -4777,27 +4777,79 @@ function PublicAddressCard({
     ? `${normalized}.getstampd.com.au`
     : null;
 
+  const isLivePublished = eventStatus === "published";
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 text-sm">
-        <div className="grid gap-1 sm:grid-cols-[160px_1fr]">
+        <div className="grid gap-2 sm:grid-cols-[180px_1fr] items-center">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Public event code</span>
           <span className="font-mono">{publicSlug ?? "—"}</span>
+
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Claimed subdomain</span>
-          <span className="font-mono">
-            {subdomainRow?.public_subdomain
-              ? `${subdomainRow.public_subdomain}.getstampd.com.au`
-              : "—"}
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="font-mono">
+              {subdomainRow?.public_subdomain
+                ? `${subdomainRow.public_subdomain}.getstampd.com.au`
+                : "—"}
+            </span>
+            {subdomainRow && canEdit && !editing && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(true);
+                  setEditInput(subdomainRow.public_subdomain ?? "");
+                  setEditAvailability({ kind: "idle" });
+                  setEditError(null);
+                }}
+                className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted"
+              >
+                Change address
+              </button>
+            )}
           </span>
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Status</span>
+
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Subdomain status</span>
           <span>
             <StatusPill status={subdomainRow?.status ?? "not_claimed"} />
           </span>
+
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Public website status</span>
+          <span className="flex flex-wrap items-center gap-2">
+            <span
+              className={
+                "rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide " +
+                (isArchived
+                  ? "bg-muted text-muted-foreground"
+                  : isLivePublished
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                    : "bg-muted text-muted-foreground")
+              }
+            >
+              {isArchived ? "Archived" : isLivePublished ? "Live" : "Not live"}
+            </span>
+            {!isArchived && canEdit && (
+              <EventLiveToggleButton
+                agencyId={agencyId}
+                eventId={eventId}
+                isLive={isLivePublished}
+                onChanged={onChanged}
+              />
+            )}
+          </span>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Pick a friendly web address for your event on <span className="font-mono">getstampd.com.au</span>.
-          You can reserve it now — it only goes live after billing/activation.
-        </p>
+        {!isArchived && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            {isLivePublished
+              ? "The public event website is available to visitors at the address above."
+              : "The public event website is turned off. The event remains editable in admin and does not count toward your live event limit."}
+          </p>
+        )}
+        {isArchived && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            This event is archived. Unarchive it before you can turn the public website on or off.
+          </p>
+        )}
       </div>
 
       {!subdomainRow && canEdit && (
