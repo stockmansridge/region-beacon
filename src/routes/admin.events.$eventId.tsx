@@ -4521,6 +4521,8 @@ function PublicAddressCard({
   publicSlug,
   internalSlug,
   eventName,
+  eventStatus,
+  isArchived,
   domains,
   canEdit,
   isPlatformAdmin,
@@ -4531,6 +4533,8 @@ function PublicAddressCard({
   publicSlug: string | null;
   internalSlug: string | null;
   eventName: string;
+  eventStatus: string;
+  isArchived: boolean;
   domains: Domain[];
   canEdit: boolean;
   isPlatformAdmin: boolean;
