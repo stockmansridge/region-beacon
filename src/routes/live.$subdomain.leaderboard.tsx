@@ -21,6 +21,8 @@ type LeaderboardRow = {
   display_name: string | null;
   stamps: number | null;
   points: number | null;
+  venue_points: number | null;
+  bonus_points: number | null;
   visit_count: number | null;
   tier: string | null;
   is_completed: boolean | null;
@@ -284,6 +286,12 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
                   {stamps} {stamps === 1 ? "stamp" : "stamps"}
                 </div>
               )}
+              {(r.venue_points !== null || r.bonus_points !== null) &&
+                (r.venue_points ?? 0) + (r.bonus_points ?? 0) > 0 && (
+                  <div className="mt-0.5 text-[10px] text-[var(--event-muted,#8A7E66)]">
+                    {r.venue_points ?? 0} venue · {r.bonus_points ?? 0} bonus
+                  </div>
+                )}
             </div>
           </li>
         );
