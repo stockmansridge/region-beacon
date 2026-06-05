@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type ParticipantRow = {
@@ -52,6 +52,7 @@ export function AdminEventParticipantsSection({
   const [sortKey, setSortKey] = useState<SortKey>("total_points");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [reloadKey, setReloadKey] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!canView) {
@@ -231,9 +232,11 @@ export function AdminEventParticipantsSection({
               </tr>
             </thead>
             <tbody>
-              {filteredSorted.map((r) => (
+              {filteredSorted.map((r) => {
+                const isExpanded = expandedId === r.passport_id;
+                return (
+                <Fragment key={r.passport_id}>
                 <tr
-                  key={r.passport_id}
                   className="border-t border-[#E6ECF4] hover:bg-[#FAFBFD]"
                 >
                   <td className="px-3 py-2.5 align-top">
@@ -259,7 +262,23 @@ export function AdminEventParticipantsSection({
                     {numberFmt.format(r.bonus_points)}
                   </td>
                   <td className="px-3 py-2.5 text-right text-[#334155]">
-                    {numberFmt.format(r.bonus_codes_claimed)}
+                    <div className="flex items-center justify-end gap-2">
+                      <span>{numberFmt.format(r.bonus_codes_claimed)}</span>
+                      {r.bonus_codes_claimed > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedId(isExpanded ? null : r.passport_id)
+                          }
+                          className="rounded border border-[#D9E2EF] bg-white px-2 py-0.5 text-xs font-medium text-[#1F56C5] hover:bg-[#F4F7FB]"
+                          aria-expanded={isExpanded}
+                        >
+                          {isExpanded ? "Hide" : "View"}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {formatDate(r.latest_activity_at)}
@@ -268,7 +287,21 @@ export function AdminEventParticipantsSection({
                     {formatDate(r.created_at)}
                   </td>
                 </tr>
-              ))}
+                {isExpanded && (
+                  <tr className="border-t border-[#E6ECF4] bg-[#F8FAFD]">
+                    <td colSpan={8} className="px-3 py-3">
+                      <ParticipantBonusClaims
+                        eventId={eventId}
+                        passportId={r.passport_id}
+                        displayName={r.display_name || "Guest"}
+                        reloadKey={reloadKey}
+                      />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -318,3 +351,132 @@ function Th({
     </th>
   );
 }
+
+type BonusClaimRow = {
+  award_id: string;
+  bonus_code_id: string | null;
+  bonus_code_name: string | null;
+  bonus_code_description: string | null;
+  points_awarded: number;
+  awarded_at: string;
+  bonus_code_is_active: boolean | null;
+};
+
+function ParticipantBonusClaims({
+  eventId,
+  passportId,
+  displayName,
+  reloadKey,
+}: {
+  eventId: string;
+  passportId: string;
+  displayName: string;
+  reloadKey: number;
+}) {
+  const [rows, setRows] = useState<BonusClaimRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      const { data, error } = await supabase.rpc(
+        "get_admin_participant_bonus_claims",
+        { p_event_id: eventId, p_passport_id: passportId },
+      );
+      if (cancelled) return;
+      if (error) {
+        console.error("get_admin_participant_bonus_claims failed", error);
+        setError("Could not load bonus claims.");
+        setRows([]);
+      } else {
+        setRows((data ?? []) as BonusClaimRow[]);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId, passportId, reloadKey]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h4 className="text-sm font-semibold text-[#111827]">
+          Bonus codes claimed by {displayName}
+        </h4>
+        <p className="text-[11px] text-muted-foreground">
+          Points shown are the points awarded at the time of claim.
+        </p>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading bonus claims…</p>
+      ) : error ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-md border border-dashed border-[#D9E2EF] bg-white px-3 py-3">
+          <p className="text-sm font-medium text-[#111827]">
+            No bonus codes claimed
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This participant has not claimed any bonus codes yet.
+          </p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-[#E6ECF4] rounded-md border border-[#E6ECF4] bg-white">
+          {rows.map((c) => {
+            const missing = !c.bonus_code_id;
+            const name = missing
+              ? "Bonus code no longer available"
+              : c.bonus_code_name || "Untitled bonus code";
+            const statusLabel = missing
+              ? null
+              : c.bonus_code_is_active
+              ? "Currently active"
+              : "Currently disabled";
+            return (
+              <li key={c.award_id} className="flex flex-wrap items-start justify-between gap-3 px-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={"text-sm font-medium " + (missing ? "text-muted-foreground italic" : "text-[#111827]")}>
+                      {name}
+                    </span>
+                    {statusLabel && (
+                      <span
+                        className={
+                          "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide " +
+                          (c.bonus_code_is_active
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-amber-50 text-amber-700")
+                        }
+                      >
+                        {statusLabel}
+                      </span>
+                    )}
+                  </div>
+                  {c.bonus_code_description && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {c.bonus_code_description}
+                    </p>
+                  )}
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Claimed {formatDate(c.awarded_at)}
+                  </p>
+                </div>
+                <div className="text-right text-sm font-semibold text-[#111827]">
+                  {numberFmt.format(c.points_awarded)} pts
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
