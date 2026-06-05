@@ -5386,6 +5386,26 @@ function GoLivePanel({
         )}
       </div>
 
+      <div
+        className={
+          "mt-2 rounded-md border px-3 py-2 text-xs " +
+          (allPass
+            ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
+            : "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300")
+        }
+      >
+        <span className="font-semibold">Public website is {allPass ? "live" : "not live"}.</span>{" "}
+        {allPass
+          ? "Visitors can reach the public event website at the URL above."
+          : !eventPass
+            ? "Not live because event status is Draft. Turn the public event on from the Public address section above."
+            : !domainPass
+              ? primaryDomain
+                ? `Not live because public address is ${primaryDomain.status}.`
+                : "Not live because no public address is claimed."
+              : "Not live because commercial activation is inactive."}
+      </div>
+
       {primarySubdomain?.public_subdomain && (
         <div className="mt-2 rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs">
           <a
