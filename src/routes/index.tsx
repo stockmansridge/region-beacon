@@ -718,7 +718,68 @@ function StampLogoFooter() {
   );
 }
 
+function FreeAccountCard() {
+  return (
+    <div className="relative">
+      {/* Pointer label */}
+      <div className="mb-4 flex items-center justify-center gap-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#8A1538]">
+        <span className="hidden sm:inline">New to GetStampd?</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8A1538] px-3 py-1 text-white shadow-sm">
+          <Sparkles className="h-3 w-3" /> Start here
+        </span>
+        <ArrowRight className="h-4 w-4 rotate-90 text-[#8A1538]" />
+      </div>
+
+      <div className="relative rounded-3xl border-2 border-[#8A1538] bg-gradient-to-br from-[#FBF5E8] to-[#F8F3EA] p-8 shadow-xl shadow-[#8A1538]/10 ring-1 ring-[#C8A24A]/40">
+        <span className="absolute right-6 top-6 inline-flex items-center gap-1.5 rounded-full bg-[#C8A24A] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1F2417] shadow-sm">
+          <Stamp className="h-3 w-3" /> You&rsquo;re here
+        </span>
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div>
+            <h3 className="font-serif text-3xl font-semibold text-[#1F2417]">Free Account</h3>
+            <p className="mt-3 text-[#666666]">
+              Perfect for exploring GetStampd and setting up your first digital stamp experience.
+            </p>
+            <div className="mt-5 flex items-baseline gap-2">
+              <span className="font-serif text-5xl font-semibold text-[#1F2417]">$0</span>
+              <span className="text-sm font-medium uppercase tracking-wider text-[#C8A24A]">Free to start</span>
+            </div>
+            <p className="mt-4 text-sm text-[#666666]">
+              Upgrade when you&rsquo;re ready to launch publicly or grow your experience.
+            </p>
+            <a
+              href={authUrl("/signup?plan=free")}
+              className="mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-[#8A1538] px-7 text-sm font-semibold text-white shadow-md shadow-[#8A1538]/20 transition hover:-translate-y-0.5 hover:bg-[#6f1029] hover:shadow-lg"
+            >
+              Start here for free <ArrowRight className="h-4 w-4" />
+            </a>
+            <p className="mt-3 text-xs font-medium text-[#666666]">No payment required to begin.</p>
+          </div>
+          <ul className="space-y-2.5 text-sm text-[#1F2417]">
+            {[
+              "Create your GetStampd account",
+              "Build your first draft trail or event",
+              "Add sample stops, stalls or locations",
+              "Preview the visitor mobile pass",
+              "Test digital stamp collection",
+              "Try QR code check-ins",
+              "Set up sample rewards",
+              "Explore the organiser dashboard",
+            ].map((f) => (
+              <li key={f} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#687642]" />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PricingCard({ plan }: { plan: (typeof PLANS)[number] }) {
+
   return (
     <div
       className={cn(
