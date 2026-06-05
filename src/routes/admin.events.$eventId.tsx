@@ -4900,33 +4900,106 @@ function PublicAddressCard({
         <EmptyNotice>No public address claimed yet. Ask an owner or admin to reserve one.</EmptyNotice>
       )}
 
-      {subdomainRow && subdomainRow.status === "pending" && canEdit && (
-        <div className="space-y-2 rounded-md border p-3">
-          <div className="text-sm">
-            Pending reservation — will activate once billing/activation is complete.
-          </div>
-          {releaseError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {releaseError}
+      {subdomainRow && canEdit && (
+        <div className="space-y-3 rounded-md border p-3">
+          {subdomainRow.status === "pending" && (
+            <div className="text-sm">
+              Pending reservation — will activate once billing/activation is complete.
             </div>
           )}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleRelease}
-              disabled={releasing}
-              className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-            >
-              {releasing ? "Releasing…" : "Release subdomain"}
-            </button>
-          </div>
-        </div>
-      )}
+          {subdomainRow.status === "active" && (
+            <div className="text-sm text-muted-foreground">
+              Changing the public address updates the URL visitors use.
+              Existing bookmarks to the old address will stop working.
+            </div>
+          )}
 
-      {subdomainRow && subdomainRow.status === "active" && (
-        <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-          Active subdomains are read-only here.
-          {isPlatformAdmin && " Platform admins can change active domains via system admin."}
+          {!editing && (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(true);
+                  setEditInput(subdomainRow.public_subdomain ?? "");
+                  setEditAvailability({ kind: "idle" });
+                  setEditError(null);
+                }}
+                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+              >
+                Change address
+              </button>
+              {subdomainRow.status === "pending" && (
+                <button
+                  type="button"
+                  onClick={handleRelease}
+                  disabled={releasing}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  {releasing ? "Releasing…" : "Release subdomain"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {editing && (
+            <div className="space-y-3">
+              <label htmlFor="gs-subdomain-edit" className="block text-sm font-medium">
+                New public address
+              </label>
+              <div className="flex items-stretch gap-0">
+                <span className="inline-flex items-center rounded-l-md border border-r-0 bg-muted px-2 text-xs text-muted-foreground">
+                  https://
+                </span>
+                <input
+                  id="gs-subdomain-edit"
+                  type="text"
+                  value={editInput}
+                  onChange={(e) => setEditInput(e.target.value.toLowerCase())}
+                  maxLength={63}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="h-9 w-full border bg-background px-2 text-sm font-mono"
+                />
+                <span className="inline-flex items-center rounded-r-md border border-l-0 bg-muted px-2 text-xs text-muted-foreground">
+                  .getstampd.com.au
+                </span>
+              </div>
+              <AvailabilityMessage state={editAvailability} />
+              {editError && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  {editError}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(false);
+                    setEditInput("");
+                    setEditAvailability({ kind: "idle" });
+                    setEditError(null);
+                  }}
+                  disabled={savingEdit}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={savingEdit || editAvailability.kind !== "available"}
+                  className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {savingEdit ? "Saving…" : "Save new address"}
+                </button>
+              </div>
+              {isPlatformAdmin && subdomainRow.status === "active" && (
+                <p className="text-[11px] text-muted-foreground">
+                  Platform admin: this updates the live event_domains row in place. The event live/off state is preserved.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
