@@ -232,9 +232,11 @@ export function AdminEventParticipantsSection({
               </tr>
             </thead>
             <tbody>
-              {filteredSorted.map((r) => (
+              {filteredSorted.map((r) => {
+                const isExpanded = expandedId === r.passport_id;
+                return (
+                <Fragment key={r.passport_id}>
                 <tr
-                  key={r.passport_id}
                   className="border-t border-[#E6ECF4] hover:bg-[#FAFBFD]"
                 >
                   <td className="px-3 py-2.5 align-top">
@@ -260,7 +262,23 @@ export function AdminEventParticipantsSection({
                     {numberFmt.format(r.bonus_points)}
                   </td>
                   <td className="px-3 py-2.5 text-right text-[#334155]">
-                    {numberFmt.format(r.bonus_codes_claimed)}
+                    <div className="flex items-center justify-end gap-2">
+                      <span>{numberFmt.format(r.bonus_codes_claimed)}</span>
+                      {r.bonus_codes_claimed > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedId(isExpanded ? null : r.passport_id)
+                          }
+                          className="rounded border border-[#D9E2EF] bg-white px-2 py-0.5 text-xs font-medium text-[#1F56C5] hover:bg-[#F4F7FB]"
+                          aria-expanded={isExpanded}
+                        >
+                          {isExpanded ? "Hide" : "View"}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {formatDate(r.latest_activity_at)}
@@ -269,7 +287,21 @@ export function AdminEventParticipantsSection({
                     {formatDate(r.created_at)}
                   </td>
                 </tr>
-              ))}
+                {isExpanded && (
+                  <tr className="border-t border-[#E6ECF4] bg-[#F8FAFD]">
+                    <td colSpan={8} className="px-3 py-3">
+                      <ParticipantBonusClaims
+                        eventId={eventId}
+                        passportId={r.passport_id}
+                        displayName={r.display_name || "Guest"}
+                        reloadKey={reloadKey}
+                      />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
