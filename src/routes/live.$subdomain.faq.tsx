@@ -98,17 +98,9 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
                 No FAQ entries have been published for this event yet.
               </p>
             )}
-            {faq.kind === "ok" &&
-              faq.entries.map((entry, idx) => (
-                <article key={`${idx}-${entry.question}`} className="space-y-2">
-                  <h2 className="font-bold text-[var(--event-primary,#1F3D2B)] text-lg">
-                    {entry.question}
-                  </h2>
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
-                    {entry.answer}
-                  </p>
-                </article>
-              ))}
+            {faq.kind === "ok" && faq.entries.length > 0 && (
+              <FaqAccordion entries={faq.entries} />
+            )}
           </div>
         </div>
 
@@ -117,5 +109,55 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
         </div>
       </div>
     </EventPaletteScope>
+  );
+}
+
+type FaqEntry = { question: string; answer: string };
+
+function FaqAccordion({ entries }: { entries: FaqEntry[] }) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  return (
+    <ul className="space-y-3">
+      {entries.map((entry, idx) => {
+        const key = `${idx}-${entry.question}`;
+        const isOpen = openKey === key;
+        const panelId = `faq-panel-${idx}`;
+        return (
+          <li
+            key={key}
+            className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]"
+          >
+            <button
+              type="button"
+              onClick={() => setOpenKey((prev) => (prev === key ? null : key))}
+              aria-expanded={isOpen}
+              aria-controls={panelId}
+              className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)] focus-visible:ring-offset-2"
+            >
+              <span className="font-bold text-[var(--event-primary,#1F3D2B)] text-base sm:text-lg">
+                {entry.question}
+              </span>
+              <span
+                aria-hidden="true"
+                className={
+                  "shrink-0 text-xl leading-none text-[var(--event-primary,#1F3D2B)] transition-transform duration-200 " +
+                  (isOpen ? "rotate-180" : "rotate-0")
+                }
+              >
+                ⌄
+              </span>
+            </button>
+            {isOpen && (
+              <div
+                id={panelId}
+                className="px-4 pb-4 -mt-1 text-sm leading-relaxed text-[var(--event-body,#3D372C)] whitespace-pre-line"
+              >
+                {entry.answer}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
