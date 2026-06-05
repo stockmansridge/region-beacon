@@ -97,7 +97,7 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
       const payload: PosterInput = {
         eventName: poster.eventName,
         venueName: poster.venueName,
-        checkinUrl: value,
+        checkinUrl: normalisedValue,
         logoUrl: poster.logoUrl ?? null,
         primaryColor: poster.primaryColor ?? null,
         accentColor: poster.accentColor ?? null,
