@@ -291,7 +291,7 @@ export function EventFaqSection({
               <button
                 type="button"
                 onClick={saveAll}
-                  disabled={saving || Boolean(eventIdSaveError)}
+                disabled={saving || Boolean(eventIdSaveError)}
                 className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save changes"}
