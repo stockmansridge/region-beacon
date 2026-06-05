@@ -48,9 +48,11 @@ function formatDate(value: string | null): string {
 export function AdminEventParticipantsSection({
   eventId,
   canView,
+  eventName,
 }: {
   eventId: string;
   canView: boolean;
+  eventName?: string | null;
 }) {
   const [rows, setRows] = useState<ParticipantRow[]>([]);
   const [loading, setLoading] = useState(true);
