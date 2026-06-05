@@ -1746,33 +1746,10 @@ function EventDetail() {
     if (!agencyId || !bundle) return;
     setDeleting(true);
     try {
-      const [{ data: limits, error: limErr }, { count, error: cntErr }] = await Promise.all([
-        supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }) as unknown as Promise<{
-          data: { active_event_limit: number | null } | null;
-          error: { message: string } | null;
-        }>,
-        supabase
-          .from("events")
-          .select("id", { count: "exact", head: true })
-          .eq("agency_id", agencyId)
-          .is("deleted_at", null),
-      ]);
-      if (limErr) {
-        toast.error(`Could not check plan limit: ${limErr.message}`);
-        return;
-      }
-      if (cntErr) {
-        toast.error(`Could not count active events: ${cntErr.message}`);
-        return;
-      }
-      const limit = limits?.active_event_limit ?? null;
-      const currentActive = count ?? 0;
-      if (limit !== null && currentActive >= limit) {
-        toast.error(
-          `You have reached your active event limit (${limit}). Upgrade your plan or archive another event before unarchiving this event.`,
-        );
-        return;
-      }
+      // Unarchive restores the event as a draft. It does not turn the
+      // public event on, so no live-event-limit check is required here.
+      // The limit is re-checked when the user turns the public event on
+      // from the Public Address section.
       const { error: updErr } = await supabase
         .from("events")
         .update({ deleted_at: null, status: "draft" })
@@ -1788,6 +1765,7 @@ function EventDetail() {
       setDeleting(false);
     }
   }
+
 
   /**
    * Build the check-in URL for a QR token.
