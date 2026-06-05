@@ -159,10 +159,6 @@ function LivePublicLoaded({
           Admin preview · close tab to return
         </div>
       )}
-      paletteKey={event.palette_key ?? null}
-      backgroundKey={event.page_background_key ?? null}
-      className="min-h-screen px-4 py-8"
-    >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
