@@ -2850,11 +2850,17 @@ function EventDetail() {
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{v.address ?? "—"}</td>
                           <td className="px-3 py-2">
-                            <span className={
-                              v.status === "active"
-                                ? "inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]"
-                                : "inline-flex items-center rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-1 text-xs font-semibold text-[#475569]"
-                            }>{v.status}</span>
+                            {v.deleted_at != null ? (
+                              <span className="inline-flex items-center rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-1 text-xs font-semibold text-[#475569]">
+                                Disabled
+                              </span>
+                            ) : (
+                              <span className={
+                                v.status === "active"
+                                  ? "inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]"
+                                  : "inline-flex items-center rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-1 text-xs font-semibold text-[#475569]"
+                              }>{v.status}</span>
+                            )}
                           </td>
                           <td className="px-3 py-2">
                             {hasActiveQr ? (
