@@ -526,11 +526,10 @@ function EventDetail() {
             supabase
               .from("venues")
               .select(
-                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path",
+                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path, deleted_at",
               )
               .eq("event_id", event.id)
               .eq("agency_id", agencyId)
-              .is("deleted_at", null)
               .order("order_index", { ascending: true }),
             event.current_terms_version_id
               ? supabase
