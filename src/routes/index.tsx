@@ -574,17 +574,17 @@ function Landing() {
       {/* PRICING PREVIEW */}
       <section className="bg-white py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <div className="mx-auto max-w-3xl text-center">
             <h2 className="font-serif text-4xl font-semibold tracking-tight text-[#1F2417]">
-              Simple pricing for every trail, event, and destination
+              Pricing that grows with your venue, campaign or region
             </h2>
             <p className="mt-4 text-[#666666]">
-              Launch digital stamp trails for events, markets, tourism campaigns, and destination experiences. Start small, then scale as your programme grows.
+              Choose the GetStampd plan that fits how you want to run QR check-ins, rewards, trails and regional loyalty experiences.
             </p>
           </div>
-          <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((p) => (
-              <PricingCard key={p.name} plan={p} />
+              <PricingCard key={p.code} plan={p} />
             ))}
           </div>
 
