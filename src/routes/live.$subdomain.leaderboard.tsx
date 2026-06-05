@@ -165,8 +165,8 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
         {state.kind === "ready" && state.rows.length === 0 && (
           <EmptyState
-            title="No leaderboard entries yet"
-            body="As soon as visitors start collecting stamps they'll appear here."
+            title="No points collected yet"
+            body="Participants will appear here once they scan venue or bonus QR codes."
           />
         )}
 
@@ -199,7 +199,7 @@ function Header({ subdomain }: { subdomain: string }) {
         Leaderboard
       </h1>
       <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]/80">
-        Top stamp collectors at this event.
+        Ranked by total points. Passport stamps are still shown so you can track venue progress.
       </p>
     </div>
   );
