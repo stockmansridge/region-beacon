@@ -1281,18 +1281,7 @@ function EventDetail() {
       });
       return;
     }
-    const website = venueForm.website_url.trim();
-    if (website.length > 0 && !/^https:\/\//i.test(website)) {
-      setVenueValidationError("Website URL must start with https://");
-      setVenueSaveDebug({
-        route,
-        action: "validation",
-        payloadKeys: [],
-        venueId: venueEditingId,
-        eventId,
-        agencyId,
-        message: "Validation blocked the save before Supabase was reached: website URL did not start with https://.",
-      });
+    const website = normalizeWebsiteUrl(venueForm.website_url) ?? "";
       return;
     }
     const phone = venueForm.phone.trim();
