@@ -1102,7 +1102,9 @@ function EventDetail() {
       phone: "",
       logo_path: null,
       cover_path: null,
+      points_value: "0",
     });
+
     setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
