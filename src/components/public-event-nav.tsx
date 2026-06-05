@@ -190,6 +190,20 @@ export function PublicEventNav({
         </Link>
       ),
     },
+    ...(hasFaq
+      ? [{
+          key: "faq",
+          node: (
+            <Link
+              to="/faq"
+              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+              style={{ color: primary }}
+            >
+              FAQ / Info
+            </Link>
+          ),
+        }]
+      : []),
     ...(hasTerms
       ? [{
           key: "terms",
