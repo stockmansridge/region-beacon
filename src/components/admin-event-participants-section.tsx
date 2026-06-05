@@ -150,11 +150,11 @@ export function AdminEventParticipantsSection({
         bonus_code_name_display: c.bonus_code_id
           ? c.bonus_code_name || "Untitled bonus code"
           : "Bonus code no longer available",
-        bonus_code_status: !c.bonus_code_id
+        bonus_code_status: (!c.bonus_code_id
           ? "Unavailable"
           : c.bonus_code_is_active
           ? "Active"
-          : "Disabled",
+          : "Disabled") as BonusClaimCsvRow["bonus_code_status"],
       }));
       const csv = toCsv(csvRows, BONUS_CLAIMS_CSV_HEADERS);
       const slug = sanitiseCsvFilename(eventName || "event");
