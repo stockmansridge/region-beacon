@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,83 @@ const OFFER_MAX = 800;
 const PHONE_MAX = 40;
 const ACCEPT_ATTR = VENUE_ASSET_ALLOWED_MIME.join(",");
 
+type VenueProfileSaveDebug = {
+  route: string;
+  action: "update" | "validation" | "exception";
+  payloadKeys: string[];
+  venueId: string | null;
+  eventId: string;
+  agencyId: string | null;
+  message: string;
+  details?: string | null;
+  hint?: string | null;
+  code?: string | null;
+  httpStatus?: number | null;
+  httpStatusText?: string | null;
+  matchedRows?: number | null;
+};
+
+function formatVenueProfileSaveFailure(debug: VenueProfileSaveDebug) {
+  const parts = [debug.message];
+  if (debug.details) parts.push(`Details: ${debug.details}`);
+  if (debug.hint) parts.push(`Hint: ${debug.hint}`);
+  if (debug.code) parts.push(`Code: ${debug.code}`);
+  if (debug.httpStatus) parts.push(`HTTP ${debug.httpStatus}${debug.httpStatusText ? ` ${debug.httpStatusText}` : ""}`);
+  if (debug.matchedRows === 0) parts.push("Matched rows: 0");
+  return parts.join("\n");
+}
+
+function venueProfileDebugFromError(args: {
+  action: VenueProfileSaveDebug["action"];
+  payloadKeys: string[];
+  venueId: string | null;
+  eventId: string;
+  agencyId: string | null;
+  error: unknown;
+  httpStatus?: number | null;
+  httpStatusText?: string | null;
+  matchedRows?: number | null;
+}): VenueProfileSaveDebug {
+  const err = args.error as {
+    message?: unknown;
+    details?: unknown;
+    hint?: unknown;
+    code?: unknown;
+    status?: unknown;
+    statusText?: unknown;
+  } | null;
+  return {
+    route: "client handleSave in src/components/venue-public-profile-dialog.tsx",
+    action: args.action,
+    payloadKeys: args.payloadKeys,
+    venueId: args.venueId,
+    eventId: args.eventId,
+    agencyId: args.agencyId,
+    message:
+      typeof err?.message === "string" && err.message.trim()
+        ? err.message
+        : typeof args.error === "string" && args.error.trim()
+          ? args.error
+          : "Venue public profile save failed without an error message from the request layer.",
+    details: typeof err?.details === "string" ? err.details : null,
+    hint: typeof err?.hint === "string" ? err.hint : null,
+    code: typeof err?.code === "string" ? err.code : null,
+    httpStatus:
+      typeof args.httpStatus === "number"
+        ? args.httpStatus
+        : typeof err?.status === "number"
+          ? err.status
+          : null,
+    httpStatusText:
+      typeof args.httpStatusText === "string"
+        ? args.httpStatusText
+        : typeof err?.statusText === "string"
+          ? err.statusText
+          : null,
+    matchedRows: args.matchedRows ?? null,
+  };
+}
+
 export function VenuePublicProfileDialog({
   open,
   onOpenChange,
@@ -78,6 +156,7 @@ export function VenuePublicProfileDialog({
   const [logoPath, setLogoPath] = useState<string | null>(venue?.logo_path ?? null);
   const [coverPath, setCoverPath] = useState<string | null>(venue?.cover_path ?? null);
   const [error, setError] = useState<string | null>(null);
+  const [saveDebug, setSaveDebug] = useState<VenueProfileSaveDebug | null>(null);
   const [saving, setSaving] = useState(false);
   const [busyKind, setBusyKind] = useState<VenueAssetKind | null>(null);
 
@@ -90,6 +169,7 @@ export function VenuePublicProfileDialog({
     setLogoPath(venue?.logo_path ?? null);
     setCoverPath(venue?.cover_path ?? null);
     setError(null);
+    setSaveDebug(null);
     setOfferSummary("");
     setOfferSupported(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,12 +227,23 @@ export function VenuePublicProfileDialog({
 
   async function handleSave() {
     if (!venue || !agencyId) return;
+    const route = "client handleSave in src/components/venue-public-profile-dialog.tsx";
     const v = validate();
     if (v) {
       setError(v);
+      setSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venue.id,
+        eventId,
+        agencyId,
+        message: `Validation blocked the save before Supabase was reached: ${v}`,
+      });
       return;
     }
     setError(null);
+    setSaveDebug(null);
     setSaving(true);
     const patch: Record<string, string | null> = {
       description: description.trim() ? description.trim() : null,
@@ -162,19 +253,78 @@ export function VenuePublicProfileDialog({
     if (offerSupported) {
       patch.offer_summary = offerSummary.trim() ? offerSummary.trim() : null;
     }
-    const { error: upErr } = await supabase
-      .from("venues")
-      .update(patch)
-      .eq("id", venue.id)
-      .eq("event_id", eventId)
-      .eq("agency_id", agencyId);
-    setSaving(false);
-    if (upErr) {
-      setError(`Could not save: ${upErr.message}`);
-      return;
+    const payloadKeys = Object.keys(patch);
+    const failSave = (debug: VenueProfileSaveDebug) => {
+      console.error("[venue-public-profile-save] failed", debug);
+      const msg = formatVenueProfileSaveFailure(debug);
+      setSaveDebug(debug);
+      setError(msg);
+      toast.error(msg);
+    };
+    console.info("[venue-public-profile-save] calling Supabase update", {
+      route,
+      payloadKeys,
+      venueId: venue.id,
+      eventId,
+      agencyId,
+    });
+    try {
+      const { data: updatedVenue, error: upErr, status, statusText } = await supabase
+        .from("venues")
+        .update(patch)
+        .eq("id", venue.id)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId)
+        .select("id")
+        .maybeSingle();
+      if (upErr) {
+        failSave(venueProfileDebugFromError({
+          action: "update",
+          payloadKeys,
+          venueId: venue.id,
+          eventId,
+          agencyId,
+          error: upErr,
+          httpStatus: status,
+          httpStatusText: statusText,
+        }));
+        return;
+      }
+      if (!updatedVenue) {
+        failSave({
+          route,
+          action: "update",
+          payloadKeys,
+          venueId: venue.id,
+          eventId,
+          agencyId,
+          message: "Supabase update completed with no error, but matched 0 venue rows. The venue may be deleted, belong to another event/organisation, or be hidden by permissions.",
+          httpStatus: status,
+          httpStatusText: statusText,
+          matchedRows: 0,
+        });
+        return;
+      }
+      console.info("[venue-public-profile-save] Supabase update succeeded", {
+        route,
+        venueId: venue.id,
+        eventId,
+        agencyId,
+      });
+      onSaved();
+      onOpenChange(false);
+    } catch (exception) {
+      failSave(venueProfileDebugFromError({
+        action: "exception",
+        payloadKeys,
+        venueId: venue.id,
+        eventId,
+        agencyId,
+        error: exception,
+      }));
+    } finally {
+      setSaving(false);
     }
-    onSaved();
-    onOpenChange(false);
   }
 
   async function handleUpload(kind: VenueAssetKind, file: File) {
@@ -418,9 +568,38 @@ export function VenuePublicProfileDialog({
           )}
 
           {error && (
-            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            <p className="whitespace-pre-wrap rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
               {error}
             </p>
+          )}
+          {saveDebug && (
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              <div className="mb-1 font-semibold text-foreground">Venue save diagnostic</div>
+              <dl className="grid gap-1 sm:grid-cols-[120px_1fr]">
+                <dt className="font-medium">Route/action</dt>
+                <dd>{saveDebug.route} / {saveDebug.action}</dd>
+                <dt className="font-medium">Payload keys</dt>
+                <dd>{saveDebug.payloadKeys.length ? saveDebug.payloadKeys.join(", ") : "—"}</dd>
+                <dt className="font-medium">Venue ID</dt>
+                <dd className="break-all">{saveDebug.venueId ?? "—"}</dd>
+                <dt className="font-medium">Event ID</dt>
+                <dd className="break-all">{saveDebug.eventId}</dd>
+                <dt className="font-medium">Agency ID</dt>
+                <dd className="break-all">{saveDebug.agencyId ?? "—"}</dd>
+                <dt className="font-medium">Message</dt>
+                <dd className="whitespace-pre-wrap">{saveDebug.message}</dd>
+                <dt className="font-medium">Details</dt>
+                <dd className="whitespace-pre-wrap">{saveDebug.details ?? "—"}</dd>
+                <dt className="font-medium">Hint</dt>
+                <dd className="whitespace-pre-wrap">{saveDebug.hint ?? "—"}</dd>
+                <dt className="font-medium">Code</dt>
+                <dd>{saveDebug.code ?? "—"}</dd>
+                <dt className="font-medium">HTTP</dt>
+                <dd>{saveDebug.httpStatus ? `${saveDebug.httpStatus}${saveDebug.httpStatusText ? ` ${saveDebug.httpStatusText}` : ""}` : "—"}</dd>
+                <dt className="font-medium">Matched rows</dt>
+                <dd>{saveDebug.matchedRows ?? "—"}</dd>
+              </dl>
+            </div>
           )}
         </div>
 

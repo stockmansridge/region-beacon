@@ -225,6 +225,83 @@ type VenueEditForm = {
   cover_path: string | null;
 };
 
+type VenueSaveDebug = {
+  route: string;
+  action: "insert" | "update" | "validation" | "preflight" | "exception";
+  payloadKeys: string[];
+  venueId: string | "new" | null;
+  eventId: string;
+  agencyId: string | null;
+  message: string;
+  details?: string | null;
+  hint?: string | null;
+  code?: string | null;
+  httpStatus?: number | null;
+  httpStatusText?: string | null;
+  matchedRows?: number | null;
+};
+
+function formatVenueSaveFailure(debug: VenueSaveDebug) {
+  const parts = [debug.message];
+  if (debug.details) parts.push(`Details: ${debug.details}`);
+  if (debug.hint) parts.push(`Hint: ${debug.hint}`);
+  if (debug.code) parts.push(`Code: ${debug.code}`);
+  if (debug.httpStatus) parts.push(`HTTP ${debug.httpStatus}${debug.httpStatusText ? ` ${debug.httpStatusText}` : ""}`);
+  if (debug.matchedRows === 0) parts.push("Matched rows: 0");
+  return parts.join("\n");
+}
+
+function venueSaveDebugFromError(args: {
+  action: VenueSaveDebug["action"];
+  payloadKeys: string[];
+  venueId: string | "new" | null;
+  eventId: string;
+  agencyId: string | null;
+  error: unknown;
+  httpStatus?: number | null;
+  httpStatusText?: string | null;
+  matchedRows?: number | null;
+}): VenueSaveDebug {
+  const err = args.error as {
+    message?: unknown;
+    details?: unknown;
+    hint?: unknown;
+    code?: unknown;
+    status?: unknown;
+    statusText?: unknown;
+  } | null;
+  return {
+    route: "client saveVenue in src/routes/admin.events.$eventId.tsx",
+    action: args.action,
+    payloadKeys: args.payloadKeys,
+    venueId: args.venueId,
+    eventId: args.eventId,
+    agencyId: args.agencyId,
+    message:
+      typeof err?.message === "string" && err.message.trim()
+        ? err.message
+        : typeof args.error === "string" && args.error.trim()
+          ? args.error
+          : "Venue save failed without an error message from the request layer.",
+    details: typeof err?.details === "string" ? err.details : null,
+    hint: typeof err?.hint === "string" ? err.hint : null,
+    code: typeof err?.code === "string" ? err.code : null,
+    httpStatus:
+      typeof args.httpStatus === "number"
+        ? args.httpStatus
+        : typeof err?.status === "number"
+          ? err.status
+          : null,
+    httpStatusText:
+      typeof args.httpStatusText === "string"
+        ? args.httpStatusText
+        : typeof err?.statusText === "string"
+          ? err.statusText
+          : null,
+    matchedRows: args.matchedRows ?? null,
+  };
+}
+
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -370,6 +447,7 @@ function EventDetail() {
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
   const [venueSaving, setVenueSaving] = useState(false);
   const [venueSaveError, setVenueSaveError] = useState<string | null>(null);
+  const [venueSaveDebug, setVenueSaveDebug] = useState<VenueSaveDebug | null>(null);
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
@@ -1019,6 +1097,7 @@ function EventDetail() {
     setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
+    setVenueSaveDebug(null);
     setVenueEditingId("new");
   }
 
@@ -1040,6 +1119,7 @@ function EventDetail() {
     setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
+    setVenueSaveDebug(null);
     setVenueEditingId(v.id);
     requestAnimationFrame(() => {
       venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1052,6 +1132,7 @@ function EventDetail() {
     setMapPickerOpen(false);
     setVenueValidationError(null);
     setVenueSaveError(null);
+    setVenueSaveDebug(null);
     // Refresh in case a venue was just created (we skipped reload then to keep
     // the editor mounted for image upload).
     setReloadKey((k) => k + 1);
@@ -1059,19 +1140,47 @@ function EventDetail() {
 
   async function saveVenue() {
     if (!venueForm || !agencyId || !bundle || !venueEditingId) return;
+    const route = "client saveVenue in src/routes/admin.events.$eventId.tsx";
 
     const name = venueForm.name.trim();
     if (!name) {
       setVenueValidationError("Name is required.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: name is required.",
+      });
       return;
     }
     if (name.length > 150) {
       setVenueValidationError("Name must be 150 characters or fewer.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: name exceeded 150 characters.",
+      });
       return;
     }
     const addressRaw = venueForm.address.trim();
     if (addressRaw.length > 300) {
       setVenueValidationError("Address must be 300 characters or fewer.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: address exceeded 300 characters.",
+      });
       return;
     }
     const address = addressRaw === "" ? null : addressRaw;
@@ -1081,6 +1190,15 @@ function EventDetail() {
       const parsed = Number(venueForm.lat.trim());
       if (!Number.isFinite(parsed) || parsed < -90 || parsed > 90) {
         setVenueValidationError("Latitude must be a number between -90 and 90.");
+        setVenueSaveDebug({
+          route,
+          action: "validation",
+          payloadKeys: [],
+          venueId: venueEditingId,
+          eventId,
+          agencyId,
+          message: "Validation blocked the save before Supabase was reached: latitude was outside -90 to 90.",
+        });
         return;
       }
       lat = parsed;
@@ -1090,6 +1208,15 @@ function EventDetail() {
       const parsed = Number(venueForm.lng.trim());
       if (!Number.isFinite(parsed) || parsed < -180 || parsed > 180) {
         setVenueValidationError("Longitude must be a number between -180 and 180.");
+        setVenueSaveDebug({
+          route,
+          action: "validation",
+          payloadKeys: [],
+          venueId: venueEditingId,
+          eventId,
+          agencyId,
+          message: "Validation blocked the save before Supabase was reached: longitude was outside -180 to 180.",
+        });
         return;
       }
       lng = parsed;
@@ -1097,40 +1224,104 @@ function EventDetail() {
     const orderIndex = parseInt(venueForm.order_index, 10);
     if (Number.isNaN(orderIndex) || orderIndex < 0) {
       setVenueValidationError("Order must be a whole number >= 0.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: order was not a whole number >= 0.",
+      });
       return;
     }
     if (venueForm.status !== "active" && venueForm.status !== "inactive") {
       setVenueValidationError("Status must be active or inactive.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: status was not active or inactive.",
+      });
       return;
     }
 
     const description = venueForm.description.trim();
     if (description.length > 1200) {
       setVenueValidationError("Description must be 1200 characters or fewer.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: description exceeded 1200 characters.",
+      });
       return;
     }
     const offerSummary = venueForm.offer_summary.trim();
     if (bundle.offerSupported && offerSummary.length > 800) {
       setVenueValidationError("Offer summary must be 800 characters or fewer.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: offer summary exceeded 800 characters.",
+      });
       return;
     }
     const website = venueForm.website_url.trim();
     if (website.length > 0 && !/^https:\/\//i.test(website)) {
       setVenueValidationError("Website URL must start with https://");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: website URL did not start with https://.",
+      });
       return;
     }
     const phone = venueForm.phone.trim();
     if (phone.length > 40) {
       setVenueValidationError("Phone must be 40 characters or fewer.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: phone exceeded 40 characters.",
+      });
       return;
     }
     if (phone.length > 0 && !/^\+?[0-9 \-]{6,40}$/.test(phone)) {
       setVenueValidationError("Phone may only contain digits, spaces, dashes, and an optional leading +.");
+      setVenueSaveDebug({
+        route,
+        action: "validation",
+        payloadKeys: [],
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        message: "Validation blocked the save before Supabase was reached: phone contained unsupported characters.",
+      });
       return;
     }
 
     setVenueValidationError(null);
     setVenueSaveError(null);
+    setVenueSaveDebug(null);
     setVenueSaving(true);
 
     const patch: Record<string, unknown> = {
@@ -1148,85 +1339,212 @@ function EventDetail() {
       patch.offer_summary = offerSummary === "" ? null : offerSummary;
     }
 
-    let error: { message: string } | null = null;
-    let newVenueId: string | null = null;
-    if (venueEditingId === "new") {
-      // Venue creation guard: check organisation plan limit before inserting.
-      const [subRes, countRes] = await Promise.all([
-        supabase
-          .from("agency_subscriptions")
-          .select("id, plan_code, status")
-          .eq("agency_id", agencyId)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("venues")
-          .select("id", { count: "exact", head: true })
-          .eq("agency_id", agencyId)
-          .is("deleted_at", null),
-      ]);
-
-      const plan = getPlanByCode(subRes.data?.plan_code);
-      const activeVenueCount = countRes.count ?? 0;
-      const venueLimit = plan.venueLimit;
-
-      if (venueLimit !== null && activeVenueCount >= venueLimit) {
-        setVenueSaving(false);
-        const nextPlan = getNextPlanAfter(plan.code);
-        const nextName = nextPlan?.name ?? "a higher plan";
-        setVenueValidationError(
-          `Your ${plan.name} plan includes up to ${venueLimit} venues. Upgrade to ${nextName} to add more venues.`
-        );
-        return;
-      }
-
-      const { data: insData, error: inErr } = await supabase
-        .from("venues")
-        .insert({
-          agency_id: agencyId,
-          event_id: eventId,
-          ...patch,
-        })
-        .select("id")
-        .single();
-      error = inErr ?? null;
-      newVenueId = (insData?.id as string | undefined) ?? null;
-    } else {
-      const { error: upErr } = await supabase
-        .from("venues")
-        .update(patch)
-        .eq("id", venueEditingId)
-        .eq("event_id", eventId)
-        .eq("agency_id", agencyId);
-      error = upErr ?? null;
-    }
-
-    setVenueSaving(false);
-    if (error) {
-      const msg = error.message || "Could not save venue. Please try again.";
+    const payloadKeys = Object.keys(patch);
+    const failVenueSave = (debug: VenueSaveDebug) => {
+      console.error("[venue-save] failed", debug);
+      const msg = formatVenueSaveFailure(debug);
+      setVenueSaveDebug(debug);
       setVenueSaveError(msg);
       toast.error(msg);
-      return;
-    }
+    };
 
-    if (venueEditingId === "new" && newVenueId) {
-      // Keep editor open in edit mode so image upload becomes available immediately.
-      // Do NOT trigger a full reload here — that would flip state to "loading" and
-      // unmount the editor. The new venue will appear in the list when the user
-      // saves again or cancels.
-      setVenueEditingId(newVenueId);
-      toast.success("Venue created. Add public details, images and QR next.");
-      // Scroll the editor into view so the user sees the new full-detail panel.
-      requestAnimationFrame(() => {
-        venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    console.info("[venue-save] started", {
+      route,
+      action: venueEditingId === "new" ? "insert" : "update",
+      payloadKeys,
+      venueId: venueEditingId,
+      eventId,
+      agencyId,
+    });
+
+    try {
+      let newVenueId: string | null = null;
+      if (venueEditingId === "new") {
+        // Venue creation guard: check organisation plan limit before inserting.
+        const [subRes, countRes] = await Promise.all([
+          supabase
+            .from("agency_subscriptions")
+            .select("id, plan_code, status")
+            .eq("agency_id", agencyId)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from("venues")
+            .select("id", { count: "exact", head: true })
+            .eq("agency_id", agencyId)
+            .is("deleted_at", null),
+        ]);
+
+        if (subRes.error) {
+          failVenueSave(venueSaveDebugFromError({
+            action: "preflight",
+            payloadKeys,
+            venueId: venueEditingId,
+            eventId,
+            agencyId,
+            error: subRes.error,
+            httpStatus: subRes.status,
+            httpStatusText: subRes.statusText,
+          }));
+          return;
+        }
+        if (countRes.error) {
+          failVenueSave(venueSaveDebugFromError({
+            action: "preflight",
+            payloadKeys,
+            venueId: venueEditingId,
+            eventId,
+            agencyId,
+            error: countRes.error,
+            httpStatus: countRes.status,
+            httpStatusText: countRes.statusText,
+          }));
+          return;
+        }
+
+        const plan = getPlanByCode(subRes.data?.plan_code);
+        const activeVenueCount = countRes.count ?? 0;
+        const venueLimit = plan.venueLimit;
+
+        if (venueLimit !== null && activeVenueCount >= venueLimit) {
+          const nextPlan = getNextPlanAfter(plan.code);
+          const nextName = nextPlan?.name ?? "a higher plan";
+          const limitMessage = `Your ${plan.name} plan includes up to ${venueLimit} venues. Upgrade to ${nextName} to add more venues.`;
+          setVenueValidationError(limitMessage);
+          setVenueSaveDebug({
+            route,
+            action: "preflight",
+            payloadKeys,
+            venueId: venueEditingId,
+            eventId,
+            agencyId,
+            message: `Venue creation blocked before insert by active venue limit. Active venues counted: ${activeVenueCount}. Limit: ${venueLimit}.`,
+          });
+          return;
+        }
+
+        console.info("[venue-save] calling Supabase insert", { route, payloadKeys, eventId, agencyId });
+        const { data: insData, error: inErr, status, statusText } = await supabase
+          .from("venues")
+          .insert({
+            agency_id: agencyId,
+            event_id: eventId,
+            ...patch,
+          })
+          .select("id")
+          .single();
+        if (inErr) {
+          failVenueSave(venueSaveDebugFromError({
+            action: "insert",
+            payloadKeys,
+            venueId: venueEditingId,
+            eventId,
+            agencyId,
+            error: inErr,
+            httpStatus: status,
+            httpStatusText: statusText,
+          }));
+          return;
+        }
+        newVenueId = (insData?.id as string | undefined) ?? null;
+        if (!newVenueId) {
+          failVenueSave({
+            route,
+            action: "insert",
+            payloadKeys,
+            venueId: venueEditingId,
+            eventId,
+            agencyId,
+            message: "Supabase insert returned no error, but the created venue id was missing from the response.",
+            httpStatus: status,
+            httpStatusText: statusText,
+            matchedRows: 0,
+          });
+          return;
+        }
+      } else {
+        console.info("[venue-save] calling Supabase update", {
+          route,
+          payloadKeys,
+          venueId: venueEditingId,
+          eventId,
+          agencyId,
+        });
+        const { data: updatedVenue, error: upErr, status, statusText } = await supabase
+          .from("venues")
+          .update(patch)
+          .eq("id", venueEditingId)
+          .eq("event_id", eventId)
+          .eq("agency_id", agencyId)
+          .select("id")
+          .maybeSingle();
+        if (upErr) {
+          failVenueSave(venueSaveDebugFromError({
+            action: "update",
+            payloadKeys,
+            venueId: venueEditingId,
+            eventId,
+            agencyId,
+            error: upErr,
+            httpStatus: status,
+            httpStatusText: statusText,
+          }));
+          return;
+        }
+        if (!updatedVenue) {
+          failVenueSave({
+            route,
+            action: "update",
+            payloadKeys,
+            venueId: venueEditingId,
+            eventId,
+            agencyId,
+            message: "Supabase update completed with no error, but matched 0 venue rows. The venue may be deleted, belong to another event/organisation, or be hidden by permissions.",
+            httpStatus: status,
+            httpStatusText: statusText,
+            matchedRows: 0,
+          });
+          return;
+        }
+      }
+
+      console.info("[venue-save] Supabase mutation succeeded", {
+        route,
+        action: venueEditingId === "new" ? "insert" : "update",
+        venueId: venueEditingId === "new" ? newVenueId : venueEditingId,
+        eventId,
+        agencyId,
       });
-    } else {
-      setVenueEditingId(null);
-      setVenueForm(null);
-      setMapPickerOpen(false);
-      toast.success("Venue saved.");
-      setReloadKey((k) => k + 1);
+      if (venueEditingId === "new" && newVenueId) {
+        // Keep editor open in edit mode so image upload becomes available immediately.
+        // Do NOT trigger a full reload here — that would flip state to "loading" and
+        // unmount the editor. The new venue will appear in the list when the user
+        // saves again or cancels.
+        setVenueEditingId(newVenueId);
+        toast.success("Venue created. Add public details, images and QR next.");
+        // Scroll the editor into view so the user sees the new full-detail panel.
+        requestAnimationFrame(() => {
+          venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      } else {
+        setVenueEditingId(null);
+        setVenueForm(null);
+        setMapPickerOpen(false);
+        toast.success("Venue saved.");
+        setReloadKey((k) => k + 1);
+      }
+    } catch (exception) {
+      failVenueSave(venueSaveDebugFromError({
+        action: "exception",
+        payloadKeys,
+        venueId: venueEditingId,
+        eventId,
+        agencyId,
+        error: exception,
+      }));
+    } finally {
+      setVenueSaving(false);
     }
   }
 
@@ -2386,8 +2704,37 @@ function EventDetail() {
                   </div>
                 </div>
                 {(venueValidationError || venueSaveError) && (
-                  <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+                  <div className="whitespace-pre-wrap rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                     {venueValidationError ?? venueSaveError}
+                  </div>
+                )}
+                {venueSaveDebug && (
+                  <div className="rounded-[12px] border border-[#CBD5E1] bg-[#F8FAFC] px-4 py-3 text-xs text-[#334155]">
+                    <div className="mb-2 font-semibold text-[#111827]">Venue save diagnostic</div>
+                    <dl className="grid gap-1 sm:grid-cols-[150px_1fr]">
+                      <dt className="font-medium">Route/action</dt>
+                      <dd>{venueSaveDebug.route} / {venueSaveDebug.action}</dd>
+                      <dt className="font-medium">Payload keys</dt>
+                      <dd>{venueSaveDebug.payloadKeys.length ? venueSaveDebug.payloadKeys.join(", ") : "—"}</dd>
+                      <dt className="font-medium">Venue ID</dt>
+                      <dd className="break-all">{venueSaveDebug.venueId ?? "—"}</dd>
+                      <dt className="font-medium">Event ID</dt>
+                      <dd className="break-all">{venueSaveDebug.eventId}</dd>
+                      <dt className="font-medium">Agency ID</dt>
+                      <dd className="break-all">{venueSaveDebug.agencyId ?? "—"}</dd>
+                      <dt className="font-medium">Supabase message</dt>
+                      <dd className="whitespace-pre-wrap">{venueSaveDebug.message}</dd>
+                      <dt className="font-medium">Details</dt>
+                      <dd className="whitespace-pre-wrap">{venueSaveDebug.details ?? "—"}</dd>
+                      <dt className="font-medium">Hint</dt>
+                      <dd className="whitespace-pre-wrap">{venueSaveDebug.hint ?? "—"}</dd>
+                      <dt className="font-medium">Code</dt>
+                      <dd>{venueSaveDebug.code ?? "—"}</dd>
+                      <dt className="font-medium">HTTP</dt>
+                      <dd>{venueSaveDebug.httpStatus ? `${venueSaveDebug.httpStatus}${venueSaveDebug.httpStatusText ? ` ${venueSaveDebug.httpStatusText}` : ""}` : "—"}</dd>
+                      <dt className="font-medium">Matched rows</dt>
+                      <dd>{venueSaveDebug.matchedRows ?? "—"}</dd>
+                    </dl>
                   </div>
                 )}
 
