@@ -79,3 +79,18 @@ Adds `public.force_delete_venue(p_venue_id uuid, p_confirm_text text)`.
 - Destructive: discovers every public-schema table with a FK to `public.venues(id)` via `information_schema` (same introspection used in `02_hard_delete_venue_strict.sql`) and `DELETE`s the matching rows in each — currently `checkins`, `venue_qr_codes`, `venue_offers`, plus any future FK tables automatically — then deletes the venue row.
 - `RAISE NOTICE` records `venue=<id> agency=<id> by=<auth.uid()> deleted=[table=N, ...]` for an audit breadcrumb.
 - The safe `hard_delete_venue` RPC is **unchanged** and remains the only path for normal organisation admins.
+
+## 04_force_delete_venue_order_fix.sql
+
+Replaces `force_delete_venue` body to fix this runtime error:
+
+> update or delete on table "venue_qr_codes" violates foreign key constraint "checkins_qr_fk" on table "checkins"
+
+`public.checkins.venue_qr_code_id` has an `ON DELETE RESTRICT` FK to `public.venue_qr_codes`, so checkins is a grandchild via venue_qr_codes. The previous version deleted FK tables in arbitrary `information_schema` order and could remove `venue_qr_codes` before `checkins`.
+
+New order:
+1. **Phase 1** — `delete from public.checkins where venue_id = $1` (grandchild via `venue_qr_codes`).
+2. **Phase 2** — dynamic discovery of every other public-schema table with a FK to `public.venues(id)`, deleted in arbitrary order. Excludes `venues` and `checkins`. Currently this clears `venue_qr_codes` and `venue_offers`; any future FK table is picked up automatically.
+3. **Phase 3** — `delete from public.venues where id = $1`.
+
+If a future schema adds another `ON DELETE RESTRICT` grandchild on top of a venue-linked table, add it to Phase 1.
