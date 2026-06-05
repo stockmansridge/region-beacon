@@ -130,7 +130,10 @@ type Venue = {
   phone: string | null;
   logo_path: string | null;
   cover_path: string | null;
+  deleted_at: string | null;
 };
+
+type VenueFilter = "active" | "disabled" | "all";
 
 type QrSummary = {
   venue_id: string;
@@ -370,6 +373,7 @@ function EventDetail() {
   const [venueValidationError, setVenueValidationError] = useState<string | null>(null);
   const [venueArchivingId, setVenueArchivingId] = useState<string | null>(null);
   const [venueArchiveError, setVenueArchiveError] = useState<string | null>(null);
+  const [venueFilter, setVenueFilter] = useState<VenueFilter>("active");
   const [venueAssetBusy, setVenueAssetBusy] = useState<VenueAssetKind | null>(null);
   const [venueAssetError, setVenueAssetError] = useState<string | null>(null);
   const venueEditorRef = useRef<HTMLDivElement | null>(null);
@@ -523,11 +527,10 @@ function EventDetail() {
             supabase
               .from("venues")
               .select(
-                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path",
+                "id, name, address, lat, lng, status, order_index, description, website_url, phone, logo_path, cover_path, deleted_at",
               )
               .eq("event_id", event.id)
               .eq("agency_id", agencyId)
-              .is("deleted_at", null)
               .order("order_index", { ascending: true }),
             event.current_terms_version_id
               ? supabase
@@ -1293,22 +1296,69 @@ function EventDetail() {
     // See uploadVenueImage: skip reloadKey to keep the editor mounted.
   }
 
-  async function archiveVenue(venueId: string) {
+  async function disableVenue(venueId: string) {
     if (!agencyId) return;
-    if (!window.confirm("Archive this venue? It will be hidden from the active list.")) return;
-    setVenueArchivingId(venueId);
-    setVenueArchiveError(null);
-    const { error } = await supabase
-      .from("venues")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", venueId)
-      .eq("event_id", eventId)
-      .eq("agency_id", agencyId);
-    setVenueArchivingId(null);
-    if (error) {
-      setVenueArchiveError("Could not archive venue. Please try again.");
+    if (
+      !window.confirm(
+        "Disable this venue?\n\nThis venue will no longer count toward your venue limit and cannot be selected for new events. Existing events, check-ins, QR codes, and historical reporting will remain intact.",
+      )
+    ) {
       return;
     }
+    setVenueArchivingId(venueId);
+    setVenueArchiveError(null);
+    const { error } = await supabase.rpc("disable_venue", {
+      p_venue_id: venueId,
+      p_reason: null,
+    });
+    setVenueArchivingId(null);
+    if (error) {
+      setVenueArchiveError(error.message || "Could not disable venue. Please try again.");
+      toast.error(error.message || "Could not disable venue.");
+      return;
+    }
+    toast.success("Venue disabled.");
+    setReloadKey((k) => k + 1);
+  }
+
+  async function reactivateVenue(venueId: string) {
+    if (!agencyId) return;
+    setVenueArchivingId(venueId);
+    setVenueArchiveError(null);
+    const { error } = await supabase.rpc("reactivate_venue", {
+      p_venue_id: venueId,
+    });
+    setVenueArchivingId(null);
+    if (error) {
+      setVenueArchiveError(error.message || "Could not reactivate venue.");
+      toast.error(error.message || "Could not reactivate venue.");
+      return;
+    }
+    toast.success("Venue reactivated.");
+    setReloadKey((k) => k + 1);
+  }
+
+  async function hardDeleteVenue(venueId: string) {
+    if (!agencyId) return;
+    if (
+      !window.confirm(
+        "Permanently delete this venue?\n\nThis cannot be undone. Only venues with no linked events or historical activity can be permanently deleted.",
+      )
+    ) {
+      return;
+    }
+    setVenueArchivingId(venueId);
+    setVenueArchiveError(null);
+    const { error } = await supabase.rpc("hard_delete_venue", {
+      p_venue_id: venueId,
+    });
+    setVenueArchivingId(null);
+    if (error) {
+      setVenueArchiveError(error.message || "Could not delete venue.");
+      toast.error(error.message || "Could not delete venue.");
+      return;
+    }
+    toast.success("Venue permanently deleted.");
     setReloadKey((k) => k + 1);
   }
 
@@ -2687,6 +2737,43 @@ function EventDetail() {
                 )}
               </div>
             )}
+            {(() => {
+              const activeVenues = venues.filter((v) => v.deleted_at == null);
+              const disabledVenues = venues.filter((v) => v.deleted_at != null);
+              const visibleVenues =
+                venueFilter === "active"
+                  ? activeVenues
+                  : venueFilter === "disabled"
+                    ? disabledVenues
+                    : venues;
+              return (
+                <>
+                  <div className="mb-3 inline-flex items-center gap-1 rounded-[10px] border border-[#D9E2EF] bg-white p-1 text-xs">
+                    {(["active", "disabled", "all"] as VenueFilter[]).map((opt) => {
+                      const count =
+                        opt === "active"
+                          ? activeVenues.length
+                          : opt === "disabled"
+                            ? disabledVenues.length
+                            : venues.length;
+                      const selected = venueFilter === opt;
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setVenueFilter(opt)}
+                          className={
+                            "rounded-[8px] px-3 py-1.5 font-semibold capitalize " +
+                            (selected
+                              ? "bg-[#2F6FE4] text-white"
+                              : "text-[#475569] hover:bg-[#F1F5F9]")
+                          }
+                        >
+                          {opt} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
             {venues.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
                 No venues have been added yet. Add the first venue so visitors have somewhere to check in during this event.
@@ -2719,7 +2806,7 @@ function EventDetail() {
                     </tr>
                   </thead>
                   <tbody>
-                    {venues.map((v) => {
+                    {visibleVenues.map((v) => {
                       const qr = qrByVenue.get(v.id);
                       const hasActiveQr = !!qr;
                       const isBusy = qrActionVenueId === v.id;
@@ -2763,11 +2850,17 @@ function EventDetail() {
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{v.address ?? "—"}</td>
                           <td className="px-3 py-2">
-                            <span className={
-                              v.status === "active"
-                                ? "inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]"
-                                : "inline-flex items-center rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-1 text-xs font-semibold text-[#475569]"
-                            }>{v.status}</span>
+                            {v.deleted_at != null ? (
+                              <span className="inline-flex items-center rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-1 text-xs font-semibold text-[#475569]">
+                                Disabled
+                              </span>
+                            ) : (
+                              <span className={
+                                v.status === "active"
+                                  ? "inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]"
+                                  : "inline-flex items-center rounded-full border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-1 text-xs font-semibold text-[#475569]"
+                              }>{v.status}</span>
+                            )}
                           </td>
                           <td className="px-3 py-2">
                             {hasActiveQr ? (
@@ -2932,23 +3025,44 @@ function EventDetail() {
                           )}
                           {canEdit && (
                             <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); startEditVenue(v); }}
-                                  disabled={venueEditingId !== null || venueArchivingId !== null}
+                                  disabled={venueEditingId !== null || venueArchivingId !== null || v.deleted_at != null}
                                   className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   Edit details
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => archiveVenue(v.id)}
-                                  disabled={venueEditingId !== null || venueArchivingId !== null}
-                                  className="inline-flex h-9 items-center rounded-[10px] border border-[#FDA4AF] bg-white px-3.5 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {venueArchivingId === v.id ? "Archiving…" : "Archive"}
-                                </button>
+                                {v.deleted_at == null ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => disableVenue(v.id)}
+                                    disabled={venueEditingId !== null || venueArchivingId !== null}
+                                    className="inline-flex h-9 items-center rounded-[10px] border border-[#FDA4AF] bg-white px-3.5 text-sm font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {venueArchivingId === v.id ? "Disabling…" : "Disable venue"}
+                                  </button>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => reactivateVenue(v.id)}
+                                      disabled={venueEditingId !== null || venueArchivingId !== null}
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#86EFAC] bg-white px-3.5 text-sm font-semibold text-[#047857] hover:bg-[#ECFDF5] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {venueArchivingId === v.id ? "Working…" : "Reactivate venue"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => hardDeleteVenue(v.id)}
+                                      disabled={venueEditingId !== null || venueArchivingId !== null}
+                                      className="inline-flex h-9 items-center rounded-[10px] border border-[#E11D48] bg-[#E11D48] px-3.5 text-sm font-semibold text-white hover:bg-[#BE123C] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {venueArchivingId === v.id ? "Deleting…" : "Delete permanently"}
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           )}
@@ -2986,6 +3100,9 @@ function EventDetail() {
                 </p>
               </div>
             )}
+                </>
+              );
+            })()}
           </Section>
 
           <Section title="Analytics" id="section-analytics" tab="analytics">
