@@ -605,13 +605,26 @@ function Landing() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="font-serif text-4xl font-semibold tracking-tight text-[#1F2417]">
-              Pricing that grows with your venue, campaign or region
+              Start free, upgrade when you're ready
             </h2>
             <p className="mt-4 text-[#666666]">
-              Choose the GetStampd plan that fits how you want to run QR check-ins, rewards, trails and regional loyalty experiences.
+              Create your free account, test the visitor experience, and build your first digital stamp trail before choosing a paid plan.
             </p>
           </div>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+
+          {/* Free Account spotlight */}
+          <div className="mx-auto mt-14 max-w-4xl">
+            <FreeAccountCard />
+          </div>
+
+          {/* Paid plans */}
+          <div className="mx-auto mt-10 max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A1538]">Upgrade paths</p>
+            <h3 className="mt-2 font-serif text-2xl font-semibold text-[#1F2417]">
+              Ready to launch publicly? Choose a paid plan.
+            </h3>
+          </div>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {PLANS.map((p) => (
               <PricingCard key={p.code} plan={p} />
             ))}
@@ -648,6 +661,8 @@ function Landing() {
           </div>
         </div>
       </section>
+
+
 
       {/* TRUST FOOTER */}
       <section className="bg-[#32391F] py-16 text-[#F8F3EA]">
