@@ -43,7 +43,7 @@ function useEventInfo(subdomain: string): EventInfo {
   return info;
 }
 
-function FaqPage({ subdomain }: { subdomain: string }) {
+export function FaqPage({ subdomain }: { subdomain: string }) {
   const branding = useEventBrandingKeys(subdomain);
   const eventInfo = useEventInfo(subdomain);
   const faq = useEventFaqByDomain(subdomain);

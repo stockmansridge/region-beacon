@@ -22,6 +22,7 @@ import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview
 import { Route as MapRouteImport } from './routes/map'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as JoinRouteImport } from './routes/join'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -130,6 +131,11 @@ const LeaderboardRoute = LeaderboardRouteImport.update({
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -363,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
   '/map': typeof MapRoute
@@ -421,6 +428,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
   '/map': typeof MapRoute
@@ -481,6 +489,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
   '/map': typeof MapRoute
@@ -542,6 +551,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/faq'
     | '/join'
     | '/leaderboard'
     | '/map'
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/contact'
+    | '/faq'
     | '/join'
     | '/leaderboard'
     | '/map'
@@ -659,6 +670,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/faq'
     | '/join'
     | '/leaderboard'
     | '/map'
@@ -719,6 +731,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   ContactRoute: typeof ContactRoute
+  FaqRoute: typeof FaqRoute
   JoinRoute: typeof JoinRoute
   LeaderboardRoute: typeof LeaderboardRoute
   MapRoute: typeof MapRoute
@@ -853,6 +866,13 @@ declare module '@tanstack/react-router' {
       path: '/join'
       fullPath: '/join'
       preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -1224,6 +1244,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   ContactRoute: ContactRoute,
+  FaqRoute: FaqRoute,
   JoinRoute: JoinRoute,
   LeaderboardRoute: LeaderboardRoute,
   MapRoute: MapRoute,

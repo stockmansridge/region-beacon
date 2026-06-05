@@ -75,16 +75,13 @@ export function EventFaqSection({
     setLoading(true);
     setLoadError(null);
     (async () => {
-      const { data, error } = await supabase
-        .from("event_faq_entries")
-        .select("id, agency_id, event_id, question, answer, order_index, created_at, updated_at")
-        .eq("agency_id", agencyId)
-        .eq("event_id", eventId)
-        .order("order_index", { ascending: true })
-        .order("created_at", { ascending: true });
+      const { data, error } = await supabase.rpc("get_event_faq_entries", {
+        p_event_id: eventId,
+      });
       if (cancelled) return;
       if (error) {
-        setLoadError("Could not load FAQ entries.");
+        console.error("[FAQ LOAD] failed", error);
+        setLoadError(formatSupabaseError(error));
         setDrafts([]);
       } else {
         const rows = (data ?? []) as FaqEntry[];
