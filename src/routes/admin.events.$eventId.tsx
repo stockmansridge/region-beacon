@@ -7,6 +7,7 @@ import { AdminEventRewards } from "@/components/admin-event-rewards";
 import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
 import { BonusCodesSection } from "@/components/event-bonus-codes-section";
+import { AdminEventParticipantsSection } from "@/components/admin-event-participants-section";
 
 import {
   deleteVenueAssetSafely,
@@ -331,7 +332,7 @@ type EventTabKey =
   | "venues"
   | "bonuscodes"
   | "checkin"
-
+  | "participants"
   | "leaderboard"
   | "terms"
   | "analytics";
@@ -343,7 +344,7 @@ const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
   { key: "venues", label: "Venues" },
   { key: "bonuscodes", label: "Bonus Codes" },
   { key: "checkin", label: "Check-in" },
-
+  { key: "participants", label: "Participants" },
   { key: "leaderboard", label: "Leaderboard" },
   { key: "terms", label: "Terms & privacy" },
   { key: "analytics", label: "Analytics" },
@@ -3601,6 +3602,18 @@ function EventDetail() {
                 </>
               );
             })()}
+          </Section>
+
+          <Section
+            title="Participants"
+            id="section-participants"
+            tab="participants"
+            description="Passport stamps and points awarded to each participant in this event."
+          >
+            <AdminEventParticipantsSection
+              eventId={event.id}
+              canView={canEdit || agency.selected?.role === "agency_member"}
+            />
           </Section>
 
           <Section
