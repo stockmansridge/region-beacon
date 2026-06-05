@@ -37,65 +37,64 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-const PLANS = [
-  {
-    name: "Pilot",
-    desc: "For small organisations testing GetStampd.",
-    price: "Free",
-    cadence: "",
-    billed: "Start free",
-    features: [
-      "1 active trail or campaign",
-      "Up to 5 venues / stops",
-      "Limited passport volume",
-      "Basic digital passport",
-      "Self-serve setup",
-      "Basic support",
-    ],
-    cta: "Start a pilot",
-    href: authUrl("/signup"),
-    highlight: false,
+// Public plans pulled from the GetStampd pricing config (single source of
+// truth shared with the in-product upgrade flow and Stripe checkout).
+const PUBLIC_PLAN_CODES = ["starter", "growth", "regional", "pro_region"] as const;
+
+const PLAN_COPY: Record<(typeof PUBLIC_PLAN_CODES)[number], {
+  desc: string;
+  cta: string;
+  highlight?: boolean;
+  badge?: string;
+  salesAssisted?: boolean;
+}> = {
+  starter: {
+    desc: "For single venues or small operators getting started with GetStampd.",
+    cta: "Start with Starter",
   },
-  {
-    name: "Launch",
-    badge: "Most popular",
-    desc: "The main paid option for running branded stamp trails and events.",
-    price: "From $990",
-    cadence: " per campaign",
-    billed: "Pricing scales with your programme",
-    features: [
-      "Multiple venues / stops",
-      "Higher passport volume",
-      "Custom-branded digital passport",
-      "QR codes for participating venues",
-      "Campaign dashboard",
-      "Analytics and reporting",
-      "Support for setup and launch",
-    ],
-    cta: "Launch a trail",
-    href: authUrl("/signup"),
+  growth: {
+    desc: "For venues, producers and operators growing repeat visits and customer engagement.",
+    cta: "Upgrade to Growth",
     highlight: true,
+    badge: "Most popular",
   },
-  {
-    name: "Destination Programme",
-    desc: "For tourism boards, councils, regions, DMOs, and multi-destination programmes.",
-    price: "Custom",
-    cadence: "",
-    billed: "Let's talk",
+  regional: {
+    desc: "For trails, tourism groups, events and multi-venue regional programs.",
+    cta: "Choose Regional",
+  },
+  pro_region: {
+    desc: "For larger regions, destination programs and advanced multi-operator loyalty experiences.",
+    cta: "Choose Pro Region",
+  },
+};
+
+const PLANS = PUBLIC_PLAN_CODES.map((code) => {
+  const plan = getPlanByCode(code);
+  const copy = PLAN_COPY[code];
+  const [priceMain, priceCadence] = plan.price.includes("/")
+    ? [plan.price.split("/")[0], `/${plan.price.split("/").slice(1).join("/")}`]
+    : [plan.price, ""];
+  return {
+    code: plan.code,
+    name: plan.name,
+    desc: copy.desc,
+    price: priceMain,
+    cadence: priceCadence,
+    billed: priceCadence ? "Billed annually" : "",
     features: [
-      "Multiple trails or campaigns",
-      "Large or unlimited venue count",
-      "Custom passport volume",
-      "Multi-destination setup",
-      "Partner / venue onboarding",
-      "Advanced reporting",
-      "Dedicated account support",
+      `Up to ${plan.venueLimit} venues for QR check-ins`,
+      plan.events,
+      plan.passports,
+      "Custom-branded digital passes & rewards",
+      "Trail, campaign and venue dashboards",
+      plan.support,
     ],
-    cta: "Talk to us",
-    href: "/contact",
-    highlight: false,
-  },
-] as const;
+    cta: copy.cta,
+    href: copy.salesAssisted ? "/contact" : authUrl(`/signup?plan=${plan.code}`),
+    highlight: copy.highlight ?? false,
+    badge: copy.badge,
+  };
+});
 
 const FAQS = [
   {
