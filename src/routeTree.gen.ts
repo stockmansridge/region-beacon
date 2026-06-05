@@ -55,6 +55,7 @@ import { Route as LiveSubdomainOffersRouteImport } from './routes/live.$subdomai
 import { Route as LiveSubdomainMapRouteImport } from './routes/live.$subdomain.map'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
+import { Route as LiveSubdomainFaqRouteImport } from './routes/live.$subdomain.faq'
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as CollectBonusTokenRouteImport } from './routes/collect.bonus.$token'
@@ -297,6 +298,11 @@ const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
   path: '/live/$subdomain/join',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiveSubdomainFaqRoute = LiveSubdomainFaqRouteImport.update({
+  id: '/live/$subdomain/faq',
+  path: '/live/$subdomain/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoWineriesVenueIdRoute = DemoWineriesVenueIdRouteImport.update({
   id: '/$venueId',
   path: '/$venueId',
@@ -396,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
@@ -453,6 +460,7 @@ export interface FileRoutesByTo {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
@@ -512,6 +520,7 @@ export interface FileRoutesById {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
@@ -572,6 +581,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
@@ -629,6 +639,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
@@ -687,6 +698,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
@@ -737,6 +749,7 @@ export interface RootRouteChildren {
   VenuesIndexRoute: typeof VenuesIndexRoute
   CollectBonusTokenRoute: typeof CollectBonusTokenRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
+  LiveSubdomainFaqRoute: typeof LiveSubdomainFaqRoute
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
   LiveSubdomainMapRoute: typeof LiveSubdomainMapRoute
@@ -1073,6 +1086,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainJoinRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/live/$subdomain/faq': {
+      id: '/live/$subdomain/faq'
+      path: '/live/$subdomain/faq'
+      fullPath: '/live/$subdomain/faq'
+      preLoaderRoute: typeof LiveSubdomainFaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/wineries/$venueId': {
       id: '/demo/wineries/$venueId'
       path: '/$venueId'
@@ -1234,6 +1254,7 @@ const rootRouteChildren: RootRouteChildren = {
   VenuesIndexRoute: VenuesIndexRoute,
   CollectBonusTokenRoute: CollectBonusTokenRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
+  LiveSubdomainFaqRoute: LiveSubdomainFaqRoute,
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
   LiveSubdomainMapRoute: LiveSubdomainMapRoute,

@@ -1,7 +1,8 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag, HelpCircle } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
+import { useEventFaqByDomain } from "@/lib/use-event-faq";
 
 type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "offers" | "leaderboard" | "more";
 
@@ -41,7 +42,6 @@ export function PublicEventNav({
   /** Current public event id for event-scoped saved passport lookup. */
   eventId?: string | null;
 }) {
-  void subdomain;
   const primary = primaryColor ?? "#1F3D2B";
   const accent = accentColor ?? "#B5572A";
   const location = useLocation();
@@ -49,6 +49,8 @@ export function PublicEventNav({
   const { passportHref: derivedPassportHref } = useCurrentEventPassport(eventId);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
   const [moreOpen, setMoreOpen] = useState(false);
+  const faqState = useEventFaqByDomain(subdomain);
+  const hasFaq = faqState.kind === "ok" && faqState.entries.length > 0;
 
   // Normalise legacy "join" override → "passport".
   const normalisedOverride: ActiveTarget | undefined =
@@ -188,6 +190,20 @@ export function PublicEventNav({
         </Link>
       ),
     },
+    ...(hasFaq
+      ? [{
+          key: "faq",
+          node: (
+            <Link
+              to="/faq"
+              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+              style={{ color: primary }}
+            >
+              FAQ / Info
+            </Link>
+          ),
+        }]
+      : []),
     ...(hasTerms
       ? [{
           key: "terms",
@@ -316,6 +332,7 @@ export function PublicEventNav({
           primary={primary}
           accent={accent}
           hasTerms={hasTerms}
+          hasFaq={hasFaq}
           hasPrivacy={hasPrivacy}
           passportHref={passportHref}
           passportLabel={passportLabel}
@@ -364,6 +381,7 @@ function MoreSheet({
   primary,
   accent,
   hasTerms,
+  hasFaq,
   hasPrivacy,
   passportHref,
   passportLabel,
@@ -373,6 +391,7 @@ function MoreSheet({
   primary: string;
   accent: string;
   hasTerms: boolean;
+  hasFaq: boolean;
   hasPrivacy: boolean;
   passportHref: string | null;
   passportLabel: string;
@@ -460,6 +479,14 @@ function MoreSheet({
               Leaderboard
             </Link>
           </li>
+          {hasFaq && (
+            <li>
+              <Link to="/faq" onClick={onClose} className={rowClass}>
+                <HelpCircle className="h-4 w-4" />
+                FAQ / Info
+              </Link>
+            </li>
+          )}
           {hasTerms && (
             <li>
               <Link to="/terms" onClick={onClose} className={rowClass}>

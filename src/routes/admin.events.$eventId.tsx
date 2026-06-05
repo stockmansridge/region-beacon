@@ -8,6 +8,7 @@ import { AdminEventPoster } from "@/components/admin-event-poster";
 import { QrPreview } from "@/components/qr-preview";
 import { BonusCodesSection } from "@/components/event-bonus-codes-section";
 import { AdminEventParticipantsSection } from "@/components/admin-event-participants-section";
+import { EventFaqSection } from "@/components/event-faq-section";
 
 import {
   deleteVenueAssetSafely,
@@ -335,6 +336,7 @@ type EventTabKey =
   | "participants"
   | "leaderboard"
   | "terms"
+  | "faq"
   | "analytics";
 
 const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
@@ -347,6 +349,7 @@ const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
   { key: "participants", label: "Participants" },
   { key: "leaderboard", label: "Leaderboard" },
   { key: "terms", label: "Terms & privacy" },
+  { key: "faq", label: "FAQ / Info Page" },
   { key: "analytics", label: "Analytics" },
 ];
 
@@ -3649,6 +3652,27 @@ function EventDetail() {
               </p>
             )}
           </Section>
+
+          <Section
+            title="FAQ / Info Page"
+            id="section-faq"
+            tab="faq"
+            description="Customer-facing question and answer entries shown on the public FAQ / Info page. The public menu item only appears when at least one entry is saved."
+          >
+            {agencyId ? (
+              <EventFaqSection
+                agencyId={agencyId}
+                eventId={event.id}
+                canEdit={canEdit}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Select an agency to manage FAQ entries.
+              </p>
+            )}
+          </Section>
+
+
 
 
 
