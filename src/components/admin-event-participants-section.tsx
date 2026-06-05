@@ -60,6 +60,41 @@ const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantRow>> = [
   { label: "Passport ID", key: "passport_id" },
 ];
 
+type BonusClaimExportRow = {
+  passport_id: string;
+  visitor_id: string | null;
+  display_name: string;
+  email: string | null;
+  mobile: string | null;
+  award_id: string;
+  bonus_code_id: string | null;
+  bonus_code_name: string | null;
+  bonus_code_description: string | null;
+  points_awarded: number;
+  awarded_at: string;
+  bonus_code_is_active: boolean | null;
+};
+
+type BonusClaimCsvRow = BonusClaimExportRow & {
+  bonus_code_name_display: string;
+  bonus_code_status: "Active" | "Disabled" | "Unavailable";
+};
+
+const BONUS_CLAIMS_CSV_HEADERS: Array<CsvHeader<BonusClaimCsvRow>> = [
+  { label: "Participant name", key: "display_name" },
+  { label: "Email", key: "email" },
+  { label: "Mobile", key: "mobile" },
+  { label: "Bonus code name", key: "bonus_code_name_display" },
+  { label: "Bonus code description", key: "bonus_code_description" },
+  { label: "Points awarded", key: "points_awarded" },
+  { label: "Claimed at", key: "awarded_at" },
+  { label: "Bonus code status", key: "bonus_code_status" },
+  { label: "Passport ID", key: "passport_id" },
+  { label: "Award ID", key: "award_id" },
+  { label: "Visitor ID", key: "visitor_id" },
+  { label: "Bonus code ID", key: "bonus_code_id" },
+];
+
 function exportParticipantsCsv(
   rows: ParticipantRow[],
   eventName: string | null | undefined,
@@ -94,6 +129,46 @@ export function AdminEventParticipantsSection({
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [reloadKey, setReloadKey] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [exportingClaims, setExportingClaims] = useState(false);
+
+  async function handleExportBonusClaimsCsv() {
+    setExportingClaims(true);
+    setError(null);
+    try {
+      const { data, error: rpcError } = await supabase.rpc(
+        "get_admin_event_bonus_claims_export",
+        { p_event_id: eventId },
+      );
+      if (rpcError) throw rpcError;
+      const claimRows = (data ?? []) as BonusClaimExportRow[];
+      if (claimRows.length === 0) {
+        setError("No bonus claims to export yet.");
+        return;
+      }
+      const csvRows = claimRows.map((c) => ({
+        ...c,
+        bonus_code_name_display: c.bonus_code_id
+          ? c.bonus_code_name || "Untitled bonus code"
+          : "Bonus code no longer available",
+        bonus_code_status: (!c.bonus_code_id
+          ? "Unavailable"
+          : c.bonus_code_is_active
+          ? "Active"
+          : "Disabled") as BonusClaimCsvRow["bonus_code_status"],
+      }));
+      const csv = toCsv(csvRows, BONUS_CLAIMS_CSV_HEADERS);
+      const slug = sanitiseCsvFilename(eventName || "event");
+      downloadCsv(
+        `getstampd-${slug}-bonus-claims-${todayStamp()}.csv`,
+        csv,
+      );
+    } catch (err) {
+      console.error("Bonus claims CSV export failed", err);
+      setError("Could not export bonus claims.");
+    } finally {
+      setExportingClaims(false);
+    }
+  }
 
   useEffect(() => {
     if (!canView) {
@@ -221,6 +296,15 @@ export function AdminEventParticipantsSection({
             }
           >
             Export CSV
+          </button>
+          <button
+            type="button"
+            disabled={exportingClaims || loading}
+            onClick={handleExportBonusClaimsCsv}
+            className="inline-flex h-9 items-center rounded-md border border-[#D9E2EF] bg-white px-3 text-sm font-medium text-[#1F56C5] hover:bg-[#F4F7FB] disabled:cursor-not-allowed disabled:opacity-50"
+            title="Export one row per bonus code claim as CSV"
+          >
+            {exportingClaims ? "Exporting…" : "Export bonus claims CSV"}
           </button>
           <button
             type="button"
