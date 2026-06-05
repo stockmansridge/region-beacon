@@ -5068,32 +5068,19 @@ function AvailabilityMessage({ state }: { state: AvailabilityState }) {
 }
 
 
-function EventLiveToggle({
+function EventLiveToggleButton({
   agencyId,
   eventId,
-  eventStatus,
-  isArchived,
-  canEdit,
+  isLive,
   onChanged,
 }: {
   agencyId: string | null;
   eventId: string;
-  eventStatus: string;
-  isArchived: boolean;
-  canEdit: boolean;
+  isLive: boolean;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [confirmKind, setConfirmKind] = useState<"on" | "off" | null>(null);
-  const isLive = eventStatus === "published";
-
-  if (isArchived) {
-    return (
-      <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-        This event is archived. Unarchive it before you can turn the public event on or off.
-      </div>
-    );
-  }
 
   async function turnOn() {
     if (!agencyId) return;
@@ -5167,42 +5154,18 @@ function EventLiveToggle({
   }
 
   return (
-    <div className="rounded-md border p-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-0.5">
-          <div className="text-sm font-semibold text-[#111827]">Public event is live</div>
-          <div className="text-xs text-muted-foreground">
-            {isLive
-              ? "The public event website is available to visitors at the address below."
-              : "The public event website is turned off. The event remains editable in admin and does not count toward your live event limit."}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={
-              "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide " +
-              (isLive
-                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                : "bg-muted text-muted-foreground")
-            }
-          >
-            {isLive ? "Live" : "Off"}
-          </span>
-          {canEdit && (
-            <button
-              type="button"
-              onClick={() => setConfirmKind(isLive ? "off" : "on")}
-              disabled={busy}
-              className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-            >
-              {isLive ? "Turn off public event" : "Turn on public event"}
-            </button>
-          )}
-        </div>
-      </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setConfirmKind(isLive ? "off" : "on")}
+        disabled={busy}
+        className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted disabled:opacity-50"
+      >
+        {isLive ? "Turn off public event" : "Turn on public event"}
+      </button>
 
       {confirmKind && (
-        <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
+        <div className="mt-3 w-full rounded-md border bg-background p-3 text-sm">
           {confirmKind === "off" ? (
             <>
               <div className="font-semibold text-[#111827]">Turn public event off?</div>
@@ -5232,8 +5195,7 @@ function EventLiveToggle({
             <>
               <div className="font-semibold text-[#111827]">Turn public event on?</div>
               <p className="mt-1 text-muted-foreground">
-                This will make the event website available at its public address.
-                It will count toward your live event limit.
+                This will make the event website available at its public address. It will count toward your live event limit.
               </p>
               <div className="mt-3 flex justify-end gap-2">
                 <button
@@ -5257,9 +5219,12 @@ function EventLiveToggle({
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
+
+
+
 
 
 
