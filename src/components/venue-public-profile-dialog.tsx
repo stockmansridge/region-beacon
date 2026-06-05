@@ -568,9 +568,38 @@ export function VenuePublicProfileDialog({
           )}
 
           {error && (
-            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            <p className="whitespace-pre-wrap rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
               {error}
             </p>
+          )}
+          {saveDebug && (
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              <div className="mb-1 font-semibold text-foreground">Venue save diagnostic</div>
+              <dl className="grid gap-1 sm:grid-cols-[120px_1fr]">
+                <dt className="font-medium">Route/action</dt>
+                <dd>{saveDebug.route} / {saveDebug.action}</dd>
+                <dt className="font-medium">Payload keys</dt>
+                <dd>{saveDebug.payloadKeys.length ? saveDebug.payloadKeys.join(", ") : "—"}</dd>
+                <dt className="font-medium">Venue ID</dt>
+                <dd className="break-all">{saveDebug.venueId ?? "—"}</dd>
+                <dt className="font-medium">Event ID</dt>
+                <dd className="break-all">{saveDebug.eventId}</dd>
+                <dt className="font-medium">Agency ID</dt>
+                <dd className="break-all">{saveDebug.agencyId ?? "—"}</dd>
+                <dt className="font-medium">Message</dt>
+                <dd className="whitespace-pre-wrap">{saveDebug.message}</dd>
+                <dt className="font-medium">Details</dt>
+                <dd className="whitespace-pre-wrap">{saveDebug.details ?? "—"}</dd>
+                <dt className="font-medium">Hint</dt>
+                <dd className="whitespace-pre-wrap">{saveDebug.hint ?? "—"}</dd>
+                <dt className="font-medium">Code</dt>
+                <dd>{saveDebug.code ?? "—"}</dd>
+                <dt className="font-medium">HTTP</dt>
+                <dd>{saveDebug.httpStatus ? `${saveDebug.httpStatus}${saveDebug.httpStatusText ? ` ${saveDebug.httpStatusText}` : ""}` : "—"}</dd>
+                <dt className="font-medium">Matched rows</dt>
+                <dd>{saveDebug.matchedRows ?? "—"}</dd>
+              </dl>
+            </div>
           )}
         </div>
 
