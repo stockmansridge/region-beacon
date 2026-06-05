@@ -376,64 +376,67 @@ const STEPS = [
   { n: 4, icon: Gift, title: "Unlock rewards", body: "Redeem rewards, discounts and offers as you collect more stamps." },
 ];
 
-// Public marketing plans — sourced from the same pricing config used by
-// the GetStampd tool & Stripe checkout (see src/lib/getstampd-pricing.ts).
-const PUBLIC_PLAN_CODES = ["starter", "growth", "regional", "pro_region"] as const;
-
-const PLAN_COPY: Record<(typeof PUBLIC_PLAN_CODES)[number], {
-  desc: string;
-  cta: string;
-  highlight?: boolean;
-  badge?: string;
-  salesAssisted?: boolean;
-}> = {
-  starter: {
-    desc: "For single venues or small operators getting started with GetStampd.",
-    cta: "Start with Starter",
-  },
-  growth: {
-    desc: "For venues, producers and operators growing repeat visits and customer engagement.",
-    cta: "Upgrade to Growth",
-    highlight: true,
-    badge: "Most popular",
-  },
-  regional: {
-    desc: "For trails, tourism groups, events and multi-venue regional programs.",
-    cta: "Choose Regional",
-  },
-  pro_region: {
-    desc: "For larger regions, destination programs and advanced multi-operator loyalty experiences.",
-    cta: "Choose Pro Region",
-  },
-};
-
-const PLANS = PUBLIC_PLAN_CODES.map((code) => {
-  const plan = getPlanByCode(code);
-  const copy = PLAN_COPY[code];
-  const [priceMain, priceCadence] = plan.price.includes("/")
-    ? [plan.price.split("/")[0], `/${plan.price.split("/").slice(1).join("/")}`]
-    : [plan.price, ""];
-  return {
-    code: plan.code,
-    name: plan.name,
-    desc: copy.desc,
-    price: priceMain,
-    cadence: priceCadence,
-    billed: priceCadence ? "Billed annually" : "",
+// Marketing pricing tiers for the public homepage.
+const PLANS = [
+  {
+    code: "starter",
+    name: "Starter",
+    desc: "For small live trails, events and local experiences.",
+    price: "$49",
+    cadence: " / month",
+    billed: "Billed annually",
     features: [
-      `Up to ${plan.venueLimit} venues for QR check-ins`,
-      plan.events,
-      plan.passports,
-      "Custom-branded digital passes & rewards",
-      "Trail, campaign and venue dashboards",
-      plan.support,
+      "Launch 1 active trail or event",
+      "Up to 1,000 participants",
+      "Custom branding",
+      "Basic analytics",
+      "Email support",
     ],
-    cta: copy.cta,
-    href: copy.salesAssisted ? "/contact" : authUrl(`/signup?plan=${plan.code}`),
-    highlight: copy.highlight ?? false,
-    badge: copy.badge,
-  };
-});
+    cta: "Upgrade to Starter",
+    href: authUrl("/signup?plan=starter"),
+    highlight: false,
+    badge: undefined as string | undefined,
+  },
+  {
+    code: "growth",
+    name: "Growth",
+    desc: "For growing destinations, markets and tourism campaigns.",
+    price: "$149",
+    cadence: " / month",
+    billed: "Billed annually",
+    features: [
+      "Up to 10 active trails/events",
+      "Up to 10,000 participants",
+      "Advanced analytics",
+      "Reward tracking",
+      "Priority email support",
+    ],
+    cta: "Upgrade to Growth",
+    href: authUrl("/signup?plan=growth"),
+    highlight: true,
+    badge: "Most popular" as string | undefined,
+  },
+  {
+    code: "enterprise",
+    name: "Enterprise",
+    desc: "For tourism boards, regions and large multi-location programs.",
+    price: "Custom",
+    cadence: "",
+    billed: "Let's talk",
+    features: [
+      "Unlimited trails/events",
+      "Unlimited participants",
+      "Multi-destination programs",
+      "Custom integrations",
+      "Dedicated account manager",
+    ],
+    cta: "Contact sales",
+    href: "/contact",
+    highlight: false,
+    badge: undefined as string | undefined,
+  },
+];
+
 
 function Landing() {
   return (
