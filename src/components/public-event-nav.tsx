@@ -1,7 +1,8 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag, HelpCircle } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
+import { useEventFaqByDomain } from "@/lib/use-event-faq";
 
 type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "offers" | "leaderboard" | "more";
 
@@ -49,6 +50,8 @@ export function PublicEventNav({
   const { passportHref: derivedPassportHref } = useCurrentEventPassport(eventId);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
   const [moreOpen, setMoreOpen] = useState(false);
+  const faqState = useEventFaqByDomain(subdomain);
+  const hasFaq = faqState.kind === "ok" && faqState.entries.length > 0;
 
   // Normalise legacy "join" override → "passport".
   const normalisedOverride: ActiveTarget | undefined =
