@@ -2737,6 +2737,43 @@ function EventDetail() {
                 )}
               </div>
             )}
+            {(() => {
+              const activeVenues = venues.filter((v) => v.deleted_at == null);
+              const disabledVenues = venues.filter((v) => v.deleted_at != null);
+              const visibleVenues =
+                venueFilter === "active"
+                  ? activeVenues
+                  : venueFilter === "disabled"
+                    ? disabledVenues
+                    : venues;
+              return (
+                <>
+                  <div className="mb-3 inline-flex items-center gap-1 rounded-[10px] border border-[#D9E2EF] bg-white p-1 text-xs">
+                    {(["active", "disabled", "all"] as VenueFilter[]).map((opt) => {
+                      const count =
+                        opt === "active"
+                          ? activeVenues.length
+                          : opt === "disabled"
+                            ? disabledVenues.length
+                            : venues.length;
+                      const selected = venueFilter === opt;
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setVenueFilter(opt)}
+                          className={
+                            "rounded-[8px] px-3 py-1.5 font-semibold capitalize " +
+                            (selected
+                              ? "bg-[#2F6FE4] text-white"
+                              : "text-[#475569] hover:bg-[#F1F5F9]")
+                          }
+                        >
+                          {opt} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
             {venues.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
                 No venues have been added yet. Add the first venue so visitors have somewhere to check in during this event.
