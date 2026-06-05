@@ -42,7 +42,6 @@ export function PublicEventNav({
   /** Current public event id for event-scoped saved passport lookup. */
   eventId?: string | null;
 }) {
-  void subdomain;
   const primary = primaryColor ?? "#1F3D2B";
   const accent = accentColor ?? "#B5572A";
   const location = useLocation();
