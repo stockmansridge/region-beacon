@@ -98,17 +98,9 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
                 No FAQ entries have been published for this event yet.
               </p>
             )}
-            {faq.kind === "ok" &&
-              faq.entries.map((entry, idx) => (
-                <article key={`${idx}-${entry.question}`} className="space-y-2">
-                  <h2 className="font-bold text-[var(--event-primary,#1F3D2B)] text-lg">
-                    {entry.question}
-                  </h2>
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
-                    {entry.answer}
-                  </p>
-                </article>
-              ))}
+            {faq.kind === "ok" && faq.entries.length > 0 && (
+              <FaqAccordion entries={faq.entries} />
+            )}
           </div>
         </div>
 
