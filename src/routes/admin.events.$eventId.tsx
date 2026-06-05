@@ -1204,9 +1204,12 @@ function EventDetail() {
 
     setVenueSaving(false);
     if (error) {
-      setVenueSaveError("Could not save venue. Please try again.");
+      const msg = error.message || "Could not save venue. Please try again.";
+      setVenueSaveError(msg);
+      toast.error(msg);
       return;
     }
+
     if (venueEditingId === "new" && newVenueId) {
       // Keep editor open in edit mode so image upload becomes available immediately.
       // Do NOT trigger a full reload here — that would flip state to "loading" and
