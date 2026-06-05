@@ -2112,7 +2112,17 @@ function EventDetail() {
             >
               Preview customer page
             </Link>
-            {canEdit && (
+            {canEdit && (event.deleted_at != null ? (
+              <button
+                type="button"
+                onClick={unarchiveEvent}
+                disabled={deleting}
+                title="Unarchive this event. Subject to your plan's active event limit."
+                className="inline-flex h-10 items-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EFF4FF] disabled:opacity-50"
+              >
+                {deleting ? "Unarchiving…" : "Unarchive event"}
+              </button>
+            ) : (
               <button
                 type="button"
                 onClick={archiveEvent}
@@ -2122,7 +2132,7 @@ function EventDetail() {
               >
                 {deleting ? "Archiving…" : "Archive event"}
               </button>
-            )}
+            ))}
           </div>
         }
       />
