@@ -3100,6 +3100,9 @@ function EventDetail() {
                 </p>
               </div>
             )}
+                </>
+              );
+            })()}
           </Section>
 
           <Section title="Analytics" id="section-analytics" tab="analytics">
