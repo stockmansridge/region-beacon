@@ -662,7 +662,7 @@ export function EventBulkImportSection({
         .maybeSingle();
       if (qrLookupErr || !qrRow) {
         const note =
-          "check_in_value not applied — generate a QR for this venue in the venue editor, then re-import.";
+          "Venue imported, but no active venue QR exists yet. Generate a QR for this venue, then re-import or edit the stamp value manually.";
         venuesNext[idx] = {
           ...v,
           resultMessage: v.resultMessage ? `${v.resultMessage} ${note}` : note,
