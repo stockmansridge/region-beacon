@@ -36,6 +36,9 @@ type VenueDraft = {
   offer_summary: string | null;
   order_index: number;
   status: "active" | "inactive";
+  // Optional stamp/entry value saved to venue_qr_codes.entry_value for the
+  // venue's active QR row. null = leave unchanged on import.
+  check_in_value: number | null;
   issues: RowIssue[];
   // Resolved at confirm:
   matchedVenueId?: string | null;
@@ -62,7 +65,7 @@ type TastingDraft = {
   venue_key: string;
   qr_name: string;
   description: string | null;
-  entry_value: number;
+  points: number;
   status: Status;
   issues: RowIssue[];
   result?: "created" | "updated" | "skipped" | "error";
@@ -124,6 +127,15 @@ function downloadTemplate() {
     ["6. Matching: venues match by name within this event; bonus codes match by"],
     ["   title; tasting QR codes match by qr_name within their venue."],
     [""],
+    ["Reward values:"],
+    ["  check_in_value (Venues): stamps/entries awarded for a venue QR check-in."],
+    ["    Whole number 1–100. Leave blank to keep the existing value."],
+    ["    Requires an active venue QR — generate one in the venue editor first."],
+    ["  points (Bonus Codes): points awarded when a customer enters this bonus code."],
+    ["    Whole number 0 or greater."],
+    ["  points (Tasting QR Codes): extra points awarded for scanning this tasting QR."],
+    ["    Whole number 0 or greater."],
+    [""],
     ["Example values:"],
     ["  venue_key: venue_001, ridge_winery, stall_12"],
     ["  status:    active, disabled"],
@@ -148,6 +160,7 @@ function downloadTemplate() {
     "offer_summary",
     "order_index",
     "status",
+    "check_in_value",
   ];
   const venuesExample = [
     "venue_001",
@@ -161,6 +174,7 @@ function downloadTemplate() {
     "Free tasting flight on arrival",
     1,
     "active",
+    1,
   ];
   const wsV = XLSX.utils.aoa_to_sheet([venuesHeader, venuesExample]);
   wsV["!cols"] = venuesHeader.map(() => ({ wch: 18 }));
@@ -172,8 +186,8 @@ function downloadTemplate() {
   wsB["!cols"] = bonusHeader.map(() => ({ wch: 22 }));
   XLSX.utils.book_append_sheet(wb, wsB, "Bonus Codes");
 
-  const tastingHeader = ["venue_key", "qr_name", "description", "entry_value", "status"];
-  const tastingExample = ["venue_001", "Shiraz Tasting", "Try our flagship Shiraz.", 1, "active"];
+  const tastingHeader = ["venue_key", "qr_name", "description", "points", "status"];
+  const tastingExample = ["venue_001", "Shiraz Tasting", "Try our flagship Shiraz.", 10, "active"];
   const wsT = XLSX.utils.aoa_to_sheet([tastingHeader, tastingExample]);
   wsT["!cols"] = tastingHeader.map(() => ({ wch: 22 }));
   XLSX.utils.book_append_sheet(wb, wsT, "Tasting QR Codes");
@@ -232,6 +246,16 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       }
       const orderRaw = num(r["order_index"]);
       const order = orderRaw === null ? i : Math.max(0, Math.floor(orderRaw));
+      const civRaw = num(r["check_in_value"]);
+      let civ: number | null = null;
+      if (civRaw !== null) {
+        const civInt = Math.floor(civRaw);
+        if (!Number.isFinite(civRaw) || civRaw < 1 || civRaw > 100 || civInt !== civRaw) {
+          issues.push({ level: "error", message: "check_in_value must be a whole number between 1 and 100." });
+        } else {
+          civ = civInt;
+        }
+      }
       return {
         rowNum: i + 2,
         venue_key,
@@ -245,6 +269,7 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         offer_summary: s(r["offer_summary"]) || null,
         order_index: order,
         status: statusParsed === "disabled" ? "inactive" : "active",
+        check_in_value: civ,
         issues,
       };
     })
@@ -300,10 +325,11 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         });
       }
       if (!qr_name) issues.push({ level: "error", message: "QR name is required." });
-      const evRaw = num(r["entry_value"]);
-      const ev = evRaw === null ? 1 : Math.floor(evRaw);
-      if (evRaw !== null && (!Number.isFinite(evRaw) || evRaw < 1 || ev !== evRaw)) {
-        issues.push({ level: "error", message: "Entry value must be a positive whole number." });
+      // Accept either `points` (preferred) or legacy `entry_value` column.
+      const pRaw = num(r["points"] ?? "") ?? num(r["entry_value"]);
+      const points = pRaw === null ? 10 : Math.max(0, Math.floor(pRaw));
+      if (pRaw !== null && (!Number.isFinite(pRaw) || pRaw < 0 || Math.floor(pRaw) !== pRaw)) {
+        issues.push({ level: "error", message: "points must be a whole number 0 or greater." });
       }
       const statusParsed = statusOrDefault(r["status"], "active");
       if (statusParsed === null) {
@@ -314,7 +340,7 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         venue_key,
         qr_name,
         description: s(r["description"]) || null,
-        entry_value: ev,
+        points,
         status: (statusParsed ?? "active") as Status,
         issues,
       };
@@ -591,6 +617,46 @@ export function EventBulkImportSection({
       }
     }
 
+    // ---- Venue check-in values (writes to venue_qr_codes.entry_value for
+    // the venue's active QR row — mirrors the manual admin "Stamp value"
+    // editor). Only runs when the spreadsheet supplied a value.
+    for (let idx = 0; idx < venuesNext.length; idx++) {
+      const v = venuesNext[idx];
+      if (v.check_in_value == null) continue;
+      if (v.result !== "created" && v.result !== "updated") continue;
+      const venueId =
+        v.resultVenueId ?? venueIdByKey.get(v.venue_key.toLowerCase()) ?? null;
+      if (!venueId) continue;
+      const { data: qrRow, error: qrLookupErr } = await supabase
+        .from("venue_qr_codes")
+        .select("id")
+        .eq("venue_id", venueId)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId)
+        .eq("status", "active")
+        .maybeSingle();
+      if (qrLookupErr || !qrRow) {
+        const note =
+          "check_in_value not applied — generate a QR for this venue in the venue editor, then re-import.";
+        venuesNext[idx] = {
+          ...v,
+          resultMessage: v.resultMessage ? `${v.resultMessage} ${note}` : note,
+        };
+        continue;
+      }
+      const { error: qrUpdateErr } = await supabase
+        .from("venue_qr_codes")
+        .update({ entry_value: v.check_in_value })
+        .eq("id", (qrRow as { id: string }).id);
+      if (qrUpdateErr) {
+        const note = `check_in_value not saved: ${qrUpdateErr.message ?? "unknown error"}`;
+        venuesNext[idx] = {
+          ...v,
+          resultMessage: v.resultMessage ? `${v.resultMessage} ${note}` : note,
+        };
+      }
+    }
+
     // ---- Bonus Codes
     const bonusesNext: BonusDraft[] = [];
     for (const b of drafts.bonuses) {
@@ -685,7 +751,7 @@ export function EventBulkImportSection({
           _venue_id: venueId,
           _label: t.qr_name,
           _description: t.description,
-          _points: t.entry_value, // entry_value maps to the QR's points/entry weight
+          _points: t.points,
           _status: t.status,
           _scan_limit_per_passport: null,
           _starts_at: null,
@@ -842,18 +908,24 @@ export function EventBulkImportSection({
               <p className="text-xs text-muted-foreground">No venue rows.</p>
             ) : (
               <PreviewTable
-                rows={drafts.venues.map((v) => ({
-                  rowNum: v.rowNum,
-                  label: v.name || v.venue_key,
-                  status: v.status,
-                  issues: v.issues,
-                  extra:
-                    existingVenueByName.has(v.name.trim().toLowerCase())
-                      ? "Will UPDATE an existing venue with the same name."
-                      : "Will CREATE a new venue.",
-                  result: v.result,
-                  resultMessage: v.resultMessage,
-                }))}
+                rows={drafts.venues.map((v) => {
+                  const action = existingVenueByName.has(v.name.trim().toLowerCase())
+                    ? "Will UPDATE an existing venue with the same name."
+                    : "Will CREATE a new venue.";
+                  const civ =
+                    v.check_in_value != null
+                      ? ` Check-in value: ${v.check_in_value} stamp${v.check_in_value === 1 ? "" : "s"} per QR scan.`
+                      : " Check-in value: leave unchanged.";
+                  return {
+                    rowNum: v.rowNum,
+                    label: v.name || v.venue_key,
+                    status: v.status,
+                    issues: v.issues,
+                    extra: action + civ,
+                    result: v.result,
+                    resultMessage: v.resultMessage,
+                  };
+                })}
               />
             )}
           </PreviewBlock>
@@ -868,9 +940,11 @@ export function EventBulkImportSection({
                   label: b.title || b.code,
                   status: b.status,
                   issues: b.issues,
-                  extra: existingBonusByName.has(b.title.trim().toLowerCase())
-                    ? "Will UPDATE an existing bonus code with the same title."
-                    : "Will CREATE a new bonus code.",
+                  extra:
+                    (existingBonusByName.has(b.title.trim().toLowerCase())
+                      ? "Will UPDATE an existing bonus code with the same title."
+                      : "Will CREATE a new bonus code.") +
+                    ` Bonus points: ${b.points}.`,
                   result: b.result,
                   resultMessage: b.resultMessage,
                 }))}
@@ -888,6 +962,7 @@ export function EventBulkImportSection({
                   label: `${t.qr_name || "—"} (${t.venue_key})`,
                   status: t.status,
                   issues: t.issues,
+                  extra: `Tasting points: ${t.points}.`,
                   result: t.result,
                   resultMessage: t.resultMessage,
                 }))}
