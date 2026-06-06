@@ -144,18 +144,20 @@ export function PublicEventNav({
         </PassportLink>
       ),
     },
-    {
-      key: "map",
-      node: (
-        <Link
-          to="/map"
-          className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-          style={{ color: primary }}
-        >
-          Trail Map
-        </Link>
-      ),
-    },
+    ...(hasMap
+      ? [{
+          key: "map",
+          node: (
+            <Link
+              to="/map"
+              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+              style={{ color: primary }}
+            >
+              Trail Map
+            </Link>
+          ),
+        }]
+      : []),
     {
       key: "venues",
       node: (
