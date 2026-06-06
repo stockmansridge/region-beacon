@@ -151,6 +151,7 @@ function downloadTemplate() {
     "offer_summary",
     "order_index",
     "status",
+    "check_in_value",
   ];
   const venuesExample = [
     "venue_001",
@@ -164,6 +165,7 @@ function downloadTemplate() {
     "Free tasting flight on arrival",
     1,
     "active",
+    1,
   ];
   const wsV = XLSX.utils.aoa_to_sheet([venuesHeader, venuesExample]);
   wsV["!cols"] = venuesHeader.map(() => ({ wch: 18 }));
@@ -175,8 +177,8 @@ function downloadTemplate() {
   wsB["!cols"] = bonusHeader.map(() => ({ wch: 22 }));
   XLSX.utils.book_append_sheet(wb, wsB, "Bonus Codes");
 
-  const tastingHeader = ["venue_key", "qr_name", "description", "entry_value", "status"];
-  const tastingExample = ["venue_001", "Shiraz Tasting", "Try our flagship Shiraz.", 1, "active"];
+  const tastingHeader = ["venue_key", "qr_name", "description", "points", "status"];
+  const tastingExample = ["venue_001", "Shiraz Tasting", "Try our flagship Shiraz.", 10, "active"];
   const wsT = XLSX.utils.aoa_to_sheet([tastingHeader, tastingExample]);
   wsT["!cols"] = tastingHeader.map(() => ({ wch: 22 }));
   XLSX.utils.book_append_sheet(wb, wsT, "Tasting QR Codes");
