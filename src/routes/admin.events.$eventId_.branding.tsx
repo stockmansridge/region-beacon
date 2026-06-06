@@ -33,6 +33,12 @@ import {
   getBackground,
 } from "@/lib/event-backgrounds";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import {
+  EVENT_FONTS,
+  buildGoogleFontsHref,
+  getEventFont,
+  isSupportedEventFont,
+} from "@/lib/event-fonts";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
@@ -213,6 +219,21 @@ function BrandingEditor() {
     };
   }, [agency.status, agencyId, eventId, reloadKey]);
 
+  // Dynamically load the selected Google Font so the preview reflects it.
+  useEffect(() => {
+    const href = buildGoogleFontsHref([form.font_family]);
+    if (!href) return;
+    const existing = document.querySelector<HTMLLinkElement>(
+      `link[data-event-font="${href}"]`,
+    );
+    if (existing) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [form.font_family]);
+
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
 
@@ -234,6 +255,10 @@ function BrandingEditor() {
     }
     if (font_family.length > 100) {
       setValidationError("Font family must be 100 characters or fewer.");
+      return;
+    }
+    if (font_family && !isSupportedEventFont(font_family)) {
+      setValidationError("Pick a font from the list.");
       return;
     }
     if (welcome_copy.length > 1000) {
@@ -712,17 +737,13 @@ function BrandingEditor() {
             </div>
           )}
 
-          <Field label="Font family">
-            <input
-              type="text"
-              value={form.font_family}
-              onChange={(e) => setForm({ ...form, font_family: e.target.value })}
-              placeholder="e.g. Inter, system-ui"
-              disabled={!canEdit || saving}
-              maxLength={100}
-              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </Field>
+          <FontPicker
+            value={form.font_family}
+            onChange={(value) => setForm({ ...form, font_family: value })}
+            disabled={!canEdit || saving}
+            eventName={event.name}
+          />
+
 
           <Field label="Welcome copy">
             <textarea
@@ -820,7 +841,7 @@ function BrandingEditor() {
                   if (p) return p.accent;
                   return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
                 })()}
-                fontFamily={form.font_family.trim() || undefined}
+                fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
                 venueCount={venueCount}
                 venueLabelPlural={resolveVenueLabels({ venue_label_singular: form.venue_label_singular, venue_label_plural: form.venue_label_plural }).plural}
                 logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
@@ -986,6 +1007,16 @@ function AssetUploader({
     kind === "logo"
       ? "Shown in the header of your event page. Square images look best."
       : "Wide hero image shown at the top of your event page.";
+  const recommended =
+    kind === "logo"
+      ? {
+          size: "800 × 800 px (square)",
+          note: "Use a transparent PNG for best results.",
+        }
+      : {
+          size: "1600 × 900 px (16:9)",
+          note: "PNG or JPG. Avoid important detail near the edges — the top of the image is overlaid with the event title.",
+        };
   const limitMB = Math.round(EVENT_ASSET_MAX_BYTES[kind] / (1024 * 1024));
   const accept = EVENT_ASSET_ALLOWED_MIME.join(",");
   const disabled = !canEdit || busy || removing;
@@ -1029,6 +1060,11 @@ function AssetUploader({
         </div>
       </div>
       <p className="text-sm leading-6 text-[#64748B]">{helper}</p>
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2 text-[11px] leading-5 text-[#475569]">
+        <span className="font-semibold text-[#334155]">Recommended size:</span>{" "}
+        {recommended.size}
+        <span className="block text-[#64748B]">{recommended.note}</span>
+      </div>
 
       <div className={`rounded-[16px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-6 ${url ? "" : "text-center"}`}>
         {url ? (
@@ -1346,5 +1382,108 @@ function BackgroundSelector({
   );
 }
 
+// ============================================================================
+// FontPicker
+// ============================================================================
 
+function FontPicker({
+  value,
+  onChange,
+  disabled,
+  eventName,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  eventName: string;
+}) {
+  const selected = getEventFont(value);
+  // If a stored value isn't in the curated list, show "Default" but keep the
+  // raw value visible so the admin understands what's saved.
+  const selectValue = selected ? selected.value : value.trim() ? "__unknown__" : "";
+  const previewStack =
+    selected?.stack ?? (value.trim() ? value.trim() : undefined);
+
+  return (
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <div>
+        <div className="text-sm font-semibold text-[#111827]">Fonts</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Pick a font for your public event page. Leave on{" "}
+          <span className="font-medium">Default</span> to use the GetStampd
+          house font.
+        </p>
+      </div>
+
+      <Field label="Brand font">
+        <select
+          value={selectValue}
+          onChange={(e) => {
+            const next = e.target.value;
+            if (next === "__unknown__") return; // can't be re-selected
+            onChange(next);
+          }}
+          disabled={disabled}
+          className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="">Default (GetStampd)</option>
+          {selectValue === "__unknown__" && (
+            <option value="__unknown__" disabled>
+              {value.trim()} (unavailable — pick a font below)
+            </option>
+          )}
+          {(["Sans", "Serif", "Display"] as const).map((cat) => {
+            const fonts = EVENT_FONTS.filter((f) => f.category === cat);
+            if (fonts.length === 0) return null;
+            return (
+              <optgroup key={cat} label={cat}>
+                {fonts.map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
+        </select>
+      </Field>
+
+      <div className="space-y-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
+        <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">
+          Font preview
+        </div>
+        <div style={previewStack ? { fontFamily: previewStack } : undefined}>
+          <div className="text-[11px] uppercase tracking-wide text-[#64748B]">
+            Heading
+          </div>
+          <div className="mt-0.5 text-2xl font-semibold leading-tight text-[#111827]">
+            {eventName || "Explore Orange Wine Trail"}
+          </div>
+
+          <div className="mt-4 text-[11px] uppercase tracking-wide text-[#64748B]">
+            Body
+          </div>
+          <p className="mt-0.5 text-sm leading-6 text-[#334155]">
+            Collect stamps as you visit participating venues and unlock rewards
+            along the way.
+          </p>
+
+          <div className="mt-4 text-[11px] uppercase tracking-wide text-[#64748B]">
+            Accent
+          </div>
+          <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.22em] text-[#475569]">
+            Your trail passport
+          </div>
+        </div>
+        {!selected && value.trim() && (
+          <div className="rounded-[10px] border border-[#FCD34D] bg-[#FFFBEB] px-3 py-2 text-[11px] text-[#92400E]">
+            Saved font “{value.trim()}” isn’t in the supported list. Pick one
+            above to update; the public page will fall back to the default
+            until you do.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
