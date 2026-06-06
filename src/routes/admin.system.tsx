@@ -16,13 +16,15 @@ import {
   AlertCircle,
   RefreshCw,
   X,
+  Trash2,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { useAuth } from "@/hooks/use-auth";
-import { formatRoleLabel } from "@/lib/role-labels";
+import { formatRoleLabel, formatMemberType } from "@/lib/role-labels";
 import { RESERVED_SUBDOMAINS } from "@/lib/reserved-subdomains";
 import { getPlanByCode, normalizePlanCode } from "@/lib/getstampd-pricing";
 import {
@@ -54,6 +56,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export const Route = createFileRoute("/admin/system")({
   head: () => ({ meta: [{ title: "System Admin — GetStampd" }] }),
