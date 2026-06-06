@@ -3747,7 +3747,7 @@ function EventDetail() {
                               )}
                             </td>
                           )}
-                          {canEdit && (
+                          {canEdit && showVenueQrControls && (
                             <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
                               {hasActiveQr ? (
                                 <div className="flex flex-col gap-1.5">
