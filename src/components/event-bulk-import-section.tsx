@@ -339,10 +339,19 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       }
       if (!qr_name) issues.push({ level: "error", message: "QR name is required." });
       // Accept either `points` (preferred) or legacy `entry_value` column.
-      const pRaw = num(r["points"] ?? "") ?? num(r["entry_value"]);
+      const pointsCell = s(r["points"]);
+      const legacyCell = s(r["entry_value"]);
+      const usedLegacy = pointsCell === "" && legacyCell !== "";
+      const pRaw = pointsCell !== "" ? num(pointsCell) : num(legacyCell);
       const points = pRaw === null ? 10 : Math.max(0, Math.floor(pRaw));
       if (pRaw !== null && (!Number.isFinite(pRaw) || pRaw < 0 || Math.floor(pRaw) !== pRaw)) {
-        issues.push({ level: "error", message: "points must be a whole number 0 or greater." });
+        issues.push({ level: "error", message: "Tasting points must be 0 or higher." });
+      }
+      if (usedLegacy) {
+        issues.push({
+          level: "warning",
+          message: "Tasting QR Codes should use points. Legacy entry_value was accepted and converted to points.",
+        });
       }
       const statusParsed = statusOrDefault(r["status"], "active");
       if (statusParsed === null) {
