@@ -1060,6 +1060,11 @@ function AssetUploader({
         </div>
       </div>
       <p className="text-sm leading-6 text-[#64748B]">{helper}</p>
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2 text-[11px] leading-5 text-[#475569]">
+        <span className="font-semibold text-[#334155]">Recommended size:</span>{" "}
+        {recommended.size}
+        <span className="block text-[#64748B]">{recommended.note}</span>
+      </div>
 
       <div className={`rounded-[16px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-6 ${url ? "" : "text-center"}`}>
         {url ? (
