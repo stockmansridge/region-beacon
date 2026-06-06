@@ -229,8 +229,9 @@ function Login() {
 
         {showCompleteSignupBanner && (
           <div className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-xs leading-5 text-[#334155]">
-            <strong className="font-semibold">Email confirmed.</strong> Sign in to finish creating
-            your organisation.
+            <strong className="font-semibold">Confirmation link opened.</strong> Sign in below to
+            finish creating your organisation. If you haven't confirmed your email yet, please
+            click the link in your inbox first.
           </div>
         )}
 
