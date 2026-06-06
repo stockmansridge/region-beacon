@@ -339,6 +339,7 @@ export function PublicEventNav({
           accent={accent}
           hasTerms={hasTerms}
           hasFaq={hasFaq}
+          hasMap={hasMap}
           hasPrivacy={hasPrivacy}
           passportHref={passportHref}
           passportLabel={passportLabel}
@@ -388,6 +389,7 @@ function MoreSheet({
   accent,
   hasTerms,
   hasFaq,
+  hasMap,
   hasPrivacy,
   passportHref,
   passportLabel,
@@ -398,6 +400,7 @@ function MoreSheet({
   accent: string;
   hasTerms: boolean;
   hasFaq: boolean;
+  hasMap: boolean;
   hasPrivacy: boolean;
   passportHref: string | null;
   passportLabel: string;
@@ -461,12 +464,14 @@ function MoreSheet({
               )}
             </li>
           )}
-          <li>
-            <Link to="/map" onClick={onClose} className={rowClass}>
-              <MapIcon className="h-4 w-4" />
-              Trail Map
-            </Link>
-          </li>
+          {hasMap && (
+            <li>
+              <Link to="/map" onClick={onClose} className={rowClass}>
+                <MapIcon className="h-4 w-4" />
+                Trail Map
+              </Link>
+            </li>
+          )}
           <li>
             <Link to="/venues" onClick={onClose} className={rowClass}>
               <MapPin className="h-4 w-4" />
