@@ -325,10 +325,11 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         });
       }
       if (!qr_name) issues.push({ level: "error", message: "QR name is required." });
-      const evRaw = num(r["entry_value"]);
-      const ev = evRaw === null ? 1 : Math.floor(evRaw);
-      if (evRaw !== null && (!Number.isFinite(evRaw) || evRaw < 1 || ev !== evRaw)) {
-        issues.push({ level: "error", message: "Entry value must be a positive whole number." });
+      // Accept either `points` (preferred) or legacy `entry_value` column.
+      const pRaw = num(r["points"] ?? "") ?? num(r["entry_value"]);
+      const points = pRaw === null ? 10 : Math.max(0, Math.floor(pRaw));
+      if (pRaw !== null && (!Number.isFinite(pRaw) || pRaw < 0 || Math.floor(pRaw) !== pRaw)) {
+        issues.push({ level: "error", message: "points must be a whole number 0 or greater." });
       }
       const statusParsed = statusOrDefault(r["status"], "active");
       if (statusParsed === null) {
@@ -339,7 +340,7 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         venue_key,
         qr_name,
         description: s(r["description"]) || null,
-        entry_value: ev,
+        points,
         status: (statusParsed ?? "active") as Status,
         issues,
       };
