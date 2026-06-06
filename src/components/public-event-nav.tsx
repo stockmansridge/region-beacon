@@ -485,19 +485,11 @@ function MoreSheet({
               </Link>
             </li>
           )}
-          {hasTerms && (
+          {(hasTerms || hasPrivacy) && (
             <li>
-              <Link to="/terms" onClick={onClose} className={rowClass}>
+              <Link to="/terms-privacy" onClick={onClose} className={rowClass}>
                 <FileText className="h-4 w-4" />
-                Terms
-              </Link>
-            </li>
-          )}
-          {hasPrivacy && (
-            <li>
-              <Link to="/privacy" onClick={onClose} className={rowClass}>
-                <ShieldCheck className="h-4 w-4" />
-                Privacy
+                Terms & Privacy
               </Link>
             </li>
           )}
