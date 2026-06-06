@@ -89,6 +89,8 @@ type Overview = {
   checkins_7d: number;
 };
 
+type PlanSource = "manual_override" | "subscription" | "default";
+
 type OrganisationRow = {
   agency_id: string;
   name: string;
@@ -103,7 +105,34 @@ type OrganisationRow = {
   venue_count: number;
   passport_count: number;
   checkin_count: number;
+  effective_plan_code?: string | null;
+  plan_source?: PlanSource | string | null;
+  manual_plan_override?: string | null;
+  manual_plan_override_at?: string | null;
 };
+
+const PLAN_SOURCE_META: Record<string, { label: string; cls: string }> = {
+  manual_override: { label: "Manual override", cls: "bg-[#FEF3C7] text-[#92400E]" },
+  subscription: { label: "Subscription", cls: "bg-[#DCFCE7] text-[#166534]" },
+  default: { label: "Default", cls: "bg-[#F1F5F9] text-[#475569]" },
+};
+
+function PlanCell({ row }: { row: OrganisationRow }) {
+  const code = row.effective_plan_code ?? row.manual_plan_override ?? "free";
+  const plan = getPlanByCode(code);
+  const source = (row.plan_source ?? (row.manual_plan_override ? "manual_override" : "default")) as string;
+  const meta = PLAN_SOURCE_META[source] ?? PLAN_SOURCE_META.default;
+  return (
+    <div>
+      <div className="text-sm font-medium text-[#0F172A]">{plan.name}</div>
+      <span
+        className={`mt-0.5 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}
+      >
+        {meta.label}
+      </span>
+    </div>
+  );
+}
 
 type UserRow = {
   user_id: string | null;
