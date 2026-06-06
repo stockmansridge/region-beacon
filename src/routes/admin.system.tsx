@@ -1407,24 +1407,72 @@ function OrganisationDetailDrawer({
                 <div className="text-xs text-[#64748B]">No members.</div>
               ) : (
                 <ul className="divide-y divide-[#EEF2F7]">
-                  {users.map((u, i) => (
-                    <li key={`${u.user_id ?? u.invited_email}-${i}`} className="flex items-center justify-between py-2 text-sm">
-                      <div>
-                        <div className="text-[#0F172A]">{u.email ?? u.invited_email ?? "—"}</div>
-                        <div className="text-[11px] text-[#64748B]">{formatRoleLabel(u.role)}</div>
-                      </div>
-                      {u.accepted_at ? statusPill("active") : statusPill("draft")}
-                    </li>
-                  ))}
+                  {users.map((u, i) => {
+                    const memberType = formatMemberType(u);
+                    const isSelf = !!currentUserId && u.user_id === currentUserId;
+                    const email = u.email ?? u.invited_email ?? "—";
+                    return (
+                      <li
+                        key={`${u.user_id ?? u.invited_email}-${i}`}
+                        className="flex items-center justify-between gap-2 py-2 text-sm"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-[#0F172A]">{email}</div>
+                          <div className="mt-0.5 flex items-center gap-1.5">
+                            <span className="inline-flex rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10px] font-medium text-[#1F56C5]">
+                              {memberType}
+                            </span>
+                            <span className="text-[10px] text-[#94A3B8]">
+                              Joined {fmtDate(u.accepted_at ?? u.invited_at ?? u.created_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {u.accepted_at || u.scope === "platform"
+                            ? statusPill("active")
+                            : statusPill("draft")}
+                          {u.user_id ? (
+                            <button
+                              type="button"
+                              disabled={isSelf}
+                              title={
+                                isSelf
+                                  ? "You cannot delete your own account"
+                                  : "Delete user"
+                              }
+                              onClick={() =>
+                                setDeleteTarget({
+                                  user_id: u.user_id!,
+                                  email: u.email ?? u.invited_email,
+                                  member_type: memberType,
+                                  agency_names: org.name ? [org.name] : [],
+                                })
+                              }
+                              className="inline-flex items-center justify-center rounded-[8px] border border-[#FECACA] bg-white p-1.5 text-[#DC2626] hover:bg-[#FEF2F2] disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </Section>
           </>
         ) : null}
       </SheetContent>
+      <DeleteUserDialog
+        target={deleteTarget}
+        currentUserId={currentUserId}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={() => setRefreshTick((t) => t + 1)}
+      />
     </Sheet>
   );
 }
+
 
 // -------- Users ----------------------------------------------------------
 
