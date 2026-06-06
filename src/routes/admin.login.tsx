@@ -19,6 +19,26 @@ export const Route = createFileRoute("/admin/login")({
 const SUPPORT_EMAIL = "jonathan@stockmansridge.com.au";
 const GENERIC_AUTH_ERROR = "Sign in failed. Check your credentials and try again.";
 
+/**
+ * Map Supabase auth error messages to user-friendly copy while still
+ * preserving the real reason (so we can distinguish "invalid credentials"
+ * from "email not confirmed", etc.).
+ */
+function describeSignInError(message: string | undefined): string {
+  const msg = (message || "").trim();
+  if (!msg) return GENERIC_AUTH_ERROR;
+  if (/email not confirmed/i.test(msg)) {
+    return "Email not confirmed yet. Please click the confirmation link in your inbox, then try again.";
+  }
+  if (/invalid login credentials/i.test(msg)) {
+    return "Invalid email or password. If you just signed up, make sure you've confirmed your email first.";
+  }
+  if (/email rate limit|over.*rate limit|too many/i.test(msg)) {
+    return "Too many attempts. Please wait a minute and try again.";
+  }
+  return msg;
+}
+
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
