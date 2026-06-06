@@ -3176,9 +3176,7 @@ function EventDetail() {
                         <div className="flex flex-wrap items-center gap-3">
                           <span className="text-sm text-[#111827]">
                             {qr
-                              ? `${qr.entry_value ?? 1} ${
-                                  (qr.entry_value ?? 1) === 1 ? "entry" : "entries"
-                                } per scan`
+                              ? `${qr.entry_value ?? 1} stamp${(qr.entry_value ?? 1) === 1 ? "" : "s"} per QR scan`
                               : "Not set — no QR code yet"}
                           </span>
                           <button
@@ -3186,7 +3184,7 @@ function EventDetail() {
                             onClick={() => setVenueEditorTab("qr")}
                             className="inline-flex h-8 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-xs font-semibold text-[#1F56C5] hover:bg-[#F8FAFC]"
                           >
-                            Manage in Venue QR →
+                            Manage in Venue QR
                           </button>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
