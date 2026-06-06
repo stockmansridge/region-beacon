@@ -44,7 +44,7 @@ begin
   if p_passport_id is not null then
     select event_id into v_passport_event
     from public.passports
-    where id = p_passport_id and deleted_at is null;
+    where id = p_passport_id;
     if v_passport_event is null or v_passport_event <> p_event_id then
       -- Treat as anonymous viewer.
       p_passport_id := null;

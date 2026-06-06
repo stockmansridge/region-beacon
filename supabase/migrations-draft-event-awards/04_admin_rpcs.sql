@@ -77,7 +77,6 @@ begin
   left join passport_points pp on pp.passport_id = p.id
   left join passport_visits pv on pv.passport_id = p.id
   where p.event_id = aw.event_id
-    and p.deleted_at is null
     and coalesce(pp.total_points, 0) >= aw.points_required
     and (
       aw.requires_all_locations = false

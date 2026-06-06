@@ -185,7 +185,28 @@ export async function uploadAwardImage(args: {
       cacheControl: "3600",
     });
   if (error) {
-    return { ok: false, error: error.message || "Upload failed." };
+    // Surface the real Supabase storage error so admins can diagnose
+    // RLS / path-policy / mime-type failures instead of a generic message.
+    const e = error as {
+      message?: string;
+      error?: string;
+      statusCode?: string | number;
+      name?: string;
+    };
+    const parts = [
+      e.message || e.error || "Upload failed.",
+      e.statusCode ? `status ${e.statusCode}` : null,
+      `bucket ${EVENT_ASSETS_BUCKET}`,
+      `path ${path}`,
+    ].filter(Boolean);
+    // eslint-disable-next-line no-console
+    console.error("Award image upload failed", {
+      bucket: EVENT_ASSETS_BUCKET,
+      path,
+      file: { name: args.file.name, type: args.file.type, size: args.file.size },
+      error,
+    });
+    return { ok: false, error: parts.join(" · ") };
   }
   const { data } = supabase.storage.from(EVENT_ASSETS_BUCKET).getPublicUrl(path);
   return { ok: true, path, publicUrl: data.publicUrl };
