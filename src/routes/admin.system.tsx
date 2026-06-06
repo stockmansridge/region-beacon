@@ -1574,18 +1574,20 @@ function UsersSection() {
           <TableHeader>
             <TableRow className="bg-[#F8FAFC]">
               <TableHead>Email</TableHead>
+              <TableHead>Member type</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Organisation</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Joined / invited</TableHead>
+              <TableHead className="w-[60px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={5} />
+              <LoadingRow cols={7} />
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-sm text-[#64748B]">
+                <TableCell colSpan={7} className="py-8 text-center text-sm text-[#64748B]">
                   No users match.
                 </TableCell>
               </TableRow>
@@ -1597,6 +1599,8 @@ function UsersSection() {
                     : r.accepted_at
                       ? "active"
                       : "pending invite";
+                const memberType = formatMemberType(r);
+                const isSelf = !!currentUserId && r.user_id === currentUserId;
                 return (
                   <TableRow
                     key={`${r.user_id ?? r.invited_email ?? "row"}-${r.role}-${idx}`}
@@ -1607,7 +1611,22 @@ function UsersSection() {
                       {r.email ?? r.invited_email ?? "—"}
                     </TableCell>
                     <TableCell>
-                      <span className="inline-flex rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[11px] font-medium text-[#1F56C5]">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          memberType === "Pending Invite"
+                            ? "bg-[#FEF3C7] text-[#92400E]"
+                            : memberType === "Platform Admin"
+                              ? "bg-[#FEE2E2] text-[#991B1B]"
+                              : memberType === "Owner"
+                                ? "bg-[#DCFCE7] text-[#166534]"
+                                : "bg-[#EAF2FF] text-[#1F56C5]"
+                        }`}
+                      >
+                        {memberType}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[11px] font-medium text-[#475569]">
                         {formatRoleLabel(r.role)}
                       </span>
                     </TableCell>
@@ -1620,6 +1639,32 @@ function UsersSection() {
                     <TableCell className="text-sm text-[#64748B]">
                       {fmtDate(r.accepted_at ?? r.invited_at ?? r.created_at)}
                     </TableCell>
+                    <TableCell className="text-right">
+                      {r.user_id ? (
+                        <button
+                          type="button"
+                          disabled={isSelf}
+                          title={isSelf ? "You cannot delete your own account" : "Delete user"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const agencyNames = (rows ?? [])
+                              .filter(
+                                (x) => x.user_id === r.user_id && x.agency_name,
+                              )
+                              .map((x) => x.agency_name as string);
+                            setDeleteTarget({
+                              user_id: r.user_id!,
+                              email: r.email ?? r.invited_email,
+                              member_type: memberType,
+                              agency_names: Array.from(new Set(agencyNames)),
+                            });
+                          }}
+                          className="inline-flex items-center justify-center rounded-[8px] border border-[#FECACA] bg-white p-1.5 text-[#DC2626] hover:bg-[#FEF2F2] disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                    </TableCell>
                   </TableRow>
                 );
               })
@@ -1629,9 +1674,16 @@ function UsersSection() {
       </Card>
 
       <UserDetailDrawer user={selected} allRows={rows} onClose={() => setSelected(null)} />
+      <DeleteUserDialog
+        target={deleteTarget}
+        currentUserId={currentUserId}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={load}
+      />
     </div>
   );
 }
+
 
 function UserDetailDrawer({
   user,
