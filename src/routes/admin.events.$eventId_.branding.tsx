@@ -822,7 +822,7 @@ function BrandingEditor() {
                   if (p) return p.accent;
                   return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
                 })()}
-                fontFamily={form.font_family.trim() || undefined}
+                fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
                 venueCount={venueCount}
                 venueLabelPlural={resolveVenueLabels({ venue_label_singular: form.venue_label_singular, venue_label_plural: form.venue_label_plural }).plural}
                 logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
