@@ -3694,7 +3694,7 @@ function EventDetail() {
                             )}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
-                          {canEdit && (
+                          {canEdit && showVenueQrControls && (
                             <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
                               {!hasActiveQr ? (
                                 <span className="text-xs text-muted-foreground/70">No QR yet</span>
