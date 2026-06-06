@@ -338,8 +338,8 @@ function PassportView({
   const [supportCopied, setSupportCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
-  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
   const { paletteKey, backgroundKey } = branding;
+
 
 
   const labelSingular = stamps.labelSingular;
