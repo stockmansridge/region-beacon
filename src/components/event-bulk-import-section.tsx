@@ -395,17 +395,22 @@ export function EventBulkImportSection({
   const [existingBonusCodes, setExistingBonusCodes] = useState<ExistingBonus[]>([]);
 
   // Fetch existing bonus codes once so we can match by title for updates.
-  useState(() => {
-    void (async () => {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
       const { data } = await supabase
         .from("event_bonus_codes")
         .select("id, name")
         .eq("agency_id", agencyId)
         .eq("event_id", eventId);
-      if (Array.isArray(data)) setExistingBonusCodes(data as ExistingBonus[]);
+      if (!cancelled && Array.isArray(data)) {
+        setExistingBonusCodes(data as ExistingBonus[]);
+      }
     })();
-    return null;
-  });
+    return () => {
+      cancelled = true;
+    };
+  }, [agencyId, eventId]);
 
   const existingVenueByName = useMemo(() => {
     const m = new Map<string, string>();
