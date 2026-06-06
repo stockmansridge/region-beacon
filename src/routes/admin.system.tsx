@@ -870,6 +870,7 @@ function OrganisationsSection({
   const [q, setQ] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [selected, setSelected] = useState<OrganisationRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<OrganisationRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -1002,25 +1003,35 @@ function OrganisationsSection({
                   <TableCell>{statusPill(r.status)}</TableCell>
                   <TableCell className="text-sm text-[#64748B]">{fmtDate(r.created_at)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    {r.slug ? (
+                    <div className="flex items-center justify-end gap-1">
+                      {r.slug ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await copyToClipboard(r.slug!);
+                            setCopied(r.agency_id);
+                            setTimeout(() => setCopied((c) => (c === r.agency_id ? null : c)), 1500);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                          title="Copy organisation slug"
+                        >
+                          {copied === r.agency_id ? (
+                            <CheckCircle2 className="h-3 w-3 text-[#16A34A]" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                          Slug
+                        </button>
+                      ) : null}
                       <button
                         type="button"
-                        onClick={async () => {
-                          await copyToClipboard(r.slug!);
-                          setCopied(r.agency_id);
-                          setTimeout(() => setCopied((c) => (c === r.agency_id ? null : c)), 1500);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
-                        title="Copy organisation slug"
+                        onClick={() => setDeleteTarget(r)}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2]"
+                        title="Delete organisation"
                       >
-                        {copied === r.agency_id ? (
-                          <CheckCircle2 className="h-3 w-3 text-[#16A34A]" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                        Slug
+                        <Trash2 className="h-3 w-3" />
                       </button>
-                    ) : null}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -1030,9 +1041,127 @@ function OrganisationsSection({
       </Card>
 
       <OrganisationDetailDrawer org={selected} onClose={() => setSelected(null)} onUpdated={load} />
+      <DeleteOrganisationDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={load}
+      />
     </div>
   );
 }
+
+function DeleteOrganisationDialog({
+  target,
+  onClose,
+  onDeleted,
+}: {
+  target: OrganisationRow | null;
+  onClose: () => void;
+  onDeleted: () => void | Promise<void>;
+}) {
+  const [confirm, setConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (target) setConfirm("");
+  }, [target]);
+
+  const ready = confirm.trim().toUpperCase() === "DELETE";
+
+  const handleDelete = async () => {
+    if (!target || !ready) return;
+    setDeleting(true);
+    const { data, error } = await supabase.rpc("system_admin_delete_organisation", {
+      _agency_id: target.agency_id,
+    });
+    setDeleting(false);
+    if (error) {
+      toast.error(error.message || "Could not delete organisation.");
+      return;
+    }
+    const payload = data as { success?: boolean } | null;
+    if (!payload?.success) {
+      toast.error("Delete failed. No success flag returned.");
+      return;
+    }
+    toast.success(`Deleted ${target.name}.`);
+    await onDeleted();
+    onClose();
+  };
+
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !deleting) onClose(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-[#991B1B]">
+            <Trash2 className="h-4 w-4" />
+            Delete organisation
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm text-[#475569]">
+              <p>
+                This removes the organisation from the System Admin list and
+                hides it from customer-facing views. Events, venues, passports,
+                check-ins, analytics, and billing records are preserved and can
+                be restored by a platform admin if needed.
+              </p>
+              {target ? (
+                <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs text-[#0F172A]">
+                  <div>
+                    <span className="text-[#64748B]">Name: </span>
+                    <span className="font-medium">{target.name}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Slug: </span>
+                    <span className="font-medium">{target.slug ?? "—"}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Owner: </span>
+                    <span className="font-medium">{target.owner_email ?? "—"}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Events / Venues / Passports: </span>
+                    <span className="font-medium">
+                      {target.event_count} / {target.venue_count} / {target.passport_count}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+              <div>
+                <label className="text-[11px] font-medium text-[#0F172A]">
+                  Type <code className="rounded bg-[#F1F5F9] px-1">DELETE</code> to confirm
+                </label>
+                <Input
+                  autoFocus
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="DELETE"
+                  className="mt-1"
+                  disabled={deleting}
+                />
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!ready || deleting}
+            onClick={(e) => {
+              e.preventDefault();
+              void handleDelete();
+            }}
+            className="bg-[#DC2626] text-white hover:bg-[#B91C1C]"
+          >
+            {deleting ? "Deleting…" : "Delete organisation"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+
 
 function OrganisationDetailDrawer({
   org,
