@@ -1244,8 +1244,35 @@ function OrganisationDetailDrawer({
               ) : (
                 <div className="space-y-3">
                   <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3">
-                    <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
-                      Effective plan
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
+                        Effective plan
+                      </div>
+                      {(() => {
+                        const source = planLimits?.plan_source ?? "default";
+                        const labelMap: Record<string, { label: string; cls: string }> = {
+                          manual_override: {
+                            label: "Manual override",
+                            cls: "bg-[#FEF3C7] text-[#92400E]",
+                          },
+                          subscription: {
+                            label: "Subscription",
+                            cls: "bg-[#DCFCE7] text-[#166534]",
+                          },
+                          default: {
+                            label: "Default",
+                            cls: "bg-[#F1F5F9] text-[#475569]",
+                          },
+                        };
+                        const meta = labelMap[source] ?? labelMap.default;
+                        return (
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}
+                          >
+                            Source: {meta.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="mt-1 text-sm font-semibold text-[#0F172A]">
                       {getPlanByCode(planLimits?.plan_code).name}
@@ -1265,6 +1292,7 @@ function OrganisationDetailDrawer({
                       </div>
                     </div>
                   </div>
+
 
                   <div className="rounded-[10px] border border-[#E6ECF4] bg-white p-3">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
