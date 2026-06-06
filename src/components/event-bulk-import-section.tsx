@@ -376,14 +376,12 @@ export function EventBulkImportSection({
   agencyId,
   eventId,
   existingVenues,
-  existingBonusCodes,
   canEdit,
   onImported,
 }: {
   agencyId: string;
   eventId: string;
   existingVenues: ExistingVenue[];
-  existingBonusCodes: ExistingBonus[];
   canEdit: boolean;
   onImported: () => void;
 }) {
@@ -394,6 +392,20 @@ export function EventBulkImportSection({
   const [missingSheets, setMissingSheets] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [importDone, setImportDone] = useState(false);
+  const [existingBonusCodes, setExistingBonusCodes] = useState<ExistingBonus[]>([]);
+
+  // Fetch existing bonus codes once so we can match by title for updates.
+  useState(() => {
+    void (async () => {
+      const { data } = await supabase
+        .from("event_bonus_codes")
+        .select("id, name")
+        .eq("agency_id", agencyId)
+        .eq("event_id", eventId);
+      if (Array.isArray(data)) setExistingBonusCodes(data as ExistingBonus[]);
+    })();
+    return null;
+  });
 
   const existingVenueByName = useMemo(() => {
     const m = new Map<string, string>();
