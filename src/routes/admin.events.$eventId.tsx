@@ -3964,6 +3964,7 @@ function EventDetail() {
                   .filter((v) => v.deleted_at == null)
                   .map((v) => ({ id: v.id, name: v.name }))}
                 existingBonusCodes={[]}
+
                 canEdit={canEdit}
                 onImported={() => setReloadKey((k) => k + 1)}
               />
