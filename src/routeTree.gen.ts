@@ -52,6 +52,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain.index'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
+import { Route as LiveSubdomainTermsPrivacyRouteImport } from './routes/live.$subdomain.terms-privacy'
 import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
 import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
 import { Route as LiveSubdomainOffersRouteImport } from './routes/live.$subdomain.offers'
@@ -285,6 +286,12 @@ const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => AdminRoute,
 } as any)
+const LiveSubdomainTermsPrivacyRoute =
+  LiveSubdomainTermsPrivacyRouteImport.update({
+    id: '/live/$subdomain/terms-privacy',
+    path: '/live/$subdomain/terms-privacy',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LiveSubdomainTermsRoute = LiveSubdomainTermsRouteImport.update({
   id: '/live/$subdomain/terms',
   path: '/live/$subdomain/terms',
@@ -430,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
+  '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -491,6 +499,7 @@ export interface FileRoutesByTo {
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
+  '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events': typeof AdminEventsIndexRoute
   '/live/$subdomain': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -554,6 +563,7 @@ export interface FileRoutesById {
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
+  '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
@@ -618,6 +628,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
+    | '/live/$subdomain/terms-privacy'
     | '/admin/events/'
     | '/live/$subdomain/'
     | '/admin/events/$eventId/branding'
@@ -679,6 +690,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
+    | '/live/$subdomain/terms-privacy'
     | '/admin/events'
     | '/live/$subdomain'
     | '/admin/events/$eventId/branding'
@@ -741,6 +753,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
+    | '/live/$subdomain/terms-privacy'
     | '/admin/events/'
     | '/live/$subdomain/'
     | '/admin/events/$eventId_/branding'
@@ -795,6 +808,7 @@ export interface RootRouteChildren {
   LiveSubdomainOffersRoute: typeof LiveSubdomainOffersRoute
   LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
   LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
+  LiveSubdomainTermsPrivacyRoute: typeof LiveSubdomainTermsPrivacyRoute
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
   LiveSubdomainVenuesVenueIdRoute: typeof LiveSubdomainVenuesVenueIdRoute
@@ -1104,6 +1118,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/live/$subdomain/terms-privacy': {
+      id: '/live/$subdomain/terms-privacy'
+      path: '/live/$subdomain/terms-privacy'
+      fullPath: '/live/$subdomain/terms-privacy'
+      preLoaderRoute: typeof LiveSubdomainTermsPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/terms': {
       id: '/live/$subdomain/terms'
       path: '/live/$subdomain/terms'
@@ -1324,6 +1345,7 @@ const rootRouteChildren: RootRouteChildren = {
   LiveSubdomainOffersRoute: LiveSubdomainOffersRoute,
   LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
   LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
+  LiveSubdomainTermsPrivacyRoute: LiveSubdomainTermsPrivacyRoute,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
   LiveSubdomainVenuesVenueIdRoute: LiveSubdomainVenuesVenueIdRoute,
