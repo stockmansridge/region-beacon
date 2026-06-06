@@ -98,8 +98,10 @@ as $$
   select * from venue_level
 $$;
 
+revoke all on function public.event_assets_path_parts(text) from public;
+revoke all on function public.event_assets_path_parts(text) from anon;
 grant execute on function public.event_assets_path_parts(text)
-  to authenticated, anon;
+  to authenticated, service_role;
 
 -- Write gate used by the storage.objects policies. This preserves the same
 -- permission rule as the original event-assets uploader: platform_admin OR
@@ -161,7 +163,10 @@ begin
 end;
 $$;
 
-grant execute on function public.can_write_event_asset(text) to authenticated;
+revoke all on function public.can_write_event_asset(text) from public;
+revoke all on function public.can_write_event_asset(text) from anon;
+grant execute on function public.can_write_event_asset(text)
+  to authenticated, service_role;
 
 -- Restore storage.objects policies so all writes go through the fixed helper.
 create policy "event_assets_public_read"
