@@ -71,12 +71,12 @@ export function readPendingOrganisationSignup(): PendingOrganisationSignup | nul
     if (
       !parsed ||
       typeof parsed.businessName !== "string" ||
-      typeof parsed.organisationUrlName !== "string" ||
       typeof parsed.createdAt !== "string"
     ) {
       ls.removeItem(PENDING_ORG_SIGNUP_KEY);
       return null;
     }
+
     const age = Date.now() - new Date(parsed.createdAt).getTime();
     if (!Number.isFinite(age) || age > MAX_AGE_MS) {
       ls.removeItem(PENDING_ORG_SIGNUP_KEY);
