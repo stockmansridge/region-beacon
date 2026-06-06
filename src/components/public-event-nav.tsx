@@ -394,6 +394,7 @@ function MoreSheet({
   hasTerms,
   hasFaq,
   hasMap,
+  hasAwards,
   hasPrivacy,
   passportHref,
   passportLabel,
@@ -405,6 +406,7 @@ function MoreSheet({
   hasTerms: boolean;
   hasFaq: boolean;
   hasMap: boolean;
+  hasAwards: boolean;
   hasPrivacy: boolean;
   passportHref: string | null;
   passportLabel: string;
@@ -494,6 +496,14 @@ function MoreSheet({
               Leaderboard
             </Link>
           </li>
+          {hasAwards && (
+            <li>
+              <Link to="/awards" onClick={onClose} className={rowClass}>
+                <Award className="h-4 w-4" />
+                Awards
+              </Link>
+            </li>
+          )}
           {hasFaq && (
             <li>
               <Link to="/faq" onClick={onClose} className={rowClass}>
