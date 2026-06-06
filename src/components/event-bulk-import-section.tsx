@@ -617,6 +617,46 @@ export function EventBulkImportSection({
       }
     }
 
+    // ---- Venue check-in values (writes to venue_qr_codes.entry_value for
+    // the venue's active QR row — mirrors the manual admin "Stamp value"
+    // editor). Only runs when the spreadsheet supplied a value.
+    for (let idx = 0; idx < venuesNext.length; idx++) {
+      const v = venuesNext[idx];
+      if (v.check_in_value == null) continue;
+      if (v.result !== "created" && v.result !== "updated") continue;
+      const venueId =
+        v.resultVenueId ?? venueIdByKey.get(v.venue_key.toLowerCase()) ?? null;
+      if (!venueId) continue;
+      const { data: qrRow, error: qrLookupErr } = await supabase
+        .from("venue_qr_codes")
+        .select("id")
+        .eq("venue_id", venueId)
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId)
+        .eq("status", "active")
+        .maybeSingle();
+      if (qrLookupErr || !qrRow) {
+        const note =
+          "check_in_value not applied — generate a QR for this venue in the venue editor, then re-import.";
+        venuesNext[idx] = {
+          ...v,
+          resultMessage: v.resultMessage ? `${v.resultMessage} ${note}` : note,
+        };
+        continue;
+      }
+      const { error: qrUpdateErr } = await supabase
+        .from("venue_qr_codes")
+        .update({ entry_value: v.check_in_value })
+        .eq("id", (qrRow as { id: string }).id);
+      if (qrUpdateErr) {
+        const note = `check_in_value not saved: ${qrUpdateErr.message ?? "unknown error"}`;
+        venuesNext[idx] = {
+          ...v,
+          resultMessage: v.resultMessage ? `${v.resultMessage} ${note}` : note,
+        };
+      }
+    }
+
     // ---- Bonus Codes
     const bonusesNext: BonusDraft[] = [];
     for (const b of drafts.bonuses) {
