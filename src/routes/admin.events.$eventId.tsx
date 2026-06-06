@@ -11,6 +11,7 @@ import { AdminEventParticipantsSection } from "@/components/admin-event-particip
 import { EventFaqSection } from "@/components/event-faq-section";
 import { EventMapSection } from "@/components/event-map-section";
 import { VenueTastingQrSection } from "@/components/venue-tasting-qr-section";
+import { EventBulkImportSection } from "@/components/event-bulk-import-section";
 
 import {
   deleteVenueAssetSafely,
