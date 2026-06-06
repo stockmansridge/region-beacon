@@ -1382,5 +1382,108 @@ function BackgroundSelector({
   );
 }
 
+// ============================================================================
+// FontPicker
+// ============================================================================
 
+function FontPicker({
+  value,
+  onChange,
+  disabled,
+  eventName,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  eventName: string;
+}) {
+  const selected = getEventFont(value);
+  // If a stored value isn't in the curated list, show "Default" but keep the
+  // raw value visible so the admin understands what's saved.
+  const selectValue = selected ? selected.value : value.trim() ? "__unknown__" : "";
+  const previewStack =
+    selected?.stack ?? (value.trim() ? value.trim() : undefined);
+
+  return (
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <div>
+        <div className="text-sm font-semibold text-[#111827]">Fonts</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Pick a font for your public event page. Leave on{" "}
+          <span className="font-medium">Default</span> to use the GetStampd
+          house font.
+        </p>
+      </div>
+
+      <Field label="Brand font">
+        <select
+          value={selectValue}
+          onChange={(e) => {
+            const next = e.target.value;
+            if (next === "__unknown__") return; // can't be re-selected
+            onChange(next);
+          }}
+          disabled={disabled}
+          className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="">Default (GetStampd)</option>
+          {selectValue === "__unknown__" && (
+            <option value="__unknown__" disabled>
+              {value.trim()} (unavailable — pick a font below)
+            </option>
+          )}
+          {(["Sans", "Serif", "Display"] as const).map((cat) => {
+            const fonts = EVENT_FONTS.filter((f) => f.category === cat);
+            if (fonts.length === 0) return null;
+            return (
+              <optgroup key={cat} label={cat}>
+                {fonts.map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
+        </select>
+      </Field>
+
+      <div className="space-y-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
+        <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">
+          Font preview
+        </div>
+        <div style={previewStack ? { fontFamily: previewStack } : undefined}>
+          <div className="text-[11px] uppercase tracking-wide text-[#64748B]">
+            Heading
+          </div>
+          <div className="mt-0.5 text-2xl font-semibold leading-tight text-[#111827]">
+            {eventName || "Explore Orange Wine Trail"}
+          </div>
+
+          <div className="mt-4 text-[11px] uppercase tracking-wide text-[#64748B]">
+            Body
+          </div>
+          <p className="mt-0.5 text-sm leading-6 text-[#334155]">
+            Collect stamps as you visit participating venues and unlock rewards
+            along the way.
+          </p>
+
+          <div className="mt-4 text-[11px] uppercase tracking-wide text-[#64748B]">
+            Accent
+          </div>
+          <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.22em] text-[#475569]">
+            Your trail passport
+          </div>
+        </div>
+        {!selected && value.trim() && (
+          <div className="rounded-[10px] border border-[#FCD34D] bg-[#FFFBEB] px-3 py-2 text-[11px] text-[#92400E]">
+            Saved font “{value.trim()}” isn’t in the supported list. Pick one
+            above to update; the public page will fall back to the default
+            until you do.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
