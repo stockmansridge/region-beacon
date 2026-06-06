@@ -142,7 +142,15 @@ type PlanLimits = {
   venue_limit: number | null;
   active_event_limit: number | null;
   passport_limit: number | null;
+  plan_source?: "manual_override" | "subscription" | "default" | null;
 };
+
+type PlanOverride = {
+  manual_plan_override: string | null;
+  manual_plan_override_at: string | null;
+  manual_plan_override_by: string | null;
+};
+
 
 type SubscriptionRow = {
   id: string;
