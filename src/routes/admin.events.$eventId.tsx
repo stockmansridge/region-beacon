@@ -508,6 +508,9 @@ function EventDetail() {
   const [qrCopiedVenueId, setQrCopiedVenueId] = useState<string | null>(null);
   const [qrEntryDraft, setQrEntryDraft] = useState<Map<string, string>>(new Map());
   const [qrEntrySavingId, setQrEntrySavingId] = useState<string | null>(null);
+  // When false (default), the venues list hides per-row QR controls and previews
+  // to keep the table compact. Users can flip this on to manage QRs in bulk.
+  const [showVenueQrControls, setShowVenueQrControls] = useState(false);
 
   useEffect(() => {
     if (eventId === "new") {
@@ -2081,6 +2084,178 @@ function EventDetail() {
 
   const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue, offerSummaryByVenue, activation } = bundle;
 
+  // Shared renderer for the full Venue QR management panel. Used both inside
+  // the venue editor's "Venue QR" tab and (when the operator opts in) inside
+  // each venues-list row. All handlers/state come from the component scope.
+  function renderVenueQrPanel(v: Venue) {
+    const qr = qrByVenue.get(v.id);
+    const hasActiveQr = !!qr;
+    const isBusy = qrActionVenueId === v.id;
+    const token = qr?.token ?? null;
+    const built = token ? buildCheckinUrl(token) : null;
+    const draft = qrEntryDraft.get(v.id) ?? String(qr?.entry_value ?? 1);
+    const dirty =
+      qrEntryDraft.get(v.id) !== undefined &&
+      draft !== String(qr?.entry_value ?? 1);
+    const saving = qrEntrySavingId === v.id;
+
+    return (
+      <div className="space-y-4 rounded-[12px] border border-[#E6ECF4] bg-white p-4">
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="font-medium text-[#111827]">Status:</span>
+          {hasActiveQr ? (
+            <span className="inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]">
+              {qr!.status}
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full border border-[#FDBA74] bg-[#FFF7ED] px-3 py-1 text-xs font-semibold text-[#B45309]">
+              none
+            </span>
+          )}
+          {qr?.issued_at && (
+            <span className="text-xs text-muted-foreground">
+              Issued {fmt(qr.issued_at)}
+            </span>
+          )}
+        </div>
+
+        {!hasActiveQr ? (
+          canEdit ? (
+            <button
+              type="button"
+              onClick={() => generateOrRotateQr(v.id, false)}
+              disabled={isBusy}
+              className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isBusy ? "Generating…" : "Generate QR"}
+            </button>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No QR generated yet.
+            </p>
+          )
+        ) : !built ? (
+          <p className="text-sm text-muted-foreground">QR link unavailable.</p>
+        ) : built.isFallback ? (
+          <p className="text-sm text-amber-700 dark:text-amber-400">
+            A public address is required before the QR link can be shown.
+          </p>
+        ) : (
+          <>
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                QR link
+              </p>
+              <a
+                href={built.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block font-mono text-[12px] break-all text-primary underline-offset-2 hover:underline"
+                title={built.url}
+              >
+                {built.url.replace(/^https?:\/\//, "")}
+              </a>
+              {canEdit && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => copyQrLink(v.id)}
+                    disabled={isBusy}
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
+                  </button>
+                  <a
+                    href={built.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
+                  >
+                    Open
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => generateOrRotateQr(v.id, true)}
+                    disabled={isBusy}
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#FDBA74] bg-white px-3.5 text-sm font-semibold text-[#B45309] hover:bg-[#FFF7ED] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isBusy ? "Working…" : "Rotate QR"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {canEdit && (
+              <div className="flex flex-wrap items-center gap-2 rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-3 py-2">
+                <label
+                  htmlFor={`stamp-value-panel-${v.id}`}
+                  className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                >
+                  Stamp value
+                </label>
+                <input
+                  id={`stamp-value-panel-${v.id}`}
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  inputMode="numeric"
+                  value={draft}
+                  onChange={(e) => {
+                    const val = e.currentTarget.value;
+                    setQrEntryDraft((m) => {
+                      const next = new Map(m);
+                      next.set(v.id, val);
+                      return next;
+                    });
+                  }}
+                  className="h-10 w-20 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                />
+                {(dirty || saving) && (
+                  <button
+                    type="button"
+                    onClick={() => saveQrEntryValue(v.id, draft)}
+                    disabled={saving}
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                )}
+                <span className="basis-full text-[10px] leading-tight text-muted-foreground">
+                  Number of entries earned per scan. Changes apply to future scans only — existing check-ins keep the value earned at scan time.
+                </span>
+              </div>
+            )}
+
+            <QrPreview
+              value={built.url}
+              downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+              poster={{
+                eventName: event.name,
+                venueName: v.name,
+                logoUrl: getEventAssetPublicUrl(branding?.logo_path),
+                primaryColor: branding?.primary_color ?? null,
+                accentColor: branding?.accent_color ?? null,
+                offerSummary: offerSummaryByVenue.get(v.id) ?? null,
+                entryValue: qr.entry_value ?? null,
+                filename: posterFilename(
+                  event.public_slug ?? event.slug,
+                  v.name,
+                ),
+              }}
+            />
+          </>
+        )}
+
+        {qrActionError && qrActionVenueId === v.id && (
+          <p className="text-xs text-destructive">{qrActionError}</p>
+        )}
+      </div>
+    );
+  }
+
+
+
   const activeSub =
     domains.find(
       (d) =>
@@ -2986,28 +3161,72 @@ function EventDetail() {
                       />
                     </Field>
                   </div>
-                  <Field label="Points value">
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={venueForm.points_value}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === "") {
-                          setVenueForm({ ...venueForm, points_value: "0" });
-                          return;
-                        }
-                        const n = Number(raw);
-                        if (!Number.isFinite(n) || n < 0) return;
-                        setVenueForm({ ...venueForm, points_value: String(Math.floor(n)) });
-                      }}
-                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Points awarded when a participant scans this venue QR code. This does not affect passport stamp collection.
-                    </p>
-                  </Field>
+                  {/*
+                    Stamp value lives on the venue's active QR row
+                    (`venue_qr_codes.entry_value`). This is the same value
+                    shown and edited in the venues list, so editing it here
+                    keeps the list and editor in sync. For new venues we
+                    hide the control until the QR is generated in the
+                    "Venue QR" tab.
+                  */}
+                  {venueEditingId !== "new" && (() => {
+                    const currentVenue = venues.find((x) => x.id === venueEditingId);
+                    if (!currentVenue) return null;
+                    const qr = qrByVenue.get(currentVenue.id);
+                    if (!qr) {
+                      return (
+                        <Field label="Stamp value">
+                          <p className="text-sm text-muted-foreground">
+                            Generate a QR code in the <strong>Venue QR</strong> tab to set the stamp value.
+                          </p>
+                        </Field>
+                      );
+                    }
+                    const draft =
+                      qrEntryDraft.get(currentVenue.id) ?? String(qr.entry_value ?? 1);
+                    const dirty =
+                      qrEntryDraft.get(currentVenue.id) !== undefined &&
+                      draft !== String(qr.entry_value ?? 1);
+                    const saving = qrEntrySavingId === currentVenue.id;
+                    return (
+                      <Field label="Stamp value">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            step={1}
+                            inputMode="numeric"
+                            value={draft}
+                            onChange={(e) => {
+                              const val = e.currentTarget.value;
+                              setQrEntryDraft((m) => {
+                                const next = new Map(m);
+                                next.set(currentVenue.id, val);
+                                return next;
+                              });
+                            }}
+                            disabled={!canEdit || saving}
+                            className="h-10 w-24 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20 disabled:opacity-50"
+                          />
+                          {canEdit && (dirty || saving) && (
+                            <button
+                              type="button"
+                              onClick={() => saveQrEntryValue(currentVenue.id, draft)}
+                              disabled={saving}
+                              className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {saving ? "Saving…" : "Save stamp value"}
+                            </button>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Number of entries awarded each time a participant scans this venue's QR code. Changes apply to future scans only — existing check-ins keep the value earned at scan time.
+                        </p>
+                      </Field>
+                    );
+                  })()}
+
                 </FormSection>
                 )}
 
@@ -3263,13 +3482,19 @@ function EventDetail() {
                 </FormSection>
                 )}
 
-                {venueEditorTab === "qr" && venueEditingId !== "new" && (
-                <FormSection title="Venue QR">
-                  <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-                    Main venue QR controls — reveal, copy, rotate and download — are available in the venues list below. For security, the QR token is only fetched when you explicitly reveal it.
-                  </p>
-                </FormSection>
-                )}
+                {venueEditorTab === "qr" && venueEditingId !== "new" && (() => {
+                  const currentVenue = venues.find((x) => x.id === venueEditingId);
+                  if (!currentVenue) return null;
+                  return (
+                    <FormSection title="Venue QR">
+                      <p className="text-xs text-muted-foreground">
+                        Manage this venue's main check-in QR code. The QR token is only fetched and revealed when you explicitly generate, rotate, copy or download it.
+                      </p>
+                      {renderVenueQrPanel(currentVenue)}
+                    </FormSection>
+                  );
+                })()}
+
 
                 {venueEditorTab === "tasting" && agencyId && venueEditingId && venueEditingId !== "new" && (
                   <VenueTastingQrSection
@@ -3329,11 +3554,39 @@ function EventDetail() {
                       );
                     })}
                   </div>
+                  {canEdit && (
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowVenueQrControls((v) => !v)}
+                        aria-pressed={showVenueQrControls}
+                        className={
+                          "inline-flex h-8 items-center gap-2 rounded-[10px] border px-3 text-xs font-semibold transition-colors " +
+                          (showVenueQrControls
+                            ? "border-[#2F6FE4] bg-[#EEF4FF] text-[#1F56C5]"
+                            : "border-[#D9E2EF] bg-white text-[#475569] hover:bg-[#F8FAFC]")
+                        }
+                      >
+                        <span
+                          aria-hidden
+                          className={
+                            "inline-block h-3 w-3 rounded-full " +
+                            (showVenueQrControls ? "bg-[#2F6FE4]" : "bg-[#CBD5E1]")
+                          }
+                        />
+                        {showVenueQrControls ? "Hide QR controls" : "Show QR controls"}
+                      </button>
+                      <span className="text-[11px] text-muted-foreground">
+                        Full QR management for each venue is always available from the venue editor's <strong>Venue QR</strong> tab.
+                      </span>
+                    </div>
+                  )}
                   {venueFilter === "disabled" && (
                     <p className="mb-3 text-sm text-[#64748B]">
                       Disabled venues do not count toward your venue limit. You can reactivate them, or permanently delete them if they have no linked history.
                     </p>
                   )}
+
             {venues.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
                 No venues have been added yet. Add the first venue so visitors have somewhere to check in during this event.
@@ -3368,8 +3621,8 @@ function EventDetail() {
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="px-3 py-2 font-medium">Active QR</th>
                       <th className="px-3 py-2 font-medium">Issued</th>
-                      {canEdit && <th className="px-3 py-2 font-medium">QR link</th>}
-                      {canEdit && <th className="px-3 py-2 font-medium">QR controls</th>}
+                      {canEdit && showVenueQrControls && <th className="px-3 py-2 font-medium">QR link</th>}
+                      {canEdit && showVenueQrControls && <th className="px-3 py-2 font-medium">QR controls</th>}
                       {canEdit && <th className="px-3 py-2 font-medium">Actions</th>}
                     </tr>
                   </thead>
@@ -3441,7 +3694,7 @@ function EventDetail() {
                             )}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{fmt(qr?.issued_at)}</td>
-                          {canEdit && (
+                          {canEdit && showVenueQrControls && (
                             <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
                               {!hasActiveQr ? (
                                 <span className="text-xs text-muted-foreground/70">No QR yet</span>
@@ -3494,7 +3747,7 @@ function EventDetail() {
                               )}
                             </td>
                           )}
-                          {canEdit && (
+                          {canEdit && showVenueQrControls && (
                             <td className="px-3 py-2 align-top" onClick={(e) => e.stopPropagation()}>
                               {hasActiveQr ? (
                                 <div className="flex flex-col gap-1.5">
