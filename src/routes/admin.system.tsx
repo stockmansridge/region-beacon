@@ -1050,6 +1050,119 @@ function OrganisationsSection({
   );
 }
 
+function DeleteOrganisationDialog({
+  target,
+  onClose,
+  onDeleted,
+}: {
+  target: OrganisationRow | null;
+  onClose: () => void;
+  onDeleted: () => void | Promise<void>;
+}) {
+  const [confirm, setConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (target) setConfirm("");
+  }, [target]);
+
+  const ready = confirm.trim().toUpperCase() === "DELETE";
+
+  const handleDelete = async () => {
+    if (!target || !ready) return;
+    setDeleting(true);
+    const { data, error } = await supabase.rpc("system_admin_delete_organisation", {
+      _agency_id: target.agency_id,
+    });
+    setDeleting(false);
+    if (error) {
+      toast.error(error.message || "Could not delete organisation.");
+      return;
+    }
+    const payload = data as { success?: boolean } | null;
+    if (!payload?.success) {
+      toast.error("Delete failed. No success flag returned.");
+      return;
+    }
+    toast.success(`Deleted ${target.name}.`);
+    await onDeleted();
+    onClose();
+  };
+
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !deleting) onClose(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-[#991B1B]">
+            <Trash2 className="h-4 w-4" />
+            Delete organisation
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm text-[#475569]">
+              <p>
+                This removes the organisation from the System Admin list and
+                hides it from customer-facing views. Events, venues, passports,
+                check-ins, analytics, and billing records are preserved and can
+                be restored by a platform admin if needed.
+              </p>
+              {target ? (
+                <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs text-[#0F172A]">
+                  <div>
+                    <span className="text-[#64748B]">Name: </span>
+                    <span className="font-medium">{target.name}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Slug: </span>
+                    <span className="font-medium">{target.slug ?? "—"}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Owner: </span>
+                    <span className="font-medium">{target.owner_email ?? "—"}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Events / Venues / Passports: </span>
+                    <span className="font-medium">
+                      {target.event_count} / {target.venue_count} / {target.passport_count}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+              <div>
+                <label className="text-[11px] font-medium text-[#0F172A]">
+                  Type <code className="rounded bg-[#F1F5F9] px-1">DELETE</code> to confirm
+                </label>
+                <Input
+                  autoFocus
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="DELETE"
+                  className="mt-1"
+                  disabled={deleting}
+                />
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!ready || deleting}
+            onClick={(e) => {
+              e.preventDefault();
+              void handleDelete();
+            }}
+            className="bg-[#DC2626] text-white hover:bg-[#B91C1C]"
+          >
+            {deleting ? "Deleting…" : "Delete organisation"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+
+
 function OrganisationDetailDrawer({
   org,
   onClose,
