@@ -7,6 +7,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getMapkitToken, type MapkitDiag } from "@/lib/mapkit.functions";
 import { loadMapKitScript } from "@/lib/mapkit-loader";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
@@ -53,6 +54,9 @@ type EventRow = {
   page_background_key?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
+  event_map_path?: string | null;
+  event_map_file_type?: string | null;
+  event_map_file_name?: string | null;
 };
 
 type Filter = "all" | "visited" | "not_visited";
@@ -471,43 +475,14 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         )}
 
         {noCoords ? (
-          <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center text-sm text-[#3D372C]">
-            <p>
-              {venues.length === 0
-                ? "No venue locations have been set yet."
-                : `${labels.plural} have been added, but map locations have not been set yet.`}
-            </p>
-            {venues.length > 0 && (
-              <ul className="mt-4 space-y-2 text-left">
-                {venues.map((v) => (
-                  <li
-                    key={v.venue_id ?? Math.random()}
-                    className="rounded-lg bg-white px-3 py-2"
-                  >
-                    <Link
-                      to="/venues/$venueId"
-                      params={{ venueId: v.venue_id ?? "" }}
-                      className="font-semibold underline-offset-2 hover:underline"
-                      style={{ color: primary }}
-                    >
-                      {v.name ?? "Venue"}
-                    </Link>
-                    {v.address && (
-                      <span className="block text-xs text-[#8A7E66]">{v.address}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <a
-              href="/venues"
-              className="mt-3 inline-block rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider"
-              style={{ backgroundColor: primary, color: "#FBF5E8" }}
-            >
-              See {labels.plural.toLowerCase()} list
-            </a>
-          </div>
-
+          event?.event_map_path ? (
+            <UploadedEventMap
+              path={event.event_map_path}
+              mime={event.event_map_file_type ?? null}
+              eventName={event.name}
+              primary={primary}
+            />
+          ) : null
         ) : mapError ? (
           <MapFallbackList
             venues={geoVenues}
@@ -565,6 +540,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
             )}
           </div>
         )}
+
 
 
         {!noCoords && unmappedVenues.length > 0 && (
@@ -789,4 +765,60 @@ function MapFallbackList({
       </ul>
     </div>
   );
+}
+
+function UploadedEventMap({
+  path,
+  mime,
+  eventName,
+  primary,
+}: {
+  path: string;
+  mime: string | null;
+  eventName: string;
+  primary: string;
+}) {
+  const url = getEventAssetPublicUrl(path);
+  if (!url) return null;
+  const isImage = mime !== null && mime.startsWith("image/");
+  const isPdf = mime === "application/pdf";
+
+  if (isImage) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]"
+        aria-label={`${eventName} event map — open full size`}
+      >
+        <img
+          src={url}
+          alt={`${eventName} event map`}
+          className="w-full rounded-xl bg-white object-contain"
+        />
+      </a>
+    );
+  }
+
+  if (isPdf) {
+    return (
+      <div className="rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center">
+        <p className="mb-3 text-sm text-[#3D372C]">
+          The organiser has provided a downloadable site map.
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider"
+          style={{ backgroundColor: primary, color: "#FBF5E8" }}
+        >
+          Open event map
+        </a>
+      </div>
+    );
+  }
+
+  return null;
 }

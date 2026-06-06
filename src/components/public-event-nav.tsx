@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag, HelpCircle } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
+import { useEventHasMap } from "@/lib/use-event-has-map";
 
 type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "offers" | "leaderboard" | "more";
 
@@ -51,6 +52,7 @@ export function PublicEventNav({
   const [moreOpen, setMoreOpen] = useState(false);
   const faqState = useEventFaqByDomain(subdomain);
   const hasFaq = faqState.kind === "ok" && faqState.entries.length > 0;
+  const { hasMap } = useEventHasMap(subdomain);
 
   // Normalise legacy "join" override → "passport".
   const normalisedOverride: ActiveTarget | undefined =
@@ -142,18 +144,20 @@ export function PublicEventNav({
         </PassportLink>
       ),
     },
-    {
-      key: "map",
-      node: (
-        <Link
-          to="/map"
-          className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-          style={{ color: primary }}
-        >
-          Trail Map
-        </Link>
-      ),
-    },
+    ...(hasMap
+      ? [{
+          key: "map",
+          node: (
+            <Link
+              to="/map"
+              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+              style={{ color: primary }}
+            >
+              Trail Map
+            </Link>
+          ),
+        }]
+      : []),
     {
       key: "venues",
       node: (
@@ -288,17 +292,19 @@ export function PublicEventNav({
               <span>Passport</span>
             </PassportLink>
           </BottomItem>
-          <BottomItem active={isActive("map")} accent={accent} primary={primary}>
-            <Link
-              to="/map"
-              aria-current={isActive("map") ? "page" : undefined}
-              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-              style={{ color: isActive("map") ? accent : primary }}
-            >
-              <MapIcon className="h-5 w-5" />
-              <span>Trail Map</span>
-            </Link>
-          </BottomItem>
+          {hasMap && (
+            <BottomItem active={isActive("map")} accent={accent} primary={primary}>
+              <Link
+                to="/map"
+                aria-current={isActive("map") ? "page" : undefined}
+                className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: isActive("map") ? accent : primary }}
+              >
+                <MapIcon className="h-5 w-5" />
+                <span>Trail Map</span>
+              </Link>
+            </BottomItem>
+          )}
           <BottomItem active={isActive("venues")} accent={accent} primary={primary}>
             <Link
               to="/venues"
@@ -333,6 +339,7 @@ export function PublicEventNav({
           accent={accent}
           hasTerms={hasTerms}
           hasFaq={hasFaq}
+          hasMap={hasMap}
           hasPrivacy={hasPrivacy}
           passportHref={passportHref}
           passportLabel={passportLabel}
@@ -382,6 +389,7 @@ function MoreSheet({
   accent,
   hasTerms,
   hasFaq,
+  hasMap,
   hasPrivacy,
   passportHref,
   passportLabel,
@@ -392,6 +400,7 @@ function MoreSheet({
   accent: string;
   hasTerms: boolean;
   hasFaq: boolean;
+  hasMap: boolean;
   hasPrivacy: boolean;
   passportHref: string | null;
   passportLabel: string;
@@ -455,12 +464,14 @@ function MoreSheet({
               )}
             </li>
           )}
-          <li>
-            <Link to="/map" onClick={onClose} className={rowClass}>
-              <MapIcon className="h-4 w-4" />
-              Trail Map
-            </Link>
-          </li>
+          {hasMap && (
+            <li>
+              <Link to="/map" onClick={onClose} className={rowClass}>
+                <MapIcon className="h-4 w-4" />
+                Trail Map
+              </Link>
+            </li>
+          )}
           <li>
             <Link to="/venues" onClick={onClose} className={rowClass}>
               <MapPin className="h-4 w-4" />
