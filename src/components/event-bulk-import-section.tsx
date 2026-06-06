@@ -711,7 +711,7 @@ export function EventBulkImportSection({
           _venue_id: venueId,
           _label: t.qr_name,
           _description: t.description,
-          _points: t.entry_value, // entry_value maps to the QR's points/entry weight
+          _points: t.points,
           _status: t.status,
           _scan_limit_per_passport: null,
           _starts_at: null,
