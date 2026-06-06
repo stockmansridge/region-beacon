@@ -475,42 +475,28 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         )}
 
         {noCoords ? (
-          <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center text-sm text-[#3D372C]">
-            <p>
-              {venues.length === 0
-                ? "No venue locations have been set yet."
-                : `${labels.plural} have been added, but map locations have not been set yet.`}
-            </p>
-            {venues.length > 0 && (
-              <ul className="mt-4 space-y-2 text-left">
-                {venues.map((v) => (
-                  <li
-                    key={v.venue_id ?? Math.random()}
-                    className="rounded-lg bg-white px-3 py-2"
-                  >
-                    <Link
-                      to="/venues/$venueId"
-                      params={{ venueId: v.venue_id ?? "" }}
-                      className="font-semibold underline-offset-2 hover:underline"
-                      style={{ color: primary }}
-                    >
-                      {v.name ?? "Venue"}
-                    </Link>
-                    {v.address && (
-                      <span className="block text-xs text-[#8A7E66]">{v.address}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <a
-              href="/venues"
-              className="mt-3 inline-block rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider"
-              style={{ backgroundColor: primary, color: "#FBF5E8" }}
-            >
-              See {labels.plural.toLowerCase()} list
-            </a>
-          </div>
+          event?.event_map_path ? (
+            <UploadedEventMap
+              path={event.event_map_path}
+              mime={event.event_map_file_type ?? null}
+              eventName={event.name}
+              primary={primary}
+            />
+          ) : null
+        ) : mapError ? (
+          <MapFallbackList
+            venues={geoVenues}
+            primary={primary}
+            errorMessage={mapError}
+            buildReport={buildSupportReport}
+          />
+        ) /* end mapError */ : (
+          // Placeholder; the original geolocated map block follows below.
+          null
+        )}
+        {/* keep original conditional structure intact below this line; we re-render
+            the geolocated map only when there are coords AND no mapError. */}
+
 
         ) : mapError ? (
           <MapFallbackList
