@@ -2084,6 +2084,178 @@ function EventDetail() {
 
   const { event, branding, domains, terms, checkin, leaderboard, venues, qrByVenue, offerSummaryByVenue, activation } = bundle;
 
+  // Shared renderer for the full Venue QR management panel. Used both inside
+  // the venue editor's "Venue QR" tab and (when the operator opts in) inside
+  // each venues-list row. All handlers/state come from the component scope.
+  function renderVenueQrPanel(v: Venue) {
+    const qr = qrByVenue.get(v.id);
+    const hasActiveQr = !!qr;
+    const isBusy = qrActionVenueId === v.id;
+    const token = qr?.token ?? null;
+    const built = token ? buildCheckinUrl(token) : null;
+    const draft = qrEntryDraft.get(v.id) ?? String(qr?.entry_value ?? 1);
+    const dirty =
+      qrEntryDraft.get(v.id) !== undefined &&
+      draft !== String(qr?.entry_value ?? 1);
+    const saving = qrEntrySavingId === v.id;
+
+    return (
+      <div className="space-y-4 rounded-[12px] border border-[#E6ECF4] bg-white p-4">
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="font-medium text-[#111827]">Status:</span>
+          {hasActiveQr ? (
+            <span className="inline-flex items-center rounded-full border border-[#86EFAC] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]">
+              {qr!.status}
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full border border-[#FDBA74] bg-[#FFF7ED] px-3 py-1 text-xs font-semibold text-[#B45309]">
+              none
+            </span>
+          )}
+          {qr?.issued_at && (
+            <span className="text-xs text-muted-foreground">
+              Issued {fmt(qr.issued_at)}
+            </span>
+          )}
+        </div>
+
+        {!hasActiveQr ? (
+          canEdit ? (
+            <button
+              type="button"
+              onClick={() => generateOrRotateQr(v.id, false)}
+              disabled={isBusy}
+              className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isBusy ? "Generating…" : "Generate QR"}
+            </button>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No QR generated yet.
+            </p>
+          )
+        ) : !built ? (
+          <p className="text-sm text-muted-foreground">QR link unavailable.</p>
+        ) : built.isFallback ? (
+          <p className="text-sm text-amber-700 dark:text-amber-400">
+            A public address is required before the QR link can be shown.
+          </p>
+        ) : (
+          <>
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                QR link
+              </p>
+              <a
+                href={built.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block font-mono text-[12px] break-all text-primary underline-offset-2 hover:underline"
+                title={built.url}
+              >
+                {built.url.replace(/^https?:\/\//, "")}
+              </a>
+              {canEdit && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => copyQrLink(v.id)}
+                    disabled={isBusy}
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
+                  </button>
+                  <a
+                    href={built.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
+                  >
+                    Open
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => generateOrRotateQr(v.id, true)}
+                    disabled={isBusy}
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#FDBA74] bg-white px-3.5 text-sm font-semibold text-[#B45309] hover:bg-[#FFF7ED] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isBusy ? "Working…" : "Rotate QR"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {canEdit && (
+              <div className="flex flex-wrap items-center gap-2 rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-3 py-2">
+                <label
+                  htmlFor={`stamp-value-panel-${v.id}`}
+                  className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                >
+                  Stamp value
+                </label>
+                <input
+                  id={`stamp-value-panel-${v.id}`}
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  inputMode="numeric"
+                  value={draft}
+                  onChange={(e) => {
+                    const val = e.currentTarget.value;
+                    setQrEntryDraft((m) => {
+                      const next = new Map(m);
+                      next.set(v.id, val);
+                      return next;
+                    });
+                  }}
+                  className="h-10 w-20 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                />
+                {(dirty || saving) && (
+                  <button
+                    type="button"
+                    onClick={() => saveQrEntryValue(v.id, draft)}
+                    disabled={saving}
+                    className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                )}
+                <span className="basis-full text-[10px] leading-tight text-muted-foreground">
+                  Number of entries earned per scan. Changes apply to future scans only — existing check-ins keep the value earned at scan time.
+                </span>
+              </div>
+            )}
+
+            <QrPreview
+              value={built.url}
+              downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+              poster={{
+                eventName: event.name,
+                venueName: v.name,
+                logoUrl: getEventAssetPublicUrl(branding?.logo_path),
+                primaryColor: branding?.primary_color ?? null,
+                accentColor: branding?.accent_color ?? null,
+                offerSummary: offerSummaryByVenue.get(v.id) ?? null,
+                entryValue: qr.entry_value ?? null,
+                filename: posterFilename(
+                  event.public_slug ?? event.slug,
+                  v.name,
+                ),
+              }}
+            />
+          </>
+        )}
+
+        {qrActionError && qrActionVenueId === v.id && (
+          <p className="text-xs text-destructive">{qrActionError}</p>
+        )}
+      </div>
+    );
+  }
+
+
+
   const activeSub =
     domains.find(
       (d) =>
