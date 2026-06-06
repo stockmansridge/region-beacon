@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-found'
+import { Route as TermsPrivacyRouteImport } from './routes/terms-privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -51,6 +52,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain.index'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
+import { Route as LiveSubdomainTermsPrivacyRouteImport } from './routes/live.$subdomain.terms-privacy'
 import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
 import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
 import { Route as LiveSubdomainOffersRouteImport } from './routes/live.$subdomain.offers'
@@ -72,6 +74,11 @@ import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.e
 const WorkspaceNotFoundRoute = WorkspaceNotFoundRouteImport.update({
   id: '/workspace-not-found',
   path: '/workspace-not-found',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsPrivacyRoute = TermsPrivacyRouteImport.update({
+  id: '/terms-privacy',
+  path: '/terms-privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -279,6 +286,12 @@ const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => AdminRoute,
 } as any)
+const LiveSubdomainTermsPrivacyRoute =
+  LiveSubdomainTermsPrivacyRouteImport.update({
+    id: '/live/$subdomain/terms-privacy',
+    path: '/live/$subdomain/terms-privacy',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LiveSubdomainTermsRoute = LiveSubdomainTermsRouteImport.update({
   id: '/live/$subdomain/terms',
   path: '/live/$subdomain/terms',
@@ -388,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/terms-privacy': typeof TermsPrivacyRoute
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -423,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
+  '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -448,6 +463,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/terms-privacy': typeof TermsPrivacyRoute
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -483,6 +499,7 @@ export interface FileRoutesByTo {
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
+  '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events': typeof AdminEventsIndexRoute
   '/live/$subdomain': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -510,6 +527,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/terms-privacy': typeof TermsPrivacyRoute
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -545,6 +563,7 @@ export interface FileRoutesById {
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
+  '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
@@ -573,6 +592,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
+    | '/terms-privacy'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -608,6 +628,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
+    | '/live/$subdomain/terms-privacy'
     | '/admin/events/'
     | '/live/$subdomain/'
     | '/admin/events/$eventId/branding'
@@ -633,6 +654,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
+    | '/terms-privacy'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -668,6 +690,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
+    | '/live/$subdomain/terms-privacy'
     | '/admin/events'
     | '/live/$subdomain'
     | '/admin/events/$eventId/branding'
@@ -694,6 +717,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
+    | '/terms-privacy'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -729,6 +753,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
     | '/live/$subdomain/terms'
+    | '/live/$subdomain/terms-privacy'
     | '/admin/events/'
     | '/live/$subdomain/'
     | '/admin/events/$eventId_/branding'
@@ -756,6 +781,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  TermsPrivacyRoute: typeof TermsPrivacyRoute
   WorkspaceNotFoundRoute: typeof WorkspaceNotFoundRoute
   CheckinQrTokenRoute: typeof CheckinQrTokenRoute
   DemoInviteRoute: typeof DemoInviteRoute
@@ -782,6 +808,7 @@ export interface RootRouteChildren {
   LiveSubdomainOffersRoute: typeof LiveSubdomainOffersRoute
   LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
   LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
+  LiveSubdomainTermsPrivacyRoute: typeof LiveSubdomainTermsPrivacyRoute
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
   LiveSubdomainVenuesVenueIdRoute: typeof LiveSubdomainVenuesVenueIdRoute
@@ -795,6 +822,13 @@ declare module '@tanstack/react-router' {
       path: '/workspace-not-found'
       fullPath: '/workspace-not-found'
       preLoaderRoute: typeof WorkspaceNotFoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-privacy': {
+      id: '/terms-privacy'
+      path: '/terms-privacy'
+      fullPath: '/terms-privacy'
+      preLoaderRoute: typeof TermsPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -1084,6 +1118,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/live/$subdomain/terms-privacy': {
+      id: '/live/$subdomain/terms-privacy'
+      path: '/live/$subdomain/terms-privacy'
+      fullPath: '/live/$subdomain/terms-privacy'
+      preLoaderRoute: typeof LiveSubdomainTermsPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/terms': {
       id: '/live/$subdomain/terms'
       path: '/live/$subdomain/terms'
@@ -1277,6 +1318,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  TermsPrivacyRoute: TermsPrivacyRoute,
   WorkspaceNotFoundRoute: WorkspaceNotFoundRoute,
   CheckinQrTokenRoute: CheckinQrTokenRoute,
   DemoInviteRoute: DemoInviteRoute,
@@ -1303,6 +1345,7 @@ const rootRouteChildren: RootRouteChildren = {
   LiveSubdomainOffersRoute: LiveSubdomainOffersRoute,
   LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
   LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
+  LiveSubdomainTermsPrivacyRoute: LiveSubdomainTermsPrivacyRoute,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
   LiveSubdomainVenuesVenueIdRoute: LiveSubdomainVenuesVenueIdRoute,

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag, HelpCircle } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, X, Tag, HelpCircle } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { useEventHasMap } from "@/lib/use-event-has-map";
@@ -208,30 +208,16 @@ export function PublicEventNav({
           ),
         }]
       : []),
-    ...(hasTerms
+    ...(hasTerms || hasPrivacy
       ? [{
-          key: "terms",
+          key: "terms-privacy",
           node: (
             <Link
-              to="/terms"
+              to="/terms-privacy"
               className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
               style={{ color: primary }}
             >
-              Terms
-            </Link>
-          ),
-        }]
-      : []),
-    ...(hasPrivacy
-      ? [{
-          key: "privacy",
-          node: (
-            <Link
-              to="/privacy"
-              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-              style={{ color: primary }}
-            >
-              Privacy
+              Terms & Privacy
             </Link>
           ),
         }]
@@ -243,7 +229,8 @@ export function PublicEventNav({
     isActive("leaderboard") ||
     isActive("offers") ||
     pathname === "/terms" ||
-    pathname === "/privacy";
+    pathname === "/privacy" ||
+    pathname === "/terms-privacy";
 
   return (
     <>
@@ -498,19 +485,11 @@ function MoreSheet({
               </Link>
             </li>
           )}
-          {hasTerms && (
+          {(hasTerms || hasPrivacy) && (
             <li>
-              <Link to="/terms" onClick={onClose} className={rowClass}>
+              <Link to="/terms-privacy" onClick={onClose} className={rowClass}>
                 <FileText className="h-4 w-4" />
-                Terms
-              </Link>
-            </li>
-          )}
-          {hasPrivacy && (
-            <li>
-              <Link to="/privacy" onClick={onClose} className={rowClass}>
-                <ShieldCheck className="h-4 w-4" />
-                Privacy
+                Terms & Privacy
               </Link>
             </li>
           )}
