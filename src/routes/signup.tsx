@@ -157,10 +157,39 @@ function SignupPage() {
       },
     });
 
+    // eslint-disable-next-line no-console
+    console.log("[signup] signUp response", {
+      hasUser: !!signUpData?.user,
+      hasSession: !!signUpData?.session,
+      userId: signUpData?.user?.id,
+      emailConfirmedAt: signUpData?.user?.email_confirmed_at ?? null,
+      identitiesCount: signUpData?.user?.identities?.length ?? 0,
+      errorCode: (signUpErr as { code?: string } | null)?.code,
+      errorStatus: (signUpErr as { status?: number } | null)?.status,
+      errorMessage: signUpErr?.message,
+    });
+
     if (signUpErr) {
       clearPendingOrganisationSignup();
       setStage("form");
       setTopError(signUpErr.message || "Could not create account.");
+      return;
+    }
+
+    // Supabase quirk: when a user already exists, signUp may return a "fake"
+    // user with an empty identities array and no session, instead of an error.
+    // Detect that case so we don't silently tell them to "check email".
+    if (
+      signUpData?.user &&
+      !signUpData.session &&
+      Array.isArray(signUpData.user.identities) &&
+      signUpData.user.identities.length === 0
+    ) {
+      clearPendingOrganisationSignup();
+      setStage("form");
+      setTopError(
+        "An account with this email already exists. Try signing in instead, or use the password reset link.",
+      );
       return;
     }
 
