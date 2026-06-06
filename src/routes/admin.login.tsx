@@ -19,6 +19,26 @@ export const Route = createFileRoute("/admin/login")({
 const SUPPORT_EMAIL = "jonathan@stockmansridge.com.au";
 const GENERIC_AUTH_ERROR = "Sign in failed. Check your credentials and try again.";
 
+/**
+ * Map Supabase auth error messages to user-friendly copy while still
+ * preserving the real reason (so we can distinguish "invalid credentials"
+ * from "email not confirmed", etc.).
+ */
+function describeSignInError(message: string | undefined): string {
+  const msg = (message || "").trim();
+  if (!msg) return GENERIC_AUTH_ERROR;
+  if (/email not confirmed/i.test(msg)) {
+    return "Email not confirmed yet. Please click the confirmation link in your inbox, then try again.";
+  }
+  if (/invalid login credentials/i.test(msg)) {
+    return "Invalid email or password. If you just signed up, make sure you've confirmed your email first.";
+  }
+  if (/email rate limit|over.*rate limit|too many/i.test(msg)) {
+    return "Too many attempts. Please wait a minute and try again.";
+  }
+  return msg;
+}
+
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
@@ -97,10 +117,19 @@ function Login() {
       return;
     }
     setSubmitting(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    // eslint-disable-next-line no-console
+    console.log("[admin-login] sign-in response", {
+      hasSession: !!signInData?.session,
+      userId: signInData?.user?.id,
+      emailConfirmedAt: signInData?.user?.email_confirmed_at ?? null,
+      errorCode: (signInError as { code?: string } | null)?.code,
+      errorStatus: (signInError as { status?: number } | null)?.status,
+      errorMessage: signInError?.message,
+    });
     if (signInError) {
       setSubmitting(false);
-      setError(GENERIC_AUTH_ERROR);
+      setError(describeSignInError(signInError.message));
       return;
     }
     // The authenticated effect above takes over from here (pending-signup
@@ -200,8 +229,9 @@ function Login() {
 
         {showCompleteSignupBanner && (
           <div className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-xs leading-5 text-[#334155]">
-            <strong className="font-semibold">Email confirmed.</strong> Sign in to finish creating
-            your organisation.
+            <strong className="font-semibold">Confirmation link opened.</strong> Sign in below to
+            finish creating your organisation. If you haven't confirmed your email yet, please
+            click the link in your inbox first.
           </div>
         )}
 
