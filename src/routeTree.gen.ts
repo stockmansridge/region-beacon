@@ -31,6 +31,7 @@ import { Route as PassportIndexRouteImport } from './routes/passport.index'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as VenuesVenueIdRouteImport } from './routes/venues.$venueId'
+import { Route as TastingQrTokenRouteImport } from './routes/tasting.$qrToken'
 import { Route as TAgencySlugRouteImport } from './routes/t.$agencySlug'
 import { Route as PassportTokenRouteImport } from './routes/passport.$token'
 import { Route as DemoWineriesRouteImport } from './routes/demo.wineries'
@@ -176,6 +177,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const VenuesVenueIdRoute = VenuesVenueIdRouteImport.update({
   id: '/venues/$venueId',
   path: '/venues/$venueId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TastingQrTokenRoute = TastingQrTokenRouteImport.update({
+  id: '/tasting/$qrToken',
+  path: '/tasting/$qrToken',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TAgencySlugRoute = TAgencySlugRouteImport.update({
@@ -400,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
+  '/tasting/$qrToken': typeof TastingQrTokenRoute
   '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
@@ -459,6 +466,7 @@ export interface FileRoutesByTo {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
+  '/tasting/$qrToken': typeof TastingQrTokenRoute
   '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin': typeof AdminIndexRoute
   '/demo': typeof DemoIndexRoute
@@ -520,6 +528,7 @@ export interface FileRoutesById {
   '/demo/wineries': typeof DemoWineriesRouteWithChildren
   '/passport/$token': typeof PassportTokenRoute
   '/t/$agencySlug': typeof TAgencySlugRouteWithChildren
+  '/tasting/$qrToken': typeof TastingQrTokenRoute
   '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin/': typeof AdminIndexRoute
   '/demo/': typeof DemoIndexRoute
@@ -582,6 +591,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/passport/$token'
     | '/t/$agencySlug'
+    | '/tasting/$qrToken'
     | '/venues/$venueId'
     | '/admin/'
     | '/demo/'
@@ -641,6 +651,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/passport/$token'
     | '/t/$agencySlug'
+    | '/tasting/$qrToken'
     | '/venues/$venueId'
     | '/admin'
     | '/demo'
@@ -701,6 +712,7 @@ export interface FileRouteTypes {
     | '/demo/wineries'
     | '/passport/$token'
     | '/t/$agencySlug'
+    | '/tasting/$qrToken'
     | '/venues/$venueId'
     | '/admin/'
     | '/demo/'
@@ -756,6 +768,7 @@ export interface RootRouteChildren {
   DemoWineriesRoute: typeof DemoWineriesRouteWithChildren
   PassportTokenRoute: typeof PassportTokenRoute
   TAgencySlugRoute: typeof TAgencySlugRouteWithChildren
+  TastingQrTokenRoute: typeof TastingQrTokenRoute
   VenuesVenueIdRoute: typeof VenuesVenueIdRoute
   DemoIndexRoute: typeof DemoIndexRoute
   PassportIndexRoute: typeof PassportIndexRoute
@@ -929,6 +942,13 @@ declare module '@tanstack/react-router' {
       path: '/venues/$venueId'
       fullPath: '/venues/$venueId'
       preLoaderRoute: typeof VenuesVenueIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tasting/$qrToken': {
+      id: '/tasting/$qrToken'
+      path: '/tasting/$qrToken'
+      fullPath: '/tasting/$qrToken'
+      preLoaderRoute: typeof TastingQrTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/t/$agencySlug': {
@@ -1269,6 +1289,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoWineriesRoute: DemoWineriesRouteWithChildren,
   PassportTokenRoute: PassportTokenRoute,
   TAgencySlugRoute: TAgencySlugRouteWithChildren,
+  TastingQrTokenRoute: TastingQrTokenRoute,
   VenuesVenueIdRoute: VenuesVenueIdRoute,
   DemoIndexRoute: DemoIndexRoute,
   PassportIndexRoute: PassportIndexRoute,
