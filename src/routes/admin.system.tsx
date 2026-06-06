@@ -1057,6 +1057,11 @@ function OrganisationDetailDrawer({
     setPlanLoading(false);
   }, []);
 
+  const [refreshTick, setRefreshTick] = useState(0);
+  const { session } = useAuth();
+  const currentUserId = session?.user?.id ?? null;
+  const [deleteTarget, setDeleteTarget] = useState<DeleteUserTarget | null>(null);
+
   useEffect(() => {
     if (!org) return;
     let cancelled = false;
@@ -1076,7 +1081,8 @@ function OrganisationDetailDrawer({
     })();
     loadPlan(org.agency_id);
     return () => { cancelled = true; };
-  }, [org, loadPlan]);
+  }, [org, loadPlan, refreshTick]);
+
 
   const handleSavePlan = async () => {
     if (!org) return;
