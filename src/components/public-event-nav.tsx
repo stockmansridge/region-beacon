@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag, HelpCircle } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
+import { useEventHasMap } from "@/lib/use-event-has-map";
 
 type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "offers" | "leaderboard" | "more";
 
