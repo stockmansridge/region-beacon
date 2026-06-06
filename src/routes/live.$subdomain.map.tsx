@@ -490,21 +490,6 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
             errorMessage={mapError}
             buildReport={buildSupportReport}
           />
-        ) /* end mapError */ : (
-          // Placeholder; the original geolocated map block follows below.
-          null
-        )}
-        {/* keep original conditional structure intact below this line; we re-render
-            the geolocated map only when there are coords AND no mapError. */}
-
-
-        ) : mapError ? (
-          <MapFallbackList
-            venues={geoVenues}
-            primary={primary}
-            errorMessage={mapError}
-            buildReport={buildSupportReport}
-          />
         ) : (
           <div className="relative">
             <div
@@ -555,6 +540,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
             )}
           </div>
         )}
+
 
 
         {!noCoords && unmappedVenues.length > 0 && (
