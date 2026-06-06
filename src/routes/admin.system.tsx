@@ -1484,6 +1484,10 @@ function UsersSection() {
   const [scope, setScope] = useState<string>("all");
   const [role, setRole] = useState<string>("all");
   const [selected, setSelected] = useState<UserRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteUserTarget | null>(null);
+  const { session } = useAuth();
+  const currentUserId = session?.user?.id ?? null;
+
 
   const load = async () => {
     setLoading(true);
