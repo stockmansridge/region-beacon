@@ -32,7 +32,12 @@ update storage.buckets
 
 -- 2. Replace the path-parts helper to also recognise kind 'map'.
 --    Shape and grants preserved from migrations-draft-event-assets-storage.
-create or replace function public.event_assets_path_parts(_name text)
+--    Drop first because the OUT-parameter row type is unchanged here, but
+--    Postgres still refuses CREATE OR REPLACE if any column type/name
+--    differs from a previous deployment of this helper.
+drop function if exists public.event_assets_path_parts(text);
+
+create function public.event_assets_path_parts(_name text)
 returns table (agency_id uuid, event_id uuid, kind text)
 language sql
 immutable
