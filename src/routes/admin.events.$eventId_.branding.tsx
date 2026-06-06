@@ -257,6 +257,10 @@ function BrandingEditor() {
       setValidationError("Font family must be 100 characters or fewer.");
       return;
     }
+    if (font_family && !isSupportedEventFont(font_family)) {
+      setValidationError("Pick a font from the list.");
+      return;
+    }
     if (welcome_copy.length > 1000) {
       setValidationError("Welcome copy must be 1000 characters or fewer.");
       return;
