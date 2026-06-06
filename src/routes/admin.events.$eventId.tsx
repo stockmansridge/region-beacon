@@ -1141,6 +1141,7 @@ function EventDetail() {
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueSaveDebug(null);
+    setVenueEditorTab("basics");
     setVenueEditingId("new");
   }
 
