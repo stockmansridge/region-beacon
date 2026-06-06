@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,6 +13,8 @@ import {
   clearPendingOrganisationSignup,
   isOrganisationSignupServerSetupError,
   ORG_SIGNUP_SERVER_SETUP_ERROR,
+  slugifyOrganisationName,
+  createAgencyWithSlugRetry,
 } from "@/lib/pending-organisation-signup";
 
 
@@ -31,16 +33,6 @@ export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
-function slugifyName(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
-
 const SignupSchema = z
   .object({
     fullName: z.string().trim().min(1, "Your name is required.").max(120),
@@ -52,17 +44,8 @@ const SignupSchema = z
       .trim()
       .min(1, "Organisation name is required.")
       .max(200),
-    slug: z
-      .string()
-      .trim()
-      .min(2, "Organisation URL name must be at least 2 characters.")
-      .max(60, "Organisation URL name must be 60 characters or fewer.")
-      .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Use lowercase letters, numbers and hyphens only.",
-      ),
     acceptTerms: z.literal(true, {
-      errorMap: () => ({ message: "You must accept the platform terms to continue." }),
+      errorMap: () => ({ message: "You must accept the Terms and Privacy Policy to continue." }),
     }),
   })
   .refine((v) => v.password === v.confirm, {
@@ -71,6 +54,22 @@ const SignupSchema = z
   });
 
 type Stage = "form" | "submitting" | "check-email" | "done";
+
+function LegalAgreement() {
+  return (
+    <span>
+      I agree to the GetStampd{" "}
+      <Link to="/terms" target="_blank" rel="noreferrer" className="underline font-medium">
+        Terms and Conditions
+      </Link>{" "}
+      and{" "}
+      <Link to="/privacy" target="_blank" rel="noreferrer" className="underline font-medium">
+        Privacy Policy
+      </Link>
+      .
+    </span>
+  );
+}
 
 function SignupPage() {
   const auth = useAuth();
@@ -81,8 +80,6 @@ function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugDirty, setSlugDirty] = useState(false);
   const [experienceType, setExperienceType] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
 
@@ -90,13 +87,6 @@ function SignupPage() {
   const [topError, setTopError] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("form");
 
-  const computedSlug = useMemo(
-    () => (slugDirty ? slug : slugifyName(businessName)),
-    [slugDirty, slug, businessName],
-  );
-
-  // If the user becomes authenticated mid-flow (email confirmation off, or
-  // already-signed-in user hits /signup), forward them to /admin.
   useEffect(() => {
     if (stage === "done" && auth.status === "authenticated") {
       navigate({ to: "/admin", replace: true });
@@ -106,7 +96,6 @@ function SignupPage() {
   async function handleSignOutAndRestart() {
     clearPendingOrganisationSignup();
     await signOut();
-    // Stay on /signup; auth state will flip to unauthenticated and form renders.
   }
 
 
@@ -121,7 +110,6 @@ function SignupPage() {
       password,
       confirm,
       businessName,
-      slug: computedSlug,
       acceptTerms,
     });
     if (!parsed.success) {
@@ -136,18 +124,17 @@ function SignupPage() {
 
     setStage("submitting");
     const data = parsed.data;
+    const baseSlug = slugifyOrganisationName(data.businessName);
 
-    // Persist pending organisation details BEFORE auth.signUp so that, if
-    // email confirmation is required, we can complete organisation creation
-    // after the user confirms email and signs in.
+    // Persist pending organisation details BEFORE auth.signUp so we can
+    // complete organisation creation after the user confirms email.
     savePendingOrganisationSignup({
       businessName: data.businessName,
-      organisationUrlName: data.slug,
+      organisationUrlName: baseSlug,
       email: data.email,
       source: "signup",
     });
 
-    // 1. Create auth user
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -176,9 +163,6 @@ function SignupPage() {
       return;
     }
 
-    // Supabase quirk: when a user already exists, signUp may return a "fake"
-    // user with an empty identities array and no session, instead of an error.
-    // Detect that case so we don't silently tell them to "check email".
     if (
       signUpData?.user &&
       !signUpData.session &&
@@ -193,18 +177,13 @@ function SignupPage() {
       return;
     }
 
-    // If email confirmation is required, no session yet — ask them to confirm.
-    // Pending signup stays in localStorage and will be completed on first sign-in.
     if (!signUpData.session) {
       setStage("check-email");
       return;
     }
 
-    // 2. Create the organisation via SECURITY DEFINER RPC.
-    const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
-      _agency_name: data.businessName,
-      _agency_slug: data.slug,
-    });
+    // Create the organisation via SECURITY DEFINER RPC, auto-resolving slug conflicts.
+    const { error: rpcErr } = await createAgencyWithSlugRetry(data.businessName, baseSlug);
 
     if (rpcErr) {
       // eslint-disable-next-line no-console
@@ -212,21 +191,10 @@ function SignupPage() {
         supabaseUrl: SUPABASE_URL,
         code: rpcErr.code,
         message: rpcErr.message,
-        details: (rpcErr as { details?: string }).details,
-        hint: (rpcErr as { hint?: string }).hint,
       });
-    }
-
-    if (rpcErr) {
       setStage("form");
       const msg = rpcErr.message || "";
-      if (/agency_slug_taken/i.test(msg)) {
-        setFieldErrors({
-          slug: "That Organisation URL name is already taken. Please choose another.",
-        });
-      } else if (/invalid_agency_slug/i.test(msg)) {
-        setFieldErrors({ slug: "Organisation URL name is invalid." });
-      } else if (/invalid_agency_name/i.test(msg)) {
+      if (/invalid_agency_name/i.test(msg)) {
         setFieldErrors({ businessName: "Organisation name is invalid." });
       } else if (/not_authenticated/i.test(msg)) {
         setTopError("Sign-in did not persist. Please try logging in.");
@@ -245,7 +213,7 @@ function SignupPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      
+
       <header className="border-b">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center">
@@ -360,41 +328,16 @@ function SignupPage() {
 
             <Field
               label="Organisation name"
+              hint="You can change your organisation's URL later in the admin portal."
               error={fieldErrors.businessName}
             >
               <input
                 type="text"
                 value={businessName}
-                onChange={(e) => {
-                  setBusinessName(e.target.value);
-                  if (!slugDirty) setSlug(slugifyName(e.target.value));
-                }}
+                onChange={(e) => setBusinessName(e.target.value)}
                 maxLength={200}
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
               />
-            </Field>
-
-            <Field
-              label="Organisation URL name"
-              hint="Used in your organisation's web address. Lowercase letters, numbers and hyphens."
-              error={fieldErrors.slug}
-            >
-              <div className="flex items-center overflow-hidden rounded-md border bg-background">
-                <span className="px-3 text-xs text-muted-foreground">
-                  getstampd.com.au/w/
-                </span>
-                <input
-                  type="text"
-                  value={computedSlug}
-                  onChange={(e) => {
-                    setSlugDirty(true);
-                    setSlug(e.target.value.toLowerCase());
-                  }}
-                  maxLength={60}
-                  className="h-10 flex-1 border-0 bg-transparent px-2 text-sm font-mono focus:outline-none"
-                  placeholder="acme-tours"
-                />
-              </div>
             </Field>
 
             <Field label="Type of experience" hint="Optional — helps us tailor your setup.">
@@ -413,19 +356,15 @@ function SignupPage() {
               </select>
             </Field>
 
-
-
-
             <label className="flex items-start gap-2 text-sm">
               <input
                 type="checkbox"
                 checked={acceptTerms}
                 onChange={(e) => setAcceptTerms(e.target.checked)}
                 className="mt-0.5 h-4 w-4"
+                required
               />
-              <span>
-                I agree to the GetStampd platform terms.
-              </span>
+              <LegalAgreement />
             </label>
             {fieldErrors.acceptTerms && (
               <p className="text-xs text-destructive">{fieldErrors.acceptTerms}</p>
@@ -481,13 +420,9 @@ function AuthenticatedRecoveryForm({
   onCreated: () => void;
 }) {
   const [businessName, setBusinessName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugDirty, setSlugDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  const computedSlug = slugDirty ? slug : slugifyName(businessName);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -495,18 +430,13 @@ function AuthenticatedRecoveryForm({
     setFieldErrors({});
     const errs: Record<string, string> = {};
     if (!businessName.trim()) errs.businessName = "Organisation name is required.";
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(computedSlug) || computedSlug.length < 2) {
-      errs.slug = "Use lowercase letters, numbers and hyphens (min 2 chars).";
-    }
     if (Object.keys(errs).length) {
       setFieldErrors(errs);
       return;
     }
     setBusy(true);
-    const { error: rpcErr } = await supabase.rpc("create_customer_agency", {
-      _agency_name: businessName.trim(),
-      _agency_slug: computedSlug,
-    });
+    const baseSlug = slugifyOrganisationName(businessName);
+    const { error: rpcErr } = await createAgencyWithSlugRetry(businessName.trim(), baseSlug);
 
     setBusy(false);
     if (rpcErr) {
@@ -516,14 +446,8 @@ function AuthenticatedRecoveryForm({
         supabaseUrl: SUPABASE_URL,
         code: rpcErr.code,
         message: msg,
-        details: (rpcErr as { details?: string }).details,
-        hint: (rpcErr as { hint?: string }).hint,
       });
-      if (/agency_slug_taken/i.test(msg)) {
-        setFieldErrors({ slug: "That Organisation URL name is already taken." });
-      } else if (/invalid_agency_slug/i.test(msg)) {
-        setFieldErrors({ slug: "Organisation URL name is invalid." });
-      } else if (/invalid_agency_name/i.test(msg)) {
+      if (/invalid_agency_name/i.test(msg)) {
         setFieldErrors({ businessName: "Organisation name is invalid." });
       } else if (isOrganisationSignupServerSetupError(msg)) {
         setError(ORG_SIGNUP_SERVER_SETUP_ERROR);
@@ -541,40 +465,21 @@ function AuthenticatedRecoveryForm({
       <h1 className="text-xl font-semibold">Create your organisation</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         You're signed in as <strong>{email || "this account"}</strong>. Enter your
-        organisation details to finish setup, or sign out to use a different email.
+        organisation name to finish setup, or sign out to use a different email.
       </p>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-        <Field label="Organisation name" error={fieldErrors.businessName}>
+        <Field
+          label="Organisation name"
+          hint="You can change your organisation's URL later in the admin portal."
+          error={fieldErrors.businessName}
+        >
           <input
             type="text"
             value={businessName}
-            onChange={(e) => {
-              setBusinessName(e.target.value);
-              if (!slugDirty) setSlug(slugifyName(e.target.value));
-            }}
+            onChange={(e) => setBusinessName(e.target.value)}
             maxLength={200}
             className="h-10 w-full rounded-md border bg-background px-3 text-sm"
           />
-        </Field>
-        <Field
-          label="Organisation URL name"
-          hint="Lowercase letters, numbers and hyphens."
-          error={fieldErrors.slug}
-        >
-          <div className="flex items-center overflow-hidden rounded-md border bg-background">
-            <span className="px-3 text-xs text-muted-foreground">getstampd.com.au/w/</span>
-            <input
-              type="text"
-              value={computedSlug}
-              onChange={(e) => {
-                setSlugDirty(true);
-                setSlug(e.target.value.toLowerCase());
-              }}
-              maxLength={60}
-              className="h-10 flex-1 border-0 bg-transparent px-2 text-sm font-mono focus:outline-none"
-              placeholder="acme-tours"
-            />
-          </div>
         </Field>
         {error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -605,4 +510,3 @@ function AuthenticatedRecoveryForm({
     </div>
   );
 }
-
