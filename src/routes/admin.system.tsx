@@ -454,9 +454,141 @@ function writeHash(state: HashState) {
   window.history.replaceState(null, "", next ? `${window.location.pathname}${window.location.search}#${next}` : url);
 }
 
+// -------- Delete user dialog ---------------------------------------------
+
+type DeleteUserTarget = {
+  user_id: string;
+  email: string | null;
+  member_type: string;
+  agency_names: string[];
+};
+
+function DeleteUserDialog({
+  target,
+  currentUserId,
+  onClose,
+  onDeleted,
+}: {
+  target: DeleteUserTarget | null;
+  currentUserId: string | null;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const [confirm, setConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (target) setConfirm("");
+  }, [target]);
+
+  const isSelf = !!target && !!currentUserId && target.user_id === currentUserId;
+  const ready = confirm.trim().toUpperCase() === "DELETE" && !isSelf;
+
+  const handleDelete = async () => {
+    if (!target || !ready) return;
+    setDeleting(true);
+    const { data, error } = await supabase.rpc("system_admin_delete_user", {
+      _target_user_id: target.user_id,
+    });
+    setDeleting(false);
+    if (error) {
+      toast.error(error.message || "Could not delete user.");
+      return;
+    }
+    const payload = data as { success?: boolean; deleted_user_id?: string } | null;
+    if (!payload?.success) {
+      toast.error("Delete failed. No success flag returned.");
+      return;
+    }
+    toast.success(`Deleted ${target.email ?? "user"}.`);
+    onDeleted();
+    onClose();
+  };
+
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !deleting) onClose(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-[#991B1B]">
+            <Trash2 className="h-4 w-4" />
+            Delete user from GetStampd
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm text-[#475569]">
+              <p>
+                This will remove this user from GetStampd. Their organisation
+                memberships, role assignments, and related access records will
+                be removed. This action cannot be undone.
+              </p>
+              {target ? (
+                <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs text-[#0F172A]">
+                  <div>
+                    <span className="text-[#64748B]">Email: </span>
+                    <span className="font-medium">{target.email ?? "—"}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Member type: </span>
+                    <span className="font-medium">{target.member_type}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Organisations: </span>
+                    <span className="font-medium">
+                      {target.agency_names.length
+                        ? target.agency_names.join(", ")
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+              {isSelf ? (
+                <div className="rounded-[10px] border border-[#FECACA] bg-[#FEF2F2] p-3 text-xs text-[#991B1B]">
+                  You cannot delete your own platform admin account.
+                </div>
+              ) : (
+                <div>
+                  <label className="text-[11px] font-medium text-[#0F172A]">
+                    Type <code className="rounded bg-[#F1F5F9] px-1">DELETE</code> to confirm
+                  </label>
+                  <Input
+                    autoFocus
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    placeholder="DELETE"
+                    className="mt-1"
+                    disabled={deleting}
+                  />
+                </div>
+              )}
+              <p className="text-[11px] text-[#64748B]">
+                Organisations, events, venues, passports, and check-ins are
+                not removed. An owner being deleted leaves the organisation
+                intact and ownerless for platform admin follow-up.
+              </p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!ready || deleting}
+            onClick={(e) => {
+              e.preventDefault();
+              handleDelete();
+            }}
+            className="bg-[#DC2626] text-white hover:bg-[#B91C1C]"
+          >
+            {deleting ? "Deleting…" : "Delete user"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 // -------- Main component --------------------------------------------------
 
 function SystemAdmin() {
+
   const access = useAdminAccess();
   const { email } = useAuth();
 
