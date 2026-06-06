@@ -12,6 +12,8 @@
 
 set search_path = public;
 
+drop function if exists public.system_admin_organisations();
+
 create or replace function public.system_admin_organisations()
 returns table (
   agency_id uuid,
