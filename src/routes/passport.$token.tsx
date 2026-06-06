@@ -183,10 +183,13 @@ const URL_SAFE_TOKEN_RE = /^[A-Za-z0-9_-]+$/;
 function PassportNotFound({
   token,
   diagnostics,
+  branding: _branding,
 }: {
   token: string;
   diagnostics: LookupDiagnostics;
+  branding: EventBrandingKeys;
 }) {
+
   const [copied, setCopied] = useState(false);
   const [clearedEventId, setClearedEventId] = useState<string | null>(null);
   const [storageKeyCleared, setStorageKeyCleared] = useState<boolean>(false);
