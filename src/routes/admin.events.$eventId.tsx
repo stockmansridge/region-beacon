@@ -3482,13 +3482,19 @@ function EventDetail() {
                 </FormSection>
                 )}
 
-                {venueEditorTab === "qr" && venueEditingId !== "new" && (
-                <FormSection title="Venue QR">
-                  <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-                    Main venue QR controls — reveal, copy, rotate and download — are available in the venues list below. For security, the QR token is only fetched when you explicitly reveal it.
-                  </p>
-                </FormSection>
-                )}
+                {venueEditorTab === "qr" && venueEditingId !== "new" && (() => {
+                  const currentVenue = venues.find((x) => x.id === venueEditingId);
+                  if (!currentVenue) return null;
+                  return (
+                    <FormSection title="Venue QR">
+                      <p className="text-xs text-muted-foreground">
+                        Manage this venue's main check-in QR code. The QR token is only fetched and revealed when you explicitly generate, rotate, copy or download it.
+                      </p>
+                      {renderVenueQrPanel(currentVenue)}
+                    </FormSection>
+                  );
+                })()}
+
 
                 {venueEditorTab === "tasting" && agencyId && venueEditingId && venueEditingId !== "new" && (
                   <VenueTastingQrSection
