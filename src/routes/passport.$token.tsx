@@ -324,22 +324,23 @@ function PassportView({
   eventName,
   stamps,
   token,
+  subdomain,
+  branding,
 }: {
   passport: PassportRow;
   eventName: string | null;
   stamps: PassportStampState;
   token: string;
+  subdomain: string | null;
+  branding: EventBrandingKeys;
 }) {
   const [copied, setCopied] = useState(false);
   const [supportCopied, setSupportCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
   const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-  const subdomain = useMemo(() => {
-    const cls = classifyHost(hostname);
-    return cls.kind === "tenant" ? cls.subdomain : null;
-  }, [hostname]);
-  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
+  const { paletteKey, backgroundKey } = branding;
+
 
   const labelSingular = stamps.labelSingular;
   const labelPlural = stamps.labelPlural;
