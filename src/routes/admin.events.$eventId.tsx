@@ -1166,6 +1166,7 @@ function EventDetail() {
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueSaveDebug(null);
+    setVenueEditorTab("basics");
     setVenueEditingId(v.id);
     requestAnimationFrame(() => {
       venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
