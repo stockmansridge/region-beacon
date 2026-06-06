@@ -11,6 +11,7 @@ import { AdminEventParticipantsSection } from "@/components/admin-event-particip
 import { EventFaqSection } from "@/components/event-faq-section";
 import { EventMapSection } from "@/components/event-map-section";
 import { VenueTastingQrSection } from "@/components/venue-tasting-qr-section";
+import { EventBulkImportSection } from "@/components/event-bulk-import-section";
 
 import {
   deleteVenueAssetSafely,
@@ -334,6 +335,7 @@ type EventTabKey =
   | "branding"
   | "venues"
   | "bonuscodes"
+  | "bulkimport"
   | "checkin"
   | "participants"
   | "leaderboard"
@@ -347,6 +349,7 @@ const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
   { key: "branding", label: "Branding" },
   { key: "venues", label: "Venues" },
   { key: "bonuscodes", label: "Bonus Codes" },
+  { key: "bulkimport", label: "Bulk Import" },
   { key: "checkin", label: "Check-in" },
   { key: "participants", label: "Participants" },
   { key: "leaderboard", label: "Leaderboard" },
@@ -3946,6 +3949,31 @@ function EventDetail() {
               </p>
             )}
           </Section>
+
+          <Section
+            title="Bulk Import"
+            id="section-bulk-import"
+            tab="bulkimport"
+            description="Upload an Excel file to create or update venues, bonus codes, and tasting QR codes for this event. Bulk import never deletes existing records."
+          >
+            {agencyId ? (
+              <EventBulkImportSection
+                agencyId={agencyId}
+                eventId={event.id}
+                existingVenues={venues
+                  .filter((v) => v.deleted_at == null)
+                  .map((v) => ({ id: v.id, name: v.name }))}
+
+                canEdit={canEdit}
+                onImported={() => setReloadKey((k) => k + 1)}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Select an agency to use bulk import.
+              </p>
+            )}
+          </Section>
+
 
           <Section
             title="FAQ / Info Page"
