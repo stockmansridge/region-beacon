@@ -292,17 +292,19 @@ export function PublicEventNav({
               <span>Passport</span>
             </PassportLink>
           </BottomItem>
-          <BottomItem active={isActive("map")} accent={accent} primary={primary}>
-            <Link
-              to="/map"
-              aria-current={isActive("map") ? "page" : undefined}
-              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
-              style={{ color: isActive("map") ? accent : primary }}
-            >
-              <MapIcon className="h-5 w-5" />
-              <span>Trail Map</span>
-            </Link>
-          </BottomItem>
+          {hasMap && (
+            <BottomItem active={isActive("map")} accent={accent} primary={primary}>
+              <Link
+                to="/map"
+                aria-current={isActive("map") ? "page" : undefined}
+                className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: isActive("map") ? accent : primary }}
+              >
+                <MapIcon className="h-5 w-5" />
+                <span>Trail Map</span>
+              </Link>
+            </BottomItem>
+          )}
           <BottomItem active={isActive("venues")} accent={accent} primary={primary}>
             <Link
               to="/venues"
