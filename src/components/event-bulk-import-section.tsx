@@ -264,7 +264,7 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       if (civRaw !== null) {
         const civInt = Math.floor(civRaw);
         if (!Number.isFinite(civRaw) || civRaw < 1 || civRaw > 100 || civInt !== civRaw) {
-          issues.push({ level: "error", message: "check_in_value must be a whole number between 1 and 100." });
+          issues.push({ level: "error", message: "check_in_value must be a whole number from 1 to 100." });
         } else {
           civ = civInt;
         }
