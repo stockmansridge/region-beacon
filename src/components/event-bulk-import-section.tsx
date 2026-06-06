@@ -244,12 +244,11 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         phone: s(r["phone"]) || null,
         offer_summary: s(r["offer_summary"]) || null,
         order_index: order,
-        status: statusParsed === "disabled" ? "disabled" : "active" as Status,
+        status: statusParsed === "disabled" ? "inactive" : "active",
         issues,
-      } as unknown as VenueDraft;
+      };
     })
-    .filter((r): r is VenueDraft => r !== null)
-    .map((v) => ({ ...v, status: v.status === "disabled" ? "inactive" : "active" } as VenueDraft));
+    .filter((r): r is VenueDraft => r !== null);
 
   const bonuses: BonusDraft[] = bonusRows
     .map((r, i): BonusDraft | null => {
