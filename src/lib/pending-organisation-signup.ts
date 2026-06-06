@@ -13,11 +13,22 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 
 export type PendingOrganisationSignup = {
   businessName: string;
-  organisationUrlName: string;
+  organisationUrlName?: string;
   email: string;
   createdAt: string;
   source: string;
 };
+
+export function slugifyOrganisationName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "organisation";
+}
+
 
 function storageAvailable(): Storage | null {
   try {
