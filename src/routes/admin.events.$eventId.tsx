@@ -12,6 +12,7 @@ import { EventFaqSection } from "@/components/event-faq-section";
 import { EventMapSection } from "@/components/event-map-section";
 import { VenueTastingQrSection } from "@/components/venue-tasting-qr-section";
 import { EventBulkImportSection } from "@/components/event-bulk-import-section";
+import { EventAwardsSection } from "@/components/event-awards-section";
 
 import {
   deleteVenueAssetSafely,
@@ -336,6 +337,7 @@ type EventTabKey =
   | "venues"
   | "bonuscodes"
   | "bulkimport"
+  | "awards"
   | "checkin"
   | "participants"
   | "leaderboard"
@@ -350,6 +352,7 @@ const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
   { key: "venues", label: "Venues" },
   { key: "bonuscodes", label: "Bonus Codes" },
   { key: "bulkimport", label: "Bulk Import" },
+  { key: "awards", label: "Awards" },
   { key: "checkin", label: "Check-in" },
   { key: "participants", label: "Participants" },
   { key: "leaderboard", label: "Leaderboard" },
