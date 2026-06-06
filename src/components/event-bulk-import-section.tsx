@@ -127,14 +127,27 @@ function downloadTemplate() {
     ["6. Matching: venues match by name within this event; bonus codes match by"],
     ["   title; tasting QR codes match by qr_name within their venue."],
     [""],
-    ["Reward values:"],
-    ["  check_in_value (Venues): stamps/entries awarded for a venue QR check-in."],
-    ["    Whole number 1–100. Leave blank to keep the existing value."],
-    ["    Requires an active venue QR — generate one in the venue editor first."],
-    ["  points (Bonus Codes): points awarded when a customer enters this bonus code."],
-    ["    Whole number 0 or greater."],
-    ["  points (Tasting QR Codes): extra points awarded for scanning this tasting QR."],
-    ["    Whole number 0 or greater."],
+    ["Reward values — IMPORTANT:"],
+    ["Venue check-ins and bonus rewards use different reward fields."],
+    ["  • Venue check-ins use check_in_value, which controls the number of stamps"],
+    ["    awarded for scanning the venue's normal QR / check-in code."],
+    ["  • Bonus Codes and Tasting QR Codes use points, which controls additional"],
+    ["    points earned through optional bonus actions."],
+    [""],
+    ["  check_in_value (Venues sheet):"],
+    ["    Stamp value awarded when a participant scans this venue's normal"],
+    ["    QR / check-in code. Whole number from 1 to 100."],
+    ["    Leaving a venue check_in_value blank will leave the existing venue QR"],
+    ["    stamp value unchanged."],
+    ["    If a venue does not yet have an active venue QR code, the venue will"],
+    ["    still import, but the check-in value cannot be applied until a QR"],
+    ["    code exists."],
+    [""],
+    ["  points (Bonus Codes sheet):"],
+    ["    Bonus points awarded when this bonus code is claimed. 0 or higher."],
+    [""],
+    ["  points (Tasting QR Codes sheet):"],
+    ["    Tasting points awarded when this tasting QR code is claimed. 0 or higher."],
     [""],
     ["Example values:"],
     ["  venue_key: venue_001, ridge_winery, stall_12"],
@@ -251,7 +264,7 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       if (civRaw !== null) {
         const civInt = Math.floor(civRaw);
         if (!Number.isFinite(civRaw) || civRaw < 1 || civRaw > 100 || civInt !== civRaw) {
-          issues.push({ level: "error", message: "check_in_value must be a whole number between 1 and 100." });
+          issues.push({ level: "error", message: "check_in_value must be a whole number from 1 to 100." });
         } else {
           civ = civInt;
         }
@@ -292,6 +305,9 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         }
       }
       const pointsRaw = num(r["points"]);
+      if (pointsRaw !== null && (!Number.isFinite(pointsRaw) || pointsRaw < 0 || Math.floor(pointsRaw) !== pointsRaw)) {
+        issues.push({ level: "error", message: "Bonus points must be 0 or higher." });
+      }
       const points = pointsRaw === null ? 0 : Math.max(0, Math.floor(pointsRaw));
       const statusParsed = statusOrDefault(r["status"], "active");
       if (statusParsed === null) {
@@ -326,10 +342,19 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       }
       if (!qr_name) issues.push({ level: "error", message: "QR name is required." });
       // Accept either `points` (preferred) or legacy `entry_value` column.
-      const pRaw = num(r["points"] ?? "") ?? num(r["entry_value"]);
+      const pointsCell = s(r["points"]);
+      const legacyCell = s(r["entry_value"]);
+      const usedLegacy = pointsCell === "" && legacyCell !== "";
+      const pRaw = pointsCell !== "" ? num(pointsCell) : num(legacyCell);
       const points = pRaw === null ? 10 : Math.max(0, Math.floor(pRaw));
       if (pRaw !== null && (!Number.isFinite(pRaw) || pRaw < 0 || Math.floor(pRaw) !== pRaw)) {
-        issues.push({ level: "error", message: "points must be a whole number 0 or greater." });
+        issues.push({ level: "error", message: "Tasting points must be 0 or higher." });
+      }
+      if (usedLegacy) {
+        issues.push({
+          level: "warning",
+          message: "Tasting QR Codes should use points. Legacy entry_value was accepted and converted to points.",
+        });
       }
       const statusParsed = statusOrDefault(r["status"], "active");
       if (statusParsed === null) {
@@ -637,7 +662,7 @@ export function EventBulkImportSection({
         .maybeSingle();
       if (qrLookupErr || !qrRow) {
         const note =
-          "check_in_value not applied — generate a QR for this venue in the venue editor, then re-import.";
+          "Venue imported, but no active venue QR exists yet. Generate a QR for this venue, then re-import or edit the stamp value manually.";
         venuesNext[idx] = {
           ...v,
           resultMessage: v.resultMessage ? `${v.resultMessage} ${note}` : note,
@@ -914,8 +939,8 @@ export function EventBulkImportSection({
                     : "Will CREATE a new venue.";
                   const civ =
                     v.check_in_value != null
-                      ? ` Check-in value: ${v.check_in_value} stamp${v.check_in_value === 1 ? "" : "s"} per QR scan.`
-                      : " Check-in value: leave unchanged.";
+                      ? ` Check-in stamp value: ${v.check_in_value}.`
+                      : " Check-in stamp value: leave unchanged.";
                   return {
                     rowNum: v.rowNum,
                     label: v.name || v.venue_key,
