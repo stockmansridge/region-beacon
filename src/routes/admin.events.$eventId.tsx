@@ -3951,6 +3951,31 @@ function EventDetail() {
           </Section>
 
           <Section
+            title="Bulk Import"
+            id="section-bulk-import"
+            tab="bulkimport"
+            description="Upload an Excel file to create or update venues, bonus codes, and tasting QR codes for this event. Bulk import never deletes existing records."
+          >
+            {agencyId ? (
+              <EventBulkImportSection
+                agencyId={agencyId}
+                eventId={event.id}
+                existingVenues={venues
+                  .filter((v) => v.deleted_at == null)
+                  .map((v) => ({ id: v.id, name: v.name }))}
+                existingBonusCodes={[]}
+                canEdit={canEdit}
+                onImported={() => setReloadKey((k) => k + 1)}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Select an agency to use bulk import.
+              </p>
+            )}
+          </Section>
+
+
+          <Section
             title="FAQ / Info Page"
             id="section-faq"
             tab="faq"
