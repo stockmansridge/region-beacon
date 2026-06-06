@@ -10,6 +10,7 @@ import { BonusCodesSection } from "@/components/event-bonus-codes-section";
 import { AdminEventParticipantsSection } from "@/components/admin-event-participants-section";
 import { EventFaqSection } from "@/components/event-faq-section";
 import { EventMapSection } from "@/components/event-map-section";
+import { VenueTastingQrSection } from "@/components/venue-tasting-qr-section";
 
 import {
   deleteVenueAssetSafely,
