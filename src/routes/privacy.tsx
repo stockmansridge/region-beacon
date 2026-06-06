@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PrivacyPage } from "./live.$subdomain.privacy";
 import { useTenantSubdomain } from "@/lib/tenant-host";
-import { NonTenantNotice } from "@/components/non-tenant-notice";
+import { PlatformPrivacyPage } from "@/components/platform-legal";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({ meta: [{ title: "Privacy Policy — GetStampd" }] }),
+  head: () => ({ meta: [{ title: "GetStampd Privacy Policy" }] }),
   component: PrivacyCleanRoute,
 });
 
 function PrivacyCleanRoute() {
   const subdomain = useTenantSubdomain();
-  if (!subdomain) return <NonTenantNotice />;
-  return <PrivacyPage subdomain={subdomain} />;
+  if (subdomain) return <PrivacyPage subdomain={subdomain} />;
+  return <PlatformPrivacyPage />;
 }
