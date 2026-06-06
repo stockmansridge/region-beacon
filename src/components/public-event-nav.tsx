@@ -52,6 +52,7 @@ export function PublicEventNav({
   const [moreOpen, setMoreOpen] = useState(false);
   const faqState = useEventFaqByDomain(subdomain);
   const hasFaq = faqState.kind === "ok" && faqState.entries.length > 0;
+  const { hasMap } = useEventHasMap(subdomain);
 
   // Normalise legacy "join" override → "passport".
   const normalisedOverride: ActiveTarget | undefined =
