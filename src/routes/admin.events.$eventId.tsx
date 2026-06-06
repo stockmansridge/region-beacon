@@ -3554,11 +3554,39 @@ function EventDetail() {
                       );
                     })}
                   </div>
+                  {canEdit && (
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowVenueQrControls((v) => !v)}
+                        aria-pressed={showVenueQrControls}
+                        className={
+                          "inline-flex h-8 items-center gap-2 rounded-[10px] border px-3 text-xs font-semibold transition-colors " +
+                          (showVenueQrControls
+                            ? "border-[#2F6FE4] bg-[#EEF4FF] text-[#1F56C5]"
+                            : "border-[#D9E2EF] bg-white text-[#475569] hover:bg-[#F8FAFC]")
+                        }
+                      >
+                        <span
+                          aria-hidden
+                          className={
+                            "inline-block h-3 w-3 rounded-full " +
+                            (showVenueQrControls ? "bg-[#2F6FE4]" : "bg-[#CBD5E1]")
+                          }
+                        />
+                        {showVenueQrControls ? "Hide QR controls" : "Show QR controls"}
+                      </button>
+                      <span className="text-[11px] text-muted-foreground">
+                        Full QR management for each venue is always available from the venue editor's <strong>Venue QR</strong> tab.
+                      </span>
+                    </div>
+                  )}
                   {venueFilter === "disabled" && (
                     <p className="mb-3 text-sm text-[#64748B]">
                       Disabled venues do not count toward your venue limit. You can reactivate them, or permanently delete them if they have no linked history.
                     </p>
                   )}
+
             {venues.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
                 No venues have been added yet. Add the first venue so visitors have somewhere to check in during this event.
