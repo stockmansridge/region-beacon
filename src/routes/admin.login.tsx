@@ -117,10 +117,19 @@ function Login() {
       return;
     }
     setSubmitting(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    // eslint-disable-next-line no-console
+    console.log("[admin-login] sign-in response", {
+      hasSession: !!signInData?.session,
+      userId: signInData?.user?.id,
+      emailConfirmedAt: signInData?.user?.email_confirmed_at ?? null,
+      errorCode: (signInError as { code?: string } | null)?.code,
+      errorStatus: (signInError as { status?: number } | null)?.status,
+      errorMessage: signInError?.message,
+    });
     if (signInError) {
       setSubmitting(false);
-      setError(GENERIC_AUTH_ERROR);
+      setError(describeSignInError(signInError.message));
       return;
     }
     // The authenticated effect above takes over from here (pending-signup
