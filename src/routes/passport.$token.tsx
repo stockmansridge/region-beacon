@@ -13,7 +13,9 @@ import {
 
 import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
 import { PoweredByGetStampd } from "@/components/brand";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
+import { EventPaletteScope } from "@/components/event-palette-scope";
+
 
 export const Route = createFileRoute("/passport/$token")({
   head: () => ({ meta: [{ title: "My passport" }] }),
@@ -61,6 +63,13 @@ const ACCENT = "#B5572A";
 function PassportPage() {
   const { token } = Route.useParams();
   const [state, setState] = useState<LoadState>({ kind: "loading" });
+
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const subdomain = useMemo(() => {
+    const cls = classifyHost(hostname);
+    return cls.kind === "tenant" ? cls.subdomain : null;
+  }, [hostname]);
+  const branding = useEventBrandingKeys(subdomain);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,37 +142,54 @@ function PassportPage() {
     };
   }, [token]);
 
-  if (state.kind === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
-        Loading your passport…
-      </div>
-    );
-  }
-
-  if (state.kind === "not_found") {
-    return <PassportNotFound token={token} diagnostics={state.diagnostics} />;
-  }
+  // Always wrap output in EventPaletteScope so the chosen event background
+  // is applied on the first painted frame (no cream flash). Until branding
+  // resolves we render a neutral, non-cream placeholder.
+  const showInner = branding.ready && state.kind !== "loading";
 
   return (
-    <PassportView
-      passport={state.passport}
-      eventName={state.eventName}
-      stamps={state.stamps}
-      token={token}
-    />
+    <EventPaletteScope
+      paletteKey={branding.paletteKey}
+      backgroundKey={branding.backgroundKey}
+      primaryColor={branding.primaryColor}
+      accentColor={branding.accentColor}
+      pageBackgroundColor={branding.pageBackgroundColor}
+      cardBackgroundColor={branding.cardBackgroundColor}
+      className="min-h-screen"
+    >
+      {!showInner ? (
+        <div className="flex min-h-screen items-center justify-center text-sm text-[var(--event-muted,#8A7E66)]">
+          {state.kind === "loading" || !branding.ready ? "Loading your passport…" : null}
+        </div>
+      ) : state.kind === "not_found" ? (
+        <PassportNotFound token={token} diagnostics={state.diagnostics} branding={branding} />
+      ) : state.kind === "ready" ? (
+        <PassportView
+          passport={state.passport}
+          eventName={state.eventName}
+          stamps={state.stamps}
+          token={token}
+          subdomain={subdomain}
+          branding={branding}
+        />
+      ) : null}
+    </EventPaletteScope>
   );
 }
+
 
 const URL_SAFE_TOKEN_RE = /^[A-Za-z0-9_-]+$/;
 
 function PassportNotFound({
   token,
   diagnostics,
+  branding: _branding,
 }: {
   token: string;
   diagnostics: LookupDiagnostics;
+  branding: EventBrandingKeys;
 }) {
+
   const [copied, setCopied] = useState(false);
   const [clearedEventId, setClearedEventId] = useState<string | null>(null);
   const [storageKeyCleared, setStorageKeyCleared] = useState<boolean>(false);
@@ -298,22 +324,23 @@ function PassportView({
   eventName,
   stamps,
   token,
+  subdomain,
+  branding,
 }: {
   passport: PassportRow;
   eventName: string | null;
   stamps: PassportStampState;
   token: string;
+  subdomain: string | null;
+  branding: EventBrandingKeys;
 }) {
   const [copied, setCopied] = useState(false);
   const [supportCopied, setSupportCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
-  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-  const subdomain = useMemo(() => {
-    const cls = classifyHost(hostname);
-    return cls.kind === "tenant" ? cls.subdomain : null;
-  }, [hostname]);
-  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
+  const { paletteKey, backgroundKey } = branding;
+
+
 
   const labelSingular = stamps.labelSingular;
   const labelPlural = stamps.labelPlural;
@@ -347,7 +374,8 @@ function PassportView({
     const report = {
       timestamp: new Date().toISOString(),
       route: "/passport/$token",
-      hostname,
+      hostname: typeof window !== "undefined" ? window.location.hostname : "",
+
       event_id: eventId,
       saved_passport_key_checked: eventId ? `gs.passport.${eventId}` : null,
       saved_passport_found: savedPassportFound,
