@@ -1,9 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, X, Tag, HelpCircle } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, X, Tag, HelpCircle, Award } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { useEventHasMap } from "@/lib/use-event-has-map";
+import { useEventHasAwards } from "@/lib/use-event-has-awards";
 
 type ActiveTarget = "home" | "join" | "passport" | "map" | "venues" | "offers" | "leaderboard" | "more";
 
@@ -53,6 +54,7 @@ export function PublicEventNav({
   const faqState = useEventFaqByDomain(subdomain);
   const hasFaq = faqState.kind === "ok" && faqState.entries.length > 0;
   const { hasMap } = useEventHasMap(subdomain);
+  const { hasAwards } = useEventHasAwards(subdomain);
 
   // Normalise legacy "join" override → "passport".
   const normalisedOverride: ActiveTarget | undefined =
@@ -194,6 +196,20 @@ export function PublicEventNav({
         </Link>
       ),
     },
+    ...(hasAwards
+      ? [{
+          key: "awards",
+          node: (
+            <Link
+              to="/awards"
+              className="text-sm font-medium uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+              style={{ color: primary }}
+            >
+              Awards
+            </Link>
+          ),
+        }]
+      : []),
     ...(hasFaq
       ? [{
           key: "faq",

@@ -25,6 +25,7 @@ import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as AwardsRouteImport } from './routes/awards'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VenuesIndexRouteImport } from './routes/venues.index'
@@ -60,6 +61,7 @@ import { Route as LiveSubdomainMapRouteImport } from './routes/live.$subdomain.m
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
 import { Route as LiveSubdomainFaqRouteImport } from './routes/live.$subdomain.faq'
+import { Route as LiveSubdomainAwardsRouteImport } from './routes/live.$subdomain.awards'
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as CollectBonusTokenRouteImport } from './routes/collect.bonus.$token'
@@ -149,6 +151,11 @@ const FaqRoute = FaqRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AwardsRoute = AwardsRouteImport.update({
+  id: '/awards',
+  path: '/awards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -328,6 +335,11 @@ const LiveSubdomainFaqRoute = LiveSubdomainFaqRouteImport.update({
   path: '/live/$subdomain/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiveSubdomainAwardsRoute = LiveSubdomainAwardsRouteImport.update({
+  id: '/live/$subdomain/awards',
+  path: '/live/$subdomain/awards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoWineriesVenueIdRoute = DemoWineriesVenueIdRouteImport.update({
   id: '/$venueId',
   path: '/$venueId',
@@ -387,6 +399,7 @@ const AdminEventsEventIdBrandingRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/awards': typeof AwardsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -430,6 +443,7 @@ export interface FileRoutesByFullPath {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/awards': typeof LiveSubdomainAwardsRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
@@ -449,6 +463,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/awards': typeof AwardsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -492,6 +507,7 @@ export interface FileRoutesByTo {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/awards': typeof LiveSubdomainAwardsRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
@@ -513,6 +529,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/awards': typeof AwardsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -556,6 +573,7 @@ export interface FileRoutesById {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/awards': typeof LiveSubdomainAwardsRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
@@ -578,6 +596,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/awards'
     | '/contact'
     | '/faq'
     | '/join'
@@ -621,6 +640,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/awards'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
@@ -640,6 +660,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/awards'
     | '/contact'
     | '/faq'
     | '/join'
@@ -683,6 +704,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/awards'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
@@ -703,6 +725,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/awards'
     | '/contact'
     | '/faq'
     | '/join'
@@ -746,6 +769,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/awards'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
@@ -767,6 +791,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AwardsRoute: typeof AwardsRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   JoinRoute: typeof JoinRoute
@@ -801,6 +826,7 @@ export interface RootRouteChildren {
   VenuesIndexRoute: typeof VenuesIndexRoute
   CollectBonusTokenRoute: typeof CollectBonusTokenRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
+  LiveSubdomainAwardsRoute: typeof LiveSubdomainAwardsRoute
   LiveSubdomainFaqRoute: typeof LiveSubdomainFaqRoute
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
@@ -927,6 +953,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/awards': {
+      id: '/awards'
+      path: '/awards'
+      fullPath: '/awards'
+      preLoaderRoute: typeof AwardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -1174,6 +1207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainFaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/live/$subdomain/awards': {
+      id: '/live/$subdomain/awards'
+      path: '/live/$subdomain/awards'
+      fullPath: '/live/$subdomain/awards'
+      preLoaderRoute: typeof LiveSubdomainAwardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/wineries/$venueId': {
       id: '/demo/wineries/$venueId'
       path: '/$venueId'
@@ -1304,6 +1344,7 @@ const TAgencySlugRouteWithChildren = TAgencySlugRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AwardsRoute: AwardsRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   JoinRoute: JoinRoute,
@@ -1338,6 +1379,7 @@ const rootRouteChildren: RootRouteChildren = {
   VenuesIndexRoute: VenuesIndexRoute,
   CollectBonusTokenRoute: CollectBonusTokenRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
+  LiveSubdomainAwardsRoute: LiveSubdomainAwardsRoute,
   LiveSubdomainFaqRoute: LiveSubdomainFaqRoute,
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
