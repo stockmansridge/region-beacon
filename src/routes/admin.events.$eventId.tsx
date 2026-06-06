@@ -402,6 +402,25 @@ function EventTabBar({
   );
 }
 
+type VenueEditorTabKey =
+  | "basics"
+  | "location"
+  | "public"
+  | "images"
+  | "qr"
+  | "tasting";
+
+const VENUE_EDITOR_TABS: Array<{ key: VenueEditorTabKey; label: string; existingOnly?: boolean }> = [
+  { key: "basics", label: "Basics" },
+  { key: "location", label: "Location" },
+  { key: "public", label: "Public Page" },
+  { key: "images", label: "Images", existingOnly: true },
+  { key: "qr", label: "Venue QR", existingOnly: true },
+  { key: "tasting", label: "Tasting QR", existingOnly: true },
+];
+
+
+
 
 function EventDetail() {
   const { eventId } = Route.useParams();
@@ -477,6 +496,7 @@ function EventDetail() {
   const [venueAssetBusy, setVenueAssetBusy] = useState<VenueAssetKind | null>(null);
   const [venueAssetError, setVenueAssetError] = useState<string | null>(null);
   const venueEditorRef = useRef<HTMLDivElement | null>(null);
+  const [venueEditorTab, setVenueEditorTab] = useState<VenueEditorTabKey>("basics");
 
   // QR controls — token is fetched only on explicit reveal/rotate and held in
   // memory only. Map: venue_id -> revealed token.
@@ -1121,6 +1141,7 @@ function EventDetail() {
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueSaveDebug(null);
+    setVenueEditorTab("basics");
     setVenueEditingId("new");
   }
 
@@ -1145,6 +1166,7 @@ function EventDetail() {
     setVenueValidationError(null);
     setVenueSaveError(null);
     setVenueSaveDebug(null);
+    setVenueEditorTab("basics");
     setVenueEditingId(v.id);
     requestAnimationFrame(() => {
       venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2901,6 +2923,32 @@ function EventDetail() {
                   </div>
                 ) : (
                 <>
+                <div className="overflow-x-auto">
+                  <div className="inline-flex min-w-full gap-1 rounded-[12px] border border-[#D9E2EF] bg-[#F8FAFC] p-1">
+                    {VENUE_EDITOR_TABS
+                      .filter((tab) => !tab.existingOnly || venueEditingId !== "new")
+                      .map((tab) => {
+                        const active = venueEditorTab === tab.key;
+                        return (
+                          <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setVenueEditorTab(tab.key)}
+                            className={
+                              "h-9 shrink-0 rounded-[10px] px-3 text-sm font-semibold transition-colors " +
+                              (active
+                                ? "bg-white text-[#1F56C5] shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
+                                : "text-[#64748B] hover:bg-white/70 hover:text-[#111827]")
+                            }
+                          >
+                            {tab.label}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                {venueEditorTab === "basics" && (
                 <FormSection title="Basics">
                   <Field label="Name" required>
                     <input
@@ -2961,8 +3009,10 @@ function EventDetail() {
                     </p>
                   </Field>
                 </FormSection>
+                )}
 
-
+                {venueEditorTab === "public" && (
+                <>
                 <FormSection title="Public page content">
                   <Field label="Description">
                     <textarea
@@ -2996,6 +3046,31 @@ function EventDetail() {
                       Offer summary field not available — the <span className="font-mono">venues.offer_summary</span> column is not deployed in this environment.
                     </p>
                   )}
+                </FormSection>
+
+                <FormSection title="Contact">
+                  <Field label="Website">
+                    <input
+                      type="url"
+                      inputMode="url"
+                      value={venueForm.website_url}
+                      onChange={(e) => setVenueForm({ ...venueForm, website_url: e.target.value })}
+                      placeholder="https://example.com"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">Must start with https://</p>
+                  </Field>
+                  <Field label="Phone">
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      maxLength={40}
+                      value={venueForm.phone}
+                      onChange={(e) => setVenueForm({ ...venueForm, phone: e.target.value })}
+                      placeholder="+61 400 000 000"
+                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
+                    />
+                  </Field>
                 </FormSection>
 
                 {venueEditingId !== "new" && (() => {
@@ -3060,68 +3135,40 @@ function EventDetail() {
                     </FormSection>
                   );
                 })()}
+                </>
+                )}
 
+                {venueEditorTab === "images" && venueEditingId !== "new" && (
                 <FormSection title="Images">
-                  {venueEditingId === "new" ? (
-                    <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-                      Save the venue first — the editor will stay open and image upload will become available immediately.
+                  <VenueImageField
+                    kind="logo"
+                    label="Logo"
+                    helpText={`Square works best. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.logo / (1024 * 1024))} MB.`}
+                    path={venueForm.logo_path}
+                    canEdit={canEdit}
+                    busy={venueAssetBusy === "logo"}
+                    onUpload={(f) => uploadVenueImage("logo", f)}
+                    onRemove={() => removeVenueImage("logo")}
+                  />
+                  <VenueImageField
+                    kind="cover"
+                    label="Hero / cover image"
+                    helpText={`Wide hero image. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.cover / (1024 * 1024))} MB.`}
+                    path={venueForm.cover_path}
+                    canEdit={canEdit}
+                    busy={venueAssetBusy === "cover"}
+                    onUpload={(f) => uploadVenueImage("cover", f)}
+                    onRemove={() => removeVenueImage("cover")}
+                  />
+                  {venueAssetError && (
+                    <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                      {venueAssetError}
                     </p>
-                  ) : (
-                    <>
-                      <VenueImageField
-                        kind="logo"
-                        label="Logo"
-                        helpText={`Square works best. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.logo / (1024 * 1024))} MB.`}
-                        path={venueForm.logo_path}
-                        canEdit={canEdit}
-                        busy={venueAssetBusy === "logo"}
-                        onUpload={(f) => uploadVenueImage("logo", f)}
-                        onRemove={() => removeVenueImage("logo")}
-                      />
-                      <VenueImageField
-                        kind="cover"
-                        label="Hero / cover image"
-                        helpText={`Wide hero image. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.cover / (1024 * 1024))} MB.`}
-                        path={venueForm.cover_path}
-                        canEdit={canEdit}
-                        busy={venueAssetBusy === "cover"}
-                        onUpload={(f) => uploadVenueImage("cover", f)}
-                        onRemove={() => removeVenueImage("cover")}
-                      />
-                      {venueAssetError && (
-                        <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-                          {venueAssetError}
-                        </p>
-                      )}
-                    </>
                   )}
                 </FormSection>
+                )}
 
-                <FormSection title="Contact">
-                  <Field label="Website">
-                    <input
-                      type="url"
-                      inputMode="url"
-                      value={venueForm.website_url}
-                      onChange={(e) => setVenueForm({ ...venueForm, website_url: e.target.value })}
-                      placeholder="https://example.com"
-                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">Must start with https://</p>
-                  </Field>
-                  <Field label="Phone">
-                    <input
-                      type="tel"
-                      inputMode="tel"
-                      maxLength={40}
-                      value={venueForm.phone}
-                      onChange={(e) => setVenueForm({ ...venueForm, phone: e.target.value })}
-                      placeholder="+61 400 000 000"
-                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
-                    />
-                  </Field>
-                </FormSection>
-
+                {venueEditorTab === "location" && (
                 <FormSection title="Location">
                   <Field label="Address">
                     <input
@@ -3157,6 +3204,9 @@ function EventDetail() {
                       />
                     </Field>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Venues without an address or coordinates are still supported — they just won&apos;t appear on the public map.
+                  </p>
                   <div className="space-y-2">
                     {!mapPickerOpen && (
                       <button
@@ -3211,8 +3261,17 @@ function EventDetail() {
                     );
                   })()}
                 </FormSection>
+                )}
 
-                {agencyId && venueEditingId && venueEditingId !== "new" && (
+                {venueEditorTab === "qr" && venueEditingId !== "new" && (
+                <FormSection title="Venue QR">
+                  <p className="rounded-md border border-dashed bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                    Main venue QR controls — reveal, copy, rotate and download — are available in the venues list below. For security, the QR token is only fetched when you explicitly reveal it.
+                  </p>
+                </FormSection>
+                )}
+
+                {venueEditorTab === "tasting" && agencyId && venueEditingId && venueEditingId !== "new" && (
                   <VenueTastingQrSection
                     agencyId={agencyId}
                     eventId={event.id}
@@ -3223,6 +3282,7 @@ function EventDetail() {
                   />
                 )}
                 </>
+
                 )}
               </div>
             )}
