@@ -508,6 +508,9 @@ function EventDetail() {
   const [qrCopiedVenueId, setQrCopiedVenueId] = useState<string | null>(null);
   const [qrEntryDraft, setQrEntryDraft] = useState<Map<string, string>>(new Map());
   const [qrEntrySavingId, setQrEntrySavingId] = useState<string | null>(null);
+  // When false (default), the venues list hides per-row QR controls and previews
+  // to keep the table compact. Users can flip this on to manage QRs in bulk.
+  const [showVenueQrControls, setShowVenueQrControls] = useState(false);
 
   useEffect(() => {
     if (eventId === "new") {
