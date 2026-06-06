@@ -1007,6 +1007,16 @@ function AssetUploader({
     kind === "logo"
       ? "Shown in the header of your event page. Square images look best."
       : "Wide hero image shown at the top of your event page.";
+  const recommended =
+    kind === "logo"
+      ? {
+          size: "800 × 800 px (square)",
+          note: "Use a transparent PNG for best results.",
+        }
+      : {
+          size: "1600 × 900 px (16:9)",
+          note: "PNG or JPG. Avoid important detail near the edges — the top of the image is overlaid with the event title.",
+        };
   const limitMB = Math.round(EVENT_ASSET_MAX_BYTES[kind] / (1024 * 1024));
   const accept = EVENT_ASSET_ALLOWED_MIME.join(",");
   const disabled = !canEdit || busy || removing;
