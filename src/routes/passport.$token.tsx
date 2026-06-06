@@ -374,7 +374,8 @@ function PassportView({
     const report = {
       timestamp: new Date().toISOString(),
       route: "/passport/$token",
-      hostname,
+      hostname: typeof window !== "undefined" ? window.location.hostname : "",
+
       event_id: eventId,
       saved_passport_key_checked: eventId ? `gs.passport.${eventId}` : null,
       saved_passport_found: savedPassportFound,
