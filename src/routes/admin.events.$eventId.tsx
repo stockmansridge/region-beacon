@@ -9,6 +9,7 @@ import { QrPreview } from "@/components/qr-preview";
 import { BonusCodesSection } from "@/components/event-bonus-codes-section";
 import { AdminEventParticipantsSection } from "@/components/admin-event-participants-section";
 import { EventFaqSection } from "@/components/event-faq-section";
+import { EventMapSection } from "@/components/event-map-section";
 
 import {
   deleteVenueAssetSafely,
@@ -3668,6 +3669,25 @@ function EventDetail() {
             ) : (
               <p className="text-sm text-muted-foreground">
                 Select an agency to manage FAQ entries.
+              </p>
+            )}
+          </Section>
+
+          <Section
+            title="Event map / site map"
+            id="section-event-map"
+            tab="branding"
+            description="Upload a map image or PDF for events where venues do not have individual map locations, such as markets, expos, halls, showgrounds, or small precinct events. Shown on the public Map page only when no venues have coordinates."
+          >
+            {agencyId ? (
+              <EventMapSection
+                agencyId={agencyId}
+                eventId={event.id}
+                canEdit={canEdit}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Select an agency to manage the event map.
               </p>
             )}
           </Section>
