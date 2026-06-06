@@ -219,6 +219,21 @@ function BrandingEditor() {
     };
   }, [agency.status, agencyId, eventId, reloadKey]);
 
+  // Dynamically load the selected Google Font so the preview reflects it.
+  useEffect(() => {
+    const href = buildGoogleFontsHref([form.font_family]);
+    if (!href) return;
+    const existing = document.querySelector<HTMLLinkElement>(
+      `link[data-event-font="${href}"]`,
+    );
+    if (existing) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [form.font_family]);
+
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
 
