@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-found'
+import { Route as TermsPrivacyRouteImport } from './routes/terms-privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -72,6 +73,11 @@ import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.e
 const WorkspaceNotFoundRoute = WorkspaceNotFoundRouteImport.update({
   id: '/workspace-not-found',
   path: '/workspace-not-found',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsPrivacyRoute = TermsPrivacyRouteImport.update({
+  id: '/terms-privacy',
+  path: '/terms-privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -388,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/terms-privacy': typeof TermsPrivacyRoute
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -448,6 +455,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/terms-privacy': typeof TermsPrivacyRoute
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -510,6 +518,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/terms-privacy': typeof TermsPrivacyRoute
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -573,6 +582,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
+    | '/terms-privacy'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -633,6 +643,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
+    | '/terms-privacy'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -694,6 +705,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
+    | '/terms-privacy'
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
@@ -756,6 +768,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  TermsPrivacyRoute: typeof TermsPrivacyRoute
   WorkspaceNotFoundRoute: typeof WorkspaceNotFoundRoute
   CheckinQrTokenRoute: typeof CheckinQrTokenRoute
   DemoInviteRoute: typeof DemoInviteRoute
@@ -795,6 +808,13 @@ declare module '@tanstack/react-router' {
       path: '/workspace-not-found'
       fullPath: '/workspace-not-found'
       preLoaderRoute: typeof WorkspaceNotFoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-privacy': {
+      id: '/terms-privacy'
+      path: '/terms-privacy'
+      fullPath: '/terms-privacy'
+      preLoaderRoute: typeof TermsPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -1277,6 +1297,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  TermsPrivacyRoute: TermsPrivacyRoute,
   WorkspaceNotFoundRoute: WorkspaceNotFoundRoute,
   CheckinQrTokenRoute: CheckinQrTokenRoute,
   DemoInviteRoute: DemoInviteRoute,
