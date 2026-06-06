@@ -3977,6 +3977,27 @@ function EventDetail() {
             )}
           </Section>
 
+          <Section
+            title="Awards"
+            id="section-awards"
+            tab="awards"
+            description="Prizes participants can unlock by reaching a points threshold and/or visiting every location. Run a randomised winner draw once an event is complete."
+          >
+            {agencyId ? (
+              <EventAwardsSection
+                agencyId={agencyId}
+                eventId={event.id}
+                canEdit={canEdit}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Select an agency to manage awards.
+              </p>
+            )}
+          </Section>
+
+
+
 
           <Section
             title="FAQ / Info Page"
