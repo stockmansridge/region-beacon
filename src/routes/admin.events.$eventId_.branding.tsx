@@ -718,17 +718,13 @@ function BrandingEditor() {
             </div>
           )}
 
-          <Field label="Font family">
-            <input
-              type="text"
-              value={form.font_family}
-              onChange={(e) => setForm({ ...form, font_family: e.target.value })}
-              placeholder="e.g. Inter, system-ui"
-              disabled={!canEdit || saving}
-              maxLength={100}
-              className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </Field>
+          <FontPicker
+            value={form.font_family}
+            onChange={(value) => setForm({ ...form, font_family: value })}
+            disabled={!canEdit || saving}
+            eventName={event.name}
+          />
+
 
           <Field label="Welcome copy">
             <textarea
