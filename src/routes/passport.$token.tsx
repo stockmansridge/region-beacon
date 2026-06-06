@@ -13,7 +13,9 @@ import {
 
 import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
 import { PoweredByGetStampd } from "@/components/brand";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
+import { EventPaletteScope } from "@/components/event-palette-scope";
+
 
 export const Route = createFileRoute("/passport/$token")({
   head: () => ({ meta: [{ title: "My passport" }] }),
