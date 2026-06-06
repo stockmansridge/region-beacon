@@ -1148,6 +1148,7 @@ function OrganisationDetailDrawer({
     }
     toast.success(`Manual plan override saved: ${getPlanByCode(overrideForm).name}.`);
     await loadPlan(org.agency_id);
+    onUpdated?.();
   };
 
   const handleClearOverride = async () => {
@@ -1168,6 +1169,7 @@ function OrganisationDetailDrawer({
     }
     toast.success("Manual plan override cleared.");
     await loadPlan(org.agency_id);
+    onUpdated?.();
   };
 
 
