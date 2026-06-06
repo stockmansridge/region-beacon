@@ -1,6 +1,7 @@
 // Shared loader/state for the public /live/$subdomain/{terms,privacy} pages.
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { LegalBody } from "@/components/legal-body";
