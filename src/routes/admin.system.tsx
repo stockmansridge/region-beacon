@@ -142,7 +142,15 @@ type PlanLimits = {
   venue_limit: number | null;
   active_event_limit: number | null;
   passport_limit: number | null;
+  plan_source?: "manual_override" | "subscription" | "default" | null;
 };
+
+type PlanOverride = {
+  manual_plan_override: string | null;
+  manual_plan_override_at: string | null;
+  manual_plan_override_by: string | null;
+};
+
 
 type SubscriptionRow = {
   id: string;
@@ -1011,16 +1019,15 @@ function OrganisationDetailDrawer({
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
-  const [planForm, setPlanForm] = useState<{ plan_code: string; status: string }>({
-    plan_code: "free",
-    status: "active",
-  });
+  const [override, setOverride] = useState<PlanOverride | null>(null);
+  const [overrideForm, setOverrideForm] = useState<string>("free");
   const [saving, setSaving] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const loadPlan = useCallback(async (agencyId: string) => {
     setPlanLoading(true);
     setPlanError(null);
-    const [limitsRes, subRes, billingRes] = await Promise.all([
+    const [limitsRes, subRes, billingRes, overrideRes] = await Promise.all([
       supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
       supabase
         .from("agency_subscriptions")
@@ -1036,6 +1043,7 @@ function OrganisationDetailDrawer({
         .select("stripe_customer_id")
         .eq("agency_id", agencyId)
         .maybeSingle(),
+      supabase.rpc("get_organisation_plan_override", { p_agency_id: agencyId }),
     ]);
     if (limitsRes.error) {
       setPlanError(limitsRes.error.message);
@@ -1050,10 +1058,13 @@ function OrganisationDetailDrawer({
         ? null
         : ((billingRes.data as { stripe_customer_id: string | null }).stripe_customer_id ?? null);
     setStripeCustomerId(stripeCustomer);
-    setPlanForm({
-      plan_code: normalizePlanCode(sub?.plan_code ?? "free"),
-      status: sub?.status && sub.status !== "none" ? sub.status : "active",
-    });
+    const ov = overrideRes.error
+      ? null
+      : ((overrideRes.data ?? null) as
+          | (PlanOverride & { effective_plan?: PlanLimits })
+          | null);
+    setOverride(ov);
+    setOverrideForm(normalizePlanCode(ov?.manual_plan_override ?? "free"));
     setPlanLoading(false);
   }, []);
 
@@ -1069,6 +1080,7 @@ function OrganisationDetailDrawer({
     setIdCopied(false);
     setPlanLimits(null);
     setSubscription(null);
+    setOverride(null);
     (async () => {
       const [ev, us] = await Promise.all([
         supabase.rpc("system_admin_events"),
@@ -1084,43 +1096,47 @@ function OrganisationDetailDrawer({
   }, [org, loadPlan, refreshTick]);
 
 
-  const handleSavePlan = async () => {
+  const handleSaveOverride = async () => {
     if (!org) return;
     setSaving(true);
-    const nowIso = new Date().toISOString();
-    let err: { message: string } | null = null;
-    if (subscription?.id) {
-      const { error } = await supabase
-        .from("agency_subscriptions")
-        .update({
-          plan_code: planForm.plan_code,
-          status: planForm.status,
-          updated_at: nowIso,
-        })
-        .eq("id", subscription.id);
-      err = error;
-    } else {
-      const periodEnd = new Date();
-      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-      const { error } = await supabase.from("agency_subscriptions").insert({
-        agency_id: org.agency_id,
-        plan_code: planForm.plan_code,
-        status: planForm.status,
-        current_period_start: nowIso,
-        current_period_end: periodEnd.toISOString(),
-        cancel_at_period_end: false,
-        updated_at: nowIso,
-      });
-      err = error;
-    }
+    const { data, error } = await supabase.rpc("save_organisation_plan_override", {
+      p_agency_id: org.agency_id,
+      p_plan_key: overrideForm,
+    });
     setSaving(false);
-    if (err) {
-      toast.error(`Could not save plan: ${err.message}`);
+    if (error) {
+      toast.error(error.message || "Could not save manual plan override.");
       return;
     }
-    toast.success("Plan updated.");
+    const payload = data as { success?: boolean } | null;
+    if (!payload?.success) {
+      toast.error("Save failed. No success flag returned.");
+      return;
+    }
+    toast.success(`Manual plan override saved: ${getPlanByCode(overrideForm).name}.`);
     await loadPlan(org.agency_id);
   };
+
+  const handleClearOverride = async () => {
+    if (!org) return;
+    setClearing(true);
+    const { data, error } = await supabase.rpc("clear_organisation_plan_override", {
+      p_agency_id: org.agency_id,
+    });
+    setClearing(false);
+    if (error) {
+      toast.error(error.message || "Could not clear manual plan override.");
+      return;
+    }
+    const payload = data as { success?: boolean } | null;
+    if (!payload?.success) {
+      toast.error("Clear failed. No success flag returned.");
+      return;
+    }
+    toast.success("Manual plan override cleared.");
+    await loadPlan(org.agency_id);
+  };
+
 
   const handleCopyId = async () => {
     if (!org) return;
@@ -1228,8 +1244,35 @@ function OrganisationDetailDrawer({
               ) : (
                 <div className="space-y-3">
                   <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3">
-                    <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
-                      Effective plan
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
+                        Effective plan
+                      </div>
+                      {(() => {
+                        const source = planLimits?.plan_source ?? "default";
+                        const labelMap: Record<string, { label: string; cls: string }> = {
+                          manual_override: {
+                            label: "Manual override",
+                            cls: "bg-[#FEF3C7] text-[#92400E]",
+                          },
+                          subscription: {
+                            label: "Subscription",
+                            cls: "bg-[#DCFCE7] text-[#166534]",
+                          },
+                          default: {
+                            label: "Default",
+                            cls: "bg-[#F1F5F9] text-[#475569]",
+                          },
+                        };
+                        const meta = labelMap[source] ?? labelMap.default;
+                        return (
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}
+                          >
+                            Source: {meta.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="mt-1 text-sm font-semibold text-[#0F172A]">
                       {getPlanByCode(planLimits?.plan_code).name}
@@ -1249,6 +1292,7 @@ function OrganisationDetailDrawer({
                       </div>
                     </div>
                   </div>
+
 
                   <div className="rounded-[10px] border border-[#E6ECF4] bg-white p-3">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
@@ -1300,17 +1344,35 @@ function OrganisationDetailDrawer({
 
                   <div className="rounded-[10px] border border-[#FCD34D] bg-[#FFFBEB] p-3">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400E]">
-                      Platform admin manual plan control
+                      Platform admin manual plan override
                     </div>
                     <p className="mt-1 text-[11px] text-[#92400E]">
-                      Manual plan changes are for platform-admin testing and early customer management. Stripe billing will replace this later.
+                      Set a manual plan when this customer is invoiced
+                      directly. The manual override takes priority over the
+                      Stripe subscription for feature gating
+                      (override → subscription → free).
                     </p>
-                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="mt-2 rounded-[8px] border border-[#FDE68A] bg-white p-2 text-[11px] text-[#0F172A]">
+                      <div>
+                        <span className="text-[#64748B]">Current override: </span>
+                        <span className="font-medium">
+                          {override?.manual_plan_override
+                            ? getPlanByCode(override.manual_plan_override).name
+                            : "None"}
+                        </span>
+                      </div>
+                      {override?.manual_plan_override_at ? (
+                        <div className="mt-0.5 text-[10px] text-[#64748B]">
+                          Set {fmtDateTime(override.manual_plan_override_at)}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
                       <div>
                         <label className="text-[11px] font-medium text-[#0F172A]">Plan</label>
                         <Select
-                          value={planForm.plan_code}
-                          onValueChange={(v) => setPlanForm((f) => ({ ...f, plan_code: v }))}
+                          value={overrideForm}
+                          onValueChange={(v) => setOverrideForm(v)}
                         >
                           <SelectTrigger className="mt-1 h-8 text-xs">
                             <SelectValue />
@@ -1325,33 +1387,23 @@ function OrganisationDetailDrawer({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
-                        <label className="text-[11px] font-medium text-[#0F172A]">Status</label>
-                        <Select
-                          value={planForm.status}
-                          onValueChange={(v) => setPlanForm((f) => ({ ...f, status: v }))}
-                        >
-                          <SelectTrigger className="mt-1 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">active</SelectItem>
-                            <SelectItem value="trialing">trialing</SelectItem>
-                            <SelectItem value="comp">comp</SelectItem>
-                            <SelectItem value="past_due">past_due</SelectItem>
-                            <SelectItem value="cancelled">cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={handleSavePlan}
-                        disabled={saving}
+                        onClick={handleSaveOverride}
+                        disabled={saving || planLoading}
                         className="inline-flex items-center gap-1 rounded-[8px] bg-[#1F56C5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1A48A8] disabled:opacity-60"
                       >
-                        {saving ? "Saving…" : "Save plan"}
+                        {saving ? "Saving…" : "Save manual override"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearOverride}
+                        disabled={clearing || planLoading || !override?.manual_plan_override}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#FCA5A5] bg-white px-3 py-1.5 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2] disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {clearing ? "Clearing…" : "Clear manual override"}
                       </button>
                       <button
                         type="button"
@@ -1363,6 +1415,7 @@ function OrganisationDetailDrawer({
                       </button>
                     </div>
                   </div>
+
                 </div>
               )}
             </Section>
