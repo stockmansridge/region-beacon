@@ -11,6 +11,7 @@ export type EventBrandingKeys = {
   accentColor: string | null;
   pageBackgroundColor: string | null;
   cardBackgroundColor: string | null;
+  ready: boolean;
 };
 
 const EMPTY: EventBrandingKeys = {
@@ -20,6 +21,7 @@ const EMPTY: EventBrandingKeys = {
   accentColor: null,
   pageBackgroundColor: null,
   cardBackgroundColor: null,
+  ready: false,
 };
 
 export function useEventBrandingKeys(
@@ -28,10 +30,11 @@ export function useEventBrandingKeys(
   const [keys, setKeys] = useState<EventBrandingKeys>(EMPTY);
   useEffect(() => {
     if (!subdomain) {
-      setKeys(EMPTY);
+      setKeys({ ...EMPTY, ready: true });
       return;
     }
     let cancelled = false;
+    setKeys(EMPTY);
     (async () => {
       try {
         const host = tenantHost(subdomain);
@@ -54,9 +57,10 @@ export function useEventBrandingKeys(
           accentColor: row?.accent_color ?? null,
           pageBackgroundColor: row?.page_background_color ?? null,
           cardBackgroundColor: row?.card_background_color ?? null,
+          ready: true,
         });
       } catch {
-        if (!cancelled) setKeys(EMPTY);
+        if (!cancelled) setKeys({ ...EMPTY, ready: true });
       }
     })();
     return () => {
@@ -71,3 +75,4 @@ export function useEventPaletteKey(
 ): string | null {
   return useEventBrandingKeys(subdomain).paletteKey;
 }
+
