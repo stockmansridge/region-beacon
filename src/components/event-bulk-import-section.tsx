@@ -939,8 +939,8 @@ export function EventBulkImportSection({
                     : "Will CREATE a new venue.";
                   const civ =
                     v.check_in_value != null
-                      ? ` Check-in value: ${v.check_in_value} stamp${v.check_in_value === 1 ? "" : "s"} per QR scan.`
-                      : " Check-in value: leave unchanged.";
+                      ? ` Check-in stamp value: ${v.check_in_value}.`
+                      : " Check-in stamp value: leave unchanged.";
                   return {
                     rowNum: v.rowNum,
                     label: v.name || v.venue_key,
