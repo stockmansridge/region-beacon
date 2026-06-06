@@ -305,6 +305,9 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         }
       }
       const pointsRaw = num(r["points"]);
+      if (pointsRaw !== null && (!Number.isFinite(pointsRaw) || pointsRaw < 0 || Math.floor(pointsRaw) !== pointsRaw)) {
+        issues.push({ level: "error", message: "Bonus points must be 0 or higher." });
+      }
       const points = pointsRaw === null ? 0 : Math.max(0, Math.floor(pointsRaw));
       const statusParsed = statusOrDefault(r["status"], "active");
       if (statusParsed === null) {
