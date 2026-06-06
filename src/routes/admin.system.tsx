@@ -870,6 +870,7 @@ function OrganisationsSection({
   const [q, setQ] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [selected, setSelected] = useState<OrganisationRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<OrganisationRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -1002,25 +1003,35 @@ function OrganisationsSection({
                   <TableCell>{statusPill(r.status)}</TableCell>
                   <TableCell className="text-sm text-[#64748B]">{fmtDate(r.created_at)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    {r.slug ? (
+                    <div className="flex items-center justify-end gap-1">
+                      {r.slug ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await copyToClipboard(r.slug!);
+                            setCopied(r.agency_id);
+                            setTimeout(() => setCopied((c) => (c === r.agency_id ? null : c)), 1500);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                          title="Copy organisation slug"
+                        >
+                          {copied === r.agency_id ? (
+                            <CheckCircle2 className="h-3 w-3 text-[#16A34A]" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                          Slug
+                        </button>
+                      ) : null}
                       <button
                         type="button"
-                        onClick={async () => {
-                          await copyToClipboard(r.slug!);
-                          setCopied(r.agency_id);
-                          setTimeout(() => setCopied((c) => (c === r.agency_id ? null : c)), 1500);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
-                        title="Copy organisation slug"
+                        onClick={() => setDeleteTarget(r)}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2]"
+                        title="Delete organisation"
                       >
-                        {copied === r.agency_id ? (
-                          <CheckCircle2 className="h-3 w-3 text-[#16A34A]" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                        Slug
+                        <Trash2 className="h-3 w-3" />
                       </button>
-                    ) : null}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -1030,6 +1041,11 @@ function OrganisationsSection({
       </Card>
 
       <OrganisationDetailDrawer org={selected} onClose={() => setSelected(null)} onUpdated={load} />
+      <DeleteOrganisationDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={load}
+      />
     </div>
   );
 }
