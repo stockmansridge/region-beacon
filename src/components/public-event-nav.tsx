@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, ShieldCheck, X, Tag, HelpCircle } from "lucide-react";
+import { Ticket, MapPin, Trophy, Map as MapIcon, MoreHorizontal, Home, FileText, X, Tag, HelpCircle } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { useEventHasMap } from "@/lib/use-event-has-map";
