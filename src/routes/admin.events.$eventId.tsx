@@ -3210,6 +3210,17 @@ function EventDetail() {
                     );
                   })()}
                 </FormSection>
+
+                {agencyId && venueEditingId && venueEditingId !== "new" && (
+                  <VenueTastingQrSection
+                    agencyId={agencyId}
+                    eventId={event.id}
+                    venueId={venueEditingId}
+                    venueName={venueForm.name}
+                    publicSubdomain={activeSubdomain}
+                    canEdit={canEdit}
+                  />
+                )}
                 </>
                 )}
               </div>
