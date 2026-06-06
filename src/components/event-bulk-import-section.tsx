@@ -36,6 +36,9 @@ type VenueDraft = {
   offer_summary: string | null;
   order_index: number;
   status: "active" | "inactive";
+  // Optional stamp/entry value saved to venue_qr_codes.entry_value for the
+  // venue's active QR row. null = leave unchanged on import.
+  check_in_value: number | null;
   issues: RowIssue[];
   // Resolved at confirm:
   matchedVenueId?: string | null;
@@ -62,7 +65,7 @@ type TastingDraft = {
   venue_key: string;
   qr_name: string;
   description: string | null;
-  entry_value: number;
+  points: number;
   status: Status;
   issues: RowIssue[];
   result?: "created" | "updated" | "skipped" | "error";
