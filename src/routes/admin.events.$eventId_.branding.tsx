@@ -33,6 +33,12 @@ import {
   getBackground,
 } from "@/lib/event-backgrounds";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import {
+  EVENT_FONTS,
+  buildGoogleFontsHref,
+  getEventFont,
+  isSupportedEventFont,
+} from "@/lib/event-fonts";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
