@@ -343,6 +343,7 @@ export function PublicEventNav({
           hasTerms={hasTerms}
           hasFaq={hasFaq}
           hasMap={hasMap}
+          hasAwards={hasAwards}
           hasPrivacy={hasPrivacy}
           passportHref={passportHref}
           passportLabel={passportLabel}
