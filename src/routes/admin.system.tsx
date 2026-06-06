@@ -959,6 +959,7 @@ function OrganisationsSection({
               <TableHead className="text-right">Venues</TableHead>
               <TableHead className="text-right">Passports</TableHead>
               <TableHead className="text-right">Check-ins</TableHead>
+              <TableHead>Plan</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -966,10 +967,10 @@ function OrganisationsSection({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={10} />
+              <LoadingRow cols={11} />
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-8 text-center text-sm text-[#64748B]">
+                <TableCell colSpan={11} className="py-8 text-center text-sm text-[#64748B]">
                   No organisations match.
                 </TableCell>
               </TableRow>
@@ -997,6 +998,7 @@ function OrganisationsSection({
                   <TableCell className="text-right text-sm">{fmtNum(r.venue_count)}</TableCell>
                   <TableCell className="text-right text-sm">{fmtNum(r.passport_count)}</TableCell>
                   <TableCell className="text-right text-sm">{fmtNum(r.checkin_count)}</TableCell>
+                  <TableCell><PlanCell row={r} /></TableCell>
                   <TableCell>{statusPill(r.status)}</TableCell>
                   <TableCell className="text-sm text-[#64748B]">{fmtDate(r.created_at)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -1027,7 +1029,7 @@ function OrganisationsSection({
         </Table>
       </Card>
 
-      <OrganisationDetailDrawer org={selected} onClose={() => setSelected(null)} />
+      <OrganisationDetailDrawer org={selected} onClose={() => setSelected(null)} onUpdated={load} />
     </div>
   );
 }
