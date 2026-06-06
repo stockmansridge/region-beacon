@@ -1037,9 +1037,11 @@ function OrganisationsSection({
 function OrganisationDetailDrawer({
   org,
   onClose,
+  onUpdated,
 }: {
   org: OrganisationRow | null;
   onClose: () => void;
+  onUpdated?: () => void | Promise<void>;
 }) {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [users, setUsers] = useState<UserRow[] | null>(null);
