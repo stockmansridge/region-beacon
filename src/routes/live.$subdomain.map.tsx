@@ -766,3 +766,59 @@ function MapFallbackList({
     </div>
   );
 }
+
+function UploadedEventMap({
+  path,
+  mime,
+  eventName,
+  primary,
+}: {
+  path: string;
+  mime: string | null;
+  eventName: string;
+  primary: string;
+}) {
+  const url = getEventAssetPublicUrl(path);
+  if (!url) return null;
+  const isImage = mime !== null && mime.startsWith("image/");
+  const isPdf = mime === "application/pdf";
+
+  if (isImage) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]"
+        aria-label={`${eventName} event map — open full size`}
+      >
+        <img
+          src={url}
+          alt={`${eventName} event map`}
+          className="w-full rounded-xl bg-white object-contain"
+        />
+      </a>
+    );
+  }
+
+  if (isPdf) {
+    return (
+      <div className="rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center">
+        <p className="mb-3 text-sm text-[#3D372C]">
+          The organiser has provided a downloadable site map.
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider"
+          style={{ backgroundColor: primary, color: "#FBF5E8" }}
+        >
+          Open event map
+        </a>
+      </div>
+    );
+  }
+
+  return null;
+}
