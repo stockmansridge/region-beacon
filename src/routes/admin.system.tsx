@@ -1019,16 +1019,15 @@ function OrganisationDetailDrawer({
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
-  const [planForm, setPlanForm] = useState<{ plan_code: string; status: string }>({
-    plan_code: "free",
-    status: "active",
-  });
+  const [override, setOverride] = useState<PlanOverride | null>(null);
+  const [overrideForm, setOverrideForm] = useState<string>("free");
   const [saving, setSaving] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const loadPlan = useCallback(async (agencyId: string) => {
     setPlanLoading(true);
     setPlanError(null);
-    const [limitsRes, subRes, billingRes] = await Promise.all([
+    const [limitsRes, subRes, billingRes, overrideRes] = await Promise.all([
       supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
       supabase
         .from("agency_subscriptions")
@@ -1044,6 +1043,7 @@ function OrganisationDetailDrawer({
         .select("stripe_customer_id")
         .eq("agency_id", agencyId)
         .maybeSingle(),
+      supabase.rpc("get_organisation_plan_override", { p_agency_id: agencyId }),
     ]);
     if (limitsRes.error) {
       setPlanError(limitsRes.error.message);
@@ -1058,10 +1058,13 @@ function OrganisationDetailDrawer({
         ? null
         : ((billingRes.data as { stripe_customer_id: string | null }).stripe_customer_id ?? null);
     setStripeCustomerId(stripeCustomer);
-    setPlanForm({
-      plan_code: normalizePlanCode(sub?.plan_code ?? "free"),
-      status: sub?.status && sub.status !== "none" ? sub.status : "active",
-    });
+    const ov = overrideRes.error
+      ? null
+      : ((overrideRes.data ?? null) as
+          | (PlanOverride & { effective_plan?: PlanLimits })
+          | null);
+    setOverride(ov);
+    setOverrideForm(normalizePlanCode(ov?.manual_plan_override ?? "free"));
     setPlanLoading(false);
   }, []);
 
@@ -1077,6 +1080,7 @@ function OrganisationDetailDrawer({
     setIdCopied(false);
     setPlanLimits(null);
     setSubscription(null);
+    setOverride(null);
     (async () => {
       const [ev, us] = await Promise.all([
         supabase.rpc("system_admin_events"),
@@ -1092,43 +1096,47 @@ function OrganisationDetailDrawer({
   }, [org, loadPlan, refreshTick]);
 
 
-  const handleSavePlan = async () => {
+  const handleSaveOverride = async () => {
     if (!org) return;
     setSaving(true);
-    const nowIso = new Date().toISOString();
-    let err: { message: string } | null = null;
-    if (subscription?.id) {
-      const { error } = await supabase
-        .from("agency_subscriptions")
-        .update({
-          plan_code: planForm.plan_code,
-          status: planForm.status,
-          updated_at: nowIso,
-        })
-        .eq("id", subscription.id);
-      err = error;
-    } else {
-      const periodEnd = new Date();
-      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-      const { error } = await supabase.from("agency_subscriptions").insert({
-        agency_id: org.agency_id,
-        plan_code: planForm.plan_code,
-        status: planForm.status,
-        current_period_start: nowIso,
-        current_period_end: periodEnd.toISOString(),
-        cancel_at_period_end: false,
-        updated_at: nowIso,
-      });
-      err = error;
-    }
+    const { data, error } = await supabase.rpc("save_organisation_plan_override", {
+      p_agency_id: org.agency_id,
+      p_plan_key: overrideForm,
+    });
     setSaving(false);
-    if (err) {
-      toast.error(`Could not save plan: ${err.message}`);
+    if (error) {
+      toast.error(error.message || "Could not save manual plan override.");
       return;
     }
-    toast.success("Plan updated.");
+    const payload = data as { success?: boolean } | null;
+    if (!payload?.success) {
+      toast.error("Save failed. No success flag returned.");
+      return;
+    }
+    toast.success(`Manual plan override saved: ${getPlanByCode(overrideForm).name}.`);
     await loadPlan(org.agency_id);
   };
+
+  const handleClearOverride = async () => {
+    if (!org) return;
+    setClearing(true);
+    const { data, error } = await supabase.rpc("clear_organisation_plan_override", {
+      p_agency_id: org.agency_id,
+    });
+    setClearing(false);
+    if (error) {
+      toast.error(error.message || "Could not clear manual plan override.");
+      return;
+    }
+    const payload = data as { success?: boolean } | null;
+    if (!payload?.success) {
+      toast.error("Clear failed. No success flag returned.");
+      return;
+    }
+    toast.success("Manual plan override cleared.");
+    await loadPlan(org.agency_id);
+  };
+
 
   const handleCopyId = async () => {
     if (!org) return;
