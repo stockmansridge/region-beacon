@@ -402,6 +402,25 @@ function EventTabBar({
   );
 }
 
+type VenueEditorTabKey =
+  | "basics"
+  | "location"
+  | "public"
+  | "images"
+  | "qr"
+  | "tasting";
+
+const VENUE_EDITOR_TABS: Array<{ key: VenueEditorTabKey; label: string; existingOnly?: boolean }> = [
+  { key: "basics", label: "Basics" },
+  { key: "location", label: "Location" },
+  { key: "public", label: "Public Page" },
+  { key: "images", label: "Images", existingOnly: true },
+  { key: "qr", label: "Venue QR", existingOnly: true },
+  { key: "tasting", label: "Tasting QR", existingOnly: true },
+];
+
+
+
 
 function EventDetail() {
   const { eventId } = Route.useParams();
