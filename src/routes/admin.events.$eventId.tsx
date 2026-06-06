@@ -3161,28 +3161,72 @@ function EventDetail() {
                       />
                     </Field>
                   </div>
-                  <Field label="Points value">
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={venueForm.points_value}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === "") {
-                          setVenueForm({ ...venueForm, points_value: "0" });
-                          return;
-                        }
-                        const n = Number(raw);
-                        if (!Number.isFinite(n) || n < 0) return;
-                        setVenueForm({ ...venueForm, points_value: String(Math.floor(n)) });
-                      }}
-                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Points awarded when a participant scans this venue QR code. This does not affect passport stamp collection.
-                    </p>
-                  </Field>
+                  {/*
+                    Stamp value lives on the venue's active QR row
+                    (`venue_qr_codes.entry_value`). This is the same value
+                    shown and edited in the venues list, so editing it here
+                    keeps the list and editor in sync. For new venues we
+                    hide the control until the QR is generated in the
+                    "Venue QR" tab.
+                  */}
+                  {venueEditingId !== "new" && (() => {
+                    const currentVenue = venues.find((x) => x.id === venueEditingId);
+                    if (!currentVenue) return null;
+                    const qr = qrByVenue.get(currentVenue.id);
+                    if (!qr) {
+                      return (
+                        <Field label="Stamp value">
+                          <p className="text-sm text-muted-foreground">
+                            Generate a QR code in the <strong>Venue QR</strong> tab to set the stamp value.
+                          </p>
+                        </Field>
+                      );
+                    }
+                    const draft =
+                      qrEntryDraft.get(currentVenue.id) ?? String(qr.entry_value ?? 1);
+                    const dirty =
+                      qrEntryDraft.get(currentVenue.id) !== undefined &&
+                      draft !== String(qr.entry_value ?? 1);
+                    const saving = qrEntrySavingId === currentVenue.id;
+                    return (
+                      <Field label="Stamp value">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            step={1}
+                            inputMode="numeric"
+                            value={draft}
+                            onChange={(e) => {
+                              const val = e.currentTarget.value;
+                              setQrEntryDraft((m) => {
+                                const next = new Map(m);
+                                next.set(currentVenue.id, val);
+                                return next;
+                              });
+                            }}
+                            disabled={!canEdit || saving}
+                            className="h-10 w-24 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:outline-none focus:ring-2 focus:ring-[#2F6FE4]/20 disabled:opacity-50"
+                          />
+                          {canEdit && (dirty || saving) && (
+                            <button
+                              type="button"
+                              onClick={() => saveQrEntryValue(currentVenue.id, draft)}
+                              disabled={saving}
+                              className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {saving ? "Saving…" : "Save stamp value"}
+                            </button>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Number of entries awarded each time a participant scans this venue's QR code. Changes apply to future scans only — existing check-ins keep the value earned at scan time.
+                        </p>
+                      </Field>
+                    );
+                  })()}
+
                 </FormSection>
                 )}
 
