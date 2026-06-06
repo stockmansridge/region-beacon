@@ -16,13 +16,15 @@ import {
   AlertCircle,
   RefreshCw,
   X,
+  Trash2,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { useAuth } from "@/hooks/use-auth";
-import { formatRoleLabel } from "@/lib/role-labels";
+import { formatRoleLabel, formatMemberType } from "@/lib/role-labels";
 import { RESERVED_SUBDOMAINS } from "@/lib/reserved-subdomains";
 import { getPlanByCode, normalizePlanCode } from "@/lib/getstampd-pricing";
 import {
@@ -54,6 +56,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export const Route = createFileRoute("/admin/system")({
   head: () => ({ meta: [{ title: "System Admin — GetStampd" }] }),
@@ -441,9 +454,141 @@ function writeHash(state: HashState) {
   window.history.replaceState(null, "", next ? `${window.location.pathname}${window.location.search}#${next}` : url);
 }
 
+// -------- Delete user dialog ---------------------------------------------
+
+type DeleteUserTarget = {
+  user_id: string;
+  email: string | null;
+  member_type: string;
+  agency_names: string[];
+};
+
+function DeleteUserDialog({
+  target,
+  currentUserId,
+  onClose,
+  onDeleted,
+}: {
+  target: DeleteUserTarget | null;
+  currentUserId: string | null;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const [confirm, setConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (target) setConfirm("");
+  }, [target]);
+
+  const isSelf = !!target && !!currentUserId && target.user_id === currentUserId;
+  const ready = confirm.trim().toUpperCase() === "DELETE" && !isSelf;
+
+  const handleDelete = async () => {
+    if (!target || !ready) return;
+    setDeleting(true);
+    const { data, error } = await supabase.rpc("system_admin_delete_user", {
+      _target_user_id: target.user_id,
+    });
+    setDeleting(false);
+    if (error) {
+      toast.error(error.message || "Could not delete user.");
+      return;
+    }
+    const payload = data as { success?: boolean; deleted_user_id?: string } | null;
+    if (!payload?.success) {
+      toast.error("Delete failed. No success flag returned.");
+      return;
+    }
+    toast.success(`Deleted ${target.email ?? "user"}.`);
+    onDeleted();
+    onClose();
+  };
+
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !deleting) onClose(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-[#991B1B]">
+            <Trash2 className="h-4 w-4" />
+            Delete user from GetStampd
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm text-[#475569]">
+              <p>
+                This will remove this user from GetStampd. Their organisation
+                memberships, role assignments, and related access records will
+                be removed. This action cannot be undone.
+              </p>
+              {target ? (
+                <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs text-[#0F172A]">
+                  <div>
+                    <span className="text-[#64748B]">Email: </span>
+                    <span className="font-medium">{target.email ?? "—"}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Member type: </span>
+                    <span className="font-medium">{target.member_type}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-[#64748B]">Organisations: </span>
+                    <span className="font-medium">
+                      {target.agency_names.length
+                        ? target.agency_names.join(", ")
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+              {isSelf ? (
+                <div className="rounded-[10px] border border-[#FECACA] bg-[#FEF2F2] p-3 text-xs text-[#991B1B]">
+                  You cannot delete your own platform admin account.
+                </div>
+              ) : (
+                <div>
+                  <label className="text-[11px] font-medium text-[#0F172A]">
+                    Type <code className="rounded bg-[#F1F5F9] px-1">DELETE</code> to confirm
+                  </label>
+                  <Input
+                    autoFocus
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    placeholder="DELETE"
+                    className="mt-1"
+                    disabled={deleting}
+                  />
+                </div>
+              )}
+              <p className="text-[11px] text-[#64748B]">
+                Organisations, events, venues, passports, and check-ins are
+                not removed. An owner being deleted leaves the organisation
+                intact and ownerless for platform admin follow-up.
+              </p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!ready || deleting}
+            onClick={(e) => {
+              e.preventDefault();
+              handleDelete();
+            }}
+            className="bg-[#DC2626] text-white hover:bg-[#B91C1C]"
+          >
+            {deleting ? "Deleting…" : "Delete user"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 // -------- Main component --------------------------------------------------
 
 function SystemAdmin() {
+
   const access = useAdminAccess();
   const { email } = useAuth();
 
@@ -912,6 +1057,11 @@ function OrganisationDetailDrawer({
     setPlanLoading(false);
   }, []);
 
+  const [refreshTick, setRefreshTick] = useState(0);
+  const { session } = useAuth();
+  const currentUserId = session?.user?.id ?? null;
+  const [deleteTarget, setDeleteTarget] = useState<DeleteUserTarget | null>(null);
+
   useEffect(() => {
     if (!org) return;
     let cancelled = false;
@@ -931,7 +1081,8 @@ function OrganisationDetailDrawer({
     })();
     loadPlan(org.agency_id);
     return () => { cancelled = true; };
-  }, [org, loadPlan]);
+  }, [org, loadPlan, refreshTick]);
+
 
   const handleSavePlan = async () => {
     if (!org) return;
@@ -1256,24 +1407,72 @@ function OrganisationDetailDrawer({
                 <div className="text-xs text-[#64748B]">No members.</div>
               ) : (
                 <ul className="divide-y divide-[#EEF2F7]">
-                  {users.map((u, i) => (
-                    <li key={`${u.user_id ?? u.invited_email}-${i}`} className="flex items-center justify-between py-2 text-sm">
-                      <div>
-                        <div className="text-[#0F172A]">{u.email ?? u.invited_email ?? "—"}</div>
-                        <div className="text-[11px] text-[#64748B]">{formatRoleLabel(u.role)}</div>
-                      </div>
-                      {u.accepted_at ? statusPill("active") : statusPill("draft")}
-                    </li>
-                  ))}
+                  {users.map((u, i) => {
+                    const memberType = formatMemberType(u);
+                    const isSelf = !!currentUserId && u.user_id === currentUserId;
+                    const email = u.email ?? u.invited_email ?? "—";
+                    return (
+                      <li
+                        key={`${u.user_id ?? u.invited_email}-${i}`}
+                        className="flex items-center justify-between gap-2 py-2 text-sm"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-[#0F172A]">{email}</div>
+                          <div className="mt-0.5 flex items-center gap-1.5">
+                            <span className="inline-flex rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10px] font-medium text-[#1F56C5]">
+                              {memberType}
+                            </span>
+                            <span className="text-[10px] text-[#94A3B8]">
+                              Joined {fmtDate(u.accepted_at ?? u.invited_at ?? u.created_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {u.accepted_at || u.scope === "platform"
+                            ? statusPill("active")
+                            : statusPill("draft")}
+                          {u.user_id ? (
+                            <button
+                              type="button"
+                              disabled={isSelf}
+                              title={
+                                isSelf
+                                  ? "You cannot delete your own account"
+                                  : "Delete user"
+                              }
+                              onClick={() =>
+                                setDeleteTarget({
+                                  user_id: u.user_id!,
+                                  email: u.email ?? u.invited_email,
+                                  member_type: memberType,
+                                  agency_names: org.name ? [org.name] : [],
+                                })
+                              }
+                              className="inline-flex items-center justify-center rounded-[8px] border border-[#FECACA] bg-white p-1.5 text-[#DC2626] hover:bg-[#FEF2F2] disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </Section>
           </>
         ) : null}
       </SheetContent>
+      <DeleteUserDialog
+        target={deleteTarget}
+        currentUserId={currentUserId}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={() => setRefreshTick((t) => t + 1)}
+      />
     </Sheet>
   );
 }
+
 
 // -------- Users ----------------------------------------------------------
 
@@ -1285,6 +1484,10 @@ function UsersSection() {
   const [scope, setScope] = useState<string>("all");
   const [role, setRole] = useState<string>("all");
   const [selected, setSelected] = useState<UserRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteUserTarget | null>(null);
+  const { session } = useAuth();
+  const currentUserId = session?.user?.id ?? null;
+
 
   const load = async () => {
     setLoading(true);
@@ -1371,18 +1574,20 @@ function UsersSection() {
           <TableHeader>
             <TableRow className="bg-[#F8FAFC]">
               <TableHead>Email</TableHead>
+              <TableHead>Member type</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Organisation</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Joined / invited</TableHead>
+              <TableHead className="w-[60px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={5} />
+              <LoadingRow cols={7} />
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-sm text-[#64748B]">
+                <TableCell colSpan={7} className="py-8 text-center text-sm text-[#64748B]">
                   No users match.
                 </TableCell>
               </TableRow>
@@ -1394,6 +1599,8 @@ function UsersSection() {
                     : r.accepted_at
                       ? "active"
                       : "pending invite";
+                const memberType = formatMemberType(r);
+                const isSelf = !!currentUserId && r.user_id === currentUserId;
                 return (
                   <TableRow
                     key={`${r.user_id ?? r.invited_email ?? "row"}-${r.role}-${idx}`}
@@ -1404,7 +1611,22 @@ function UsersSection() {
                       {r.email ?? r.invited_email ?? "—"}
                     </TableCell>
                     <TableCell>
-                      <span className="inline-flex rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[11px] font-medium text-[#1F56C5]">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          memberType === "Pending Invite"
+                            ? "bg-[#FEF3C7] text-[#92400E]"
+                            : memberType === "Platform Admin"
+                              ? "bg-[#FEE2E2] text-[#991B1B]"
+                              : memberType === "Owner"
+                                ? "bg-[#DCFCE7] text-[#166534]"
+                                : "bg-[#EAF2FF] text-[#1F56C5]"
+                        }`}
+                      >
+                        {memberType}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[11px] font-medium text-[#475569]">
                         {formatRoleLabel(r.role)}
                       </span>
                     </TableCell>
@@ -1417,6 +1639,32 @@ function UsersSection() {
                     <TableCell className="text-sm text-[#64748B]">
                       {fmtDate(r.accepted_at ?? r.invited_at ?? r.created_at)}
                     </TableCell>
+                    <TableCell className="text-right">
+                      {r.user_id ? (
+                        <button
+                          type="button"
+                          disabled={isSelf}
+                          title={isSelf ? "You cannot delete your own account" : "Delete user"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const agencyNames = (rows ?? [])
+                              .filter(
+                                (x) => x.user_id === r.user_id && x.agency_name,
+                              )
+                              .map((x) => x.agency_name as string);
+                            setDeleteTarget({
+                              user_id: r.user_id!,
+                              email: r.email ?? r.invited_email,
+                              member_type: memberType,
+                              agency_names: Array.from(new Set(agencyNames)),
+                            });
+                          }}
+                          className="inline-flex items-center justify-center rounded-[8px] border border-[#FECACA] bg-white p-1.5 text-[#DC2626] hover:bg-[#FEF2F2] disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                    </TableCell>
                   </TableRow>
                 );
               })
@@ -1426,9 +1674,16 @@ function UsersSection() {
       </Card>
 
       <UserDetailDrawer user={selected} allRows={rows} onClose={() => setSelected(null)} />
+      <DeleteUserDialog
+        target={deleteTarget}
+        currentUserId={currentUserId}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={load}
+      />
     </div>
   );
 }
+
 
 function UserDetailDrawer({
   user,
