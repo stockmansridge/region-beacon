@@ -1344,17 +1344,35 @@ function OrganisationDetailDrawer({
 
                   <div className="rounded-[10px] border border-[#FCD34D] bg-[#FFFBEB] p-3">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400E]">
-                      Platform admin manual plan control
+                      Platform admin manual plan override
                     </div>
                     <p className="mt-1 text-[11px] text-[#92400E]">
-                      Manual plan changes are for platform-admin testing and early customer management. Stripe billing will replace this later.
+                      Set a manual plan when this customer is invoiced
+                      directly. The manual override takes priority over the
+                      Stripe subscription for feature gating
+                      (override → subscription → free).
                     </p>
-                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="mt-2 rounded-[8px] border border-[#FDE68A] bg-white p-2 text-[11px] text-[#0F172A]">
+                      <div>
+                        <span className="text-[#64748B]">Current override: </span>
+                        <span className="font-medium">
+                          {override?.manual_plan_override
+                            ? getPlanByCode(override.manual_plan_override).name
+                            : "None"}
+                        </span>
+                      </div>
+                      {override?.manual_plan_override_at ? (
+                        <div className="mt-0.5 text-[10px] text-[#64748B]">
+                          Set {fmtDateTime(override.manual_plan_override_at)}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
                       <div>
                         <label className="text-[11px] font-medium text-[#0F172A]">Plan</label>
                         <Select
-                          value={planForm.plan_code}
-                          onValueChange={(v) => setPlanForm((f) => ({ ...f, plan_code: v }))}
+                          value={overrideForm}
+                          onValueChange={(v) => setOverrideForm(v)}
                         >
                           <SelectTrigger className="mt-1 h-8 text-xs">
                             <SelectValue />
@@ -1369,33 +1387,23 @@ function OrganisationDetailDrawer({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
-                        <label className="text-[11px] font-medium text-[#0F172A]">Status</label>
-                        <Select
-                          value={planForm.status}
-                          onValueChange={(v) => setPlanForm((f) => ({ ...f, status: v }))}
-                        >
-                          <SelectTrigger className="mt-1 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">active</SelectItem>
-                            <SelectItem value="trialing">trialing</SelectItem>
-                            <SelectItem value="comp">comp</SelectItem>
-                            <SelectItem value="past_due">past_due</SelectItem>
-                            <SelectItem value="cancelled">cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={handleSavePlan}
-                        disabled={saving}
+                        onClick={handleSaveOverride}
+                        disabled={saving || planLoading}
                         className="inline-flex items-center gap-1 rounded-[8px] bg-[#1F56C5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1A48A8] disabled:opacity-60"
                       >
-                        {saving ? "Saving…" : "Save plan"}
+                        {saving ? "Saving…" : "Save manual override"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearOverride}
+                        disabled={clearing || planLoading || !override?.manual_plan_override}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#FCA5A5] bg-white px-3 py-1.5 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2] disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {clearing ? "Clearing…" : "Clear manual override"}
                       </button>
                       <button
                         type="button"
@@ -1407,6 +1415,7 @@ function OrganisationDetailDrawer({
                       </button>
                     </div>
                   </div>
+
                 </div>
               )}
             </Section>
