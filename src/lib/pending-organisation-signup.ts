@@ -13,11 +13,22 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 
 export type PendingOrganisationSignup = {
   businessName: string;
-  organisationUrlName: string;
+  organisationUrlName?: string;
   email: string;
   createdAt: string;
   source: string;
 };
+
+export function slugifyOrganisationName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "organisation";
+}
+
 
 function storageAvailable(): Storage | null {
   try {
@@ -60,12 +71,12 @@ export function readPendingOrganisationSignup(): PendingOrganisationSignup | nul
     if (
       !parsed ||
       typeof parsed.businessName !== "string" ||
-      typeof parsed.organisationUrlName !== "string" ||
       typeof parsed.createdAt !== "string"
     ) {
       ls.removeItem(PENDING_ORG_SIGNUP_KEY);
       return null;
     }
+
     const age = Date.now() - new Date(parsed.createdAt).getTime();
     if (!Number.isFinite(age) || age > MAX_AGE_MS) {
       ls.removeItem(PENDING_ORG_SIGNUP_KEY);
@@ -165,11 +176,12 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     return { ok: true, alreadyHadOrganisation: true };
   }
 
-  const rpcArgs = {
-    _agency_name: pending.businessName,
-    _agency_slug: pending.organisationUrlName,
-  };
-  const { error: rpcErr } = await supabase.rpc("create_customer_agency", rpcArgs);
+  const baseSlug = (pending.organisationUrlName && pending.organisationUrlName.trim())
+    ? pending.organisationUrlName.trim().toLowerCase()
+    : slugifyOrganisationName(pending.businessName);
+
+  const { error: rpcErr } = await createAgencyWithSlugRetry(pending.businessName, baseSlug);
+
   if (rpcErr) {
     // eslint-disable-next-line no-console
     console.warn("[org-signup] create_customer_agency failed", {
@@ -177,21 +189,7 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
       code: rpcErr.code,
       message: rpcErr.message,
     });
-  }
-
-
-
-
-  if (rpcErr) {
     const msg = rpcErr.message || "";
-    if (/agency_slug_taken/i.test(msg)) {
-      return {
-        ok: false,
-        code: "slug_taken",
-        message:
-          "That Organisation URL name is already taken. Please choose another.",
-      };
-    }
     if (/invalid_agency_slug/i.test(msg)) {
       return { ok: false, code: "invalid_slug", message: "Organisation URL name is invalid." };
     }
@@ -225,3 +223,33 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
   clearPendingOrganisationSignup();
   return { ok: true };
 }
+
+/**
+ * Creates an organisation, automatically appending -2, -3, ... to the slug
+ * if the requested slug is taken. Slug conflicts must not block signup.
+ */
+export async function createAgencyWithSlugRetry(
+  agencyName: string,
+  baseSlug: string,
+  maxAttempts = 50,
+): Promise<{ error: { message: string; code?: string } | null; slug?: string }> {
+  const base = baseSlug && baseSlug.length >= 2 ? baseSlug : slugifyOrganisationName(agencyName);
+  for (let i = 0; i < maxAttempts; i++) {
+    const candidate = i === 0 ? base : `${base}-${i + 1}`.slice(0, 60);
+    const { error } = await supabase.rpc("create_customer_agency", {
+      _agency_name: agencyName,
+      _agency_slug: candidate,
+    });
+    if (!error) return { error: null, slug: candidate };
+    if (!/agency_slug_taken/i.test(error.message || "")) {
+      return { error };
+    }
+  }
+  return {
+    error: {
+      message:
+        "Could not find an available Organisation URL name. Please try a different organisation name.",
+    },
+  };
+}
+
