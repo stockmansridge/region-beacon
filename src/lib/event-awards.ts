@@ -1,0 +1,202 @@
+// Event Awards / Prizes — client helpers.
+//
+// Wraps the SECURITY DEFINER RPCs (see
+// supabase/migrations-draft-event-awards/) and provides an image upload
+// helper that reuses the existing `event-assets` public storage bucket
+// under {agency_id}/{event_id}/awards/{uuid}.{ext}.
+
+import { supabase } from "@/integrations/supabase/client";
+import { EVENT_ASSETS_BUCKET } from "@/lib/event-assets";
+
+export type AwardStatus = "active" | "disabled";
+
+export type AdminEventAward = {
+  id: string;
+  event_id: string;
+  agency_id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  points_required: number;
+  requires_all_locations: boolean;
+  status: AwardStatus;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  eligible_count: number;
+  latest_draw_id: string | null;
+  latest_drawn_at: string | null;
+  latest_winner_name: string | null;
+  latest_winner_email: string | null;
+  latest_eligible_count: number | null;
+};
+
+export type AwardDrawResult = {
+  draw_id: string;
+  award_title: string;
+  winner_passport_id: string;
+  winner_participant_name: string | null;
+  winner_participant_email: string | null;
+  eligible_count: number;
+  drawn_at: string;
+};
+
+export type AwardDrawHistoryRow = {
+  id: string;
+  award_id: string;
+  award_title: string;
+  points_required: number;
+  requires_all_locations: boolean;
+  winner_participant_name: string | null;
+  winner_participant_email: string | null;
+  eligible_count: number;
+  drawn_by: string | null;
+  drawn_at: string;
+  notes: string | null;
+};
+
+export type PublicEventAward = {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  points_required: number;
+  requires_all_locations: boolean;
+  eligible_count: number;
+  passport_points: number;
+  passport_visited_count: number;
+  event_venue_count: number;
+  is_eligible: boolean;
+  points_remaining: number;
+  needs_all_locations: boolean;
+  sort_order: number;
+};
+
+export type SaveAwardInput = {
+  awardId: string | null;
+  eventId: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  pointsRequired: number;
+  requiresAllLocations: boolean;
+  status: AwardStatus;
+  sortOrder: number;
+};
+
+const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp"] as const;
+const MAX_BYTES = 5 * 1024 * 1024;
+
+export async function listAdminAwards(eventId: string): Promise<AdminEventAward[]> {
+  const { data, error } = await supabase.rpc("get_event_awards_admin" as never, {
+    p_event_id: eventId,
+  } as never);
+  if (error) throw error;
+  return (data ?? []) as AdminEventAward[];
+}
+
+export async function saveAward(input: SaveAwardInput): Promise<AdminEventAward> {
+  const { data, error } = await supabase.rpc("save_event_award" as never, {
+    p_award_id: input.awardId,
+    p_event_id: input.eventId,
+    p_title: input.title,
+    p_description: input.description,
+    p_image_url: input.imageUrl,
+    p_points_required: input.pointsRequired,
+    p_requires_all_locations: input.requiresAllLocations,
+    p_status: input.status,
+    p_sort_order: input.sortOrder,
+  } as never);
+  if (error) throw error;
+  return data as AdminEventAward;
+}
+
+export async function deleteAward(awardId: string): Promise<void> {
+  const { error } = await supabase.rpc("delete_event_award" as never, {
+    p_award_id: awardId,
+  } as never);
+  if (error) throw error;
+}
+
+export async function drawAwardWinner(awardId: string): Promise<AwardDrawResult> {
+  const { data, error } = await supabase.rpc("draw_event_award_winner" as never, {
+    p_award_id: awardId,
+  } as never);
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error("Draw returned no result");
+  return row as AwardDrawResult;
+}
+
+export async function listAwardDrawHistory(eventId: string): Promise<AwardDrawHistoryRow[]> {
+  const { data, error } = await supabase.rpc("get_event_award_draws_admin" as never, {
+    p_event_id: eventId,
+  } as never);
+  if (error) throw error;
+  return (data ?? []) as AwardDrawHistoryRow[];
+}
+
+export async function listPublicAwards(
+  eventId: string,
+  passportId: string | null,
+): Promise<PublicEventAward[]> {
+  const { data, error } = await supabase.rpc("get_public_event_awards" as never, {
+    p_event_id: eventId,
+    p_passport_id: passportId,
+  } as never);
+  if (error) throw error;
+  return (data ?? []) as PublicEventAward[];
+}
+
+export type AwardImageUploadResult =
+  | { ok: true; path: string; publicUrl: string }
+  | { ok: false; error: string };
+
+export function validateAwardImage(file: File): { ok: true } | { ok: false; error: string } {
+  if (!(ALLOWED_MIME as readonly string[]).includes(file.type)) {
+    return { ok: false, error: "Use PNG, JPG, or WebP (SVG is not allowed)." };
+  }
+  if (file.size === 0) return { ok: false, error: "File is empty." };
+  if (file.size > MAX_BYTES) return { ok: false, error: "File must be 5 MB or smaller." };
+  return { ok: true };
+}
+
+const EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+
+export async function uploadAwardImage(args: {
+  agencyId: string;
+  eventId: string;
+  file: File;
+}): Promise<AwardImageUploadResult> {
+  const v = validateAwardImage(args.file);
+  if (!v.ok) return v;
+  const ext = EXT[args.file.type] ?? "png";
+  const id = crypto.randomUUID();
+  const path = `${args.agencyId}/${args.eventId}/awards/${id}.${ext}`;
+  const { error } = await supabase.storage
+    .from(EVENT_ASSETS_BUCKET)
+    .upload(path, args.file, {
+      contentType: args.file.type,
+      upsert: false,
+      cacheControl: "3600",
+    });
+  if (error) {
+    return { ok: false, error: error.message || "Upload failed." };
+  }
+  const { data } = supabase.storage.from(EVENT_ASSETS_BUCKET).getPublicUrl(path);
+  return { ok: true, path, publicUrl: data.publicUrl };
+}
+
+export async function hasActiveAwards(eventId: string): Promise<boolean> {
+  // Cheap public check used by nav visibility: anonymous call (no passport).
+  try {
+    const rows = await listPublicAwards(eventId, null);
+    return rows.length > 0;
+  } catch {
+    return false;
+  }
+}
