@@ -908,18 +908,24 @@ export function EventBulkImportSection({
               <p className="text-xs text-muted-foreground">No venue rows.</p>
             ) : (
               <PreviewTable
-                rows={drafts.venues.map((v) => ({
-                  rowNum: v.rowNum,
-                  label: v.name || v.venue_key,
-                  status: v.status,
-                  issues: v.issues,
-                  extra:
-                    existingVenueByName.has(v.name.trim().toLowerCase())
-                      ? "Will UPDATE an existing venue with the same name."
-                      : "Will CREATE a new venue.",
-                  result: v.result,
-                  resultMessage: v.resultMessage,
-                }))}
+                rows={drafts.venues.map((v) => {
+                  const action = existingVenueByName.has(v.name.trim().toLowerCase())
+                    ? "Will UPDATE an existing venue with the same name."
+                    : "Will CREATE a new venue.";
+                  const civ =
+                    v.check_in_value != null
+                      ? ` Check-in value: ${v.check_in_value} stamp${v.check_in_value === 1 ? "" : "s"} per QR scan.`
+                      : " Check-in value: leave unchanged.";
+                  return {
+                    rowNum: v.rowNum,
+                    label: v.name || v.venue_key,
+                    status: v.status,
+                    issues: v.issues,
+                    extra: action + civ,
+                    result: v.result,
+                    resultMessage: v.resultMessage,
+                  };
+                })}
               />
             )}
           </PreviewBlock>
@@ -934,9 +940,11 @@ export function EventBulkImportSection({
                   label: b.title || b.code,
                   status: b.status,
                   issues: b.issues,
-                  extra: existingBonusByName.has(b.title.trim().toLowerCase())
-                    ? "Will UPDATE an existing bonus code with the same title."
-                    : "Will CREATE a new bonus code.",
+                  extra:
+                    (existingBonusByName.has(b.title.trim().toLowerCase())
+                      ? "Will UPDATE an existing bonus code with the same title."
+                      : "Will CREATE a new bonus code.") +
+                    ` Bonus points: ${b.points}.`,
                   result: b.result,
                   resultMessage: b.resultMessage,
                 }))}
@@ -954,6 +962,7 @@ export function EventBulkImportSection({
                   label: `${t.qr_name || "—"} (${t.venue_key})`,
                   status: t.status,
                   issues: t.issues,
+                  extra: `Tasting points: ${t.points}.`,
                   result: t.result,
                   resultMessage: t.resultMessage,
                 }))}
