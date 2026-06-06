@@ -246,6 +246,16 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       }
       const orderRaw = num(r["order_index"]);
       const order = orderRaw === null ? i : Math.max(0, Math.floor(orderRaw));
+      const civRaw = num(r["check_in_value"]);
+      let civ: number | null = null;
+      if (civRaw !== null) {
+        const civInt = Math.floor(civRaw);
+        if (!Number.isFinite(civRaw) || civRaw < 1 || civRaw > 100 || civInt !== civRaw) {
+          issues.push({ level: "error", message: "check_in_value must be a whole number between 1 and 100." });
+        } else {
+          civ = civInt;
+        }
+      }
       return {
         rowNum: i + 2,
         venue_key,
@@ -259,6 +269,7 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         offer_summary: s(r["offer_summary"]) || null,
         order_index: order,
         status: statusParsed === "disabled" ? "inactive" : "active",
+        check_in_value: civ,
         issues,
       };
     })
