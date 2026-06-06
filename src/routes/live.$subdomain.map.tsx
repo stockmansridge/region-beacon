@@ -7,6 +7,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getMapkitToken, type MapkitDiag } from "@/lib/mapkit.functions";
 import { loadMapKitScript } from "@/lib/mapkit-loader";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
@@ -53,6 +54,9 @@ type EventRow = {
   page_background_key?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
+  event_map_path?: string | null;
+  event_map_file_type?: string | null;
+  event_map_file_name?: string | null;
 };
 
 type Filter = "all" | "visited" | "not_visited";
