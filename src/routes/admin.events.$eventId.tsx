@@ -1567,6 +1567,7 @@ function EventDetail() {
         // unmount the editor. The new venue will appear in the list when the user
         // saves again or cancels.
         setVenueEditingId(newVenueId);
+        setVenueEditorTab("basics");
         toast.success("Venue created. Add public details, images and QR next.");
         // Scroll the editor into view so the user sees the new full-detail panel.
         requestAnimationFrame(() => {
