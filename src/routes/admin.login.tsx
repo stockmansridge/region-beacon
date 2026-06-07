@@ -73,6 +73,11 @@ function Login() {
       if (params.get("complete_signup") === "1") {
         setShowCompleteSignupBanner(true);
       }
+      const prefillEmail = params.get("email");
+      if (prefillEmail) {
+        setEmail(prefillEmail);
+        setResetEmail(prefillEmail);
+      }
     }
   }, []);
 
