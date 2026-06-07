@@ -534,7 +534,7 @@ function Landing() {
               <ellipse cx="72" cy="35" rx="10" ry="4" transform="rotate(-10 72 35)" fill="currentColor" opacity="0.7" />
             </svg>
             <div className="relative rotate-[4deg]">
-              <PhoneMockup trail="Hunter Valley Wine Trail" filled={7} total={12} rewardText="Free tasting at stamp 8" />
+              <PhoneMockup trail="Orange Region Wine Trail" filled={7} total={12} rewardText="Free tasting at stamp 8" />
             </div>
           </div>
         </div>
