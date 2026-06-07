@@ -33,6 +33,7 @@ export function NoAccessScreen({ email }: { email: string | null }) {
     setError(null);
     const result = await completePendingOrganisationSignup();
     if (result.ok) {
+      writeLastOrganisationSignupError(null);
       window.location.assign("/admin/events");
       return;
     }
@@ -41,6 +42,8 @@ export function NoAccessScreen({ email }: { email: string | null }) {
       clearPendingOrganisationSignup();
       setPending(null);
     }
+    writeLastOrganisationSignupError(result.message);
+    setPriorError(result.message);
     if (result.code === "email_mismatch") {
       // Force them to sign out — only the correct account can complete this.
       setError(result.message);
