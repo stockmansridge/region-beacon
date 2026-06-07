@@ -92,7 +92,7 @@ function AdminLayout() {
     );
   }
 
-  if (confirmedUnauthorized) return <NoAccessScreen email={email} />;
+  if (confirmedUnauthorized) return <NoAccessScreen email={email} isPlatformAdmin={access.isPlatformAdmin} />;
 
   return (
     <AdminShell
