@@ -13,12 +13,14 @@ export const PENDING_ORG_SIGNUP_KEY = "getstampd:pending-organisation-signup";
 const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 
 export type PendingOrganisationSignup = {
+  id?: string;
   businessName: string;
   organisationUrlName?: string;
   intention?: string;
   email: string;
   createdAt: string;
   source: string;
+  status?: string;
   lastError?: string | null;
 };
 
@@ -166,20 +168,24 @@ export async function getMyPendingOrganisationSignupServer(): Promise<PendingOrg
   const row = Array.isArray(data) ? data[0] : null;
   if (!row) return null;
   const pending = row as {
+    id: string;
     email: string;
     organisation_name: string;
     organisation_slug: string | null;
     signup_intention: string | null;
+    status: string;
     created_at: string;
     last_error: string | null;
   };
   return {
+    id: pending.id,
     businessName: pending.organisation_name,
     organisationUrlName: pending.organisation_slug ?? undefined,
     intention: pending.signup_intention ?? undefined,
     email: pending.email,
     createdAt: pending.created_at,
     source: "server",
+    status: pending.status,
     lastError: pending.last_error,
   };
 }
@@ -194,6 +200,11 @@ export async function completePendingOrganisationSignupServer(): Promise<Complet
         console.warn("[org-signup] completion returned stored failure", {
           lastError: pending.lastError,
         });
+        return {
+          ok: false,
+          code: "completion_failed",
+          message: pending.lastError,
+        };
       }
       return {
         ok: false,
@@ -203,7 +214,7 @@ export async function completePendingOrganisationSignupServer(): Promise<Complet
       };
     }
     clearPendingOrganisationSignup();
-    return { ok: true };
+    return { ok: true, agencyId: (data as string | null) ?? null };
   }
   // eslint-disable-next-line no-console
   console.warn("[org-signup] complete_pending_organisation_signup failed", {
@@ -263,7 +274,7 @@ export function clearPendingOrganisationSignup(): void {
 }
 
 export type CompletePendingResult =
-  | { ok: true; alreadyHadOrganisation?: boolean }
+  | { ok: true; alreadyHadOrganisation?: boolean; agencyId?: string | null }
   | {
       ok: false;
       code: string;
