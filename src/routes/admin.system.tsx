@@ -1002,12 +1002,17 @@ function OrganisationsSection({
                   <TableCell><PlanCell row={r} /></TableCell>
                   <TableCell>{statusPill(r.status)}</TableCell>
                   <TableCell className="text-sm text-[#64748B]">{fmtDate(r.created_at)}</TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <TableCell
+                    className="text-right"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
                     <div className="flex items-center justify-end gap-1">
                       {r.slug ? (
                         <button
                           type="button"
-                          onClick={async () => {
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             await copyToClipboard(r.slug!);
                             setCopied(r.agency_id);
                             setTimeout(() => setCopied((c) => (c === r.agency_id ? null : c)), 1500);
@@ -1025,7 +1030,10 @@ function OrganisationsSection({
                       ) : null}
                       <button
                         type="button"
-                        onClick={() => setDeleteTarget(r)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteTarget(r);
+                        }}
                         className="inline-flex items-center gap-1 rounded-[8px] border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2]"
                         title="Delete organisation"
                       >
