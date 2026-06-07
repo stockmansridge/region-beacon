@@ -8,19 +8,31 @@ import {
   clearPendingOrganisationSignup,
   readLastOrganisationSignupError,
   writeLastOrganisationSignupError,
+  getMyPendingOrganisationSignupServer,
   type PendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
 
 export function NoAccessScreen({ email }: { email: string | null }) {
   const navigate = useNavigate();
   const [pending, setPending] = useState<PendingOrganisationSignup | null>(null);
+  const [checkingPending, setCheckingPending] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [priorError, setPriorError] = useState<string | null>(null);
 
   useEffect(() => {
-    setPending(readPendingOrganisationSignup());
-    setPriorError(readLastOrganisationSignupError());
+    let cancelled = false;
+    (async () => {
+      const serverPending = await getMyPendingOrganisationSignupServer();
+      if (cancelled) return;
+      const nextPending = serverPending ?? readPendingOrganisationSignup();
+      setPending(nextPending);
+      setPriorError(serverPending?.lastError ?? readLastOrganisationSignupError());
+      setCheckingPending(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSignOut = async () => {
@@ -57,7 +69,15 @@ export function NoAccessScreen({ email }: { email: string | null }) {
     <div className="flex min-h-screen items-center justify-center bg-sidebar p-4">
       <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm text-center">
         <div className="mx-auto h-10 w-10 rounded-lg bg-hero-gradient" />
-        {pending ? (
+        {checkingPending ? (
+          <>
+            <h1 className="mt-4 text-lg font-semibold">Checking organisation setup</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Looking for your pending organisation details…
+            </p>
+            <Loader2 className="mx-auto mt-6 h-5 w-5 animate-spin text-muted-foreground" />
+          </>
+        ) : pending ? (
           <>
             <h1 className="mt-4 text-lg font-semibold">Finish creating your organisation</h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -90,7 +110,7 @@ export function NoAccessScreen({ email }: { email: string | null }) {
               className="mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              {priorError ? "Finish creating my organisation" : "Create organisation"}
+              {priorError ? "Finish creating my organisation" : "Finish creating my organisation"}
             </button>
             <button
               type="button"
