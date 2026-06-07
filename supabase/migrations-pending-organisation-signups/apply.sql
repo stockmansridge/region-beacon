@@ -325,12 +325,7 @@ begin
       return v_agency_id;
     exception
       when unique_violation then
-        v_last_error := SQLERRM;
-        if SQLERRM ilike '%agency_slug_taken%' then
-          continue;
-        end if;
-        update public.pending_organisation_signups set last_error = v_last_error where id = v_pending.id;
-        return null;
+        continue;
       when others then
         v_last_error := SQLERRM;
         if SQLERRM ilike '%agency_slug_taken%' then
