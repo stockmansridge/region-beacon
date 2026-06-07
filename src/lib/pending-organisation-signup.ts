@@ -1,4 +1,5 @@
 import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
+import { RESERVED_SUBDOMAINS } from "@/lib/reserved-subdomains";
 
 function supabaseProjectRef(): string {
   try {
