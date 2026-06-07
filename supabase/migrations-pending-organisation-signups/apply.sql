@@ -330,21 +330,21 @@ begin
           continue;
         end if;
         update public.pending_organisation_signups set last_error = v_last_error where id = v_pending.id;
-        raise exception 'pending_organisation_signup_completion_failed' using errcode = 'P0001';
+        return null;
       when others then
         v_last_error := SQLERRM;
         if SQLERRM ilike '%agency_slug_taken%' then
           continue;
         end if;
         update public.pending_organisation_signups set last_error = v_last_error where id = v_pending.id;
-        raise exception 'pending_organisation_signup_completion_failed' using errcode = 'P0001';
+        return null;
     end;
   end loop;
 
   update public.pending_organisation_signups
   set last_error = 'agency_slug_unavailable'
   where id = v_pending.id;
-  raise exception 'agency_slug_unavailable' using errcode = 'P0001';
+  return null;
 end;
 $$;
 
