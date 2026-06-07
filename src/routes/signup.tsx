@@ -187,11 +187,12 @@ function SignupPage() {
       Array.isArray(signUpData.user.identities) &&
       signUpData.user.identities.length === 0
     ) {
-      clearPendingOrganisationSignup();
-      setStage("form");
-      setTopError(
-        "An account with this email already exists. Try signing in instead, or use the password reset link.",
-      );
+      // Account already exists in auth.users. Keep pending organisation
+      // signup data in localStorage so that when the user signs in (or
+      // resets their password and then signs in), admin.login.tsx detects
+      // the pending entry and calls completePendingOrganisationSignup() to
+      // attach the organisation to their existing account.
+      setStage("account-exists");
       return;
     }
 
