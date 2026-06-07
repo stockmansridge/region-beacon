@@ -72,6 +72,7 @@ export function savePendingOrganisationSignup(
     const payload: PendingOrganisationSignup = {
       businessName: input.businessName,
       organisationUrlName: input.organisationUrlName,
+      intention: input.intention,
       email: input.email,
       createdAt: new Date().toISOString(),
       source: input.source ?? "signup",
