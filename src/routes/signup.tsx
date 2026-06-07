@@ -105,6 +105,17 @@ function SignupPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [topError, setTopError] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("form");
+  const [pendingSaveDebug, setPendingSaveDebug] = useState<{
+    saved: boolean;
+    pendingId: string | null;
+    status: string | null;
+    error: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[signup] pending signup server flow enabled");
+  }, []);
 
   useEffect(() => {
     if (stage === "done" && auth.status === "authenticated") {
@@ -122,6 +133,7 @@ function SignupPage() {
     e.preventDefault();
     setTopError(null);
     setFieldErrors({});
+    setPendingSaveDebug(null);
 
     const parsed = SignupSchema.safeParse({
       fullName,
@@ -168,15 +180,45 @@ function SignupPage() {
         code: serverSave.error.code,
         message: serverSave.error.message,
       });
+      // eslint-disable-next-line no-console
+      console.log("[signup] pending signup saved", {
+        email: data.email,
+        organisationName: data.businessName,
+        signupIntention: experienceType || null,
+        pendingId: null,
+        status: null,
+        error: serverSave.error.message || serverSave.error.code || "unknown_error",
+      });
+      setPendingSaveDebug({
+        saved: false,
+        pendingId: null,
+        status: null,
+        error: serverSave.error.message || serverSave.error.code || "Unknown error",
+      });
       setStage("form");
       const msg = serverSave.error.message || "";
       setTopError(
         isOrganisationSignupServerSetupError(msg)
           ? ORG_SIGNUP_SERVER_SETUP_ERROR
-          : "We could not securely save your organisation details. Please try again, or contact support if it continues.",
+          : `We could not securely save your organisation details: ${msg || "Unknown error"}`,
       );
       return;
     }
+    // eslint-disable-next-line no-console
+    console.log("[signup] pending signup saved", {
+      email: data.email,
+      organisationName: data.businessName,
+      signupIntention: experienceType || null,
+      pendingId: serverSave.id,
+      status: "pending",
+      error: null,
+    });
+    setPendingSaveDebug({
+      saved: true,
+      pendingId: serverSave.id,
+      status: "pending",
+      error: null,
+    });
 
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: data.email,
@@ -320,6 +362,14 @@ function SignupPage() {
             {topError && (
               <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 {topError}
+              </div>
+            )}
+            {pendingSaveDebug && (
+              <div className="rounded-md border border-muted bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                Pending signup server save: {pendingSaveDebug.saved ? "saved" : "failed"}
+                {pendingSaveDebug.pendingId ? ` · id ${pendingSaveDebug.pendingId}` : ""}
+                {pendingSaveDebug.status ? ` · status ${pendingSaveDebug.status}` : ""}
+                {pendingSaveDebug.error ? ` · error ${pendingSaveDebug.error}` : ""}
               </div>
             )}
 
