@@ -199,13 +199,9 @@ export async function completePendingOrganisationSignupServer(): Promise<Complet
   return mapOrganisationCompletionError(error);
 }
 
-// NOTE (production hardening): pending organisation signup data is kept in
-// localStorage, so it only works when the user completes signup AND the
-// confirmation-link login happen in the SAME browser profile. A future
-// hardening step should persist pending organisation signup server-side
-// (keyed by the auth user id / email) so a confirmation email opened on
-// another device — or in a different browser — can still complete
-// organisation creation on first login.
+// Convenience fallback only. The production source of truth is the server-side
+// pending_organisation_signups row; localStorage helps same-browser retries but
+// must never be required for email confirmation completion.
 export function readPendingOrganisationSignup(): PendingOrganisationSignup | null {
   const ls = storageAvailable();
   if (!ls) return null;
