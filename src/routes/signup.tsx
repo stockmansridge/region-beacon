@@ -332,6 +332,7 @@ function SignupPage() {
               activate your account, then return and sign in to finish creating
               your organisation.
             </p>
+            <PendingSignupDebugLine debug={pendingSaveDebug} />
             <a
               href={authUrl("/admin/login?complete_signup=1")}
               className="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
@@ -343,6 +344,7 @@ function SignupPage() {
           <AccountExistsCard
             email={email}
             businessName={businessName}
+            pendingSaveDebug={pendingSaveDebug}
             onBack={() => setStage("form")}
           />
         ) : (
@@ -364,14 +366,7 @@ function SignupPage() {
                 {topError}
               </div>
             )}
-            {pendingSaveDebug && (
-              <div className="rounded-md border border-muted bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                Pending signup server save: {pendingSaveDebug.saved ? "saved" : "failed"}
-                {pendingSaveDebug.pendingId ? ` · id ${pendingSaveDebug.pendingId}` : ""}
-                {pendingSaveDebug.status ? ` · status ${pendingSaveDebug.status}` : ""}
-                {pendingSaveDebug.error ? ` · error ${pendingSaveDebug.error}` : ""}
-              </div>
-            )}
+            <PendingSignupDebugLine debug={pendingSaveDebug} />
 
             <Field label="Your full name" error={fieldErrors.fullName}>
               <input
@@ -504,6 +499,27 @@ function Field({
   );
 }
 
+function PendingSignupDebugLine({
+  debug,
+}: {
+  debug: {
+    saved: boolean;
+    pendingId: string | null;
+    status: string | null;
+    error: string | null;
+  } | null;
+}) {
+  if (!debug) return null;
+  return (
+    <div className="mt-3 rounded-md border border-muted bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+      Pending signup server save: {debug.saved ? "saved" : "failed"}
+      {debug.pendingId ? ` · id ${debug.pendingId}` : ""}
+      {debug.status ? ` · status ${debug.status}` : ""}
+      {debug.error ? ` · error ${debug.error}` : ""}
+    </div>
+  );
+}
+
 function AuthenticatedRecoveryForm({
   email,
   onSignOut,
@@ -608,10 +624,17 @@ function AuthenticatedRecoveryForm({
 function AccountExistsCard({
   email,
   businessName,
+  pendingSaveDebug,
   onBack,
 }: {
   email: string;
   businessName: string;
+  pendingSaveDebug: {
+    saved: boolean;
+    pendingId: string | null;
+    status: string | null;
+    error: string | null;
+  } | null;
   onBack: () => void;
 }) {
   const [resetState, setResetState] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -640,6 +663,7 @@ function AccountExistsCard({
         do not remember it. We&rsquo;ve kept your organisation details — they&rsquo;ll
         be applied automatically as soon as you sign in.
       </p>
+      <PendingSignupDebugLine debug={pendingSaveDebug} />
 
       <div className="mt-6 flex flex-col gap-3">
         <a
