@@ -36,6 +36,14 @@ set search_path = public
 as $$
 begin
   if new.deleted_at is not null and (old.deleted_at is null) then
+    -- Delete event_subdomain rows that only carry a public_subdomain
+    -- (no custom_domain) — NULLing would violate event_domains_has_some_name.
+    delete from public.event_domains
+     where event_id = new.id
+       and domain_type = 'event_subdomain'
+       and custom_domain is null;
+
+    -- Rows that also have a custom_domain: just release the subdomain label.
     update public.event_domains
        set public_subdomain = null,
            status           = 'revoked',
@@ -43,7 +51,8 @@ begin
            updated_at       = now()
      where event_id = new.id
        and domain_type = 'event_subdomain'
-       and public_subdomain is not null;
+       and public_subdomain is not null
+       and custom_domain is not null;
   end if;
   return new;
 end;
