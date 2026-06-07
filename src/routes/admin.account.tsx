@@ -130,6 +130,8 @@ function AccountPage() {
   const [domains, setDomains] = useState<DomainRow[]>([]);
   const [billingAccount, setBillingAccount] = useState<BillingAccountRow | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [effectivePlanCode, setEffectivePlanCode] = useState<string | null>(null);
+  const [planSource, setPlanSource] = useState<string | null>(null);
   const [activations, setActivations] = useState<ActivationRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -367,6 +369,21 @@ function AccountPage() {
       setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
       setVenueCount(venueRes.error ? 0 : (venueRes.count ?? 0));
 
+      // Effective plan (manual override > subscription > free) — matches System Admin.
+      const planRes = await supabase.rpc("get_agency_plan_limits", {
+        _agency_id: agencyId,
+      });
+      if (!signal?.cancelled) {
+        if (planRes.error || !planRes.data) {
+          setEffectivePlanCode(null);
+          setPlanSource(null);
+        } else {
+          const data = planRes.data as { plan_code?: string; plan_source?: string };
+          setEffectivePlanCode(data.plan_code ?? null);
+          setPlanSource(data.plan_source ?? null);
+        }
+      }
+
       const eventIds = eventRows.map((e) => e.id);
       if (eventIds.length > 0) {
         const actRes = await supabase
@@ -463,7 +480,15 @@ function AccountPage() {
     activationByEvent.set(a.event_id, a);
   }
 
-  const currentPlan = getPlanByCode(subscription?.plan_code);
+  const currentPlan = getPlanByCode(effectivePlanCode ?? subscription?.plan_code);
+  const planSourceLabel =
+    planSource === "manual_override"
+      ? "Manual billing plan"
+      : planSource === "subscription"
+        ? "Subscription"
+        : planSource === "default"
+          ? "Default"
+          : null;
   const subStatus = subscription?.status ?? "none";
   const periodEnd = subscription?.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString()
@@ -576,6 +601,7 @@ function AccountPage() {
 
         <Card title="Plan">
           <Row label="Current plan" value={currentPlan.name} />
+          {planSourceLabel && <Row label="Plan source" value={planSourceLabel} />}
           <Row label="Venue usage" value={venueUsageMessage} />
           <Row label="Venue limit" value={formatVenueLimit(currentPlan.venueLimit)} />
           <Row label="Events" value={currentPlan.events} />
