@@ -112,15 +112,21 @@ declare
   v_org_slug text := nullif(btrim(coalesce(_organisation_slug, '')), '');
   v_intention text := nullif(btrim(coalesce(_signup_intention, '')), '');
   v_auth_user_id uuid;
-  v_caller_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
+  v_caller_email text;
   v_existing_id uuid;
 begin
   if v_email = '' or v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
     raise exception 'invalid_pending_signup_email' using errcode = '22023';
   end if;
 
-  if auth.uid() is not null and v_caller_email <> '' and v_caller_email <> v_email then
-    raise exception 'pending_signup_email_mismatch' using errcode = '42501';
+  if auth.uid() is not null then
+    select lower(u.email) into v_caller_email
+    from auth.users u
+    where u.id = auth.uid();
+
+    if coalesce(v_caller_email, '') <> v_email then
+      raise exception 'pending_signup_email_mismatch' using errcode = '42501';
+    end if;
   end if;
 
   if v_org_name is null or char_length(v_org_name) > 200 then
