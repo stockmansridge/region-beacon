@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { GetStampdLogo } from "@/components/brand";
 
 const CONTACT_EMAIL = "jonathan@stockmansridge.com.au";
-const LAST_UPDATED = "6 June 2026";
+const LAST_UPDATED = "7 June 2026";
 
 function Shell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
