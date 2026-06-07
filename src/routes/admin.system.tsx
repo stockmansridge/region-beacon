@@ -42,6 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -2568,7 +2569,151 @@ function EventsSection({
         publicUrl={selected ? publicUrlFor(selected) : null}
         onClose={() => setSelected(null)}
       />
+
+      <DeletedSubdomainsCleanup />
     </div>
+  );
+}
+
+function DeletedSubdomainsCleanup() {
+  type Row = {
+    event_id: string;
+    agency_id: string;
+    agency_name: string;
+    event_name: string;
+    public_subdomain: string;
+    domain_status: string;
+    deleted_at: string;
+  };
+  const [rows, setRows] = useState<Row[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [clearingId, setClearingId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase.rpc(
+      "system_admin_deleted_events_with_subdomain",
+    );
+    if (error) {
+      setError(isMissingFn(error) ? MISSING_RPC_HINT : error.message);
+      setRows(null);
+    } else {
+      setRows((data ?? []) as Row[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!rows) return [];
+    const needle = q.trim().toLowerCase();
+    if (!needle) return rows;
+    return rows.filter(
+      (r) =>
+        r.public_subdomain.toLowerCase().includes(needle) ||
+        r.event_name.toLowerCase().includes(needle) ||
+        r.agency_name.toLowerCase().includes(needle),
+    );
+  }, [rows, q]);
+
+  async function clearSubdomain(r: Row) {
+    if (
+      !window.confirm(
+        `Clear subdomain "${r.public_subdomain}" from deleted event "${r.event_name}"?\n\nThis releases the subdomain so a new event can claim it. The event record itself is kept for history.`,
+      )
+    )
+      return;
+    setClearingId(r.event_id);
+    const { error } = await supabase.rpc("system_admin_clear_event_subdomain", {
+      p_event_id: r.event_id,
+    });
+    setClearingId(null);
+    if (error) {
+      toast.error(`Could not clear subdomain: ${error.message}`);
+      return;
+    }
+    toast.success(`Released ${r.public_subdomain}.`);
+    load();
+  }
+
+  return (
+    <Card className="border-[#E6ECF4] p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-semibold text-[#0F172A]">
+            Released / old subdomains
+          </div>
+          <div className="text-xs text-[#64748B]">
+            Deleted or archived events that still hold a subdomain. Clearing one
+            frees the label for reuse by a new event.
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search subdomain / event / org"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="h-8 w-64"
+          />
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            {loading ? "Loading…" : "Refresh"}
+          </Button>
+        </div>
+      </div>
+      {error ? (
+        <ErrorBanner message={error} onRetry={load} />
+      ) : loading && !rows ? (
+        <div className="text-sm text-[#64748B]">Loading…</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-sm text-[#64748B]">
+          No deleted events are holding a subdomain. Nothing to clean up.
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Subdomain</TableHead>
+              <TableHead>Event</TableHead>
+              <TableHead>Organisation</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Deleted</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((r) => (
+              <TableRow key={`${r.event_id}-${r.public_subdomain}`}>
+                <TableCell className="font-mono text-xs">{r.public_subdomain}</TableCell>
+                <TableCell>{r.event_name}</TableCell>
+                <TableCell>{r.agency_name}</TableCell>
+                <TableCell className="text-xs uppercase text-[#64748B]">
+                  {r.domain_status}
+                </TableCell>
+                <TableCell className="text-xs text-[#64748B]">
+                  {new Date(r.deleted_at).toLocaleString()}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => clearSubdomain(r)}
+                    disabled={clearingId === r.event_id}
+                  >
+                    {clearingId === r.event_id ? "Clearing…" : "Clear subdomain"}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </Card>
   );
 }
 
