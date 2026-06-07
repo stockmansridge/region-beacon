@@ -212,7 +212,12 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     ? pending.organisationUrlName.trim().toLowerCase()
     : slugifyOrganisationName(pending.businessName);
 
-  const { error: rpcErr } = await createAgencyWithSlugRetry(pending.businessName, baseSlug);
+  const { error: rpcErr } = await createAgencyWithSlugRetry(
+    pending.businessName,
+    baseSlug,
+    50,
+    pending.intention,
+  );
 
   if (rpcErr) {
     // eslint-disable-next-line no-console
