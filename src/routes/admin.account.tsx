@@ -369,6 +369,21 @@ function AccountPage() {
       setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
       setVenueCount(venueRes.error ? 0 : (venueRes.count ?? 0));
 
+      // Effective plan (manual override > subscription > free) — matches System Admin.
+      const planRes = await supabase.rpc("get_agency_plan_limits", {
+        _agency_id: agencyId,
+      });
+      if (!signal?.cancelled) {
+        if (planRes.error || !planRes.data) {
+          setEffectivePlanCode(null);
+          setPlanSource(null);
+        } else {
+          const data = planRes.data as { plan_code?: string; plan_source?: string };
+          setEffectivePlanCode(data.plan_code ?? null);
+          setPlanSource(data.plan_source ?? null);
+        }
+      }
+
       const eventIds = eventRows.map((e) => e.id);
       if (eventIds.length > 0) {
         const actRes = await supabase
