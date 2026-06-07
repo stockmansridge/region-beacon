@@ -1961,7 +1961,11 @@ function PendingOrganisationSignupsCard() {
     setError(null);
     const { data, error } = await supabase.rpc("system_admin_pending_organisation_signups");
     if (error) {
-      setError(isMissingFn(error) ? MISSING_RPC_HINT : error.message);
+      setError(
+        isMissingFn(error)
+          ? "Pending signup RPCs are not installed yet. Apply supabase/migrations-pending-organisation-signups/apply.sql in the Supabase SQL editor."
+          : error.message,
+      );
       setLoading(false);
       return;
     }
