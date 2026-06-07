@@ -130,6 +130,8 @@ function AccountPage() {
   const [domains, setDomains] = useState<DomainRow[]>([]);
   const [billingAccount, setBillingAccount] = useState<BillingAccountRow | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [effectivePlanCode, setEffectivePlanCode] = useState<string | null>(null);
+  const [planSource, setPlanSource] = useState<string | null>(null);
   const [activations, setActivations] = useState<ActivationRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
