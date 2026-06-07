@@ -1078,15 +1078,28 @@ function DeleteOrganisationDialog({
 
   const handleDelete = async () => {
     if (!target || !ready) return;
+    // eslint-disable-next-line no-console
+    console.log("[delete-org] start", { agency_id: target.agency_id, name: target.name });
     setDeleting(true);
     const { data, error } = await supabase.rpc("system_admin_delete_organisation", {
       _agency_id: target.agency_id,
     });
     setDeleting(false);
     if (error) {
-      toast.error(error.message || "Could not delete organisation.");
+      // eslint-disable-next-line no-console
+      console.error("[delete-org] rpc error", error);
+      const isMissing = /Could not find the function|PGRST202|schema cache|does not exist/i.test(
+        error.message || "",
+      );
+      toast.error(
+        isMissing
+          ? "Delete RPC is missing. Apply supabase/migrations-system-admin-delete-organisation/apply.sql in the Supabase SQL editor."
+          : error.message || JSON.stringify(error) || "Could not delete organisation.",
+      );
       return;
     }
+    // eslint-disable-next-line no-console
+    console.log("[delete-org] rpc success", data);
     const payload = data as { success?: boolean } | null;
     if (!payload?.success) {
       toast.error("Delete failed. No success flag returned.");
@@ -1096,6 +1109,7 @@ function DeleteOrganisationDialog({
     await onDeleted();
     onClose();
   };
+
 
   return (
     <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !deleting) onClose(); }}>
