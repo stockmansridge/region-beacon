@@ -27,7 +27,7 @@ import { useAdminAccess } from "@/hooks/use-admin-access";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { useAuth } from "@/hooks/use-auth";
 import { formatRoleLabel, formatMemberType } from "@/lib/role-labels";
-import { RESERVED_SUBDOMAINS } from "@/lib/reserved-subdomains";
+import { RESERVED_SUBDOMAINS, isReservedSubdomain, isValidSubdomainLabel } from "@/lib/reserved-subdomains";
 import { getPlanByCode, normalizePlanCode } from "@/lib/getstampd-pricing";
 import {
   Tabs,
@@ -2626,8 +2626,10 @@ function EventsSection({
         onArchived={onArchived}
       />
 
+      <SubdomainLookupCard />
       <ActiveSubdomainsCard />
       <DeletedSubdomainsCleanup />
+      <ReservedSubdomainsCard />
     </div>
   );
 }
@@ -3692,6 +3694,205 @@ function BillingSection() {
         org={selectedOrg}
         onClose={() => setSelectedOrg(null)}
       />
+    </div>
+  );
+}
+
+// -------- Reserved / blocked subdomains card ------------------------------
+
+function ReservedSubdomainsCard() {
+  const reserved = Array.from(RESERVED_SUBDOMAINS).sort();
+  return (
+    <Card className="border-[#E6ECF4] p-4">
+      <div className="mb-2">
+        <div className="text-sm font-semibold text-[#0F172A]">
+          Reserved / blocked subdomains ({reserved.length})
+        </div>
+        <div className="text-xs text-[#64748B]">
+          These labels are reserved by GetStampd and can never be claimed by
+          an event, regardless of whether any event currently holds them.
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {reserved.map((sub) => (
+          <span
+            key={sub}
+            className="rounded-full bg-[#F1F5F9] px-2.5 py-1 font-mono text-xs font-medium text-[#475569]"
+          >
+            {sub}
+          </span>
+        ))}
+      </div>
+      <div className="mt-3 text-xs text-[#64748B]">
+        Source of truth:{" "}
+        <code className="rounded bg-[#F1F5F9] px-1.5 py-0.5">
+          src/lib/reserved-subdomains.ts
+        </code>
+        .
+      </div>
+    </Card>
+  );
+}
+
+// -------- Subdomain lookup ------------------------------------------------
+
+type LookupState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "invalid"; label: string; reason: string }
+  | { kind: "reserved"; label: string }
+  | { kind: "held"; label: string; row: { event_id: string; event_name: string; agency_name: string; status: string; domain_status: string } }
+  | { kind: "released"; label: string; row: { event_id: string; event_name: string; agency_name: string; deleted_at: string } }
+  | { kind: "available"; label: string }
+  | { kind: "error"; message: string };
+
+function SubdomainLookupCard() {
+  const [q, setQ] = useState("");
+  const [state, setState] = useState<LookupState>({ kind: "idle" });
+
+  async function lookup() {
+    const label = q.trim().toLowerCase();
+    if (!label) {
+      setState({ kind: "idle" });
+      return;
+    }
+    if (!isValidSubdomainLabel(label)) {
+      setState({
+        kind: "invalid",
+        label,
+        reason:
+          "Labels must be 1–63 chars, lowercase letters/digits/hyphens, and cannot start or end with a hyphen.",
+      });
+      return;
+    }
+    if (isReservedSubdomain(label)) {
+      setState({ kind: "reserved", label });
+      return;
+    }
+    setState({ kind: "loading" });
+    // Check held (active) and released (deleted) in parallel.
+    const [{ data: activeRows, error: activeErr }, { data: deletedRows, error: deletedErr }] = await Promise.all([
+      supabase.rpc("system_admin_active_events_with_subdomain"),
+      supabase.rpc("system_admin_deleted_events_with_subdomain"),
+    ]);
+    if (activeErr) {
+      setState({ kind: "error", message: isMissingFn(activeErr) ? MISSING_RPC_HINT : activeErr.message });
+      return;
+    }
+    if (deletedErr) {
+      setState({ kind: "error", message: isMissingFn(deletedErr) ? MISSING_RPC_HINT : deletedErr.message });
+      return;
+    }
+    const held = (activeRows ?? []).find(
+      (r: { public_subdomain: string }) => r.public_subdomain?.toLowerCase() === label,
+    );
+    if (held) {
+      setState({ kind: "held", label, row: held });
+      return;
+    }
+    const released = (deletedRows ?? []).find(
+      (r: { public_subdomain: string }) => r.public_subdomain?.toLowerCase() === label,
+    );
+    if (released) {
+      setState({ kind: "released", label, row: released });
+      return;
+    }
+    setState({ kind: "available", label });
+  }
+
+  return (
+    <Card className="border-[#E6ECF4] p-4">
+      <div className="mb-3">
+        <div className="text-sm font-semibold text-[#0F172A]">
+          Subdomain lookup
+        </div>
+        <div className="text-xs text-[#64748B]">
+          Type any label to see whether it is available, currently held by an
+          event, released from a deleted event, reserved by GetStampd, or
+          invalid.
+        </div>
+      </div>
+      <form
+        className="flex flex-wrap items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          lookup();
+        }}
+      >
+        <Input
+          placeholder="e.g. cargordtrail"
+          value={q}
+          onChange={(e) => setQ(e.target.value.toLowerCase())}
+          className="h-8 w-64 font-mono"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <Button type="submit" size="sm" variant="outline" disabled={state.kind === "loading"}>
+          {state.kind === "loading" ? "Checking…" : "Look up"}
+        </Button>
+      </form>
+      <div className="mt-3">
+        <LookupResult state={state} />
+      </div>
+    </Card>
+  );
+}
+
+function LookupResult({ state }: { state: LookupState }) {
+  if (state.kind === "idle") {
+    return <div className="text-xs text-[#64748B]">Enter a subdomain to check its status.</div>;
+  }
+  if (state.kind === "loading") {
+    return <div className="text-xs text-[#64748B]">Checking…</div>;
+  }
+  if (state.kind === "error") {
+    return <div className="text-xs text-destructive">{state.message}</div>;
+  }
+  const pill = (text: string, cls: string) => (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{text}</span>
+  );
+  return (
+    <div className="space-y-1 rounded-md border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[#0F172A]">{state.label}</span>
+        {state.kind === "available" && pill("Available", "bg-emerald-500/15 text-emerald-700")}
+        {state.kind === "held" && pill("Currently held by event", "bg-amber-500/15 text-amber-700")}
+        {state.kind === "released" && pill("Released from deleted event", "bg-sky-500/15 text-sky-700")}
+        {state.kind === "reserved" && pill("Reserved / blocked", "bg-destructive/15 text-destructive")}
+        {state.kind === "invalid" && pill("Invalid format", "bg-destructive/15 text-destructive")}
+      </div>
+      {state.kind === "reserved" && (
+        <div className="text-xs text-[#64748B]">
+          Reason: reserved word. This label is blocked globally by GetStampd
+          and is never available, even if no event holds it.
+        </div>
+      )}
+      {state.kind === "invalid" && (
+        <div className="text-xs text-[#64748B]">Reason: {state.reason}</div>
+      )}
+      {state.kind === "available" && (
+        <div className="text-xs text-[#64748B]">
+          No active or archived event owns this label. A new event can claim it.
+        </div>
+      )}
+      {state.kind === "held" && (
+        <div className="text-xs text-[#64748B]">
+          Held by{" "}
+          <span className="font-medium text-[#0F172A]">{state.row.event_name}</span>{" "}
+          ({state.row.agency_name}) — event status{" "}
+          <span className="font-mono">{state.row.status}</span>, domain{" "}
+          <span className="font-mono">{state.row.domain_status}</span>. Archive
+          the event to release the label.
+        </div>
+      )}
+      {state.kind === "released" && (
+        <div className="text-xs text-[#64748B]">
+          Held by deleted event{" "}
+          <span className="font-medium text-[#0F172A]">{state.row.event_name}</span>{" "}
+          ({state.row.agency_name}). Use “Released / old subdomains” below to
+          clear it.
+        </div>
+      )}
     </div>
   );
 }

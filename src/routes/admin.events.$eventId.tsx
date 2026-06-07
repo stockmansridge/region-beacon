@@ -5384,7 +5384,7 @@ function PublicAddressCard({
             </div>
           )}
 
-          <AvailabilityMessage state={availability} />
+          <AvailabilityMessage state={availability} candidate={input} />
 
           {submitError && (
             <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -5460,7 +5460,7 @@ function PublicAddressCard({
                   .getstampd.com.au
                 </span>
               </div>
-              <AvailabilityMessage state={editAvailability} />
+              <AvailabilityMessage state={editAvailability} candidate={editInput} />
               {editError && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                   {editError}
@@ -5549,14 +5549,21 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`rounded-full px-2 py-0.5 text-xs ${cls}`}>{label}</span>;
 }
 
-function AvailabilityMessage({ state }: { state: AvailabilityState }) {
+function AvailabilityMessage({ state, candidate }: { state: AvailabilityState; candidate?: string }) {
   if (state.kind === "idle") return null;
+  const label = (candidate ?? "").trim().toLowerCase();
+  const reservedText = label
+    ? `"${label}" is reserved by GetStampd and cannot be used as a public subdomain.`
+    : "This label is reserved by GetStampd and cannot be used as a public subdomain.";
+  const takenText = label
+    ? `"${label}" is already taken by another event — please choose another.`
+    : "Already taken — please choose another.";
   const map = {
     checking: { cls: "text-muted-foreground", text: "Checking…" },
     available: { cls: "text-emerald-600 dark:text-emerald-400", text: "Available — will be reserved as pending." },
     invalid: { cls: "text-destructive", text: state.kind === "invalid" ? state.message : "" },
-    reserved: { cls: "text-destructive", text: "Reserved word — please choose another." },
-    taken: { cls: "text-destructive", text: "Already taken — please choose another." },
+    reserved: { cls: "text-destructive", text: reservedText },
+    taken: { cls: "text-destructive", text: takenText },
     error: { cls: "text-destructive", text: state.kind === "error" ? state.message : "" },
   } as const;
   const m = map[state.kind];
