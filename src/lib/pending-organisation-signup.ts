@@ -84,6 +84,13 @@ export function savePendingOrganisationSignup(
   }
 }
 
+// NOTE (production hardening): pending organisation signup data is kept in
+// localStorage, so it only works when the user completes signup AND the
+// confirmation-link login happen in the SAME browser profile. A future
+// hardening step should persist pending organisation signup server-side
+// (keyed by the auth user id / email) so a confirmation email opened on
+// another device — or in a different browser — can still complete
+// organisation creation on first login.
 export function readPendingOrganisationSignup(): PendingOrganisationSignup | null {
   const ls = storageAvailable();
   if (!ls) return null;
