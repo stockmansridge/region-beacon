@@ -201,7 +201,12 @@ function SignupPage() {
     }
 
     // Create the organisation via SECURITY DEFINER RPC, auto-resolving slug conflicts.
-    const { error: rpcErr } = await createAgencyWithSlugRetry(data.businessName, baseSlug);
+    const { error: rpcErr } = await createAgencyWithSlugRetry(
+      data.businessName,
+      baseSlug,
+      50,
+      experienceType || null,
+    );
 
     if (rpcErr) {
       // eslint-disable-next-line no-console

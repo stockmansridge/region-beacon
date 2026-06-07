@@ -212,7 +212,12 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     ? pending.organisationUrlName.trim().toLowerCase()
     : slugifyOrganisationName(pending.businessName);
 
-  const { error: rpcErr } = await createAgencyWithSlugRetry(pending.businessName, baseSlug);
+  const { error: rpcErr } = await createAgencyWithSlugRetry(
+    pending.businessName,
+    baseSlug,
+    50,
+    pending.intention,
+  );
 
   if (rpcErr) {
     // eslint-disable-next-line no-console
@@ -264,13 +269,16 @@ export async function createAgencyWithSlugRetry(
   agencyName: string,
   baseSlug: string,
   maxAttempts = 50,
+  signupIntention?: string | null,
 ): Promise<{ error: { message: string; code?: string } | null; slug?: string }> {
   const base = baseSlug && baseSlug.length >= 2 ? baseSlug : slugifyOrganisationName(agencyName);
+  const intention = (signupIntention ?? "").trim() || null;
   for (let i = 0; i < maxAttempts; i++) {
     const candidate = i === 0 ? base : `${base}-${i + 1}`.slice(0, 60);
     const { error } = await supabase.rpc("create_customer_agency", {
       _agency_name: agencyName,
       _agency_slug: candidate,
+      _signup_intention: intention,
     });
     if (!error) return { error: null, slug: candidate };
     if (!/agency_slug_taken/i.test(error.message || "")) {

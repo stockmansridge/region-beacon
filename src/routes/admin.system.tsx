@@ -109,6 +109,7 @@ type OrganisationRow = {
   plan_source?: PlanSource | string | null;
   manual_plan_override?: string | null;
   manual_plan_override_at?: string | null;
+  signup_intention?: string | null;
 };
 
 const PLAN_SOURCE_META: Record<string, { label: string; cls: string }> = {
@@ -1394,6 +1395,7 @@ function OrganisationDetailDrawer({
               <KV label="Passports" value={fmtNum(org.passport_count)} />
               <KV label="Check-ins" value={fmtNum(org.checkin_count)} />
               <KV label="Billing email" value={org.billing_email ?? "—"} />
+              <KV label="Business type" value={org.signup_intention ?? "—"} />
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
