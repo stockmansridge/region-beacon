@@ -36,6 +36,14 @@ set search_path = public
 as $$
 begin
   if new.deleted_at is not null and (old.deleted_at is null) then
+    -- Delete event_subdomain rows that only carry a public_subdomain
+    -- (no custom_domain) — NULLing would violate event_domains_has_some_name.
+    delete from public.event_domains
+     where event_id = new.id
+       and domain_type = 'event_subdomain'
+       and custom_domain is null;
+
+    -- Rows that also have a custom_domain: just release the subdomain label.
     update public.event_domains
        set public_subdomain = null,
            status           = 'revoked',
@@ -43,7 +51,8 @@ begin
            updated_at       = now()
      where event_id = new.id
        and domain_type = 'event_subdomain'
-       and public_subdomain is not null;
+       and public_subdomain is not null
+       and custom_domain is not null;
   end if;
   return new;
 end;
@@ -57,6 +66,14 @@ create trigger trg_release_event_subdomains_on_archive
 
 -- 2. Backfill: release subdomains on already-archived events ---------------
 
+delete from public.event_domains d
+ using public.events e
+ where d.event_id = e.id
+   and d.domain_type = 'event_subdomain'
+   and d.public_subdomain is not null
+   and d.custom_domain is null
+   and e.deleted_at is not null;
+
 update public.event_domains d
    set public_subdomain = null,
        status           = 'revoked',
@@ -66,6 +83,7 @@ update public.event_domains d
  where d.event_id = e.id
    and d.domain_type = 'event_subdomain'
    and d.public_subdomain is not null
+   and d.custom_domain is not null
    and e.deleted_at is not null;
 
 -- 3. validate_public_subdomain — ignore subdomains on deleted events -------
@@ -143,6 +161,12 @@ begin
    order by d.is_primary desc, d.updated_at desc
    limit 1;
 
+  delete from public.event_domains
+   where event_id = p_event_id
+     and domain_type = 'event_subdomain'
+     and public_subdomain is not null
+     and custom_domain is null;
+
   update public.event_domains
      set public_subdomain = null,
          status           = 'revoked',
@@ -150,7 +174,8 @@ begin
          updated_at       = now()
    where event_id = p_event_id
      and domain_type = 'event_subdomain'
-     and public_subdomain is not null;
+     and public_subdomain is not null
+     and custom_domain is not null;
 
   return jsonb_build_object(
     'success', true,
