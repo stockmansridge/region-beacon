@@ -134,31 +134,42 @@ function Login() {
       if (cancelled) return;
       if (result.ok) {
         writeLastOrganisationSignupError(null);
-        // Verify membership landed before redirect.
+        // eslint-disable-next-line no-console
+        console.log("[admin-login] pending signup completed, refreshing session/membership");
+        // Poll membership visibility — RLS / replication lag can briefly
+        // hide the just-created agency_members row from the user's session.
         const { data: userRes } = await supabase.auth.getUser();
         const uid = userRes.user?.id ?? null;
         let membership: { agency_id: string } | null = null;
         if (uid) {
-          const { data: rows } = await supabase
-            .from("agency_members")
-            .select("agency_id")
-            .eq("user_id", uid)
-            .not("accepted_at", "is", null)
-            .limit(1);
-          membership = rows?.[0] ?? null;
+          for (let i = 0; i < 8; i++) {
+            const { data: rows } = await supabase
+              .from("agency_members")
+              .select("agency_id")
+              .eq("user_id", uid)
+              .not("accepted_at", "is", null)
+              .limit(1);
+            membership = rows?.[0] ?? null;
+            if (membership) break;
+            await new Promise((r) => setTimeout(r, 250));
+          }
         }
         // eslint-disable-next-line no-console
-        console.log("[admin-login] membership check after completion", {
-          userId: uid,
-          membershipFound: !!membership,
+        console.log("[admin-login] post-completion membership check", {
+          hasMembership: !!membership,
           agencyId: membership?.agency_id ?? null,
         });
-        navigate({ to: "/admin", replace: true });
+        if (cancelled) return;
+        // Hard reload so every downstream hook (useAdminAccess,
+        // useAgencyContext, billing context) re-initialises against the
+        // freshly-created organisation instead of latching to a stale
+        // "no memberships" verdict.
+        window.location.assign("/admin");
         return;
       }
       if (result.code === "no_pending") {
         writeLastOrganisationSignupError(null);
-        navigate({ to: "/admin", replace: true });
+        window.location.assign("/admin");
         return;
       }
       if (result.code === "email_mismatch") {
