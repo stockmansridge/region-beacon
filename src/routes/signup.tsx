@@ -90,6 +90,14 @@ function LegalAgreement() {
   );
 }
 
+type GateState =
+  | { status: "checking" }
+  | { status: "anonymous" }
+  | { status: "redirecting-to-admin" }
+  | { status: "auto-completing"; businessName: string }
+  | { status: "recovery"; hasPending: boolean; pendingBusinessName: string | null }
+  | { status: "error"; message: string };
+
 function SignupPage() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -112,10 +120,86 @@ function SignupPage() {
     error: string | null;
   } | null>(null);
 
+  // Gate state for already-authenticated visitors. Until this resolves we
+  // MUST NOT show the signup form OR the "Create your organisation"
+  // recovery card — otherwise a signed-in organisation owner would be
+  // briefly prompted to create a second org.
+  const [gate, setGate] = useState<GateState>({ status: "checking" });
+
   useEffect(() => {
     // eslint-disable-next-line no-console
     console.log("[signup] pending signup server flow enabled");
   }, []);
+
+  useEffect(() => {
+    if (auth.status === "loading") return;
+    if (auth.status === "unauthenticated") {
+      setGate({ status: "anonymous" });
+      return;
+    }
+    // authenticated: check membership/role BEFORE showing any UI.
+    let cancelled = false;
+    (async () => {
+      setGate({ status: "checking" });
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id ?? null;
+      if (!uid) {
+        if (!cancelled) setGate({ status: "anonymous" });
+        return;
+      }
+      const [rolesRes, membersRes] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        supabase
+          .from("agency_members")
+          .select("agency_id, accepted_at")
+          .eq("user_id", uid)
+          .not("accepted_at", "is", null)
+          .limit(1),
+      ]);
+      if (cancelled) return;
+      const isPlatformAdmin = (rolesRes.data ?? []).some((r) => r.role === "platform_admin");
+      const hasMembership = (membersRes.data ?? []).length > 0;
+      // eslint-disable-next-line no-console
+      console.log("[signup] auth gate check", { uid, isPlatformAdmin, hasMembership });
+      if (isPlatformAdmin || hasMembership) {
+        setGate({ status: "redirecting-to-admin" });
+        navigate({ to: "/admin", replace: true });
+        return;
+      }
+      // Auth-only orphan. Look for a server-side pending signup.
+      const pending = await getMyPendingOrganisationSignupServer();
+      if (cancelled) return;
+      if (pending && !pending.lastError) {
+        setGate({ status: "auto-completing", businessName: pending.businessName });
+        // eslint-disable-next-line no-console
+        console.log("[signup] auto-completing pending signup", { businessName: pending.businessName });
+        const result = await completePendingOrganisationSignup();
+        if (cancelled) return;
+        if (result.ok) {
+          navigate({ to: "/admin", replace: true });
+          return;
+        }
+        if (result.code === "user_already_has_organisation") {
+          navigate({ to: "/admin", replace: true });
+          return;
+        }
+        setGate({
+          status: "recovery",
+          hasPending: true,
+          pendingBusinessName: pending.businessName,
+        });
+        return;
+      }
+      setGate({
+        status: "recovery",
+        hasPending: !!pending,
+        pendingBusinessName: pending?.businessName ?? null,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.status, navigate]);
 
   useEffect(() => {
     if (stage === "done" && auth.status === "authenticated") {
@@ -127,6 +211,7 @@ function SignupPage() {
     clearPendingOrganisationSignup();
     await signOut();
   }
+
 
 
   async function onSubmit(e: FormEvent) {
