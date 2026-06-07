@@ -2399,9 +2399,20 @@ function EventsSection({
     return list;
   }, [rows, q, filter, agencyId]);
 
-  const publicUrlFor = (r: EventRow) => {
-    if (!r.public_slug || !r.agency_slug) return null;
-    return `https://www.getstampd.com.au/t/${r.agency_slug}/e/${r.public_slug}`;
+  const publicUrlFor = (r: EventRow): string | null => {
+    if (r.custom_domain) return `https://${r.custom_domain}`;
+    if (r.public_subdomain) return tenantUrl(r.public_subdomain);
+    if (r.public_slug && r.agency_slug) {
+      return `https://www.getstampd.com.au/t/${r.agency_slug}/e/${r.public_slug}`;
+    }
+    return null;
+  };
+
+  const [archiveTarget, setArchiveTarget] = useState<EventRow | null>(null);
+  const onArchived = () => {
+    setArchiveTarget(null);
+    setSelected(null);
+    load();
   };
 
   if (error) return <ErrorBanner message={error} onRetry={load} />;
