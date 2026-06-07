@@ -1922,6 +1922,8 @@ function UsersSection() {
         </Table>
       </Card>
 
+      <OrphanAuthUsersCard />
+
       <UserDetailDrawer user={selected} allRows={rows} onClose={() => setSelected(null)} />
       <DeleteUserDialog
         target={deleteTarget}
@@ -1930,6 +1932,101 @@ function UsersSection() {
         onDeleted={load}
       />
     </div>
+  );
+}
+
+type OrphanAuthUserRow = {
+  user_id: string;
+  email: string | null;
+  created_at: string | null;
+  last_sign_in_at: string | null;
+  email_confirmed_at: string | null;
+};
+
+function OrphanAuthUsersCard() {
+  const [rows, setRows] = useState<OrphanAuthUserRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase.rpc("system_admin_orphan_auth_users");
+    if (error) {
+      setError(isMissingFn(error) ? MISSING_RPC_HINT : error.message);
+      setLoading(false);
+      return;
+    }
+    setRows((data ?? []) as OrphanAuthUserRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-start justify-between gap-3 border-b bg-[#FFFBEB] px-4 py-3">
+        <div>
+          <h3 className="text-sm font-semibold text-[#92400E]">Auth-only users (orphans)</h3>
+          <p className="mt-0.5 text-xs text-[#A16207]">
+            Accounts that exist in Supabase Auth but have no platform role and no
+            organisation membership. They can sign in but have nowhere to land —
+            usually users who started signup and never finished creating an organisation.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={load}
+          className="rounded-md border bg-white px-2 py-1 text-xs hover:bg-[#FEF3C7]"
+        >
+          Refresh
+        </button>
+      </div>
+      {error ? (
+        <div className="p-4">
+          <ErrorBanner message={error} onRetry={load} />
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-[#F8FAFC]">
+              <TableHead>Email</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Email confirmed</TableHead>
+              <TableHead>Last sign-in</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <LoadingRow cols={4} />
+            ) : !rows || rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-6 text-center text-xs text-[#64748B]">
+                  No orphan auth users. 🎉
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((r) => (
+                <TableRow key={r.user_id}>
+                  <TableCell className="text-sm text-[#0F172A]">{r.email ?? "—"}</TableCell>
+                  <TableCell className="text-xs text-[#64748B]">
+                    {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
+                  </TableCell>
+                  <TableCell className="text-xs text-[#64748B]">
+                    {r.email_confirmed_at ? new Date(r.email_confirmed_at).toLocaleString() : "—"}
+                  </TableCell>
+                  <TableCell className="text-xs text-[#64748B]">
+                    {r.last_sign_in_at ? new Date(r.last_sign_in_at).toLocaleString() : "Never"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      )}
+    </Card>
   );
 }
 
