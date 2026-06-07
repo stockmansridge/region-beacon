@@ -292,9 +292,17 @@ export function isOrganisationSignupServerSetupError(message: string): boolean {
 
 function mapOrganisationCompletionError(rpcErr: SupabaseRpcError): CompletePendingResult {
   const msg = rpcErr?.message || "";
+  if (/user_already_has_organisation/i.test(msg)) {
+    return {
+      ok: false,
+      code: "user_already_has_organisation",
+      message: "You already have an organisation. Go to your admin portal instead.",
+    };
+  }
   if (/pending_organisation_signup_not_found/i.test(msg)) {
     return { ok: false, code: "no_pending", message: "No pending organisation signup found." };
   }
+
   if (/agencies_slug_public_subdomain_check|agency_slug_invalid|invalid_agency_slug/i.test(msg)) {
     return {
       ok: false,
