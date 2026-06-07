@@ -3458,7 +3458,26 @@ function EventDetail() {
 
                 {venueEditorTab === "qr" && venueEditingId !== "new" && (() => {
                   const currentVenue = venues.find((x) => x.id === venueEditingId);
-                  if (!currentVenue) return null;
+                  if (!currentVenue) {
+                    return (
+                      <FormSection title="Venue QR">
+                        <div className="rounded-[16px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-8 text-center">
+                          <h3 className="text-base font-semibold text-[#111827]">Save this venue first</h3>
+                          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#64748B]">
+                            QR codes can be generated after the venue has been saved. Finish the venue details, click Save, then return to this tab to generate the venue QR code.
+                          </p>
+                          <Button
+                            type="button"
+                            variant="default"
+                            onClick={() => setVenueEditorTab("basics")}
+                            className="mt-4"
+                          >
+                            Go to Basics
+                          </Button>
+                        </div>
+                      </FormSection>
+                    );
+                  }
                   return (
                     <FormSection title="Venue QR">
                       <p className="text-xs text-muted-foreground">
