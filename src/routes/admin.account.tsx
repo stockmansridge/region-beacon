@@ -520,9 +520,20 @@ function AccountPage() {
   );
 
 
+  if (isBootstrapping) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="text-sm text-muted-foreground">Loading account…</div>
+      </div>
+    );
+  }
+
   if (!canView) {
+    // eslint-disable-next-line no-console
+    console.warn("[account-billing] access denied", { redirectReason, agencyRole, isPlatformAdmin: access.isPlatformAdmin });
     return <NoAccessScreen email={auth.email ?? null} />;
   }
+
 
   const domainByEvent = new Map<string, DomainRow>();
   for (const d of domains) {
