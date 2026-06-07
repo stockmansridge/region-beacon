@@ -17,7 +17,9 @@ import {
   RefreshCw,
   X,
   Trash2,
+  Archive,
 } from "lucide-react";
+import { tenantUrl } from "@/lib/domains";
 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
