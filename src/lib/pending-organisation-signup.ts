@@ -123,6 +123,7 @@ export function clearPendingOrganisationSignup(): void {
   if (!ls) return;
   try {
     ls.removeItem(PENDING_ORG_SIGNUP_KEY);
+    ls.removeItem(LAST_ORG_SIGNUP_ERROR_KEY);
   } catch {
     /* ignore */
   }
