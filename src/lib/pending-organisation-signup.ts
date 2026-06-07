@@ -108,6 +108,7 @@ export function readPendingOrganisationSignup(): PendingOrganisationSignup | nul
     return {
       businessName: parsed.businessName,
       organisationUrlName: parsed.organisationUrlName,
+      intention: parsed.intention,
       email: parsed.email ?? "",
       createdAt: parsed.createdAt,
       source: parsed.source ?? "signup",
