@@ -148,6 +148,7 @@ function SignupPage() {
     savePendingOrganisationSignup({
       businessName: data.businessName,
       organisationUrlName: baseSlug,
+      intention: experienceType || undefined,
       email: data.email,
       source: "signup",
     });

@@ -8,6 +8,7 @@ import {
   readPendingOrganisationSignup,
   completePendingOrganisationSignup,
   clearPendingOrganisationSignup,
+  writeLastOrganisationSignupError,
 } from "@/lib/pending-organisation-signup";
 
 
@@ -82,13 +83,50 @@ function Login() {
     let cancelled = false;
     (async () => {
       const pending = readPendingOrganisationSignup();
+      const pendingEmail = pending?.email ?? null;
+      const emailMatches = !!pending && !!sessionEmail &&
+        pending.email.toLowerCase().trim() === sessionEmail.toLowerCase().trim();
+      // eslint-disable-next-line no-console
+      console.log("[admin-login] post-auth pending-signup audit", {
+        signedInEmail: sessionEmail,
+        pendingExists: !!pending,
+        pendingEmail,
+        pendingBusinessName: pending?.businessName ?? null,
+        pendingIntention: pending?.intention ?? null,
+        emailMatchesSignedIn: emailMatches,
+      });
       if (!pending) {
+        writeLastOrganisationSignupError(null);
         navigate({ to: "/admin", replace: true });
         return;
       }
+      // eslint-disable-next-line no-console
+      console.log("[admin-login] calling completePendingOrganisationSignup");
       const result = await completePendingOrganisationSignup();
       if (cancelled) return;
+      // eslint-disable-next-line no-console
+      console.log("[admin-login] completePendingOrganisationSignup result", result);
       if (result.ok) {
+        writeLastOrganisationSignupError(null);
+        // Verify membership landed before redirect.
+        const { data: userRes } = await supabase.auth.getUser();
+        const uid = userRes.user?.id ?? null;
+        let membership: { agency_id: string } | null = null;
+        if (uid) {
+          const { data: rows } = await supabase
+            .from("agency_members")
+            .select("agency_id")
+            .eq("user_id", uid)
+            .not("accepted_at", "is", null)
+            .limit(1);
+          membership = rows?.[0] ?? null;
+        }
+        // eslint-disable-next-line no-console
+        console.log("[admin-login] membership check after completion", {
+          userId: uid,
+          membershipFound: !!membership,
+          agencyId: membership?.agency_id ?? null,
+        });
         navigate({ to: "/admin", replace: true });
         return;
       }
@@ -99,9 +137,15 @@ function Login() {
         });
         return;
       }
-      // Non-fatal — let user continue; NoAccessScreen will offer a retry.
+      // Non-fatal — record the failure so NoAccessScreen can show a clear
+      // "we could not finish creating your organisation" message instead of
+      // pretending we never had pending signup details.
+      writeLastOrganisationSignupError(result.message || "Unknown error");
       // eslint-disable-next-line no-console
-      console.warn("Pending organisation completion failed:", result.message);
+      console.warn("[admin-login] pending organisation completion failed", {
+        code: result.code,
+        message: result.message,
+      });
       navigate({ to: "/admin", replace: true });
     })();
     return () => {

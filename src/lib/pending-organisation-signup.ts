@@ -14,10 +14,32 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 export type PendingOrganisationSignup = {
   businessName: string;
   organisationUrlName?: string;
+  intention?: string;
   email: string;
   createdAt: string;
   source: string;
 };
+
+export const LAST_ORG_SIGNUP_ERROR_KEY = "getstampd:last-organisation-signup-error";
+
+export function readLastOrganisationSignupError(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(LAST_ORG_SIGNUP_ERROR_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function writeLastOrganisationSignupError(message: string | null): void {
+  try {
+    if (typeof window === "undefined") return;
+    if (message) window.localStorage.setItem(LAST_ORG_SIGNUP_ERROR_KEY, message);
+    else window.localStorage.removeItem(LAST_ORG_SIGNUP_ERROR_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function slugifyOrganisationName(name: string): string {
   return name
@@ -50,6 +72,7 @@ export function savePendingOrganisationSignup(
     const payload: PendingOrganisationSignup = {
       businessName: input.businessName,
       organisationUrlName: input.organisationUrlName,
+      intention: input.intention,
       email: input.email,
       createdAt: new Date().toISOString(),
       source: input.source ?? "signup",
@@ -85,6 +108,7 @@ export function readPendingOrganisationSignup(): PendingOrganisationSignup | nul
     return {
       businessName: parsed.businessName,
       organisationUrlName: parsed.organisationUrlName,
+      intention: parsed.intention,
       email: parsed.email ?? "",
       createdAt: parsed.createdAt,
       source: parsed.source ?? "signup",
@@ -99,6 +123,7 @@ export function clearPendingOrganisationSignup(): void {
   if (!ls) return;
   try {
     ls.removeItem(PENDING_ORG_SIGNUP_KEY);
+    ls.removeItem(LAST_ORG_SIGNUP_ERROR_KEY);
   } catch {
     /* ignore */
   }

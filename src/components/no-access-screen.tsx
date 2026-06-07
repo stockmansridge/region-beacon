@@ -6,6 +6,8 @@ import {
   readPendingOrganisationSignup,
   completePendingOrganisationSignup,
   clearPendingOrganisationSignup,
+  readLastOrganisationSignupError,
+  writeLastOrganisationSignupError,
   type PendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
 
@@ -14,9 +16,11 @@ export function NoAccessScreen({ email }: { email: string | null }) {
   const [pending, setPending] = useState<PendingOrganisationSignup | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [priorError, setPriorError] = useState<string | null>(null);
 
   useEffect(() => {
     setPending(readPendingOrganisationSignup());
+    setPriorError(readLastOrganisationSignupError());
   }, []);
 
   const handleSignOut = async () => {
@@ -29,6 +33,7 @@ export function NoAccessScreen({ email }: { email: string | null }) {
     setError(null);
     const result = await completePendingOrganisationSignup();
     if (result.ok) {
+      writeLastOrganisationSignupError(null);
       window.location.assign("/admin/events");
       return;
     }
@@ -37,6 +42,8 @@ export function NoAccessScreen({ email }: { email: string | null }) {
       clearPendingOrganisationSignup();
       setPending(null);
     }
+    writeLastOrganisationSignupError(result.message);
+    setPriorError(result.message);
     if (result.code === "email_mismatch") {
       // Force them to sign out — only the correct account can complete this.
       setError(result.message);
@@ -54,11 +61,17 @@ export function NoAccessScreen({ email }: { email: string | null }) {
           <>
             <h1 className="mt-4 text-lg font-semibold">Finish creating your organisation</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {email ? (
-                <>You're signed in as <span className="font-medium text-foreground">{email}</span>. </>
-              ) : null}
-              Tap below to create <span className="font-medium text-foreground">{pending.businessName}</span>{" "}
-              and get into the admin.
+              {priorError ? (
+                <>Your account was confirmed, but we could not finish creating your organisation. Please try again or contact support.</>
+              ) : (
+                <>
+                  {email ? (
+                    <>You're signed in as <span className="font-medium text-foreground">{email}</span>. </>
+                  ) : null}
+                  Tap below to create <span className="font-medium text-foreground">{pending.businessName}</span>{" "}
+                  and get into the admin.
+                </>
+              )}
             </p>
             {error && (
               <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
