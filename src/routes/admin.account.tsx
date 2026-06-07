@@ -601,6 +601,7 @@ function AccountPage() {
 
         <Card title="Plan">
           <Row label="Current plan" value={currentPlan.name} />
+          {planSourceLabel && <Row label="Plan source" value={planSourceLabel} />}
           <Row label="Venue usage" value={venueUsageMessage} />
           <Row label="Venue limit" value={formatVenueLimit(currentPlan.venueLimit)} />
           <Row label="Events" value={currentPlan.events} />
