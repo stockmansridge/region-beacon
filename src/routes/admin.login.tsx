@@ -7,6 +7,7 @@ import { authUrl, cleanAuthUrlFragments } from "@/lib/auth-redirect";
 import {
   readPendingOrganisationSignup,
   completePendingOrganisationSignup,
+  completePendingOrganisationSignupServer,
   clearPendingOrganisationSignup,
   writeLastOrganisationSignupError,
   getMyPendingOrganisationSignupServer,
@@ -95,21 +96,42 @@ function Login() {
       const emailMatches = !!pending && !!sessionEmail &&
         pending.email.toLowerCase().trim() === sessionEmail.toLowerCase().trim();
       // eslint-disable-next-line no-console
-      console.log("[admin-login] post-auth pending-signup audit", {
-        signedInEmail: sessionEmail,
-        serverPendingExists: !!serverPending,
-        localPendingExists: !!localPending,
-        pendingEmail,
-        pendingBusinessName: pending?.businessName ?? null,
-        pendingIntention: pending?.intention ?? null,
-        emailMatchesSignedIn: emailMatches,
+      console.log("[admin-login] pending signup lookup", {
+        signedInEmail: sessionEmail ?? null,
+        hasPending: !!serverPending,
+        pendingEmail: serverPending?.email ?? null,
+        organisationName: serverPending?.businessName ?? null,
+        status: serverPending?.status ?? null,
+        lastError: serverPending?.lastError ?? null,
       });
-      // eslint-disable-next-line no-console
-      console.log("[admin-login] calling completePendingOrganisationSignup");
-      const result = await completePendingOrganisationSignup();
+      let result;
+      if (serverPending) {
+        // eslint-disable-next-line no-console
+        console.log("[admin-login] completing pending signup", {
+          pendingId: serverPending.id ?? null,
+          signedInEmail: sessionEmail ?? null,
+        });
+        result = await completePendingOrganisationSignupServer();
+        // eslint-disable-next-line no-console
+        console.log("[admin-login] complete pending signup result", {
+          success: result.ok,
+          agencyId: result.ok ? result.agencyId ?? null : null,
+          error: result.ok ? null : result.message,
+        });
+      } else {
+        // eslint-disable-next-line no-console
+        console.log("[admin-login] post-auth pending-signup audit", {
+          signedInEmail: sessionEmail,
+          serverPendingExists: false,
+          localPendingExists: !!localPending,
+          pendingEmail,
+          pendingBusinessName: pending?.businessName ?? null,
+          pendingIntention: pending?.intention ?? null,
+          emailMatchesSignedIn: emailMatches,
+        });
+        result = await completePendingOrganisationSignup();
+      }
       if (cancelled) return;
-      // eslint-disable-next-line no-console
-      console.log("[admin-login] completePendingOrganisationSignup result", result);
       if (result.ok) {
         writeLastOrganisationSignupError(null);
         // Verify membership landed before redirect.
