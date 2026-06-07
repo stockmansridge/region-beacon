@@ -626,17 +626,24 @@ function PendingSignupDebugLine({
 
 function AuthenticatedRecoveryForm({
   email,
+  hasPending,
+  pendingBusinessName,
   onSignOut,
   onCreated,
+  onGoToAdmin,
 }: {
   email: string;
+  hasPending: boolean;
+  pendingBusinessName: string | null;
   onSignOut: () => void | Promise<void>;
   onCreated: () => void;
+  onGoToAdmin: () => void;
 }) {
-  const [businessName, setBusinessName] = useState("");
+  const [businessName, setBusinessName] = useState(pendingBusinessName ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [alreadyHasOrg, setAlreadyHasOrg] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -661,7 +668,10 @@ function AuthenticatedRecoveryForm({
         code: rpcErr.code,
         message: msg,
       });
-      if (/invalid_agency_name/i.test(msg)) {
+      if (/user_already_has_organisation/i.test(msg)) {
+        setAlreadyHasOrg(true);
+        setError("You already have an organisation. Go to your admin portal instead.");
+      } else if (/invalid_agency_name/i.test(msg)) {
         setFieldErrors({ businessName: "Organisation name is invalid." });
       } else if (isOrganisationSignupServerSetupError(msg)) {
         setError(ORG_SIGNUP_SERVER_SETUP_ERROR);
@@ -676,43 +686,72 @@ function AuthenticatedRecoveryForm({
 
   return (
     <div className="rounded-2xl border bg-card p-8 shadow-sm">
-      <h1 className="text-xl font-semibold">Create your organisation</h1>
+      <h1 className="text-xl font-semibold">
+        {hasPending ? "Finish creating your organisation" : "You're already signed in"}
+      </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        You're signed in as <strong>{email || "this account"}</strong>. Enter your
-        organisation name to finish setup, or sign out to use a different email.
-      </p>
-      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-        <Field
-          label="Organisation name"
-          hint="You can change your organisation's URL later in the admin portal."
-          error={fieldErrors.businessName}
-        >
-          <input
-            type="text"
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            maxLength={200}
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-          />
-        </Field>
-        {error && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            {error}
-          </div>
+        You're signed in as <strong>{email || "this account"}</strong>, but this
+        account is not linked to an organisation yet.
+        {hasPending && pendingBusinessName ? (
+          <>
+            {" "}We saved <strong>{pendingBusinessName}</strong> during signup —
+            finish creating it below, or sign out to use a different email.
+          </>
+        ) : (
+          <> Enter your organisation name to finish setup, or sign out to use a different email.</>
         )}
-        <button
-          type="submit"
-          disabled={busy}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
-        >
-          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-          Create organisation
-        </button>
-      </form>
+      </p>
+      {alreadyHasOrg ? (
+        <div className="mt-5 space-y-4">
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            You already have an organisation. Go to your admin portal instead.
+          </div>
+          <button
+            type="button"
+            onClick={onGoToAdmin}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground"
+          >
+            Go to admin portal
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          <Field
+            label="Organisation name"
+            hint="You can change your organisation's URL later in the admin portal."
+            error={fieldErrors.businessName}
+          >
+            <input
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              maxLength={200}
+              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            />
+          </Field>
+          {error && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={busy}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            {hasPending ? "Finish creating my organisation" : "Create organisation"}
+          </button>
+        </form>
+      )}
       <div className="mt-4 flex items-center justify-between text-xs">
-        <Link to="/admin" className="text-muted-foreground hover:text-foreground">
+        <button
+          type="button"
+          onClick={onGoToAdmin}
+          className="text-muted-foreground hover:text-foreground"
+        >
           Continue to admin
-        </Link>
+        </button>
         <button
           type="button"
           onClick={onSignOut}
@@ -724,6 +763,7 @@ function AuthenticatedRecoveryForm({
     </div>
   );
 }
+
 
 function AccountExistsCard({
   email,
