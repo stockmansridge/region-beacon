@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { signOut } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import {
   readPendingOrganisationSignup,
@@ -11,6 +12,20 @@ import {
   getMyPendingOrganisationSignupServer,
   type PendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
+
+async function checkMembership(): Promise<{ hasMembership: boolean; agencyId: string | null }> {
+  const { data: userRes } = await supabase.auth.getUser();
+  const uid = userRes.user?.id ?? null;
+  if (!uid) return { hasMembership: false, agencyId: null };
+  const { data: rows } = await supabase
+    .from("agency_members")
+    .select("agency_id")
+    .eq("user_id", uid)
+    .not("accepted_at", "is", null)
+    .limit(1);
+  const row = rows?.[0] ?? null;
+  return { hasMembership: !!row, agencyId: row?.agency_id ?? null };
+}
 
 export function NoAccessScreen({
   email,
@@ -32,6 +47,19 @@ export function NoAccessScreen({
     (async () => {
       // eslint-disable-next-line no-console
       console.log("[no-access] server pending signup check enabled");
+
+      // Guard: if the user already has an agency_members row, never show
+      // the "Create your organisation" UI. Hard-redirect into admin so
+      // every downstream hook re-initialises against the membership.
+      const initialMembership = await checkMembership();
+      // eslint-disable-next-line no-console
+      console.log("[no-access] membership recheck before create screen", initialMembership);
+      if (cancelled) return;
+      if (initialMembership.hasMembership) {
+        window.location.assign("/admin");
+        return;
+      }
+
       const serverPending = await getMyPendingOrganisationSignupServer();
       if (cancelled) return;
       const nextPending = serverPending ?? readPendingOrganisationSignup();
@@ -51,12 +79,41 @@ export function NoAccessScreen({
           ? "We could not finish creating your organisation automatically. Please try again, or contact support if it continues."
           : readLastOrganisationSignupError(),
       );
+
+      // Auto-complete: if a pending signup exists and there's no prior
+      // error, attempt completion immediately instead of asking the user
+      // to click a button. This is the production fix for the "Create
+      // your organisation" screen flashing after email confirmation.
+      if (nextPending && !serverPending?.lastError) {
+        // eslint-disable-next-line no-console
+        console.log("[no-access] auto-completing pending signup");
+        const result = await completePendingOrganisationSignup();
+        if (cancelled) return;
+        if (result.ok) {
+          writeLastOrganisationSignupError(null);
+          // Poll membership visibility before redirect.
+          for (let i = 0; i < 8; i++) {
+            const m = await checkMembership();
+            if (m.hasMembership) break;
+            await new Promise((r) => setTimeout(r, 250));
+          }
+          if (cancelled) return;
+          window.location.assign("/admin");
+          return;
+        }
+        writeLastOrganisationSignupError(result.message);
+        setPriorError(result.message);
+        setError(result.message);
+      }
+
       setCheckingPending(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [email]);
+
+
 
   const handleSignOut = async () => {
     await signOut();
