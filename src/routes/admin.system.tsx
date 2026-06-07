@@ -1395,6 +1395,7 @@ function OrganisationDetailDrawer({
               <KV label="Passports" value={fmtNum(org.passport_count)} />
               <KV label="Check-ins" value={fmtNum(org.checkin_count)} />
               <KV label="Billing email" value={org.billing_email ?? "—"} />
+              <KV label="Business type" value={org.signup_intention ?? "—"} />
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
