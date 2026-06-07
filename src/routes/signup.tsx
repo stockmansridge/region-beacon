@@ -53,7 +53,7 @@ const SignupSchema = z
     path: ["confirm"],
   });
 
-type Stage = "form" | "submitting" | "check-email" | "done";
+type Stage = "form" | "submitting" | "check-email" | "account-exists" | "done";
 
 function LegalAgreement() {
   // stopPropagation prevents the surrounding <label> from toggling the
@@ -187,11 +187,12 @@ function SignupPage() {
       Array.isArray(signUpData.user.identities) &&
       signUpData.user.identities.length === 0
     ) {
-      clearPendingOrganisationSignup();
-      setStage("form");
-      setTopError(
-        "An account with this email already exists. Try signing in instead, or use the password reset link.",
-      );
+      // Account already exists in auth.users. Keep pending organisation
+      // signup data in localStorage so that when the user signs in (or
+      // resets their password and then signs in), admin.login.tsx detects
+      // the pending entry and calls completePendingOrganisationSignup() to
+      // attach the organisation to their existing account.
+      setStage("account-exists");
       return;
     }
 
@@ -264,7 +265,7 @@ function SignupPage() {
           Back
         </Link>
 
-        {auth.status === "authenticated" && stage !== "check-email" && stage !== "done" ? (
+        {auth.status === "authenticated" && stage !== "check-email" && stage !== "account-exists" && stage !== "done" ? (
           <AuthenticatedRecoveryForm
             email={auth.email ?? ""}
             onSignOut={handleSignOutAndRestart}
@@ -286,6 +287,12 @@ function SignupPage() {
               Go to sign in
             </a>
           </div>
+        ) : stage === "account-exists" ? (
+          <AccountExistsCard
+            email={email}
+            businessName={businessName}
+            onBack={() => setStage("form")}
+          />
         ) : (
 
           <form
@@ -532,6 +539,82 @@ function AuthenticatedRecoveryForm({
           className="text-muted-foreground hover:text-foreground"
         >
           Sign out and use a different email
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AccountExistsCard({
+  email,
+  businessName,
+  onBack,
+}: {
+  email: string;
+  businessName: string;
+  onBack: () => void;
+}) {
+  const [resetState, setResetState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  async function sendReset() {
+    setResetState("sending");
+    setResetError(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: authUrl("/admin/update-password?complete_signup=1"),
+    });
+    if (error) {
+      setResetState("error");
+      setResetError(error.message || "Could not send reset email.");
+      return;
+    }
+    setResetState("sent");
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card p-8 shadow-sm">
+      <h1 className="text-xl font-semibold">An account already exists</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        An account already exists for <strong>{email}</strong>. Sign in to finish
+        creating <strong>{businessName}</strong>, or reset your password if you
+        do not remember it. We&rsquo;ve kept your organisation details — they&rsquo;ll
+        be applied automatically as soon as you sign in.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-3">
+        <a
+          href={authUrl(`/admin/login?complete_signup=1&email=${encodeURIComponent(email)}`)}
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+        >
+          Sign in to finish creating your organisation
+        </a>
+        {resetState === "sent" ? (
+          <p className="rounded-md border border-emerald-300/60 bg-emerald-50/60 px-3 py-2 text-xs text-emerald-800">
+            Password reset email sent to <strong>{email}</strong>. Follow the link, set
+            a new password, then sign in to finish creating your organisation.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={sendReset}
+            disabled={resetState === "sending"}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-60"
+          >
+            {resetState === "sending" && <Loader2 className="h-4 w-4 animate-spin" />}
+            Email me a password reset link
+          </button>
+        )}
+        {resetState === "error" && resetError && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            {resetError}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Use a different email
         </button>
       </div>
     </div>
