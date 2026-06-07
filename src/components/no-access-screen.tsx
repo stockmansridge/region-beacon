@@ -73,8 +73,13 @@ export function NoAccessScreen({ email }: { email: string | null }) {
                 </>
               )}
             </p>
+            {priorError && !error && (
+              <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive text-left">
+                {priorError}
+              </p>
+            )}
             {error && (
-              <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+              <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive text-left">
                 {error}
               </p>
             )}
@@ -85,7 +90,7 @@ export function NoAccessScreen({ email }: { email: string | null }) {
               className="mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create organisation
+              {priorError ? "Finish creating my organisation" : "Create organisation"}
             </button>
             <button
               type="button"

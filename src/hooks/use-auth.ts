@@ -49,5 +49,16 @@ export function useAuth(): AuthState {
 }
 
 export async function signOut() {
+  // Explicitly drop the stored "last organisation signup error" so a
+  // different user signing in on the same browser doesn't inherit a stale
+  // failed-signup message. clearPendingOrganisationSignup() also wipes
+  // this key, but sign-out should be unconditional.
+  try {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("getstampd:last-organisation-signup-error");
+    }
+  } catch {
+    /* ignore */
+  }
   await supabase.auth.signOut();
 }
