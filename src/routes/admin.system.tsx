@@ -1086,16 +1086,23 @@ function DeleteOrganisationDialog({
     });
     setDeleting(false);
     if (error) {
+      const err = error as { message?: string; details?: string; hint?: string; code?: string };
       // eslint-disable-next-line no-console
-      console.error("[delete-org] rpc error", error);
-      const isMissing = /Could not find the function|PGRST202|schema cache|does not exist/i.test(
-        error.message || "",
-      );
-      toast.error(
-        isMissing
-          ? "Delete RPC is missing. Apply supabase/migrations-system-admin-delete-organisation/apply.sql in the Supabase SQL editor."
-          : error.message || JSON.stringify(error) || "Could not delete organisation.",
-      );
+      console.error("[delete-org] rpc error", {
+        message: err.message,
+        details: err.details,
+        hint: err.hint,
+        code: err.code,
+      });
+      const description = [
+        err.message,
+        err.details,
+        err.hint,
+        err.code ? `Code: ${err.code}` : null,
+      ]
+        .filter(Boolean)
+        .join(" | ");
+      toast.error(description || "Could not delete organisation.");
       return;
     }
     // eslint-disable-next-line no-console
@@ -1109,6 +1116,7 @@ function DeleteOrganisationDialog({
     await onDeleted();
     onClose();
   };
+
 
 
   return (
