@@ -17,7 +17,9 @@ import {
   RefreshCw,
   X,
   Trash2,
+  Archive,
 } from "lucide-react";
+import { tenantUrl } from "@/lib/domains";
 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -172,10 +174,14 @@ type EventRow = {
   event_name: string;
   event_slug: string | null;
   public_slug: string | null;
+  public_subdomain: string | null;
+  custom_domain: string | null;
+  subdomain_status: string | null;
   status: string;
   starts_at: string | null;
   ends_at: string | null;
   created_at: string;
+  deleted_at: string | null;
   venue_count: number;
   passport_count: number;
   checkin_count: number;
@@ -2393,9 +2399,20 @@ function EventsSection({
     return list;
   }, [rows, q, filter, agencyId]);
 
-  const publicUrlFor = (r: EventRow) => {
-    if (!r.public_slug || !r.agency_slug) return null;
-    return `https://www.getstampd.com.au/t/${r.agency_slug}/e/${r.public_slug}`;
+  const publicUrlFor = (r: EventRow): string | null => {
+    if (r.custom_domain) return `https://${r.custom_domain}`;
+    if (r.public_subdomain) return tenantUrl(r.public_subdomain);
+    if (r.public_slug && r.agency_slug) {
+      return `https://www.getstampd.com.au/t/${r.agency_slug}/e/${r.public_slug}`;
+    }
+    return null;
+  };
+
+  const [archiveTarget, setArchiveTarget] = useState<EventRow | null>(null);
+  const onArchived = () => {
+    setArchiveTarget(null);
+    setSelected(null);
+    load();
   };
 
   if (error) return <ErrorBanner message={error} onRetry={load} />;
@@ -2514,8 +2531,26 @@ function EventsSection({
                         <div className="mt-1">{statusPill(r.activation_status)}</div>
                       ) : null}
                     </TableCell>
-                    <TableCell className="max-w-[220px] truncate text-xs text-[#64748B]">
-                      {publicUrl ?? "—"}
+                    <TableCell className="max-w-[260px] text-xs">
+                      {r.public_subdomain ? (
+                        <div className="font-mono text-[#0F172A]">
+                          {r.public_subdomain}
+                          <span className="text-[#94A3B8]">.getstampd.com.au</span>
+                        </div>
+                      ) : r.custom_domain ? (
+                        <div className="font-mono text-[#0F172A]">{r.custom_domain}</div>
+                      ) : publicUrl ? (
+                        <div className="truncate font-mono text-[#64748B]" title={publicUrl}>
+                          {publicUrl.replace(/^https?:\/\//, "")}
+                        </div>
+                      ) : (
+                        <span className="text-[#94A3B8]">—</span>
+                      )}
+                      {r.public_slug ? (
+                        <div className="mt-0.5 text-[10px] text-[#94A3B8]">
+                          slug: <span className="font-mono">{r.public_slug}</span>
+                        </div>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-right text-sm">{fmtNum(r.venue_count)}</TableCell>
                     <TableCell className="text-right text-sm">{fmtNum(r.passport_count)}</TableCell>
@@ -2554,6 +2589,20 @@ function EventsSection({
                             </button>
                           </>
                         ) : null}
+                        {r.deleted_at == null ? (
+                          <button
+                            type="button"
+                            onClick={() => setArchiveTarget(r)}
+                            className="inline-flex items-center gap-1 rounded-[8px] border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2]"
+                            title="Archive event"
+                          >
+                            <Archive className="h-3 w-3" />
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-[8px] border border-[#E6ECF4] bg-[#F8FAFC] px-2 py-1 text-[10px] uppercase text-[#64748B]">
+                            archived
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -2568,8 +2617,16 @@ function EventsSection({
         event={selected}
         publicUrl={selected ? publicUrlFor(selected) : null}
         onClose={() => setSelected(null)}
+        onArchive={(r) => setArchiveTarget(r)}
       />
 
+      <ArchiveEventDialog
+        target={archiveTarget}
+        onClose={() => setArchiveTarget(null)}
+        onArchived={onArchived}
+      />
+
+      <ActiveSubdomainsCard />
       <DeletedSubdomainsCleanup />
     </div>
   );
@@ -2721,10 +2778,12 @@ function EventDetailDrawer({
   event,
   publicUrl,
   onClose,
+  onArchive,
 }: {
   event: EventRow | null;
   publicUrl: string | null;
   onClose: () => void;
+  onArchive: (r: EventRow) => void;
 }) {
   return (
     <Sheet open={!!event} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -2749,7 +2808,44 @@ function EventDetailDrawer({
               <KV label="Venues" value={fmtNum(event.venue_count)} />
               <KV label="Passports" value={fmtNum(event.passport_count)} />
               <KV label="Check-ins" value={fmtNum(event.checkin_count)} />
-              <KV label="Public slug" value={event.public_slug ?? "—"} />
+              <KV label="Archived" value={event.deleted_at ? fmtDateTime(event.deleted_at) : "—"} />
+            </div>
+
+            <div className="mt-5 rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
+                Public routing
+              </div>
+              <div className="space-y-1.5 text-[#0F172A]">
+                <div>
+                  <span className="text-[#64748B]">Subdomain: </span>
+                  <span className="font-mono">{event.public_subdomain ?? "—"}</span>
+                  {event.subdomain_status ? (
+                    <span className="ml-2 text-[10px] uppercase text-[#64748B]">
+                      ({event.subdomain_status})
+                    </span>
+                  ) : null}
+                </div>
+                {event.custom_domain ? (
+                  <div>
+                    <span className="text-[#64748B]">Custom domain: </span>
+                    <span className="font-mono">{event.custom_domain}</span>
+                  </div>
+                ) : null}
+                <div>
+                  <span className="text-[#64748B]">Public slug: </span>
+                  <span className="font-mono">{event.public_slug ?? "—"}</span>
+                </div>
+                <div className="break-all">
+                  <span className="text-[#64748B]">Full URL: </span>
+                  {publicUrl ? (
+                    <a href={publicUrl} target="_blank" rel="noreferrer" className="font-mono text-[#1F56C5] hover:underline">
+                      {publicUrl}
+                    </a>
+                  ) : (
+                    <span className="text-[#94A3B8]">—</span>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2">
@@ -2779,11 +2875,244 @@ function EventDetailDrawer({
                   </button>
                 </>
               ) : null}
+              {event.deleted_at == null ? (
+                <button
+                  type="button"
+                  onClick={() => onArchive(event)}
+                  className="ml-auto inline-flex items-center gap-1 rounded-[8px] border border-[#FECACA] bg-white px-3 py-1.5 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2]"
+                >
+                  <Archive className="h-3 w-3" /> Archive event
+                </button>
+              ) : null}
             </div>
           </>
         ) : null}
       </SheetContent>
     </Sheet>
+  );
+}
+
+// -------- Archive event dialog --------------------------------------------
+
+function ArchiveEventDialog({
+  target,
+  onClose,
+  onArchived,
+}: {
+  target: EventRow | null;
+  onClose: () => void;
+  onArchived: () => void;
+}) {
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!target) setConfirm("");
+  }, [target]);
+
+  const ready = confirm.trim().toUpperCase() === "ARCHIVE";
+
+  const handleArchive = async () => {
+    if (!target || !ready) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("system_admin_archive_event", {
+      p_event_id: target.event_id,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message || "Could not archive event.");
+      return;
+    }
+    toast.success(`Archived “${target.event_name}”.${target.public_subdomain ? ` Subdomain ${target.public_subdomain} released.` : ""}`);
+    onArchived();
+  };
+
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !busy) onClose(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-[#991B1B]">
+            <Archive className="h-4 w-4" />
+            Archive event
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm text-[#475569]">
+              <p>
+                This will remove the event from active admin/public views and
+                release its public subdomain for future use. Events, venues,
+                passports, check-ins and analytics records are preserved.
+              </p>
+              {target ? (
+                <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs text-[#0F172A]">
+                  <div><span className="text-[#64748B]">Event: </span><span className="font-medium">{target.event_name}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Organisation: </span><span className="font-medium">{target.agency_name}</span></div>
+                  {target.public_subdomain ? (
+                    <div className="mt-1">
+                      <span className="text-[#64748B]">Subdomain to release: </span>
+                      <span className="font-mono font-medium">{target.public_subdomain}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              <div>
+                <label className="text-[11px] font-medium text-[#0F172A]">
+                  Type <code className="rounded bg-[#F1F5F9] px-1">ARCHIVE</code> to confirm
+                </label>
+                <Input
+                  autoFocus
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="ARCHIVE"
+                  className="mt-1"
+                  disabled={busy}
+                />
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!ready || busy}
+            onClick={(e) => { e.preventDefault(); handleArchive(); }}
+            className="bg-[#DC2626] text-white hover:bg-[#B91C1C]"
+          >
+            {busy ? "Archiving…" : "Archive event"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+// -------- Currently held subdomains (active events) -----------------------
+
+function ActiveSubdomainsCard() {
+  type Row = {
+    event_id: string;
+    agency_id: string;
+    agency_name: string;
+    event_name: string;
+    status: string;
+    public_subdomain: string;
+    domain_status: string;
+    created_at: string;
+  };
+  const [rows, setRows] = useState<Row[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase.rpc("system_admin_active_events_with_subdomain");
+    if (error) {
+      setError(isMissingFn(error) ? MISSING_RPC_HINT : error.message);
+      setRows(null);
+    } else {
+      setRows((data ?? []) as Row[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(() => {
+    if (!rows) return [];
+    const needle = q.trim().toLowerCase();
+    if (!needle) return rows;
+    return rows.filter(
+      (r) =>
+        r.public_subdomain.toLowerCase().includes(needle) ||
+        r.event_name.toLowerCase().includes(needle) ||
+        r.agency_name.toLowerCase().includes(needle),
+    );
+  }, [rows, q]);
+
+  return (
+    <Card className="border-[#E6ECF4] p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-semibold text-[#0F172A]">
+            Currently held subdomains
+          </div>
+          <div className="text-xs text-[#64748B]">
+            Active, draft and published events that currently own a public
+            subdomain. Archive an event to release its label for reuse.
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search subdomain / event / org"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="h-8 w-64"
+          />
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            {loading ? "Loading…" : "Refresh"}
+          </Button>
+        </div>
+      </div>
+      {error ? (
+        <ErrorBanner message={error} onRetry={load} />
+      ) : loading && !rows ? (
+        <div className="text-sm text-[#64748B]">Loading…</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-sm text-[#64748B]">
+          No active events currently own a subdomain.
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Subdomain</TableHead>
+              <TableHead>Full URL</TableHead>
+              <TableHead>Event</TableHead>
+              <TableHead>Organisation</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Open</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((r) => {
+              const url = tenantUrl(r.public_subdomain);
+              return (
+                <TableRow key={`${r.event_id}-${r.public_subdomain}`}>
+                  <TableCell className="font-mono text-xs">{r.public_subdomain}</TableCell>
+                  <TableCell className="text-xs">
+                    <a href={url} target="_blank" rel="noreferrer" className="font-mono text-[#1F56C5] hover:underline">
+                      {url.replace(/^https?:\/\//, "")}
+                    </a>
+                  </TableCell>
+                  <TableCell className="text-sm">{r.event_name}</TableCell>
+                  <TableCell className="text-sm">{r.agency_name}</TableCell>
+                  <TableCell>{statusPill(r.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Link
+                        to="/admin/events/$eventId"
+                        params={{ eventId: r.event_id }}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                      >
+                        Open
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(url)}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                        title="Copy public URL"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      )}
+    </Card>
   );
 }
 
