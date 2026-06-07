@@ -1,4 +1,5 @@
 import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
+import { RESERVED_SUBDOMAINS } from "@/lib/reserved-subdomains";
 
 function supabaseProjectRef(): string {
   try {
@@ -41,14 +42,58 @@ export function writeLastOrganisationSignupError(message: string | null): void {
   }
 }
 
-export function slugifyOrganisationName(name: string): string {
-  return name
+/**
+ * Maximum base-slug length. The DB constraint allows up to 63 chars total
+ * (DNS-label shape). We cap the base at 60 so that retry suffixes like "-99"
+ * still fit within the 63-char hard limit.
+ */
+export const MAX_AGENCY_SLUG_LENGTH = 63;
+const MAX_AGENCY_BASE_SLUG_LENGTH = 60;
+
+/**
+ * Sanitises a candidate string into a slug that satisfies
+ * `agencies_slug_public_subdomain_check`:
+ *   - lowercase a-z 0-9 hyphen
+ *   - must start and end with [a-z0-9]
+ *   - no leading/trailing/double hyphens
+ *   - length 1..maxLength
+ *   - not a reserved subdomain
+ *
+ * Returns "" if nothing valid can be produced; callers should fall back.
+ */
+export function sanitiseAgencySlug(
+  input: string,
+  maxLength: number = MAX_AGENCY_BASE_SLUG_LENGTH,
+): string {
+  if (!input) return "";
+  let s = input
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "organisation";
+    .slice(0, Math.max(1, maxLength))
+    .replace(/^-+|-+$/g, "");
+  if (!s) return "";
+  if (RESERVED_SUBDOMAINS.has(s)) {
+    const suffixed = `${s}-org`.slice(0, maxLength).replace(/-+$/g, "");
+    s = suffixed || "";
+  }
+  return s;
+}
+
+export function isValidAgencySlug(s: string): boolean {
+  if (typeof s !== "string") return false;
+  if (s.length < 1 || s.length > MAX_AGENCY_SLUG_LENGTH) return false;
+  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(s)) return false;
+  if (RESERVED_SUBDOMAINS.has(s)) return false;
+  return true;
+}
+
+export function slugifyOrganisationName(name: string): string {
+  return sanitiseAgencySlug(name || "") || "organisation";
 }
 
 
@@ -208,9 +253,18 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     return { ok: true, alreadyHadOrganisation: true };
   }
 
-  const baseSlug = (pending.organisationUrlName && pending.organisationUrlName.trim())
-    ? pending.organisationUrlName.trim().toLowerCase()
-    : slugifyOrganisationName(pending.businessName);
+  const rawBase = (pending.organisationUrlName && pending.organisationUrlName.trim())
+    ? pending.organisationUrlName.trim()
+    : pending.businessName;
+  const baseSlug = sanitiseAgencySlug(rawBase) || slugifyOrganisationName(pending.businessName);
+
+  // eslint-disable-next-line no-console
+  console.log("[signup-completion] generated slug", {
+    organisationName: pending.businessName,
+    rawBase,
+    baseSlug,
+    valid: isValidAgencySlug(baseSlug),
+  });
 
   const { error: rpcErr } = await createAgencyWithSlugRetry(
     pending.businessName,
@@ -227,8 +281,13 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
       message: rpcErr.message,
     });
     const msg = rpcErr.message || "";
-    if (/invalid_agency_slug/i.test(msg)) {
-      return { ok: false, code: "invalid_slug", message: "Organisation URL name is invalid." };
+    if (/agencies_slug_public_subdomain_check|agency_slug_invalid|invalid_agency_slug/i.test(msg)) {
+      return {
+        ok: false,
+        code: "invalid_slug",
+        message:
+          "We could not finish creating your organisation because the generated organisation URL was invalid. Please try again, or contact support if it continues.",
+      };
     }
     if (/invalid_agency_name/i.test(msg)) {
       return { ok: false, code: "invalid_name", message: "Organisation name is invalid." };
@@ -264,6 +323,10 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
 /**
  * Creates an organisation, automatically appending -2, -3, ... to the slug
  * if the requested slug is taken. Slug conflicts must not block signup.
+ *
+ * Every candidate is re-sanitised so it satisfies the DB
+ * `agencies_slug_public_subdomain_check` constraint (length, charset,
+ * leading/trailing hyphens, reserved labels).
  */
 export async function createAgencyWithSlugRetry(
   agencyName: string,
@@ -271,10 +334,28 @@ export async function createAgencyWithSlugRetry(
   maxAttempts = 50,
   signupIntention?: string | null,
 ): Promise<{ error: { message: string; code?: string } | null; slug?: string }> {
-  const base = baseSlug && baseSlug.length >= 2 ? baseSlug : slugifyOrganisationName(agencyName);
+  const safeBase =
+    sanitiseAgencySlug(baseSlug) ||
+    sanitiseAgencySlug(agencyName) ||
+    "organisation";
   const intention = (signupIntention ?? "").trim() || null;
+
   for (let i = 0; i < maxAttempts; i++) {
-    const candidate = i === 0 ? base : `${base}-${i + 1}`.slice(0, 60);
+    const suffix = i === 0 ? "" : `-${i + 1}`;
+    const room = Math.max(1, MAX_AGENCY_SLUG_LENGTH - suffix.length);
+    const trimmedBase = safeBase.slice(0, room).replace(/-+$/g, "") || "organisation";
+    const candidate = sanitiseAgencySlug(`${trimmedBase}${suffix}`, MAX_AGENCY_SLUG_LENGTH);
+
+    if (!candidate || !isValidAgencySlug(candidate)) {
+      // eslint-disable-next-line no-console
+      console.warn("[signup-completion] skipping invalid candidate slug", {
+        attempt: i,
+        candidate,
+        safeBase,
+      });
+      continue;
+    }
+
     const { error } = await supabase.rpc("create_customer_agency", {
       _agency_name: agencyName,
       _agency_slug: candidate,

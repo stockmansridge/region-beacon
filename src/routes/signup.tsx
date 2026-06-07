@@ -217,7 +217,11 @@ function SignupPage() {
       });
       setStage("form");
       const msg = rpcErr.message || "";
-      if (/invalid_agency_name/i.test(msg)) {
+      if (/agencies_slug_public_subdomain_check|agency_slug_invalid|invalid_agency_slug/i.test(msg)) {
+        setTopError(
+          "We could not finish creating your organisation because the generated organisation URL was invalid. Please try again, or contact support if it continues.",
+        );
+      } else if (/invalid_agency_name/i.test(msg)) {
         setFieldErrors({ businessName: "Organisation name is invalid." });
       } else if (/not_authenticated/i.test(msg)) {
         setTopError("Sign-in did not persist. Please try logging in.");
