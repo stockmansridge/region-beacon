@@ -1937,6 +1937,7 @@ function UsersSection() {
         </Table>
       </Card>
 
+      <PendingOrganisationSignupsCard />
       <OrphanAuthUsersCard />
 
       <UserDetailDrawer user={selected} allRows={rows} onClose={() => setSelected(null)} />
