@@ -19,7 +19,10 @@ export type PendingOrganisationSignup = {
   email: string;
   createdAt: string;
   source: string;
+  lastError?: string | null;
 };
+
+type SupabaseRpcError = { message?: string; code?: string } | null;
 
 export const LAST_ORG_SIGNUP_ERROR_KEY = "getstampd:last-organisation-signup-error";
 
@@ -196,6 +199,62 @@ export const ORG_SIGNUP_SERVER_SETUP_ERROR =
 
 export function isOrganisationSignupServerSetupError(message: string): boolean {
   return /PGRST202|schema cache|Could not find the function|function .* does not exist/i.test(message);
+}
+
+function mapOrganisationCompletionError(rpcErr: SupabaseRpcError): CompletePendingResult {
+  const msg = rpcErr?.message || "";
+  if (/pending_organisation_signup_not_found/i.test(msg)) {
+    return { ok: false, code: "no_pending", message: "No pending organisation signup found." };
+  }
+  if (/agencies_slug_public_subdomain_check|agency_slug_invalid|invalid_agency_slug/i.test(msg)) {
+    return {
+      ok: false,
+      code: "invalid_slug",
+      message:
+        "We could not finish creating your organisation because the generated organisation URL was invalid. Please try again, or contact support if it continues.",
+    };
+  }
+  if (/agency_slug_unavailable/i.test(msg)) {
+    return {
+      ok: false,
+      code: "slug_unavailable",
+      message:
+        "Could not find an available Organisation URL name. Please try a different organisation name.",
+    };
+  }
+  if (/invalid_agency_name|invalid_pending_signup_organisation_name/i.test(msg)) {
+    return { ok: false, code: "invalid_name", message: "Organisation name is invalid." };
+  }
+  if (/not_authenticated/i.test(msg)) {
+    return {
+      ok: false,
+      code: "not_authenticated",
+      message: "You must be signed in to finish creating your organisation.",
+    };
+  }
+  if (/permission denied|forbidden/i.test(msg)) {
+    return {
+      ok: false,
+      code: "permission_denied",
+      message: "Permission denied creating organisation. Please contact support.",
+    };
+  }
+  if (/pending_organisation_signup_completion_failed/i.test(msg)) {
+    return {
+      ok: false,
+      code: "completion_failed",
+      message:
+        "We could not finish creating your organisation. Please try again, or contact support if it continues.",
+    };
+  }
+  if (isOrganisationSignupServerSetupError(msg)) {
+    return {
+      ok: false,
+      code: "rpc_missing",
+      message: ORG_SIGNUP_SERVER_SETUP_ERROR,
+    };
+  }
+  return { ok: false, code: "rpc_error", message: msg || "Could not create organisation." };
 }
 
 /**
