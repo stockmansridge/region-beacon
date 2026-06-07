@@ -544,3 +544,80 @@ function AuthenticatedRecoveryForm({
     </div>
   );
 }
+
+function AccountExistsCard({
+  email,
+  businessName,
+  onBack,
+}: {
+  email: string;
+  businessName: string;
+  onBack: () => void;
+}) {
+  const [resetState, setResetState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  async function sendReset() {
+    setResetState("sending");
+    setResetError(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: authUrl("/admin/update-password?complete_signup=1"),
+    });
+    if (error) {
+      setResetState("error");
+      setResetError(error.message || "Could not send reset email.");
+      return;
+    }
+    setResetState("sent");
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card p-8 shadow-sm">
+      <h1 className="text-xl font-semibold">An account already exists</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        An account already exists for <strong>{email}</strong>. Sign in to finish
+        creating <strong>{businessName}</strong>, or reset your password if you
+        do not remember it. We&rsquo;ve kept your organisation details — they&rsquo;ll
+        be applied automatically as soon as you sign in.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-3">
+        <Link
+          to="/admin/login"
+          search={{ complete_signup: "1", email } as never}
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+        >
+          Sign in to finish creating your organisation
+        </Link>
+        {resetState === "sent" ? (
+          <p className="rounded-md border border-emerald-300/60 bg-emerald-50/60 px-3 py-2 text-xs text-emerald-800">
+            Password reset email sent to <strong>{email}</strong>. Follow the link, set
+            a new password, then sign in to finish creating your organisation.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={sendReset}
+            disabled={resetState === "sending"}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-60"
+          >
+            {resetState === "sending" && <Loader2 className="h-4 w-4 animate-spin" />}
+            Email me a password reset link
+          </button>
+        )}
+        {resetState === "error" && resetError && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            {resetError}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Use a different email
+        </button>
+      </div>
+    </div>
+  );
+}
