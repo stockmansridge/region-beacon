@@ -2531,8 +2531,26 @@ function EventsSection({
                         <div className="mt-1">{statusPill(r.activation_status)}</div>
                       ) : null}
                     </TableCell>
-                    <TableCell className="max-w-[220px] truncate text-xs text-[#64748B]">
-                      {publicUrl ?? "—"}
+                    <TableCell className="max-w-[260px] text-xs">
+                      {r.public_subdomain ? (
+                        <div className="font-mono text-[#0F172A]">
+                          {r.public_subdomain}
+                          <span className="text-[#94A3B8]">.getstampd.com.au</span>
+                        </div>
+                      ) : r.custom_domain ? (
+                        <div className="font-mono text-[#0F172A]">{r.custom_domain}</div>
+                      ) : publicUrl ? (
+                        <div className="truncate font-mono text-[#64748B]" title={publicUrl}>
+                          {publicUrl.replace(/^https?:\/\//, "")}
+                        </div>
+                      ) : (
+                        <span className="text-[#94A3B8]">—</span>
+                      )}
+                      {r.public_slug ? (
+                        <div className="mt-0.5 text-[10px] text-[#94A3B8]">
+                          slug: <span className="font-mono">{r.public_slug}</span>
+                        </div>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-right text-sm">{fmtNum(r.venue_count)}</TableCell>
                     <TableCell className="text-right text-sm">{fmtNum(r.passport_count)}</TableCell>
@@ -2571,6 +2589,20 @@ function EventsSection({
                             </button>
                           </>
                         ) : null}
+                        {r.deleted_at == null ? (
+                          <button
+                            type="button"
+                            onClick={() => setArchiveTarget(r)}
+                            className="inline-flex items-center gap-1 rounded-[8px] border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2]"
+                            title="Archive event"
+                          >
+                            <Archive className="h-3 w-3" />
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-[8px] border border-[#E6ECF4] bg-[#F8FAFC] px-2 py-1 text-[10px] uppercase text-[#64748B]">
+                            archived
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -2585,8 +2617,16 @@ function EventsSection({
         event={selected}
         publicUrl={selected ? publicUrlFor(selected) : null}
         onClose={() => setSelected(null)}
+        onArchive={(r) => setArchiveTarget(r)}
       />
 
+      <ArchiveEventDialog
+        target={archiveTarget}
+        onClose={() => setArchiveTarget(null)}
+        onArchived={onArchived}
+      />
+
+      <ActiveSubdomainsCard />
       <DeletedSubdomainsCleanup />
     </div>
   );
