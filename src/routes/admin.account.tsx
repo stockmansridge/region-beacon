@@ -480,7 +480,15 @@ function AccountPage() {
     activationByEvent.set(a.event_id, a);
   }
 
-  const currentPlan = getPlanByCode(subscription?.plan_code);
+  const currentPlan = getPlanByCode(effectivePlanCode ?? subscription?.plan_code);
+  const planSourceLabel =
+    planSource === "manual_override"
+      ? "Manual billing plan"
+      : planSource === "subscription"
+        ? "Subscription"
+        : planSource === "default"
+          ? "Default"
+          : null;
   const subStatus = subscription?.status ?? "none";
   const periodEnd = subscription?.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString()
