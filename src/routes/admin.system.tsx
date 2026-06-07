@@ -27,7 +27,7 @@ import { useAdminAccess } from "@/hooks/use-admin-access";
 import { NoAccessScreen } from "@/components/no-access-screen";
 import { useAuth } from "@/hooks/use-auth";
 import { formatRoleLabel, formatMemberType } from "@/lib/role-labels";
-import { RESERVED_SUBDOMAINS } from "@/lib/reserved-subdomains";
+import { RESERVED_SUBDOMAINS, isReservedSubdomain, isValidSubdomainLabel } from "@/lib/reserved-subdomains";
 import { getPlanByCode, normalizePlanCode } from "@/lib/getstampd-pricing";
 import {
   Tabs,
