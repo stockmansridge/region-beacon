@@ -1944,9 +1944,14 @@ type OrphanAuthUserRow = {
 };
 
 function OrphanAuthUsersCard() {
+  const { session } = useAuth();
+  const currentUserId = session?.user?.id ?? null;
   const [rows, setRows] = useState<OrphanAuthUserRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<OrphanAuthUserRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -1964,6 +1969,35 @@ function OrphanAuthUsersCard() {
   useEffect(() => {
     load();
   }, []);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const { error } = await supabase.rpc("system_admin_delete_orphan_auth_user", {
+      _user_id: deleteTarget.user_id,
+    });
+    setDeleting(false);
+    if (error) {
+      console.warn("[orphan-delete] failed", { code: error.code, message: error.message });
+      const msg = error.message ?? "";
+      let friendly = "Could not delete this user. Please try again.";
+      if (msg.includes("cannot_delete_self")) {
+        friendly = "You cannot delete your own account from this list.";
+      } else if (msg.includes("orphan_user_not_found_or_no_longer_orphaned")) {
+        friendly =
+          "This user is no longer orphaned (they now have a role or organisation membership) or no longer exists. The list will refresh.";
+      } else if (isMissingFn(error)) {
+        friendly = MISSING_RPC_HINT;
+      }
+      setDeleteError(friendly);
+      // Refresh list — state may have changed server-side.
+      await load();
+      return;
+    }
+    setDeleteTarget(null);
+    await load();
+  };
 
   return (
     <Card className="overflow-hidden p-0">
@@ -1996,39 +2030,107 @@ function OrphanAuthUsersCard() {
               <TableHead>Created</TableHead>
               <TableHead>Email confirmed</TableHead>
               <TableHead>Last sign-in</TableHead>
+              <TableHead className="w-24 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={4} />
+              <LoadingRow cols={5} />
             ) : !rows || rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="py-6 text-center text-xs text-[#64748B]">
+                <TableCell colSpan={5} className="py-6 text-center text-xs text-[#64748B]">
                   No orphan auth users. 🎉
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r) => (
-                <TableRow key={r.user_id}>
-                  <TableCell className="text-sm text-[#0F172A]">{r.email ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-[#64748B]">
-                    {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
-                  </TableCell>
-                  <TableCell className="text-xs text-[#64748B]">
-                    {r.email_confirmed_at ? new Date(r.email_confirmed_at).toLocaleString() : "—"}
-                  </TableCell>
-                  <TableCell className="text-xs text-[#64748B]">
-                    {r.last_sign_in_at ? new Date(r.last_sign_in_at).toLocaleString() : "Never"}
-                  </TableCell>
-                </TableRow>
-              ))
+              rows.map((r) => {
+                const isSelf = !!currentUserId && r.user_id === currentUserId;
+                return (
+                  <TableRow key={r.user_id}>
+                    <TableCell className="text-sm text-[#0F172A]">{r.email ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-[#64748B]">
+                      {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-[#64748B]">
+                      {r.email_confirmed_at ? new Date(r.email_confirmed_at).toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-[#64748B]">
+                      {r.last_sign_in_at ? new Date(r.last_sign_in_at).toLocaleString() : "Never"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <button
+                        type="button"
+                        disabled={isSelf}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setDeleteTarget(r);
+                        }}
+                        title={isSelf ? "You cannot delete your own account" : "Delete this auth-only user"}
+                        className="rounded-md border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#B91C1C] hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
       )}
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o && !deleting) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#991B1B]">
+              Delete this auth-only user?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-[#475569]">
+                <p>
+                  This will permanently remove their login account. This should
+                  only be used for test or abandoned signup accounts.
+                </p>
+                {deleteTarget?.email ? (
+                  <p className="rounded-md bg-[#F8FAFC] px-3 py-2 font-mono text-xs text-[#0F172A]">
+                    {deleteTarget.email}
+                  </p>
+                ) : null}
+                {deleteError ? (
+                  <p className="rounded-md border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-xs text-[#991B1B]">
+                    {deleteError}
+                  </p>
+                ) : null}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmDelete();
+              }}
+              disabled={deleting}
+              className="bg-[#B91C1C] hover:bg-[#991B1B]"
+            >
+              {deleting ? "Deleting…" : "Delete user"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
+
 
 
 function UserDetailDrawer({
