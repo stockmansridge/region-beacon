@@ -109,6 +109,7 @@ type OrganisationRow = {
   plan_source?: PlanSource | string | null;
   manual_plan_override?: string | null;
   manual_plan_override_at?: string | null;
+  signup_intention?: string | null;
 };
 
 const PLAN_SOURCE_META: Record<string, { label: string; cls: string }> = {
