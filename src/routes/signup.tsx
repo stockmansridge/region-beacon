@@ -404,14 +404,7 @@ function SignupPage() {
           Back
         </Link>
 
-        {auth.status === "authenticated" && stage !== "check-email" && stage !== "account-exists" && stage !== "done" ? (
-          <AuthenticatedRecoveryForm
-            email={auth.email ?? ""}
-            onSignOut={handleSignOutAndRestart}
-            onCreated={() => navigate({ to: "/admin", replace: true })}
-          />
-
-        ) : stage === "check-email" ? (
+        {stage === "check-email" ? (
           <div className="rounded-2xl border bg-card p-8 shadow-sm">
             <h1 className="text-xl font-semibold">Check your email</h1>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -434,7 +427,31 @@ function SignupPage() {
             pendingSaveDebug={pendingSaveDebug}
             onBack={() => setStage("form")}
           />
+        ) : gate.status === "checking" || gate.status === "redirecting-to-admin" || gate.status === "auto-completing" ? (
+          <div className="flex min-h-[40vh] items-center justify-center rounded-2xl border bg-card p-8 shadow-sm">
+            <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>
+                {gate.status === "auto-completing"
+                  ? `Finishing setup for ${gate.businessName}…`
+                  : gate.status === "redirecting-to-admin"
+                  ? "Taking you to your admin portal…"
+                  : "Checking your account…"}
+              </span>
+            </div>
+          </div>
+        ) : gate.status === "recovery" ? (
+          <AuthenticatedRecoveryForm
+            email={auth.email ?? ""}
+            hasPending={gate.hasPending}
+            pendingBusinessName={gate.pendingBusinessName}
+            onSignOut={handleSignOutAndRestart}
+            onCreated={() => navigate({ to: "/admin", replace: true })}
+            onGoToAdmin={() => navigate({ to: "/admin", replace: true })}
+          />
         ) : (
+
+
 
           <form
             onSubmit={onSubmit}
