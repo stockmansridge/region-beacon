@@ -265,7 +265,7 @@ function SignupPage() {
           Back
         </Link>
 
-        {auth.status === "authenticated" && stage !== "check-email" && stage !== "done" ? (
+        {auth.status === "authenticated" && stage !== "check-email" && stage !== "account-exists" && stage !== "done" ? (
           <AuthenticatedRecoveryForm
             email={auth.email ?? ""}
             onSignOut={handleSignOutAndRestart}
@@ -287,6 +287,12 @@ function SignupPage() {
               Go to sign in
             </a>
           </div>
+        ) : stage === "account-exists" ? (
+          <AccountExistsCard
+            email={email}
+            businessName={businessName}
+            onBack={() => setStage("form")}
+          />
         ) : (
 
           <form
