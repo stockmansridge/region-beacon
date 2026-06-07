@@ -215,11 +215,9 @@ function SignupPage() {
       Array.isArray(signUpData.user.identities) &&
       signUpData.user.identities.length === 0
     ) {
-      // Account already exists in auth.users. Keep pending organisation
-      // signup data in localStorage so that when the user signs in (or
-      // resets their password and then signs in), admin.login.tsx detects
-      // the pending entry and calls completePendingOrganisationSignup() to
-      // attach the organisation to their existing account.
+      // Account already exists in auth.users. The pending organisation row has
+      // already been saved server-side, so signing in or resetting password can
+      // still finish organisation creation without relying on localStorage.
       setStage("account-exists");
       return;
     }
