@@ -27,7 +27,11 @@ export function NoAccessScreen({ email }: { email: string | null }) {
       if (cancelled) return;
       const nextPending = serverPending ?? readPendingOrganisationSignup();
       setPending(nextPending);
-      setPriorError(serverPending?.lastError ?? readLastOrganisationSignupError());
+      setPriorError(
+        serverPending?.lastError
+          ? "We could not finish creating your organisation automatically. Please try again, or contact support if it continues."
+          : readLastOrganisationSignupError(),
+      );
       setCheckingPending(false);
     })();
     return () => {
@@ -110,7 +114,7 @@ export function NoAccessScreen({ email }: { email: string | null }) {
               className="mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              {priorError ? "Finish creating my organisation" : "Finish creating my organisation"}
+              Finish creating my organisation
             </button>
             <button
               type="button"
