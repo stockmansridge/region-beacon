@@ -174,10 +174,14 @@ type EventRow = {
   event_name: string;
   event_slug: string | null;
   public_slug: string | null;
+  public_subdomain: string | null;
+  custom_domain: string | null;
+  subdomain_status: string | null;
   status: string;
   starts_at: string | null;
   ends_at: string | null;
   created_at: string;
+  deleted_at: string | null;
   venue_count: number;
   passport_count: number;
   checkin_count: number;
