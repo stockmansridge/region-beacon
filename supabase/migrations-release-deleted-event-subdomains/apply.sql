@@ -161,6 +161,12 @@ begin
    order by d.is_primary desc, d.updated_at desc
    limit 1;
 
+  delete from public.event_domains
+   where event_id = p_event_id
+     and domain_type = 'event_subdomain'
+     and public_subdomain is not null
+     and custom_domain is null;
+
   update public.event_domains
      set public_subdomain = null,
          status           = 'revoked',
@@ -168,7 +174,8 @@ begin
          updated_at       = now()
    where event_id = p_event_id
      and domain_type = 'event_subdomain'
-     and public_subdomain is not null;
+     and public_subdomain is not null
+     and custom_domain is not null;
 
   return jsonb_build_object(
     'success', true,
