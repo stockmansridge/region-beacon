@@ -292,9 +292,17 @@ export function isOrganisationSignupServerSetupError(message: string): boolean {
 
 function mapOrganisationCompletionError(rpcErr: SupabaseRpcError): CompletePendingResult {
   const msg = rpcErr?.message || "";
+  if (/user_already_has_organisation/i.test(msg)) {
+    return {
+      ok: false,
+      code: "user_already_has_organisation",
+      message: "You already have an organisation. Go to your admin portal instead.",
+    };
+  }
   if (/pending_organisation_signup_not_found/i.test(msg)) {
     return { ok: false, code: "no_pending", message: "No pending organisation signup found." };
   }
+
   if (/agencies_slug_public_subdomain_check|agency_slug_invalid|invalid_agency_slug/i.test(msg)) {
     return {
       ok: false,
@@ -454,6 +462,14 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
       message: rpcErr.message,
     });
     const msg = rpcErr.message || "";
+    if (/user_already_has_organisation/i.test(msg)) {
+      clearPendingOrganisationSignup();
+      return {
+        ok: false,
+        code: "user_already_has_organisation",
+        message: "You already have an organisation. Go to your admin portal instead.",
+      };
+    }
     if (/agencies_slug_public_subdomain_check|agency_slug_invalid|invalid_agency_slug/i.test(msg)) {
       return {
         ok: false,
@@ -462,6 +478,7 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
           "We could not finish creating your organisation because the generated organisation URL was invalid. Please try again, or contact support if it continues.",
       };
     }
+
     if (/invalid_agency_name/i.test(msg)) {
       return { ok: false, code: "invalid_name", message: "Organisation name is invalid." };
     }
