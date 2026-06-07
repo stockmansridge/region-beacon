@@ -56,14 +56,31 @@ const SignupSchema = z
 type Stage = "form" | "submitting" | "check-email" | "done";
 
 function LegalAgreement() {
+  // stopPropagation prevents the surrounding <label> from toggling the
+  // checkbox when the user clicks/activates one of these links.
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
   return (
     <span>
       I agree to the GetStampd{" "}
-      <Link to="/terms" target="_blank" rel="noreferrer" className="underline font-medium">
+      <Link
+        to="/terms"
+        target="_blank"
+        rel="noreferrer"
+        className="underline font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring rounded-sm"
+        onClick={stop}
+        onKeyDown={stop}
+      >
         Terms and Conditions
       </Link>{" "}
       and{" "}
-      <Link to="/privacy" target="_blank" rel="noreferrer" className="underline font-medium">
+      <Link
+        to="/privacy"
+        target="_blank"
+        rel="noreferrer"
+        className="underline font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring rounded-sm"
+        onClick={stop}
+        onKeyDown={stop}
+      >
         Privacy Policy
       </Link>
       .
