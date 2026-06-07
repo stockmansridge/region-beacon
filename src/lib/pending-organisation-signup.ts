@@ -377,6 +377,26 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
     };
   }
 
+  const serverSave = await savePendingOrganisationSignupServer({
+    email: currentEmail || pending.email,
+    fullName: userRes.user.user_metadata?.full_name as string | undefined,
+    businessName: pending.businessName,
+    organisationUrlName: pending.organisationUrlName,
+    intention: pending.intention,
+  });
+  if (serverSave.ok) {
+    const retryServerResult = await completePendingOrganisationSignupServer();
+    if (retryServerResult.ok || retryServerResult.code !== "no_pending") {
+      return retryServerResult;
+    }
+  } else if (!isOrganisationSignupServerSetupError(serverSave.error.message || "")) {
+    // eslint-disable-next-line no-console
+    console.warn("[org-signup] fallback save_pending_organisation_signup failed", {
+      code: serverSave.error.code,
+      message: serverSave.error.message,
+    });
+  }
+
   // If the user already has a membership, just clear and succeed.
   const { data: existing, error: existingErr } = await supabase
     .from("agency_members")
