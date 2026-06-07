@@ -334,6 +334,11 @@ function mapOrganisationCompletionError(rpcErr: SupabaseRpcError): CompletePendi
  * being attached to the wrong existing account.
  */
 export async function completePendingOrganisationSignup(): Promise<CompletePendingResult> {
+  const serverResult = await completePendingOrganisationSignupServer();
+  if (serverResult.ok || serverResult.code !== "no_pending") {
+    return serverResult;
+  }
+
   const pending = readPendingOrganisationSignup();
   if (!pending) {
     return { ok: false, code: "no_pending", message: "No pending organisation signup found." };
