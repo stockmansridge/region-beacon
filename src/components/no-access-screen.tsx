@@ -61,11 +61,17 @@ export function NoAccessScreen({ email }: { email: string | null }) {
           <>
             <h1 className="mt-4 text-lg font-semibold">Finish creating your organisation</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {email ? (
-                <>You're signed in as <span className="font-medium text-foreground">{email}</span>. </>
-              ) : null}
-              Tap below to create <span className="font-medium text-foreground">{pending.businessName}</span>{" "}
-              and get into the admin.
+              {priorError ? (
+                <>Your account was confirmed, but we could not finish creating your organisation. Please try again or contact support.</>
+              ) : (
+                <>
+                  {email ? (
+                    <>You're signed in as <span className="font-medium text-foreground">{email}</span>. </>
+                  ) : null}
+                  Tap below to create <span className="font-medium text-foreground">{pending.businessName}</span>{" "}
+                  and get into the admin.
+                </>
+              )}
             </p>
             {error && (
               <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
