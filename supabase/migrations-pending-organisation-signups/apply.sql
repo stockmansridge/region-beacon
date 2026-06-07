@@ -143,10 +143,6 @@ begin
   order by u.created_at desc
   limit 1;
 
-  if auth.uid() is null and v_auth_user_id is not null then
-    raise exception 'pending_signup_auth_required' using errcode = '42501';
-  end if;
-
   loop
     update public.pending_organisation_signups p
     set
