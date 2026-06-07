@@ -3466,14 +3466,13 @@ function EventDetail() {
                           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#64748B]">
                             QR codes can be generated after the venue has been saved. Finish the venue details, click Save, then return to this tab to generate the venue QR code.
                           </p>
-                          <Button
+                          <button
                             type="button"
-                            variant="default"
                             onClick={() => setVenueEditorTab("basics")}
-                            className="mt-4"
+                            className="mt-4 inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
                           >
                             Go to Basics
-                          </Button>
+                          </button>
                         </div>
                       </FormSection>
                     );
