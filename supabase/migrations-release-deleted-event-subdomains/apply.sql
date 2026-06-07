@@ -66,6 +66,14 @@ create trigger trg_release_event_subdomains_on_archive
 
 -- 2. Backfill: release subdomains on already-archived events ---------------
 
+delete from public.event_domains d
+ using public.events e
+ where d.event_id = e.id
+   and d.domain_type = 'event_subdomain'
+   and d.public_subdomain is not null
+   and d.custom_domain is null
+   and e.deleted_at is not null;
+
 update public.event_domains d
    set public_subdomain = null,
        status           = 'revoked',
@@ -75,6 +83,7 @@ update public.event_domains d
  where d.event_id = e.id
    and d.domain_type = 'event_subdomain'
    and d.public_subdomain is not null
+   and d.custom_domain is not null
    and e.deleted_at is not null;
 
 -- 3. validate_public_subdomain — ignore subdomains on deleted events -------
