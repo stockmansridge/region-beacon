@@ -12,9 +12,16 @@ import {
   type PendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
 
-export function NoAccessScreen({ email }: { email: string | null }) {
+export function NoAccessScreen({
+  email,
+  isPlatformAdmin = false,
+}: {
+  email: string | null;
+  isPlatformAdmin?: boolean;
+}) {
   const navigate = useNavigate();
   const [pending, setPending] = useState<PendingOrganisationSignup | null>(null);
+  const [serverPendingFound, setServerPendingFound] = useState<boolean | null>(null);
   const [checkingPending, setCheckingPending] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,10 +30,22 @@ export function NoAccessScreen({ email }: { email: string | null }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // eslint-disable-next-line no-console
+      console.log("[no-access] server pending signup check enabled");
       const serverPending = await getMyPendingOrganisationSignupServer();
       if (cancelled) return;
       const nextPending = serverPending ?? readPendingOrganisationSignup();
       setPending(nextPending);
+      setServerPendingFound(!!serverPending);
+      // eslint-disable-next-line no-console
+      console.log("[no-access] pending signup check", {
+        signedInEmail: email ?? null,
+        hasPending: !!serverPending,
+        pendingEmail: serverPending?.email ?? null,
+        organisationName: serverPending?.businessName ?? null,
+        status: serverPending?.status ?? null,
+        lastError: serverPending?.lastError ?? null,
+      });
       setPriorError(
         serverPending?.lastError
           ? "We could not finish creating your organisation automatically. Please try again, or contact support if it continues."
@@ -37,7 +56,7 @@ export function NoAccessScreen({ email }: { email: string | null }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [email]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -107,6 +126,11 @@ export function NoAccessScreen({ email }: { email: string | null }) {
                 {error}
               </p>
             )}
+            {(import.meta.env.DEV || isPlatformAdmin) && (
+              <p className="mt-3 text-left text-[11px] text-muted-foreground">
+                Pending signup found: {serverPendingFound ? "yes" : "no"}
+              </p>
+            )}
             <button
               type="button"
               onClick={handleCreate}
@@ -134,6 +158,11 @@ export function NoAccessScreen({ email }: { email: string | null }) {
             <p className="mt-2 text-xs text-muted-foreground">
               If you were in the middle of signing up, create your organisation now. Otherwise, ask a platform admin to grant you a role.
             </p>
+            {(import.meta.env.DEV || isPlatformAdmin) && (
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                Pending signup found: {serverPendingFound ? "yes" : "no"}
+              </p>
+            )}
             <Link
               to="/signup"
               className="mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
