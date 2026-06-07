@@ -200,6 +200,11 @@ export async function completePendingOrganisationSignupServer(): Promise<Complet
         console.warn("[org-signup] completion returned stored failure", {
           lastError: pending.lastError,
         });
+        return {
+          ok: false,
+          code: "completion_failed",
+          message: pending.lastError,
+        };
       }
       return {
         ok: false,
