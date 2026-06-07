@@ -185,8 +185,18 @@ export async function getMyPendingOrganisationSignupServer(): Promise<PendingOrg
 }
 
 export async function completePendingOrganisationSignupServer(): Promise<CompletePendingResult> {
-  const { error } = await supabase.rpc("complete_pending_organisation_signup");
+  const { data, error } = await supabase.rpc("complete_pending_organisation_signup");
   if (!error) {
+    if (!data) {
+      const pending = await getMyPendingOrganisationSignupServer();
+      return {
+        ok: false,
+        code: "completion_failed",
+        message:
+          pending?.lastError ||
+          "We could not finish creating your organisation. Please try again, or contact support if it continues.",
+      };
+    }
     clearPendingOrganisationSignup();
     return { ok: true };
   }
