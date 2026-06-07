@@ -200,6 +200,10 @@ function SignupPage() {
     });
 
     if (signUpErr) {
+      if (/already.*(registered|exists)|user_already_exists/i.test(signUpErr.message || "")) {
+        setStage("account-exists");
+        return;
+      }
       setStage("form");
       setTopError(signUpErr.message || "Could not create account.");
       return;
