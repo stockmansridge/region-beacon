@@ -42,14 +42,58 @@ export function writeLastOrganisationSignupError(message: string | null): void {
   }
 }
 
-export function slugifyOrganisationName(name: string): string {
-  return name
+/**
+ * Maximum base-slug length. The DB constraint allows up to 63 chars total
+ * (DNS-label shape). We cap the base at 60 so that retry suffixes like "-99"
+ * still fit within the 63-char hard limit.
+ */
+export const MAX_AGENCY_SLUG_LENGTH = 63;
+const MAX_AGENCY_BASE_SLUG_LENGTH = 60;
+
+/**
+ * Sanitises a candidate string into a slug that satisfies
+ * `agencies_slug_public_subdomain_check`:
+ *   - lowercase a-z 0-9 hyphen
+ *   - must start and end with [a-z0-9]
+ *   - no leading/trailing/double hyphens
+ *   - length 1..maxLength
+ *   - not a reserved subdomain
+ *
+ * Returns "" if nothing valid can be produced; callers should fall back.
+ */
+export function sanitiseAgencySlug(
+  input: string,
+  maxLength: number = MAX_AGENCY_BASE_SLUG_LENGTH,
+): string {
+  if (!input) return "";
+  let s = input
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "organisation";
+    .slice(0, Math.max(1, maxLength))
+    .replace(/^-+|-+$/g, "");
+  if (!s) return "";
+  if (RESERVED_SUBDOMAINS.has(s)) {
+    const suffixed = `${s}-org`.slice(0, maxLength).replace(/-+$/g, "");
+    s = suffixed || "";
+  }
+  return s;
+}
+
+export function isValidAgencySlug(s: string): boolean {
+  if (typeof s !== "string") return false;
+  if (s.length < 1 || s.length > MAX_AGENCY_SLUG_LENGTH) return false;
+  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(s)) return false;
+  if (RESERVED_SUBDOMAINS.has(s)) return false;
+  return true;
+}
+
+export function slugifyOrganisationName(name: string): string {
+  return sanitiseAgencySlug(name || "") || "organisation";
 }
 
 
