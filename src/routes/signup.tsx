@@ -53,7 +53,7 @@ const SignupSchema = z
     path: ["confirm"],
   });
 
-type Stage = "form" | "submitting" | "check-email" | "done";
+type Stage = "form" | "submitting" | "check-email" | "account-exists" | "done";
 
 function LegalAgreement() {
   // stopPropagation prevents the surrounding <label> from toggling the
