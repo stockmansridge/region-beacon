@@ -132,6 +132,73 @@ export function savePendingOrganisationSignup(
   }
 }
 
+export async function savePendingOrganisationSignupServer(input: {
+  email: string;
+  fullName?: string | null;
+  businessName: string;
+  organisationUrlName?: string | null;
+  intention?: string | null;
+}): Promise<{ ok: true; id: string | null } | { ok: false; error: { message: string; code?: string } }> {
+  const { data, error } = await supabase.rpc("save_pending_organisation_signup", {
+    _email: input.email,
+    _full_name: input.fullName ?? null,
+    _organisation_name: input.businessName,
+    _organisation_slug: input.organisationUrlName ?? null,
+    _signup_intention: input.intention ?? null,
+  });
+  if (error) return { ok: false, error };
+  return { ok: true, id: (data as string | null) ?? null };
+}
+
+export async function getMyPendingOrganisationSignupServer(): Promise<PendingOrganisationSignup | null> {
+  const { data, error } = await supabase.rpc("get_my_pending_organisation_signup");
+  if (error) {
+    const msg = error.message || "";
+    if (!/not_authenticated|pending_organisation_signup_not_found/i.test(msg)) {
+      // eslint-disable-next-line no-console
+      console.warn("[org-signup] get_my_pending_organisation_signup failed", {
+        code: error.code,
+        message: error.message,
+      });
+    }
+    return null;
+  }
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return null;
+  const pending = row as {
+    email: string;
+    organisation_name: string;
+    organisation_slug: string | null;
+    signup_intention: string | null;
+    created_at: string;
+    last_error: string | null;
+  };
+  return {
+    businessName: pending.organisation_name,
+    organisationUrlName: pending.organisation_slug ?? undefined,
+    intention: pending.signup_intention ?? undefined,
+    email: pending.email,
+    createdAt: pending.created_at,
+    source: "server",
+    lastError: pending.last_error,
+  };
+}
+
+export async function completePendingOrganisationSignupServer(): Promise<CompletePendingResult> {
+  const { error } = await supabase.rpc("complete_pending_organisation_signup");
+  if (!error) {
+    clearPendingOrganisationSignup();
+    return { ok: true };
+  }
+  // eslint-disable-next-line no-console
+  console.warn("[org-signup] complete_pending_organisation_signup failed", {
+    projectRef: supabaseProjectRef(),
+    code: error.code,
+    message: error.message,
+  });
+  return mapOrganisationCompletionError(error);
+}
+
 // NOTE (production hardening): pending organisation signup data is kept in
 // localStorage, so it only works when the user completes signup AND the
 // confirmation-link login happen in the SAME browser profile. A future
