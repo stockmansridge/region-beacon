@@ -19,7 +19,10 @@ export type PendingOrganisationSignup = {
   email: string;
   createdAt: string;
   source: string;
+  lastError?: string | null;
 };
+
+type SupabaseRpcError = { message?: string; code?: string } | null;
 
 export const LAST_ORG_SIGNUP_ERROR_KEY = "getstampd:last-organisation-signup-error";
 
@@ -129,13 +132,91 @@ export function savePendingOrganisationSignup(
   }
 }
 
-// NOTE (production hardening): pending organisation signup data is kept in
-// localStorage, so it only works when the user completes signup AND the
-// confirmation-link login happen in the SAME browser profile. A future
-// hardening step should persist pending organisation signup server-side
-// (keyed by the auth user id / email) so a confirmation email opened on
-// another device — or in a different browser — can still complete
-// organisation creation on first login.
+export async function savePendingOrganisationSignupServer(input: {
+  email: string;
+  fullName?: string | null;
+  businessName: string;
+  organisationUrlName?: string | null;
+  intention?: string | null;
+}): Promise<{ ok: true; id: string | null } | { ok: false; error: { message: string; code?: string } }> {
+  const { data, error } = await supabase.rpc("save_pending_organisation_signup", {
+    _email: input.email,
+    _full_name: input.fullName ?? null,
+    _organisation_name: input.businessName,
+    _organisation_slug: input.organisationUrlName ?? null,
+    _signup_intention: input.intention ?? null,
+  });
+  if (error) return { ok: false, error };
+  return { ok: true, id: (data as string | null) ?? null };
+}
+
+export async function getMyPendingOrganisationSignupServer(): Promise<PendingOrganisationSignup | null> {
+  const { data, error } = await supabase.rpc("get_my_pending_organisation_signup");
+  if (error) {
+    const msg = error.message || "";
+    if (!/not_authenticated|pending_organisation_signup_not_found/i.test(msg)) {
+      // eslint-disable-next-line no-console
+      console.warn("[org-signup] get_my_pending_organisation_signup failed", {
+        code: error.code,
+        message: error.message,
+      });
+    }
+    return null;
+  }
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return null;
+  const pending = row as {
+    email: string;
+    organisation_name: string;
+    organisation_slug: string | null;
+    signup_intention: string | null;
+    created_at: string;
+    last_error: string | null;
+  };
+  return {
+    businessName: pending.organisation_name,
+    organisationUrlName: pending.organisation_slug ?? undefined,
+    intention: pending.signup_intention ?? undefined,
+    email: pending.email,
+    createdAt: pending.created_at,
+    source: "server",
+    lastError: pending.last_error,
+  };
+}
+
+export async function completePendingOrganisationSignupServer(): Promise<CompletePendingResult> {
+  const { data, error } = await supabase.rpc("complete_pending_organisation_signup");
+  if (!error) {
+    if (!data) {
+      const pending = await getMyPendingOrganisationSignupServer();
+      if (pending?.lastError) {
+        // eslint-disable-next-line no-console
+        console.warn("[org-signup] completion returned stored failure", {
+          lastError: pending.lastError,
+        });
+      }
+      return {
+        ok: false,
+        code: "completion_failed",
+        message:
+          "We could not finish creating your organisation. Please try again, or contact support if it continues.",
+      };
+    }
+    clearPendingOrganisationSignup();
+    return { ok: true };
+  }
+  // eslint-disable-next-line no-console
+  console.warn("[org-signup] complete_pending_organisation_signup failed", {
+    projectRef: supabaseProjectRef(),
+    code: error.code,
+    message: error.message,
+  });
+  return mapOrganisationCompletionError(error);
+}
+
+// Convenience fallback only. The production source of truth is the server-side
+// pending_organisation_signups row; localStorage helps same-browser retries but
+// must never be required for email confirmation completion.
 export function readPendingOrganisationSignup(): PendingOrganisationSignup | null {
   const ls = storageAvailable();
   if (!ls) return null;
@@ -198,6 +279,62 @@ export function isOrganisationSignupServerSetupError(message: string): boolean {
   return /PGRST202|schema cache|Could not find the function|function .* does not exist/i.test(message);
 }
 
+function mapOrganisationCompletionError(rpcErr: SupabaseRpcError): CompletePendingResult {
+  const msg = rpcErr?.message || "";
+  if (/pending_organisation_signup_not_found/i.test(msg)) {
+    return { ok: false, code: "no_pending", message: "No pending organisation signup found." };
+  }
+  if (/agencies_slug_public_subdomain_check|agency_slug_invalid|invalid_agency_slug/i.test(msg)) {
+    return {
+      ok: false,
+      code: "invalid_slug",
+      message:
+        "We could not finish creating your organisation because the generated organisation URL was invalid. Please try again, or contact support if it continues.",
+    };
+  }
+  if (/agency_slug_unavailable/i.test(msg)) {
+    return {
+      ok: false,
+      code: "slug_unavailable",
+      message:
+        "Could not find an available Organisation URL name. Please try a different organisation name.",
+    };
+  }
+  if (/invalid_agency_name|invalid_pending_signup_organisation_name/i.test(msg)) {
+    return { ok: false, code: "invalid_name", message: "Organisation name is invalid." };
+  }
+  if (/not_authenticated/i.test(msg)) {
+    return {
+      ok: false,
+      code: "not_authenticated",
+      message: "You must be signed in to finish creating your organisation.",
+    };
+  }
+  if (/permission denied|forbidden/i.test(msg)) {
+    return {
+      ok: false,
+      code: "permission_denied",
+      message: "Permission denied creating organisation. Please contact support.",
+    };
+  }
+  if (/pending_organisation_signup_completion_failed/i.test(msg)) {
+    return {
+      ok: false,
+      code: "completion_failed",
+      message:
+        "We could not finish creating your organisation. Please try again, or contact support if it continues.",
+    };
+  }
+  if (isOrganisationSignupServerSetupError(msg)) {
+    return {
+      ok: false,
+      code: "rpc_missing",
+      message: ORG_SIGNUP_SERVER_SETUP_ERROR,
+    };
+  }
+  return { ok: false, code: "rpc_error", message: msg || "Could not create organisation." };
+}
+
 /**
  * Completes pending organisation signup for the currently authenticated user.
  * Safe to call multiple times — if the user already has a membership, this
@@ -208,6 +345,11 @@ export function isOrganisationSignupServerSetupError(message: string): boolean {
  * being attached to the wrong existing account.
  */
 export async function completePendingOrganisationSignup(): Promise<CompletePendingResult> {
+  const serverResult = await completePendingOrganisationSignupServer();
+  if (serverResult.ok || serverResult.code !== "no_pending") {
+    return serverResult;
+  }
+
   const pending = readPendingOrganisationSignup();
   if (!pending) {
     return { ok: false, code: "no_pending", message: "No pending organisation signup found." };
@@ -238,6 +380,26 @@ export async function completePendingOrganisationSignup(): Promise<CompletePendi
       currentEmail: userRes.user.email ?? "",
       pendingEmail: pending.email,
     };
+  }
+
+  const serverSave = await savePendingOrganisationSignupServer({
+    email: currentEmail || pending.email,
+    fullName: userRes.user.user_metadata?.full_name as string | undefined,
+    businessName: pending.businessName,
+    organisationUrlName: pending.organisationUrlName,
+    intention: pending.intention,
+  });
+  if (serverSave.ok) {
+    const retryServerResult = await completePendingOrganisationSignupServer();
+    if (retryServerResult.ok || retryServerResult.code !== "no_pending") {
+      return retryServerResult;
+    }
+  } else if (!isOrganisationSignupServerSetupError(serverSave.error.message || "")) {
+    // eslint-disable-next-line no-console
+    console.warn("[org-signup] fallback save_pending_organisation_signup failed", {
+      code: serverSave.error.code,
+      message: serverSave.error.message,
+    });
   }
 
   // If the user already has a membership, just clear and succeed.

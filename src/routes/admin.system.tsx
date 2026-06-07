@@ -148,6 +148,21 @@ type UserRow = {
   created_at: string;
 };
 
+type PendingOrganisationSignupRow = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  organisation_name: string;
+  organisation_slug: string | null;
+  signup_intention: string | null;
+  auth_user_id: string | null;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
+  completed_agency_id: string | null;
+  last_error: string | null;
+};
+
 type EventRow = {
   event_id: string;
   agency_id: string;
@@ -1922,6 +1937,7 @@ function UsersSection() {
         </Table>
       </Card>
 
+      <PendingOrganisationSignupsCard />
       <OrphanAuthUsersCard />
 
       <UserDetailDrawer user={selected} allRows={rows} onClose={() => setSelected(null)} />
@@ -1932,6 +1948,104 @@ function UsersSection() {
         onDeleted={load}
       />
     </div>
+  );
+}
+
+function PendingOrganisationSignupsCard() {
+  const [rows, setRows] = useState<PendingOrganisationSignupRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase.rpc("system_admin_pending_organisation_signups");
+    if (error) {
+      setError(
+        isMissingFn(error)
+          ? "Pending signup RPCs are not installed yet. Apply supabase/migrations-pending-organisation-signups/apply.sql in the Supabase SQL editor."
+          : error.message,
+      );
+      setLoading(false);
+      return;
+    }
+    setRows((data ?? []) as PendingOrganisationSignupRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-start justify-between gap-3 border-b bg-[#F8FAFC] px-4 py-3">
+        <div>
+          <h3 className="text-sm font-semibold text-[#0F172A]">Pending signups</h3>
+          <p className="mt-0.5 text-xs text-[#64748B]">
+            Organisation details captured before email confirmation and completed after sign-in.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={load}
+          className="rounded-md border bg-white px-2 py-1 text-xs hover:bg-[#F8FAFC]"
+        >
+          Refresh
+        </button>
+      </div>
+      {error ? (
+        <div className="p-4">
+          <ErrorBanner message={error} onRetry={load} />
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-[#F8FAFC]">
+              <TableHead>Email</TableHead>
+              <TableHead>Organisation</TableHead>
+              <TableHead>Business type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Last error</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <LoadingRow cols={6} />
+            ) : !rows || rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-6 text-center text-xs text-[#64748B]">
+                  No pending signups.
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="text-sm text-[#0F172A]">{r.email}</TableCell>
+                  <TableCell className="text-sm text-[#0F172A]">
+                    <div>{r.organisation_name}</div>
+                    {r.organisation_slug ? (
+                      <code className="text-[11px] text-[#64748B]">{r.organisation_slug}</code>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="text-xs text-[#64748B]">
+                    {r.signup_intention ?? "—"}
+                  </TableCell>
+                  <TableCell>{statusPill(r.status)}</TableCell>
+                  <TableCell className="text-xs text-[#64748B]">
+                    {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate text-xs text-[#991B1B]">
+                    {r.last_error ?? "—"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      )}
+    </Card>
   );
 }
 
