@@ -189,11 +189,16 @@ export async function completePendingOrganisationSignupServer(): Promise<Complet
   if (!error) {
     if (!data) {
       const pending = await getMyPendingOrganisationSignupServer();
+      if (pending?.lastError) {
+        // eslint-disable-next-line no-console
+        console.warn("[org-signup] completion returned stored failure", {
+          lastError: pending.lastError,
+        });
+      }
       return {
         ok: false,
         code: "completion_failed",
         message:
-          pending?.lastError ||
           "We could not finish creating your organisation. Please try again, or contact support if it continues.",
       };
     }
