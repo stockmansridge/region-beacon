@@ -214,9 +214,17 @@ security definer
 set search_path = public
 as $$
 declare
-  v_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
+  v_email text;
 begin
-  if auth.uid() is null or v_email = '' then
+  if auth.uid() is null then
+    raise exception 'not_authenticated' using errcode = '42501';
+  end if;
+
+  select lower(u.email) into v_email
+  from auth.users u
+  where u.id = auth.uid();
+
+  if coalesce(v_email, '') = '' then
     raise exception 'not_authenticated' using errcode = '42501';
   end if;
 
@@ -250,7 +258,7 @@ set search_path = public
 as $$
 declare
   v_user_id uuid := auth.uid();
-  v_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
+  v_email text;
   v_pending public.pending_organisation_signups%rowtype;
   v_existing_agency_id uuid;
   v_base text;
@@ -261,7 +269,15 @@ declare
   v_attempt integer;
   v_last_error text;
 begin
-  if v_user_id is null or v_email = '' then
+  if v_user_id is null then
+    raise exception 'not_authenticated' using errcode = '42501';
+  end if;
+
+  select lower(u.email) into v_email
+  from auth.users u
+  where u.id = v_user_id;
+
+  if coalesce(v_email, '') = '' then
     raise exception 'not_authenticated' using errcode = '42501';
   end if;
 
