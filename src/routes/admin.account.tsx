@@ -166,7 +166,7 @@ function AccountPage() {
       redirectReason: isBootstrapping ? null : redirectReason,
     });
   }, [
-    auth.userId,
+    auth.session?.user?.id,
     auth.email,
     auth.status,
     access.status,
