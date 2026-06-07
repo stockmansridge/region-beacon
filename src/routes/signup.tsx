@@ -10,11 +10,13 @@ import { authUrl } from "@/lib/auth-redirect";
 import { signOut } from "@/hooks/use-auth";
 import {
   savePendingOrganisationSignup,
+  savePendingOrganisationSignupServer,
   clearPendingOrganisationSignup,
   isOrganisationSignupServerSetupError,
   ORG_SIGNUP_SERVER_SETUP_ERROR,
   slugifyOrganisationName,
   createAgencyWithSlugRetry,
+  completePendingOrganisationSignup,
 } from "@/lib/pending-organisation-signup";
 
 
@@ -153,6 +155,29 @@ function SignupPage() {
       source: "signup",
     });
 
+    const serverSave = await savePendingOrganisationSignupServer({
+      email: data.email,
+      fullName: data.fullName,
+      businessName: data.businessName,
+      organisationUrlName: baseSlug,
+      intention: experienceType || null,
+    });
+    if (!serverSave.ok) {
+      // eslint-disable-next-line no-console
+      console.warn("[signup] save_pending_organisation_signup failed", {
+        code: serverSave.error.code,
+        message: serverSave.error.message,
+      });
+      setStage("form");
+      const msg = serverSave.error.message || "";
+      setTopError(
+        isOrganisationSignupServerSetupError(msg)
+          ? ORG_SIGNUP_SERVER_SETUP_ERROR
+          : "We could not securely save your organisation details. Please try again, or contact support if it continues.",
+      );
+      return;
+    }
+
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -175,7 +200,6 @@ function SignupPage() {
     });
 
     if (signUpErr) {
-      clearPendingOrganisationSignup();
       setStage("form");
       setTopError(signUpErr.message || "Could not create account.");
       return;
@@ -201,35 +225,19 @@ function SignupPage() {
       return;
     }
 
-    // Create the organisation via SECURITY DEFINER RPC, auto-resolving slug conflicts.
-    const { error: rpcErr } = await createAgencyWithSlugRetry(
-      data.businessName,
-      baseSlug,
-      50,
-      experienceType || null,
-    );
-
-    if (rpcErr) {
+    const completion = await completePendingOrganisationSignup();
+    if (!completion.ok) {
       // eslint-disable-next-line no-console
-      console.warn("[org-signup] signup RPC error", {
+      console.warn("[org-signup] immediate signup completion error", {
         supabaseUrl: SUPABASE_URL,
-        code: rpcErr.code,
-        message: rpcErr.message,
+        code: completion.code,
+        message: completion.message,
       });
       setStage("form");
-      const msg = rpcErr.message || "";
-      if (/agencies_slug_public_subdomain_check|agency_slug_invalid|invalid_agency_slug/i.test(msg)) {
-        setTopError(
-          "We could not finish creating your organisation because the generated organisation URL was invalid. Please try again, or contact support if it continues.",
-        );
-      } else if (/invalid_agency_name/i.test(msg)) {
+      if (completion.code === "invalid_name") {
         setFieldErrors({ businessName: "Organisation name is invalid." });
-      } else if (/not_authenticated/i.test(msg)) {
-        setTopError("Sign-in did not persist. Please try logging in.");
-      } else if (isOrganisationSignupServerSetupError(msg)) {
-        setTopError(ORG_SIGNUP_SERVER_SETUP_ERROR);
       } else {
-        setTopError(`Account created but organisation setup failed: ${msg}`);
+        setTopError(completion.message);
       }
       return;
     }
