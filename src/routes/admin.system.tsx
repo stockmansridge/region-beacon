@@ -2626,8 +2626,10 @@ function EventsSection({
         onArchived={onArchived}
       />
 
+      <SubdomainLookupCard />
       <ActiveSubdomainsCard />
       <DeletedSubdomainsCleanup />
+      <ReservedSubdomainsCard />
     </div>
   );
 }
