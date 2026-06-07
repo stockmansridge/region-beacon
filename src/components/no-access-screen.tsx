@@ -16,9 +16,11 @@ export function NoAccessScreen({ email }: { email: string | null }) {
   const [pending, setPending] = useState<PendingOrganisationSignup | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [priorError, setPriorError] = useState<string | null>(null);
 
   useEffect(() => {
     setPending(readPendingOrganisationSignup());
+    setPriorError(readLastOrganisationSignupError());
   }, []);
 
   const handleSignOut = async () => {
