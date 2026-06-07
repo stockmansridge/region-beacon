@@ -150,7 +150,7 @@ function AccountPage() {
   useEffect(() => {
     // eslint-disable-next-line no-console
     console.log("[account-billing] route entered", {
-      userId: auth.userId ?? null,
+      userId: auth.session?.user?.id ?? null,
       email: auth.email ?? null,
       authStatus: auth.status,
       accessStatus: access.status,
