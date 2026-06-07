@@ -5460,7 +5460,7 @@ function PublicAddressCard({
                   .getstampd.com.au
                 </span>
               </div>
-              <AvailabilityMessage state={editAvailability} />
+              <AvailabilityMessage state={editAvailability} candidate={editInput} />
               {editError && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                   {editError}
