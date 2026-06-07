@@ -9,6 +9,7 @@ import {
   completePendingOrganisationSignup,
   clearPendingOrganisationSignup,
   writeLastOrganisationSignupError,
+  getMyPendingOrganisationSignupServer,
 } from "@/lib/pending-organisation-signup";
 
 
@@ -87,24 +88,22 @@ function Login() {
     if (status !== "authenticated") return;
     let cancelled = false;
     (async () => {
-      const pending = readPendingOrganisationSignup();
+      const serverPending = await getMyPendingOrganisationSignupServer();
+      const localPending = readPendingOrganisationSignup();
+      const pending = serverPending ?? localPending;
       const pendingEmail = pending?.email ?? null;
       const emailMatches = !!pending && !!sessionEmail &&
         pending.email.toLowerCase().trim() === sessionEmail.toLowerCase().trim();
       // eslint-disable-next-line no-console
       console.log("[admin-login] post-auth pending-signup audit", {
         signedInEmail: sessionEmail,
-        pendingExists: !!pending,
+        serverPendingExists: !!serverPending,
+        localPendingExists: !!localPending,
         pendingEmail,
         pendingBusinessName: pending?.businessName ?? null,
         pendingIntention: pending?.intention ?? null,
         emailMatchesSignedIn: emailMatches,
       });
-      if (!pending) {
-        writeLastOrganisationSignupError(null);
-        navigate({ to: "/admin", replace: true });
-        return;
-      }
       // eslint-disable-next-line no-console
       console.log("[admin-login] calling completePendingOrganisationSignup");
       const result = await completePendingOrganisationSignup();
@@ -135,10 +134,15 @@ function Login() {
         navigate({ to: "/admin", replace: true });
         return;
       }
+      if (result.code === "no_pending") {
+        writeLastOrganisationSignupError(null);
+        navigate({ to: "/admin", replace: true });
+        return;
+      }
       if (result.code === "email_mismatch") {
         setMismatch({
           currentEmail: result.currentEmail ?? sessionEmail ?? "",
-          pendingEmail: result.pendingEmail ?? pending.email,
+          pendingEmail: result.pendingEmail ?? pending?.email ?? "",
         });
         return;
       }
