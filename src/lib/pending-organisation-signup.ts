@@ -14,10 +14,32 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 export type PendingOrganisationSignup = {
   businessName: string;
   organisationUrlName?: string;
+  intention?: string;
   email: string;
   createdAt: string;
   source: string;
 };
+
+export const LAST_ORG_SIGNUP_ERROR_KEY = "getstampd:last-organisation-signup-error";
+
+export function readLastOrganisationSignupError(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(LAST_ORG_SIGNUP_ERROR_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function writeLastOrganisationSignupError(message: string | null): void {
+  try {
+    if (typeof window === "undefined") return;
+    if (message) window.localStorage.setItem(LAST_ORG_SIGNUP_ERROR_KEY, message);
+    else window.localStorage.removeItem(LAST_ORG_SIGNUP_ERROR_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function slugifyOrganisationName(name: string): string {
   return name
