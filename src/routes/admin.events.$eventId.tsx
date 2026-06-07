@@ -1764,7 +1764,7 @@ function EventDetail() {
     if (!agencyId || !bundle) return;
     if (
       !window.confirm(
-        "Archive this event? It will be removed from active admin lists and public access. Existing records (venues, visitors, check-ins) are kept for audit/history.",
+        "Archive this event?\n\nIt will be removed from active admin lists and public access, and its subdomain will be released so a new event can reuse it. Existing records (venues, visitors, check-ins) are kept for audit/history.",
       )
     ) {
       return;
