@@ -123,8 +123,65 @@ function AccountPage() {
   const agencyId = agency.selected?.id ?? null;
   const agencyRole = agency.selected?.role ?? null;
 
+  // Wait for both access + agency context to resolve before deciding access.
+  // Otherwise canView is false during the brief loading window, NoAccessScreen
+  // mounts, sees the user actually has a membership, and hard-redirects to
+  // /admin — which looks like "Account & Billing kicks me back to Dashboard".
+  const isBootstrapping =
+    auth.status === "loading" ||
+    access.status === "loading" ||
+    agency.status === "loading" ||
+    (access.status === "authorized" &&
+      access.memberships.length > 0 &&
+      agency.selected === null &&
+      agency.status !== "error");
+
   const canView =
     access.isPlatformAdmin || (agencyRole !== null && ALLOWED_ROLES.has(agencyRole));
+
+  const redirectReason = !canView
+    ? !access.isPlatformAdmin && agencyRole === null
+      ? "no agency role resolved"
+      : !access.isPlatformAdmin && agencyRole !== null && !ALLOWED_ROLES.has(agencyRole)
+        ? `role ${agencyRole} not in ALLOWED_ROLES`
+        : "unknown"
+    : null;
+
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[account-billing] route entered", {
+      userId: auth.userId ?? null,
+      email: auth.email ?? null,
+      authStatus: auth.status,
+      accessStatus: access.status,
+      agencyStatus: agency.status,
+      agencyId,
+      agencyName: agency.selected?.name ?? null,
+      role: agencyRole,
+      hasMembership: access.memberships.length > 0,
+      isOwner: agencyRole === "agency_owner",
+      isPlatformAdmin: access.isPlatformAdmin,
+      isBootstrapping,
+      canView,
+      redirectReason: isBootstrapping ? null : redirectReason,
+    });
+  }, [
+    auth.userId,
+    auth.email,
+    auth.status,
+    access.status,
+    access.isPlatformAdmin,
+    access.memberships.length,
+    agency.status,
+    agency.selected,
+    agencyId,
+    agencyRole,
+    isBootstrapping,
+    canView,
+    redirectReason,
+  ]);
+
+
 
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [domains, setDomains] = useState<DomainRow[]>([]);
