@@ -269,7 +269,7 @@ export function clearPendingOrganisationSignup(): void {
 }
 
 export type CompletePendingResult =
-  | { ok: true; alreadyHadOrganisation?: boolean }
+  | { ok: true; alreadyHadOrganisation?: boolean; agencyId?: string | null }
   | {
       ok: false;
       code: string;
