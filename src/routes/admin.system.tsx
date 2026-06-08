@@ -2920,7 +2920,15 @@ function EventDetailDrawer({
                 >
                   <Archive className="h-3 w-3" /> Archive event
                 </button>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onHardDelete(event)}
+                  className="ml-auto inline-flex items-center gap-1 rounded-[8px] border border-[#DC2626] bg-[#DC2626] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#B91C1C]"
+                >
+                  <Trash2 className="h-3 w-3" /> Delete forever
+                </button>
+              )}
             </div>
           </>
         ) : null}
