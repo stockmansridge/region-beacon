@@ -2845,6 +2845,7 @@ function EventDetailDrawer({
               <KV label="Passports" value={fmtNum(event.passport_count)} />
               <KV label="Check-ins" value={fmtNum(event.checkin_count)} />
               <KV label="Archived" value={event.deleted_at ? fmtDateTime(event.deleted_at) : "—"} />
+              <KV label="Days archived" value={formatDaysArchived(event.days_since_archived)} />
             </div>
 
             <div className="mt-5 rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs">
