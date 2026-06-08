@@ -2613,9 +2613,19 @@ function EventsSection({
                             <Archive className="h-3 w-3" />
                           </button>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-[8px] border border-[#E6ECF4] bg-[#F8FAFC] px-2 py-1 text-[10px] uppercase text-[#64748B]">
-                            archived
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-[8px] border border-[#E6ECF4] bg-[#F8FAFC] px-2 py-1 text-[10px] uppercase text-[#64748B]">
+                              archived
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setHardDeleteTarget(r)}
+                              className="inline-flex items-center gap-1 rounded-[8px] border border-[#DC2626] bg-[#DC2626] px-2 py-1 text-xs font-medium text-white hover:bg-[#B91C1C]"
+                              title="Delete forever"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -2632,6 +2642,7 @@ function EventsSection({
         publicUrl={selected ? publicUrlFor(selected) : null}
         onClose={() => setSelected(null)}
         onArchive={(r) => setArchiveTarget(r)}
+        onHardDelete={(r) => setHardDeleteTarget(r)}
       />
 
       <ArchiveEventDialog
@@ -2640,9 +2651,16 @@ function EventsSection({
         onArchived={onArchived}
       />
 
-      <SubdomainLookupCard />
-      <ActiveSubdomainsCard />
-      <DeletedSubdomainsCleanup />
+      <HardDeleteEventDialog
+        target={hardDeleteTarget}
+        publicUrl={hardDeleteTarget ? publicUrlFor(hardDeleteTarget) : null}
+        onClose={() => setHardDeleteTarget(null)}
+        onDeleted={onHardDeleted}
+      />
+
+      <SubdomainLookupCard key={`lookup-${subdomainRefreshKey}`} />
+      <ActiveSubdomainsCard key={`active-${subdomainRefreshKey}`} />
+      <DeletedSubdomainsCleanup key={`deleted-${subdomainRefreshKey}`} />
       <ReservedSubdomainsCard />
     </div>
   );
