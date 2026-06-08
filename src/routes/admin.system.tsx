@@ -2410,9 +2410,18 @@ function EventsSection({
   };
 
   const [archiveTarget, setArchiveTarget] = useState<EventRow | null>(null);
+  const [hardDeleteTarget, setHardDeleteTarget] = useState<EventRow | null>(null);
+  const [subdomainRefreshKey, setSubdomainRefreshKey] = useState(0);
   const onArchived = () => {
     setArchiveTarget(null);
     setSelected(null);
+    setSubdomainRefreshKey((k) => k + 1);
+    load();
+  };
+  const onHardDeleted = () => {
+    setHardDeleteTarget(null);
+    setSelected(null);
+    setSubdomainRefreshKey((k) => k + 1);
     load();
   };
 
