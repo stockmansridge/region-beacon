@@ -182,6 +182,7 @@ type EventRow = {
   ends_at: string | null;
   created_at: string;
   deleted_at: string | null;
+  days_since_archived: number | null;
   venue_count: number;
   passport_count: number;
   checkin_count: number;
@@ -2409,9 +2410,18 @@ function EventsSection({
   };
 
   const [archiveTarget, setArchiveTarget] = useState<EventRow | null>(null);
+  const [hardDeleteTarget, setHardDeleteTarget] = useState<EventRow | null>(null);
+  const [subdomainRefreshKey, setSubdomainRefreshKey] = useState(0);
   const onArchived = () => {
     setArchiveTarget(null);
     setSelected(null);
+    setSubdomainRefreshKey((k) => k + 1);
+    load();
+  };
+  const onHardDeleted = () => {
+    setHardDeleteTarget(null);
+    setSelected(null);
+    setSubdomainRefreshKey((k) => k + 1);
     load();
   };
 
@@ -2497,15 +2507,16 @@ function EventsSection({
               <TableHead className="text-right">Passports</TableHead>
               <TableHead className="text-right">Check-ins</TableHead>
               <TableHead>Last check-in</TableHead>
+              <TableHead>Days archived</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={9} />
+              <LoadingRow cols={10} />
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="py-8 text-center text-sm text-[#64748B]">
+                <TableCell colSpan={10} className="py-8 text-center text-sm text-[#64748B]">
                   No events match.
                 </TableCell>
               </TableRow>
@@ -2558,6 +2569,9 @@ function EventsSection({
                     <TableCell className="text-sm text-[#64748B]">
                       {fmtDateTime(r.last_checkin_at)}
                     </TableCell>
+                    <TableCell className="text-sm text-[#64748B]">
+                      {formatDaysArchived(r.days_since_archived)}
+                    </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         <Link
@@ -2599,9 +2613,19 @@ function EventsSection({
                             <Archive className="h-3 w-3" />
                           </button>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-[8px] border border-[#E6ECF4] bg-[#F8FAFC] px-2 py-1 text-[10px] uppercase text-[#64748B]">
-                            archived
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-[8px] border border-[#E6ECF4] bg-[#F8FAFC] px-2 py-1 text-[10px] uppercase text-[#64748B]">
+                              archived
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setHardDeleteTarget(r)}
+                              className="inline-flex items-center gap-1 rounded-[8px] border border-[#DC2626] bg-[#DC2626] px-2 py-1 text-xs font-medium text-white hover:bg-[#B91C1C]"
+                              title="Delete forever"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -2618,6 +2642,7 @@ function EventsSection({
         publicUrl={selected ? publicUrlFor(selected) : null}
         onClose={() => setSelected(null)}
         onArchive={(r) => setArchiveTarget(r)}
+        onHardDelete={(r) => setHardDeleteTarget(r)}
       />
 
       <ArchiveEventDialog
@@ -2626,9 +2651,16 @@ function EventsSection({
         onArchived={onArchived}
       />
 
-      <SubdomainLookupCard />
-      <ActiveSubdomainsCard />
-      <DeletedSubdomainsCleanup />
+      <HardDeleteEventDialog
+        target={hardDeleteTarget}
+        publicUrl={hardDeleteTarget ? publicUrlFor(hardDeleteTarget) : null}
+        onClose={() => setHardDeleteTarget(null)}
+        onDeleted={onHardDeleted}
+      />
+
+      <SubdomainLookupCard key={`lookup-${subdomainRefreshKey}`} />
+      <ActiveSubdomainsCard key={`active-${subdomainRefreshKey}`} />
+      <DeletedSubdomainsCleanup key={`deleted-${subdomainRefreshKey}`} />
       <ReservedSubdomainsCard />
     </div>
   );
@@ -2781,11 +2813,13 @@ function EventDetailDrawer({
   publicUrl,
   onClose,
   onArchive,
+  onHardDelete,
 }: {
   event: EventRow | null;
   publicUrl: string | null;
   onClose: () => void;
   onArchive: (r: EventRow) => void;
+  onHardDelete: (r: EventRow) => void;
 }) {
   return (
     <Sheet open={!!event} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -2811,6 +2845,7 @@ function EventDetailDrawer({
               <KV label="Passports" value={fmtNum(event.passport_count)} />
               <KV label="Check-ins" value={fmtNum(event.checkin_count)} />
               <KV label="Archived" value={event.deleted_at ? fmtDateTime(event.deleted_at) : "—"} />
+              <KV label="Days archived" value={formatDaysArchived(event.days_since_archived)} />
             </div>
 
             <div className="mt-5 rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs">
@@ -2885,7 +2920,15 @@ function EventDetailDrawer({
                 >
                   <Archive className="h-3 w-3" /> Archive event
                 </button>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onHardDelete(event)}
+                  className="ml-auto inline-flex items-center gap-1 rounded-[8px] border border-[#DC2626] bg-[#DC2626] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#B91C1C]"
+                >
+                  <Trash2 className="h-3 w-3" /> Delete forever
+                </button>
+              )}
             </div>
           </>
         ) : null}
@@ -2979,6 +3022,118 @@ function ArchiveEventDialog({
             className="bg-[#DC2626] text-white hover:bg-[#B91C1C]"
           >
             {busy ? "Archiving…" : "Archive event"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+// -------- Days-archived helper --------------------------------------------
+
+function formatDaysArchived(days: number | null | undefined): string {
+  if (days === null || days === undefined) return "—";
+  if (days <= 0) return "Today";
+  if (days === 1) return "1 day";
+  return `${days} days`;
+}
+
+// -------- Hard delete event dialog (platform admin only) ------------------
+
+function HardDeleteEventDialog({
+  target,
+  publicUrl,
+  onClose,
+  onDeleted,
+}: {
+  target: EventRow | null;
+  publicUrl: string | null;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!target) setConfirm("");
+  }, [target]);
+
+  const ready = confirm.trim().toUpperCase() === "DELETE FOREVER";
+
+  const handleDelete = async () => {
+    if (!target || !ready) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("system_admin_hard_delete_event", {
+      p_event_id: target.event_id,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message || "Could not delete event.");
+      return;
+    }
+    toast.success("Event permanently deleted", {
+      description: `${target.event_name} and its related records were removed.`,
+    });
+    onDeleted();
+  };
+
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !busy) onClose(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-[#991B1B]">
+            <Trash2 className="h-4 w-4" />
+            Permanently delete event
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm text-[#475569]">
+              <p>
+                This will permanently delete this event and its related setup
+                data from GetStampd. This action cannot be undone.
+              </p>
+              <p>
+                Only use this for test events, duplicate events, or events that
+                must be removed from the production database.
+              </p>
+              {target ? (
+                <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs text-[#0F172A]">
+                  <div><span className="text-[#64748B]">Event: </span><span className="font-medium">{target.event_name}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Organisation: </span><span className="font-medium">{target.agency_name}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Status: </span><span className="font-medium">{target.status}</span></div>
+                  <div className="mt-1 break-all">
+                    <span className="text-[#64748B]">Public URL: </span>
+                    <span className="font-mono">{publicUrl ?? "—"}</span>
+                  </div>
+                  <div className="mt-1"><span className="text-[#64748B]">Venues: </span><span className="font-medium">{fmtNum(target.venue_count)}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Passports: </span><span className="font-medium">{fmtNum(target.passport_count)}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Check-ins: </span><span className="font-medium">{fmtNum(target.checkin_count)}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Archived: </span><span className="font-medium">{target.deleted_at ? fmtDateTime(target.deleted_at) : "—"}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Days archived: </span><span className="font-medium">{formatDaysArchived(target.days_since_archived)}</span></div>
+                </div>
+              ) : null}
+              <div>
+                <label className="text-[11px] font-medium text-[#0F172A]">
+                  Type <code className="rounded bg-[#F1F5F9] px-1">DELETE FOREVER</code> to confirm
+                </label>
+                <Input
+                  autoFocus
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="DELETE FOREVER"
+                  className="mt-1"
+                  disabled={busy}
+                />
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!ready || busy}
+            onClick={(e) => { e.preventDefault(); handleDelete(); }}
+            className="bg-[#DC2626] text-white hover:bg-[#B91C1C]"
+          >
+            {busy ? "Deleting…" : "Delete forever"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
