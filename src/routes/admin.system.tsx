@@ -2569,6 +2569,9 @@ function EventsSection({
                     <TableCell className="text-sm text-[#64748B]">
                       {fmtDateTime(r.last_checkin_at)}
                     </TableCell>
+                    <TableCell className="text-sm text-[#64748B]">
+                      {formatDaysArchived(r.days_since_archived)}
+                    </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         <Link
