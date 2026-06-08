@@ -182,6 +182,7 @@ type EventRow = {
   ends_at: string | null;
   created_at: string;
   deleted_at: string | null;
+  days_since_archived: number | null;
   venue_count: number;
   passport_count: number;
   checkin_count: number;
