@@ -2813,11 +2813,13 @@ function EventDetailDrawer({
   publicUrl,
   onClose,
   onArchive,
+  onHardDelete,
 }: {
   event: EventRow | null;
   publicUrl: string | null;
   onClose: () => void;
   onArchive: (r: EventRow) => void;
+  onHardDelete: (r: EventRow) => void;
 }) {
   return (
     <Sheet open={!!event} onOpenChange={(o) => { if (!o) onClose(); }}>
