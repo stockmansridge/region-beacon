@@ -2507,15 +2507,16 @@ function EventsSection({
               <TableHead className="text-right">Passports</TableHead>
               <TableHead className="text-right">Check-ins</TableHead>
               <TableHead>Last check-in</TableHead>
+              <TableHead>Days archived</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={9} />
+              <LoadingRow cols={10} />
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="py-8 text-center text-sm text-[#64748B]">
+                <TableCell colSpan={10} className="py-8 text-center text-sm text-[#64748B]">
                   No events match.
                 </TableCell>
               </TableRow>
