@@ -3029,6 +3029,118 @@ function ArchiveEventDialog({
   );
 }
 
+// -------- Days-archived helper --------------------------------------------
+
+function formatDaysArchived(days: number | null | undefined): string {
+  if (days === null || days === undefined) return "—";
+  if (days <= 0) return "Today";
+  if (days === 1) return "1 day";
+  return `${days} days`;
+}
+
+// -------- Hard delete event dialog (platform admin only) ------------------
+
+function HardDeleteEventDialog({
+  target,
+  publicUrl,
+  onClose,
+  onDeleted,
+}: {
+  target: EventRow | null;
+  publicUrl: string | null;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!target) setConfirm("");
+  }, [target]);
+
+  const ready = confirm.trim().toUpperCase() === "DELETE FOREVER";
+
+  const handleDelete = async () => {
+    if (!target || !ready) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("system_admin_hard_delete_event", {
+      p_event_id: target.event_id,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message || "Could not delete event.");
+      return;
+    }
+    toast.success("Event permanently deleted", {
+      description: `${target.event_name} and its related records were removed.`,
+    });
+    onDeleted();
+  };
+
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !busy) onClose(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-[#991B1B]">
+            <Trash2 className="h-4 w-4" />
+            Permanently delete event
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm text-[#475569]">
+              <p>
+                This will permanently delete this event and its related setup
+                data from GetStampd. This action cannot be undone.
+              </p>
+              <p>
+                Only use this for test events, duplicate events, or events that
+                must be removed from the production database.
+              </p>
+              {target ? (
+                <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3 text-xs text-[#0F172A]">
+                  <div><span className="text-[#64748B]">Event: </span><span className="font-medium">{target.event_name}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Organisation: </span><span className="font-medium">{target.agency_name}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Status: </span><span className="font-medium">{target.status}</span></div>
+                  <div className="mt-1 break-all">
+                    <span className="text-[#64748B]">Public URL: </span>
+                    <span className="font-mono">{publicUrl ?? "—"}</span>
+                  </div>
+                  <div className="mt-1"><span className="text-[#64748B]">Venues: </span><span className="font-medium">{fmtNum(target.venue_count)}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Passports: </span><span className="font-medium">{fmtNum(target.passport_count)}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Check-ins: </span><span className="font-medium">{fmtNum(target.checkin_count)}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Archived: </span><span className="font-medium">{target.deleted_at ? fmtDateTime(target.deleted_at) : "—"}</span></div>
+                  <div className="mt-1"><span className="text-[#64748B]">Days archived: </span><span className="font-medium">{formatDaysArchived(target.days_since_archived)}</span></div>
+                </div>
+              ) : null}
+              <div>
+                <label className="text-[11px] font-medium text-[#0F172A]">
+                  Type <code className="rounded bg-[#F1F5F9] px-1">DELETE FOREVER</code> to confirm
+                </label>
+                <Input
+                  autoFocus
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="DELETE FOREVER"
+                  className="mt-1"
+                  disabled={busy}
+                />
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!ready || busy}
+            onClick={(e) => { e.preventDefault(); handleDelete(); }}
+            className="bg-[#DC2626] text-white hover:bg-[#B91C1C]"
+          >
+            {busy ? "Deleting…" : "Delete forever"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 // -------- Currently held subdomains (active events) -----------------------
 
 function ActiveSubdomainsCard() {
