@@ -307,6 +307,10 @@ type ResendableAuthUser = {
   email_confirmed_at: string | null;
 };
 
+function isUnconfirmedAuthUser(user: { email?: string | null; email_confirmed_at?: string | null }) {
+  return !!user.email && !user.email_confirmed_at;
+}
+
 function formatSupabaseError(error: { message: string; status?: number; code?: string }): string {
   const code = error.status ?? error.code;
   return code ? `${error.message} (${code})` : error.message;
@@ -2345,7 +2349,7 @@ function OrphanAuthUsersCard() {
               <TableHead>Created</TableHead>
               <TableHead>Email confirmed</TableHead>
               <TableHead>Last sign-in</TableHead>
-              <TableHead className="w-[260px] text-right">Actions</TableHead>
+              <TableHead className="w-[280px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -2360,6 +2364,7 @@ function OrphanAuthUsersCard() {
             ) : (
               rows.map((r) => {
                 const isSelf = !!currentUserId && r.user_id === currentUserId;
+                const canResend = isUnconfirmedAuthUser(r);
                 return (
                   <TableRow key={r.user_id}>
                     <TableCell className="text-sm text-[#0F172A]">{r.email ?? "—"}</TableCell>
@@ -2372,9 +2377,9 @@ function OrphanAuthUsersCard() {
                     <TableCell className="text-xs text-[#64748B]">
                       {r.last_sign_in_at ? new Date(r.last_sign_in_at).toLocaleString() : "Never"}
                     </TableCell>
-                    <TableCell className="min-w-[260px] text-right">
-                      <div className="flex min-w-[250px] flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
-                        {!r.email_confirmed_at && r.email ? (
+                    <TableCell className="min-w-[280px] text-right">
+                      <div className="flex min-w-[270px] flex-col items-end gap-1.5 whitespace-nowrap">
+                        {canResend ? (
                           <button
                             type="button"
                             disabled={resendingUserId !== null || resendCooldown > 0}
