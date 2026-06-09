@@ -2771,7 +2771,7 @@ function UserAuthDiagnosticsCard() {
                 </div>
               ) : null}
 
-              {!selected.email_confirmed_at && selected.email ? (
+              {isUnconfirmedUser(selected) && selected.email ? (
                 <div className="mt-4 rounded-[12px] border border-[#E6ECF4] bg-white p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-semibold text-[#0F172A]">
@@ -2779,7 +2779,7 @@ function UserAuthDiagnosticsCard() {
                     </div>
                     <Button
                       size="sm"
-                      onClick={handleResendVerification}
+                      onClick={() => void handleResendVerification()}
                       disabled={resending || resendCooldown > 0}
                     >
                       <MailCheck className="mr-1 h-3.5 w-3.5" />
@@ -2791,10 +2791,8 @@ function UserAuthDiagnosticsCard() {
                     </Button>
                   </div>
                   <div className="mt-2 text-xs text-[#64748B]">
-                    Resend requests confirm that Supabase accepted the email send request.
                     Delivery depends on SMTP/provider configuration, recipient mail filtering,
-                    and domain authentication. For reliable delivery and provider logs, configure
-                    custom SMTP.
+                    and domain authentication. Check provider logs for delivery status.
                   </div>
                   {resendMessage ? (
                     <div
