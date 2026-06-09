@@ -2305,7 +2305,7 @@ function OrphanAuthUsersCard() {
   };
 
   const handleResendVerification = async (user: OrphanAuthUserRow) => {
-    if (!user.email || user.email_confirmed_at || resendingUserId || resendCooldown > 0) return;
+    if (!isUnconfirmedAuthUser(user) || resendingUserId || resendCooldown > 0) return;
     setResendingUserId(user.user_id);
     try {
       await resendVerificationEmail(user, "system_admin_orphan_auth_users");
