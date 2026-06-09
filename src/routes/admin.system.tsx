@@ -2294,37 +2294,18 @@ function OrphanAuthUsersCard() {
   const handleResendVerification = async (user: OrphanAuthUserRow) => {
     if (!user.email || user.email_confirmed_at || resendingUserId || resendCooldown > 0) return;
     setResendingUserId(user.user_id);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: user.email,
-      options: {
-        emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
-      },
-    });
-    if (error) {
-      const code = (error as { status?: number; code?: string }).status
-        ?? (error as { code?: string }).code;
-      toast.error(code ? `${error.message} (${code})` : error.message);
+    try {
+      await resendVerificationEmail(user, "system_admin_orphan_auth_users");
+      toast.success(VERIFICATION_RESEND_SUCCESS);
+      setResendCooldownUserId(user.user_id);
+      setResendCooldown(60);
+      notifyAuthUserDiagnosticsChanged();
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not resend verification email.");
+    } finally {
       setResendingUserId(null);
-      return;
     }
-    const { error: logErr } = await supabase.rpc("system_admin_log_support_action", {
-      p_action: "auth_verification_email_resent",
-      p_target_user_id: user.user_id,
-      p_target_email: user.email,
-      p_source: "system_admin_orphan_auth_users",
-      p_metadata: {
-        redirect_to: authUrl("/admin/login?complete_signup=1"),
-      },
-    });
-    if (logErr && !isMissingFn(logErr)) {
-      console.warn("[support-action log] failed", logErr.message);
-    }
-    toast.success("Verification email resend request accepted; check provider logs for delivery status.");
-    setResendCooldownUserId(user.user_id);
-    setResendCooldown(60);
-    setResendingUserId(null);
-    await load();
   };
 
   return (
