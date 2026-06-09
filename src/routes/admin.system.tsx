@@ -2262,6 +2262,12 @@ function OrphanAuthUsersCard() {
     load();
   }, []);
 
+  useEffect(() => {
+    const onAuthUserUpdated = () => void load();
+    window.addEventListener(AUTH_USER_DIAGNOSTICS_REFRESH_EVENT, onAuthUserUpdated);
+    return () => window.removeEventListener(AUTH_USER_DIAGNOSTICS_REFRESH_EVENT, onAuthUserUpdated);
+  }, []);
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
