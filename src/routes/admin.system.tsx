@@ -2325,7 +2325,377 @@ function UserDetailDrawer({
   );
 }
 
+// -------- User auth diagnostics (platform admin only) --------------------
+
+type AuthUserSummary = {
+  user_id: string;
+  email: string | null;
+  created_at: string | null;
+  email_confirmed_at: string | null;
+  last_sign_in_at: string | null;
+  confirmation_sent_at: string | null;
+  invited_at: string | null;
+  recovery_sent_at: string | null;
+  email_change: string | null;
+  email_change_sent_at: string | null;
+  phone: string | null;
+  phone_confirmed_at: string | null;
+  banned_until: string | null;
+  provider: string | null;
+  providers: string[] | null;
+  is_platform_admin: boolean;
+  has_organisation: boolean;
+  agency_id: string | null;
+  agency_name: string | null;
+  agency_role: string | null;
+  accepted_at: string | null;
+  invited_member_at: string | null;
+};
+
+type AuthTimelineRow = {
+  occurred_at: string;
+  event_type: string;
+  status: string | null;
+  summary: string | null;
+  source: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+type AuthEmailDiagnostics = {
+  user_exists: boolean;
+  user_id?: string;
+  email?: string | null;
+  created_at?: string | null;
+  email_confirmed?: boolean;
+  email_confirmed_at?: string | null;
+  confirmation_sent_at?: string | null;
+  last_sign_in_at?: string | null;
+  banned_until?: string | null;
+  likely_issue?: string;
+  recommended_next_action?: string;
+};
+
+function DiagBadge({ tone, children }: { tone: "ok" | "warn" | "bad" | "info"; children: React.ReactNode }) {
+  const cls =
+    tone === "ok"
+      ? "bg-[#DCFCE7] text-[#166534]"
+      : tone === "warn"
+        ? "bg-[#FEF3C7] text-[#92400E]"
+        : tone === "bad"
+          ? "bg-[#FEE2E2] text-[#991B1B]"
+          : "bg-[#EAF2FF] text-[#1F56C5]";
+  return (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}>
+      {children}
+    </span>
+  );
+}
+
+function UserAuthDiagnosticsCard() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<AuthUserSummary[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<AuthUserSummary | null>(null);
+  const [timeline, setTimeline] = useState<AuthTimelineRow[] | null>(null);
+  const [diag, setDiag] = useState<AuthEmailDiagnostics | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  const runSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const needle = query.trim();
+    if (!needle) return;
+    setSearching(true);
+    setSearchError(null);
+    setResults(null);
+    const { data, error } = await supabase.rpc("system_admin_find_auth_user", { p_search: needle });
+    if (error) {
+      setSearchError(
+        isMissingFn(error)
+          ? "User auth diagnostics RPCs are not installed yet. Apply supabase/migrations-system-admin-user-auth-diagnostics/apply.sql."
+          : error.message,
+      );
+      setSearching(false);
+      return;
+    }
+    setResults((data ?? []) as AuthUserSummary[]);
+    setSearching(false);
+  };
+
+  const openUser = async (user: AuthUserSummary) => {
+    setSelected(user);
+    setDetailLoading(true);
+    setDetailError(null);
+    setTimeline(null);
+    setDiag(null);
+    const [tl, dg] = await Promise.all([
+      supabase.rpc("system_admin_user_auth_timeline", { p_user_id: user.user_id }),
+      supabase.rpc("system_admin_auth_email_diagnostics", { p_user_id: user.user_id }),
+    ]);
+    if (tl.error) {
+      setDetailError(tl.error.message);
+    } else {
+      const rows = (tl.data ?? []) as AuthTimelineRow[];
+      rows.sort((a, b) => (a.occurred_at < b.occurred_at ? 1 : -1));
+      setTimeline(rows);
+    }
+    if (!dg.error) {
+      setDiag(dg.data as AuthEmailDiagnostics);
+    }
+    setDetailLoading(false);
+  };
+
+  const copySummary = async () => {
+    if (!selected) return;
+    const lines = [
+      `User: ${selected.email ?? selected.user_id}`,
+      `User ID: ${selected.user_id}`,
+      `Signed up: ${fmtDateTime(selected.created_at)}`,
+      `Email confirmed: ${selected.email_confirmed_at ? `yes (${fmtDateTime(selected.email_confirmed_at)})` : "no"}`,
+      `Confirmation sent: ${fmtDateTime(selected.confirmation_sent_at)}`,
+      `Last login: ${selected.last_sign_in_at ? fmtDateTime(selected.last_sign_in_at) : "never"}`,
+      `Organisation: ${selected.agency_name ?? "—"} (${selected.has_organisation ? selected.agency_role ?? "member" : "none"})`,
+      `Platform admin: ${selected.is_platform_admin ? "yes" : "no"}`,
+      `Likely issue: ${diag?.likely_issue ?? "—"}`,
+      `Recommended next action: ${diag?.recommended_next_action ?? "—"}`,
+    ];
+    await copyToClipboard(lines.join("\n"));
+    toast.success("Diagnostic summary copied");
+  };
+
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold text-[#0F172A]">User auth diagnostics</div>
+          <div className="mt-0.5 text-xs text-[#64748B]">
+            Search any user by email or user ID to inspect signup, email confirmation, and login state. Platform admin only.
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={runSearch} className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+          <Input
+            placeholder="Search by email or user ID"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button type="submit" disabled={searching || !query.trim()}>
+          {searching ? "Searching…" : "Search"}
+        </Button>
+      </form>
+
+      {searchError ? (
+        <div className="mt-3"><ErrorBanner message={searchError} /></div>
+      ) : null}
+
+      {results && results.length === 0 ? (
+        <div className="mt-3 rounded-[12px] border border-dashed border-[#CBD5E1] bg-white p-4 text-sm text-[#64748B]">
+          No users match that search.
+        </div>
+      ) : null}
+
+      {results && results.length > 0 ? (
+        <div className="mt-3 overflow-hidden rounded-[12px] border border-[#E6ECF4]">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[#F8FAFC]">
+                <TableHead>Email</TableHead>
+                <TableHead>Signed up</TableHead>
+                <TableHead>Email confirmed</TableHead>
+                <TableHead>Last login</TableHead>
+                <TableHead>Organisation</TableHead>
+                <TableHead className="w-[80px] text-right">Open</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {results.map((u) => (
+                <TableRow
+                  key={u.user_id}
+                  className="cursor-pointer hover:bg-[#F8FBFF]"
+                  onClick={() => openUser(u)}
+                >
+                  <TableCell className="text-sm text-[#0F172A]">{u.email ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-[#64748B]">{fmtDate(u.created_at)}</TableCell>
+                  <TableCell>
+                    {u.email_confirmed_at ? (
+                      <DiagBadge tone="ok">Confirmed</DiagBadge>
+                    ) : (
+                      <DiagBadge tone="warn">Not confirmed</DiagBadge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {u.last_sign_in_at ? (
+                      <span className="text-sm text-[#64748B]">{fmtDate(u.last_sign_in_at)}</span>
+                    ) : (
+                      <DiagBadge tone="info">Never logged in</DiagBadge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm text-[#0F172A]">
+                    {u.has_organisation ? (
+                      u.agency_name ?? "—"
+                    ) : (
+                      <DiagBadge tone="warn">Missing organisation</DiagBadge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openUser(u); }}>
+                      Open
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : null}
+
+      <Sheet open={!!selected} onOpenChange={(o) => { if (!o) setSelected(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+          {selected ? (
+            <>
+              <SheetHeader>
+                <SheetTitle>{selected.email ?? "Auth user"}</SheetTitle>
+                <SheetDescription className="break-all">{selected.user_id}</SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {selected.email_confirmed_at ? (
+                  <DiagBadge tone="ok">Confirmed</DiagBadge>
+                ) : (
+                  <DiagBadge tone="warn">Not confirmed</DiagBadge>
+                )}
+                {selected.last_sign_in_at ? (
+                  <DiagBadge tone="ok">Has logged in</DiagBadge>
+                ) : (
+                  <DiagBadge tone="info">Never logged in</DiagBadge>
+                )}
+                {selected.has_organisation ? (
+                  <DiagBadge tone="ok">Has organisation</DiagBadge>
+                ) : (
+                  <DiagBadge tone="warn">Missing organisation</DiagBadge>
+                )}
+                {selected.is_platform_admin ? <DiagBadge tone="bad">Platform admin</DiagBadge> : null}
+                {selected.agency_role === "agency_owner" || selected.agency_role === "agency_admin" ? (
+                  <DiagBadge tone="info">Org admin</DiagBadge>
+                ) : null}
+                {selected.banned_until ? <DiagBadge tone="bad">Banned</DiagBadge> : null}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-[12px] border border-[#E6ECF4] p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-[#64748B]">Signed up</div>
+                  <div className="mt-1 text-sm text-[#0F172A]">{fmtDateTime(selected.created_at)}</div>
+                </div>
+                <div className="rounded-[12px] border border-[#E6ECF4] p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-[#64748B]">Email confirmed</div>
+                  <div className="mt-1 text-sm text-[#0F172A]">{fmtDateTime(selected.email_confirmed_at)}</div>
+                </div>
+                <div className="rounded-[12px] border border-[#E6ECF4] p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-[#64748B]">Last login</div>
+                  <div className="mt-1 text-sm text-[#0F172A]">{fmtDateTime(selected.last_sign_in_at)}</div>
+                </div>
+                <div className="rounded-[12px] border border-[#E6ECF4] p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-[#64748B]">Organisation</div>
+                  <div className="mt-1 text-sm text-[#0F172A]">
+                    {selected.agency_name ?? "—"}
+                    {selected.agency_role ? (
+                      <span className="ml-1 text-xs text-[#64748B]">({formatRoleLabel(selected.agency_role)})</span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-[#64748B]">Confirmation sent: </span>
+                  <span className="text-[#0F172A]">{fmtDateTime(selected.confirmation_sent_at)}</span>
+                </div>
+                <div>
+                  <span className="text-[#64748B]">Invited: </span>
+                  <span className="text-[#0F172A]">{fmtDateTime(selected.invited_at)}</span>
+                </div>
+                <div>
+                  <span className="text-[#64748B]">Recovery sent: </span>
+                  <span className="text-[#0F172A]">{fmtDateTime(selected.recovery_sent_at)}</span>
+                </div>
+                <div>
+                  <span className="text-[#64748B]">Email change sent: </span>
+                  <span className="text-[#0F172A]">{fmtDateTime(selected.email_change_sent_at)}</span>
+                </div>
+                <div>
+                  <span className="text-[#64748B]">Phone confirmed: </span>
+                  <span className="text-[#0F172A]">{fmtDateTime(selected.phone_confirmed_at)}</span>
+                </div>
+                <div>
+                  <span className="text-[#64748B]">Provider: </span>
+                  <span className="text-[#0F172A]">
+                    {selected.providers && selected.providers.length > 0
+                      ? selected.providers.join(", ")
+                      : selected.provider ?? "—"}
+                  </span>
+                </div>
+              </div>
+
+              {diag?.likely_issue ? (
+                <div className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] p-3 text-sm text-[#78350F]">
+                  <div className="font-semibold">Likely issue</div>
+                  <div className="mt-0.5">{diag.likely_issue}</div>
+                  {diag.recommended_next_action ? (
+                    <div className="mt-2">
+                      <span className="font-semibold">Next action:</span> {diag.recommended_next_action}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-sm font-semibold text-[#0F172A]">Auth timeline</div>
+                <Button variant="outline" size="sm" onClick={copySummary}>
+                  <Copy className="mr-1 h-3.5 w-3.5" /> Copy summary
+                </Button>
+              </div>
+
+              {detailLoading ? (
+                <div className="mt-2 text-sm text-[#64748B]">Loading timeline…</div>
+              ) : detailError ? (
+                <div className="mt-2"><ErrorBanner message={detailError} /></div>
+              ) : timeline && timeline.length > 0 ? (
+                <ol className="mt-2 space-y-2">
+                  {timeline.map((t, i) => (
+                    <li key={i} className="rounded-[12px] border border-[#E6ECF4] p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="text-sm font-medium text-[#0F172A]">{t.event_type}</div>
+                        <div className="text-xs text-[#64748B]">{fmtDateTime(t.occurred_at)}</div>
+                      </div>
+                      {t.summary ? <div className="mt-0.5 text-xs text-[#475569]">{t.summary}</div> : null}
+                      <div className="mt-1 flex items-center gap-2 text-[11px] text-[#64748B]">
+                        {t.status ? <span className="rounded bg-[#F1F5F9] px-1.5 py-0.5">{t.status}</span> : null}
+                        {t.source ? <span>{t.source}</span> : null}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <div className="mt-2 rounded-[12px] border border-dashed border-[#CBD5E1] p-3 text-xs text-[#64748B]">
+                  No auth timeline entries available. Supabase's <code>auth.audit_log_entries</code> may be empty or unavailable on this project.
+                </div>
+              )}
+            </>
+          ) : null}
+        </SheetContent>
+      </Sheet>
+    </Card>
+  );
+}
+
 // -------- Events ----------------------------------------------------------
+
 
 function EventsSection({
   filter,
