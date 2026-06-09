@@ -2003,7 +2003,6 @@ function UsersSection() {
       </Card>
 
       <UserAuthDiagnosticsCard />
-      <PendingOrganisationSignupsCard />
       <OrphanAuthUsersCard />
 
       <UserDetailDrawer user={selected} allRows={rows} onClose={() => setSelected(null)} />
@@ -2367,7 +2366,9 @@ function OrphanAuthUsersCard() {
             ) : (
               rows.map((r) => {
                 const isSelf = !!currentUserId && r.user_id === currentUserId;
-                const canResend = isUnconfirmedAuthUser(r);
+                const email = r.email?.trim() ?? "";
+                const confirmedAt = String(r.email_confirmed_at ?? "").trim().toLowerCase();
+                const canResend = email.length > 0 && (confirmedAt === "" || confirmedAt === "null");
                 return (
                   <TableRow key={r.user_id}>
                     <TableCell className="text-sm text-[#0F172A]">{r.email ?? "—"}</TableCell>
@@ -2383,20 +2384,23 @@ function OrphanAuthUsersCard() {
                     <TableCell className="min-w-[280px] text-right">
                       <div className="flex min-w-[270px] flex-col items-end gap-1.5 whitespace-nowrap">
                         {canResend ? (
-                          <button
-                            type="button"
-                            disabled={resendingUserId !== null || resendCooldown > 0}
-                            onClick={() => void handleResendVerification(r)}
-                            title="Resend verification email"
-                            className="inline-flex items-center rounded-md border border-[#BFDBFE] bg-white px-2 py-1 text-xs font-medium text-[#1D4ED8] hover:bg-[#EFF6FF] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <MailCheck className="mr-1 h-3.5 w-3.5" />
-                            {resendingUserId === r.user_id
-                              ? "Resending…"
-                              : resendCooldown > 0 && resendCooldownUserId === r.user_id
-                                ? `Wait ${resendCooldown}s`
-                                : "Resend verification email"}
-                          </button>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-[11px] font-medium text-[#166534]">resend eligible</span>
+                            <button
+                              type="button"
+                              disabled={resendingUserId !== null || resendCooldown > 0}
+                              onClick={() => void handleResendVerification(r)}
+                              title="Resend verification email"
+                              className="inline-flex items-center rounded-md border border-[#BFDBFE] bg-white px-2 py-1 text-xs font-medium text-[#1D4ED8] hover:bg-[#EFF6FF] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <MailCheck className="mr-1 h-3.5 w-3.5" />
+                              {resendingUserId === r.user_id
+                                ? "Resending…"
+                                : resendCooldown > 0 && resendCooldownUserId === r.user_id
+                                  ? `Wait ${resendCooldown}s`
+                                  : "Resend verification email"}
+                            </button>
+                          </div>
                         ) : null}
                         <button
                           type="button"
