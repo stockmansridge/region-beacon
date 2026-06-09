@@ -307,8 +307,13 @@ type ResendableAuthUser = {
   email_confirmed_at: string | null;
 };
 
+function isBlankAuthTimestamp(value: string | null | undefined) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized === "" || normalized === "null" || normalized === "never" || normalized === "—";
+}
+
 function isUnconfirmedAuthUser(user: { email?: string | null; email_confirmed_at?: string | null }) {
-  return !!user.email && !user.email_confirmed_at;
+  return !!user.email?.trim() && isBlankAuthTimestamp(user.email_confirmed_at);
 }
 
 function formatSupabaseError(error: { message: string; status?: number; code?: string }): string {
@@ -2043,7 +2048,6 @@ function PendingOrganisationSignupsCard() {
     const emails = Array.from(
       new Set(
         pendingRows
-          .filter((r) => (r.status ?? "").toLowerCase() === "pending")
           .map((r) => emailKey(r.email))
           .filter(Boolean),
       ),
@@ -2170,8 +2174,7 @@ function PendingOrganisationSignupsCard() {
                 const authUser = authByEmail[key];
                 const authLookupLoading = authLookupLoadingByEmail[key];
                 const authLookupError = authLookupErrorByEmail[key];
-                const isPending = (r.status ?? "").toLowerCase() === "pending";
-                const canResend = isPending && !!authUser?.email && !authUser.email_confirmed_at;
+                const canResend = isUnconfirmedAuthUser(authUser ?? { email: null, email_confirmed_at: null });
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="text-sm text-[#0F172A]">{r.email}</TableCell>
@@ -2207,7 +2210,7 @@ function PendingOrganisationSignupsCard() {
                               ? `Wait ${resendCooldown}s`
                               : "Resend verification email"}
                         </button>
-                      ) : authLookupLoading && isPending ? (
+                      ) : authLookupLoading ? (
                         <span className="text-xs text-[#64748B]">Checking auth…</span>
                       ) : null}
                     </TableCell>
