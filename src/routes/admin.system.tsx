@@ -2077,6 +2077,15 @@ function OrphanAuthUsersCard() {
   const [deleteTarget, setDeleteTarget] = useState<OrphanAuthUserRow | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [resendingUserId, setResendingUserId] = useState<string | null>(null);
+  const [resendCooldownUserId, setResendCooldownUserId] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
 
   const load = async () => {
     setLoading(true);
@@ -2124,6 +2133,42 @@ function OrphanAuthUsersCard() {
     await load();
   };
 
+  const handleResendVerification = async (user: OrphanAuthUserRow) => {
+    if (!user.email || user.email_confirmed_at || resendingUserId || resendCooldown > 0) return;
+    setResendingUserId(user.user_id);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: user.email,
+      options: {
+        emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
+      },
+    });
+    if (error) {
+      const code = (error as { status?: number; code?: string }).status
+        ?? (error as { code?: string }).code;
+      toast.error(code ? `${error.message} (${code})` : error.message);
+      setResendingUserId(null);
+      return;
+    }
+    const { error: logErr } = await supabase.rpc("system_admin_log_support_action", {
+      p_action: "auth_verification_email_resent",
+      p_target_user_id: user.user_id,
+      p_target_email: user.email,
+      p_source: "system_admin_orphan_auth_users",
+      p_metadata: {
+        redirect_to: authUrl("/admin/login?complete_signup=1"),
+      },
+    });
+    if (logErr && !isMissingFn(logErr)) {
+      console.warn("[support-action log] failed", logErr.message);
+    }
+    toast.success("Verification email resend request accepted; check provider logs for delivery status.");
+    setResendCooldownUserId(user.user_id);
+    setResendCooldown(60);
+    setResendingUserId(null);
+    await load();
+  };
+
   return (
     <Card className="overflow-hidden p-0">
       <div className="flex items-start justify-between gap-3 border-b bg-[#FFFBEB] px-4 py-3">
@@ -2155,7 +2200,7 @@ function OrphanAuthUsersCard() {
               <TableHead>Created</TableHead>
               <TableHead>Email confirmed</TableHead>
               <TableHead>Last sign-in</TableHead>
-              <TableHead className="w-24 text-right">Actions</TableHead>
+              <TableHead className="w-[260px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -2183,18 +2228,36 @@ function OrphanAuthUsersCard() {
                       {r.last_sign_in_at ? new Date(r.last_sign_in_at).toLocaleString() : "Never"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <button
-                        type="button"
-                        disabled={isSelf}
-                        onClick={() => {
-                          setDeleteError(null);
-                          setDeleteTarget(r);
-                        }}
-                        title={isSelf ? "You cannot delete your own account" : "Delete this auth-only user"}
-                        className="rounded-md border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#B91C1C] hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {!r.email_confirmed_at && r.email ? (
+                          <button
+                            type="button"
+                            disabled={resendingUserId !== null || resendCooldown > 0}
+                            onClick={() => void handleResendVerification(r)}
+                            title="Resend verification email"
+                            className="inline-flex items-center rounded-md border border-[#BFDBFE] bg-white px-2 py-1 text-xs font-medium text-[#1D4ED8] hover:bg-[#EFF6FF] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <MailCheck className="mr-1 h-3.5 w-3.5" />
+                            {resendingUserId === r.user_id
+                              ? "Resending…"
+                              : resendCooldown > 0 && resendCooldownUserId === r.user_id
+                                ? `Wait ${resendCooldown}s`
+                                : "Resend verification email"}
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          disabled={isSelf}
+                          onClick={() => {
+                            setDeleteError(null);
+                            setDeleteTarget(r);
+                          }}
+                          title={isSelf ? "You cannot delete your own account" : "Delete this auth-only user"}
+                          className="rounded-md border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#B91C1C] hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -2465,15 +2528,19 @@ function UserAuthDiagnosticsCard() {
     setDetailLoading(false);
   };
 
-  const refreshSelected = async () => {
-    if (!selected) return;
+  const refreshUser = async (user: AuthUserSummary) => {
     const { data } = await supabase.rpc("system_admin_find_auth_user", {
-      p_search: selected.user_id,
+      p_search: user.user_id,
     });
     const rows = (data ?? []) as AuthUserSummary[];
-    const fresh = rows.find((r) => r.user_id === selected.user_id);
+    const fresh = rows.find((r) => r.user_id === user.user_id);
     if (fresh) setSelected(fresh);
-    await loadDetails(selected.user_id);
+    await loadDetails(user.user_id);
+  };
+
+  const refreshSelected = async () => {
+    if (!selected) return;
+    await refreshUser(selected);
   };
 
   const handleResendVerification = async (target?: AuthUserSummary) => {
@@ -2525,7 +2592,7 @@ function UserAuthDiagnosticsCard() {
     toast.success("Verification email resent");
     setResendCooldown(60);
     setResending(false);
-    await refreshSelected();
+    await refreshUser(user);
   };
 
   const isUnconfirmedUser = (u: AuthUserSummary | null | undefined): boolean => {
@@ -2605,7 +2672,7 @@ function UserAuthDiagnosticsCard() {
                 <TableHead>Email confirmed</TableHead>
                 <TableHead>Last login</TableHead>
                 <TableHead>Organisation</TableHead>
-                <TableHead className="w-[80px] text-right">Open</TableHead>
+                <TableHead className="w-[260px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
