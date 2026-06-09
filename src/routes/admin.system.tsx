@@ -2187,7 +2187,7 @@ function PendingOrganisationSignupsCard() {
                     <TableCell className="max-w-xs truncate text-xs text-[#991B1B]">
                       {r.last_error ?? (authLookupError || "—")}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="min-w-[240px] text-right">
                       {canResend ? (
                         <button
                           type="button"
@@ -2366,8 +2366,8 @@ function OrphanAuthUsersCard() {
                     <TableCell className="text-xs text-[#64748B]">
                       {r.last_sign_in_at ? new Date(r.last_sign_in_at).toLocaleString() : "Never"}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex flex-wrap items-center justify-end gap-2">
+                    <TableCell className="min-w-[260px] text-right">
+                      <div className="flex min-w-[250px] flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
                         {!r.email_confirmed_at && r.email ? (
                           <button
                             type="button"
