@@ -1945,6 +1945,7 @@ function UsersSection() {
         </Table>
       </Card>
 
+      <UserAuthDiagnosticsCard />
       <PendingOrganisationSignupsCard />
       <OrphanAuthUsersCard />
 
