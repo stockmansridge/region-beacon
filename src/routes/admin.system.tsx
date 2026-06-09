@@ -2639,10 +2639,32 @@ function UserAuthDiagnosticsCard() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openUser(u); }}>
-                      Open
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      {isUnconfirmedUser(u) && u.email ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={resending || resendCooldown > 0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleResendVerification(u);
+                          }}
+                          title="Resend verification email"
+                        >
+                          <MailCheck className="mr-1 h-3.5 w-3.5" />
+                          {resending && selected?.user_id === u.user_id
+                            ? "Resending…"
+                            : resendCooldown > 0 && selected?.user_id === u.user_id
+                              ? `Wait ${resendCooldown}s`
+                              : "Resend verification email"}
+                        </Button>
+                      ) : null}
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); void openUser(u); }}>
+                        Open
+                      </Button>
+                    </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
