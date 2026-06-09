@@ -2682,6 +2682,15 @@ function UserAuthDiagnosticsCard() {
     await refreshUser(selected);
   };
 
+  useEffect(() => {
+    const onAuthUserUpdated = () => {
+      if (selected) void refreshUser(selected);
+      if (query.trim()) void runSearch();
+    };
+    window.addEventListener(AUTH_USER_DIAGNOSTICS_REFRESH_EVENT, onAuthUserUpdated);
+    return () => window.removeEventListener(AUTH_USER_DIAGNOSTICS_REFRESH_EVENT, onAuthUserUpdated);
+  }, [selected, query]);
+
   const handleResendVerification = async (target?: AuthUserSummary) => {
     const user = target ?? selected;
     if (!user?.email) return;
