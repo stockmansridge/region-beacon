@@ -153,21 +153,6 @@ type UserRow = {
   created_at: string;
 };
 
-type PendingOrganisationSignupRow = {
-  id: string;
-  email: string;
-  full_name: string | null;
-  organisation_name: string;
-  organisation_slug: string | null;
-  signup_intention: string | null;
-  auth_user_id: string | null;
-  status: string;
-  created_at: string;
-  completed_at: string | null;
-  completed_agency_id: string | null;
-  last_error: string | null;
-};
-
 type EventRow = {
   event_id: string;
   agency_id: string;
