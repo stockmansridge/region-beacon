@@ -2476,13 +2476,18 @@ function UserAuthDiagnosticsCard() {
     await loadDetails(selected.user_id);
   };
 
-  const handleResendVerification = async () => {
-    if (!selected?.email) return;
+  const handleResendVerification = async (target?: AuthUserSummary) => {
+    const user = target ?? selected;
+    if (!user?.email) return;
+    if (!selected || selected.user_id !== user.user_id) {
+      // Open the detail panel so the user can see the result inline.
+      void openUser(user);
+    }
     setResending(true);
     setResendMessage(null);
     const { error } = await supabase.auth.resend({
       type: "signup",
-      email: selected.email,
+      email: user.email,
       options: {
         emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
       },
@@ -2501,8 +2506,8 @@ function UserAuthDiagnosticsCard() {
     // Best-effort audit log (do not fail the UX if the RPC isn't installed).
     const { error: logErr } = await supabase.rpc("system_admin_log_support_action", {
       p_action: "auth_verification_email_resent",
-      p_target_user_id: selected.user_id,
-      p_target_email: selected.email,
+      p_target_user_id: user.user_id,
+      p_target_email: user.email,
       p_source: "system_admin_user_auth_diagnostics",
       p_metadata: {
         redirect_to: authUrl("/admin/login?complete_signup=1"),
@@ -2515,13 +2520,25 @@ function UserAuthDiagnosticsCard() {
     setResendMessage({
       tone: "ok",
       text:
-        "Verification email resent. This confirms Supabase accepted the resend request, but it does not prove inbox delivery.",
+        "Verification email resent. Supabase accepted the resend request, but this does not prove inbox delivery.",
     });
     toast.success("Verification email resent");
     setResendCooldown(60);
     setResending(false);
     await refreshSelected();
   };
+
+  const isUnconfirmedUser = (u: AuthUserSummary | null | undefined): boolean => {
+    if (!u) return false;
+    const anyU = u as unknown as Record<string, unknown>;
+    if (u.email_confirmed_at) return false;
+    if (anyU.confirmed_at) return false;
+    if (anyU.emailConfirmed === true) return false;
+    if (anyU.is_email_confirmed === true) return false;
+    if (diag && diag.user_id === u.user_id && diag.email_confirmed === true) return false;
+    return true;
+  };
+
 
 
   const copySummary = async () => {
