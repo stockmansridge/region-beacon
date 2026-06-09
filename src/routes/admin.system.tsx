@@ -18,7 +18,9 @@ import {
   X,
   Trash2,
   Archive,
+  MailCheck,
 } from "lucide-react";
+import { authUrl } from "@/lib/auth-redirect";
 import { tenantUrl } from "@/lib/domains";
 
 import { toast } from "sonner";
@@ -2401,6 +2403,17 @@ function UserAuthDiagnosticsCard() {
   const [diag, setDiag] = useState<AuthEmailDiagnostics | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendMessage, setResendMessage] = useState<
+    { tone: "ok" | "bad"; text: string } | null
+  >(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
 
   const runSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -2423,15 +2436,10 @@ function UserAuthDiagnosticsCard() {
     setSearching(false);
   };
 
-  const openUser = async (user: AuthUserSummary) => {
-    setSelected(user);
-    setDetailLoading(true);
-    setDetailError(null);
-    setTimeline(null);
-    setDiag(null);
+  const loadDetails = async (userId: string) => {
     const [tl, dg] = await Promise.all([
-      supabase.rpc("system_admin_user_auth_timeline", { p_user_id: user.user_id }),
-      supabase.rpc("system_admin_auth_email_diagnostics", { p_user_id: user.user_id }),
+      supabase.rpc("system_admin_user_auth_timeline", { p_user_id: userId }),
+      supabase.rpc("system_admin_auth_email_diagnostics", { p_user_id: userId }),
     ]);
     if (tl.error) {
       setDetailError(tl.error.message);
@@ -2439,12 +2447,82 @@ function UserAuthDiagnosticsCard() {
       const rows = (tl.data ?? []) as AuthTimelineRow[];
       rows.sort((a, b) => (a.occurred_at < b.occurred_at ? 1 : -1));
       setTimeline(rows);
+      setDetailError(null);
     }
     if (!dg.error) {
       setDiag(dg.data as AuthEmailDiagnostics);
     }
+  };
+
+  const openUser = async (user: AuthUserSummary) => {
+    setSelected(user);
+    setDetailLoading(true);
+    setDetailError(null);
+    setTimeline(null);
+    setDiag(null);
+    setResendMessage(null);
+    await loadDetails(user.user_id);
     setDetailLoading(false);
   };
+
+  const refreshSelected = async () => {
+    if (!selected) return;
+    const { data } = await supabase.rpc("system_admin_find_auth_user", {
+      p_search: selected.user_id,
+    });
+    const rows = (data ?? []) as AuthUserSummary[];
+    const fresh = rows.find((r) => r.user_id === selected.user_id);
+    if (fresh) setSelected(fresh);
+    await loadDetails(selected.user_id);
+  };
+
+  const handleResendVerification = async () => {
+    if (!selected?.email) return;
+    setResending(true);
+    setResendMessage(null);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: selected.email,
+      options: {
+        emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
+      },
+    });
+    if (error) {
+      const code = (error as { status?: number; code?: string }).status
+        ?? (error as { code?: string }).code;
+      setResendMessage({
+        tone: "bad",
+        text: code ? `${error.message} (${code})` : error.message,
+      });
+      toast.error("Resend failed");
+      setResending(false);
+      return;
+    }
+    // Best-effort audit log (do not fail the UX if the RPC isn't installed).
+    const { error: logErr } = await supabase.rpc("system_admin_log_support_action", {
+      p_action: "auth_verification_email_resent",
+      p_target_user_id: selected.user_id,
+      p_target_email: selected.email,
+      p_source: "system_admin_user_auth_diagnostics",
+      p_metadata: {
+        redirect_to: authUrl("/admin/login?complete_signup=1"),
+      },
+    });
+    if (logErr && !isMissingFn(logErr)) {
+      // Non-fatal; surface in console only.
+      console.warn("[support-action log] failed", logErr.message);
+    }
+    setResendMessage({
+      tone: "ok",
+      text:
+        "Verification email resent. This confirms Supabase accepted the resend request, but it does not prove inbox delivery.",
+    });
+    toast.success("Verification email resent");
+    setResendCooldown(60);
+    setResending(false);
+    await refreshSelected();
+  };
+
 
   const copySummary = async () => {
     if (!selected) return;
@@ -2649,6 +2727,46 @@ function UserAuthDiagnosticsCard() {
                   {diag.recommended_next_action ? (
                     <div className="mt-2">
                       <span className="font-semibold">Next action:</span> {diag.recommended_next_action}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!selected.email_confirmed_at && selected.email ? (
+                <div className="mt-4 rounded-[12px] border border-[#E6ECF4] bg-white p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-semibold text-[#0F172A]">
+                      Resend verification email
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={handleResendVerification}
+                      disabled={resending || resendCooldown > 0}
+                    >
+                      <MailCheck className="mr-1 h-3.5 w-3.5" />
+                      {resending
+                        ? "Resending…"
+                        : resendCooldown > 0
+                          ? `Wait ${resendCooldown}s`
+                          : "Resend verification email"}
+                    </Button>
+                  </div>
+                  <div className="mt-2 text-xs text-[#64748B]">
+                    Resend requests confirm that Supabase accepted the email send request.
+                    Delivery depends on SMTP/provider configuration, recipient mail filtering,
+                    and domain authentication. For reliable delivery and provider logs, configure
+                    custom SMTP.
+                  </div>
+                  {resendMessage ? (
+                    <div
+                      className={
+                        "mt-2 rounded-[8px] border p-2 text-xs " +
+                        (resendMessage.tone === "ok"
+                          ? "border-[#BBF7D0] bg-[#F0FDF4] text-[#166534]"
+                          : "border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]")
+                      }
+                    >
+                      {resendMessage.text}
                     </div>
                   ) : null}
                 </div>
