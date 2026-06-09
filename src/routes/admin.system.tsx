@@ -299,6 +299,7 @@ const MISSING_RPC_HINT =
 
 const VERIFICATION_RESEND_SUCCESS =
   "Verification email resent. Supabase accepted the resend request, but this does not prove inbox delivery.";
+const AUTH_USER_DIAGNOSTICS_REFRESH_EVENT = "system-admin-auth-user-updated";
 
 type ResendableAuthUser = {
   user_id: string;
@@ -333,6 +334,12 @@ async function resendVerificationEmail(user: ResendableAuthUser, source: string)
   });
   if (logErr && !isMissingFn(logErr)) {
     console.warn("[support-action log] failed", logErr.message);
+  }
+}
+
+function notifyAuthUserDiagnosticsChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_USER_DIAGNOSTICS_REFRESH_EVENT));
   }
 }
 
