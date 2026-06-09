@@ -2706,47 +2706,26 @@ function UserAuthDiagnosticsCard() {
     }
     setResending(true);
     setResendMessage(null);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: user.email,
-      options: {
-        emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
-      },
-    });
-    if (error) {
-      const code = (error as { status?: number; code?: string }).status
-        ?? (error as { code?: string }).code;
+    try {
+      await resendVerificationEmail(user, "system_admin_user_auth_diagnostics");
+      setResendMessage({
+        tone: "ok",
+        text: VERIFICATION_RESEND_SUCCESS,
+      });
+      toast.success(VERIFICATION_RESEND_SUCCESS);
+      setResendCooldown(60);
+      notifyAuthUserDiagnosticsChanged();
+      await refreshUser(user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not resend verification email.";
       setResendMessage({
         tone: "bad",
-        text: code ? `${error.message} (${code})` : error.message,
+        text: message,
       });
-      toast.error("Resend failed");
+      toast.error(message);
+    } finally {
       setResending(false);
-      return;
     }
-    // Best-effort audit log (do not fail the UX if the RPC isn't installed).
-    const { error: logErr } = await supabase.rpc("system_admin_log_support_action", {
-      p_action: "auth_verification_email_resent",
-      p_target_user_id: user.user_id,
-      p_target_email: user.email,
-      p_source: "system_admin_user_auth_diagnostics",
-      p_metadata: {
-        redirect_to: authUrl("/admin/login?complete_signup=1"),
-      },
-    });
-    if (logErr && !isMissingFn(logErr)) {
-      // Non-fatal; surface in console only.
-      console.warn("[support-action log] failed", logErr.message);
-    }
-    setResendMessage({
-      tone: "ok",
-      text:
-        "Verification email resent. Supabase accepted the resend request, but this does not prove inbox delivery.",
-    });
-    toast.success("Verification email resent");
-    setResendCooldown(60);
-    setResending(false);
-    await refreshUser(user);
   };
 
   const isUnconfirmedUser = (u: AuthUserSummary | null | undefined): boolean => {
