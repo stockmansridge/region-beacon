@@ -2185,7 +2185,7 @@ function PendingOrganisationSignupsCard() {
                       {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
                     </TableCell>
                     <TableCell className="max-w-xs truncate text-xs text-[#991B1B]">
-                      {r.last_error ?? authLookupError || "—"}
+                      {r.last_error ?? (authLookupError || "—")}
                     </TableCell>
                     <TableCell className="text-right">
                       {canResend ? (
