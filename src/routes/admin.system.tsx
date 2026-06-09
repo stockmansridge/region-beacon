@@ -2476,13 +2476,18 @@ function UserAuthDiagnosticsCard() {
     await loadDetails(selected.user_id);
   };
 
-  const handleResendVerification = async () => {
-    if (!selected?.email) return;
+  const handleResendVerification = async (target?: AuthUserSummary) => {
+    const user = target ?? selected;
+    if (!user?.email) return;
+    if (!selected || selected.user_id !== user.user_id) {
+      // Open the detail panel so the user can see the result inline.
+      void openUser(user);
+    }
     setResending(true);
     setResendMessage(null);
     const { error } = await supabase.auth.resend({
       type: "signup",
-      email: selected.email,
+      email: user.email,
       options: {
         emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
       },
@@ -2501,8 +2506,8 @@ function UserAuthDiagnosticsCard() {
     // Best-effort audit log (do not fail the UX if the RPC isn't installed).
     const { error: logErr } = await supabase.rpc("system_admin_log_support_action", {
       p_action: "auth_verification_email_resent",
-      p_target_user_id: selected.user_id,
-      p_target_email: selected.email,
+      p_target_user_id: user.user_id,
+      p_target_email: user.email,
       p_source: "system_admin_user_auth_diagnostics",
       p_metadata: {
         redirect_to: authUrl("/admin/login?complete_signup=1"),
@@ -2515,13 +2520,25 @@ function UserAuthDiagnosticsCard() {
     setResendMessage({
       tone: "ok",
       text:
-        "Verification email resent. This confirms Supabase accepted the resend request, but it does not prove inbox delivery.",
+        "Verification email resent. Supabase accepted the resend request, but this does not prove inbox delivery.",
     });
     toast.success("Verification email resent");
     setResendCooldown(60);
     setResending(false);
     await refreshSelected();
   };
+
+  const isUnconfirmedUser = (u: AuthUserSummary | null | undefined): boolean => {
+    if (!u) return false;
+    const anyU = u as unknown as Record<string, unknown>;
+    if (u.email_confirmed_at) return false;
+    if (anyU.confirmed_at) return false;
+    if (anyU.emailConfirmed === true) return false;
+    if (anyU.is_email_confirmed === true) return false;
+    if (diag && diag.user_id === u.user_id && diag.email_confirmed === true) return false;
+    return true;
+  };
+
 
 
   const copySummary = async () => {
@@ -2622,10 +2639,32 @@ function UserAuthDiagnosticsCard() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openUser(u); }}>
-                      Open
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      {isUnconfirmedUser(u) && u.email ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={resending || resendCooldown > 0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleResendVerification(u);
+                          }}
+                          title="Resend verification email"
+                        >
+                          <MailCheck className="mr-1 h-3.5 w-3.5" />
+                          {resending && selected?.user_id === u.user_id
+                            ? "Resending…"
+                            : resendCooldown > 0 && selected?.user_id === u.user_id
+                              ? `Wait ${resendCooldown}s`
+                              : "Resend verification email"}
+                        </Button>
+                      ) : null}
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); void openUser(u); }}>
+                        Open
+                      </Button>
+                    </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
@@ -2732,7 +2771,7 @@ function UserAuthDiagnosticsCard() {
                 </div>
               ) : null}
 
-              {!selected.email_confirmed_at && selected.email ? (
+              {isUnconfirmedUser(selected) && selected.email ? (
                 <div className="mt-4 rounded-[12px] border border-[#E6ECF4] bg-white p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-semibold text-[#0F172A]">
@@ -2740,7 +2779,7 @@ function UserAuthDiagnosticsCard() {
                     </div>
                     <Button
                       size="sm"
-                      onClick={handleResendVerification}
+                      onClick={() => void handleResendVerification()}
                       disabled={resending || resendCooldown > 0}
                     >
                       <MailCheck className="mr-1 h-3.5 w-3.5" />
@@ -2752,10 +2791,8 @@ function UserAuthDiagnosticsCard() {
                     </Button>
                   </div>
                   <div className="mt-2 text-xs text-[#64748B]">
-                    Resend requests confirm that Supabase accepted the email send request.
                     Delivery depends on SMTP/provider configuration, recipient mail filtering,
-                    and domain authentication. For reliable delivery and provider logs, configure
-                    custom SMTP.
+                    and domain authentication. Check provider logs for delivery status.
                   </div>
                   {resendMessage ? (
                     <div
