@@ -2012,6 +2012,65 @@ function PendingOrganisationSignupsCard() {
   const [rows, setRows] = useState<PendingOrganisationSignupRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authByEmail, setAuthByEmail] = useState<Record<string, ResendableAuthUser | null>>({});
+  const [authLookupErrorByEmail, setAuthLookupErrorByEmail] = useState<Record<string, string>>({});
+  const [authLookupLoadingByEmail, setAuthLookupLoadingByEmail] = useState<Record<string, boolean>>({});
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
+  const [resendCooldownEmail, setResendCooldownEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const emailKey = (email: string | null | undefined) => (email ?? "").trim().toLowerCase();
+
+  const findAuthUserByEmail = async (email: string): Promise<ResendableAuthUser | null> => {
+    const { data, error } = await supabase.rpc("system_admin_find_auth_user", { p_search: email });
+    if (error) throw new Error(isMissingFn(error) ? MISSING_RPC_HINT : error.message);
+    const key = emailKey(email);
+    const matches = (data ?? []) as Array<ResendableAuthUser & { email?: string | null }>;
+    return matches.find((u) => emailKey(u.email) === key) ?? null;
+  };
+
+  const loadAuthLookups = async (pendingRows: PendingOrganisationSignupRow[]) => {
+    const emails = Array.from(
+      new Set(
+        pendingRows
+          .filter((r) => (r.status ?? "").toLowerCase() === "pending")
+          .map((r) => emailKey(r.email))
+          .filter(Boolean),
+      ),
+    );
+    if (emails.length === 0) return;
+    setAuthLookupLoadingByEmail((prev) => ({
+      ...prev,
+      ...Object.fromEntries(emails.map((email) => [email, true])),
+    }));
+    const settled = await Promise.all(
+      emails.map(async (email) => {
+        try {
+          return { email, user: await findAuthUserByEmail(email), error: null as string | null };
+        } catch (err) {
+          return { email, user: null, error: err instanceof Error ? err.message : "Could not look up auth user." };
+        }
+      }),
+    );
+    setAuthByEmail((prev) => ({
+      ...prev,
+      ...Object.fromEntries(settled.map((r) => [r.email, r.user])),
+    }));
+    setAuthLookupErrorByEmail((prev) => ({
+      ...prev,
+      ...Object.fromEntries(settled.map((r) => [r.email, r.error ?? ""])),
+    }));
+    setAuthLookupLoadingByEmail((prev) => ({
+      ...prev,
+      ...Object.fromEntries(settled.map((r) => [r.email, false])),
+    }));
+  };
 
   const load = async () => {
     setLoading(true);
@@ -2026,13 +2085,37 @@ function PendingOrganisationSignupsCard() {
       setLoading(false);
       return;
     }
-    setRows((data ?? []) as PendingOrganisationSignupRow[]);
+    const pendingRows = (data ?? []) as PendingOrganisationSignupRow[];
+    setRows(pendingRows);
     setLoading(false);
+    void loadAuthLookups(pendingRows);
   };
 
   useEffect(() => {
     load();
   }, []);
+
+  const handleResendVerification = async (row: PendingOrganisationSignupRow) => {
+    const key = emailKey(row.email);
+    if (!key || resendingEmail || resendCooldown > 0) return;
+    setResendingEmail(key);
+    try {
+      const user = authByEmail[key] ?? (await findAuthUserByEmail(row.email));
+      setAuthByEmail((prev) => ({ ...prev, [key]: user }));
+      if (!user) throw new Error("No auth user exists for this pending signup email.");
+      if (user.email_confirmed_at) throw new Error("This user's email is already confirmed.");
+      await resendVerificationEmail(user, "system_admin_pending_signups");
+      toast.success(VERIFICATION_RESEND_SUCCESS);
+      setResendCooldownEmail(key);
+      setResendCooldown(60);
+      notifyAuthUserDiagnosticsChanged();
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not resend verification email.");
+    } finally {
+      setResendingEmail(null);
+    }
+  };
 
   return (
     <Card className="overflow-hidden p-0">
@@ -2065,14 +2148,15 @@ function PendingOrganisationSignupsCard() {
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead>Last error</TableHead>
+              <TableHead className="w-[240px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={6} />
+              <LoadingRow cols={7} />
             ) : !rows || rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-6 text-center text-xs text-[#64748B]">
+                <TableCell colSpan={7} className="py-6 text-center text-xs text-[#64748B]">
                   No pending signups.
                 </TableCell>
               </TableRow>
