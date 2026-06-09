@@ -18,7 +18,9 @@ import {
   X,
   Trash2,
   Archive,
+  MailCheck,
 } from "lucide-react";
+import { authUrl } from "@/lib/auth-redirect";
 import { tenantUrl } from "@/lib/domains";
 
 import { toast } from "sonner";
