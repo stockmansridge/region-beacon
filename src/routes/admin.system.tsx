@@ -2161,27 +2161,55 @@ function PendingOrganisationSignupsCard() {
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="text-sm text-[#0F172A]">{r.email}</TableCell>
-                  <TableCell className="text-sm text-[#0F172A]">
-                    <div>{r.organisation_name}</div>
-                    {r.organisation_slug ? (
-                      <code className="text-[11px] text-[#64748B]">{r.organisation_slug}</code>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="text-xs text-[#64748B]">
-                    {r.signup_intention ?? "—"}
-                  </TableCell>
-                  <TableCell>{statusPill(r.status)}</TableCell>
-                  <TableCell className="text-xs text-[#64748B]">
-                    {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate text-xs text-[#991B1B]">
-                    {r.last_error ?? "—"}
-                  </TableCell>
-                </TableRow>
-              ))
+              rows.map((r) => {
+                const key = emailKey(r.email);
+                const authUser = authByEmail[key];
+                const authLookupLoading = authLookupLoadingByEmail[key];
+                const authLookupError = authLookupErrorByEmail[key];
+                const isPending = (r.status ?? "").toLowerCase() === "pending";
+                const canResend = isPending && !!authUser?.email && !authUser.email_confirmed_at;
+                return (
+                  <TableRow key={r.id}>
+                    <TableCell className="text-sm text-[#0F172A]">{r.email}</TableCell>
+                    <TableCell className="text-sm text-[#0F172A]">
+                      <div>{r.organisation_name}</div>
+                      {r.organisation_slug ? (
+                        <code className="text-[11px] text-[#64748B]">{r.organisation_slug}</code>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-xs text-[#64748B]">
+                      {r.signup_intention ?? "—"}
+                    </TableCell>
+                    <TableCell>{statusPill(r.status)}</TableCell>
+                    <TableCell className="text-xs text-[#64748B]">
+                      {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate text-xs text-[#991B1B]">
+                      {r.last_error ?? authLookupError || "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {canResend ? (
+                        <button
+                          type="button"
+                          disabled={resendingEmail !== null || resendCooldown > 0}
+                          onClick={() => void handleResendVerification(r)}
+                          title="Resend verification email"
+                          className="inline-flex items-center rounded-md border border-[#BFDBFE] bg-white px-2 py-1 text-xs font-medium text-[#1D4ED8] hover:bg-[#EFF6FF] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <MailCheck className="mr-1 h-3.5 w-3.5" />
+                          {resendingEmail === key
+                            ? "Resending…"
+                            : resendCooldown > 0 && resendCooldownEmail === key
+                              ? `Wait ${resendCooldown}s`
+                              : "Resend verification email"}
+                        </button>
+                      ) : authLookupLoading && isPending ? (
+                        <span className="text-xs text-[#64748B]">Checking auth…</span>
+                      ) : null}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
