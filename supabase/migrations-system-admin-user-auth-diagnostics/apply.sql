@@ -256,8 +256,8 @@ begin
           'ip_address', ale.ip_address::text
         )) as metadata
       from auth.audit_log_entries ale
-      where (ale.payload ->> 'actor_id')::uuid = $1
-         or (ale.payload -> 'traits' ->> 'user_id')::uuid = $1
+      where (ale.payload ->> 'actor_id') = $1::text
+         or (ale.payload -> 'traits' ->> 'user_id') = $1::text
       order by ale.created_at desc
       limit 200
     $q$
