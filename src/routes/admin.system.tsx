@@ -297,6 +297,45 @@ function isMissingFn(err: { code?: string; message?: string } | null): boolean {
 const MISSING_RPC_HINT =
   "System Admin RPCs are not installed yet. Apply supabase/migrations-system-admin-rpcs/apply.sql in the Supabase SQL editor.";
 
+const VERIFICATION_RESEND_SUCCESS =
+  "Verification email resent. Supabase accepted the resend request, but this does not prove inbox delivery.";
+
+type ResendableAuthUser = {
+  user_id: string;
+  email: string | null;
+  email_confirmed_at: string | null;
+};
+
+function formatSupabaseError(error: { message: string; status?: number; code?: string }): string {
+  const code = error.status ?? error.code;
+  return code ? `${error.message} (${code})` : error.message;
+}
+
+async function resendVerificationEmail(user: ResendableAuthUser, source: string) {
+  if (!user.email) throw new Error("User email is missing.");
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: user.email,
+    options: {
+      emailRedirectTo: authUrl("/admin/login?complete_signup=1"),
+    },
+  });
+  if (error) throw new Error(formatSupabaseError(error));
+
+  const { error: logErr } = await supabase.rpc("system_admin_log_support_action", {
+    p_action: "auth_verification_email_resent",
+    p_target_user_id: user.user_id,
+    p_target_email: user.email,
+    p_source: source,
+    p_metadata: {
+      redirect_to: authUrl("/admin/login?complete_signup=1"),
+    },
+  });
+  if (logErr && !isMissingFn(logErr)) {
+    console.warn("[support-action log] failed", logErr.message);
+  }
+}
+
 function statusPill(status: string | null | undefined) {
   const s = (status ?? "").toLowerCase();
   const map: Record<string, string> = {
