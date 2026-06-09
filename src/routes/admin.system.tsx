@@ -2200,7 +2200,7 @@ function OrphanAuthUsersCard() {
               <TableHead>Created</TableHead>
               <TableHead>Email confirmed</TableHead>
               <TableHead>Last sign-in</TableHead>
-              <TableHead className="w-24 text-right">Actions</TableHead>
+              <TableHead className="w-[260px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -2528,15 +2528,19 @@ function UserAuthDiagnosticsCard() {
     setDetailLoading(false);
   };
 
-  const refreshSelected = async () => {
-    if (!selected) return;
+  const refreshUser = async (user: AuthUserSummary) => {
     const { data } = await supabase.rpc("system_admin_find_auth_user", {
-      p_search: selected.user_id,
+      p_search: user.user_id,
     });
     const rows = (data ?? []) as AuthUserSummary[];
-    const fresh = rows.find((r) => r.user_id === selected.user_id);
+    const fresh = rows.find((r) => r.user_id === user.user_id);
     if (fresh) setSelected(fresh);
-    await loadDetails(selected.user_id);
+    await loadDetails(user.user_id);
+  };
+
+  const refreshSelected = async () => {
+    if (!selected) return;
+    await refreshUser(selected);
   };
 
   const handleResendVerification = async (target?: AuthUserSummary) => {
@@ -2588,7 +2592,7 @@ function UserAuthDiagnosticsCard() {
     toast.success("Verification email resent");
     setResendCooldown(60);
     setResending(false);
-    await refreshSelected();
+    await refreshUser(user);
   };
 
   const isUnconfirmedUser = (u: AuthUserSummary | null | undefined): boolean => {
