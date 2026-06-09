@@ -2672,7 +2672,7 @@ function UserAuthDiagnosticsCard() {
                 <TableHead>Email confirmed</TableHead>
                 <TableHead>Last login</TableHead>
                 <TableHead>Organisation</TableHead>
-                <TableHead className="w-[80px] text-right">Open</TableHead>
+                <TableHead className="w-[260px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
