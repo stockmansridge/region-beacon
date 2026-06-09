@@ -2732,6 +2732,46 @@ function UserAuthDiagnosticsCard() {
                 </div>
               ) : null}
 
+              {!selected.email_confirmed_at && selected.email ? (
+                <div className="mt-4 rounded-[12px] border border-[#E6ECF4] bg-white p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-semibold text-[#0F172A]">
+                      Resend verification email
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={handleResendVerification}
+                      disabled={resending || resendCooldown > 0}
+                    >
+                      <MailCheck className="mr-1 h-3.5 w-3.5" />
+                      {resending
+                        ? "Resending…"
+                        : resendCooldown > 0
+                          ? `Wait ${resendCooldown}s`
+                          : "Resend verification email"}
+                    </Button>
+                  </div>
+                  <div className="mt-2 text-xs text-[#64748B]">
+                    Resend requests confirm that Supabase accepted the email send request.
+                    Delivery depends on SMTP/provider configuration, recipient mail filtering,
+                    and domain authentication. For reliable delivery and provider logs, configure
+                    custom SMTP.
+                  </div>
+                  {resendMessage ? (
+                    <div
+                      className={
+                        "mt-2 rounded-[8px] border p-2 text-xs " +
+                        (resendMessage.tone === "ok"
+                          ? "border-[#BBF7D0] bg-[#F0FDF4] text-[#166534]"
+                          : "border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]")
+                      }
+                    >
+                      {resendMessage.text}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-sm font-semibold text-[#0F172A]">Auth timeline</div>
                 <Button variant="outline" size="sm" onClick={copySummary}>
