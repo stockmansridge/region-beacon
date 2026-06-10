@@ -99,9 +99,30 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
               </p>
             )}
             {faq.kind === "ok" && faq.entries.length > 0 && (
-              <FaqAccordion entries={faq.entries} />
+              <>
+                <FaqAccordion entries={faq.entries} />
+                <script
+                  type="application/ld+json"
+                  // eslint-disable-next-line react/no-danger
+                  dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                      "@context": "https://schema.org",
+                      "@type": "FAQPage",
+                      mainEntity: faq.entries.map((e) => ({
+                        "@type": "Question",
+                        name: e.question,
+                        acceptedAnswer: {
+                          "@type": "Answer",
+                          text: e.answer,
+                        },
+                      })),
+                    }),
+                  }}
+                />
+              </>
             )}
           </div>
+
         </div>
 
         <div className="mt-6 flex justify-center">
