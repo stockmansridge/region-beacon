@@ -75,6 +75,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "GetStampd — Digital Stamp Trails for Tourism" },
       { name: "description", content: "Digital stamp trails for wineries, markets, tourism groups and events." },
+      { name: "keywords", content: "GetStampd, GetStamped, digital stamp trail, stamp card, loyalty program, tourism, wineries, markets, events, rewards, QR code passport" },
       { name: "author", content: "GetStampd" },
       { property: "og:site_name", content: "GetStampd" },
       { property: "og:title", content: "GetStampd — Digital Stamp Trails for Tourism" },
