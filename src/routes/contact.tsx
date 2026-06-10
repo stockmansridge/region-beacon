@@ -9,6 +9,7 @@ export const Route = createFileRoute("/contact")({
         name: "description",
         content: "Contact the GetStampd team for sales, partnerships and general enquiries.",
       },
+      { name: "keywords", content: "GetStampd, GetStamped, contact digital stamp trail, tourism loyalty platform, event passport support" },
       { property: "og:title", content: "Contact GetStampd" },
       {
         property: "og:description",

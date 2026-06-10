@@ -8,6 +8,7 @@ export const Route = createFileRoute("/faq")({
     meta: [
       { title: "FAQ / Info — GetStampd" },
       { name: "description", content: "Answers to common questions about GetStampd digital stamp trails — how visitors collect stamps, redeem rewards, and how organisers run their trail." },
+      { name: "keywords", content: "GetStampd, GetStamped, digital stamp trail FAQ, how stamp trails work, collect stamps, redeem rewards" },
       { property: "og:title", content: "GetStampd FAQ — How digital stamp trails work" },
       { property: "og:description", content: "Common questions about joining a trail, collecting stamps and redeeming rewards on GetStampd." },
       { property: "og:url", content: "https://getstampd.com.au/faq" },

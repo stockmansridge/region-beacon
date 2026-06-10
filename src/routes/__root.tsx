@@ -101,6 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "GetStampd",
+          alternateName: "GetStamped",
           url: "https://getstampd.com.au",
           description: "Digital stamp trails for wineries, markets, tourism groups and events.",
         }),

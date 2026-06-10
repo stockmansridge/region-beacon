@@ -24,6 +24,7 @@ export const Route = createFileRoute("/pricing")({
         content:
           "Start with a free GetStampd account, then upgrade to Starter, Growth or Enterprise when you're ready to launch your digital stamp trails publicly.",
       },
+      { name: "keywords", content: "GetStampd, GetStamped, digital stamp trail pricing, loyalty program cost, event passport pricing" },
       { property: "og:title", content: "GetStampd Pricing — Start free, upgrade when you're ready" },
       {
         property: "og:description",
