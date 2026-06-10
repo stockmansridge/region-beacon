@@ -20,6 +20,7 @@ export const Route = createFileRoute("/support")({
         name: "description",
         content: "Get help with your GetStampd event. Support for login, event setup, QR codes and billing.",
       },
+      { name: "keywords", content: "GetStampd, GetStamped, support, help, digital stamp trail setup, QR code troubleshooting" },
     ],
   }),
   component: SupportPage,

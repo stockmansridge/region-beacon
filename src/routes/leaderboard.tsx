@@ -8,6 +8,7 @@ export const Route = createFileRoute("/leaderboard")({
     meta: [
       { title: "Leaderboard — GetStampd" },
       { name: "description", content: "See top stamp collectors on GetStampd digital trails — live leaderboards for tourism trails, wine regions, markets and events." },
+      { name: "keywords", content: "GetStampd, GetStamped, stamp trail leaderboard, top collectors, tourism rankings" },
       { property: "og:title", content: "Stamp trail leaderboard — GetStampd" },
       { property: "og:description", content: "Live rankings of top stamp collectors on GetStampd trails." },
       { property: "og:url", content: "https://getstampd.com.au/leaderboard" },

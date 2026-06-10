@@ -8,6 +8,7 @@ export const Route = createFileRoute("/terms")({
     meta: [
       { title: "Terms & Conditions — GetStampd" },
       { name: "description", content: "The terms governing use of the GetStampd platform by organisers running digital stamp trails and the visitors who join them." },
+      { name: "keywords", content: "GetStampd, GetStamped, terms and conditions, digital stamp trail platform" },
       { property: "og:title", content: "GetStampd Terms & Conditions" },
       { property: "og:description", content: "Terms for using the GetStampd digital stamp trail platform." },
       { property: "og:url", content: "https://getstampd.com.au/terms" },

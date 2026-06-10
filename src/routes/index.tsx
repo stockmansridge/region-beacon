@@ -36,6 +36,7 @@ export const Route = createFileRoute("/")({
         content:
           "Digital stamp trails for wineries, markets, tourism groups and events. Visitors scan QR codes, collect stamps and unlock rewards — no app download required.",
       },
+      { name: "keywords", content: "GetStampd, GetStamped, digital stamp trail, stamp card, tourism loyalty, winery passport, event rewards, QR code trail" },
       { property: "og:title", content: "GetStampd — Digital stamp trails for tourism" },
       {
         property: "og:description",
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/")({
           "@context": "https://schema.org",
           "@type": "Organization",
           name: "GetStampd",
+          alternateName: "GetStamped",
           url: "https://getstampd.com.au",
           description:
             "Digital stamp trails for wineries, markets, tourism groups and events.",
