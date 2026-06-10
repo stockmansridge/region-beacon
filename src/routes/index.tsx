@@ -61,7 +61,26 @@ export const Route = createFileRoute("/")({
             "Digital stamp trails for wineries, markets, tourism groups and events.",
         }),
       },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "GetStampd Digital Stamp Trails",
+          serviceType: "Digital Stamp Trails",
+          provider: {
+            "@type": "Organization",
+            name: "GetStampd",
+            url: "https://getstampd.com.au",
+          },
+          areaServed: "AU",
+          description:
+            "Branded digital passport and stamp trail platform for wineries, markets, tourism groups and events. Visitors scan QR codes to collect stamps and unlock rewards — no app download required.",
+          url: "https://getstampd.com.au/",
+        }),
+      },
     ],
+
   }),
   component: IndexRoute,
 });
