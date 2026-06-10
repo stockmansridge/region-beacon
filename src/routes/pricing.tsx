@@ -287,7 +287,7 @@ function PricingPage() {
           <Sparkles className="h-3.5 w-3.5" /> Pricing
         </span>
         <h1 className="mt-5 font-serif text-4xl font-semibold leading-tight tracking-tight text-[#1F2417] sm:text-5xl">
-          Start with a free GetStampd account
+          GetStampd Pricing & Plans
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-[#666666] sm:text-lg">
           Create your account, explore the platform, build your first digital stamp experience and see how visitors collect stamps before you choose a paid plan.

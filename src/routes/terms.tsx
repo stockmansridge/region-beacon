@@ -4,7 +4,16 @@ import { useTenantSubdomain } from "@/lib/tenant-host";
 import { PlatformTermsPage } from "@/components/platform-legal";
 
 export const Route = createFileRoute("/terms")({
-  head: () => ({ meta: [{ title: "GetStampd Terms and Conditions" }] }),
+  head: () => ({
+    meta: [
+      { title: "Terms & Conditions — GetStampd" },
+      { name: "description", content: "The terms governing use of the GetStampd platform by organisers running digital stamp trails and the visitors who join them." },
+      { property: "og:title", content: "GetStampd Terms & Conditions" },
+      { property: "og:description", content: "Terms for using the GetStampd digital stamp trail platform." },
+      { property: "og:url", content: "https://getstampd.com.au/terms" },
+    ],
+    links: [{ rel: "canonical", href: "https://getstampd.com.au/terms" }],
+  }),
   component: TermsCleanRoute,
 });
 

@@ -4,7 +4,16 @@ import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
 
 export const Route = createFileRoute("/leaderboard")({
-  head: () => ({ meta: [{ title: "Leaderboard — GetStampd" }] }),
+  head: () => ({
+    meta: [
+      { title: "Leaderboard — GetStampd" },
+      { name: "description", content: "See top stamp collectors on GetStampd digital trails — live leaderboards for tourism trails, wine regions, markets and events." },
+      { property: "og:title", content: "Stamp trail leaderboard — GetStampd" },
+      { property: "og:description", content: "Live rankings of top stamp collectors on GetStampd trails." },
+      { property: "og:url", content: "https://getstampd.com.au/leaderboard" },
+    ],
+    links: [{ rel: "canonical", href: "https://getstampd.com.au/leaderboard" }],
+  }),
   component: LeaderboardCleanRoute,
 });
 
