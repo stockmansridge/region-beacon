@@ -487,7 +487,8 @@ function Landing() {
               <Sparkles className="h-3.5 w-3.5" /> Discover · Stamp · Reward
             </span>
             <h1 className="mt-5 font-serif text-4xl font-semibold leading-[1.05] tracking-tight text-[#1F2417] sm:text-5xl lg:text-6xl">
-              Discover trails, collect digital stamps, and{" "}
+              Discover trails, collect digital stamps in your{" "}
+              <span className="text-[#8A1538]">passport</span>, and{" "}
               <span className="text-[#8A1538]">unlock rewards</span>.
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-[#666666] sm:text-lg">
