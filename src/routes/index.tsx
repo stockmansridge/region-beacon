@@ -469,9 +469,9 @@ function Landing() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8A1538]">
               For tourism · trails · events · destinations
             </p>
-            <h2 className="mt-2 max-w-2xl font-serif text-2xl font-semibold leading-tight text-[#1F2417] sm:text-3xl">
+            <p className="mt-2 max-w-2xl font-serif text-2xl font-semibold leading-tight text-[#1F2417] sm:text-3xl">
               Beautifully simple digital stamp trails for every kind of experience.
-            </h2>
+            </p>
           </div>
         </div>
         <HeroCarousel />
