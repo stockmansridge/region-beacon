@@ -52,6 +52,8 @@ type PublicEvent = {
   // before the migration is applied.
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
+  hero_overlay_color?: string | null;
+  hero_overlay_opacity?: number | null;
 };
 
 type PublicVenue = {
@@ -192,6 +194,8 @@ function LivePublicLoaded({
         venueCount={venues.length}
         venueNames={venues.map((v) => v.name)}
         termsUrl={event.terms_url}
+        heroOverlayColor={event.hero_overlay_color ?? null}
+        heroOverlayOpacity={event.hero_overlay_opacity ?? null}
         primaryCta={
           passportHref ? (
             <a

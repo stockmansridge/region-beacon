@@ -72,12 +72,12 @@ type Branding = {
   page_background_key: string | null;
   page_background_color: string | null;
   card_background_color: string | null;
-  // Simplified semantic colour roles. Optional — fall back to palette
-  // values when null. New saves write to these columns.
   text_color: string | null;
   muted_text_color: string | null;
   border_color: string | null;
   primary_text_color: string | null;
+  hero_overlay_color: string | null;
+  hero_overlay_opacity: number | null;
 };
 
 type Domain = {
@@ -112,6 +112,8 @@ type Form = {
   muted_text_color: string;
   border_color: string;
   primary_text_color: string;
+  hero_overlay_color: string;
+  hero_overlay_opacity: string; // empty string = inherit default
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
@@ -146,6 +148,8 @@ function BrandingEditor() {
     muted_text_color: "",
     border_color: "",
     primary_text_color: "",
+    hero_overlay_color: "",
+    hero_overlay_opacity: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -183,7 +187,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, border_color, primary_text_color")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, border_color, primary_text_color, hero_overlay_color, hero_overlay_opacity")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -232,6 +236,11 @@ function BrandingEditor() {
         muted_text_color: branding?.muted_text_color ?? "",
         border_color: branding?.border_color ?? "",
         primary_text_color: branding?.primary_text_color ?? "",
+        hero_overlay_color: branding?.hero_overlay_color ?? "",
+        hero_overlay_opacity:
+          branding?.hero_overlay_opacity != null
+            ? String(branding.hero_overlay_opacity)
+            : "",
       });
       setState("ready");
     })();
@@ -312,6 +321,8 @@ function BrandingEditor() {
     const muted_text_color = form.muted_text_color.trim();
     const border_color = form.border_color.trim();
     const primary_text_color = form.primary_text_color.trim();
+    const hero_overlay_color = form.hero_overlay_color.trim();
+    const hero_overlay_opacity_str = form.hero_overlay_opacity.trim();
 
     if (page_background_color && !HEX_RE.test(page_background_color)) {
       setSaving(false);
@@ -328,12 +339,23 @@ function BrandingEditor() {
       ["Muted text colour", muted_text_color],
       ["Border colour", border_color],
       ["Primary button text colour", primary_text_color],
+      ["Hero image overlay colour", hero_overlay_color],
     ] as const) {
       if (value && !HEX_RE.test(value)) {
         setSaving(false);
         setValidationError(`${label} must be a valid 6-digit hex code.`);
         return;
       }
+    }
+    let hero_overlay_opacity_num: number | null = null;
+    if (hero_overlay_opacity_str) {
+      const n = Number(hero_overlay_opacity_str);
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        setSaving(false);
+        setValidationError("Hero overlay opacity must be between 0 and 100.");
+        return;
+      }
+      hero_overlay_opacity_num = Math.round(n);
     }
 
     const fullPayload: Record<string, unknown> = {
@@ -352,12 +374,15 @@ function BrandingEditor() {
       muted_text_color: muted_text_color || null,
       border_color: border_color || null,
       primary_text_color: primary_text_color || null,
+      hero_overlay_color: hero_overlay_color || null,
+      hero_overlay_opacity: hero_overlay_opacity_num,
     };
 
     const NEW_TEXT_COLS = "text_color, muted_text_color, border_color, primary_text_color";
+    const HERO_OVERLAY_COLS = "hero_overlay_color, hero_overlay_opacity";
     const BASE_SELECT_COLS =
       "logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color";
-    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}`;
+    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${HERO_OVERLAY_COLS}`;
 
     // 1. Re-check existence from the DB (don't rely on stale bundle.hasBranding).
     const { data: existing, error: existingErr } = await supabase
@@ -450,6 +475,28 @@ function BrandingEditor() {
       }
     }
 
+    // Fallback if hero overlay columns are missing on the production DB
+    // (migration `migrations-draft-event-hero-overlay` not yet applied).
+    if (
+      writeErr &&
+      /(hero_overlay_color|hero_overlay_opacity)/i.test(writeErr.message ?? "")
+    ) {
+      console.warn("[branding-save] hero overlay columns missing, retrying without", {
+        message: writeErr.message,
+      });
+      const { hero_overlay_color: _hoc, hero_overlay_opacity: _hoo, ...rest } = payload;
+      payload = rest;
+      SELECT_COLS = SELECT_COLS.replace(`, ${HERO_OVERLAY_COLS}`, "");
+      const retry = await writeRow(payload, mode);
+      savedRow = retry.row;
+      writeErr = retry.error;
+      if (!writeErr && (hero_overlay_color || hero_overlay_opacity_num !== null)) {
+        setSaveError(
+          "Saved core branding. Hero overlay colour/opacity require the database migration in supabase/migrations-draft-event-hero-overlay/.",
+        );
+      }
+    }
+
     if (writeErr) {
       // eslint-disable-next-line no-console
       console.warn("[branding-save] write failed", {
@@ -496,6 +543,13 @@ function BrandingEditor() {
       muted_text_color: saved.muted_text_color ?? muted_text_color ?? "",
       border_color: saved.border_color ?? border_color ?? "",
       primary_text_color: saved.primary_text_color ?? primary_text_color ?? "",
+      hero_overlay_color: saved.hero_overlay_color ?? hero_overlay_color ?? "",
+      hero_overlay_opacity:
+        saved.hero_overlay_opacity != null
+          ? String(saved.hero_overlay_opacity)
+          : hero_overlay_opacity_num != null
+            ? String(hero_overlay_opacity_num)
+            : "",
     });
 
     setSaving(false);
@@ -697,8 +751,25 @@ function BrandingEditor() {
           <PaletteSelector
             value={form.palette_key}
             onChange={(key) => setForm({ ...form, palette_key: key })}
+            onApplyTheme={(p) =>
+              setForm((f) => ({
+                ...f,
+                palette_key: "custom",
+                primary_color: p.primary,
+                accent_color: p.accent,
+                page_background_color: p.pageBg,
+                card_background_color: p.cardBg,
+                text_color: p.heading ?? p.bodyText,
+                muted_text_color: p.mutedText,
+                border_color: p.border,
+                primary_text_color: p.primaryForeground,
+                // Switch background mode to honour the custom hex values.
+                page_background_key: "custom_color",
+              }))
+            }
             disabled={!canEdit || saving}
           />
+
 
           {/* Custom brand colours — only visible when the Custom palette is selected. */}
           {form.palette_key === "custom" && (
@@ -827,6 +898,13 @@ function BrandingEditor() {
             disabled={!canEdit || saving}
           />
 
+          <HeroOverlayCard
+            form={form}
+            setForm={setForm}
+            disabled={!canEdit || saving}
+          />
+
+
 
           <FontPicker
             value={form.font_family}
@@ -917,6 +995,7 @@ function BrandingEditor() {
               mutedTextColor={form.muted_text_color}
               borderColor={form.border_color}
               primaryTextColor={form.primary_text_color}
+              fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
               className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
             >
               <div
@@ -930,14 +1009,16 @@ function BrandingEditor() {
                 eventName={event.name}
                 welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
                 primaryColor={(() => {
+                  if (HEX_RE.test(form.primary_color.trim())) return form.primary_color.trim();
                   const p = getPalette(form.palette_key || null);
                   if (p) return p.primary;
-                  return HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B";
+                  return "#1F3D2B";
                 })()}
                 accentColor={(() => {
+                  if (HEX_RE.test(form.accent_color.trim())) return form.accent_color.trim();
                   const p = getPalette(form.palette_key || null);
                   if (p) return p.accent;
-                  return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
+                  return "#B5572A";
                 })()}
                 fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
                 venueCount={venueCount}
@@ -946,7 +1027,14 @@ function BrandingEditor() {
                 heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
                 badge="Preview"
                 termsUrl={null}
+                heroOverlayColor={form.hero_overlay_color || null}
+                heroOverlayOpacity={
+                  form.hero_overlay_opacity.trim()
+                    ? Number(form.hero_overlay_opacity)
+                    : null
+                }
               />
+
               <SemanticPreview
                 venueLabelPlural={resolveVenueLabels({ venue_label_singular: form.venue_label_singular, venue_label_plural: form.venue_label_plural }).plural}
               />
@@ -1262,10 +1350,12 @@ const PALETTE_FILTERS = [
 function PaletteSelector({
   value,
   onChange,
+  onApplyTheme,
   disabled,
 }: {
   value: string;
   onChange: (key: string) => void;
+  onApplyTheme?: (palette: EventPalette) => void;
   disabled?: boolean;
 }) {
   const [filter, setFilter] = useState<(typeof PALETTE_FILTERS)[number]["key"]>("all");
@@ -1281,8 +1371,10 @@ function PaletteSelector({
         <div>
           <div className="text-sm font-semibold">Theme</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Pick a curated theme that fits your event. Each theme sets the full
-            public-page colour scheme — header, cards, text and accents.
+            Pick a curated theme as a starting point. Use{" "}
+            <span className="font-medium">Apply to custom</span> on any theme to
+            copy its full colour set into the editable fields below — you can
+            then change any individual colour to build your own brand.
           </p>
         </div>
         {selected && !disabled && (
@@ -1326,8 +1418,10 @@ function PaletteSelector({
             active={p.key === value}
             disabled={disabled}
             onSelect={() => onChange(p.key as EventPaletteKey)}
+            onApply={onApplyTheme ? () => onApplyTheme(p) : undefined}
           />
         ))}
+
         {/* Custom palette card */}
         <button
           type="button"
@@ -1363,92 +1457,112 @@ function PaletteCard({
   active,
   disabled,
   onSelect,
+  onApply,
 }: {
   palette: EventPalette;
   active: boolean;
   disabled?: boolean;
   onSelect: () => void;
+  onApply?: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
-      aria-pressed={active}
-      className={`group relative flex flex-col gap-2 rounded-[12px] border p-2 text-left transition disabled:opacity-50 ${
+    <div
+      className={`group relative flex flex-col gap-2 rounded-[12px] border p-2 text-left transition ${
+        disabled ? "opacity-50" : ""
+      } ${
         active
           ? "border-[#2F6FE4] ring-2 ring-[#2F6FE4]/30"
           : "border-[#D9E2EF] hover:border-[#94A3B8]"
       }`}
     >
-      {/* Mini public-page preview: header strip + card + accent dot + button */}
-      <div
-        className="overflow-hidden rounded-[8px] border"
-        style={{ backgroundColor: p.pageBg, borderColor: p.border }}
+      <button
+        type="button"
+        onClick={onSelect}
+        disabled={disabled}
+        aria-pressed={active}
+        className="flex flex-col gap-2 text-left disabled:cursor-not-allowed"
       >
+        {/* Mini public-page preview: header strip + card + accent dot + button */}
         <div
-          className="flex h-5 items-center justify-center text-[8px] font-semibold uppercase tracking-[0.18em]"
-          style={{ backgroundColor: p.primary, color: p.primaryForeground }}
+          className="overflow-hidden rounded-[8px] border"
+          style={{ backgroundColor: p.pageBg, borderColor: p.border }}
         >
-          Header
-        </div>
-        <div className="space-y-1.5 p-2">
           <div
-            className="rounded-[4px] px-1.5 py-1"
-            style={{ backgroundColor: p.cardBg, border: `1px solid ${p.border}` }}
+            className="flex h-5 items-center justify-center text-[8px] font-semibold uppercase tracking-[0.18em]"
+            style={{ backgroundColor: p.primary, color: p.primaryForeground }}
           >
-            <div
-              className="h-1.5 w-12 rounded-full"
-              style={{ backgroundColor: p.heading }}
-            />
-            <div
-              className="mt-1 h-1 w-16 rounded-full"
-              style={{ backgroundColor: p.mutedText, opacity: 0.7 }}
-            />
+            Header
           </div>
-          <div className="flex items-center gap-1.5">
-            <span
-              className="rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
-              style={{ backgroundColor: p.primary, color: p.primaryForeground }}
+          <div className="space-y-1.5 p-2">
+            <div
+              className="rounded-[4px] px-1.5 py-1"
+              style={{ backgroundColor: p.cardBg, border: `1px solid ${p.border}` }}
             >
-              Button
-            </span>
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: p.accent }}
-              aria-hidden
-            />
+              <div
+                className="h-1.5 w-12 rounded-full"
+                style={{ backgroundColor: p.heading }}
+              />
+              <div
+                className="mt-1 h-1 w-16 rounded-full"
+                style={{ backgroundColor: p.mutedText, opacity: 0.7 }}
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span
+                className="rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
+                style={{ backgroundColor: p.primary, color: p.primaryForeground }}
+              >
+                Button
+              </span>
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: p.accent }}
+                aria-hidden
+              />
+            </div>
           </div>
         </div>
-      </div>
-      <div>
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-sm font-semibold text-[#111827]">{p.label}</div>
-          {active && (
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-[#2F6FE4]">
-              Selected
-            </span>
+        <div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm font-semibold text-[#111827]">{p.label}</div>
+            {active && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-[#2F6FE4]">
+                Selected
+              </span>
+            )}
+          </div>
+          <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+            {p.description}
+          </div>
+          {p.tags.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {p.tags.slice(0, 3).map((t: string) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-[#F1F5F9] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-[#475569]"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
           )}
         </div>
-        <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-          {p.description}
-        </div>
-        {p.tags.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {p.tags.slice(0, 3).map((t: string) => (
-              <span
-                key={t}
-                className="rounded-full bg-[#F1F5F9] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-[#475569]"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </button>
+      </button>
+      {onApply && (
+        <button
+          type="button"
+          onClick={onApply}
+          disabled={disabled}
+          title="Copy this theme's full colour set into the editable colour fields below. You can then customise any colour."
+          className="mt-1 inline-flex h-8 items-center justify-center rounded-[8px] border border-[#D9E2EF] bg-white px-2 text-[11px] font-semibold text-[#1F56C5] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Apply to custom →
+        </button>
+      )}
+    </div>
   );
 }
+
 
 // ============================================================================
 // BackgroundSelector — simplified to 6 palette-driven styles.
@@ -1964,5 +2078,101 @@ function SemanticPreview({ venueLabelPlural }: { venueLabelPlural: string }) {
     </div>
   );
 }
+
+// ============================================================================
+// HeroOverlayCard — colour + opacity slider for the hero image fade.
+// ============================================================================
+
+function HeroOverlayCard({
+  form,
+  setForm,
+  disabled,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  disabled?: boolean;
+}) {
+  const opacityNum = form.hero_overlay_opacity
+    ? Math.max(0, Math.min(100, Number(form.hero_overlay_opacity) || 0))
+    : null;
+  const colorPickerValue = HEX_RE.test(form.hero_overlay_color)
+    ? form.hero_overlay_color
+    : HEX_RE.test(form.primary_color)
+      ? form.primary_color
+      : "#1F3D2B";
+
+  return (
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <div>
+        <div className="text-sm font-semibold">Hero image fade</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Darken or tint the hero image so the event title, logo, and passport
+          icon stay readable. Defaults to your primary colour when left blank.
+        </p>
+      </div>
+
+      <Field label="Overlay colour">
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={colorPickerValue}
+            onChange={(e) => setForm({ ...form, hero_overlay_color: e.target.value })}
+            disabled={disabled}
+            className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <input
+            type="text"
+            value={form.hero_overlay_color}
+            onChange={(e) => setForm({ ...form, hero_overlay_color: e.target.value })}
+            placeholder="(uses primary colour)"
+            disabled={disabled}
+            maxLength={7}
+            className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {form.hero_overlay_color && !disabled && (
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, hero_overlay_color: "" })}
+              className="text-[11px] text-muted-foreground underline hover:text-foreground"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </Field>
+
+      <Field label={`Overlay opacity${opacityNum != null ? ` — ${opacityNum}%` : " — default gradient"}`}>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={0}
+            max={90}
+            step={5}
+            value={opacityNum ?? 50}
+            onChange={(e) =>
+              setForm({ ...form, hero_overlay_opacity: e.target.value })
+            }
+            disabled={disabled}
+            className="h-10 flex-1"
+          />
+          {form.hero_overlay_opacity && !disabled && (
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, hero_overlay_opacity: "" })}
+              className="text-[11px] text-muted-foreground underline hover:text-foreground"
+            >
+              Use default
+            </button>
+          )}
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Leave on “default gradient” to keep the existing soft fade. Drag the
+          slider to apply a flat overlay tint at the chosen opacity.
+        </p>
+      </Field>
+    </div>
+  );
+}
+
 
 

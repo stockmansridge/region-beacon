@@ -35,6 +35,7 @@ export function EventPaletteScope({
   mutedTextColor,
   borderColor,
   primaryTextColor,
+  fontFamily,
   children,
   className,
   applyBackground = true,
@@ -49,6 +50,7 @@ export function EventPaletteScope({
   mutedTextColor?: string | null;
   borderColor?: string | null;
   primaryTextColor?: string | null;
+  fontFamily?: string | null;
   children: ReactNode;
   className?: string;
   applyBackground?: boolean;
@@ -68,7 +70,8 @@ export function EventPaletteScope({
     !explicitCurated &&
     !hasCustomPalette &&
     !explicitBackground &&
-    !hasSemanticOverride
+    !hasSemanticOverride &&
+    !fontFamily
   ) {
     return <div className={className}>{children}</div>;
   }
@@ -118,6 +121,9 @@ export function EventPaletteScope({
   const style: React.CSSProperties = {
     ...themeCssVars(theme),
     ...bgStyle,
+    ...(fontFamily
+      ? { fontFamily, ["--event-font" as any]: fontFamily }
+      : {}),
   };
   return (
     <div className={className} style={style}>

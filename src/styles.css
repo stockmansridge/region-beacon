@@ -149,7 +149,9 @@
     color: transparent;
   }
   .font-trail-serif {
-    font-family: "Fraunces", "Cormorant Garamond", "Playfair Display", Georgia, ui-serif, serif;
+    /* When an event sets a branded font, --event-font wins. Falls back to
+       the GetStampd house serif so unbranded pages look identical. */
+    font-family: var(--event-font, "Fraunces", "Cormorant Garamond", "Playfair Display", Georgia, ui-serif, serif);
     font-optical-sizing: auto;
     letter-spacing: -0.01em;
   }
