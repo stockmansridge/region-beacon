@@ -292,6 +292,17 @@ function Dashboard() {
           <div>banner_plan_name: {currentPlan.name}</div>
           <div>banner_venue_limit: {limit === null ? "unlimited" : limit}</div>
           <div>banner_plan_came_from: {planInfo ? "rpc (get_agency_plan_limits)" : "static fallback (Free defaults)"}</div>
+          <div>
+            falling_back_to_free: {String(fallingBackToFree)}
+            {fallingBackToFree &&
+              ` — reason: ${
+                planRpcError
+                  ? "RPC returned an error (see above)"
+                  : !planFetchSettled
+                    ? "RPC has not returned yet / no workspace agency selected"
+                    : "RPC returned no parseable object"
+              }`}
+          </div>
           <div className="mt-2">
             parsed → effective_plan_code: {planInfo?.code ?? "(rpc not parsed — fell back to free)"} · plan_source:{" "}
             {planInfo?.source ?? "—"} · venue_limit:{" "}
