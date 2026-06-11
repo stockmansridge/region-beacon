@@ -1239,8 +1239,18 @@ function AssetUploader({
 }
 
 // ============================================================================
-// PaletteSelector
+// PaletteSelector — modern mini-preview cards with category filter chips.
 // ============================================================================
+
+const PALETTE_FILTERS = [
+  { key: "all" as const, label: "All" },
+  { key: "minimal" as const, label: "Minimal" },
+  { key: "premium" as const, label: "Premium" },
+  { key: "bright" as const, label: "Bright" },
+  { key: "nature" as const, label: "Nature" },
+  { key: "coastal" as const, label: "Coastal" },
+  { key: "food_wine" as const, label: "Food & Wine" },
+];
 
 function PaletteSelector({
   value,
@@ -1251,11 +1261,23 @@ function PaletteSelector({
   onChange: (key: string) => void;
   disabled?: boolean;
 }) {
+  const [filter, setFilter] = useState<(typeof PALETTE_FILTERS)[number]["key"]>("all");
+  const palettes =
+    filter === "all"
+      ? EVENT_PALETTES
+      : EVENT_PALETTES.filter((p) => p.categories.includes(filter));
   const selected = getPalette(value || null);
+
   return (
     <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex items-baseline justify-between">
-        <div className="text-sm font-semibold">Colour palette</div>
+        <div>
+          <div className="text-sm font-semibold">Theme</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Pick a curated theme that fits your event. Each theme sets the full
+            public-page colour scheme — header, cards, text and accents.
+          </p>
+        </div>
         {selected && !disabled && (
           <button
             type="button"
@@ -1266,117 +1288,163 @@ function PaletteSelector({
           </button>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">
-        Pick a curated palette to colour the public event pages. When set, the
-        palette overrides the primary &amp; accent colours below. Leave unset to
-        keep the GetStampd default look (or your own primary/accent hex codes).
-      </p>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {EVENT_PALETTES.map((p) => {
-          const active = p.key === value;
+
+      {/* Category filter chips */}
+      <div className="flex flex-wrap gap-1.5">
+        {PALETTE_FILTERS.map((f) => {
+          const active = f.key === filter;
           return (
             <button
-              key={p.key}
+              key={f.key}
               type="button"
-              onClick={() => onChange(p.key as EventPaletteKey)}
+              onClick={() => setFilter(f.key)}
               disabled={disabled}
-              className={`flex items-start gap-3 rounded-lg border p-2 text-left transition disabled:opacity-50 ${
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:opacity-50 ${
                 active
-                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                  : "border-border hover:bg-muted/40"
+                  ? "border-[#2F6FE4] bg-[#EAF2FF] text-[#1F56C5]"
+                  : "border-[#D9E2EF] bg-white text-[#475569] hover:bg-[#F8FAFC]"
               }`}
             >
-              <div className="flex flex-col gap-0.5">
-                <span
-                  className="block h-5 w-10 rounded"
-                  style={{ background: p.primary }}
-                  aria-hidden
-                />
-                <span
-                  className="block h-5 w-10 rounded"
-                  style={{ background: p.accent }}
-                  aria-hidden
-                />
-                <span
-                  className="block h-5 w-10 rounded border"
-                  style={{ background: p.pageBg, borderColor: p.border }}
-                  aria-hidden
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium">{p.label}</div>
-                <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                  {p.description}
-                </div>
-              </div>
+              {f.label}
             </button>
           );
         })}
+      </div>
+
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        {palettes.map((p) => (
+          <PaletteCard
+            key={p.key}
+            palette={p}
+            active={p.key === value}
+            disabled={disabled}
+            onSelect={() => onChange(p.key as EventPaletteKey)}
+          />
+        ))}
         {/* Custom palette card */}
         <button
           type="button"
           onClick={() => onChange("custom")}
           disabled={disabled}
-          className={`flex items-start gap-3 rounded-lg border p-2 text-left transition disabled:opacity-50 ${
+          className={`group flex flex-col gap-2 rounded-[12px] border p-2 text-left transition disabled:opacity-50 ${
             value === "custom"
-              ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-              : "border-border hover:bg-muted/40"
+              ? "border-[#2F6FE4] ring-2 ring-[#2F6FE4]/30"
+              : "border-[#D9E2EF] hover:border-[#94A3B8]"
           }`}
         >
-          <div className="flex h-[68px] w-10 items-center justify-center rounded border text-xl" aria-hidden>
+          <div
+            className="flex h-[78px] items-center justify-center rounded-[8px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] text-2xl"
+            aria-hidden
+          >
             🎨
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium">Custom</div>
+          <div>
+            <div className="text-sm font-semibold text-[#111827]">Custom</div>
             <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-              Use your own primary &amp; accent hex colours (set below).
+              Build your own colour scheme below.
             </div>
           </div>
         </button>
       </div>
-      {selected && (
-        <div
-          className="mt-2 rounded-lg p-3 text-xs"
-          style={{
-            background: selected.cardBg,
-            color: selected.bodyText,
-            border: `1px solid ${selected.border}`,
-          }}
-        >
-          <div
-            className="mb-1 font-semibold"
-            style={{ color: selected.heading }}
-          >
-            {selected.label} preview
-          </div>
-          <div style={{ color: selected.mutedText }}>
-            Sample card · Body text · Muted line
-          </div>
-          <div className="mt-2 flex gap-2">
-            <span
-              className="rounded-full px-3 py-1 text-[11px] font-semibold"
-              style={{
-                background: selected.primary,
-                color: selected.primaryForeground,
-              }}
-            >
-              Primary
-            </span>
-            <span
-              className="rounded-full px-3 py-1 text-[11px] font-semibold"
-              style={{ background: selected.accent, color: "#fff" }}
-            >
-              Accent
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
+/** Mini preview card that mimics public-page surfaces. */
+function PaletteCard({
+  palette: p,
+  active,
+  disabled,
+  onSelect,
+}: {
+  palette: EventPalette;
+  active: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`group relative flex flex-col gap-2 rounded-[12px] border p-2 text-left transition disabled:opacity-50 ${
+        active
+          ? "border-[#2F6FE4] ring-2 ring-[#2F6FE4]/30"
+          : "border-[#D9E2EF] hover:border-[#94A3B8]"
+      }`}
+    >
+      {/* Mini public-page preview: header strip + card + accent dot + button */}
+      <div
+        className="overflow-hidden rounded-[8px] border"
+        style={{ backgroundColor: p.pageBg, borderColor: p.border }}
+      >
+        <div
+          className="flex h-5 items-center justify-center text-[8px] font-semibold uppercase tracking-[0.18em]"
+          style={{ backgroundColor: p.primary, color: p.primaryForeground }}
+        >
+          Header
+        </div>
+        <div className="space-y-1.5 p-2">
+          <div
+            className="rounded-[4px] px-1.5 py-1"
+            style={{ backgroundColor: p.cardBg, border: `1px solid ${p.border}` }}
+          >
+            <div
+              className="h-1.5 w-12 rounded-full"
+              style={{ backgroundColor: p.heading }}
+            />
+            <div
+              className="mt-1 h-1 w-16 rounded-full"
+              style={{ backgroundColor: p.mutedText, opacity: 0.7 }}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
+              style={{ backgroundColor: p.primary, color: p.primaryForeground }}
+            >
+              Button
+            </span>
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: p.accent }}
+              aria-hidden
+            />
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-sm font-semibold text-[#111827]">{p.label}</div>
+          {active && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-[#2F6FE4]">
+              Selected
+            </span>
+          )}
+        </div>
+        <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+          {p.description}
+        </div>
+        {p.tags.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {p.tags.slice(0, 3).map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-[#F1F5F9] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-[#475569]"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </button>
+  );
+}
+
 // ============================================================================
-// BackgroundSelector
+// BackgroundSelector — simplified to 6 palette-driven styles.
 // ============================================================================
 
 function BackgroundSelector({
@@ -1400,12 +1468,26 @@ function BackgroundSelector({
     }
     return getPaletteOrDefault(paletteKey || null);
   })();
-  const selected = getBackground(value || null);
+  // Highlight the modern style that matches the saved key (even if it's
+  // a legacy key like `warm_paper`).
+  const activeStyleKey = getModernStyleKey(value || null);
+  const selectedPalette = getPalette(paletteKey || null);
+  const recommendedKey = selectedPalette?.recommendedBackground ?? null;
+  const recommended = recommendedKey
+    ? MODERN_BACKGROUND_STYLES.find((b) => b.key === recommendedKey)
+    : null;
+
   return (
     <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="flex items-baseline justify-between">
-        <div className="text-sm font-semibold">Page background</div>
-        {selected && !disabled && (
+        <div>
+          <div className="text-sm font-semibold">Background style</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Adjusts the public page background. Styles adapt automatically to
+            your selected theme.
+          </p>
+        </div>
+        {value && !disabled && (
           <button
             type="button"
             onClick={() => onChange("")}
@@ -1415,67 +1497,61 @@ function BackgroundSelector({
           </button>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">
-        Choose the page background used behind the public event pages. This is
-        independent of the colour palette and falls back to a clean light
-        background when unset.
-      </p>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {EVENT_BACKGROUNDS.map((bg) => {
-          const active = bg.key === value;
+
+      {recommended && (
+        <div className="rounded-[10px] border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-[11px] leading-5 text-[#1E40AF]">
+          Recommended for <span className="font-semibold">{selectedPalette?.label}</span>:{" "}
+          <span className="font-semibold">{recommended.label}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {MODERN_BACKGROUND_STYLES.map((bg) => {
+          const active = bg.key === activeStyleKey;
+          const isRecommended = bg.key === recommendedKey;
           return (
             <button
               key={bg.key}
               type="button"
               onClick={() => onChange(bg.key as EventBackgroundKey)}
               disabled={disabled}
-              className={`flex items-stretch gap-3 rounded-lg border p-2 text-left transition disabled:opacity-50 ${
+              aria-pressed={active}
+              className={`group flex flex-col items-stretch gap-1.5 rounded-[12px] border p-2 text-left transition disabled:opacity-50 ${
                 active
-                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                  : "border-border hover:bg-muted/40"
+                  ? "border-[#2F6FE4] ring-2 ring-[#2F6FE4]/30"
+                  : "border-[#D9E2EF] hover:border-[#94A3B8]"
               }`}
             >
               <span
-                className="block h-14 w-16 flex-shrink-0 rounded border"
-                style={bg.swatch(palette)}
+                className="block h-14 w-full rounded-[8px] border"
+                style={{ ...bg.swatch(palette), borderColor: palette.border }}
                 aria-hidden
               />
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium">{bg.label}</span>
-                <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
-                  {bg.description}
-                </span>
+              <span className="flex items-center justify-between gap-1">
+                <span className="text-[12px] font-semibold text-[#111827]">{bg.label}</span>
+                {isRecommended && (
+                  <span className="rounded-full bg-[#EFF6FF] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#1E40AF]">
+                    Rec
+                  </span>
+                )}
               </span>
             </button>
           );
         })}
       </div>
-      {selected && (
-        <div
-          className="mt-2 rounded-lg p-3 text-xs"
-          style={{
-            ...selected.build(palette),
-            color: palette.bodyText,
-            border: `1px solid ${palette.border}`,
-          }}
-        >
-          <div
-            className="mb-1 font-semibold"
-            style={{ color: palette.heading }}
-          >
-            {selected.label} preview
-          </div>
-          <div
-            className="rounded p-2"
-            style={{ background: palette.cardBg, color: palette.bodyText }}
-          >
-            Sample card on this background — confirms cards stay readable.
-          </div>
+
+      {/* Hint that a legacy key is still saved so admins can move forward. */}
+      {value && !MODERN_BACKGROUND_STYLES.some((b) => b.key === value) && (
+        <div className="rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[11px] leading-5 text-[#92400E]">
+          This event still uses an older background style
+          {getBackground(value) ? ` (“${getBackground(value)!.label}”)` : ""}. It
+          still renders correctly. Pick a modern style above to update.
         </div>
       )}
     </div>
   );
 }
+
 
 // ============================================================================
 // FontPicker
