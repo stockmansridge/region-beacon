@@ -1343,10 +1343,12 @@ const PALETTE_FILTERS = [
 function PaletteSelector({
   value,
   onChange,
+  onApplyTheme,
   disabled,
 }: {
   value: string;
   onChange: (key: string) => void;
+  onApplyTheme?: (palette: EventPalette) => void;
   disabled?: boolean;
 }) {
   const [filter, setFilter] = useState<(typeof PALETTE_FILTERS)[number]["key"]>("all");
@@ -1362,8 +1364,10 @@ function PaletteSelector({
         <div>
           <div className="text-sm font-semibold">Theme</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Pick a curated theme that fits your event. Each theme sets the full
-            public-page colour scheme — header, cards, text and accents.
+            Pick a curated theme as a starting point. Use{" "}
+            <span className="font-medium">Apply to custom</span> on any theme to
+            copy its full colour set into the editable fields below — you can
+            then change any individual colour to build your own brand.
           </p>
         </div>
         {selected && !disabled && (
@@ -1407,8 +1411,10 @@ function PaletteSelector({
             active={p.key === value}
             disabled={disabled}
             onSelect={() => onChange(p.key as EventPaletteKey)}
+            onApply={onApplyTheme ? () => onApplyTheme(p) : undefined}
           />
         ))}
+
         {/* Custom palette card */}
         <button
           type="button"
