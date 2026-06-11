@@ -1581,3 +1581,300 @@ function FontPicker({
   );
 }
 
+// ============================================================================
+// ColorRolesCard — simplified semantic text/border colour controls
+// ============================================================================
+
+type ColorRolesCardProps = {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  disabled?: boolean;
+};
+
+function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
+  // Resolve the effective theme using the same helper public pages use,
+  // so contrast warnings reflect what the customer will actually see.
+  const theme = resolveEventTheme({
+    palette_key: form.palette_key || null,
+    primary_color: form.primary_color || null,
+    accent_color: form.accent_color || null,
+    page_background_color: form.page_background_color || null,
+    card_background_color: form.card_background_color || null,
+    text_color: form.text_color || null,
+    muted_text_color: form.muted_text_color || null,
+    border_color: form.border_color || null,
+    primary_text_color: form.primary_text_color || null,
+    page_background_key: form.page_background_key || null,
+  });
+
+  const warnings = {
+    textOnPage: lowContrastWarning(theme.text, theme.pageBg),
+    textOnCard: lowContrastWarning(theme.text, theme.cardBg),
+    mutedOnCard: lowContrastWarning(theme.muted, theme.cardBg, 3),
+    primaryButton: lowContrastWarning(theme.primaryText, theme.primary),
+  };
+
+  return (
+    <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <div>
+        <div className="text-sm font-semibold">Text &amp; border colours</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Public passport pages use these four semantic colours everywhere.
+          Leave any field blank to inherit from the selected palette.
+        </p>
+      </div>
+
+      <ColorRoleRow
+        label="Main text colour"
+        helper="Headings, venue names, body copy, leaderboard names, FAQ questions."
+        resolved={theme.text}
+        value={form.text_color}
+        onChange={(v) => setForm({ ...form, text_color: v })}
+        disabled={disabled}
+        warning={warnings.textOnPage ?? warnings.textOnCard}
+      />
+      <ColorRoleRow
+        label="Muted text colour"
+        helper="Helper text, descriptions, timestamps, secondary labels, metadata."
+        resolved={theme.muted}
+        value={form.muted_text_color}
+        onChange={(v) => setForm({ ...form, muted_text_color: v })}
+        disabled={disabled}
+        warning={warnings.mutedOnCard}
+      />
+      <ColorRoleRow
+        label="Border / divider colour"
+        helper="Card borders, dividers, input outlines on the public pages."
+        resolved={theme.border}
+        value={form.border_color}
+        onChange={(v) => setForm({ ...form, border_color: v })}
+        disabled={disabled}
+      />
+      <ColorRoleRow
+        label="Primary button text colour"
+        helper="Text and icons drawn on top of the primary brand colour."
+        resolved={theme.primaryText}
+        value={form.primary_text_color}
+        onChange={(v) => setForm({ ...form, primary_text_color: v })}
+        disabled={disabled}
+        warning={warnings.primaryButton}
+      />
+    </div>
+  );
+}
+
+function ColorRoleRow({
+  label,
+  helper,
+  resolved,
+  value,
+  onChange,
+  disabled,
+  warning,
+}: {
+  label: string;
+  helper: string;
+  resolved: string;
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  warning?: string | null;
+}) {
+  const HEX = /^#[0-9A-Fa-f]{6}$/;
+  const pickerValue = HEX.test(value) ? value : resolved;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm font-medium text-[#334155]">{label}</span>
+        {value && !disabled && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          >
+            Reset to palette
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">{helper}</p>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={pickerValue}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={resolved}
+          disabled={disabled}
+          maxLength={7}
+          className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        />
+      </div>
+      {warning && (
+        <div
+          role="alert"
+          className="rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[11px] leading-5 text-[#92400E]"
+        >
+          Low contrast: this text may be hard to read on the public passport. {warning}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function lowContrastWarning(
+  fg: string,
+  bg: string,
+  threshold = 4.5,
+): string | null {
+  const ratio = contrastRatio(fg, bg);
+  if (ratio == null) return null;
+  if (ratio >= threshold) return null;
+  return `(${ratio.toFixed(2)}:1, needs ≥${threshold}:1)`;
+}
+
+// ============================================================================
+// SemanticPreview — sample UI drawn entirely from --event-* tokens so the
+// admin sees the exact same theme variables the public passport renders.
+// ============================================================================
+
+function SemanticPreview({ venueLabelPlural }: { venueLabelPlural: string }) {
+  return (
+    <div
+      className="mt-4 space-y-3 rounded-[12px] p-3"
+      style={{
+        backgroundColor: "var(--event-page-bg)",
+        border: "1px solid var(--event-border)",
+      }}
+    >
+      <div
+        className="text-[10px] font-medium uppercase tracking-[0.22em]"
+        style={{ color: "var(--event-muted)" }}
+      >
+        Semantic tokens preview
+      </div>
+
+      <div>
+        <h4
+          className="text-base font-semibold"
+          style={{ color: "var(--event-text)" }}
+        >
+          Sample heading
+        </h4>
+        <p className="text-sm" style={{ color: "var(--event-text)" }}>
+          This body paragraph uses the main text colour.
+        </p>
+        <p className="text-xs" style={{ color: "var(--event-muted)" }}>
+          This is muted helper text used for metadata and descriptions.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="inline-flex h-9 items-center rounded-[10px] px-3 text-xs font-semibold"
+          style={{
+            backgroundColor: "var(--event-primary)",
+            color: "var(--event-primary-fg)",
+          }}
+        >
+          Primary button
+        </button>
+        <button
+          type="button"
+          className="inline-flex h-9 items-center rounded-[10px] border px-3 text-xs font-semibold"
+          style={{
+            backgroundColor: "var(--event-card-bg)",
+            borderColor: "var(--event-border)",
+            color: "var(--event-text)",
+          }}
+        >
+          Secondary button
+        </button>
+      </div>
+
+      <div
+        className="rounded-[10px] p-3"
+        style={{
+          backgroundColor: "var(--event-card-bg)",
+          border: "1px solid var(--event-border)",
+        }}
+      >
+        <div
+          className="text-sm font-semibold"
+          style={{ color: "var(--event-text)" }}
+        >
+          Sample card
+        </div>
+        <div className="text-xs" style={{ color: "var(--event-muted)" }}>
+          Cards and surfaces use the card background colour.
+        </div>
+      </div>
+
+      <div
+        className="flex items-center justify-between rounded-[10px] px-3 py-2"
+        style={{
+          backgroundColor: "var(--event-card-bg)",
+          border: "1px solid var(--event-border)",
+        }}
+      >
+        <div>
+          <div
+            className="text-sm font-medium"
+            style={{ color: "var(--event-text)" }}
+          >
+            Sample {venueLabelPlural.toLowerCase().replace(/s$/, "")} row
+          </div>
+          <div className="text-xs" style={{ color: "var(--event-muted)" }}>
+            123 Sample Street · Open now
+          </div>
+        </div>
+        <span
+          className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          style={{
+            backgroundColor: "var(--event-accent)",
+            color: "var(--event-primary-fg)",
+          }}
+        >
+          Open
+        </span>
+      </div>
+
+      <div
+        className="flex items-center justify-between rounded-[10px] px-3 py-2"
+        style={{
+          backgroundColor: "var(--event-card-bg)",
+          border: "1px solid var(--event-border)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold"
+            style={{
+              backgroundColor: "var(--event-primary)",
+              color: "var(--event-primary-fg)",
+            }}
+          >
+            1
+          </span>
+          <div
+            className="text-sm font-medium"
+            style={{ color: "var(--event-text)" }}
+          >
+            Top stamp collector
+          </div>
+        </div>
+        <div className="text-xs" style={{ color: "var(--event-muted)" }}>
+          12 stamps
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
