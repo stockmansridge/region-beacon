@@ -119,7 +119,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
     <EventPaletteScope
       paletteKey={event?.palette_key ?? null}
       backgroundKey={event?.page_background_key ?? null}
-      className="min-h-screen px-4 py-8"
+      className="min-h-screen px-4 py-6"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
@@ -130,23 +130,27 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         eventId={event?.event_id ?? null}
       />
       <div className="mx-auto max-w-md">
-        <div className="mb-6">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-muted,#8A7E66)]">
+              Trail
+            </p>
+            <h1 className="mt-1 font-trail-serif text-[26px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+              Offers
+            </h1>
+          </div>
           <Link
             to="/"
-            className="text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+            className="shrink-0 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)] underline-offset-4 hover:underline"
           >
-            ← Back
+            ← Home
           </Link>
-          <h1 className="mt-3 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
-            Offers
-          </h1>
-          <p className="mt-1 text-sm text-[var(--event-body,#3D372C)]">
-            Special offers from {labels.plural.toLowerCase()} on this trail.
-          </p>
         </div>
 
+        <PublicTrailTabs active="offers" venueLabelPlural={labels.plural} />
+
         {offers.length === 0 ? (
-          <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
+          <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
             <p>No offers have been listed yet.</p>
             <Link
               to="/venues"
@@ -156,46 +160,44 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
             </Link>
           </div>
         ) : (
-          <ul className="space-y-4">
+          <ul className="space-y-3">
             {offers.map((v) => {
               const vid = v.venue_id ?? "";
+              const offerLines = v.offer_summary.split("\n").filter(Boolean);
+              const offerTitle = offerLines[0] ?? v.offer_summary;
+              const offerBody = offerLines.slice(1).join(" ").trim();
               return (
-                <li
-                  key={vid}
-                  className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm"
-                >
+                <li key={vid}>
                   <Link
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
-                    className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                    className="flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-2.5 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
                     aria-label={`View ${v.name ?? "venue"} details`}
                   >
-                    <div className="flex items-stretch gap-3 p-3">
-                      <Thumb path={v.logo_path ?? v.cover_path} />
-                      <div className="flex min-w-0 flex-1 flex-col justify-center">
-                        <p className="truncate font-trail-serif text-lg font-semibold text-[var(--event-primary,#1F3D2B)]">
-                          {v.name ?? "Unnamed"}
-                        </p>
-                      </div>
-                      <span
-                        className="self-center text-lg leading-none"
-                        style={{ color: accent }}
-                        aria-hidden
-                      >
-                        ›
-                      </span>
-                    </div>
-                    <div className="border-t border-[var(--event-border,#E6DCC7)] bg-white/40 px-4 py-3">
+                    <Thumb path={v.cover_path ?? v.logo_path} />
+                    <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
                       <p
-                        className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                        className="truncate text-[10px] font-semibold uppercase tracking-[0.22em]"
                         style={{ color: accent }}
                       >
-                        Offer
+                        {v.name ?? "Venue"}
                       </p>
-                      <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
-                        {v.offer_summary}
+                      <p className="mt-0.5 line-clamp-2 font-trail-serif text-[16px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)]">
+                        {offerTitle}
                       </p>
+                      {offerBody && (
+                        <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[var(--event-body,#3D372C)]">
+                          {offerBody}
+                        </p>
+                      )}
                     </div>
+                    <span
+                      className="self-center pr-1 text-lg leading-none"
+                      style={{ color: accent }}
+                      aria-hidden
+                    >
+                      ›
+                    </span>
                   </Link>
                 </li>
               );
