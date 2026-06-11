@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Gift, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
@@ -43,6 +45,7 @@ type EventRow = {
   page_background_key?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
+  logo_path?: string | null;
 };
 
 type OfferVenue = VenueRow & { offer_summary: string };
@@ -79,9 +82,6 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
       }
       const venues = rows.filter((r) => r.event_found !== false && r.venue_id);
 
-      // Single round-trip: offer_summary is now projected by
-      // get_public_venues_by_domain (migration
-      // supabase/migrations-draft-public-offers/01_extend_get_public_venues_by_domain_offer_summary.sql).
       const offers: OfferVenue[] = venues
         .filter(
           (v): v is VenueRow & { offer_summary: string } =>
@@ -90,7 +90,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         )
         .map((v) => ({ ...v, offer_summary: v.offer_summary!.trim() }));
 
-      const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
+      const evtRaw = (evtData?.[0] ?? null) as EventRow | null;
       const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
       setState({ kind: "ready", event: evt, offers });
     })();
@@ -113,13 +113,13 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
   const { event, offers } = state;
   const labels = resolveVenueLabels(event ?? {});
-  const accent = event?.primary_color ?? "var(--event-primary,#1F3D2B)";
+  const logoUrl = getEventAssetPublicUrl(event?.logo_path ?? null);
 
   return (
     <EventPaletteScope
       paletteKey={event?.palette_key ?? null}
       backgroundKey={event?.page_background_key ?? null}
-      className="min-h-screen px-4 py-6"
+      className="min-h-screen px-4 pb-10"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
@@ -127,27 +127,20 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         eventName={event?.name}
         primaryColor={event?.primary_color}
         accentColor={event?.accent_color}
+        logoUrl={logoUrl}
         eventId={event?.event_id ?? null}
       />
       <div className="mx-auto max-w-md">
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-muted,#8A7E66)]">
-              Trail
-            </p>
-            <h1 className="mt-1 font-trail-serif text-[26px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
-              Offers
-            </h1>
-          </div>
-          <Link
-            to="/"
-            className="shrink-0 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)] underline-offset-4 hover:underline"
-          >
-            ← Home
-          </Link>
-        </div>
-
         <PublicTrailTabs active="offers" venueLabelPlural={labels.plural} />
+
+        <div className="mb-4 px-1">
+          <h1 className="font-trail-serif text-[26px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+            Special Offers
+          </h1>
+          <p className="mt-1 text-[13px] leading-snug text-[var(--event-muted,#8A7E66)]">
+            Visit the {labels.plural.toLowerCase()} to unlock these offers.
+          </p>
+        </div>
 
         {offers.length === 0 ? (
           <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
@@ -166,19 +159,34 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
               const offerLines = v.offer_summary.split("\n").filter(Boolean);
               const offerTitle = offerLines[0] ?? v.offer_summary;
               const offerBody = offerLines.slice(1).join(" ").trim();
+              const thumb = getVenueAssetPublicUrl(
+                v.cover_path ?? v.logo_path,
+              );
               return (
                 <li key={vid}>
                   <Link
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
-                    className="flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-2.5 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
-                    aria-label={`View ${v.name ?? "venue"} details`}
+                    className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-3 pr-14 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                    aria-label={`View ${v.name ?? "venue"} offer`}
                   >
-                    <Thumb path={v.cover_path ?? v.logo_path} />
-                    <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
+                    {/* Offer icon badge (left) */}
+                    <span
+                      className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full"
+                      style={{
+                        background:
+                          "color-mix(in oklab, var(--event-accent, var(--event-primary, #1F3D2B)) 18%, transparent)",
+                        color: "var(--event-primary,#1F3D2B)",
+                      }}
+                      aria-hidden
+                    >
+                      <Gift className="h-5 w-5" />
+                    </span>
+
+                    {/* Content (middle) */}
+                    <div className="flex min-w-0 flex-1 flex-col justify-center">
                       <p
-                        className="truncate text-[10px] font-semibold uppercase tracking-[0.22em]"
-                        style={{ color: accent }}
+                        className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]"
                       >
                         {v.name ?? "Venue"}
                       </p>
@@ -186,23 +194,43 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                         {offerTitle}
                       </p>
                       {offerBody && (
-                        <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[var(--event-body,#3D372C)]">
+                        <p className="mt-0.5 line-clamp-1 text-[12px] leading-snug text-[var(--event-body,#3D372C)]">
                           {offerBody}
                         </p>
                       )}
                     </div>
+
+                    {/* Image thumb (right) */}
+                    <div className="hidden h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10 sm:block">
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-[var(--event-primary,#1F3D2B)]/40">
+                          <Gift className="h-5 w-5" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Strong circular chevron (far right) */}
                     <span
-                      className="self-center pr-1 text-lg leading-none"
-                      style={{ color: accent }}
                       aria-hidden
+                      className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full shadow-sm transition group-hover:translate-x-0.5"
+                      style={{
+                        background: "var(--event-primary,#1F3D2B)",
+                        color: "var(--event-primary-fg,#F6EFE2)",
+                      }}
                     >
-                      ›
+                      <ChevronRight className="h-5 w-5" />
                     </span>
                   </Link>
                 </li>
               );
             })}
-
           </ul>
         )}
 
@@ -211,18 +239,6 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         </div>
       </div>
     </EventPaletteScope>
-  );
-}
-
-function Thumb({ path }: { path: string | null }) {
-  const url = getVenueAssetPublicUrl(path);
-  if (!url) {
-    return <div className="h-[80px] w-[80px] flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />;
-  }
-  return (
-    <div className="h-[80px] w-[80px] flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10">
-      <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
-    </div>
   );
 }
 
