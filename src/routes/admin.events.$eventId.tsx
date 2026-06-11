@@ -466,6 +466,49 @@ function EventDetail() {
     const lng = coords.reduce((s, v) => s + (v.lng as number), 0) / coords.length;
     return { lat, lng };
   }, [bundle?.venues]);
+  // Best-effort human-readable region label for the Apple Maps picker. Priority:
+  // 1) town/state parsed from an existing venue address, 2) tokens lifted from
+  // the event name that look like an Australian town/state, 3) null.
+  const venueRegionHintLabel = useMemo<string | null>(() => {
+    const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
+    const venues = bundle?.venues ?? [];
+    for (const v of venues) {
+      const addr = (v.address ?? "").trim();
+      if (!addr) continue;
+      const parts = addr.split(",").map((p) => p.trim()).filter(Boolean);
+      if (parts.length === 0) continue;
+      // Look for "Town STATE" or "Town STATE postcode" in the last 3 segments.
+      for (let i = parts.length - 1; i >= Math.max(0, parts.length - 3); i--) {
+        const seg = parts[i];
+        const m = seg.match(/^([A-Za-z][A-Za-z\s'-]+?)\s+(NSW|VIC|QLD|WA|SA|TAS|ACT|NT)\b/i);
+        if (m) return `${m[1].trim()} ${m[2].toUpperCase()}`;
+      }
+      // Fallback: penultimate segment + last state-ish token.
+      if (parts.length >= 2) {
+        const town = parts[parts.length - 2];
+        const tail = parts[parts.length - 1];
+        const stateMatch = tail.match(/\b(NSW|VIC|QLD|WA|SA|TAS|ACT|NT)\b/i);
+        if (town && stateMatch) return `${town} ${stateMatch[1].toUpperCase()}`;
+        if (town) return town;
+      }
+    }
+    const name = bundle?.event.name ?? "";
+    if (name) {
+      const stateInName = name.match(/\b(NSW|VIC|QLD|WA|SA|TAS|ACT|NT)\b/i);
+      // Strip generic event words to leave a likely place token.
+      const stripped = name
+        .replace(/\b(hop on hop off|passport|trail|festival|event|tour|crawl|tasting|weekend|expo|market|show)\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      const firstToken = stripped.split(/\s+/)[0];
+      if (firstToken && firstToken.length >= 3) {
+        return stateInName ? `${firstToken} ${stateInName[1].toUpperCase()}` : firstToken;
+      }
+      if (stateInName) return stateInName[1].toUpperCase();
+    }
+    void AU_STATES;
+    return null;
+  }, [bundle?.venues, bundle?.event.name]);
   useEffect(() => {
     let cancelled = false;
     if (!agencyId) return;
@@ -3165,6 +3208,8 @@ function EventDetail() {
                         }}
                         nameIsBlank={venueForm.name.trim().length === 0}
                         regionHint={venueRegionHint}
+                        regionHintLabel={venueRegionHintLabel}
+                        venueName={venueForm.name}
                         onChange={(next) =>
                           setVenueForm((prev) => (prev ? { ...prev, ...next } : prev))
                         }
@@ -3513,6 +3558,8 @@ function EventDetail() {
                         }}
                         nameIsBlank={venueForm.name.trim().length === 0}
                         regionHint={venueRegionHint}
+                        regionHintLabel={venueRegionHintLabel}
+                        venueName={venueForm.name}
                         onChange={(next) =>
                           setVenueForm((prev) => (prev ? { ...prev, ...next } : prev))
                         }
