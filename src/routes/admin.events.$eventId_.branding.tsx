@@ -306,6 +306,10 @@ function BrandingEditor() {
     const page_background_key = form.page_background_key.trim();
     const page_background_color = form.page_background_color.trim();
     const card_background_color = form.card_background_color.trim();
+    const text_color = form.text_color.trim();
+    const muted_text_color = form.muted_text_color.trim();
+    const border_color = form.border_color.trim();
+    const primary_text_color = form.primary_text_color.trim();
 
     if (page_background_color && !HEX_RE.test(page_background_color)) {
       setSaving(false);
@@ -316,6 +320,18 @@ function BrandingEditor() {
       setSaving(false);
       setValidationError("Custom card background must be a valid 6-digit hex code.");
       return;
+    }
+    for (const [label, value] of [
+      ["Main text colour", text_color],
+      ["Muted text colour", muted_text_color],
+      ["Border colour", border_color],
+      ["Primary button text colour", primary_text_color],
+    ] as const) {
+      if (value && !HEX_RE.test(value)) {
+        setSaving(false);
+        setValidationError(`${label} must be a valid 6-digit hex code.`);
+        return;
+      }
     }
 
     const fullPayload: Record<string, unknown> = {
@@ -330,10 +346,16 @@ function BrandingEditor() {
       page_background_key: page_background_key || null,
       page_background_color: page_background_color || null,
       card_background_color: card_background_color || null,
+      text_color: text_color || null,
+      muted_text_color: muted_text_color || null,
+      border_color: border_color || null,
+      primary_text_color: primary_text_color || null,
     };
 
-    const SELECT_COLS =
+    const NEW_TEXT_COLS = "text_color, muted_text_color, border_color, primary_text_color";
+    const BASE_SELECT_COLS =
       "logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color";
+    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}`;
 
     // 1. Re-check existence from the DB (don't rely on stale bundle.hasBranding).
     const { data: existing, error: existingErr } = await supabase
