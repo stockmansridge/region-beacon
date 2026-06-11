@@ -704,7 +704,10 @@ function BrandingEditor() {
           {form.palette_key === "custom" && (
             <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
               <div>
-                <div className="text-sm font-semibold">Custom brand colours</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+                  Advanced — custom colours
+                </div>
+                <div className="mt-1 text-sm font-semibold">Custom brand colours</div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Used as the primary button colour and accent across the public pages. Leave blank to fall back to the GetStampd defaults.
                 </p>
