@@ -4865,12 +4865,14 @@ function EventSetupWarnings({
   hasTerms,
   hasVenues,
   eventId,
+  isFreePlan,
 }: {
   status: string;
   domains: Domain[];
   hasTerms: boolean;
   hasVenues: boolean;
   eventId: string;
+  isFreePlan: boolean;
 }) {
   const activeSub = domains.find(
     (d) => d.domain_type === "event_subdomain" && d.status === "active",
