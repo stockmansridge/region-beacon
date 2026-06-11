@@ -211,16 +211,32 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             </p>
           )}
 
-          {venue.offer_summary && (
-            <div className="mt-5 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
-                Offers
+          {venue.offer_summary && (() => {
+            const OfferIcon = resolveOfferIcon(venue.offer_display_icon);
+            const badgeStyle = resolveOfferBadgeStyle(
+              venue.offer_display_colour,
+              venue.offer_display_foreground_colour,
+            );
+            return (
+              <div className="mt-5 flex gap-3 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-4">
+                <span
+                  className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full"
+                  style={badgeStyle}
+                  aria-hidden
+                >
+                  <OfferIcon className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+                    Offer
+                  </div>
+                  <p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-body,#3D372C)]">
+                    {venue.offer_summary}
+                  </p>
+                </div>
               </div>
-              <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-body,#3D372C)]">
-                {venue.offer_summary}
-              </p>
-            </div>
-          )}
+            );
+          })()}
 
           <div className="mt-6 space-y-2">
             {(() => {
