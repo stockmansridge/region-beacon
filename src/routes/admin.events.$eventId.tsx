@@ -443,6 +443,21 @@ function EventDetail() {
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [planCode, setPlanCode] = useState<string>("free");
+  const isFreePlan = planCode === "free";
+  useEffect(() => {
+    let cancelled = false;
+    if (!agencyId) return;
+    (async () => {
+      const { data, error } = await supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId });
+      if (cancelled || error || !data) return;
+      const code = typeof data === "object" && data !== null && "plan_code" in (data as Record<string, unknown>)
+        ? String((data as Record<string, unknown>).plan_code ?? "free")
+        : "free";
+      setPlanCode(code.toLowerCase().replace(/-/g, "_"));
+    })();
+    return () => { cancelled = true; };
+  }, [agencyId]);
   const [activeTab, setActiveTabRaw] = useState<EventTabKey>(() => readTabFromHash());
   const setActiveTab = (next: EventTabKey) => {
     setActiveTabRaw(next);
@@ -2406,6 +2421,7 @@ function EventDetail() {
             hasTerms={!!terms}
             hasVenues={venues.length > 0}
             eventId={event.id}
+            isFreePlan={isFreePlan}
           />
 
           {agency.isPlatformAdmin && diagnosticsEnabled && (
@@ -2560,6 +2576,7 @@ function EventDetail() {
 
           <Section title="Public address" id="section-public-address" tab="overview">
             <PublicAddressCard
+              isFreePlan={isFreePlan}
               agencyId={agencyId}
               eventId={event.id}
               publicSlug={event.public_slug}
@@ -4849,12 +4866,14 @@ function EventSetupWarnings({
   hasTerms,
   hasVenues,
   eventId,
+  isFreePlan,
 }: {
   status: string;
   domains: Domain[];
   hasTerms: boolean;
   hasVenues: boolean;
   eventId: string;
+  isFreePlan: boolean;
 }) {
   const activeSub = domains.find(
     (d) => d.domain_type === "event_subdomain" && d.status === "active",
@@ -4901,15 +4920,23 @@ function EventSetupWarnings({
     items.push({
       tone: "warn",
       title: hasPendingSubdomain
-        ? "Public address reserved — billing activation required"
+        ? (isFreePlan
+            ? "Public address reserved — publish to go live"
+            : "Public address reserved — billing activation required")
         : "Public address not claimed",
       body: hasPendingSubdomain
-        ? "A subdomain has been reserved but is not active. It will go live once billing/activation is complete."
-        : "Choose and reserve a subdomain so visitors can find this event after activation.",
+        ? (isFreePlan
+            ? "Your free event includes a GetStampd subdomain. Publish the event to make this address live and start sharing your passport and QR codes."
+            : "A subdomain has been reserved but is not active. It will go live once billing/activation is complete.")
+        : (isFreePlan
+            ? "Your free event includes a GetStampd subdomain so you can share your passport and generate QR codes. Choose an available address to reserve it."
+            : "Choose and reserve a subdomain so visitors can find this event after activation."),
       action: {
         kind: "anchor",
         href: "#section-public-address",
-        label: hasPendingSubdomain ? "View activation status" : "Choose public address",
+        label: hasPendingSubdomain
+          ? (isFreePlan ? "Review address" : "View activation status")
+          : "Choose public address",
       },
     });
   }
@@ -4932,12 +4959,14 @@ function EventSetupWarnings({
     });
   }
 
-  items.push({
-    tone: "info",
-    title: "Billing activation not configured",
-    body: "Per-event billing/activation will be wired in a later step. This event won't go live publicly until it's activated.",
-    action: { kind: "link", to: "/admin/account", label: "Go to Account & Billing" },
-  });
+  if (!isFreePlan) {
+    items.push({
+      tone: "info",
+      title: "Billing activation not configured",
+      body: "Per-event billing/activation will be wired in a later step. This event won't go live publicly until it's activated.",
+      action: { kind: "link", to: "/admin/account", label: "Go to Account & Billing" },
+    });
+  }
 
   if (items.length === 0) return null;
 
@@ -5022,6 +5051,7 @@ function PublicAddressCard({
   domains,
   canEdit,
   isPlatformAdmin,
+  isFreePlan,
   onChanged,
 }: {
   agencyId: string | null;
@@ -5034,6 +5064,7 @@ function PublicAddressCard({
   domains: Domain[];
   canEdit: boolean;
   isPlatformAdmin: boolean;
+  isFreePlan: boolean;
   onChanged: () => void;
 }) {
   const subdomainRow = domains.find((d) => d.domain_type === "event_subdomain") ?? null;
@@ -5394,8 +5425,11 @@ function PublicAddressCard({
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] text-muted-foreground">
-              Reserving creates a <span className="font-medium">pending</span> address.
-              It activates after billing.
+              {isFreePlan ? (
+                <>Reserving creates a <span className="font-medium">pending</span> address. It goes live the moment you publish the event — your free plan includes the GetStampd subdomain.</>
+              ) : (
+                <>Reserving creates a <span className="font-medium">pending</span> address. It activates after billing.</>
+              )}
             </p>
             <button
               type="button"
@@ -5418,7 +5452,9 @@ function PublicAddressCard({
           {!editing && subdomainRow.status === "pending" && (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm">
-                Pending reservation — will activate once billing/activation is complete.
+                {isFreePlan
+                  ? "Pending reservation — will go live as soon as you publish the event."
+                  : "Pending reservation — will activate once billing/activation is complete."}
               </div>
               <button
                 type="button"
