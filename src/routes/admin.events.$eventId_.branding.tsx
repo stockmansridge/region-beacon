@@ -475,6 +475,28 @@ function BrandingEditor() {
       }
     }
 
+    // Fallback if hero overlay columns are missing on the production DB
+    // (migration `migrations-draft-event-hero-overlay` not yet applied).
+    if (
+      writeErr &&
+      /(hero_overlay_color|hero_overlay_opacity)/i.test(writeErr.message ?? "")
+    ) {
+      console.warn("[branding-save] hero overlay columns missing, retrying without", {
+        message: writeErr.message,
+      });
+      const { hero_overlay_color: _hoc, hero_overlay_opacity: _hoo, ...rest } = payload;
+      payload = rest;
+      SELECT_COLS = SELECT_COLS.replace(`, ${HERO_OVERLAY_COLS}`, "");
+      const retry = await writeRow(payload, mode);
+      savedRow = retry.row;
+      writeErr = retry.error;
+      if (!writeErr && (hero_overlay_color || hero_overlay_opacity_num !== null)) {
+        setSaveError(
+          "Saved core branding. Hero overlay colour/opacity require the database migration in supabase/migrations-draft-event-hero-overlay/.",
+        );
+      }
+    }
+
     if (writeErr) {
       // eslint-disable-next-line no-console
       console.warn("[branding-save] write failed", {
@@ -521,6 +543,13 @@ function BrandingEditor() {
       muted_text_color: saved.muted_text_color ?? muted_text_color ?? "",
       border_color: saved.border_color ?? border_color ?? "",
       primary_text_color: saved.primary_text_color ?? primary_text_color ?? "",
+      hero_overlay_color: saved.hero_overlay_color ?? hero_overlay_color ?? "",
+      hero_overlay_opacity:
+        saved.hero_overlay_opacity != null
+          ? String(saved.hero_overlay_opacity)
+          : hero_overlay_opacity_num != null
+            ? String(hero_overlay_opacity_num)
+            : "",
     });
 
     setSaving(false);
