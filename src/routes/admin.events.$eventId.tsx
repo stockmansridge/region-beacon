@@ -443,6 +443,21 @@ function EventDetail() {
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [planCode, setPlanCode] = useState<string>("free");
+  const isFreePlan = planCode === "free";
+  useEffect(() => {
+    let cancelled = false;
+    if (!agencyId) return;
+    (async () => {
+      const { data, error } = await supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId });
+      if (cancelled || error || !data) return;
+      const code = typeof data === "object" && data !== null && "plan_code" in (data as Record<string, unknown>)
+        ? String((data as Record<string, unknown>).plan_code ?? "free")
+        : "free";
+      setPlanCode(code.toLowerCase().replace(/-/g, "_"));
+    })();
+    return () => { cancelled = true; };
+  }, [agencyId]);
   const [activeTab, setActiveTabRaw] = useState<EventTabKey>(() => readTabFromHash());
   const setActiveTab = (next: EventTabKey) => {
     setActiveTabRaw(next);
