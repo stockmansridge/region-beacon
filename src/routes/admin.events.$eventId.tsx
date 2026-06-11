@@ -3208,6 +3208,8 @@ function EventDetail() {
                         }}
                         nameIsBlank={venueForm.name.trim().length === 0}
                         regionHint={venueRegionHint}
+                        regionHintLabel={venueRegionHintLabel}
+                        venueName={venueForm.name}
                         onChange={(next) =>
                           setVenueForm((prev) => (prev ? { ...prev, ...next } : prev))
                         }
