@@ -971,6 +971,7 @@ function BrandingEditor() {
               mutedTextColor={form.muted_text_color}
               borderColor={form.border_color}
               primaryTextColor={form.primary_text_color}
+              fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
               className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
             >
               <div
@@ -984,14 +985,16 @@ function BrandingEditor() {
                 eventName={event.name}
                 welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
                 primaryColor={(() => {
+                  if (HEX_RE.test(form.primary_color.trim())) return form.primary_color.trim();
                   const p = getPalette(form.palette_key || null);
                   if (p) return p.primary;
-                  return HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : "#1F3D2B";
+                  return "#1F3D2B";
                 })()}
                 accentColor={(() => {
+                  if (HEX_RE.test(form.accent_color.trim())) return form.accent_color.trim();
                   const p = getPalette(form.palette_key || null);
                   if (p) return p.accent;
-                  return HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : "#B5572A";
+                  return "#B5572A";
                 })()}
                 fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
                 venueCount={venueCount}
@@ -1000,7 +1003,14 @@ function BrandingEditor() {
                 heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
                 badge="Preview"
                 termsUrl={null}
+                heroOverlayColor={form.hero_overlay_color || null}
+                heroOverlayOpacity={
+                  form.hero_overlay_opacity.trim()
+                    ? Number(form.hero_overlay_opacity)
+                    : null
+                }
               />
+
               <SemanticPreview
                 venueLabelPlural={resolveVenueLabels({ venue_label_singular: form.venue_label_singular, venue_label_plural: form.venue_label_plural }).plural}
               />
