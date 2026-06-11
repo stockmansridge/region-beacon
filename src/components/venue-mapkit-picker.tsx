@@ -191,17 +191,54 @@ export function VenueMapKitPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Build a Search/Autocomplete instance biased to Australia and (when
+  // available) the current map centre. Apple's Search supports both POI /
+  // business names and partial addresses — biasing the region dramatically
+  // improves match quality for short queries like "Crown" or "The Espy".
+  const buildSearchOptions = useCallback(() => {
+    const mapkit = window.mapkit;
+    if (!mapkit) return null;
+    // Continental AU bounding box (covers Tas + mainland; excludes external territories).
+    const auRegion = new mapkit.CoordinateRegion(
+      new mapkit.Coordinate(-25.2744, 133.7751),
+      new mapkit.CoordinateSpan(40, 45),
+    );
+    const opts: Record<string, unknown> = {
+      language: "en-AU",
+      region: auRegion,
+    };
+    // If the map has been moved by the user, prefer their current centre as
+    // a tighter hint while keeping the AU region constraint.
+    try {
+      const centre = mapRef.current?.center;
+      if (centre && typeof centre.latitude === "number") {
+        opts.coordinate = new mapkit.Coordinate(centre.latitude, centre.longitude);
+      }
+    } catch { /* ignore */ }
+    return opts;
+  }, []);
+
   const runSearch = useCallback(async () => {
     const mapkit = window.mapkit;
-    if (!mapkit || !searchQuery.trim()) return;
+    const q = searchQuery.trim();
+    if (!mapkit || !q) return;
+    setSearchAttempted(true);
+    setSearchError(null);
     setSearching(true);
     try {
-      const search = new mapkit.Search({ language: "en-AU" });
-      search.search(searchQuery.trim(), (err: any, data: any) => {
+      const opts = buildSearchOptions() ?? { language: "en-AU" };
+      const search = new mapkit.Search(opts);
+      search.search(q, (err: any, data: any) => {
         setSearching(false);
-        if (err) return;
-        const items = (data?.places ?? []).slice(0, 8).map((p: any, i: number) => ({
-          id: `${i}-${p.name}`,
+        if (err) {
+          setResults([]);
+          setSearchError(
+            "We couldn't reach Apple Maps just now. Try again, or set the address and lat/lng manually below.",
+          );
+          return;
+        }
+        const items = (data?.places ?? []).slice(0, 10).map((p: any, i: number) => ({
+          id: `${i}-${p.name ?? p.formattedAddress ?? "result"}`,
           name: p.name ?? "",
           address: p.formattedAddress ?? "",
           lat: p.coordinate?.latitude ?? 0,
@@ -211,8 +248,69 @@ export function VenueMapKitPicker({
       });
     } catch {
       setSearching(false);
+      setResults([]);
+      setSearchError("Search failed. Try again, or set the address manually below.");
     }
-  }, [searchQuery]);
+  }, [searchQuery, buildSearchOptions]);
+
+  // Debounced live autocomplete as the user types. Falls back to runSearch
+  // if the SDK doesn't expose autocomplete (older MapKit builds).
+  useEffect(() => {
+    if (status !== "ready") return;
+    const mapkit = window.mapkit;
+    if (!mapkit) return;
+    const q = searchQuery.trim();
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (q.length < 2) {
+      setResults([]);
+      setSearchError(null);
+      setSearchAttempted(false);
+      return;
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      setSearchAttempted(true);
+      setSearchError(null);
+      const opts = buildSearchOptions() ?? { language: "en-AU" };
+      try {
+        const search = new mapkit.Search(opts);
+        // Prefer autocomplete when available — it returns POI + address
+        // suggestions for partial input far better than full search.
+        if (typeof search.autocomplete === "function") {
+          search.autocomplete(q, (err: any, data: any) => {
+            if (err) return;
+            const items = (data?.results ?? []).slice(0, 10).map((r: any, i: number) => {
+              const coord = r.coordinate ?? r.place?.coordinate ?? null;
+              return {
+                id: `ac-${i}-${r.displayLines?.join("|") ?? r.formattedAddress ?? ""}`,
+                name: r.displayLines?.[0] ?? r.place?.name ?? "",
+                address: r.displayLines?.slice(1).join(", ") ?? r.formattedAddress ?? r.place?.formattedAddress ?? "",
+                lat: coord?.latitude ?? 0,
+                lng: coord?.longitude ?? 0,
+              };
+            });
+            // Autocomplete results without coordinates can't be picked
+            // directly — drop those.
+            setResults(items.filter((x: { lat: number; lng: number }) => x.lat !== 0 || x.lng !== 0));
+          });
+        } else {
+          search.search(q, (err: any, data: any) => {
+            if (err) return;
+            const items = (data?.places ?? []).slice(0, 10).map((p: any, i: number) => ({
+              id: `${i}-${p.name ?? p.formattedAddress ?? "result"}`,
+              name: p.name ?? "",
+              address: p.formattedAddress ?? "",
+              lat: p.coordinate?.latitude ?? 0,
+              lng: p.coordinate?.longitude ?? 0,
+            }));
+            setResults(items);
+          });
+        }
+      } catch { /* ignore */ }
+    }, 280);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery, status, buildSearchOptions]);
 
   const pickResult = (r: { name: string; address: string; lat: number; lng: number }) => {
     const next: Partial<VenueMapKitValue> = {
@@ -224,6 +322,7 @@ export function VenueMapKitPicker({
     onChange(next);
     placeMarker(r.lat, r.lng);
     setResults([]);
+    setSearchAttempted(false);
   };
 
   return (
