@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-// Use the browser entry directly — it avoids `node:fs` (imported by the
-// default entry) and is bundled into the admin chunk so we don't depend on
-// a fragile dynamic import that can 404 after a redeploy with a new hash.
-// @ts-expect-error — qrcode types only describe the default entry; the browser entry has the same toDataURL surface.
-import QRCode from "qrcode/lib/browser";
+// IMPORTANT: do NOT statically import `qrcode` (or any of its subpaths) at
+// module scope. The package's main entry imports `node:fs`, which crashes
+// the Cloudflare Worker SSR bundle ("No such module node:fs") and takes
+// down the entire /admin route. The QR renderer must be loaded lazily,
+// inside an effect, and only in the browser.
 import { generateQrPosterPdf, type PosterInput } from "@/lib/qr-poster";
 import { normaliseQrUrl } from "@/lib/qr-url";
 
