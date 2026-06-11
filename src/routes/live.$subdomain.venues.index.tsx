@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Check, Circle, MapPin, Gift, Navigation } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
@@ -48,6 +50,7 @@ type EventRow = {
   page_background_key?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
+  logo_path?: string | null;
 };
 
 type State =
@@ -120,12 +123,13 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
 
   const { event, venues } = state;
   const labels = resolveVenueLabels(event ?? {});
+  const logoUrl = getEventAssetPublicUrl(event?.logo_path ?? null);
 
   return (
     <EventPaletteScope
       paletteKey={event?.palette_key ?? null}
       backgroundKey={event?.page_background_key ?? null}
-      className="min-h-screen px-4 py-6"
+      className="min-h-screen px-4 pb-10"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
@@ -133,26 +137,10 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
         eventName={event?.name}
         primaryColor={event?.primary_color}
         accentColor={event?.accent_color}
+        logoUrl={logoUrl}
         eventId={event?.event_id ?? null}
       />
       <div className="mx-auto max-w-md">
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-muted,#8A7E66)]">
-              Trail
-            </p>
-            <h1 className="mt-1 truncate font-trail-serif text-[26px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
-              {labels.plural}
-            </h1>
-          </div>
-          <Link
-            to="/"
-            className="shrink-0 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)] underline-offset-4 hover:underline"
-          >
-            ← Home
-          </Link>
-        </div>
-
         <PublicTrailTabs active="venues" venueLabelPlural={labels.plural} />
 
         {venues.length === 0 ? (
@@ -174,13 +162,14 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                 v.offer_summary.trim().length > 0;
               return (
                 <li key={vid || Math.random()}>
-                  <div className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/50 hover:shadow-md">
-                    <a
-                      href={vid ? `/venues/${vid}` : "#"}
+                  <div className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md">
+                    <Link
+                      to="/venues/$venueId"
+                      params={{ venueId: vid }}
                       aria-label={`View ${v.name ?? "venue"} details`}
-                      className="flex items-stretch gap-3 p-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                      className="flex items-stretch gap-3 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
                     >
-                      <Thumb path={v.cover_path ?? v.logo_path} />
+                      <Thumb path={v.cover_path ?? v.logo_path} visited={visited} />
                       <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
                         <div className="min-w-0">
                           <div className="flex items-start justify-between gap-2">
@@ -196,16 +185,16 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                           )}
                         </div>
                         {hasOffer && (
-                          <div className="mt-1.5">
+                          <div className="mt-2">
                             <span
-                              className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.14em]"
+                              className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
                               style={{
                                 backgroundColor:
-                                  "color-mix(in oklab, var(--event-accent, var(--event-primary, #1F3D2B)) 16%, transparent)",
+                                  "color-mix(in oklab, var(--event-accent, var(--event-primary, #1F3D2B)) 18%, transparent)",
                                 color: "var(--event-primary,#1F3D2B)",
                               }}
                             >
-                              <span aria-hidden>🎁</span>
+                              <Gift className="h-3 w-3" aria-hidden />
                               <span className="truncate">
                                 {v.offer_summary!.split("\n")[0].slice(0, 40)}
                               </span>
@@ -213,16 +202,17 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                           </div>
                         )}
                       </div>
-                    </a>
+                    </Link>
                     {directionsUrl && (
                       <a
                         href={directionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-between border-t border-[var(--event-border,#E6DCC7)] px-3 py-2 text-[12px] font-medium text-[var(--event-primary,#1F3D2B)] hover:bg-[var(--event-primary,#1F3D2B)]/5"
+                        className="flex items-center justify-between border-t border-[var(--event-border,#E6DCC7)] px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--event-primary,#1F3D2B)] transition hover:bg-[var(--event-primary,#1F3D2B)]/5"
                       >
-                        <span className="inline-flex items-center gap-1.5">
-                          <span aria-hidden>📍</span> Get directions
+                        <span className="inline-flex items-center gap-2">
+                          <Navigation className="h-3.5 w-3.5" aria-hidden />
+                          Get directions
                         </span>
                         <span aria-hidden className="text-[var(--event-muted,#8A7E66)]">
                           ↗
@@ -246,39 +236,57 @@ function VisitedBadge({ visited }: { visited: boolean }) {
   if (visited) {
     return (
       <span
-        className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--event-card-bg,#FBF5E8)]"
+        className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary-fg,#F6EFE2)]"
         title="Visited"
       >
-        ✓ Visited
+        <Check className="h-3 w-3" aria-hidden /> Visited
       </span>
     );
   }
   return (
     <span
-      className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-[var(--event-muted,#8A7E66)] text-[10px] text-[var(--event-muted,#8A7E66)]"
-      title="Not visited"
-      aria-label="Not visited"
+      className="shrink-0 inline-flex items-center gap-1 rounded-full border border-dashed border-[var(--event-muted,#8A7E66)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]"
+      title="Not visited yet"
     >
-      ○
+      <Circle className="h-2.5 w-2.5" aria-hidden /> Not yet
     </span>
   );
 }
 
-function Thumb({ path }: { path: string | null }) {
+function Thumb({ path, visited }: { path: string | null; visited: boolean }) {
   const url = getVenueAssetPublicUrl(path);
-  if (!url) {
-    return (
-      <div className="h-[88px] w-[88px] flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />
-    );
-  }
   return (
-    <div className="h-[88px] w-[88px] flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10">
-      <img
-        src={url}
-        alt=""
-        className="h-full w-full object-cover"
-        loading="lazy"
-      />
+    <div
+      className="relative h-[88px] w-[88px] flex-shrink-0 overflow-hidden rounded-xl"
+      style={{
+        background:
+          "color-mix(in oklab, var(--event-primary,#1F3D2B) 10%, var(--event-card-bg,#FBF5E8))",
+      }}
+    >
+      {url ? (
+        <img
+          src={url}
+          alt=""
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <div className="grid h-full w-full place-items-center text-[var(--event-primary,#1F3D2B)]/40">
+          <MapPin className="h-6 w-6" aria-hidden />
+        </div>
+      )}
+      {visited && (
+        <span
+          aria-hidden
+          className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full shadow"
+          style={{
+            background: "var(--event-primary,#1F3D2B)",
+            color: "var(--event-primary-fg,#F6EFE2)",
+          }}
+        >
+          <Check className="h-3.5 w-3.5" />
+        </span>
+      )}
     </div>
   );
 }
