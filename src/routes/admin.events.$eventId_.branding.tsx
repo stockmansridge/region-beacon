@@ -898,6 +898,13 @@ function BrandingEditor() {
             disabled={!canEdit || saving}
           />
 
+          <HeroOverlayCard
+            form={form}
+            setForm={setForm}
+            disabled={!canEdit || saving}
+          />
+
+
 
           <FontPicker
             value={form.font_family}
