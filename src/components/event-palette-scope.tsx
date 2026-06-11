@@ -70,7 +70,8 @@ export function EventPaletteScope({
     !explicitCurated &&
     !hasCustomPalette &&
     !explicitBackground &&
-    !hasSemanticOverride
+    !hasSemanticOverride &&
+    !fontFamily
   ) {
     return <div className={className}>{children}</div>;
   }
