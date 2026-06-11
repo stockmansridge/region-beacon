@@ -49,14 +49,93 @@ export type VenueMapKitValue = {
   lng: string;
 };
 
+type SearchResult = {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  isAU: boolean;
+  distanceKm: number | null;
+  score: number;
+};
+
+const AU_CENTROID = { lat: -25.2744, lng: 133.7751 };
+
+function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+function placeIsAU(p: any): boolean {
+  const cc = (p?.countryCode ?? "").toString().toUpperCase();
+  if (cc) return cc === "AU";
+  const addr = `${p?.formattedAddress ?? ""} ${p?.country ?? ""}`.toLowerCase();
+  return /australia/.test(addr);
+}
+
+function scorePlace(p: any, query: string, centre: { lat: number; lng: number } | null): SearchResult | null {
+  const lat = p?.coordinate?.latitude;
+  const lng = p?.coordinate?.longitude;
+  if (typeof lat !== "number" || typeof lng !== "number" || (lat === 0 && lng === 0)) return null;
+  const name: string = p?.name ?? "";
+  const address: string = p?.formattedAddress ?? "";
+  const isAU = placeIsAU(p);
+  let score = 0;
+  // Country bias — AU strongly preferred, overseas heavily demoted.
+  score += isAU ? 60 : -80;
+  // Distance from the best-known centre.
+  let distanceKm: number | null = null;
+  if (centre) {
+    distanceKm = haversineKm(centre.lat, centre.lng, lat, lng);
+    if (distanceKm < 25) score += 35;
+    else if (distanceKm < 100) score += 25;
+    else if (distanceKm < 400) score += 12;
+    else if (distanceKm < 1500) score += 4;
+    else if (distanceKm > 5000) score -= 30;
+  }
+  // Name match against query tokens.
+  const qTokens = query.toLowerCase().split(/\s+/).filter((t) => t.length > 1);
+  const nameLc = name.toLowerCase();
+  if (qTokens.length > 0) {
+    const matched = qTokens.filter((t) => nameLc.includes(t)).length;
+    score += Math.round((matched / qTokens.length) * 30);
+    if (nameLc === query.toLowerCase()) score += 10;
+  }
+  // POI/business indicator: poiCategory means an actual place, not a region.
+  if (p?.poiCategory) score += 20;
+  // Looks like an administrative area (city/region) while the query has
+  // multiple words (likely a business name) → demote.
+  const looksAdmin = !p?.poiCategory && !/\d/.test(address) && (p?.administrativeArea || p?.locality) && nameLc === (p?.locality ?? p?.administrativeArea ?? "").toLowerCase();
+  if (looksAdmin && qTokens.length > 1) score -= 25;
+  return {
+    id: `${lat.toFixed(5)},${lng.toFixed(5)}-${name || address}`,
+    name,
+    address,
+    lat,
+    lng,
+    isAU,
+    distanceKm,
+    score,
+  };
+}
+
 export function VenueMapKitPicker({
   value,
   nameIsBlank,
+  regionHint,
   onChange,
   onClose,
 }: {
   value: VenueMapKitValue;
   nameIsBlank: boolean;
+  /** Best-known event/region centre (e.g. averaged from existing venue coordinates). */
+  regionHint?: { lat: number; lng: number } | null;
   onChange: (next: Partial<VenueMapKitValue>) => void;
   onClose: () => void;
 }) {
