@@ -25,6 +25,11 @@ export type TrailLandingProps = {
   badge?: string;
   noAppNote?: string;
   footer?: ReactNode;
+  /** Hex colour painted over the hero image. Defaults to `primaryColor`. */
+  heroOverlayColor?: string | null;
+  /** 0–100. When provided, replaces the default 3-stop gradient with a flat
+   *  overlay of `heroOverlayColor` at this opacity. */
+  heroOverlayOpacity?: number | null;
 };
 
 export function TrailLanding({
