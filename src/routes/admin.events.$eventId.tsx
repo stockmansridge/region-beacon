@@ -5425,8 +5425,11 @@ function PublicAddressCard({
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] text-muted-foreground">
-              Reserving creates a <span className="font-medium">pending</span> address.
-              It activates after billing.
+              {isFreePlan ? (
+                <>Reserving creates a <span className="font-medium">pending</span> address. It goes live the moment you publish the event — your free plan includes the GetStampd subdomain.</>
+              ) : (
+                <>Reserving creates a <span className="font-medium">pending</span> address. It activates after billing.</>
+              )}
             </p>
             <button
               type="button"
