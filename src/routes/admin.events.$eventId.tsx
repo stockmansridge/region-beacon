@@ -5562,46 +5562,20 @@ function PublicAddressCard({
           {!editing && subdomainRow.status === "pending" && (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm">
-                {isFreePlan && eventStatus === "published"
-                  ? "Pending reservation — activate now to make your public site live."
+                {eventStatus !== "published"
+                  ? "Reserved — turn on the public event to activate this address."
                   : isFreePlan
-                    ? "Reserved — will go live as soon as you publish the event."
-                    : "Pending reservation — will activate once billing/activation is complete."}
+                    ? "Ready to activate — click Check / activate subdomain."
+                    : "Pending — click Check / activate subdomain to re-run activation."}
               </div>
               <div className="flex items-center gap-2">
-                {isFreePlan && eventStatus === "published" && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!agencyId) return;
-                      // Server-side activation via SECURITY DEFINER RPC.
-                      const { data, error } = await supabase.rpc("claim_event_subdomain" as never, {
-                        _event_id: eventId,
-                        _subdomain: null,
-                      } as never);
-                      const res = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
-                      console.log("[claim_event_subdomain] activate", {
-                        rpcError: error ? { code: error.code, message: error.message } : null,
-                        response: res,
-                      });
-                      if (error) {
-                        toast.error(`Could not activate: ${error.message} (${error.code ?? "no code"})`);
-                        return;
-                      }
-                      if (!res?.ok) {
-                        toast.error(String(res?.message ?? "Could not activate public address."));
-                        return;
-                      }
-                      toast.success(String(res.message ?? "Public address activated."), {
-                        description: `plan=${res.plan_code} event=${res.event_status} domain=${res.domain_status} activation_attempted=${res.activation_attempted}`,
-                      });
-                      onChanged();
-                    }}
-                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
-                  >
-                    Activate public address
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={recheckSubdomain}
+                  className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+                >
+                  Check / activate subdomain
+                </button>
                 <button
                   type="button"
                   onClick={handleRelease}
@@ -5615,7 +5589,7 @@ function PublicAddressCard({
           )}
           {!editing && subdomainRow.status === "active" && (
             <div className="text-sm text-muted-foreground">
-              You can change this public address at any time using <span className="font-medium">Change address</span> above.
+              Active — your public site is live at this address. You can change it at any time using <span className="font-medium">Change address</span> above.
               The old address will stop working after the change. Changing the address does not turn the event on or off.
             </div>
           )}
