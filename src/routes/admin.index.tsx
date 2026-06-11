@@ -82,18 +82,24 @@ function Dashboard() {
         checkins: checkins.count ?? 0,
         visitors: visitors.count ?? 0,
       });
-      const raw =
-        !planRes.error && planRes.data && typeof planRes.data === "object" && "plan_code" in (planRes.data as Record<string, unknown>)
-          ? String((planRes.data as Record<string, unknown>).plan_code ?? "free")
-          : "free";
-      setPlanCode(raw.toLowerCase().replace(/-/g, "_"));
+      if (!planRes.error && planRes.data && typeof planRes.data === "object") {
+        const d = planRes.data as Record<string, unknown>;
+        setPlanInfo({
+          code: String(d.plan_code ?? "free").toLowerCase().replace(/-/g, "_"),
+          source: d.plan_source != null ? String(d.plan_source) : null,
+          venueLimit: typeof d.venue_limit === "number" ? d.venue_limit : null,
+          manualOverride: d.manual_plan_override != null ? String(d.manual_plan_override) : null,
+          subscriptionCode: d.subscription_plan_code != null ? String(d.subscription_plan_code) : null,
+          fetchedAt: new Date().toISOString(),
+        });
+      }
       setLoading(false);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [agencyId]);
+  }, [agencyId, planRefreshKey]);
 
   const items = [
     {
@@ -126,12 +132,14 @@ function Dashboard() {
     },
   ];
 
-  const currentPlan = getPlanByCode(planCode);
+  const currentPlan = getPlanByCode(planInfo?.code ?? null);
   const venueCount = counts?.venues ?? 0;
   const venueUsageMessage = getVenueUsageMessage(venueCount, currentPlan);
   const nextPlan =
     getNextPlanAfter(currentPlan.code) ?? getNextPlanForVenueCount(venueCount);
-  const limit = currentPlan.venueLimit;
+  // Trust the RPC's venue_limit (null = unlimited, e.g. Enterprise); fall
+  // back to the static plan table only before the RPC has resolved.
+  const limit = planInfo ? planInfo.venueLimit : currentPlan.venueLimit;
 
   let venueNotice: { tone: "info" | "warn" | "danger"; message: string } | null = null;
   if (limit !== null) {
