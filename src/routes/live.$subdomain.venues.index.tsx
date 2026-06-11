@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, Circle, MapPin, Navigation } from "lucide-react";
+import { Check, Stamp, MapPin, Navigation } from "lucide-react";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
@@ -12,6 +12,7 @@ import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicTrailTabs } from "@/components/public-trail-tabs";
+import { PassportProgressCard } from "@/components/passport-progress-card";
 import { tenantHost } from "@/lib/domains";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
@@ -41,6 +42,7 @@ type VenueRow = {
   offer_display_icon: string | null;
   offer_display_colour: string | null;
   offer_display_foreground_colour: string | null;
+  points_value?: number | null;
   order_index: number | null;
   event_found: boolean | null;
 };
@@ -65,7 +67,6 @@ type State =
 export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +129,9 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
   const { event, venues } = state;
   const labels = resolveVenueLabels(event ?? {});
   const logoUrl = getEventAssetPublicUrl(event?.logo_path ?? null);
+  const pointsEnabled = venues.some(
+    (v) => typeof v.points_value === "number" && (v.points_value ?? 0) > 0,
+  );
 
   return (
     <EventPaletteScope
@@ -145,14 +149,20 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
         eventId={event?.event_id ?? null}
       />
       <div className="mx-auto max-w-md">
-        <PublicTrailTabs active="venues" venueLabelPlural={labels.plural} />
+        <PassportProgressCard
+          eventId={event?.event_id ?? null}
+          venueLabelPlural={labels.plural}
+        />
+        <div className="mt-4">
+          <PublicTrailTabs active="venues" venueLabelPlural={labels.plural} />
+        </div>
 
         {venues.length === 0 ? (
           <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
             No {labels.plural.toLowerCase()} listed yet. Check back soon.
           </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {venues.map((v) => {
               const vid = v.venue_id ?? "";
               const visited = vid ? visitedIds.has(vid) : false;
@@ -164,6 +174,8 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
               const hasOffer =
                 typeof v.offer_summary === "string" &&
                 v.offer_summary.trim().length > 0;
+              const points = v.points_value ?? 0;
+              const showPoints = pointsEnabled && points > 0;
               return (
                 <li key={vid || Math.random()}>
                   <div className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md">
@@ -171,63 +183,78 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                       to="/venues/$venueId"
                       params={{ venueId: vid }}
                       aria-label={`View ${v.name ?? "venue"} details`}
-                      className="flex items-stretch gap-3 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                      className="grid grid-cols-[42%_1fr] items-stretch focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
                     >
-                      <Thumb path={v.cover_path ?? v.logo_path} visited={visited} />
-                      <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
+                      <HeroThumb
+                        path={v.cover_path ?? v.logo_path}
+                        visited={visited}
+                      />
+                      <div className="flex min-w-0 flex-col justify-between p-3.5">
                         <div className="min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="truncate font-trail-serif text-[17px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
-                              {v.name ?? "Unnamed"}
-                            </p>
-                            <VisitedBadge visited={visited} />
-                          </div>
+                          <p className="line-clamp-2 font-trail-serif text-[17px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+                            {v.name ?? "Unnamed"}
+                          </p>
                           {v.description && (
-                            <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
+                            <p className="mt-1.5 line-clamp-3 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
                               {v.description}
                             </p>
                           )}
-                        </div>
-                        {hasOffer && (() => {
-                          const OfferIcon = resolveOfferIcon(v.offer_display_icon);
-                          const badgeStyle = resolveOfferBadgeStyle(
-                            v.offer_display_colour,
-                            v.offer_display_foreground_colour,
-                          );
-                          return (
-                            <div className="mt-2">
-                              <span
-                                className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                                style={{
-                                  backgroundColor: badgeStyle.background,
-                                  color: badgeStyle.color,
-                                }}
-                              >
-                                <OfferIcon className="h-3 w-3" aria-hidden />
-                                <span className="truncate">
-                                  {v.offer_summary!.split("\n")[0].slice(0, 40)}
+                          {hasOffer && (() => {
+                            const OfferIcon = resolveOfferIcon(v.offer_display_icon);
+                            const badgeStyle = resolveOfferBadgeStyle(
+                              v.offer_display_colour,
+                              v.offer_display_foreground_colour,
+                            );
+                            return (
+                              <div className="mt-2">
+                                <span
+                                  className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                                  style={{
+                                    backgroundColor: badgeStyle.background,
+                                    color: badgeStyle.color,
+                                  }}
+                                >
+                                  <OfferIcon className="h-3 w-3" aria-hidden />
+                                  <span className="truncate">
+                                    {v.offer_summary!.split("\n")[0].slice(0, 40)}
+                                  </span>
                                 </span>
-                              </span>
-                            </div>
-                          );
-                        })()}
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </Link>
-                    {directionsUrl && (
-                      <a
-                        href={directionsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between border-t border-[var(--event-border,#E6DCC7)] px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--event-primary,#1F3D2B)] transition hover:bg-[var(--event-primary,#1F3D2B)]/5"
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <Navigation className="h-3.5 w-3.5" aria-hidden />
-                          Get directions
-                        </span>
-                        <span aria-hidden className="text-[var(--event-muted,#8A7E66)]">
-                          ↗
-                        </span>
-                      </a>
+                    {(directionsUrl || showPoints) && (
+                      <div className="flex items-center justify-between gap-2 border-t border-[var(--event-border,#E6DCC7)] px-3 py-2.5">
+                        {directionsUrl ? (
+                          <a
+                            href={directionsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--event-primary,#1F3D2B)] transition hover:underline"
+                          >
+                            <Navigation className="h-3.5 w-3.5" aria-hidden />
+                            Get directions
+                          </a>
+                        ) : (
+                          <span />
+                        )}
+                        {showPoints && (
+                          <span
+                            className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+                            style={{ color: "var(--event-muted,#8A7E66)" }}
+                          >
+                            {visited ? (
+                              <span style={{ color: "var(--event-primary,#1F3D2B)" }}>
+                                {points} pts earned
+                              </span>
+                            ) : (
+                              <>Visit to earn {points} pts</>
+                            )}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </li>
@@ -242,32 +269,11 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
   );
 }
 
-function VisitedBadge({ visited }: { visited: boolean }) {
-  if (visited) {
-    return (
-      <span
-        className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary-fg,#F6EFE2)]"
-        title="Visited"
-      >
-        <Check className="h-3 w-3" aria-hidden /> Visited
-      </span>
-    );
-  }
-  return (
-    <span
-      className="shrink-0 inline-flex items-center gap-1 rounded-full border border-dashed border-[var(--event-muted,#8A7E66)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]"
-      title="Not visited yet"
-    >
-      <Circle className="h-2.5 w-2.5" aria-hidden /> Not yet
-    </span>
-  );
-}
-
-function Thumb({ path, visited }: { path: string | null; visited: boolean }) {
+function HeroThumb({ path, visited }: { path: string | null; visited: boolean }) {
   const url = getVenueAssetPublicUrl(path);
   return (
     <div
-      className="relative h-[88px] w-[88px] flex-shrink-0 overflow-hidden rounded-xl"
+      className="relative aspect-[4/5] min-h-full w-full overflow-hidden"
       style={{
         background:
           "color-mix(in oklab, var(--event-primary,#1F3D2B) 10%, var(--event-card-bg,#FBF5E8))",
@@ -277,26 +283,40 @@ function Thumb({ path, visited }: { path: string | null; visited: boolean }) {
         <img
           src={url}
           alt=""
-          className="h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
           loading="lazy"
         />
       ) : (
-        <div className="grid h-full w-full place-items-center text-[var(--event-primary,#1F3D2B)]/40">
-          <MapPin className="h-6 w-6" aria-hidden />
+        <div className="absolute inset-0 grid place-items-center text-[var(--event-primary,#1F3D2B)]/35">
+          <MapPin className="h-9 w-9" aria-hidden />
         </div>
       )}
-      {visited && (
-        <span
-          aria-hidden
-          className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full shadow"
-          style={{
-            background: "var(--event-primary,#1F3D2B)",
-            color: "var(--event-primary-fg,#F6EFE2)",
-          }}
-        >
-          <Check className="h-3.5 w-3.5" />
-        </span>
-      )}
+      {/* Icon-only visited / not-yet indicator */}
+      <span
+        aria-label={visited ? "Visited" : "Not visited yet"}
+        title={visited ? "Visited" : "Not visited yet"}
+        className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full shadow"
+        style={
+          visited
+            ? {
+                background: "var(--event-primary,#1F3D2B)",
+                color: "var(--event-primary-fg,#F6EFE2)",
+              }
+            : {
+                background:
+                  "color-mix(in oklab, var(--event-card-bg,#FBF5E8) 80%, transparent)",
+                color: "var(--event-muted,#8A7E66)",
+                border:
+                  "1px dashed color-mix(in oklab, var(--event-muted,#8A7E66) 60%, transparent)",
+              }
+        }
+      >
+        {visited ? (
+          <Check className="h-4 w-4" aria-hidden />
+        ) : (
+          <Stamp className="h-4 w-4" aria-hidden />
+        )}
+      </span>
     </div>
   );
 }
