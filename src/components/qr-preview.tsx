@@ -125,7 +125,23 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
   }
 
   if (error) {
-    return <p className="text-xs text-destructive">{error}</p>;
+    return (
+      <div className="flex flex-col items-start gap-2 text-xs">
+        <p className="text-destructive">{error}</p>
+        <p className="text-muted-foreground">
+          You can still copy or open the QR link using the buttons above.
+        </p>
+        {stale && (
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+          >
+            Reload page
+          </button>
+        )}
+      </div>
+    );
   }
   if (!dataUrl) {
     return (
