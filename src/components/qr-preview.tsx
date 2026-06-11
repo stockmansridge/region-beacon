@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-// qrcode is loaded lazily inside the effect — it imports `node:fs`
-// transitively, which Cloudflare Workers cannot resolve at SSR time.
+// Use the browser entry directly — it avoids `node:fs` (imported by the
+// default entry) and is bundled into the admin chunk so we don't depend on
+// a fragile dynamic import that can 404 after a redeploy with a new hash.
+// @ts-expect-error — qrcode types only describe the default entry; the browser entry has the same toDataURL surface.
+import QRCode from "qrcode/lib/browser";
 import { generateQrPosterPdf, type PosterInput } from "@/lib/qr-poster";
 import { normaliseQrUrl } from "@/lib/qr-url";
 
@@ -29,6 +32,13 @@ type Props = {
   };
 };
 
+function isStaleChunkError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(
+    msg,
+  );
+}
+
 /**
  * Renders a QR code image from a URL, with a Download PNG action.
  * Generation happens entirely in the browser; nothing is stored or uploaded.
@@ -37,46 +47,48 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
   const normalisedValue = normaliseQrUrl(value);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [stale, setStale] = useState(false);
   const [posterBusy, setPosterBusy] = useState(false);
   const [posterError, setPosterError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setError(null);
+    setStale(false);
     setDataUrl(null);
     if (!normalisedValue) {
-      // Nothing to encode — show a friendly empty state instead of erroring.
       setError("No QR value yet.");
       return;
     }
     // Render at 4x for a crisp downloadable PNG.
-    import("qrcode")
-      .then((m) => (m.default ?? m))
-      .then((QRCode) =>
-        QRCode.toDataURL(normalisedValue, {
-          errorCorrectionLevel: "M",
-          margin: 2,
-          width: size * 4,
-          color: { dark: "#000000", light: "#ffffff" },
-        }),
-      )
+    QRCode.toDataURL(normalisedValue, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: size * 4,
+      color: { dark: "#000000", light: "#ffffff" },
+    })
       .then((url: string) => {
         if (!cancelled) setDataUrl(url);
       })
       .catch((err: unknown) => {
-        // Surface the underlying error so admins/devs can diagnose
-        // failures (e.g. capacity overflow, missing dynamic import).
         // eslint-disable-next-line no-console
         console.error("[qr-preview] failed to render QR", { value: normalisedValue, err });
-        if (!cancelled) {
+        if (cancelled) return;
+        if (isStaleChunkError(err)) {
+          setStale(true);
+          setError(
+            "An updated version of GetStampd is available. Refresh this page to reload the latest admin tools.",
+          );
+        } else {
           const msg = err instanceof Error ? err.message : String(err);
-          setError(`Could not render QR code${msg ? `: ${msg}` : "."}`);
+          setError(`QR preview could not load${msg ? `: ${msg}` : "."}`);
         }
       });
     return () => {
       cancelled = true;
     };
   }, [normalisedValue, size]);
+
 
 
   function downloadPng() {
@@ -113,7 +125,23 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
   }
 
   if (error) {
-    return <p className="text-xs text-destructive">{error}</p>;
+    return (
+      <div className="flex flex-col items-start gap-2 text-xs">
+        <p className="text-destructive">{error}</p>
+        <p className="text-muted-foreground">
+          You can still copy or open the QR link using the buttons above.
+        </p>
+        {stale && (
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+          >
+            Reload page
+          </button>
+        )}
+      </div>
+    );
   }
   if (!dataUrl) {
     return (
