@@ -695,6 +695,29 @@ export function VenueMapKitPicker({
               {searching ? "Searching…" : "Search"}
             </button>
           </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={townHint}
+              onChange={(e) => setTownHint(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
+              placeholder={regionHintLabel ? `Town / region hint (e.g. ${regionHintLabel})` : "Town / region hint (e.g. Orange NSW)"}
+              className="h-8 flex-1 rounded-md border bg-background px-3 text-xs"
+              disabled={status !== "ready"}
+            />
+            <button
+              type="button"
+              onClick={() => setShowSearchDiag((v) => !v)}
+              className="text-[11px] text-muted-foreground underline underline-offset-2"
+            >
+              {showSearchDiag ? "Hide" : "Diagnostics"}
+            </button>
+          </div>
+          {!townHint && !regionHint && !regionHintLabel && (
+            <p className="text-[11px] text-muted-foreground">
+              Tip: add a town or region (e.g. "Orange NSW") to dramatically improve local results.
+            </p>
+          )}
 
           {results.length > 0 && (
             <ul className="max-h-56 overflow-auto rounded-md border divide-y text-sm">
