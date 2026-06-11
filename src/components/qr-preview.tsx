@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-// Use the browser entry directly — it avoids `node:fs` (imported by the
-// default entry) and is bundled into the admin chunk so we don't depend on
-// a fragile dynamic import that can 404 after a redeploy with a new hash.
-// @ts-expect-error — qrcode types only describe the default entry; the browser entry has the same toDataURL surface.
-import QRCode from "qrcode/lib/browser";
+// IMPORTANT: do NOT statically import `qrcode` (or any of its subpaths) at
+// module scope. The package's main entry imports `node:fs`, which crashes
+// the Cloudflare Worker SSR bundle ("No such module node:fs") and takes
+// down the entire /admin route. The QR renderer must be loaded lazily,
+// inside an effect, and only in the browser.
 import { generateQrPosterPdf, type PosterInput } from "@/lib/qr-poster";
 import { normaliseQrUrl } from "@/lib/qr-url";
 
@@ -60,17 +60,23 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
       setError("No QR value yet.");
       return;
     }
-    // Render at 4x for a crisp downloadable PNG.
-    QRCode.toDataURL(normalisedValue, {
-      errorCorrectionLevel: "M",
-      margin: 2,
-      width: size * 4,
-      color: { dark: "#000000", light: "#ffffff" },
-    })
-      .then((url: string) => {
+    // Client-only dynamic import: the qrcode package's default entry
+    // imports `node:fs`, which crashes the Worker SSR bundle. Guarding on
+    // `window` and lazy-importing keeps it out of the server graph entirely.
+    if (typeof window === "undefined") return;
+    (async () => {
+      try {
+        const mod = (await import("qrcode")) as unknown as { default?: typeof import("qrcode") } & typeof import("qrcode");
+        const QRCode = mod.default ?? mod;
+        // Render at 4x for a crisp downloadable PNG.
+        const url = await QRCode.toDataURL(normalisedValue, {
+          errorCorrectionLevel: "M",
+          margin: 2,
+          width: size * 4,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
         if (!cancelled) setDataUrl(url);
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         // eslint-disable-next-line no-console
         console.error("[qr-preview] failed to render QR", { value: normalisedValue, err });
         if (cancelled) return;
@@ -83,7 +89,8 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
           const msg = err instanceof Error ? err.message : String(err);
           setError(`QR preview could not load${msg ? `: ${msg}` : "."}`);
         }
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
