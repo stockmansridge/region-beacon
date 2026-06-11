@@ -1543,6 +1543,32 @@ function EventDetail() {
       patch.offer_summary = offerSummary === "" ? null : offerSummary;
     }
 
+    // Offer display configuration — feature-detect. Always send (even when
+    // empty) so admins can clear values once the migration is applied.
+    if (bundle.offerDisplaySupported) {
+      const icon = venueForm.offer_display_icon.trim();
+      const bg = venueForm.offer_display_colour.trim();
+      const fg = venueForm.offer_display_foreground_colour.trim();
+      if (icon !== "" && !(OFFER_DISPLAY_ICONS as readonly string[]).includes(icon)) {
+        setVenueValidationError("Please choose a valid offer icon.");
+        setVenueSaving(false);
+        return;
+      }
+      if (bg !== "" && !isValidHex(bg)) {
+        setVenueValidationError("Offer background colour must be a hex like #1F3D2B.");
+        setVenueSaving(false);
+        return;
+      }
+      if (fg !== "" && !isValidHex(fg)) {
+        setVenueValidationError("Offer foreground colour must be a hex like #FFFFFF.");
+        setVenueSaving(false);
+        return;
+      }
+      patch.offer_display_icon = icon === "" ? null : icon;
+      patch.offer_display_colour = bg === "" ? null : bg;
+      patch.offer_display_foreground_colour = fg === "" ? null : fg;
+    }
+
     const payloadKeys = Object.keys(patch);
     const failVenueSave = (debug: VenueSaveDebug) => {
       console.error("[venue-save] failed", debug);
