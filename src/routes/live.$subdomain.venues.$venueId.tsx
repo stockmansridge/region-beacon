@@ -12,6 +12,7 @@ import { tenantHost } from "@/lib/domains";
 import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
@@ -27,6 +28,9 @@ type VenueRow = {
   name: string;
   description: string | null;
   offer_summary: string | null;
+  offer_display_icon: string | null;
+  offer_display_colour: string | null;
+  offer_display_foreground_colour: string | null;
   address: string | null;
   website_url: string | null;
   phone: string | null;
