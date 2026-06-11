@@ -5467,6 +5467,7 @@ function PublicAddressCard({
                 agencyId={agencyId}
                 eventId={eventId}
                 isLive={isLivePublished}
+                hasPendingSubdomain={subdomainRow?.status === "pending"}
                 onChanged={onChanged}
               />
             )}
