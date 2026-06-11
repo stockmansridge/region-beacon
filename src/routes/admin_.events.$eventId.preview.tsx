@@ -62,6 +62,24 @@ function EventPreview() {
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
 
+  const storageKey = `getstampd_admin_preview_notice_dismissed_${eventId}`;
+  const [noticeDismissed, setNoticeDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem(storageKey) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissNotice = () => {
+    setNoticeDismissed(true);
+    try {
+      sessionStorage.setItem(storageKey, "true");
+    } catch {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     if (auth.status === "unauthenticated") {
       navigate({ to: "/admin/login", replace: true });
