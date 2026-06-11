@@ -255,7 +255,7 @@ function Dashboard() {
           title, for platform admins ALWAYS (not behind the Diagnostics
           toggle) and for anyone with Diagnostics ON. Never hidden by RPC
           errors, missing data, plan value or admin status. */}
-      {(agency.isPlatformAdmin || diagnosticsEnabled) && (
+      {diagnosticsEnabled && (
         <div className="mb-5 rounded-[12px] border-2 border-[#DC2626] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#475569] shadow-[0_4px_16px_rgba(220,38,38,0.18)]">
           <div className="mb-1 text-sm font-bold text-[#B91C1C]">LIVE BUILD / PLAN DEBUG</div>
           {rpcFailed && (
