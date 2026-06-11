@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, Circle, MapPin, Gift, Navigation } from "lucide-react";
+import { Check, Circle, MapPin, Navigation } from "lucide-react";
+import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
@@ -37,6 +38,9 @@ type VenueRow = {
   lat: number | null;
   lng: number | null;
   offer_summary: string | null;
+  offer_display_icon: string | null;
+  offer_display_colour: string | null;
+  offer_display_foreground_colour: string | null;
   order_index: number | null;
   event_found: boolean | null;
 };
