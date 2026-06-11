@@ -8,7 +8,8 @@
  * only apply to the (unused) toml.
  *
  * Output location depends on Nitro version / preset:
- *   - newer Nitro:   .output/wrangler.json   (with .output/server/*)
+ *   - current Nitro: .output/server/wrangler.json
+ *   - some versions: .output/wrangler.json
  *   - older preset:  dist/server/wrangler.json
  * We patch whichever exists.
  *
