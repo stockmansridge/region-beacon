@@ -9,6 +9,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/live/$subdomain/awards")({
   head: () => ({ meta: [{ title: "Awards" }] }),
@@ -95,6 +96,9 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
           subdomain={subdomain}
           eventName={eventInfo.event_name ?? "Event"}
           eventId={eventInfo.event_id}
+          logoUrl={getEventAssetPublicUrl(branding.logoPath)}
+          primaryColor={branding.primaryColor}
+          accentColor={branding.accentColor}
         />
       </div>
 

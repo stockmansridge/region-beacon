@@ -9,6 +9,7 @@ import { matchRootDomain } from "@/lib/domains";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/scan")({
   head: () => ({ meta: [{ title: "Scan venue QR" }] }),
@@ -52,6 +53,8 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   const [eventId, setEventId] = useState<string | null>(null);
   const [paletteKey, setPaletteKey] = useState<string | null>(null);
   const [backgroundKey, setBackgroundKey] = useState<string | null>(null);
+  const [eventName, setEventName] = useState<string | null>(null);
+  const [logoPath, setLogoPath] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -60,11 +63,13 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       const host = tenantHost(subdomain);
       const { data } = await supabase.rpc("get_public_event_by_domain", { _hostname: host });
       if (cancelled) return;
-      const evt = (data?.[0] ?? null) as { event_id?: string; palette_key?: string | null; page_background_key?: string | null } | null;
+      const evt = (data?.[0] ?? null) as { event_id?: string; name?: string; logo_path?: string | null; palette_key?: string | null; page_background_key?: string | null } | null;
       const eid = evt?.event_id ?? null;
       setEventId(eid);
       setPaletteKey(evt?.palette_key ?? null);
       setBackgroundKey(evt?.page_background_key ?? null);
+      setEventName(evt?.name ?? null);
+      setLogoPath(evt?.logo_path ?? null);
       if (eid && typeof localStorage !== "undefined") {
         const raw = localStorage.getItem(`gs.passport.${eid}`);
         setHasPassport(!!raw);
@@ -114,7 +119,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   return (
     <EventPaletteScope paletteKey={paletteKey} backgroundKey={backgroundKey} className="min-h-screen pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
-      <div className="px-4"><PublicEventNav subdomain={subdomain} /></div>
+      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={eventId} eventName={eventName} logoUrl={getEventAssetPublicUrl(logoPath)} /></div>
       <div className="mx-auto max-w-md px-4 pt-4">
         <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           Scan venue QR

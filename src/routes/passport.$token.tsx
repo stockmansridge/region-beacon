@@ -15,6 +15,7 @@ import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewar
 import { PoweredByGetStampd } from "@/components/brand";
 import { useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 
 export const Route = createFileRoute("/passport/$token")({
@@ -412,6 +413,7 @@ function PassportView({
             eventName={eventName ?? "Your passport"}
             primaryColor={PRIMARY}
             accentColor={ACCENT}
+            logoUrl={getEventAssetPublicUrl(branding.logoPath)}
             activeOverride="passport"
             passportHref={passportUrl}
             eventId={passport.event_id}

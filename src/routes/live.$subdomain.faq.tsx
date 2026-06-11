@@ -7,6 +7,7 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/live/$subdomain/faq")({
   component: function FaqRoute() {
@@ -63,6 +64,9 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
           subdomain={subdomain}
           eventName={eventInfo.event_name ?? "Event"}
           eventId={eventInfo.event_id}
+          logoUrl={getEventAssetPublicUrl(branding.logoPath)}
+          primaryColor={branding.primaryColor}
+          accentColor={branding.accentColor}
         />
       </div>
 

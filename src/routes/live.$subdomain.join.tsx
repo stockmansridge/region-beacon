@@ -8,6 +8,7 @@ import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticPanel } from "@/components/diagnostic-panel";
@@ -408,6 +409,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           eventName={event.name}
           primaryColor={primary}
           accentColor={accent}
+          logoUrl={getEventAssetPublicUrl(event.logo_path)}
+          eventId={event.event_id}
           hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
           hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
         />

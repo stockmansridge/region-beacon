@@ -6,6 +6,7 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard" }] }),
@@ -51,7 +52,8 @@ type State =
 export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [eventId, setEventId] = useState<string | null>(null);
-  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
+  const branding = useEventBrandingKeys(subdomain);
+  const { paletteKey, backgroundKey } = branding;
 
 
   useEffect(() => {
@@ -138,7 +140,14 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   return (
     <EventPaletteScope paletteKey={paletteKey} backgroundKey={backgroundKey} className="min-h-screen px-4 py-8 sm:py-12">
       <PublicAnnouncementBar subdomain={subdomain} />
-      <PublicEventNav subdomain={subdomain} eventId={eventId} activeOverride="leaderboard" />
+      <PublicEventNav
+        subdomain={subdomain}
+        eventId={eventId}
+        activeOverride="leaderboard"
+        logoUrl={getEventAssetPublicUrl(branding.logoPath)}
+        primaryColor={branding.primaryColor}
+        accentColor={branding.accentColor}
+      />
       <div className="mx-auto max-w-xl">
         <Header subdomain={subdomain} />
 

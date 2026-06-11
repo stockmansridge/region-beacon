@@ -57,6 +57,7 @@ type EventRow = {
   event_map_path?: string | null;
   event_map_file_type?: string | null;
   event_map_file_name?: string | null;
+  logo_path?: string | null;
 };
 
 type Filter = "all" | "visited" | "not_visited";
@@ -445,6 +446,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         eventName={event?.name}
         primaryColor={event?.primary_color}
         accentColor={event?.accent_color}
+        logoUrl={getEventAssetPublicUrl(event?.logo_path ?? null)}
         activeOverride="map"
         eventId={event?.event_id ?? null}
       />
