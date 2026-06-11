@@ -8,7 +8,11 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
+import { PublicTrailTabs } from "@/components/public-trail-tabs";
 import { tenantHost } from "@/lib/domains";
+import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
+import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
+import { loadPassportStampState } from "@/lib/passport-stamps";
 
 export const Route = createFileRoute("/live/$subdomain/venues/")({
   head: () => ({ meta: [{ title: "Venues" }] }),
@@ -30,6 +34,7 @@ type VenueRow = {
   cover_path: string | null;
   lat: number | null;
   lng: number | null;
+  offer_summary: string | null;
   order_index: number | null;
   event_found: boolean | null;
 };
@@ -52,6 +57,7 @@ type State =
 
 export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
 
 
   useEffect(() => {
@@ -82,6 +88,18 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
       const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
       const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
       setState({ kind: "ready", event: evt, venues });
+
+      if (evt?.event_id) {
+        try {
+          const passport = await resolveCurrentEventPassport(evt.event_id);
+          if (!passport.token) return;
+          const stamps = await loadPassportStampState(passport.token);
+          if (cancelled) return;
+          setVisitedIds(stamps.visitedVenueIds);
+        } catch {
+          /* ignore */
+        }
+      }
     })();
     return () => {
       cancelled = true;
@@ -102,13 +120,12 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
 
   const { event, venues } = state;
   const labels = resolveVenueLabels(event ?? {});
-  const accent = event?.primary_color ?? "var(--event-primary,#1F3D2B)";
 
   return (
     <EventPaletteScope
       paletteKey={event?.palette_key ?? null}
       backgroundKey={event?.page_background_key ?? null}
-      className="min-h-screen px-4 py-8"
+      className="min-h-screen px-4 py-6"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
@@ -119,62 +136,100 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
         eventId={event?.event_id ?? null}
       />
       <div className="mx-auto max-w-md">
-        <div className="mb-6">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-muted,#8A7E66)]">
+              Trail
+            </p>
+            <h1 className="mt-1 truncate font-trail-serif text-[26px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+              {labels.plural}
+            </h1>
+          </div>
           <Link
             to="/"
-            className="text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+            className="shrink-0 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)] underline-offset-4 hover:underline"
           >
-            ← Back
+            ← Home
           </Link>
-          <h1 className="mt-3 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
-            {labels.plural}
-          </h1>
-          {event?.name && (
-            <p className="mt-1 text-xs uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
-              {event.name}
-            </p>
-          )}
         </div>
 
+        <PublicTrailTabs active="venues" venueLabelPlural={labels.plural} />
+
         {venues.length === 0 ? (
-          <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
+          <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
             No {labels.plural.toLowerCase()} listed yet. Check back soon.
           </div>
         ) : (
           <ul className="space-y-3">
             {venues.map((v) => {
               const vid = v.venue_id ?? "";
+              const visited = vid ? visitedIds.has(vid) : false;
+              const directionsUrl = buildGoogleMapsDirectionsUrl({
+                address: v.address,
+                lat: v.lat,
+                lng: v.lng,
+              });
+              const hasOffer =
+                typeof v.offer_summary === "string" &&
+                v.offer_summary.trim().length > 0;
               return (
                 <li key={vid || Math.random()}>
-                  <a
-                    href={vid ? `/venues/${vid}` : "#"}
-                    aria-label={`View ${v.name ?? "venue"} details`}
-                    className="flex items-stretch gap-3 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-3 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--event-page-bg,#F6EFE2)] cursor-pointer"
-                  >
-                    <Thumb path={v.logo_path ?? v.cover_path} />
-                    <div className="flex min-w-0 flex-1 flex-col justify-center">
-                      <p className="truncate font-trail-serif text-lg font-semibold text-[var(--event-primary,#1F3D2B)]">
-                        {v.name ?? "Unnamed"}
-                      </p>
-                      {v.description && (
-                        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-[var(--event-body,#3D372C)]">
-                          {v.description}
-                        </p>
-                      )}
-                      {v.address && (
-                        <p className="mt-1 truncate text-[11px] text-[var(--event-muted,#8A7E66)]">
-                          {v.address}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className="self-center text-lg leading-none"
-                      style={{ color: accent }}
-                      aria-hidden
+                  <div className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/50 hover:shadow-md">
+                    <a
+                      href={vid ? `/venues/${vid}` : "#"}
+                      aria-label={`View ${v.name ?? "venue"} details`}
+                      className="flex items-stretch gap-3 p-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
                     >
-                      ›
-                    </span>
-                  </a>
+                      <Thumb path={v.cover_path ?? v.logo_path} />
+                      <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
+                        <div className="min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="truncate font-trail-serif text-[17px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+                              {v.name ?? "Unnamed"}
+                            </p>
+                            <VisitedBadge visited={visited} />
+                          </div>
+                          {v.description && (
+                            <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
+                              {v.description}
+                            </p>
+                          )}
+                        </div>
+                        {hasOffer && (
+                          <div className="mt-1.5">
+                            <span
+                              className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.14em]"
+                              style={{
+                                backgroundColor:
+                                  "color-mix(in oklab, var(--event-accent, var(--event-primary, #1F3D2B)) 16%, transparent)",
+                                color: "var(--event-primary,#1F3D2B)",
+                              }}
+                            >
+                              <span aria-hidden>🎁</span>
+                              <span className="truncate">
+                                {v.offer_summary!.split("\n")[0].slice(0, 40)}
+                              </span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </a>
+                    {directionsUrl && (
+                      <a
+                        href={directionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between border-t border-[var(--event-border,#E6DCC7)] px-3 py-2 text-[12px] font-medium text-[var(--event-primary,#1F3D2B)] hover:bg-[var(--event-primary,#1F3D2B)]/5"
+                      >
+                        <span className="inline-flex items-center gap-1.5">
+                          <span aria-hidden>📍</span> Get directions
+                        </span>
+                        <span aria-hidden className="text-[var(--event-muted,#8A7E66)]">
+                          ↗
+                        </span>
+                      </a>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -187,15 +242,37 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
   );
 }
 
+function VisitedBadge({ visited }: { visited: boolean }) {
+  if (visited) {
+    return (
+      <span
+        className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--event-card-bg,#FBF5E8)]"
+        title="Visited"
+      >
+        ✓ Visited
+      </span>
+    );
+  }
+  return (
+    <span
+      className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-[var(--event-muted,#8A7E66)] text-[10px] text-[var(--event-muted,#8A7E66)]"
+      title="Not visited"
+      aria-label="Not visited"
+    >
+      ○
+    </span>
+  );
+}
+
 function Thumb({ path }: { path: string | null }) {
   const url = getVenueAssetPublicUrl(path);
   if (!url) {
     return (
-      <div className="h-16 w-16 flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />
+      <div className="h-[88px] w-[88px] flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />
     );
   }
   return (
-    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10">
+    <div className="h-[88px] w-[88px] flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10">
       <img
         src={url}
         alt=""
