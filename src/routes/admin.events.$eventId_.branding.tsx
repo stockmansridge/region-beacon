@@ -474,7 +474,7 @@ function BrandingEditor() {
     }
 
     // Reload local state from the verified saved row, not from the form.
-    const saved = savedRow as Branding;
+    const saved = savedRow as unknown as Branding;
     setBundle((b) =>
       b ? { ...b, branding: saved, hasBranding: true } : b,
     );
@@ -490,6 +490,10 @@ function BrandingEditor() {
       page_background_key: saved.page_background_key ?? "",
       page_background_color: saved.page_background_color ?? "",
       card_background_color: saved.card_background_color ?? "",
+      text_color: saved.text_color ?? text_color ?? "",
+      muted_text_color: saved.muted_text_color ?? muted_text_color ?? "",
+      border_color: saved.border_color ?? border_color ?? "",
+      primary_text_color: saved.primary_text_color ?? primary_text_color ?? "",
     });
 
     setSaving(false);
