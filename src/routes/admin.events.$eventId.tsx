@@ -40,6 +40,14 @@ import {
   getNextPlanAfter,
 } from "@/lib/getstampd-pricing";
 import { normalizeWebsiteUrl } from "@/lib/normalize-url";
+import {
+  OFFER_DISPLAY_ICONS,
+  OFFER_DISPLAY_ICON_LABEL,
+  resolveOfferIcon,
+  resolveOfferBadgeStyle,
+  isValidHex,
+  type OfferDisplayIcon,
+} from "@/lib/offer-display";
 
 type LoadDiagnostic = {
   step: string;
