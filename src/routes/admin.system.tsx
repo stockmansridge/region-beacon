@@ -1132,6 +1132,17 @@ function OrganisationsSection({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
+                          void runDebugPlan(r);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                        title="Debug plan resolution for this organisation"
+                      >
+                        Debug plan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setDeleteTarget(r);
                         }}
                         className="inline-flex items-center gap-1 rounded-[8px] border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2]"
@@ -1147,6 +1158,22 @@ function OrganisationsSection({
           </TableBody>
         </Table>
       </Card>
+
+      {debugPlan && (
+        <div className="rounded-[12px] border border-[#D9E2EF] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#64748B]">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="font-semibold text-[#111827]">Debug plan (temporary)</span>
+            <button
+              type="button"
+              onClick={() => setDebugPlan(null)}
+              className="rounded border border-[#D9E2EF] px-2 py-0.5 text-xs hover:bg-[#F8FAFC]"
+            >
+              Close
+            </button>
+          </div>
+          <pre className="whitespace-pre-wrap break-all">{debugPlan.text}</pre>
+        </div>
+      )}
 
       <OrganisationDetailDrawer org={selected} onClose={() => setSelected(null)} onUpdated={load} />
       <DeleteOrganisationDialog
