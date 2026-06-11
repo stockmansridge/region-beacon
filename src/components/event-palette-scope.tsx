@@ -35,6 +35,7 @@ export function EventPaletteScope({
   mutedTextColor,
   borderColor,
   primaryTextColor,
+  fontFamily,
   children,
   className,
   applyBackground = true,
@@ -49,6 +50,7 @@ export function EventPaletteScope({
   mutedTextColor?: string | null;
   borderColor?: string | null;
   primaryTextColor?: string | null;
+  fontFamily?: string | null;
   children: ReactNode;
   className?: string;
   applyBackground?: boolean;
