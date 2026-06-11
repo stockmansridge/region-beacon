@@ -158,12 +158,6 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
           <ul className="space-y-4">
             {offers.map((v) => {
               const vid = v.venue_id ?? "";
-              const directionsUrl = buildAppleMapsDirectionsUrl({
-                name: v.name,
-                address: v.address,
-                lat: v.lat,
-                lng: v.lng,
-              });
               return (
                 <li
                   key={vid}
@@ -172,52 +166,40 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                   <Link
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
-                    className="flex items-stretch gap-3 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                    className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
                     aria-label={`View ${v.name ?? "venue"} details`}
                   >
-                    <Thumb path={v.logo_path ?? v.cover_path} />
-                    <div className="flex min-w-0 flex-1 flex-col justify-center">
-                      <p className="truncate font-trail-serif text-lg font-semibold text-[var(--event-primary,#1F3D2B)]">
-                        {v.name ?? "Unnamed"}
-                      </p>
-                      {v.address && (
-                        <p className="mt-0.5 truncate text-[11px] text-[var(--event-muted,#8A7E66)]">
-                          {v.address}
+                    <div className="flex items-stretch gap-3 p-3">
+                      <Thumb path={v.logo_path ?? v.cover_path} />
+                      <div className="flex min-w-0 flex-1 flex-col justify-center">
+                        <p className="truncate font-trail-serif text-lg font-semibold text-[var(--event-primary,#1F3D2B)]">
+                          {v.name ?? "Unnamed"}
                         </p>
-                      )}
-                    </div>
-                    <span
-                      className="self-center text-lg leading-none"
-                      style={{ color: accent }}
-                      aria-hidden
-                    >
-                      ›
-                    </span>
-                  </Link>
-                  <div className="border-t border-[var(--event-border,#E6DCC7)] bg-white/40 px-4 py-3">
-                    <p
-                      className="text-[10px] font-semibold uppercase tracking-[0.22em]"
-                      style={{ color: accent }}
-                    >
-                      Offer
-                    </p>
-                    <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
-                      {v.offer_summary}
-                    </p>
-                    {directionsUrl && (
-                      <a
-                        href={directionsUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+                      </div>
+                      <span
+                        className="self-center text-lg leading-none"
+                        style={{ color: accent }}
+                        aria-hidden
                       >
-                        Directions →
-                      </a>
-                    )}
-                  </div>
+                        ›
+                      </span>
+                    </div>
+                    <div className="border-t border-[var(--event-border,#E6DCC7)] bg-white/40 px-4 py-3">
+                      <p
+                        className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                        style={{ color: accent }}
+                      >
+                        Offer
+                      </p>
+                      <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
+                        {v.offer_summary}
+                      </p>
+                    </div>
+                  </Link>
                 </li>
               );
             })}
+
           </ul>
         )}
 
