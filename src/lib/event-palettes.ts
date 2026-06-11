@@ -9,22 +9,49 @@
 // existing public-page colour pipeline. Each palette also exposes a
 // `cssVars` map for components that want to scope a richer theme via CSS
 // custom properties (see <EventPaletteScope>).
+//
+// Palettes are tagged by use-case category and ship with a recommended
+// background-style key so the Branding editor can suggest a sensible
+// page background after the admin picks a palette.
 
 export type EventPaletteKey =
+  // Legacy / existing — kept so saved values keep resolving.
   | "classic_vineyard"
   | "modern_navy"
   | "festival_bright"
   | "premium_wine"
   | "coastal_trail"
   | "orchard_country"
+  // New modern additions.
+  | "clean_minimal"
+  | "coastal_fresh"
+  | "urban_night"
+  | "market_pop"
+  | "alpine_blue"
+  | "bushland"
+  | "luxury_black_gold"
   | "custom";
 
 export const CUSTOM_PALETTE_KEY: EventPaletteKey = "custom";
+
+export type PaletteCategory =
+  | "premium"
+  | "bright"
+  | "nature"
+  | "coastal"
+  | "minimal"
+  | "food_wine";
 
 export type EventPalette = {
   key: EventPaletteKey;
   label: string;
   description: string;
+  /** Short use-case tags, surfaced in the palette card as chips. */
+  tags: ReadonlyArray<string>;
+  /** Filter categories the palette belongs to. */
+  categories: ReadonlyArray<PaletteCategory>;
+  /** Recommended background-style key (see event-backgrounds.ts). */
+  recommendedBackground: string;
   // Core colours surfaced to existing components via the
   // primary_color / accent_color pipeline.
   primary: string;
@@ -42,26 +69,33 @@ export type EventPalette = {
 };
 
 export const EVENT_PALETTES: ReadonlyArray<EventPalette> = [
+  // ---------- Modern, recommended-first ----------
   {
-    key: "classic_vineyard",
-    label: "Classic Vineyard",
-    description: "Cream, deep green, muted gold — the GetStampd house look.",
-    primary: "#1F3D2B",
-    primaryForeground: "#F6EFE2",
-    accent: "#B5572A",
-    pageBg: "#F6EFE2",
-    cardBg: "#FBF5E8",
-    heading: "#1F3D2B",
-    bodyText: "#2A2620",
-    mutedText: "#7A6F5C",
-    border: "#E6DCC7",
-    visitedStamp: "#1F3D2B",
-    pinDefault: "#B5572A",
+    key: "clean_minimal",
+    label: "Clean Minimal",
+    description: "Crisp neutral surfaces with a confident blue accent — works for almost any event.",
+    tags: ["General", "Corporate", "Minimal"],
+    categories: ["minimal", "premium"],
+    recommendedBackground: "clean",
+    primary: "#1F2937",
+    primaryForeground: "#FFFFFF",
+    accent: "#2F6FE4",
+    pageBg: "#F5F7FB",
+    cardBg: "#FFFFFF",
+    heading: "#0F172A",
+    bodyText: "#1F2937",
+    mutedText: "#64748B",
+    border: "#E2E8F0",
+    visitedStamp: "#2F6FE4",
+    pinDefault: "#2F6FE4",
   },
   {
     key: "modern_navy",
     label: "Modern Navy",
-    description: "Pale neutral background, navy primary, gold accent.",
+    description: "Premium navy with gold detailing — tourism, regions, corporate events.",
+    tags: ["Premium", "Tourism", "Regional"],
+    categories: ["premium", "minimal"],
+    recommendedBackground: "clean",
     primary: "#0F2A4A",
     primaryForeground: "#FFFFFF",
     accent: "#C9A24A",
@@ -77,23 +111,144 @@ export const EVENT_PALETTES: ReadonlyArray<EventPalette> = [
   {
     key: "festival_bright",
     label: "Festival Bright",
-    description: "Light warm background, vivid blue primary, sunny accent.",
+    description: "Vivid blue and sunny accents for festivals, markets, and family events.",
+    tags: ["Festival", "Family", "Bright"],
+    categories: ["bright"],
+    recommendedBackground: "gradient",
     primary: "#1F6FEB",
     primaryForeground: "#FFFFFF",
     accent: "#F4B400",
-    pageBg: "#FFF8EE",
+    pageBg: "#FFFFFF",
     cardBg: "#FFFFFF",
     heading: "#16243F",
     bodyText: "#22324D",
-    mutedText: "#6B7A8F",
-    border: "#F0E2C8",
+    mutedText: "#5B6478",
+    border: "#E2E8F0",
     visitedStamp: "#E94F37",
     pinDefault: "#1F6FEB",
   },
   {
+    key: "coastal_fresh",
+    label: "Coastal Fresh",
+    description: "Ocean-inspired teals on pale aqua — tourism, beach, holiday trails.",
+    tags: ["Tourism", "Coastal", "Family"],
+    categories: ["coastal", "bright"],
+    recommendedBackground: "soft_tint",
+    primary: "#0E6E7A",
+    primaryForeground: "#FFFFFF",
+    accent: "#E2A24A",
+    pageBg: "#EEF6F8",
+    cardBg: "#FFFFFF",
+    heading: "#093F47",
+    bodyText: "#15333A",
+    mutedText: "#5F7378",
+    border: "#D6E4E7",
+    visitedStamp: "#0E6E7A",
+    pinDefault: "#E2A24A",
+  },
+  {
+    key: "alpine_blue",
+    label: "Alpine Blue",
+    description: "Deep blue on pale sky — towns, regional and tourism trails.",
+    tags: ["Tourism", "Regional", "Towns"],
+    categories: ["coastal", "minimal"],
+    recommendedBackground: "soft_tint",
+    primary: "#1E3A8A",
+    primaryForeground: "#FFFFFF",
+    accent: "#3D8B6A",
+    pageBg: "#EAF1F8",
+    cardBg: "#FFFFFF",
+    heading: "#0F1F4D",
+    bodyText: "#1B2540",
+    mutedText: "#5C6B85",
+    border: "#D7E0EE",
+    visitedStamp: "#1E3A8A",
+    pinDefault: "#3D8B6A",
+  },
+  {
+    key: "bushland",
+    label: "Bushland",
+    description: "Eucalyptus green on pale sage — nature, outdoor, country trails.",
+    tags: ["Nature", "Outdoor", "Country"],
+    categories: ["nature"],
+    recommendedBackground: "soft_tint",
+    primary: "#3F5D3A",
+    primaryForeground: "#FFFFFF",
+    accent: "#C0683A",
+    pageBg: "#EFF3EB",
+    cardBg: "#FAFBF6",
+    heading: "#1F2C1A",
+    bodyText: "#2A332A",
+    mutedText: "#6B7765",
+    border: "#DCE3D3",
+    visitedStamp: "#3F5D3A",
+    pinDefault: "#C0683A",
+  },
+  {
+    key: "market_pop",
+    label: "Market Pop",
+    description: "Raspberry with a mint accent — markets, retail, food activations.",
+    tags: ["Market", "Retail", "Food"],
+    categories: ["bright", "food_wine"],
+    recommendedBackground: "soft_tint",
+    primary: "#C8366A",
+    primaryForeground: "#FFFFFF",
+    accent: "#39B58A",
+    pageBg: "#FFF4F7",
+    cardBg: "#FFFFFF",
+    heading: "#3A0F23",
+    bodyText: "#2A1820",
+    mutedText: "#7A5566",
+    border: "#F1D7E0",
+    visitedStamp: "#C8366A",
+    pinDefault: "#39B58A",
+  },
+  {
+    key: "urban_night",
+    label: "Urban Night",
+    description: "Near-black surfaces with electric violet — nightlife, city and art trails.",
+    tags: ["Premium", "City", "Art"],
+    categories: ["premium"],
+    recommendedBackground: "dark_premium",
+    primary: "#7C5CFF",
+    primaryForeground: "#FFFFFF",
+    accent: "#3DD9D6",
+    pageBg: "#0E1020",
+    cardBg: "#1A1D33",
+    heading: "#F5F7FF",
+    bodyText: "#E4E7F5",
+    mutedText: "#9BA1BD",
+    border: "#2A2F4A",
+    visitedStamp: "#7C5CFF",
+    pinDefault: "#3DD9D6",
+  },
+  {
+    key: "luxury_black_gold",
+    label: "Luxury Black & Gold",
+    description: "Strong black header with gold accents — premium events and gala trails.",
+    tags: ["Premium", "Gala", "Luxury"],
+    categories: ["premium", "food_wine"],
+    recommendedBackground: "clean",
+    primary: "#111111",
+    primaryForeground: "#F5E7B8",
+    accent: "#C9A84C",
+    pageBg: "#FAFAF7",
+    cardBg: "#FFFFFF",
+    heading: "#111111",
+    bodyText: "#1F1F1F",
+    mutedText: "#6B6358",
+    border: "#E7E3DA",
+    visitedStamp: "#111111",
+    pinDefault: "#C9A84C",
+  },
+  // ---------- Beige-leaning (kept lower so they aren't the default) ----------
+  {
     key: "premium_wine",
     label: "Premium Wine",
-    description: "Soft cream, burgundy primary, champagne accent.",
+    description: "Burgundy on soft cream with a champagne accent — premium wine and food.",
+    tags: ["Wine", "Food", "Premium"],
+    categories: ["food_wine", "premium"],
+    recommendedBackground: "soft_tint",
     primary: "#6E1A2E",
     primaryForeground: "#FBF5E8",
     accent: "#D9B97A",
@@ -107,25 +262,31 @@ export const EVENT_PALETTES: ReadonlyArray<EventPalette> = [
     pinDefault: "#6E1A2E",
   },
   {
-    key: "coastal_trail",
-    label: "Coastal Trail",
-    description: "Pale blue/cream background, teal primary, sand accent.",
-    primary: "#1F6E7A",
-    primaryForeground: "#FFFFFF",
-    accent: "#E2C58A",
-    pageBg: "#EFF6F7",
-    cardBg: "#FFFFFF",
-    heading: "#0F3D44",
-    bodyText: "#1F2E33",
-    mutedText: "#5F7378",
-    border: "#D6E4E7",
-    visitedStamp: "#1F6E7A",
-    pinDefault: "#C58A3F",
+    key: "classic_vineyard",
+    label: "Classic Vineyard",
+    description: "Cream, deep green and muted gold — the traditional GetStampd wine-trail look.",
+    tags: ["Wine", "Classic"],
+    categories: ["food_wine", "nature"],
+    recommendedBackground: "subtle_texture",
+    primary: "#1F3D2B",
+    primaryForeground: "#F6EFE2",
+    accent: "#B5572A",
+    pageBg: "#F6EFE2",
+    cardBg: "#FBF5E8",
+    heading: "#1F3D2B",
+    bodyText: "#2A2620",
+    mutedText: "#7A6F5C",
+    border: "#E6DCC7",
+    visitedStamp: "#1F3D2B",
+    pinDefault: "#B5572A",
   },
   {
     key: "orchard_country",
     label: "Orchard Country",
-    description: "Warm cream, olive primary, burnt-orange accent.",
+    description: "Olive on warm cream with a burnt-orange accent — orchards and produce trails.",
+    tags: ["Farm", "Produce", "Country"],
+    categories: ["nature", "food_wine"],
+    recommendedBackground: "subtle_texture",
     primary: "#5C6B2A",
     primaryForeground: "#FBF7EC",
     accent: "#C45A1F",
@@ -138,23 +299,45 @@ export const EVENT_PALETTES: ReadonlyArray<EventPalette> = [
     visitedStamp: "#5C6B2A",
     pinDefault: "#C45A1F",
   },
+  {
+    key: "coastal_trail",
+    label: "Coastal Trail (warm)",
+    description: "Soft cream + teal — earlier coastal styling, kept for existing events.",
+    tags: ["Coastal", "Warm"],
+    categories: ["coastal", "food_wine"],
+    recommendedBackground: "soft_tint",
+    primary: "#1F6E7A",
+    primaryForeground: "#FFFFFF",
+    accent: "#E2C58A",
+    pageBg: "#EFF6F7",
+    cardBg: "#FFFFFF",
+    heading: "#0F3D44",
+    bodyText: "#1F2E33",
+    mutedText: "#5F7378",
+    border: "#D6E4E7",
+    visitedStamp: "#1F6E7A",
+    pinDefault: "#C58A3F",
+  },
 ];
 
 /**
  * Build a runtime palette from custom primary/accent hex inputs. Surface
- * colours are derived from the classic_vineyard palette so cards/text
+ * colours are derived from the Clean Minimal palette so cards/text
  * stay readable when an event picks the Custom option.
  */
 export function buildCustomPalette(
   primaryHex: string | null | undefined,
   accentHex: string | null | undefined,
 ): EventPalette {
-  const base = EVENT_PALETTES[0];
+  const base =
+    EVENT_PALETTES.find((p) => p.key === "clean_minimal") ?? EVENT_PALETTES[0];
   return {
     ...base,
     key: "custom" as EventPaletteKey,
     label: "Custom",
     description: "Custom brand colours",
+    tags: ["Custom"],
+    categories: ["minimal"],
     primary: primaryHex && /^#[0-9A-Fa-f]{6}$/.test(primaryHex) ? primaryHex : base.primary,
     accent: accentHex && /^#[0-9A-Fa-f]{6}$/.test(accentHex) ? accentHex : base.accent,
     visitedStamp: primaryHex && /^#[0-9A-Fa-f]{6}$/.test(primaryHex) ? primaryHex : base.visitedStamp,
@@ -182,7 +365,10 @@ export function resolveEventPalette(input: {
   return getPaletteOrDefault(null);
 }
 
-export const DEFAULT_PALETTE_KEY: EventPaletteKey = "classic_vineyard";
+// New events default to a modern, readable palette. Existing events keep
+// whatever palette_key they were saved with — this only affects events
+// that have no palette set yet.
+export const DEFAULT_PALETTE_KEY: EventPaletteKey = "clean_minimal";
 
 const PALETTE_INDEX: Record<string, EventPalette> = Object.fromEntries(
   EVENT_PALETTES.map((p) => [p.key, p]),
