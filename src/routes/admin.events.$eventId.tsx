@@ -5732,11 +5732,13 @@ function EventLiveToggleButton({
   agencyId,
   eventId,
   isLive,
+  hasPendingSubdomain,
   onChanged,
 }: {
   agencyId: string | null;
   eventId: string;
   isLive: boolean;
+  hasPendingSubdomain: boolean;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -5785,6 +5787,27 @@ function EventLiveToggleButton({
         return;
       }
       toast.success("Public event is now live.");
+      // If a claimed subdomain is still pending, re-run server-side
+      // activation now that the event is published, so users never see
+      // "LIVE" alongside a stuck pending subdomain.
+      if (hasPendingSubdomain) {
+        const { data, error: actErr } = await supabase.rpc("claim_event_subdomain" as never, {
+          _event_id: eventId,
+          _subdomain: null,
+        } as never);
+        const res = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+        console.log("[claim_event_subdomain] auto-activate after turn-on", {
+          rpcError: actErr ? { code: actErr.code, message: actErr.message } : null,
+          response: res,
+        });
+        if (!actErr && res?.ok && res.domain_status_after === "active") {
+          toast.success("Subdomain activated — your public site is live at its address.");
+        } else if (!actErr && res?.ok) {
+          toast.info(String(res.message ?? "Subdomain not activated yet — use Check / activate subdomain in the Public address card."));
+        } else {
+          toast.info("Public event is on, but the subdomain could not be activated automatically. Use Check / activate subdomain in the Public address card.");
+        }
+      }
       setConfirmKind(null);
       onChanged();
     } finally {
