@@ -5452,7 +5452,9 @@ function PublicAddressCard({
           {!editing && subdomainRow.status === "pending" && (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm">
-                Pending reservation — will activate once billing/activation is complete.
+                {isFreePlan
+                  ? "Pending reservation — will go live as soon as you publish the event."
+                  : "Pending reservation — will activate once billing/activation is complete."}
               </div>
               <button
                 type="button"
