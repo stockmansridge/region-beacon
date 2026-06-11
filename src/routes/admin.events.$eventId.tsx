@@ -5380,6 +5380,32 @@ function PublicAddressCard({
     onChanged();
   }
 
+  // Re-run claim/activation server-side for the existing subdomain row.
+  // claim_event_subdomain(_event_id, null) re-processes the row and
+  // activates it when the event is published — for every plan.
+  async function recheckSubdomain() {
+    const { data, error } = await supabase.rpc("claim_event_subdomain" as never, {
+      _event_id: eventId,
+      _subdomain: null,
+    } as never);
+    const res = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+    console.log("[claim_event_subdomain] recheck", {
+      rpcError: error ? { code: error.code, message: error.message } : null,
+      response: res,
+    });
+    if (error) {
+      toast.error(`Could not check subdomain: ${error.message} (${error.code ?? "no code"})`);
+      return;
+    }
+    if (!res?.ok) {
+      toast.error(String(res?.message ?? "Could not check subdomain status."));
+      return;
+    }
+    toast.success(String(res.message ?? "Subdomain status checked."), {
+      description: `plan=${res.plan_code} source=${res.plan_source} event=${res.event_status} domain=${res.domain_status_before}→${res.domain_status_after} result=${res.activation_result}`,
+    });
+    onChanged();
+  }
 
   const previewHost = normalized && availability.kind !== "invalid"
     ? `${normalized}.getstampd.com.au`
