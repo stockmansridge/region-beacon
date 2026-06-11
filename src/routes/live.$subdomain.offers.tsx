@@ -159,7 +159,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
             </Link>
           </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {offers.map((v) => {
               const vid = v.venue_id ?? "";
               const offerLines = v.offer_summary.split("\n").filter(Boolean);
@@ -178,37 +178,35 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                   <Link
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
-                    className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-3 pr-14 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                    className="group relative flex items-stretch gap-4 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-4 pr-16 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
                     aria-label={`View ${v.name ?? "venue"} offer`}
                   >
                     {/* Offer icon badge (left) */}
                     <span
-                      className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full"
+                      className="grid h-14 w-14 flex-shrink-0 place-items-center self-center rounded-full"
                       style={badgeStyle}
                       aria-hidden
                     >
-                      <OfferIcon className="h-5 w-5" />
+                      <OfferIcon className="h-6 w-6" />
                     </span>
 
                     {/* Content (middle) */}
-                    <div className="flex min-w-0 flex-1 flex-col justify-center">
-                      <p
-                        className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]"
-                      >
+                    <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
+                      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
                         {v.name ?? "Venue"}
                       </p>
-                      <p className="mt-0.5 line-clamp-2 font-trail-serif text-[16px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)]">
+                      <p className="mt-1 line-clamp-2 font-trail-serif text-[17px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)]">
                         {offerTitle}
                       </p>
                       {offerBody && (
-                        <p className="mt-0.5 line-clamp-1 text-[12px] leading-snug text-[var(--event-body,#3D372C)]">
+                        <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
                           {offerBody}
                         </p>
                       )}
                     </div>
 
                     {/* Image thumb (right) */}
-                    <div className="hidden h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10 sm:block">
+                    <div className="hidden h-16 w-16 flex-shrink-0 self-center overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10 sm:block">
                       {thumb ? (
                         <img
                           src={thumb}
@@ -218,10 +216,12 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                         />
                       ) : (
                         <div className="grid h-full w-full place-items-center text-[var(--event-primary,#1F3D2B)]/40">
-                          <OfferIcon className="h-5 w-5" />
+                          <OfferIcon className="h-6 w-6" />
                         </div>
                       )}
                     </div>
+
+
 
 
                     {/* Strong circular chevron (far right) */}
