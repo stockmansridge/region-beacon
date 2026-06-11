@@ -2413,15 +2413,43 @@ function EventDetail() {
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {event.status === "published" && activeSubdomain ? (
-              <a
-                href={tenantUrl(activeSubdomain, "/?preview=1")}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F8FAFC]"
-                title="Open the live customer site in a new tab"
-              >
-                Preview customer page
-              </a>
+              <>
+                <a
+                  href={tenantUrl(activeSubdomain, "/?preview=1")}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F8FAFC]"
+                  title="Open the live customer site in a new tab"
+                >
+                  Preview customer page
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      typeof window !== "undefined" &&
+                      window.confirm(
+                        "Refresh the public site for this event? This re-opens the live customer page with a fresh fetch — it will not delete or change any event content.",
+                      )
+                    ) {
+                      const t = Date.now();
+                      const url = tenantUrl(activeSubdomain, `/?_refresh=${t}`);
+                      try {
+                        window.open(url, "_blank", "noopener,noreferrer");
+                      } catch {
+                        /* ignore */
+                      }
+                      toast.success(
+                        "Public site refreshed — opening the latest customer page in a new tab.",
+                      );
+                    }
+                  }}
+                  className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F8FAFC]"
+                  title="Force a fresh load of the live customer site. Public pages render from current event data on every visit; this opens a cache-busted reload."
+                >
+                  Refresh public site
+                </button>
+              </>
             ) : (
               <Link
                 to="/admin/events/$eventId/preview"
