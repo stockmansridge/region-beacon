@@ -1471,14 +1471,34 @@ function EventDetail() {
           return;
         }
 
-        const limits = planRes.data as { plan_code?: string | null; venue_limit?: number | null } | null;
+        const limits = planRes.data as
+          | { plan_code?: string | null; venue_limit?: number | null; plan_source?: string | null }
+          | null;
         const rawPlanCode = limits && typeof limits === "object" ? limits.plan_code ?? null : null;
-        const plan = getPlanByCode(rawPlanCode);
+        const normalisedPlanCode = String(rawPlanCode ?? "free").toLowerCase().replace(/-/g, "_");
+        const plan = getPlanByCode(normalisedPlanCode);
+        const planSource = limits && typeof limits === "object" ? limits.plan_source ?? null : null;
         const activeVenueCount = countRes.count ?? 0;
-        const venueLimit =
-          limits && typeof limits === "object" && "venue_limit" in limits
-            ? (limits.venue_limit ?? null)
-            : plan.venueLimit;
+        // Enterprise = unlimited. Trust the RPC: venue_limit === null/undefined = unlimited.
+        const rpcVenueLimitRaw =
+          limits && typeof limits === "object" && "venue_limit" in limits ? limits.venue_limit : undefined;
+        const venueLimit: number | null =
+          normalisedPlanCode === "enterprise"
+            ? null
+            : rpcVenueLimitRaw === null || rpcVenueLimitRaw === undefined
+              ? null
+              : Number(rpcVenueLimitRaw);
+
+        console.info("[venue-save] plan preflight", {
+          agencyId,
+          rawPlanCode,
+          normalisedPlanCode,
+          venueLimit,
+          rpcVenueLimitRaw,
+          planSource,
+          activeVenueCount,
+          rpc: limits,
+        });
 
         if (venueLimit !== null && activeVenueCount >= venueLimit) {
           const nextPlan = getNextPlanAfter(plan.code);
@@ -1492,7 +1512,7 @@ function EventDetail() {
             venueId: venueEditingId,
             eventId,
             agencyId,
-            message: `Venue creation blocked before insert by active venue limit. Active venues counted: ${activeVenueCount}. Limit: ${venueLimit}.`,
+            message: `Venue creation blocked before insert by active venue limit. Active venues counted: ${activeVenueCount}. Limit: ${venueLimit}. plan_code=${normalisedPlanCode} plan_source=${planSource ?? "unknown"}.`,
           });
           return;
         }
