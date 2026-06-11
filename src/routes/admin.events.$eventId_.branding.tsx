@@ -2079,4 +2079,100 @@ function SemanticPreview({ venueLabelPlural }: { venueLabelPlural: string }) {
   );
 }
 
+// ============================================================================
+// HeroOverlayCard — colour + opacity slider for the hero image fade.
+// ============================================================================
+
+function HeroOverlayCard({
+  form,
+  setForm,
+  disabled,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  disabled?: boolean;
+}) {
+  const opacityNum = form.hero_overlay_opacity
+    ? Math.max(0, Math.min(100, Number(form.hero_overlay_opacity) || 0))
+    : null;
+  const colorPickerValue = HEX_RE.test(form.hero_overlay_color)
+    ? form.hero_overlay_color
+    : HEX_RE.test(form.primary_color)
+      ? form.primary_color
+      : "#1F3D2B";
+
+  return (
+    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <div>
+        <div className="text-sm font-semibold">Hero image fade</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Darken or tint the hero image so the event title, logo, and passport
+          icon stay readable. Defaults to your primary colour when left blank.
+        </p>
+      </div>
+
+      <Field label="Overlay colour">
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={colorPickerValue}
+            onChange={(e) => setForm({ ...form, hero_overlay_color: e.target.value })}
+            disabled={disabled}
+            className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <input
+            type="text"
+            value={form.hero_overlay_color}
+            onChange={(e) => setForm({ ...form, hero_overlay_color: e.target.value })}
+            placeholder="(uses primary colour)"
+            disabled={disabled}
+            maxLength={7}
+            className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {form.hero_overlay_color && !disabled && (
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, hero_overlay_color: "" })}
+              className="text-[11px] text-muted-foreground underline hover:text-foreground"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </Field>
+
+      <Field label={`Overlay opacity${opacityNum != null ? ` — ${opacityNum}%` : " — default gradient"}`}>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={0}
+            max={90}
+            step={5}
+            value={opacityNum ?? 50}
+            onChange={(e) =>
+              setForm({ ...form, hero_overlay_opacity: e.target.value })
+            }
+            disabled={disabled}
+            className="h-10 flex-1"
+          />
+          {form.hero_overlay_opacity && !disabled && (
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, hero_overlay_opacity: "" })}
+              className="text-[11px] text-muted-foreground underline hover:text-foreground"
+            >
+              Use default
+            </button>
+          )}
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Leave on “default gradient” to keep the existing soft fade. Drag the
+          slider to apply a flat overlay tint at the chosen opacity.
+        </p>
+      </Field>
+    </div>
+  );
+}
+
+
 
