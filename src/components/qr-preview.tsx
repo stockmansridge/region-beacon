@@ -66,8 +66,8 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
     if (typeof window === "undefined") return;
     (async () => {
       try {
-        const mod = await import("qrcode");
-        const QRCode = (mod as { default?: typeof mod }).default ?? mod;
+        const mod = (await import("qrcode")) as unknown as { default?: typeof import("qrcode") } & typeof import("qrcode");
+        const QRCode = mod.default ?? mod;
         // Render at 4x for a crisp downloadable PNG.
         const url = await QRCode.toDataURL(normalisedValue, {
           errorCorrectionLevel: "M",
