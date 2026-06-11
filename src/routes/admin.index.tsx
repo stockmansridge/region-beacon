@@ -4,6 +4,7 @@ import { Calendar, MapPin, QrCode, Users } from "lucide-react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { useDiagnosticsEnabled } from "@/lib/diagnostics";
 import {
   getPlanByCode,
   getVenueUsageMessage,
@@ -24,10 +25,27 @@ type Counts = { events: number; venues: number; checkins: number; visitors: numb
 function Dashboard() {
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
+  const [diagnosticsEnabled] = useDiagnosticsEnabled();
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [planCode, setPlanCode] = useState<string | null>(null);
+  type PlanDiag = {
+    code: string;
+    source: string | null;
+    venueLimit: number | null;
+    manualOverride: string | null;
+    subscriptionCode: string | null;
+    fetchedAt: string;
+  };
+  const [planInfo, setPlanInfo] = useState<PlanDiag | null>(null);
+  const [planRefreshKey, setPlanRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Refresh plan-sensitive data when System Admin changes a plan override.
+  useEffect(() => {
+    const onPlanChanged = () => setPlanRefreshKey((k) => k + 1);
+    window.addEventListener("getstampd:plan-changed", onPlanChanged);
+    return () => window.removeEventListener("getstampd:plan-changed", onPlanChanged);
+  }, []);
 
 
   useEffect(() => {
@@ -64,18 +82,24 @@ function Dashboard() {
         checkins: checkins.count ?? 0,
         visitors: visitors.count ?? 0,
       });
-      const raw =
-        !planRes.error && planRes.data && typeof planRes.data === "object" && "plan_code" in (planRes.data as Record<string, unknown>)
-          ? String((planRes.data as Record<string, unknown>).plan_code ?? "free")
-          : "free";
-      setPlanCode(raw.toLowerCase().replace(/-/g, "_"));
+      if (!planRes.error && planRes.data && typeof planRes.data === "object") {
+        const d = planRes.data as Record<string, unknown>;
+        setPlanInfo({
+          code: String(d.plan_code ?? "free").toLowerCase().replace(/-/g, "_"),
+          source: d.plan_source != null ? String(d.plan_source) : null,
+          venueLimit: typeof d.venue_limit === "number" ? d.venue_limit : null,
+          manualOverride: d.manual_plan_override != null ? String(d.manual_plan_override) : null,
+          subscriptionCode: d.subscription_plan_code != null ? String(d.subscription_plan_code) : null,
+          fetchedAt: new Date().toISOString(),
+        });
+      }
       setLoading(false);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [agencyId]);
+  }, [agencyId, planRefreshKey]);
 
   const items = [
     {
@@ -108,12 +132,14 @@ function Dashboard() {
     },
   ];
 
-  const currentPlan = getPlanByCode(planCode);
+  const currentPlan = getPlanByCode(planInfo?.code ?? null);
   const venueCount = counts?.venues ?? 0;
   const venueUsageMessage = getVenueUsageMessage(venueCount, currentPlan);
   const nextPlan =
     getNextPlanAfter(currentPlan.code) ?? getNextPlanForVenueCount(venueCount);
-  const limit = currentPlan.venueLimit;
+  // Trust the RPC's venue_limit (null = unlimited, e.g. Enterprise); fall
+  // back to the static plan table only before the RPC has resolved.
+  const limit = planInfo ? planInfo.venueLimit : currentPlan.venueLimit;
 
   let venueNotice: { tone: "info" | "warn" | "danger"; message: string } | null = null;
   if (limit !== null) {
@@ -183,15 +209,32 @@ function Dashboard() {
             >
               View plans
             </Link>
-            <button
-              type="button"
-              disabled
-              title="Online billing is coming soon. You can continue setting up and testing GetStampd."
-              className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-lg border bg-[#F1F5F9] px-4 text-sm font-medium text-[#64748B] opacity-70"
-            >
-              Upgrade plan
-            </button>
+            {currentPlan.code !== "enterprise" && limit !== null && (
+              <button
+                type="button"
+                disabled
+                title="Online billing is coming soon. You can continue setting up and testing GetStampd."
+                className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-lg border bg-[#F1F5F9] px-4 text-sm font-medium text-[#64748B] opacity-70"
+              >
+                Upgrade plan
+              </button>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Temporary plan diagnostics — behind the global Diagnostics toggle */}
+      {agencyId && diagnosticsEnabled && (
+        <div className="mb-5 rounded-[12px] border border-[#D9E2EF] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#64748B]">
+          <div className="mb-1 font-semibold text-[#111827]">Plan diagnostics (temporary)</div>
+          <div>agency_id: {agencyId}</div>
+          <div>effective_plan_code: {planInfo?.code ?? "(loading)"}</div>
+          <div>plan_source: {planInfo?.source ?? "—"}</div>
+          <div>manual_plan_override: {planInfo?.manualOverride ?? "—"}</div>
+          <div>subscription_plan_code: {planInfo?.subscriptionCode ?? "—"}</div>
+          <div>venue_limit: {planInfo ? (planInfo.venueLimit === null ? "unlimited" : planInfo.venueLimit) : "—"}</div>
+          <div>resolver: supabase.rpc(&quot;get_agency_plan_limits&quot;)</div>
+          <div>fetched_at: {planInfo?.fetchedAt ?? "—"}</div>
         </div>
       )}
 

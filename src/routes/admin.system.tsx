@@ -1374,6 +1374,11 @@ function OrganisationDetailDrawer({
     toast.success(`Manual plan override saved: ${getPlanByCode(overrideForm).name}.`);
     await loadPlan(org.agency_id);
     onUpdated?.();
+    // Let any open admin pages (dashboard, event detail) refetch
+    // plan-sensitive data without a hard refresh.
+    window.dispatchEvent(
+      new CustomEvent("getstampd:plan-changed", { detail: { agencyId: org.agency_id } }),
+    );
   };
 
   const handleClearOverride = async () => {
@@ -1395,6 +1400,9 @@ function OrganisationDetailDrawer({
     toast.success("Manual plan override cleared.");
     await loadPlan(org.agency_id);
     onUpdated?.();
+    window.dispatchEvent(
+      new CustomEvent("getstampd:plan-changed", { detail: { agencyId: org.agency_id } }),
+    );
   };
 
 

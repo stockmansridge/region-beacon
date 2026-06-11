@@ -443,7 +443,17 @@ function EventDetail() {
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [planCode, setPlanCode] = useState<string>("free");
+  type PlanDiag = {
+    code: string;
+    source: string | null;
+    venueLimit: number | null;
+    manualOverride: string | null;
+    subscriptionCode: string | null;
+    fetchedAt: string;
+  };
+  const [planInfo, setPlanInfo] = useState<PlanDiag | null>(null);
+  const [planRefreshKey, setPlanRefreshKey] = useState(0);
+  const planCode = planInfo?.code ?? "free";
   const isFreePlan = planCode === "free";
   // Centre point of existing venue pins — used to bias the Apple Maps
   // venue-search picker towards the event's region.
@@ -461,14 +471,29 @@ function EventDetail() {
     if (!agencyId) return;
     (async () => {
       const { data, error } = await supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId });
-      if (cancelled || error || !data) return;
-      const code = typeof data === "object" && data !== null && "plan_code" in (data as Record<string, unknown>)
-        ? String((data as Record<string, unknown>).plan_code ?? "free")
-        : "free";
-      setPlanCode(code.toLowerCase().replace(/-/g, "_"));
+      if (cancelled || error || !data || typeof data !== "object") return;
+      const d = data as Record<string, unknown>;
+      setPlanInfo({
+        code: String(d.plan_code ?? "free").toLowerCase().replace(/-/g, "_"),
+        source: d.plan_source != null ? String(d.plan_source) : null,
+        venueLimit: typeof d.venue_limit === "number" ? d.venue_limit : null,
+        manualOverride: d.manual_plan_override != null ? String(d.manual_plan_override) : null,
+        subscriptionCode: d.subscription_plan_code != null ? String(d.subscription_plan_code) : null,
+        fetchedAt: new Date().toISOString(),
+      });
     })();
     return () => { cancelled = true; };
-  }, [agencyId]);
+  }, [agencyId, planRefreshKey, reloadKey]);
+  // System Admin broadcasts this after changing a plan override so any open
+  // admin page refreshes plan-sensitive data without a hard reload.
+  useEffect(() => {
+    const onPlanChanged = () => {
+      setPlanRefreshKey((k) => k + 1);
+      setReloadKey((k) => k + 1);
+    };
+    window.addEventListener("getstampd:plan-changed", onPlanChanged);
+    return () => window.removeEventListener("getstampd:plan-changed", onPlanChanged);
+  }, []);
   const [activeTab, setActiveTabRaw] = useState<EventTabKey>(() => readTabFromHash());
   const setActiveTab = (next: EventTabKey) => {
     setActiveTabRaw(next);
@@ -2455,7 +2480,22 @@ function EventDetail() {
             hasVenues={venues.length > 0}
             eventId={event.id}
             isFreePlan={isFreePlan}
+            planCode={planCode}
           />
+
+          {diagnosticsEnabled && (
+            <div className="rounded-md border bg-muted/30 px-3 py-2 font-mono text-[11px] leading-5 text-muted-foreground">
+              <div className="mb-1 font-semibold text-foreground">Plan diagnostics (temporary)</div>
+              <div>agency_id: {agencyId ?? "—"}</div>
+              <div>effective_plan_code: {planInfo?.code ?? "(loading)"}</div>
+              <div>plan_source: {planInfo?.source ?? "—"}</div>
+              <div>manual_plan_override: {planInfo?.manualOverride ?? "—"}</div>
+              <div>subscription_plan_code: {planInfo?.subscriptionCode ?? "—"}</div>
+              <div>venue_limit: {planInfo ? (planInfo.venueLimit === null ? "unlimited" : planInfo.venueLimit) : "—"}</div>
+              <div>resolver: supabase.rpc(&quot;get_agency_plan_limits&quot;)</div>
+              <div>fetched_at: {planInfo?.fetchedAt ?? "—"}</div>
+            </div>
+          )}
 
           {agency.isPlatformAdmin && diagnosticsEnabled && (
             <PublishGateDiagnostic
@@ -2610,6 +2650,7 @@ function EventDetail() {
           <Section title="Public address" id="section-public-address" tab="overview">
             <PublicAddressCard
               isFreePlan={isFreePlan}
+              planCode={planCode}
               agencyId={agencyId}
               eventId={event.id}
               publicSlug={event.public_slug}
@@ -4902,6 +4943,7 @@ function EventSetupWarnings({
   hasVenues,
   eventId,
   isFreePlan,
+  planCode,
 }: {
   status: string;
   domains: Domain[];
@@ -4909,6 +4951,7 @@ function EventSetupWarnings({
   hasVenues: boolean;
   eventId: string;
   isFreePlan: boolean;
+  planCode: string;
 }) {
   const activeSub = domains.find(
     (d) => d.domain_type === "event_subdomain" && d.status === "active",
@@ -4955,23 +4998,15 @@ function EventSetupWarnings({
     items.push({
       tone: "warn",
       title: hasPendingSubdomain
-        ? (isFreePlan
-            ? "Public address reserved — publish to go live"
-            : "Public address reserved — billing activation required")
+        ? "Public address reserved — waiting for public event to be turned on"
         : "Public address not claimed",
       body: hasPendingSubdomain
-        ? (isFreePlan
-            ? "Your free event includes a GetStampd subdomain. Publish the event to make this address live and start sharing your passport and QR codes."
-            : "A subdomain has been reserved but is not active. It will go live once billing/activation is complete.")
-        : (isFreePlan
-            ? "Your free event includes a GetStampd subdomain so you can share your passport and generate QR codes. Choose an available address to reserve it."
-            : "Choose and reserve a subdomain so visitors can find this event after activation."),
+        ? "Your public address is reserved. Turn on the public event to activate the subdomain and make the public site live. If the event is already live, use Check / activate subdomain in the Public address card."
+        : "Choose and reserve a GetStampd subdomain so visitors can find this event once the public event is turned on.",
       action: {
         kind: "anchor",
         href: "#section-public-address",
-        label: hasPendingSubdomain
-          ? (isFreePlan ? "Review address" : "View activation status")
-          : "Choose public address",
+        label: hasPendingSubdomain ? "Review address" : "Choose public address",
       },
     });
   }
@@ -4994,7 +5029,7 @@ function EventSetupWarnings({
     });
   }
 
-  if (!isFreePlan) {
+  if (!isFreePlan && planCode !== "enterprise") {
     items.push({
       tone: "info",
       title: "Billing activation not configured",
@@ -5087,6 +5122,7 @@ function PublicAddressCard({
   canEdit,
   isPlatformAdmin,
   isFreePlan,
+  planCode,
   onChanged,
 }: {
   agencyId: string | null;
@@ -5100,6 +5136,7 @@ function PublicAddressCard({
   canEdit: boolean;
   isPlatformAdmin: boolean;
   isFreePlan: boolean;
+  planCode: string;
   onChanged: () => void;
 }) {
   const subdomainRow = domains.find((d) => d.domain_type === "event_subdomain") ?? null;
@@ -5343,6 +5380,32 @@ function PublicAddressCard({
     onChanged();
   }
 
+  // Re-run claim/activation server-side for the existing subdomain row.
+  // claim_event_subdomain(_event_id, null) re-processes the row and
+  // activates it when the event is published — for every plan.
+  async function recheckSubdomain() {
+    const { data, error } = await supabase.rpc("claim_event_subdomain" as never, {
+      _event_id: eventId,
+      _subdomain: null,
+    } as never);
+    const res = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+    console.log("[claim_event_subdomain] recheck", {
+      rpcError: error ? { code: error.code, message: error.message } : null,
+      response: res,
+    });
+    if (error) {
+      toast.error(`Could not check subdomain: ${error.message} (${error.code ?? "no code"})`);
+      return;
+    }
+    if (!res?.ok) {
+      toast.error(String(res?.message ?? "Could not check subdomain status."));
+      return;
+    }
+    toast.success(String(res.message ?? "Subdomain status checked."), {
+      description: `plan=${res.plan_code} source=${res.plan_source} event=${res.event_status} domain=${res.domain_status_before}→${res.domain_status_after} result=${res.activation_result}`,
+    });
+    onChanged();
+  }
 
   const previewHost = normalized && availability.kind !== "invalid"
     ? `${normalized}.getstampd.com.au`
@@ -5404,6 +5467,7 @@ function PublicAddressCard({
                 agencyId={agencyId}
                 eventId={eventId}
                 isLive={isLivePublished}
+                hasPendingSubdomain={subdomainRow?.status === "pending"}
                 onChanged={onChanged}
               />
             )}
@@ -5469,12 +5533,10 @@ function PublicAddressCard({
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] text-muted-foreground">
-              {isFreePlan && eventStatus === "published" ? (
-                <>Your event is already published — reserving this address activates it immediately and your public site goes live.</>
-              ) : isFreePlan ? (
-                <>Reserving creates a <span className="font-medium">pending</span> address. It goes live the moment you publish the event — your free plan includes the GetStampd subdomain.</>
+              {eventStatus === "published" ? (
+                <>Your event is already live — reserving this address activates it immediately and your public site goes live.</>
               ) : (
-                <>Reserving creates a <span className="font-medium">pending</span> address. It activates after billing.</>
+                <>Reserving creates a <span className="font-medium">pending</span> address. It activates as soon as you turn on the public event.</>
               )}
             </p>
             <button
@@ -5484,8 +5546,8 @@ function PublicAddressCard({
               className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
               {submitting
-                ? (isFreePlan && eventStatus === "published" ? "Activating…" : "Reserving…")
-                : (isFreePlan && eventStatus === "published" ? "Activate public address" : "Reserve subdomain")}
+                ? (eventStatus === "published" ? "Activating…" : "Reserving…")
+                : (eventStatus === "published" ? "Activate public address" : "Reserve subdomain")}
             </button>
           </div>
         </div>
@@ -5500,46 +5562,20 @@ function PublicAddressCard({
           {!editing && subdomainRow.status === "pending" && (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm">
-                {isFreePlan && eventStatus === "published"
-                  ? "Pending reservation — activate now to make your public site live."
+                {eventStatus !== "published"
+                  ? "Reserved — turn on the public event to activate this address."
                   : isFreePlan
-                    ? "Reserved — will go live as soon as you publish the event."
-                    : "Pending reservation — will activate once billing/activation is complete."}
+                    ? "Ready to activate — click Check / activate subdomain."
+                    : "Pending — click Check / activate subdomain to re-run activation."}
               </div>
               <div className="flex items-center gap-2">
-                {isFreePlan && eventStatus === "published" && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!agencyId) return;
-                      // Server-side activation via SECURITY DEFINER RPC.
-                      const { data, error } = await supabase.rpc("claim_event_subdomain" as never, {
-                        _event_id: eventId,
-                        _subdomain: null,
-                      } as never);
-                      const res = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
-                      console.log("[claim_event_subdomain] activate", {
-                        rpcError: error ? { code: error.code, message: error.message } : null,
-                        response: res,
-                      });
-                      if (error) {
-                        toast.error(`Could not activate: ${error.message} (${error.code ?? "no code"})`);
-                        return;
-                      }
-                      if (!res?.ok) {
-                        toast.error(String(res?.message ?? "Could not activate public address."));
-                        return;
-                      }
-                      toast.success(String(res.message ?? "Public address activated."), {
-                        description: `plan=${res.plan_code} event=${res.event_status} domain=${res.domain_status} activation_attempted=${res.activation_attempted}`,
-                      });
-                      onChanged();
-                    }}
-                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
-                  >
-                    Activate public address
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={recheckSubdomain}
+                  className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+                >
+                  Check / activate subdomain
+                </button>
                 <button
                   type="button"
                   onClick={handleRelease}
@@ -5553,7 +5589,7 @@ function PublicAddressCard({
           )}
           {!editing && subdomainRow.status === "active" && (
             <div className="text-sm text-muted-foreground">
-              You can change this public address at any time using <span className="font-medium">Change address</span> above.
+              Active — your public site is live at this address. You can change it at any time using <span className="font-medium">Change address</span> above.
               The old address will stop working after the change. Changing the address does not turn the event on or off.
             </div>
           )}
@@ -5696,11 +5732,13 @@ function EventLiveToggleButton({
   agencyId,
   eventId,
   isLive,
+  hasPendingSubdomain,
   onChanged,
 }: {
   agencyId: string | null;
   eventId: string;
   isLive: boolean;
+  hasPendingSubdomain: boolean;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -5749,6 +5787,27 @@ function EventLiveToggleButton({
         return;
       }
       toast.success("Public event is now live.");
+      // If a claimed subdomain is still pending, re-run server-side
+      // activation now that the event is published, so users never see
+      // "LIVE" alongside a stuck pending subdomain.
+      if (hasPendingSubdomain) {
+        const { data, error: actErr } = await supabase.rpc("claim_event_subdomain" as never, {
+          _event_id: eventId,
+          _subdomain: null,
+        } as never);
+        const res = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+        console.log("[claim_event_subdomain] auto-activate after turn-on", {
+          rpcError: actErr ? { code: actErr.code, message: actErr.message } : null,
+          response: res,
+        });
+        if (!actErr && res?.ok && res.domain_status_after === "active") {
+          toast.success("Subdomain activated — your public site is live at its address.");
+        } else if (!actErr && res?.ok) {
+          toast.info(String(res.message ?? "Subdomain not activated yet — use Check / activate subdomain in the Public address card."));
+        } else {
+          toast.info("Public event is on, but the subdomain could not be activated automatically. Use Check / activate subdomain in the Public address card.");
+        }
+      }
       setConfirmKind(null);
       onChanged();
     } finally {
