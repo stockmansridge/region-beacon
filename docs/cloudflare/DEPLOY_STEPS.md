@@ -1,5 +1,46 @@
 # Cloudflare Production Deployment — GetStampd (getstampd.com.au)
 
+## Surfaces — read this first
+
+| Surface | URL | Updated by |
+|---|---|---|
+| Editor workspace (iframe may cache) | `https://lovable.dev/projects/481bb391-4845-4595-9174-36e7e5516010` | n/a |
+| **Direct preview app — canonical test** | `https://id-preview--481bb391-4845-4595-9174-36e7e5516010.lovable.app` | Every commit (auto) |
+| Lovable published app (not used for production) | `https://region-beacon.lovable.app` | Lovable **Publish** button |
+| **Production** | `https://getstampd.com.au` | **GitHub Actions → "Deploy GetStampd Cloudflare Worker"** |
+
+Lovable **Publish** does **not** update `getstampd.com.au`. The custom domain is bound to the self-hosted Cloudflare Worker via `[[routes]]` in `wrangler.toml`; only a `wrangler deploy` updates it. Use the GitHub Action below for one-click deploys.
+
+---
+
+## One-click production deploy (GitHub Action)
+
+File: `.github/workflows/deploy-cloudflare-worker.yml`
+
+**How to deploy:**
+1. Verify the change on the direct preview URL (`id-preview--…lovable.app`) and confirm the `BUILD_MARKER` is what you expect.
+2. Push/sync to GitHub (`stockmansridge/region-beacon`).
+3. GitHub → **Actions** tab → left sidebar **"Deploy GetStampd Cloudflare Worker"** → **Run workflow** button (top right) → pick branch (usually `main`) → **Run workflow**.
+4. Wait ~2–4 min. The job summary prints the commit, timestamp, and the live `/debug/worker-health` JSON.
+5. Open `https://getstampd.com.au/admin` and confirm the amber `BUILD_MARKER` bar matches preview.
+
+**Required GitHub repository secrets** (Settings → Secrets and variables → Actions → New repository secret):
+
+| Secret | Where to get it |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare Dashboard → My Profile → API Tokens → Create Token → template **"Edit Cloudflare Workers"** (or custom token with `Account.Workers Scripts:Edit` + `Zone.Workers Routes:Edit` for `getstampd.com.au`). |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Dashboard → any Workers or zone page → right sidebar → **Account ID** copy button. |
+| `VITE_SUPABASE_URL` | `https://kyjwifumacnrpgyextzz.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | The anon JWT — `CURRENT_PROJECT_PUBLISHABLE_KEY` in `src/integrations/supabase/client.ts`. |
+
+The Worker name is **`region-beacon`** (per `wrangler.toml`). Zone routes for apex / `www` / `app` / `*.getstampd.com.au` are already active in `wrangler.toml`, so the first successful run of this workflow updates the live custom domain.
+
+**GitHub connection requirement:** the workflow only runs if this Lovable project is connected to the GitHub repo `stockmansridge/region-beacon`. If it's not connected: Lovable editor → **+** menu (bottom-left of chat) → **GitHub** → Connect project, then push. Without the connection the YAML file exists in the Lovable internal git only and GitHub will never see it.
+
+---
+
+## Manual / legacy reference (Cloudflare Dashboard GitHub integration)
+
 Status: **PREP ONLY**. Cloudflare DNS is authoritative for `getstampd.com.au`
 (nameservers cut over at Crazy Domains). No Worker is deployed, no records
 added beyond Cloudflare's import, no further SQL pending.
