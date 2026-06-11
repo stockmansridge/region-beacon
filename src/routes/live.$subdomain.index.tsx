@@ -173,6 +173,7 @@ function LivePublicLoaded({
         eventName={event.name}
         primaryColor={event.primary_color}
         accentColor={event.accent_color}
+        logoUrl={getEventAssetPublicUrl(event.logo_path)}
         hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
         hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
         canRegister={canRegister}
