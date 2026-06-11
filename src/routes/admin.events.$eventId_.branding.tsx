@@ -398,6 +398,35 @@ function BrandingEditor() {
     let payload = fullPayload;
     let { row: savedRow, error: writeErr } = await writeRow(payload, mode);
 
+    // Fallback if the new semantic text columns are missing on the
+    // production DB (migration `migrations-draft-event-text-colors` not
+    // yet applied). Retry without those keys so the rest persists.
+    if (
+      writeErr &&
+      /(text_color|muted_text_color|border_color|primary_text_color)/i.test(writeErr.message ?? "")
+    ) {
+      console.warn("[branding-save] text-colour columns missing, retrying without", {
+        message: writeErr.message,
+      });
+      const {
+        text_color: _tc,
+        muted_text_color: _mtc,
+        border_color: _bc,
+        primary_text_color: _ptc,
+        ...rest
+      } = fullPayload;
+      payload = rest;
+      SELECT_COLS = BASE_SELECT_COLS;
+      const retry = await writeRow(payload, mode);
+      savedRow = retry.row;
+      writeErr = retry.error;
+      if (!writeErr && (text_color || muted_text_color || border_color || primary_text_color)) {
+        setSaveError(
+          "Saved core branding. The new semantic text/border colours require the database migration in supabase/migrations-draft-event-text-colors/.",
+        );
+      }
+    }
+
     // Fallback if custom background columns are missing on the production DB
     // (migration 03 not yet applied). Retry without those keys so the rest persists.
     if (
@@ -407,7 +436,7 @@ function BrandingEditor() {
       console.warn("[branding-save] custom-background columns missing, retrying without", {
         message: writeErr.message,
       });
-      const { page_background_color: _pbc, card_background_color: _cbc, ...rest } = fullPayload;
+      const { page_background_color: _pbc, card_background_color: _cbc, ...rest } = payload;
       payload = rest;
       const retry = await writeRow(payload, mode);
       savedRow = retry.row;
