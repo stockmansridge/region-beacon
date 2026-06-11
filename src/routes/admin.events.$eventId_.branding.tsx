@@ -23,6 +23,7 @@ import {
 import {
   EVENT_PALETTES,
   type EventPaletteKey,
+  type EventPalette,
   getPalette,
   getPaletteOrDefault,
   buildCustomPalette,
