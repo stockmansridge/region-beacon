@@ -3498,6 +3498,134 @@ function EventDetail() {
                   )}
                 </FormSection>
 
+                {bundle?.offerDisplaySupported ? (
+                  <FormSection title="Offer display">
+                    {(() => {
+                      const PreviewIcon = resolveOfferIcon(
+                        venueForm.offer_display_icon || null,
+                      );
+                      const badge = resolveOfferBadgeStyle(
+                        venueForm.offer_display_colour || null,
+                        venueForm.offer_display_foreground_colour || null,
+                      );
+                      return (
+                        <>
+                          <Field label="Icon">
+                            <select
+                              value={venueForm.offer_display_icon}
+                              onChange={(e) =>
+                                setVenueForm({
+                                  ...venueForm,
+                                  offer_display_icon: e.target.value,
+                                })
+                              }
+                              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                            >
+                              <option value="">Default (gift)</option>
+                              {OFFER_DISPLAY_ICONS.map((k) => (
+                                <option key={k} value={k}>
+                                  {OFFER_DISPLAY_ICON_LABEL[k as OfferDisplayIcon]}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Field label="Background colour">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={
+                                    isValidHex(venueForm.offer_display_colour)
+                                      ? venueForm.offer_display_colour
+                                      : "#1F3D2B"
+                                  }
+                                  onChange={(e) =>
+                                    setVenueForm({
+                                      ...venueForm,
+                                      offer_display_colour: e.target.value,
+                                    })
+                                  }
+                                  className="h-10 w-12 rounded-md border bg-background"
+                                />
+                                <input
+                                  type="text"
+                                  value={venueForm.offer_display_colour}
+                                  onChange={(e) =>
+                                    setVenueForm({
+                                      ...venueForm,
+                                      offer_display_colour: e.target.value,
+                                    })
+                                  }
+                                  placeholder="#1F3D2B (optional)"
+                                  className="h-10 flex-1 rounded-md border bg-background px-3 text-sm"
+                                />
+                              </div>
+                            </Field>
+                            <Field label="Foreground colour">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={
+                                    isValidHex(
+                                      venueForm.offer_display_foreground_colour,
+                                    )
+                                      ? venueForm.offer_display_foreground_colour
+                                      : "#FFFFFF"
+                                  }
+                                  onChange={(e) =>
+                                    setVenueForm({
+                                      ...venueForm,
+                                      offer_display_foreground_colour:
+                                        e.target.value,
+                                    })
+                                  }
+                                  className="h-10 w-12 rounded-md border bg-background"
+                                />
+                                <input
+                                  type="text"
+                                  value={venueForm.offer_display_foreground_colour}
+                                  onChange={(e) =>
+                                    setVenueForm({
+                                      ...venueForm,
+                                      offer_display_foreground_colour:
+                                        e.target.value,
+                                    })
+                                  }
+                                  placeholder="auto (optional)"
+                                  className="h-10 flex-1 rounded-md border bg-background px-3 text-sm"
+                                />
+                              </div>
+                            </Field>
+                          </div>
+                          <div className="mt-2 flex items-center gap-3 rounded-md border bg-muted/30 p-3">
+                            <span
+                              className="grid h-12 w-12 place-items-center rounded-full"
+                              style={badge}
+                              aria-hidden
+                            >
+                              <PreviewIcon className="h-5 w-5" />
+                            </span>
+                            <div className="text-xs text-muted-foreground">
+                              Live preview of the public offer badge. Leave
+                              colours empty to inherit the event theme.
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </FormSection>
+                ) : bundle?.offerSupported ? (
+                  <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                    Offer display customisation requires the{" "}
+                    <span className="font-mono">offer_display_*</span> columns —
+                    apply{" "}
+                    <span className="font-mono">
+                      migrations-draft-offer-display
+                    </span>{" "}
+                    to enable.
+                  </p>
+                ) : null}
+
                 <FormSection title="Contact">
                   <Field label="Website">
                     <input
