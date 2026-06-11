@@ -336,27 +336,37 @@ function EventPreview() {
         </div>
 
         <div className="mx-auto max-w-md px-4 py-16">
-          {/* Interactive preview callout */}
-          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-xs leading-relaxed text-amber-900 shadow-sm">
-            <p className="font-semibold uppercase tracking-[0.18em]">Admin preview</p>
-            <p className="mt-1">
-              You are viewing the real customer page in preview mode. Navigation and
-              customer actions use the live event flow.
-            </p>
-            {canOpenLive ? (
-              <p className="mt-2">
-                Customer actions taken here may create real passports, check-ins, and
-                points for this event. Use the buttons below to open the live customer
-                site in a new tab.
+          {!noticeDismissed && (
+            <div className="relative mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 pr-10 text-xs leading-relaxed text-amber-900 shadow-sm">
+              <button
+                type="button"
+                onClick={dismissNotice}
+                className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-amber-700 hover:bg-amber-200/60 hover:text-amber-900"
+                aria-label="Dismiss admin preview notice"
+                title="Dismiss"
+              >
+                ×
+              </button>
+              <p className="font-semibold uppercase tracking-[0.18em]">Admin preview</p>
+              <p className="mt-1">
+                You are viewing the real customer page in preview mode. Navigation and
+                customer actions use the live event flow.
               </p>
-            ) : (
-              <p className="mt-2">
-                This event must be published before the full customer journey can be
-                tested. Claim a public address and turn the event live, then return
-                here to open the real customer site.
-              </p>
-            )}
-          </div>
+              {canOpenLive ? (
+                <p className="mt-2">
+                  Customer actions taken here may create real passports, check-ins, and
+                  points for this event. Use the buttons below to open the live customer
+                  site in a new tab.
+                </p>
+              ) : (
+                <p className="mt-2">
+                  This event must be published before the full customer journey can be
+                  tested. Claim a public address and turn the event live, then return
+                  here to open the real customer site.
+                </p>
+              )}
+            </div>
+          )}
 
           <TrailLanding
             eventName={event.name}
