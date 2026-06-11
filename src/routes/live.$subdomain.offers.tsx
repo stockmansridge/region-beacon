@@ -9,6 +9,7 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
+import { PublicTrailTabs } from "@/components/public-trail-tabs";
 import { tenantHost } from "@/lib/domains";
 
 export const Route = createFileRoute("/live/$subdomain/offers")({
