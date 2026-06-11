@@ -2576,6 +2576,7 @@ function EventDetail() {
 
           <Section title="Public address" id="section-public-address" tab="overview">
             <PublicAddressCard
+              isFreePlan={isFreePlan}
               agencyId={agencyId}
               eventId={event.id}
               publicSlug={event.public_slug}
