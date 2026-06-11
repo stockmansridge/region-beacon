@@ -894,19 +894,53 @@ function EventDetail() {
 
         // Optional venues.offer_summary column — degrade silently if missing.
         const offerSummaryByVenue = new Map<string, string | null>();
+        const offerDisplayByVenue = new Map<string, OfferDisplayRow>();
         let offerSupported = false;
+        let offerDisplaySupported = false;
         if (venues.length > 0) {
           try {
             const { data: offerRows, error: offerErr } = await supabase
               .from("venues")
-              .select("id, offer_summary" as any)
+              .select(
+                "id, offer_summary, offer_display_icon, offer_display_colour, offer_display_foreground_colour" as any,
+              )
               .eq("agency_id", agencyId)
               .eq("event_id", event.id)
               .in("id", venues.map((v) => v.id));
             if (!offerErr && Array.isArray(offerRows)) {
               offerSupported = true;
-              for (const row of offerRows as unknown as Array<{ id: string; offer_summary: string | null }>) {
+              offerDisplaySupported = true;
+              for (const row of offerRows as unknown as Array<{
+                id: string;
+                offer_summary: string | null;
+                offer_display_icon: string | null;
+                offer_display_colour: string | null;
+                offer_display_foreground_colour: string | null;
+              }>) {
                 offerSummaryByVenue.set(row.id, row.offer_summary ?? null);
+                offerDisplayByVenue.set(row.id, {
+                  offer_display_icon: row.offer_display_icon ?? null,
+                  offer_display_colour: row.offer_display_colour ?? null,
+                  offer_display_foreground_colour:
+                    row.offer_display_foreground_colour ?? null,
+                });
+              }
+            } else if (offerErr) {
+              // Likely display columns missing — fall back to summary-only.
+              const { data: legacyRows, error: legacyErr } = await supabase
+                .from("venues")
+                .select("id, offer_summary" as any)
+                .eq("agency_id", agencyId)
+                .eq("event_id", event.id)
+                .in("id", venues.map((v) => v.id));
+              if (!legacyErr && Array.isArray(legacyRows)) {
+                offerSupported = true;
+                for (const row of legacyRows as unknown as Array<{
+                  id: string;
+                  offer_summary: string | null;
+                }>) {
+                  offerSummaryByVenue.set(row.id, row.offer_summary ?? null);
+                }
               }
             }
           } catch {
@@ -925,7 +959,9 @@ function EventDetail() {
           venues,
           qrByVenue,
           offerSummaryByVenue,
+          offerDisplayByVenue,
           offerSupported,
+          offerDisplaySupported,
           activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
         });
         setState("ready");
