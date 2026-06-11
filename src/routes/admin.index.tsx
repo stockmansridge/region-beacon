@@ -20,7 +20,21 @@ export const Route = createFileRoute("/admin/")({
 });
 
 
+// Temporary build/version marker for the live-path audit. Bump the timestamp
+// whenever Dashboard plan logic changes so the deployed build is identifiable
+// on the production site. Remove once the deploy mismatch is resolved.
+const BUILD_MARKER = "2026-06-11T12:00Z · live-path-audit-1 · src/routes/admin.index.tsx";
+const SUPABASE_REF = (() => {
+  try {
+    const url = String(import.meta.env.VITE_SUPABASE_URL ?? "");
+    return url.replace(/^https?:\/\//, "").split(".")[0] || "(unknown)";
+  } catch {
+    return "(unknown)";
+  }
+})();
+
 type Counts = { events: number; venues: number; checkins: number; visitors: number };
+
 
 function Dashboard() {
   const agency = useAgencyContext();
@@ -237,12 +251,13 @@ function Dashboard() {
         }
       />
 
-      {/* Plan resolver diagnostic — rendered FIRST, directly under the page
-          title, whenever the Diagnostics toggle is ON. Never hidden by RPC
+      {/* LIVE BUILD / PLAN DEBUG — rendered FIRST, directly under the page
+          title, for platform admins ALWAYS (not behind the Diagnostics
+          toggle) and for anyone with Diagnostics ON. Never hidden by RPC
           errors, missing data, plan value or admin status. */}
-      {diagnosticsEnabled && (
-        <div className="mb-5 rounded-[12px] border-2 border-[#2F6FE4] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#475569] shadow-[0_4px_16px_rgba(47,111,228,0.15)]">
-          <div className="mb-1 text-sm font-bold text-[#111827]">Plan resolver diagnostic</div>
+      {(agency.isPlatformAdmin || diagnosticsEnabled) && (
+        <div className="mb-5 rounded-[12px] border-2 border-[#DC2626] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#475569] shadow-[0_4px_16px_rgba(220,38,38,0.18)]">
+          <div className="mb-1 text-sm font-bold text-[#B91C1C]">LIVE BUILD / PLAN DEBUG</div>
           {rpcFailed && (
             <div className="mb-2 rounded-md border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 font-sans text-xs font-semibold text-[#B91C1C]">
               RPC failed — UI is falling back to Free
@@ -253,7 +268,10 @@ function Dashboard() {
               Plan RPC has not returned yet (loading or no workspace agency selected).
             </div>
           )}
-          <div>diagnosticsEnabled: {String(diagnosticsEnabled)}</div>
+          <div>build_marker: {BUILD_MARKER}</div>
+          <div>app_env (vite mode): {import.meta.env.MODE}</div>
+          <div>supabase_project_ref: {SUPABASE_REF}</div>
+          <div>diagnosticsEnabled: {String(diagnosticsEnabled)} · isPlatformAdmin: {String(agency.isPlatformAdmin)}</div>
           <div>route_file: src/routes/admin.index.tsx</div>
           <div>workspace_org_name: {agency.selected?.name ?? "—"}</div>
           <div>workspace_agency_id: {agencyId ?? "— (no workspace agency selected)"}</div>
@@ -274,6 +292,17 @@ function Dashboard() {
           <div>banner_plan_name: {currentPlan.name}</div>
           <div>banner_venue_limit: {limit === null ? "unlimited" : limit}</div>
           <div>banner_plan_came_from: {planInfo ? "rpc (get_agency_plan_limits)" : "static fallback (Free defaults)"}</div>
+          <div>
+            falling_back_to_free: {String(fallingBackToFree)}
+            {fallingBackToFree &&
+              ` — reason: ${
+                planRpcError
+                  ? "RPC returned an error (see above)"
+                  : !planFetchSettled
+                    ? "RPC has not returned yet / no workspace agency selected"
+                    : "RPC returned no parseable object"
+              }`}
+          </div>
           <div className="mt-2">
             parsed → effective_plan_code: {planInfo?.code ?? "(rpc not parsed — fell back to free)"} · plan_source:{" "}
             {planInfo?.source ?? "—"} · venue_limit:{" "}

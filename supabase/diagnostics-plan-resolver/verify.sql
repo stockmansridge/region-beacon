@@ -37,3 +37,6 @@ order by n.nspname, p.proname, args;
 -- update public.agencies
 --   set manual_plan_override = replace(lower(trim(manual_plan_override)), ' ', '_')
 -- where slug = 'ohoho';
+
+-- Audit: confirm which database/schema you are connected to
+select current_database(), current_schema(), now() as checked_at;
