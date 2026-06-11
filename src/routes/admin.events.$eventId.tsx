@@ -443,7 +443,17 @@ function EventDetail() {
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
   const [diagnostic, setDiagnostic] = useState<LoadDiagnostic | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [planCode, setPlanCode] = useState<string>("free");
+  type PlanDiag = {
+    code: string;
+    source: string | null;
+    venueLimit: number | null;
+    manualOverride: string | null;
+    subscriptionCode: string | null;
+    fetchedAt: string;
+  };
+  const [planInfo, setPlanInfo] = useState<PlanDiag | null>(null);
+  const [planRefreshKey, setPlanRefreshKey] = useState(0);
+  const planCode = planInfo?.code ?? "free";
   const isFreePlan = planCode === "free";
   // Centre point of existing venue pins — used to bias the Apple Maps
   // venue-search picker towards the event's region.
@@ -461,14 +471,29 @@ function EventDetail() {
     if (!agencyId) return;
     (async () => {
       const { data, error } = await supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId });
-      if (cancelled || error || !data) return;
-      const code = typeof data === "object" && data !== null && "plan_code" in (data as Record<string, unknown>)
-        ? String((data as Record<string, unknown>).plan_code ?? "free")
-        : "free";
-      setPlanCode(code.toLowerCase().replace(/-/g, "_"));
+      if (cancelled || error || !data || typeof data !== "object") return;
+      const d = data as Record<string, unknown>;
+      setPlanInfo({
+        code: String(d.plan_code ?? "free").toLowerCase().replace(/-/g, "_"),
+        source: d.plan_source != null ? String(d.plan_source) : null,
+        venueLimit: typeof d.venue_limit === "number" ? d.venue_limit : null,
+        manualOverride: d.manual_plan_override != null ? String(d.manual_plan_override) : null,
+        subscriptionCode: d.subscription_plan_code != null ? String(d.subscription_plan_code) : null,
+        fetchedAt: new Date().toISOString(),
+      });
     })();
     return () => { cancelled = true; };
-  }, [agencyId]);
+  }, [agencyId, planRefreshKey, reloadKey]);
+  // System Admin broadcasts this after changing a plan override so any open
+  // admin page refreshes plan-sensitive data without a hard reload.
+  useEffect(() => {
+    const onPlanChanged = () => {
+      setPlanRefreshKey((k) => k + 1);
+      setReloadKey((k) => k + 1);
+    };
+    window.addEventListener("getstampd:plan-changed", onPlanChanged);
+    return () => window.removeEventListener("getstampd:plan-changed", onPlanChanged);
+  }, []);
   const [activeTab, setActiveTabRaw] = useState<EventTabKey>(() => readTabFromHash());
   const setActiveTab = (next: EventTabKey) => {
     setActiveTabRaw(next);
@@ -2455,7 +2480,22 @@ function EventDetail() {
             hasVenues={venues.length > 0}
             eventId={event.id}
             isFreePlan={isFreePlan}
+            planCode={planCode}
           />
+
+          {diagnosticsEnabled && (
+            <div className="rounded-md border bg-muted/30 px-3 py-2 font-mono text-[11px] leading-5 text-muted-foreground">
+              <div className="mb-1 font-semibold text-foreground">Plan diagnostics (temporary)</div>
+              <div>agency_id: {agencyId ?? "—"}</div>
+              <div>effective_plan_code: {planInfo?.code ?? "(loading)"}</div>
+              <div>plan_source: {planInfo?.source ?? "—"}</div>
+              <div>manual_plan_override: {planInfo?.manualOverride ?? "—"}</div>
+              <div>subscription_plan_code: {planInfo?.subscriptionCode ?? "—"}</div>
+              <div>venue_limit: {planInfo ? (planInfo.venueLimit === null ? "unlimited" : planInfo.venueLimit) : "—"}</div>
+              <div>resolver: supabase.rpc(&quot;get_agency_plan_limits&quot;)</div>
+              <div>fetched_at: {planInfo?.fetchedAt ?? "—"}</div>
+            </div>
+          )}
 
           {agency.isPlatformAdmin && diagnosticsEnabled && (
             <PublishGateDiagnostic
@@ -2610,6 +2650,7 @@ function EventDetail() {
           <Section title="Public address" id="section-public-address" tab="overview">
             <PublicAddressCard
               isFreePlan={isFreePlan}
+              planCode={planCode}
               agencyId={agencyId}
               eventId={event.id}
               publicSlug={event.public_slug}
@@ -4902,6 +4943,7 @@ function EventSetupWarnings({
   hasVenues,
   eventId,
   isFreePlan,
+  planCode,
 }: {
   status: string;
   domains: Domain[];
@@ -4909,6 +4951,7 @@ function EventSetupWarnings({
   hasVenues: boolean;
   eventId: string;
   isFreePlan: boolean;
+  planCode: string;
 }) {
   const activeSub = domains.find(
     (d) => d.domain_type === "event_subdomain" && d.status === "active",
@@ -4955,23 +4998,15 @@ function EventSetupWarnings({
     items.push({
       tone: "warn",
       title: hasPendingSubdomain
-        ? (isFreePlan
-            ? "Public address reserved — publish to go live"
-            : "Public address reserved — billing activation required")
+        ? "Public address reserved — waiting for public event to be turned on"
         : "Public address not claimed",
       body: hasPendingSubdomain
-        ? (isFreePlan
-            ? "Your free event includes a GetStampd subdomain. Publish the event to make this address live and start sharing your passport and QR codes."
-            : "A subdomain has been reserved but is not active. It will go live once billing/activation is complete.")
-        : (isFreePlan
-            ? "Your free event includes a GetStampd subdomain so you can share your passport and generate QR codes. Choose an available address to reserve it."
-            : "Choose and reserve a subdomain so visitors can find this event after activation."),
+        ? "Your public address is reserved. Turn on the public event to activate the subdomain and make the public site live. If the event is already live, use Check / activate subdomain in the Public address card."
+        : "Choose and reserve a GetStampd subdomain so visitors can find this event once the public event is turned on.",
       action: {
         kind: "anchor",
         href: "#section-public-address",
-        label: hasPendingSubdomain
-          ? (isFreePlan ? "Review address" : "View activation status")
-          : "Choose public address",
+        label: hasPendingSubdomain ? "Review address" : "Choose public address",
       },
     });
   }
@@ -4994,7 +5029,7 @@ function EventSetupWarnings({
     });
   }
 
-  if (!isFreePlan) {
+  if (!isFreePlan && planCode !== "enterprise") {
     items.push({
       tone: "info",
       title: "Billing activation not configured",
