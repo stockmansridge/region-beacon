@@ -28,9 +28,10 @@ import {
   buildCustomPalette,
 } from "@/lib/event-palettes";
 import {
-  EVENT_BACKGROUNDS,
+  MODERN_BACKGROUND_STYLES,
   type EventBackgroundKey,
   getBackground,
+  getModernStyleKey,
 } from "@/lib/event-backgrounds";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveEventTheme } from "@/lib/event-theme";
