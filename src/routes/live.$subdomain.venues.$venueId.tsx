@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
-import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
+import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
