@@ -236,6 +236,11 @@ function BrandingEditor() {
         muted_text_color: branding?.muted_text_color ?? "",
         border_color: branding?.border_color ?? "",
         primary_text_color: branding?.primary_text_color ?? "",
+        hero_overlay_color: branding?.hero_overlay_color ?? "",
+        hero_overlay_opacity:
+          branding?.hero_overlay_opacity != null
+            ? String(branding.hero_overlay_opacity)
+            : "",
       });
       setState("ready");
     })();
