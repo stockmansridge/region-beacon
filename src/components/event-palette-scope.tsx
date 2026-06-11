@@ -120,6 +120,9 @@ export function EventPaletteScope({
   const style: React.CSSProperties = {
     ...themeCssVars(theme),
     ...bgStyle,
+    ...(fontFamily
+      ? { fontFamily, ["--event-font" as any]: fontFamily }
+      : {}),
   };
   return (
     <div className={className} style={style}>
