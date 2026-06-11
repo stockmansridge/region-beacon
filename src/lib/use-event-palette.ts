@@ -16,6 +16,8 @@ export type EventBrandingKeys = {
   mutedTextColor: string | null;
   borderColor: string | null;
   primaryTextColor: string | null;
+  /** Storage path of the event logo, if uploaded. */
+  logoPath: string | null;
   ready: boolean;
 };
 
@@ -30,6 +32,7 @@ const EMPTY: EventBrandingKeys = {
   mutedTextColor: null,
   borderColor: null,
   primaryTextColor: null,
+  logoPath: null,
   ready: false,
 };
 
@@ -83,6 +86,7 @@ export function useEventBrandingKeys(
           muted_text_color?: string | null;
           border_color?: string | null;
           primary_text_color?: string | null;
+          logo_path?: string | null;
         } | null;
         setKeys({
           paletteKey: row?.palette_key ?? null,
@@ -95,6 +99,7 @@ export function useEventBrandingKeys(
           mutedTextColor: row?.muted_text_color ?? null,
           borderColor: row?.border_color ?? null,
           primaryTextColor: row?.primary_text_color ?? null,
+          logoPath: row?.logo_path ?? null,
           ready: true,
         });
       } catch {
