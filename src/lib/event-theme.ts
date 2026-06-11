@@ -115,6 +115,11 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     "--event-muted": theme.muted,
     "--event-accent": theme.accent,
     "--event-border": theme.border,
+    // Derived: secondary/muted text on primary/dark surfaces (header, bottom
+    // nav, drawer). Derived from --event-primary-fg so it stays readable on
+    // --event-primary regardless of the event's content Muted Text choice.
+    // Never use --event-muted on primary surfaces — use this instead.
+    "--event-on-primary-muted": `color-mix(in srgb, ${theme.primaryText} 72%, transparent)`,
     // Legacy aliases — keep until every public page is migrated.
     "--event-heading": theme.text,
     "--event-body": theme.text,

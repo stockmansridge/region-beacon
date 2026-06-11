@@ -1610,6 +1610,7 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
   const warnings = {
     textOnPage: lowContrastWarning(theme.text, theme.pageBg),
     textOnCard: lowContrastWarning(theme.text, theme.cardBg),
+    mutedOnPage: lowContrastWarning(theme.muted, theme.pageBg, 3),
     mutedOnCard: lowContrastWarning(theme.muted, theme.cardBg, 3),
     primaryButton: lowContrastWarning(theme.primaryText, theme.primary),
   };
@@ -1634,13 +1635,13 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
         warning={warnings.textOnPage ?? warnings.textOnCard}
       />
       <ColorRoleRow
-        label="Muted text colour"
-        helper="Helper text, descriptions, timestamps, secondary labels, metadata."
+        label="Muted text"
+        helper="Used for secondary text on normal page and card backgrounds (descriptions, helper text, metadata). Header and navigation muted text is automatically adjusted for contrast."
         resolved={theme.muted}
         value={form.muted_text_color}
         onChange={(v) => setForm({ ...form, muted_text_color: v })}
         disabled={disabled}
-        warning={warnings.mutedOnCard}
+        warning={warnings.mutedOnCard ?? warnings.mutedOnPage}
       />
       <ColorRoleRow
         label="Border / divider colour"
