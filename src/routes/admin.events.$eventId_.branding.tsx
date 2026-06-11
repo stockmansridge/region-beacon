@@ -1429,7 +1429,7 @@ function PaletteCard({
         </div>
         {p.tags.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
-            {p.tags.slice(0, 3).map((t) => (
+            {p.tags.slice(0, 3).map((t: string) => (
               <span
                 key={t}
                 className="rounded-full bg-[#F1F5F9] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-[#475569]"
