@@ -612,6 +612,7 @@ function SelectedVenueCard({
   accent: string;
   onClose: () => void;
 }) {
+  void primary;
   const img = getVenueAssetPublicUrl(venue.cover_path ?? venue.logo_path);
   const directions = buildAppleMapsDirectionsUrl({
     name: venue.name,
@@ -620,20 +621,20 @@ function SelectedVenueCard({
     lng: venue.lng ?? null,
   });
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] shadow-lg">
+    <div className="relative overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-lg">
       <button
         type="button"
         onClick={onClose}
         aria-label="Close venue card"
-        className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-base text-[#3D372C] shadow-sm hover:bg-white"
+        className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-base text-[var(--event-body,#3D372C)] shadow-sm hover:bg-white"
       >
         ×
       </button>
       <Link
         to="/venues/$venueId"
         params={{ venueId: venue.venue_id ?? "" }}
-        className="flex items-stretch gap-3 p-3 pr-10 transition hover:bg-white/40 focus:outline-none focus:ring-2 focus:ring-offset-1"
-        style={{ minHeight: 88 }}
+        className="flex items-stretch gap-3 p-2.5 pr-10 transition hover:bg-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+        style={{ minHeight: 96 }}
       >
         {img ? (
           <img
@@ -643,33 +644,36 @@ function SelectedVenueCard({
             loading="lazy"
           />
         ) : (
-          <div className="h-20 w-20 flex-shrink-0 rounded-xl bg-[#1F3D2B]/10" />
+          <div className="h-20 w-20 flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />
         )}
         <div className="flex min-w-0 flex-1 flex-col justify-center">
           <div className="flex items-center gap-2">
-            <p className="truncate font-trail-serif text-lg font-semibold" style={{ color: primary }}>
+            <p className="truncate font-trail-serif text-[16px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
               {venue.name ?? "Venue"}
             </p>
-            {visited && (
+            {visited ? (
               <span
-                className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                style={{ backgroundColor: primary, color: "#FBF5E8" }}
+                className="shrink-0 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--event-primary-fg,#FBF5E8)]"
               >
-                Visited
+                ✓ Visited
+              </span>
+            ) : (
+              <span
+                aria-label="Not visited"
+                className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-[var(--event-muted,#8A7E66)] text-[10px] text-[var(--event-muted,#8A7E66)]"
+              >
+                ○
               </span>
             )}
           </div>
-          {venue.address ? (
-            <p className="mt-0.5 truncate text-[11px] text-[#8A7E66]">{venue.address}</p>
-          ) : venue.description ? (
-            <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-[#3D372C]">
+          {venue.description && (
+            <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[var(--event-body,#3D372C)]">
               {venue.description}
             </p>
-          ) : null}
+          )}
           <div className="mt-1.5 flex items-center gap-3">
             <span
-              className="text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: primary }}
+              className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--event-primary,#1F3D2B)]"
             >
               View details
             </span>
@@ -679,18 +683,17 @@ function SelectedVenueCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="text-[11px] font-semibold uppercase tracking-wider"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: accent }}
               >
-                Directions ↗
+                <span aria-hidden>📍</span> Directions ↗
               </a>
             )}
           </div>
         </div>
         <span
           aria-hidden
-          className="flex flex-shrink-0 items-center text-2xl"
-          style={{ color: primary }}
+          className="flex flex-shrink-0 items-center text-2xl text-[var(--event-primary,#1F3D2B)]"
         >
           ›
         </span>
