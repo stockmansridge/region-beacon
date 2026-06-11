@@ -446,6 +446,14 @@ export function VenueMapKitPicker({
     placeMarker(r.lat, r.lng);
     setResults([]);
     setSearchAttempted(false);
+    setWeakResults(false);
+  };
+
+  const fmtDistance = (km: number | null) => {
+    if (km == null) return null;
+    if (km < 1) return "<1 km away";
+    if (km < 100) return `${Math.round(km)} km away`;
+    return `${Math.round(km).toLocaleString()} km away`;
   };
 
   return (
