@@ -149,6 +149,8 @@ export function VenueMapKitPicker({
   value,
   nameIsBlank,
   regionHint,
+  regionHintLabel,
+  venueName,
   onChange,
   onClose,
 }: {
@@ -156,6 +158,10 @@ export function VenueMapKitPicker({
   nameIsBlank: boolean;
   /** Best-known event/region centre (e.g. averaged from existing venue coordinates). */
   regionHint?: { lat: number; lng: number } | null;
+  /** Optional human-readable region label, e.g. "Orange NSW" — appended as a search variant. */
+  regionHintLabel?: string | null;
+  /** Current venue-name draft, used as a fallback search term. */
+  venueName?: string | null;
   onChange: (next: Partial<VenueMapKitValue>) => void;
   onClose: () => void;
 }) {
