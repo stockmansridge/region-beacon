@@ -812,6 +812,14 @@ function BrandingEditor() {
             </div>
           )}
 
+          {/* ============== Semantic text & border colours ============== */}
+          <ColorRolesCard
+            form={form}
+            setForm={setForm}
+            disabled={!canEdit || saving}
+          />
+
+
           <FontPicker
             value={form.font_family}
             onChange={(value) => setForm({ ...form, font_family: value })}
@@ -897,9 +905,16 @@ function BrandingEditor() {
               accentColor={form.accent_color}
               pageBackgroundColor={form.page_background_color}
               cardBackgroundColor={form.card_background_color}
+              textColor={form.text_color}
+              mutedTextColor={form.muted_text_color}
+              borderColor={form.border_color}
+              primaryTextColor={form.primary_text_color}
               className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
             >
-              <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-muted, #8A7E66)" }}>
+              <div
+                className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]"
+                style={{ color: "var(--event-muted, #8A7E66)" }}
+              >
                 <span>Customer landing — live preview</span>
                 <span>Mobile</span>
               </div>
@@ -924,8 +939,12 @@ function BrandingEditor() {
                 badge="Preview"
                 termsUrl={null}
               />
+              <SemanticPreview
+                venueLabelPlural={resolveVenueLabels({ venue_label_singular: form.venue_label_singular, venue_label_plural: form.venue_label_plural }).plural}
+              />
             </EventPaletteScope>
           </div>
+
 
           <AssetUploader
             kind="logo"
