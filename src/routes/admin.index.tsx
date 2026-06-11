@@ -209,15 +209,32 @@ function Dashboard() {
             >
               View plans
             </Link>
-            <button
-              type="button"
-              disabled
-              title="Online billing is coming soon. You can continue setting up and testing GetStampd."
-              className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-lg border bg-[#F1F5F9] px-4 text-sm font-medium text-[#64748B] opacity-70"
-            >
-              Upgrade plan
-            </button>
+            {currentPlan.code !== "enterprise" && limit !== null && (
+              <button
+                type="button"
+                disabled
+                title="Online billing is coming soon. You can continue setting up and testing GetStampd."
+                className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-lg border bg-[#F1F5F9] px-4 text-sm font-medium text-[#64748B] opacity-70"
+              >
+                Upgrade plan
+              </button>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Temporary plan diagnostics — behind the global Diagnostics toggle */}
+      {agencyId && diagnosticsEnabled && (
+        <div className="mb-5 rounded-[12px] border border-[#D9E2EF] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#64748B]">
+          <div className="mb-1 font-semibold text-[#111827]">Plan diagnostics (temporary)</div>
+          <div>agency_id: {agencyId}</div>
+          <div>effective_plan_code: {planInfo?.code ?? "(loading)"}</div>
+          <div>plan_source: {planInfo?.source ?? "—"}</div>
+          <div>manual_plan_override: {planInfo?.manualOverride ?? "—"}</div>
+          <div>subscription_plan_code: {planInfo?.subscriptionCode ?? "—"}</div>
+          <div>venue_limit: {planInfo ? (planInfo.venueLimit === null ? "unlimited" : planInfo.venueLimit) : "—"}</div>
+          <div>resolver: supabase.rpc(&quot;get_agency_plan_limits&quot;)</div>
+          <div>fetched_at: {planInfo?.fetchedAt ?? "—"}</div>
         </div>
       )}
 
