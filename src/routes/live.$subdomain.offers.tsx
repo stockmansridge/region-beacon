@@ -166,6 +166,11 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
               const thumb = getVenueAssetPublicUrl(
                 v.cover_path ?? v.logo_path,
               );
+              const OfferIcon = resolveOfferIcon(v.offer_display_icon);
+              const badgeStyle = resolveOfferBadgeStyle(
+                v.offer_display_colour,
+                v.offer_display_foreground_colour,
+              );
               return (
                 <li key={vid}>
                   <Link
@@ -177,14 +182,10 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                     {/* Offer icon badge (left) */}
                     <span
                       className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full"
-                      style={{
-                        background:
-                          "color-mix(in oklab, var(--event-accent, var(--event-primary, #1F3D2B)) 18%, transparent)",
-                        color: "var(--event-primary,#1F3D2B)",
-                      }}
+                      style={badgeStyle}
                       aria-hidden
                     >
-                      <Gift className="h-5 w-5" />
+                      <OfferIcon className="h-5 w-5" />
                     </span>
 
                     {/* Content (middle) */}
@@ -215,10 +216,11 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                         />
                       ) : (
                         <div className="grid h-full w-full place-items-center text-[var(--event-primary,#1F3D2B)]/40">
-                          <Gift className="h-5 w-5" />
+                          <OfferIcon className="h-5 w-5" />
                         </div>
                       )}
                     </div>
+
 
                     {/* Strong circular chevron (far right) */}
                     <span
