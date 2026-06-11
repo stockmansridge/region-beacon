@@ -9,6 +9,7 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 
 export type LegalRow = {
@@ -87,6 +88,9 @@ export function PublicLegalShell({
           eventName={eventName ?? "Event"}
           activeOverride={activeOverride}
           eventId={eventId ?? null}
+          logoUrl={getEventAssetPublicUrl(b.logoPath)}
+          primaryColor={b.primaryColor}
+          accentColor={b.accentColor}
         />
       </div>
       <div className="mx-auto mt-6 max-w-2xl">

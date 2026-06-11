@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
+import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
@@ -39,7 +40,7 @@ type VenueRow = {
 type State =
   | { kind: "loading" }
   | { kind: "not_found" }
-  | { kind: "ready"; venue: VenueRow; eventId: string | null; paletteKey: string | null; backgroundKey: string | null };
+  | { kind: "ready"; venue: VenueRow; eventId: string | null; eventName: string | null; eventLogoPath: string | null; paletteKey: string | null; backgroundKey: string | null };
 
 type VisitedState =
   | { kind: "none" }
@@ -73,8 +74,8 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         setState({ kind: "not_found" });
         return;
       }
-      const evt = (evtData?.[0] ?? null) as { event_id?: string; palette_key?: string | null; page_background_key?: string | null } | null;
-      setState({ kind: "ready", venue: row, eventId: evt?.event_id ?? null, paletteKey: evt?.palette_key ?? null, backgroundKey: evt?.page_background_key ?? null });
+      const evt = (evtData?.[0] ?? null) as { event_id?: string; name?: string; logo_path?: string | null; palette_key?: string | null; page_background_key?: string | null } | null;
+      setState({ kind: "ready", venue: row, eventId: evt?.event_id ?? null, eventName: evt?.name ?? null, eventLogoPath: evt?.logo_path ?? null, paletteKey: evt?.palette_key ?? null, backgroundKey: evt?.page_background_key ?? null });
 
       if (!evt?.event_id) return;
       try {
@@ -137,7 +138,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
   return (
     <EventPaletteScope paletteKey={state.paletteKey} backgroundKey={state.backgroundKey} className="min-h-screen pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
-      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} /></div>
+      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} /></div>
       <div className="mx-auto max-w-md">
         <div className="relative aspect-[3/1] w-full overflow-hidden bg-[var(--event-primary,#1F3D2B)]/10">
           {coverUrl ? (
