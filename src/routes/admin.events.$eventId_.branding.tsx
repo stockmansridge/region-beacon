@@ -1450,92 +1450,112 @@ function PaletteCard({
   active,
   disabled,
   onSelect,
+  onApply,
 }: {
   palette: EventPalette;
   active: boolean;
   disabled?: boolean;
   onSelect: () => void;
+  onApply?: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
-      aria-pressed={active}
-      className={`group relative flex flex-col gap-2 rounded-[12px] border p-2 text-left transition disabled:opacity-50 ${
+    <div
+      className={`group relative flex flex-col gap-2 rounded-[12px] border p-2 text-left transition ${
+        disabled ? "opacity-50" : ""
+      } ${
         active
           ? "border-[#2F6FE4] ring-2 ring-[#2F6FE4]/30"
           : "border-[#D9E2EF] hover:border-[#94A3B8]"
       }`}
     >
-      {/* Mini public-page preview: header strip + card + accent dot + button */}
-      <div
-        className="overflow-hidden rounded-[8px] border"
-        style={{ backgroundColor: p.pageBg, borderColor: p.border }}
+      <button
+        type="button"
+        onClick={onSelect}
+        disabled={disabled}
+        aria-pressed={active}
+        className="flex flex-col gap-2 text-left disabled:cursor-not-allowed"
       >
+        {/* Mini public-page preview: header strip + card + accent dot + button */}
         <div
-          className="flex h-5 items-center justify-center text-[8px] font-semibold uppercase tracking-[0.18em]"
-          style={{ backgroundColor: p.primary, color: p.primaryForeground }}
+          className="overflow-hidden rounded-[8px] border"
+          style={{ backgroundColor: p.pageBg, borderColor: p.border }}
         >
-          Header
-        </div>
-        <div className="space-y-1.5 p-2">
           <div
-            className="rounded-[4px] px-1.5 py-1"
-            style={{ backgroundColor: p.cardBg, border: `1px solid ${p.border}` }}
+            className="flex h-5 items-center justify-center text-[8px] font-semibold uppercase tracking-[0.18em]"
+            style={{ backgroundColor: p.primary, color: p.primaryForeground }}
           >
-            <div
-              className="h-1.5 w-12 rounded-full"
-              style={{ backgroundColor: p.heading }}
-            />
-            <div
-              className="mt-1 h-1 w-16 rounded-full"
-              style={{ backgroundColor: p.mutedText, opacity: 0.7 }}
-            />
+            Header
           </div>
-          <div className="flex items-center gap-1.5">
-            <span
-              className="rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
-              style={{ backgroundColor: p.primary, color: p.primaryForeground }}
+          <div className="space-y-1.5 p-2">
+            <div
+              className="rounded-[4px] px-1.5 py-1"
+              style={{ backgroundColor: p.cardBg, border: `1px solid ${p.border}` }}
             >
-              Button
-            </span>
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: p.accent }}
-              aria-hidden
-            />
+              <div
+                className="h-1.5 w-12 rounded-full"
+                style={{ backgroundColor: p.heading }}
+              />
+              <div
+                className="mt-1 h-1 w-16 rounded-full"
+                style={{ backgroundColor: p.mutedText, opacity: 0.7 }}
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span
+                className="rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
+                style={{ backgroundColor: p.primary, color: p.primaryForeground }}
+              >
+                Button
+              </span>
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: p.accent }}
+                aria-hidden
+              />
+            </div>
           </div>
         </div>
-      </div>
-      <div>
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-sm font-semibold text-[#111827]">{p.label}</div>
-          {active && (
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-[#2F6FE4]">
-              Selected
-            </span>
+        <div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm font-semibold text-[#111827]">{p.label}</div>
+            {active && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-[#2F6FE4]">
+                Selected
+              </span>
+            )}
+          </div>
+          <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+            {p.description}
+          </div>
+          {p.tags.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {p.tags.slice(0, 3).map((t: string) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-[#F1F5F9] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-[#475569]"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
           )}
         </div>
-        <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-          {p.description}
-        </div>
-        {p.tags.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {p.tags.slice(0, 3).map((t: string) => (
-              <span
-                key={t}
-                className="rounded-full bg-[#F1F5F9] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-[#475569]"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </button>
+      </button>
+      {onApply && (
+        <button
+          type="button"
+          onClick={onApply}
+          disabled={disabled}
+          title="Copy this theme's full colour set into the editable colour fields below. You can then customise any colour."
+          className="mt-1 inline-flex h-8 items-center justify-center rounded-[8px] border border-[#D9E2EF] bg-white px-2 text-[11px] font-semibold text-[#1F56C5] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Apply to custom →
+        </button>
+      )}
+    </div>
   );
 }
+
 
 // ============================================================================
 // BackgroundSelector — simplified to 6 palette-driven styles.
