@@ -58,9 +58,21 @@ type SearchResult = {
   isAU: boolean;
   distanceKm: number | null;
   score: number;
+  source: "autocomplete" | "search";
+  reason?: string;
+};
+
+type DebugAttempt = {
+  api: "autocomplete" | "search";
+  query: string;
+  regionCentre: { lat: number; lng: number } | null;
+  regionSpan: number | null;
+  rawCount: number;
+  topRaw: Array<{ name: string; address: string; country: string; isAU: boolean }>;
 };
 
 const AU_CENTROID = { lat: -25.2744, lng: 133.7751 };
+const BUSINESS_WORDS = /\b(wines?|winery|wineries|cellar|brewery|distillery|cafe|caf\u00e9|restaurant|bar|pub|hotel|motel|market|farm|orchard|venue|gallery|museum|brewing|estate|vineyard|bakery|kitchen)\b/i;
 
 function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -74,45 +86,51 @@ function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): nu
 
 function placeIsAU(p: any): boolean {
   const cc = (p?.countryCode ?? "").toString().toUpperCase();
-  if (cc) return cc === "AU";
+  if (cc === "AU" || cc === "AUS") return true;
+  if (cc && cc.length <= 3) return false;
   const addr = `${p?.formattedAddress ?? ""} ${p?.country ?? ""}`.toLowerCase();
   return /australia/.test(addr);
 }
 
-function scorePlace(p: any, query: string, centre: { lat: number; lng: number } | null): SearchResult | null {
+function scorePlace(
+  p: any,
+  query: string,
+  centre: { lat: number; lng: number } | null,
+  hasBusinessWord: boolean,
+): SearchResult | null {
   const lat = p?.coordinate?.latitude;
   const lng = p?.coordinate?.longitude;
   if (typeof lat !== "number" || typeof lng !== "number" || (lat === 0 && lng === 0)) return null;
   const name: string = p?.name ?? "";
   const address: string = p?.formattedAddress ?? "";
   const isAU = placeIsAU(p);
+  const reasons: string[] = [];
   let score = 0;
-  // Country bias — AU strongly preferred, overseas heavily demoted.
-  score += isAU ? 60 : -80;
-  // Distance from the best-known centre.
+  score += isAU ? 60 : -120;
+  reasons.push(isAU ? "+60 AU" : "-120 non-AU");
   let distanceKm: number | null = null;
   if (centre) {
     distanceKm = haversineKm(centre.lat, centre.lng, lat, lng);
-    if (distanceKm < 25) score += 35;
-    else if (distanceKm < 100) score += 25;
-    else if (distanceKm < 400) score += 12;
-    else if (distanceKm < 1500) score += 4;
-    else if (distanceKm > 5000) score -= 30;
+    if (distanceKm < 25) { score += 40; reasons.push("+40 <25km"); }
+    else if (distanceKm < 100) { score += 28; reasons.push("+28 <100km"); }
+    else if (distanceKm < 400) { score += 14; reasons.push("+14 <400km"); }
+    else if (distanceKm < 1500) { score += 4; }
+    else if (distanceKm > 5000) { score -= 40; reasons.push("-40 >5000km"); }
   }
-  // Name match against query tokens.
-  const qTokens = query.toLowerCase().split(/\s+/).filter((t) => t.length > 1);
+  const qTokens = query.toLowerCase().split(/\s+/).filter((t) => t.length > 1 && !BUSINESS_WORDS.test(t));
   const nameLc = name.toLowerCase();
-  if (qTokens.length > 0) {
+  if (qTokens.length > 0 && nameLc) {
     const matched = qTokens.filter((t) => nameLc.includes(t)).length;
-    score += Math.round((matched / qTokens.length) * 30);
-    if (nameLc === query.toLowerCase()) score += 10;
+    const ratio = matched / qTokens.length;
+    const add = Math.round(ratio * 35);
+    score += add;
+    if (add) reasons.push(`+${add} name`);
+    if (nameLc === query.toLowerCase()) { score += 15; reasons.push("+15 exact"); }
   }
-  // POI/business indicator: poiCategory means an actual place, not a region.
-  if (p?.poiCategory) score += 20;
-  // Looks like an administrative area (city/region) while the query has
-  // multiple words (likely a business name) → demote.
-  const looksAdmin = !p?.poiCategory && !/\d/.test(address) && (p?.administrativeArea || p?.locality) && nameLc === (p?.locality ?? p?.administrativeArea ?? "").toLowerCase();
-  if (looksAdmin && qTokens.length > 1) score -= 25;
+  if (p?.poiCategory) { score += 30; reasons.push("+30 POI"); }
+  const looksAdmin = !p?.poiCategory && !/\d/.test(address);
+  if (looksAdmin && hasBusinessWord) { score -= 80; reasons.push("-80 admin/business-query"); }
+  else if (looksAdmin && qTokens.length > 1) { score -= 20; reasons.push("-20 admin"); }
   return {
     id: `${lat.toFixed(5)},${lng.toFixed(5)}-${name || address}`,
     name,
@@ -122,6 +140,8 @@ function scorePlace(p: any, query: string, centre: { lat: number; lng: number } 
     isAU,
     distanceKm,
     score,
+    source: "search",
+    reason: reasons.join(", "),
   };
 }
 
