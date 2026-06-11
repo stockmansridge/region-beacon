@@ -148,11 +148,56 @@ export function VenueMapKitPicker({
   const [diag, setDiag] = useState<MapkitDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<Array<{ id: string; name: string; address: string; lat: number; lng: number }>>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchAttempted, setSearchAttempted] = useState(false);
+  const [weakResults, setWeakResults] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchSeqRef = useRef(0);
+  const userLocRef = useRef<{ lat: number; lng: number } | null>(null);
+  const geoRequestedRef = useRef(false);
+
+  // Ask for browser geolocation lazily — only once the user actually starts
+  // searching, never on mount. Denial/failure is silently ignored.
+  const maybeRequestGeolocation = useCallback(() => {
+    if (geoRequestedRef.current) return;
+    geoRequestedRef.current = true;
+    try {
+      navigator.geolocation?.getCurrentPosition(
+        (pos) => {
+          userLocRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        },
+        () => { /* denied or unavailable — keep fallbacks */ },
+        { maximumAge: 600_000, timeout: 8_000, enableHighAccuracy: false },
+      );
+    } catch { /* ignore */ }
+  }, []);
+
+  // Best-known search centre, in priority order:
+  // 1. current pin / saved venue coords
+  // 2. event region hint (centre of existing venues)
+  // 3. user's geolocation (if granted)
+  // 4. current map centre, if the user has panned away from the AU centroid
+  const getBestCentre = useCallback((): { lat: number; lng: number } | null => {
+    const lat = Number(value.lat);
+    const lng = Number(value.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) {
+      return { lat, lng };
+    }
+    if (regionHint && Number.isFinite(regionHint.lat) && Number.isFinite(regionHint.lng)) {
+      return regionHint;
+    }
+    if (userLocRef.current) return userLocRef.current;
+    try {
+      const c = mapRef.current?.center;
+      if (c && typeof c.latitude === "number") {
+        const movedFromCentroid = haversineKm(c.latitude, c.longitude, AU_CENTROID.lat, AU_CENTROID.lng) > 100;
+        if (movedFromCentroid) return { lat: c.latitude, lng: c.longitude };
+      }
+    } catch { /* ignore */ }
+    return null;
+  }, [value.lat, value.lng, regionHint]);
 
   const placeMarker = useCallback((lat: number, lng: number) => {
     const mapkit = window.mapkit;
