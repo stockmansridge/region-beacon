@@ -524,12 +524,23 @@ export function VenueMapKitPicker({
                     onClick={() => pickResult(r)}
                     className="block w-full px-3 py-2 text-left hover:bg-muted"
                   >
-                    <div className="font-medium">{r.name || r.address}</div>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-medium">{r.name || r.address}</span>
+                      {fmtDistance(r.distanceKm) && (
+                        <span className="shrink-0 text-[11px] text-muted-foreground">{fmtDistance(r.distanceKm)}</span>
+                      )}
+                    </div>
                     {r.name && r.address && <div className="text-xs text-muted-foreground">{r.address}</div>}
                   </button>
                 </li>
               ))}
             </ul>
+          )}
+
+          {!searching && weakResults && results.length > 0 && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+              No strong local match found. These results may be outside your event region — try adding a town, suburb, or nearby landmark.
+            </div>
           )}
 
           {searchError && (
