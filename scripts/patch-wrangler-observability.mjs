@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 /**
  * Patch the Nitro-generated Cloudflare Worker config to add observability
- * settings. Nitro writes `dist/server/wrangler.json` and a pointer at
- * `.wrangler/deploy/config.json`; `wrangler deploy` uses the JSON one, which
- * overrides the repo-root `wrangler.toml`. So we must inject observability
- * into the generated JSON post-build, otherwise the settings only apply to
- * the (unused) toml.
+ * settings. Nitro writes a `wrangler.json` next to the Worker bundle and a
+ * pointer at `.wrangler/deploy/config.json`; `wrangler deploy` uses the JSON
+ * one, which overrides the repo-root `wrangler.toml`. So we must inject
+ * observability into the generated JSON post-build, otherwise the settings
+ * only apply to the (unused) toml.
+ *
+ * Output location depends on Nitro version / preset:
+ *   - newer Nitro:   .output/wrangler.json   (with .output/server/*)
+ *   - older preset:  dist/server/wrangler.json
+ * We patch whichever exists.
  *
  * Keep these values in sync with the [observability] block in wrangler.toml.
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
-const targets = [
+const candidates = [
+  resolve(".output/wrangler.json"),
   resolve("dist/server/wrangler.json"),
 ];
 
@@ -27,7 +33,7 @@ const observability = {
 };
 
 let patched = 0;
-for (const file of targets) {
+for (const file of candidates) {
   if (!existsSync(file)) continue;
   const cfg = JSON.parse(readFileSync(file, "utf8"));
   cfg.observability = observability;
@@ -40,12 +46,14 @@ for (const file of targets) {
 }
 
 if (!patched) {
-  // Fail loudly: Nitro is expected to emit dist/server/wrangler.json, and
-  // wrangler deploy uses THAT file (not the repo-root wrangler.toml).
-  // Silent fallback would mean observability never reaches Cloudflare.
+  // Fail loudly: Nitro is expected to emit a wrangler.json next to the Worker
+  // bundle, and `wrangler deploy` uses THAT file (not the repo-root
+  // wrangler.toml). Silent fallback would mean observability never reaches
+  // Cloudflare.
   console.error(
-    "[observability] ERROR: no Nitro wrangler.json found under dist/server/. " +
-      "Cloudflare deploy would ignore observability settings. Failing the build.",
+    "[observability] ERROR: no Nitro wrangler.json found. Looked in:\n" +
+      candidates.map((c) => `  - ${c}`).join("\n") +
+      "\nCloudflare deploy would ignore observability settings. Failing the build.",
   );
   process.exit(1);
 }
