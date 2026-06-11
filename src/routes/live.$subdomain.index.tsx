@@ -222,6 +222,11 @@ function LivePublicLoaded({
         }
         secondaryCta={<span />}
       />
+      <PassportProgressCard
+        eventId={event.event_id}
+        venueLabelPlural={venueLabels.plural}
+        canRegister={canRegister}
+      />
       <CollectPointsSection
         eventId={event.event_id}
         primaryColor={event.primary_color}
