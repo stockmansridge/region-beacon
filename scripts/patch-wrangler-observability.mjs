@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const candidates = [
+  resolve(".output/server/wrangler.json"),
   resolve(".output/wrangler.json"),
   resolve("dist/server/wrangler.json"),
 ];
