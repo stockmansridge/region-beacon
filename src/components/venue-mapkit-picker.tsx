@@ -773,6 +773,24 @@ export function VenueMapKitPicker({
           <p className="text-xs text-muted-foreground">
             Tap or drag the pin to set the venue location. Address and coordinates update automatically.
           </p>
+
+          {showSearchDiag && (
+            <div className="rounded-md border bg-muted/30 p-2 text-[10px] leading-snug">
+              <div className="mb-1 font-semibold">Search diagnostics</div>
+              <div>raw query: <code>{searchQuery}</code></div>
+              <div>town hint: <code>{townHint || "(none)"}</code></div>
+              <div>region label: <code>{regionHintLabel || "(none)"}</code></div>
+              <div>centre: <code>{(() => { const c = getBestCentre(); return c ? `${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}` : "(none — falling back to AU centroid)"; })()}</code></div>
+              <div className="mt-1">attempts ({debugAttempts.length}):</div>
+              <pre className="max-h-64 overflow-auto rounded bg-background/60 p-1">
+{JSON.stringify(debugAttempts, null, 2)}
+              </pre>
+              <div className="mt-1">final ranked ({results.length}):</div>
+              <pre className="max-h-48 overflow-auto rounded bg-background/60 p-1">
+{JSON.stringify(results.map((r) => ({ name: r.name, address: r.address, isAU: r.isAU, score: r.score, dist: r.distanceKm, src: r.source, reason: r.reason })), null, 2)}
+              </pre>
+            </div>
+          )}
         </>
       )}
     </div>
