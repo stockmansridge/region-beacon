@@ -5469,18 +5469,49 @@ function PublicAddressCard({
           {!editing && subdomainRow.status === "pending" && (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm">
-                {isFreePlan
-                  ? "Pending reservation — will go live as soon as you publish the event."
-                  : "Pending reservation — will activate once billing/activation is complete."}
+                {isFreePlan && eventStatus === "published"
+                  ? "Pending reservation — activate now to make your public site live."
+                  : isFreePlan
+                    ? "Reserved — will go live as soon as you publish the event."
+                    : "Pending reservation — will activate once billing/activation is complete."}
               </div>
-              <button
-                type="button"
-                onClick={handleRelease}
-                disabled={releasing}
-                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-              >
-                {releasing ? "Releasing…" : "Release subdomain"}
-              </button>
+              <div className="flex items-center gap-2">
+                {isFreePlan && eventStatus === "published" && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!agencyId) return;
+                      const { error } = await supabase
+                        .from("event_domains")
+                        .update({
+                          status: "active",
+                          is_primary: true,
+                          verified_at: new Date().toISOString(),
+                        })
+                        .eq("id", subdomainRow.id)
+                        .eq("agency_id", agencyId)
+                        .eq("event_id", eventId);
+                      if (error) {
+                        toast.error(`Could not activate: ${error.message}`);
+                        return;
+                      }
+                      toast.success("Public address activated. Your public site is live.");
+                      onChanged();
+                    }}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+                  >
+                    Activate public address
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleRelease}
+                  disabled={releasing}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  {releasing ? "Releasing…" : "Release subdomain"}
+                </button>
+              </div>
             </div>
           )}
           {!editing && subdomainRow.status === "active" && (
