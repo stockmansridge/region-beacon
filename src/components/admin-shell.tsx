@@ -3,6 +3,7 @@ import { LayoutDashboard, Calendar, BarChart3, LogOut, Shield, CreditCard, Bug, 
 import { ReactNode, useEffect, useState } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
+import { BuildMarker } from "@/components/build-marker";
 
 import { useDiagnosticsEnabled } from "@/lib/diagnostics";
 import { Switch } from "@/components/ui/switch";
@@ -256,7 +257,7 @@ export function AdminShell({
             </div>
           </header>
           <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-            <div className="space-y-5">{children ?? <Outlet />}</div>
+            <div className="space-y-5"><BuildMarker visible={!!isPlatformAdmin} />{children ?? <Outlet />}</div>
           </main>
         </div>
       </div>
