@@ -135,13 +135,15 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         eventId={event?.event_id ?? null}
       />
       <div className="mx-auto max-w-md">
-        <PublicTrailTabs active="offers" venueLabelPlural={labels.plural} />
+        <div className="mt-4">
+          <PublicTrailTabs active="offers" venueLabelPlural={labels.plural} />
+        </div>
 
-        <div className="mb-4 px-1">
-          <h1 className="font-trail-serif text-[26px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+        <div className="mb-5 mt-6 px-1">
+          <h1 className="font-trail-serif text-[28px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
             Special Offers
           </h1>
-          <p className="mt-1 text-[13px] leading-snug text-[var(--event-muted,#8A7E66)]">
+          <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--event-muted,#8A7E66)]">
             Visit the {labels.plural.toLowerCase()} to unlock these offers.
           </p>
         </div>
