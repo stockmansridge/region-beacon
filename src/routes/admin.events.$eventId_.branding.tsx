@@ -321,6 +321,8 @@ function BrandingEditor() {
     const muted_text_color = form.muted_text_color.trim();
     const border_color = form.border_color.trim();
     const primary_text_color = form.primary_text_color.trim();
+    const hero_overlay_color = form.hero_overlay_color.trim();
+    const hero_overlay_opacity_str = form.hero_overlay_opacity.trim();
 
     if (page_background_color && !HEX_RE.test(page_background_color)) {
       setSaving(false);
@@ -337,12 +339,23 @@ function BrandingEditor() {
       ["Muted text colour", muted_text_color],
       ["Border colour", border_color],
       ["Primary button text colour", primary_text_color],
+      ["Hero image overlay colour", hero_overlay_color],
     ] as const) {
       if (value && !HEX_RE.test(value)) {
         setSaving(false);
         setValidationError(`${label} must be a valid 6-digit hex code.`);
         return;
       }
+    }
+    let hero_overlay_opacity_num: number | null = null;
+    if (hero_overlay_opacity_str) {
+      const n = Number(hero_overlay_opacity_str);
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        setSaving(false);
+        setValidationError("Hero overlay opacity must be between 0 and 100.");
+        return;
+      }
+      hero_overlay_opacity_num = Math.round(n);
     }
 
     const fullPayload: Record<string, unknown> = {
@@ -361,6 +374,8 @@ function BrandingEditor() {
       muted_text_color: muted_text_color || null,
       border_color: border_color || null,
       primary_text_color: primary_text_color || null,
+      hero_overlay_color: hero_overlay_color || null,
+      hero_overlay_opacity: hero_overlay_opacity_num,
     };
 
     const NEW_TEXT_COLS = "text_color, muted_text_color, border_color, primary_text_color";
