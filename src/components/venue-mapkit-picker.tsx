@@ -71,6 +71,9 @@ export function VenueMapKitPicker({
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<Array<{ id: string; name: string; address: string; lat: number; lng: number }>>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchAttempted, setSearchAttempted] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const placeMarker = useCallback((lat: number, lng: number) => {
     const mapkit = window.mapkit;
