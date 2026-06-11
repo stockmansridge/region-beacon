@@ -5050,6 +5050,7 @@ function PublicAddressCard({
   domains,
   canEdit,
   isPlatformAdmin,
+  isFreePlan,
   onChanged,
 }: {
   agencyId: string | null;
@@ -5062,6 +5063,7 @@ function PublicAddressCard({
   domains: Domain[];
   canEdit: boolean;
   isPlatformAdmin: boolean;
+  isFreePlan: boolean;
   onChanged: () => void;
 }) {
   const subdomainRow = domains.find((d) => d.domain_type === "event_subdomain") ?? null;
