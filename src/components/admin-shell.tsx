@@ -3,6 +3,7 @@ import { LayoutDashboard, Calendar, BarChart3, LogOut, Shield, CreditCard, Bug, 
 import { ReactNode, useEffect, useState } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
+import { BuildMarker } from "@/components/build-marker";
 
 import { useDiagnosticsEnabled } from "@/lib/diagnostics";
 import { Switch } from "@/components/ui/switch";
