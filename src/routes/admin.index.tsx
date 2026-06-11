@@ -36,6 +36,11 @@ function Dashboard() {
     fetchedAt: string;
   };
   const [planInfo, setPlanInfo] = useState<PlanDiag | null>(null);
+  const [planRaw, setPlanRaw] = useState<string | null>(null);
+  const [planRpcError, setPlanRpcError] = useState<string | null>(null);
+  const [agencyRowRaw, setAgencyRowRaw] = useState<string | null>(null);
+  const [agencyRowError, setAgencyRowError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [planRefreshKey, setPlanRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,15 +66,63 @@ function Dashboard() {
       // overrides (e.g. Enterprise comp) take effect even without an
       // agency_subscriptions row.
       const head = { count: "exact" as const, head: true };
-      const [events, venues, checkins, visitors, planRes] = await Promise.all([
+      const [events, venues, checkins, visitors, planRes, agencyRes, userRes] = await Promise.all([
         supabase.from("events").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("venues").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("checkins").select("id", head).eq("agency_id", agencyId),
         supabase.from("visitors").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
+        supabase
+          .from("agencies")
+          .select("id, name, slug, manual_plan_override, status")
+          .eq("id", agencyId)
+          .maybeSingle(),
+        supabase.auth.getUser(),
       ]);
 
       if (cancelled) return;
+
+      // --- Plan resolver diagnostic capture (raw, unsummarised) ---
+      setUserEmail(userRes.data?.user?.email ?? null);
+      setPlanRaw(planRes.data != null ? JSON.stringify(planRes.data, null, 2) : null);
+      setPlanRpcError(
+        planRes.error
+          ? JSON.stringify(
+              {
+                message: planRes.error.message,
+                code: planRes.error.code,
+                details: planRes.error.details,
+                hint: planRes.error.hint,
+              },
+              null,
+              2,
+            )
+          : null,
+      );
+      setAgencyRowRaw(agencyRes.data != null ? JSON.stringify(agencyRes.data, null, 2) : null);
+      setAgencyRowError(
+        agencyRes.error
+          ? JSON.stringify(
+              {
+                message: agencyRes.error.message,
+                code: agencyRes.error.code,
+                details: agencyRes.error.details,
+                hint: agencyRes.error.hint,
+              },
+              null,
+              2,
+            )
+          : null,
+      );
+      console.log("[plan-resolver-diagnostic]", {
+        agencyId,
+        agencyName: agency.selected?.name,
+        agencySlug: agency.selected?.slug,
+        rpcData: planRes.data,
+        rpcError: planRes.error,
+        agencyRow: agencyRes.data,
+        agencyRowError: agencyRes.error,
+      });
       const anyError = events.error || venues.error || checkins.error || visitors.error;
       if (anyError) {
         setError("Could not load dashboard stats.");
