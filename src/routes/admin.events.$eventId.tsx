@@ -2421,6 +2421,7 @@ function EventDetail() {
             hasTerms={!!terms}
             hasVenues={venues.length > 0}
             eventId={event.id}
+            isFreePlan={isFreePlan}
           />
 
           {agency.isPlatformAdmin && diagnosticsEnabled && (
