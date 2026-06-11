@@ -12,6 +12,7 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { CollectPointsSection } from "@/components/collect-points-section";
+import { PassportProgressCard } from "@/components/passport-progress-card";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
