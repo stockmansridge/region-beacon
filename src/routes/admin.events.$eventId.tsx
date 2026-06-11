@@ -5171,39 +5171,37 @@ function PublicAddressCard({
     if (!agencyId || availability.kind !== "available") return;
     setSubmitting(true);
     setSubmitError(null);
-    // Free-plan + already published events skip the "pending" stage —
-    // there is no billing activation gate, so the reserved subdomain
-    // activates immediately and the public site goes live.
-    const activateImmediately = isFreePlan && eventStatus === "published";
-    const { error } = await supabase.from("event_domains").insert({
-      agency_id: agencyId,
-      event_id: eventId,
-      public_subdomain: normalized,
-      domain_type: "event_subdomain",
-      status: activateImmediately ? "active" : "pending",
-      is_primary: true,
-      verified_at: activateImmediately ? new Date().toISOString() : null,
-    });
+    // All claim/reserve/activate transitions run server-side via the
+    // SECURITY DEFINER RPC — the client never writes event_domains directly.
+    const { data, error } = await supabase.rpc("claim_event_subdomain" as never, {
+      _event_id: eventId,
+      _subdomain: normalized,
+    } as never);
     setSubmitting(false);
+    const res = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+    // Temporary debug logging while testing the new flow.
+    console.log("[claim_event_subdomain] claim", {
+      input: normalized,
+      rpcError: error ? { code: error.code, message: error.message } : null,
+      response: res,
+    });
     if (error) {
-      const msg = error.message ?? "Could not reserve subdomain.";
-      if (/duplicate|unique/i.test(msg)) {
-        setSubmitError("That subdomain was just taken. Please choose another.");
-        setAvailability({ kind: "taken" });
-      } else {
-        setSubmitError(`Could not reserve subdomain: ${msg}`);
-      }
+      setSubmitError(`Could not reserve subdomain: ${error.message} (${error.code ?? "no code"})`);
+      return;
+    }
+    if (!res?.ok) {
+      const reason = String(res?.reason ?? "");
+      const msg = String(res?.message ?? "Could not reserve subdomain.");
+      if (reason === "taken") setAvailability({ kind: "taken" });
+      if (reason === "reserved") setAvailability({ kind: "reserved" });
+      setSubmitError(msg);
       return;
     }
     setInput("");
     setAvailability({ kind: "idle" });
-    if (activateImmediately) {
-      toast.success("Public address activated. Your public site is live.");
-    } else if (isFreePlan) {
-      toast.success("Public address reserved. Publish your event to make it live.");
-    } else {
-      toast.success("Public address reserved.");
-    }
+    toast.success(String(res.message ?? "Public address reserved."), {
+      description: `plan=${res.plan_code} event=${res.event_status} domain=${res.domain_status} activation_attempted=${res.activation_attempted}`,
+    });
     onChanged();
   }
 
@@ -5494,21 +5492,27 @@ function PublicAddressCard({
                     type="button"
                     onClick={async () => {
                       if (!agencyId) return;
-                      const { error } = await supabase
-                        .from("event_domains")
-                        .update({
-                          status: "active",
-                          is_primary: true,
-                          verified_at: new Date().toISOString(),
-                        })
-                        .eq("id", subdomainRow.id)
-                        .eq("agency_id", agencyId)
-                        .eq("event_id", eventId);
+                      // Server-side activation via SECURITY DEFINER RPC.
+                      const { data, error } = await supabase.rpc("claim_event_subdomain" as never, {
+                        _event_id: eventId,
+                        _subdomain: null,
+                      } as never);
+                      const res = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+                      console.log("[claim_event_subdomain] activate", {
+                        rpcError: error ? { code: error.code, message: error.message } : null,
+                        response: res,
+                      });
                       if (error) {
-                        toast.error(`Could not activate: ${error.message}`);
+                        toast.error(`Could not activate: ${error.message} (${error.code ?? "no code"})`);
                         return;
                       }
-                      toast.success("Public address activated. Your public site is live.");
+                      if (!res?.ok) {
+                        toast.error(String(res?.message ?? "Could not activate public address."));
+                        return;
+                      }
+                      toast.success(String(res.message ?? "Public address activated."), {
+                        description: `plan=${res.plan_code} event=${res.event_status} domain=${res.domain_status} activation_attempted=${res.activation_attempted}`,
+                      });
                       onChanged();
                     }}
                     className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
