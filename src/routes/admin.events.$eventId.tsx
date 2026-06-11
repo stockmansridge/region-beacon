@@ -1316,6 +1316,13 @@ function EventDetail() {
       status: v.status === "inactive" ? "inactive" : "active",
       description: v.description ?? "",
       offer_summary: bundle?.offerSummaryByVenue.get(v.id) ?? "",
+      offer_display_icon:
+        bundle?.offerDisplayByVenue.get(v.id)?.offer_display_icon ?? "",
+      offer_display_colour:
+        bundle?.offerDisplayByVenue.get(v.id)?.offer_display_colour ?? "",
+      offer_display_foreground_colour:
+        bundle?.offerDisplayByVenue.get(v.id)?.offer_display_foreground_colour ??
+        "",
       website_url: v.website_url ?? "",
       phone: v.phone ?? "",
       logo_path: v.logo_path ?? null,
