@@ -4,6 +4,7 @@ import { Calendar, MapPin, QrCode, Users } from "lucide-react";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { useDiagnosticsEnabled } from "@/lib/diagnostics";
 import {
   getPlanByCode,
   getVenueUsageMessage,
@@ -24,10 +25,27 @@ type Counts = { events: number; venues: number; checkins: number; visitors: numb
 function Dashboard() {
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
+  const [diagnosticsEnabled] = useDiagnosticsEnabled();
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [planCode, setPlanCode] = useState<string | null>(null);
+  type PlanDiag = {
+    code: string;
+    source: string | null;
+    venueLimit: number | null;
+    manualOverride: string | null;
+    subscriptionCode: string | null;
+    fetchedAt: string;
+  };
+  const [planInfo, setPlanInfo] = useState<PlanDiag | null>(null);
+  const [planRefreshKey, setPlanRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Refresh plan-sensitive data when System Admin changes a plan override.
+  useEffect(() => {
+    const onPlanChanged = () => setPlanRefreshKey((k) => k + 1);
+    window.addEventListener("getstampd:plan-changed", onPlanChanged);
+    return () => window.removeEventListener("getstampd:plan-changed", onPlanChanged);
+  }, []);
 
 
   useEffect(() => {
