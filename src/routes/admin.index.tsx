@@ -108,7 +108,7 @@ function Dashboard() {
     },
   ];
 
-  const currentPlan = getPlanByCode(subscription?.plan_code);
+  const currentPlan = getPlanByCode(planCode);
   const venueCount = counts?.venues ?? 0;
   const venueUsageMessage = getVenueUsageMessage(venueCount, currentPlan);
   const nextPlan =
