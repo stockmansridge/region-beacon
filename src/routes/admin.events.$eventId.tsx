@@ -5158,14 +5158,18 @@ function PublicAddressCard({
     if (!agencyId || availability.kind !== "available") return;
     setSubmitting(true);
     setSubmitError(null);
+    // Free-plan + already published events skip the "pending" stage —
+    // there is no billing activation gate, so the reserved subdomain
+    // activates immediately and the public site goes live.
+    const activateImmediately = isFreePlan && eventStatus === "published";
     const { error } = await supabase.from("event_domains").insert({
       agency_id: agencyId,
       event_id: eventId,
       public_subdomain: normalized,
       domain_type: "event_subdomain",
-      status: "pending",
+      status: activateImmediately ? "active" : "pending",
       is_primary: true,
-      verified_at: null,
+      verified_at: activateImmediately ? new Date().toISOString() : null,
     });
     setSubmitting(false);
     if (error) {
@@ -5180,6 +5184,13 @@ function PublicAddressCard({
     }
     setInput("");
     setAvailability({ kind: "idle" });
+    if (activateImmediately) {
+      toast.success("Public address activated. Your public site is live.");
+    } else if (isFreePlan) {
+      toast.success("Public address reserved. Publish your event to make it live.");
+    } else {
+      toast.success("Public address reserved.");
+    }
     onChanged();
   }
 
@@ -5427,7 +5438,9 @@ function PublicAddressCard({
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] text-muted-foreground">
-              {isFreePlan ? (
+              {isFreePlan && eventStatus === "published" ? (
+                <>Your event is already published — reserving this address activates it immediately and your public site goes live.</>
+              ) : isFreePlan ? (
                 <>Reserving creates a <span className="font-medium">pending</span> address. It goes live the moment you publish the event — your free plan includes the GetStampd subdomain.</>
               ) : (
                 <>Reserving creates a <span className="font-medium">pending</span> address. It activates after billing.</>
@@ -5439,7 +5452,9 @@ function PublicAddressCard({
               disabled={submitting || availability.kind !== "available"}
               className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {submitting ? "Reserving…" : "Reserve subdomain"}
+              {submitting
+                ? (isFreePlan && eventStatus === "published" ? "Activating…" : "Reserving…")
+                : (isFreePlan && eventStatus === "published" ? "Activate public address" : "Reserve subdomain")}
             </button>
           </div>
         </div>
@@ -5454,18 +5469,49 @@ function PublicAddressCard({
           {!editing && subdomainRow.status === "pending" && (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm">
-                {isFreePlan
-                  ? "Pending reservation — will go live as soon as you publish the event."
-                  : "Pending reservation — will activate once billing/activation is complete."}
+                {isFreePlan && eventStatus === "published"
+                  ? "Pending reservation — activate now to make your public site live."
+                  : isFreePlan
+                    ? "Reserved — will go live as soon as you publish the event."
+                    : "Pending reservation — will activate once billing/activation is complete."}
               </div>
-              <button
-                type="button"
-                onClick={handleRelease}
-                disabled={releasing}
-                className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
-              >
-                {releasing ? "Releasing…" : "Release subdomain"}
-              </button>
+              <div className="flex items-center gap-2">
+                {isFreePlan && eventStatus === "published" && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!agencyId) return;
+                      const { error } = await supabase
+                        .from("event_domains")
+                        .update({
+                          status: "active",
+                          is_primary: true,
+                          verified_at: new Date().toISOString(),
+                        })
+                        .eq("id", subdomainRow.id)
+                        .eq("agency_id", agencyId)
+                        .eq("event_id", eventId);
+                      if (error) {
+                        toast.error(`Could not activate: ${error.message}`);
+                        return;
+                      }
+                      toast.success("Public address activated. Your public site is live.");
+                      onChanged();
+                    }}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+                  >
+                    Activate public address
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleRelease}
+                  disabled={releasing}
+                  className="inline-flex h-8 items-center rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  {releasing ? "Releasing…" : "Release subdomain"}
+                </button>
+              </div>
             </div>
           )}
           {!editing && subdomainRow.status === "active" && (
