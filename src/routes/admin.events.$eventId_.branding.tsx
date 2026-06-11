@@ -33,6 +33,8 @@ import {
   getBackground,
 } from "@/lib/event-backgrounds";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { resolveEventTheme } from "@/lib/event-theme";
+import { contrastRatio } from "@/lib/contrast";
 import {
   EVENT_FONTS,
   buildGoogleFontsHref,
@@ -68,6 +70,12 @@ type Branding = {
   page_background_key: string | null;
   page_background_color: string | null;
   card_background_color: string | null;
+  // Simplified semantic colour roles. Optional — fall back to palette
+  // values when null. New saves write to these columns.
+  text_color: string | null;
+  muted_text_color: string | null;
+  border_color: string | null;
+  primary_text_color: string | null;
 };
 
 type Domain = {
@@ -98,6 +106,10 @@ type Form = {
   page_background_key: string;
   page_background_color: string;
   card_background_color: string;
+  text_color: string;
+  muted_text_color: string;
+  border_color: string;
+  primary_text_color: string;
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
@@ -128,6 +140,10 @@ function BrandingEditor() {
     page_background_key: "",
     page_background_color: "",
     card_background_color: "",
+    text_color: "",
+    muted_text_color: "",
+    border_color: "",
+    primary_text_color: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -165,7 +181,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, border_color, primary_text_color")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -210,6 +226,10 @@ function BrandingEditor() {
         page_background_key: branding?.page_background_key ?? "",
         page_background_color: branding?.page_background_color ?? "",
         card_background_color: branding?.card_background_color ?? "",
+        text_color: branding?.text_color ?? "",
+        muted_text_color: branding?.muted_text_color ?? "",
+        border_color: branding?.border_color ?? "",
+        primary_text_color: branding?.primary_text_color ?? "",
       });
       setState("ready");
     })();
