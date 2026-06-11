@@ -148,6 +148,8 @@ function BrandingEditor() {
     muted_text_color: "",
     border_color: "",
     primary_text_color: "",
+    hero_overlay_color: "",
+    hero_overlay_opacity: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
