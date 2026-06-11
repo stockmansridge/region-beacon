@@ -60,17 +60,23 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
       setError("No QR value yet.");
       return;
     }
-    // Render at 4x for a crisp downloadable PNG.
-    QRCode.toDataURL(normalisedValue, {
-      errorCorrectionLevel: "M",
-      margin: 2,
-      width: size * 4,
-      color: { dark: "#000000", light: "#ffffff" },
-    })
-      .then((url: string) => {
+    // Client-only dynamic import: the qrcode package's default entry
+    // imports `node:fs`, which crashes the Worker SSR bundle. Guarding on
+    // `window` and lazy-importing keeps it out of the server graph entirely.
+    if (typeof window === "undefined") return;
+    (async () => {
+      try {
+        const mod = await import("qrcode");
+        const QRCode = (mod as { default?: typeof mod }).default ?? mod;
+        // Render at 4x for a crisp downloadable PNG.
+        const url = await QRCode.toDataURL(normalisedValue, {
+          errorCorrectionLevel: "M",
+          margin: 2,
+          width: size * 4,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
         if (!cancelled) setDataUrl(url);
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         // eslint-disable-next-line no-console
         console.error("[qr-preview] failed to render QR", { value: normalisedValue, err });
         if (cancelled) return;
@@ -83,7 +89,8 @@ export function QrPreview({ value, downloadName = "qr-code", size = 160, poster 
           const msg = err instanceof Error ? err.message : String(err);
           setError(`QR preview could not load${msg ? `: ${msg}` : "."}`);
         }
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
