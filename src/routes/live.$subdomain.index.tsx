@@ -194,6 +194,8 @@ function LivePublicLoaded({
         venueCount={venues.length}
         venueNames={venues.map((v) => v.name)}
         termsUrl={event.terms_url}
+        heroOverlayColor={event.hero_overlay_color ?? null}
+        heroOverlayOpacity={event.hero_overlay_opacity ?? null}
         primaryCta={
           passportHref ? (
             <a
