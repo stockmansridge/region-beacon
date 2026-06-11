@@ -751,8 +751,25 @@ function BrandingEditor() {
           <PaletteSelector
             value={form.palette_key}
             onChange={(key) => setForm({ ...form, palette_key: key })}
+            onApplyTheme={(p) =>
+              setForm((f) => ({
+                ...f,
+                palette_key: "custom",
+                primary_color: p.primary,
+                accent_color: p.accent,
+                page_background_color: p.pageBg,
+                card_background_color: p.cardBg,
+                text_color: p.heading ?? p.bodyText,
+                muted_text_color: p.mutedText,
+                border_color: p.border,
+                primary_text_color: p.primaryForeground,
+                // Switch background mode to honour the custom hex values.
+                page_background_key: "custom_color",
+              }))
+            }
             disabled={!canEdit || saving}
           />
+
 
           {/* Custom brand colours — only visible when the Custom palette is selected. */}
           {form.palette_key === "custom" && (
