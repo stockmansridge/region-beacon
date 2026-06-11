@@ -188,23 +188,29 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                             </p>
                           )}
                         </div>
-                        {hasOffer && (
-                          <div className="mt-2">
-                            <span
-                              className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                              style={{
-                                backgroundColor:
-                                  "color-mix(in oklab, var(--event-accent, var(--event-primary, #1F3D2B)) 18%, transparent)",
-                                color: "var(--event-primary,#1F3D2B)",
-                              }}
-                            >
-                              <Gift className="h-3 w-3" aria-hidden />
-                              <span className="truncate">
-                                {v.offer_summary!.split("\n")[0].slice(0, 40)}
+                        {hasOffer && (() => {
+                          const OfferIcon = resolveOfferIcon(v.offer_display_icon);
+                          const badgeStyle = resolveOfferBadgeStyle(
+                            v.offer_display_colour,
+                            v.offer_display_foreground_colour,
+                          );
+                          return (
+                            <div className="mt-2">
+                              <span
+                                className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                                style={{
+                                  backgroundColor: badgeStyle.background,
+                                  color: badgeStyle.color,
+                                }}
+                              >
+                                <OfferIcon className="h-3 w-3" aria-hidden />
+                                <span className="truncate">
+                                  {v.offer_summary!.split("\n")[0].slice(0, 40)}
+                                </span>
                               </span>
-                            </span>
-                          </div>
-                        )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </Link>
                     {directionsUrl && (
