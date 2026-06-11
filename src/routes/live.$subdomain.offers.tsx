@@ -217,10 +217,10 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 function Thumb({ path }: { path: string | null }) {
   const url = getVenueAssetPublicUrl(path);
   if (!url) {
-    return <div className="h-16 w-16 flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />;
+    return <div className="h-[80px] w-[80px] flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />;
   }
   return (
-    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10">
+    <div className="h-[80px] w-[80px] flex-shrink-0 overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10">
       <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
     </div>
   );
