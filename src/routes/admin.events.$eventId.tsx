@@ -5533,12 +5533,10 @@ function PublicAddressCard({
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] text-muted-foreground">
-              {isFreePlan && eventStatus === "published" ? (
-                <>Your event is already published — reserving this address activates it immediately and your public site goes live.</>
-              ) : isFreePlan ? (
-                <>Reserving creates a <span className="font-medium">pending</span> address. It goes live the moment you publish the event — your free plan includes the GetStampd subdomain.</>
+              {eventStatus === "published" ? (
+                <>Your event is already live — reserving this address activates it immediately and your public site goes live.</>
               ) : (
-                <>Reserving creates a <span className="font-medium">pending</span> address. It activates after billing.</>
+                <>Reserving creates a <span className="font-medium">pending</span> address. It activates as soon as you turn on the public event.</>
               )}
             </p>
             <button
@@ -5548,8 +5546,8 @@ function PublicAddressCard({
               className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
               {submitting
-                ? (isFreePlan && eventStatus === "published" ? "Activating…" : "Reserving…")
-                : (isFreePlan && eventStatus === "published" ? "Activate public address" : "Reserve subdomain")}
+                ? (eventStatus === "published" ? "Activating…" : "Reserving…")
+                : (eventStatus === "published" ? "Activate public address" : "Reserve subdomain")}
             </button>
           </div>
         </div>
