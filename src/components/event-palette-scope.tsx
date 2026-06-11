@@ -1,15 +1,11 @@
 import { ReactNode } from "react";
+import { resolveEventTheme, themeCssVars } from "@/lib/event-theme";
+import { getBackground, getBackgroundOrDefault } from "@/lib/event-backgrounds";
 import {
-  EventPalette,
+  buildCustomPalette,
   getPalette,
   getPaletteOrDefault,
-  buildCustomPalette,
-  paletteCssVars,
 } from "@/lib/event-palettes";
-import {
-  getBackground,
-  getBackgroundOrDefault,
-} from "@/lib/event-backgrounds";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -18,15 +14,15 @@ const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
  * setting CSS custom properties (--event-*) and the page background
  * treatment on the wrapping element.
  *
- * Palette and background are independent:
- *   - paletteKey            → curated palette key (or "custom")
- *   - primaryColor/accentColor → used when paletteKey is null or "custom"
- *   - backgroundKey         → background treatment key (or "custom_color")
- *   - pageBackgroundColor   → custom hex page bg, used with "custom_color"
- *   - cardBackgroundColor   → optional custom hex card surface
+ * Colour resolution is delegated to `resolveEventTheme` so every public
+ * page consumes the same 8 semantic roles:
+ *   --event-page-bg, --event-card-bg,
+ *   --event-primary, --event-primary-fg,
+ *   --event-text, --event-muted,
+ *   --event-accent, --event-border
  *
- * If nothing is set, renders an un-themed wrapper so legacy pages keep
- * their previous look.
+ * Legacy vars (--event-heading, --event-body, --event-visited,
+ * --event-pin) are emitted as aliases for back-compat.
  */
 export function EventPaletteScope({
   paletteKey,
@@ -35,6 +31,10 @@ export function EventPaletteScope({
   accentColor,
   pageBackgroundColor,
   cardBackgroundColor,
+  textColor,
+  mutedTextColor,
+  borderColor,
+  primaryTextColor,
   children,
   className,
   applyBackground = true,
@@ -45,6 +45,10 @@ export function EventPaletteScope({
   accentColor?: string | null;
   pageBackgroundColor?: string | null;
   cardBackgroundColor?: string | null;
+  textColor?: string | null;
+  mutedTextColor?: string | null;
+  borderColor?: string | null;
+  primaryTextColor?: string | null;
   children: ReactNode;
   className?: string;
   applyBackground?: boolean;
@@ -52,36 +56,40 @@ export function EventPaletteScope({
   const hasCustomPalette =
     paletteKey === "custom" ||
     (!paletteKey && (primaryColor || accentColor));
-  const explicitCurated: EventPalette | null = getPalette(paletteKey ?? null);
+  const explicitCurated = getPalette(paletteKey ?? null);
   const explicitBackground = getBackground(backgroundKey ?? null);
+  const hasSemanticOverride =
+    (textColor && HEX_RE.test(textColor)) ||
+    (mutedTextColor && HEX_RE.test(mutedTextColor)) ||
+    (borderColor && HEX_RE.test(borderColor)) ||
+    (primaryTextColor && HEX_RE.test(primaryTextColor));
 
-  if (!explicitCurated && !hasCustomPalette && !explicitBackground) {
+  if (
+    !explicitCurated &&
+    !hasCustomPalette &&
+    !explicitBackground &&
+    !hasSemanticOverride
+  ) {
     return <div className={className}>{children}</div>;
   }
 
-  let palette: EventPalette;
-  if (paletteKey === "custom" || hasCustomPalette) {
-    palette = buildCustomPalette(primaryColor ?? null, accentColor ?? null);
-  } else {
-    palette = getPaletteOrDefault(paletteKey);
-  }
+  const theme = resolveEventTheme({
+    palette_key: paletteKey ?? null,
+    primary_color: primaryColor ?? null,
+    accent_color: accentColor ?? null,
+    page_background_color: pageBackgroundColor ?? null,
+    card_background_color: cardBackgroundColor ?? null,
+    text_color: textColor ?? null,
+    muted_text_color: mutedTextColor ?? null,
+    border_color: borderColor ?? null,
+    primary_text_color: primaryTextColor ?? null,
+    page_background_key: backgroundKey ?? null,
+  });
 
-  // Custom page/card colour overrides are ONLY active when the user
-  // explicitly selected the "custom_color" background. Selecting any
-  // preset background must fully take over and ignore stale custom
-  // values that may still be present on the row for convenience.
+  // Page background painting still respects the curated background
+  // treatments (gradients/patterns). Custom hex page bg is honoured
+  // only when "custom_color" background is selected.
   const isCustomBackground = backgroundKey === "custom_color";
-
-  if (
-    isCustomBackground &&
-    cardBackgroundColor &&
-    HEX_RE.test(cardBackgroundColor)
-  ) {
-    palette = { ...palette, cardBg: cardBackgroundColor };
-  }
-
-  const background = getBackgroundOrDefault(backgroundKey);
-
   let bgStyle: React.CSSProperties = {};
   if (applyBackground) {
     if (
@@ -91,12 +99,24 @@ export function EventPaletteScope({
     ) {
       bgStyle = { backgroundColor: pageBackgroundColor };
     } else {
-      bgStyle = background.build(palette);
+      // Curated background treatments need an EventPalette; build a
+      // minimal one from the resolved theme so gradients still derive
+      // from the right primary/accent.
+      const basePalette =
+        paletteKey === "custom" || (!paletteKey && (primaryColor || accentColor))
+          ? buildCustomPalette(primaryColor ?? null, accentColor ?? null)
+          : getPaletteOrDefault(paletteKey);
+      const paletteForBg = {
+        ...basePalette,
+        pageBg: theme.pageBg,
+        cardBg: theme.cardBg,
+      };
+      bgStyle = getBackgroundOrDefault(backgroundKey).build(paletteForBg);
     }
   }
 
   const style: React.CSSProperties = {
-    ...paletteCssVars(palette),
+    ...themeCssVars(theme),
     ...bgStyle,
   };
   return (

@@ -1,65 +1,111 @@
-# Awards / Prizes System
 
-A large multi-part feature spanning database, RPCs, admin UI, public passport UI, and navigation. I'll deliver it as draft SQL (not auto-applied) plus full frontend wiring against those RPC names.
+## Goal
 
-## Part A — Draft SQL Migrations
+Reduce branding to 8 semantic colour roles, drive every public passport page through one central theme helper, add a live preview and non-blocking contrast warnings on the Branding page. Keep existing events working via backward-compatible mapping.
 
-New folder: `supabase/migrations-draft-event-awards/`
+## The 8 semantic roles
 
-1. `01_event_awards.sql` — `event_awards` table + indexes + updated_at trigger + GRANTs + RLS (deny-all; access via RPCs only).
-2. `02_event_award_draws.sql` — `event_award_draws` table + indexes + GRANTs + RLS (deny-all).
-3. `03_storage_event_awards.sql` — note that we reuse the existing `event-assets` bucket (see `src/lib/event-assets.ts`) with path `{agency_id}/{event_id}/awards/{uuid}.{ext}`. Adds a storage RLS policy allowing agency admins to write under that prefix (mirrors existing event asset policies).
-4. `04_admin_rpcs.sql` — `get_event_awards_admin`, `save_event_award`, `delete_event_award`, `draw_event_award_winner`, `get_event_award_draws_admin`.
-5. `05_public_rpcs.sql` — `get_public_event_awards`.
-6. `06_verify.sql` — sanity selects.
-7. `README.md` — review/apply instructions; lists that SQL must be applied manually before the UI works.
+| Role | CSS var | Used for |
+|---|---|---|
+| Page background | `--event-page-bg` | Outer page background |
+| Card / surface bg | `--event-card-bg` | Cards, dialogs, list rows, panels |
+| Primary brand | `--event-primary` | Primary buttons, accents, links, visited stamps |
+| Primary button text | `--event-primary-fg` | Text/icons on primary buttons |
+| Main text | `--event-text` | Headings, venue names, labels, body copy, leaderboard names, FAQ Qs |
+| Muted text | `--event-muted` | Helper text, descriptions, metadata, timestamps, secondary labels |
+| Accent / highlight | `--event-accent` | Map pins, badges, highlights, secondary brand colour |
+| Border / divider | `--event-border` | Card borders, dividers, input borders |
 
-Eligibility logic inside RPCs:
-- Points: sum from existing event points source of truth (will inspect `passport_stamps` / leaderboard RPC and reuse the same calc).
-- All-locations: distinct venue checkins for passport `>=` count of active, non-deleted venues for the event, AND active venue count `> 0`.
-- Excludes soft-deleted passports if `passports.deleted_at` exists.
+Note: `--event-text` collapses today's `--event-heading` + `--event-body` into a single role. Old vars (`--event-heading`, `--event-body`, `--event-visited`, `--event-pin`) continue to be emitted as aliases (`var(--event-text)` / `var(--event-primary)` / `var(--event-accent)`) so existing public pages keep rendering.
 
-## Part B — Frontend (admin)
+## Schema changes (migration)
 
-Files:
-- `src/lib/event-awards.ts` — TS types matching RPC return shapes; upload helper reusing `uploadEventAsset` pattern but under `awards/` subfolder, or extend `EventAssetKind` to include `"award"`. I'll add a small helper `uploadAwardImage` rather than mutate the existing kind enum, to avoid touching the existing validator.
-- `src/components/event-awards-section.tsx` — Admin tab content: list, create/edit dialog (with image upload), draw-winner confirm dialog, draw-result display, draw history table.
-- `src/routes/admin.events.$eventId.tsx` — add `"awards"` to `EventTabKey`, add tab entry, render `<EventAwardsSection />`.
+Add to `public.event_branding`:
+- `text_color text` (main text)
+- `muted_text_color text` (muted text)
+- `border_color text` (border / divider)
+- `primary_text_color text` (primary button text, distinct from `primary_color`)
 
-## Part C — Frontend (public)
+Keep existing columns (`primary_color`, `accent_color`, `page_background_color`, `card_background_color`, `palette_key`, `page_background_key`) untouched for backward compatibility. New saves write the new columns; reads fall back to palette-derived values if unset.
 
-Files:
-- `src/components/public-event-awards.tsx` — shared awards list rendering (cards with eligibility badges, entrant counts, copy variants for each state).
-- `src/routes/live.$subdomain.awards.tsx` — tenant-hosted route.
-- `src/routes/awards.tsx` — root-hosted shim mirroring existing FAQ/offers pattern.
-- `src/components/public-event-nav.tsx` — add Awards nav item (desktop + mobile), hidden when no active awards (uses a small `useEventHasAwards` hook).
-- `src/lib/use-event-has-awards.ts` — lightweight hook calling a cheap count.
-- `src/routeTree.gen.ts` — regenerated entries for new routes (manual edits since the tree is committed).
+## Central theme helper
 
-## Part D — Behaviour details
+New `src/lib/event-theme.ts`:
 
-- Confirm-modal copy and "Draw again" warning per spec.
-- Soft-delete in admin; never hard-delete.
-- Public RPC never returns winner PII.
-- All RPC calls go through the existing supabase browser client (admin RPCs check `agency_id` server-side via SECURITY DEFINER).
+```ts
+export type EventTheme = {
+  pageBg: string; cardBg: string;
+  primary: string; primaryText: string;
+  text: string; muted: string;
+  accent: string; border: string;
+};
 
-## Part E — Out of scope (unchanged)
+export function resolveEventTheme(input: {
+  palette_key?, primary_color?, accent_color?,
+  page_background_color?, card_background_color?,
+  text_color?, muted_text_color?, border_color?, primary_text_color?,
+}): EventTheme;
 
-Points ledger, leaderboard, check-in flow, passport claim, existing tabs.
+export function themeCssVars(t: EventTheme): React.CSSProperties;
+// emits --event-page-bg, --event-card-bg, --event-primary, --event-primary-fg,
+// --event-text, --event-muted, --event-accent, --event-border
+// + legacy aliases: --event-heading, --event-body, --event-visited, --event-pin
+```
 
-## Technical notes
+`EventPaletteScope` is refactored to call `resolveEventTheme` + `themeCssVars` so every public page already wrapped in it picks up the new model with zero per-page changes.
 
-- RPC names (must match exactly in SQL and frontend):
-  - `get_event_awards_admin`
-  - `save_event_award`
-  - `delete_event_award`
-  - `draw_event_award_winner`
-  - `get_event_award_draws_admin`
-  - `get_public_event_awards`
-- Storage path: `{agency_id}/{event_id}/awards/{uuid}.{ext}` in `event-assets` bucket. Images jpg/jpeg/png/webp, 5 MB cap.
-- SQL is delivered as a **draft** under `supabase/migrations-draft-event-awards/`. The user must apply it (the project's convention — all other features ship the same way per `supabase/migrations-draft-*/README.md`). The UI will surface real RPC errors if SQL hasn't been applied yet.
-- Typecheck will pass; runtime requires the SQL to be applied.
+## Public page audit (text colour pass)
 
-## Deliverables on completion
+For each file under `src/routes/live.*`, `src/routes/passport.*`, `src/routes/checkin.*`, `src/routes/tasting.*`, `src/routes/collect.bonus.*`, `src/routes/t.$agencySlug.*`, `src/routes/scan.tsx`, plus `trail-landing.tsx`, `trail-shell.tsx`, `public-event-nav.tsx`, `public-legal.tsx`, `event-map-section.tsx`, `collect-points-section.tsx`, `venue-public-profile-dialog.tsx`:
 
-Delivery report listing SQL files, changed admin/public files, RPC names, storage path, and the manual-apply instruction.
+- Replace `text-slate-*`, `text-gray-*`, `text-stone-*`, `text-muted-foreground`, raw hex text colours, and inherited-only text with one of:
+  - `style={{ color: 'var(--event-text)' }}` (or `text-[var(--event-text)]`) for main copy
+  - `style={{ color: 'var(--event-muted)' }}` for helper / metadata
+- Borders → `var(--event-border)`. Card backgrounds → `var(--event-card-bg)`.
+- Primary buttons: `bg-[var(--event-primary)] text-[var(--event-primary-fg)]`. Secondary buttons: `bg-[var(--event-card-bg)] border-[var(--event-border)] text-[var(--event-text)]`.
+
+Heading-specific weight/size stays via Tailwind; only colour comes from the theme.
+
+## Branding editor changes (`admin.events.$eventId_.branding.tsx`)
+
+- Replace the current scattered text colour inputs with exactly 8 colour controls matching the roles above (palette presets still offered as quick fills).
+- Remove / hide controls that don't drive anything consistent (any one-off text-tint fields).
+- Persist all 8 to `event_branding` on save. Legacy fields written for back-compat where they overlap.
+- Add a **Live preview** card rendered with `EventPaletteScope` using the in-progress form values — same component path as production, so what the admin sees is exactly what customers get. Preview contains: H1, body paragraph, muted helper line, primary button, secondary button, sample card, sample venue row, sample leaderboard/reward row.
+- Add **contrast warnings** using WCAG relative-luminance ratio (<4.5 AA for normal text, <3 for large):
+  - main text vs page bg
+  - main text vs card bg
+  - muted text vs card bg
+  - primary button text vs primary brand
+  Each warning is a small inline amber notice next to the affected control: *"Low contrast: this text may be hard to read on the public passport."* Non-blocking — save still works.
+
+## Backward compatibility
+
+`resolveEventTheme` precedence per role:
+1. New explicit column (e.g. `text_color`) if set & valid hex
+2. Curated palette value (when `palette_key` resolves)
+3. Custom palette derived from `primary_color`/`accent_color`
+4. Default palette (`classic_vineyard`)
+
+So events with no new columns yet render identically to today.
+
+## Files touched (estimate)
+
+- **New**: `src/lib/event-theme.ts`, `src/lib/contrast.ts`, migration under `supabase/migrations/`
+- **Edited (core)**: `src/components/event-palette-scope.tsx`, `src/lib/event-palettes.ts` (export shim), `src/routes/admin.events.$eventId_.branding.tsx`
+- **Edited (audit, colour-only)**: ~15 public route/component files listed above
+- **Type updates**: wherever `Branding` is typed, add 4 new optional fields
+
+## Out of scope
+
+- No layout/spacing/typography redesigns of public pages — colour token swap only.
+- No blocking validation on save (warnings only, per spec).
+- No removal of palette_key / curated palettes — they still work and act as quick fills.
+
+## Verification
+
+- `bun run build` clean.
+- Branding page renders 8 controls + live preview; tweaking each control updates the preview live.
+- Toggling colours to a known-bad pair (e.g. white-on-white) surfaces the contrast warning; save still succeeds.
+- An existing event with no new columns loads unchanged on `/passport/...`, `/live/.../venues`, `/live/.../leaderboard`, `/live/.../faq`, `/checkin/...`.
+- Grep confirms no `text-slate-`, `text-gray-`, `text-muted-foreground` left in audited public files.
