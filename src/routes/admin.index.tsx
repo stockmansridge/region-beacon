@@ -308,6 +308,11 @@ function Dashboard() {
                 {venueNotice.message}
               </div>
             )}
+            {rpcFailed && fallingBackToFree && (
+              <div className="mt-2 text-xs font-medium text-[#B91C1C]">
+                Plan resolver failed; using fallback Free. Turn on Diagnostics for details.
+              </div>
+            )}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
             <Link
@@ -330,41 +335,6 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Temporary plan diagnostics — behind the global Diagnostics toggle */}
-      {agencyId && diagnosticsEnabled && (
-        <div className="mb-5 rounded-[12px] border border-[#D9E2EF] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#64748B]">
-          <div className="mb-1 font-semibold text-[#111827]">Plan resolver diagnostic</div>
-          <div>workspace_org_name: {agency.selected?.name ?? "—"}</div>
-          <div>workspace_agency_id: {agencyId}</div>
-          <div>workspace_agency_slug: {agency.selected?.slug ?? "—"}</div>
-          <div>logged_in_user_email: {userEmail ?? "—"}</div>
-          <div>resolver: supabase.rpc(&quot;get_agency_plan_limits&quot;, {"{"} _agency_id: workspace_agency_id {"}"})</div>
-          <div>fetched_at: {planInfo?.fetchedAt ?? "—"}</div>
-          <div className="mt-2 font-semibold text-[#111827]">get_agency_plan_limits raw response:</div>
-          <pre className="whitespace-pre-wrap break-all">{planRaw ?? "(no data returned)"}</pre>
-          {planRpcError && (
-            <>
-              <div className="mt-2 font-semibold text-[#B91C1C]">get_agency_plan_limits RPC error:</div>
-              <pre className="whitespace-pre-wrap break-all text-[#B91C1C]">{planRpcError}</pre>
-            </>
-          )}
-          <div className="mt-2 font-semibold text-[#111827]">direct agencies row (id, name, slug, manual_plan_override, status):</div>
-          <pre className="whitespace-pre-wrap break-all">{agencyRowRaw ?? "(no row returned — RLS may block direct read; compare agency_id above against System Admin row)"}</pre>
-          {agencyRowError && (
-            <>
-              <div className="mt-2 font-semibold text-[#B91C1C]">agencies lookup error:</div>
-              <pre className="whitespace-pre-wrap break-all text-[#B91C1C]">{agencyRowError}</pre>
-            </>
-          )}
-          <div className="mt-2">
-            parsed → effective_plan_code: {planInfo?.code ?? "(rpc not parsed — fell back to free)"} · plan_source:{" "}
-            {planInfo?.source ?? "—"} · venue_limit:{" "}
-            {planInfo ? (planInfo.venueLimit === null ? "unlimited" : planInfo.venueLimit) : "—"} ·
-            manual_plan_override: {planInfo?.manualOverride ?? "—"} · subscription_plan_code:{" "}
-            {planInfo?.subscriptionCode ?? "—"}
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="mb-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
