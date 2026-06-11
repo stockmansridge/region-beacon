@@ -1702,10 +1702,13 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
   return (
     <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div>
-        <div className="text-sm font-semibold">Text &amp; border colours</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+          Advanced — custom colours
+        </div>
+        <div className="mt-1 text-sm font-semibold">Text &amp; border colours</div>
         <p className="mt-1 text-xs text-muted-foreground">
           Public passport pages use these four semantic colours everywhere.
-          Leave any field blank to inherit from the selected palette.
+          Leave any field blank to inherit from the selected theme.
         </p>
       </div>
 
