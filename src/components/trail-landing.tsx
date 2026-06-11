@@ -93,8 +93,8 @@ export function TrailLanding({
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-7 text-center text-[var(--event-page-bg,#F6EFE2)]">
             {logoUrl ? (
               <div
-                className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border bg-white/95"
-                style={{ borderColor: `${goldColor}80` }}
+                className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full"
+                style={{ background: "transparent" }}
               >
                 <img
                   src={logoUrl}

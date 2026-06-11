@@ -1421,14 +1421,11 @@ function EventDetail() {
       let newVenueId: string | null = null;
       if (venueEditingId === "new") {
         // Venue creation guard: check organisation plan limit before inserting.
-        const [subRes, countRes] = await Promise.all([
-          supabase
-            .from("agency_subscriptions")
-            .select("id, plan_code, status")
-            .eq("agency_id", agencyId)
-            .order("updated_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
+        // Plan resolution goes through get_agency_plan_limits so manual plan
+        // overrides (e.g. Enterprise comp without a subscription row) take
+        // effect immediately and consistently with the rest of the app.
+        const [planRes, countRes] = await Promise.all([
+          supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
           supabase
             .from("venues")
             .select("id", { count: "exact", head: true })
@@ -1436,16 +1433,16 @@ function EventDetail() {
             .is("deleted_at", null),
         ]);
 
-        if (subRes.error) {
+        if (planRes.error) {
           failVenueSave(venueSaveDebugFromError({
             action: "preflight",
             payloadKeys,
             venueId: venueEditingId,
             eventId,
             agencyId,
-            error: subRes.error,
-            httpStatus: subRes.status,
-            httpStatusText: subRes.statusText,
+            error: planRes.error,
+            httpStatus: null,
+            httpStatusText: null,
           }));
           return;
         }
@@ -1463,9 +1460,14 @@ function EventDetail() {
           return;
         }
 
-        const plan = getPlanByCode(subRes.data?.plan_code);
+        const limits = planRes.data as { plan_code?: string | null; venue_limit?: number | null } | null;
+        const rawPlanCode = limits && typeof limits === "object" ? limits.plan_code ?? null : null;
+        const plan = getPlanByCode(rawPlanCode);
         const activeVenueCount = countRes.count ?? 0;
-        const venueLimit = plan.venueLimit;
+        const venueLimit =
+          limits && typeof limits === "object" && "venue_limit" in limits
+            ? (limits.venue_limit ?? null)
+            : plan.venueLimit;
 
         if (venueLimit !== null && activeVenueCount >= venueLimit) {
           const nextPlan = getNextPlanAfter(plan.code);

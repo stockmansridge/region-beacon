@@ -21,17 +21,11 @@ export const Route = createFileRoute("/admin/")({
 
 type Counts = { events: number; venues: number; checkins: number; visitors: number };
 
-type SubscriptionRow = {
-  id: string;
-  plan_code: string | null;
-  status: string;
-};
-
 function Dashboard() {
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [planCode, setPlanCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,19 +39,16 @@ function Dashboard() {
     (async () => {
       // Per-table count queries scoped to the selected agency. RLS enforces tenancy;
       // the explicit agency_id filter keeps the query well-formed and indexed.
+      // Plan resolution goes through get_agency_plan_limits so manual plan
+      // overrides (e.g. Enterprise comp) take effect even without an
+      // agency_subscriptions row.
       const head = { count: "exact" as const, head: true };
-      const [events, venues, checkins, visitors, subRes] = await Promise.all([
+      const [events, venues, checkins, visitors, planRes] = await Promise.all([
         supabase.from("events").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("venues").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("checkins").select("id", head).eq("agency_id", agencyId),
         supabase.from("visitors").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
-        supabase
-          .from("agency_subscriptions")
-          .select("id, plan_code, status")
-          .eq("agency_id", agencyId)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+        supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
       ]);
 
       if (cancelled) return;
@@ -73,7 +64,11 @@ function Dashboard() {
         checkins: checkins.count ?? 0,
         visitors: visitors.count ?? 0,
       });
-      setSubscription(subRes.error ? null : ((subRes.data ?? null) as SubscriptionRow | null));
+      const raw =
+        !planRes.error && planRes.data && typeof planRes.data === "object" && "plan_code" in (planRes.data as Record<string, unknown>)
+          ? String((planRes.data as Record<string, unknown>).plan_code ?? "free")
+          : "free";
+      setPlanCode(raw.toLowerCase().replace(/-/g, "_"));
       setLoading(false);
     })();
 
@@ -113,7 +108,7 @@ function Dashboard() {
     },
   ];
 
-  const currentPlan = getPlanByCode(subscription?.plan_code);
+  const currentPlan = getPlanByCode(planCode);
   const venueCount = counts?.venues ?? 0;
   const venueUsageMessage = getVenueUsageMessage(venueCount, currentPlan);
   const nextPlan =
