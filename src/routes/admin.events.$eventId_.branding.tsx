@@ -72,12 +72,12 @@ type Branding = {
   page_background_key: string | null;
   page_background_color: string | null;
   card_background_color: string | null;
-  // Simplified semantic colour roles. Optional — fall back to palette
-  // values when null. New saves write to these columns.
   text_color: string | null;
   muted_text_color: string | null;
   border_color: string | null;
   primary_text_color: string | null;
+  hero_overlay_color: string | null;
+  hero_overlay_opacity: number | null;
 };
 
 type Domain = {
@@ -112,6 +112,8 @@ type Form = {
   muted_text_color: string;
   border_color: string;
   primary_text_color: string;
+  hero_overlay_color: string;
+  hero_overlay_opacity: string; // empty string = inherit default
 };
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
