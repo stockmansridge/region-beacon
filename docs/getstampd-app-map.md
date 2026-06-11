@@ -4,6 +4,19 @@
 > The marker renders at the top of every `/admin/*` page for platform admins via `AdminShell`.
 > If you do not see the current `BUILD_MARKER` value on a given environment, that environment is serving a stale bundle.
 
+## Surfaces — what each URL actually is
+
+There are **four** surfaces and they are NOT the same deployment. Test on the direct preview URL, not the editor iframe.
+
+| Surface | URL | What it is | Updated by |
+|---|---|---|---|
+| Editor workspace | `https://lovable.dev/projects/481bb391-4845-4595-9174-36e7e5516010` | The Lovable editor with an embedded preview iframe. The iframe may cache aggressively — **do not treat this as the canonical test site.** | n/a (editor) |
+| **Direct preview app** (canonical test) | `https://id-preview--481bb391-4845-4595-9174-36e7e5516010.lovable.app` | Lovable preview build. Rebuilds on every commit. **This is the URL to verify changes on before deploying.** | Every commit (auto) |
+| Lovable published app | `https://region-beacon.lovable.app` | Lovable publish output. Only relevant if you connect a Lovable custom domain. **Not used by getstampd.com.au.** | Clicking **Publish** in Lovable |
+| **Production custom domain** | `https://getstampd.com.au` (+ `www`, `app`, `*.getstampd.com.au`) | Self-hosted Cloudflare Worker `region-beacon` (see `wrangler.toml` `[[routes]]`). **Lovable Publish does NOT update this domain** — the zone routes intercept the hostname at Cloudflare before Lovable ever sees the request. | GitHub Actions workflow `Deploy GetStampd Cloudflare Worker` (or `bunx wrangler deploy` locally) |
+
+**Workflow:** commit → verify on direct preview URL → run `Deploy GetStampd Cloudflare Worker` from GitHub Actions → verify on `getstampd.com.au`. The build marker must match across both.
+
 ---
 
 ## Part A — Git / deployment source of truth (what this agent CAN verify)
