@@ -4919,15 +4919,23 @@ function EventSetupWarnings({
     items.push({
       tone: "warn",
       title: hasPendingSubdomain
-        ? "Public address reserved — billing activation required"
+        ? (isFreePlan
+            ? "Public address reserved — publish to go live"
+            : "Public address reserved — billing activation required")
         : "Public address not claimed",
       body: hasPendingSubdomain
-        ? "A subdomain has been reserved but is not active. It will go live once billing/activation is complete."
-        : "Choose and reserve a subdomain so visitors can find this event after activation.",
+        ? (isFreePlan
+            ? "Your free event includes a GetStampd subdomain. Publish the event to make this address live and start sharing your passport and QR codes."
+            : "A subdomain has been reserved but is not active. It will go live once billing/activation is complete.")
+        : (isFreePlan
+            ? "Your free event includes a GetStampd subdomain so you can share your passport and generate QR codes. Choose an available address to reserve it."
+            : "Choose and reserve a subdomain so visitors can find this event after activation."),
       action: {
         kind: "anchor",
         href: "#section-public-address",
-        label: hasPendingSubdomain ? "View activation status" : "Choose public address",
+        label: hasPendingSubdomain
+          ? (isFreePlan ? "Review address" : "View activation status")
+          : "Choose public address",
       },
     });
   }
@@ -4950,12 +4958,14 @@ function EventSetupWarnings({
     });
   }
 
-  items.push({
-    tone: "info",
-    title: "Billing activation not configured",
-    body: "Per-event billing/activation will be wired in a later step. This event won't go live publicly until it's activated.",
-    action: { kind: "link", to: "/admin/account", label: "Go to Account & Billing" },
-  });
+  if (!isFreePlan) {
+    items.push({
+      tone: "info",
+      title: "Billing activation not configured",
+      body: "Per-event billing/activation will be wired in a later step. This event won't go live publicly until it's activated.",
+      action: { kind: "link", to: "/admin/account", label: "Go to Account & Billing" },
+    });
+  }
 
   if (items.length === 0) return null;
 
