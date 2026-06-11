@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 // Use the browser entry directly — it avoids `node:fs` (imported by the
 // default entry) and is bundled into the admin chunk so we don't depend on
 // a fragile dynamic import that can 404 after a redeploy with a new hash.
+// @ts-expect-error — qrcode types only describe the default entry; the browser entry has the same toDataURL surface.
 import QRCode from "qrcode/lib/browser";
 import { generateQrPosterPdf, type PosterInput } from "@/lib/qr-poster";
 import { normaliseQrUrl } from "@/lib/qr-url";
