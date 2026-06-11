@@ -107,22 +107,19 @@ export function VenueTastingQrSection({
   const [expandedQrId, setExpandedQrId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // Resolve current plan (agency_subscriptions: pick latest active).
+  // Resolve current plan via get_agency_plan_limits so manual plan overrides
+  // (e.g. Enterprise comp without a subscription row) are respected.
   useEffect(() => {
     let cancelled = false;
     setPlanLoading(true);
     (async () => {
-      const { data } = await supabase
-        .from("agency_subscriptions")
-        .select("plan_code, status, updated_at")
-        .eq("agency_id", agencyId)
-        .in("status", ["active", "trialing", "comp"])
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId });
       if (cancelled) return;
-      const raw = (data?.plan_code ?? "free").toString().toLowerCase().replace(/-/g, "_");
-      setPlanCode(raw);
+      const raw =
+        !error && data && typeof data === "object" && "plan_code" in (data as Record<string, unknown>)
+          ? String((data as Record<string, unknown>).plan_code ?? "free")
+          : "free";
+      setPlanCode(raw.toLowerCase().replace(/-/g, "_"));
       setPlanLoading(false);
     })();
     return () => {
