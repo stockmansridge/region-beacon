@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Gift, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
@@ -30,6 +31,9 @@ type VenueRow = {
   logo_path: string | null;
   cover_path: string | null;
   offer_summary: string | null;
+  offer_display_icon: string | null;
+  offer_display_colour: string | null;
+  offer_display_foreground_colour: string | null;
   lat: number | null;
   lng: number | null;
   order_index: number | null;
