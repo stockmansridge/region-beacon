@@ -123,11 +123,30 @@ export default {
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response, {
+      const normalized = await normalizeCatastrophicSsrResponse(response, {
         host,
         pathname: url.pathname,
         classification,
       });
+      // Prevent browsers / Cloudflare from caching the SSR HTML shell.
+      // Hashed assets under /assets/* are served by Nitro's ASSETS binding
+      // with `immutable` long-cache headers (correct), but the HTML shell
+      // that references those hashed chunks must always be revalidated —
+      // otherwise an old shell sticks around and tries to dynamically
+      // import chunk hashes that no longer exist after a redeploy,
+      // producing "Failed to fetch dynamically imported module" errors.
+      const contentType = normalized.headers.get("content-type") ?? "";
+      if (contentType.includes("text/html")) {
+        const headers = new Headers(normalized.headers);
+        headers.set("cache-control", "no-cache, no-store, must-revalidate");
+        headers.set("pragma", "no-cache");
+        return new Response(normalized.body, {
+          status: normalized.status,
+          statusText: normalized.statusText,
+          headers,
+        });
+      }
+      return normalized;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       console.error("[ssr] thrown", {
