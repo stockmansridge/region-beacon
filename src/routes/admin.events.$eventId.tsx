@@ -183,7 +183,9 @@ type Bundle = {
   venues: Venue[];
   qrByVenue: Map<string, QrSummary>;
   offerSummaryByVenue: Map<string, string | null>;
+  offerDisplayByVenue: Map<string, OfferDisplayRow>;
   offerSupported: boolean;
+  offerDisplaySupported: boolean;
   activation: Activation | null;
 };
 
@@ -239,11 +241,20 @@ type VenueEditForm = {
   status: "active" | "inactive";
   description: string;
   offer_summary: string;
+  offer_display_icon: string;
+  offer_display_colour: string;
+  offer_display_foreground_colour: string;
   website_url: string;
   phone: string;
   logo_path: string | null;
   cover_path: string | null;
   points_value: string;
+};
+
+type OfferDisplayRow = {
+  offer_display_icon: string | null;
+  offer_display_colour: string | null;
+  offer_display_foreground_colour: string | null;
 };
 
 
