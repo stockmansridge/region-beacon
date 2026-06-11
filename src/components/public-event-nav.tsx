@@ -1,8 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  Ticket,
-  MapPin,
+  Stamp,
   Trophy,
   Map as MapIcon,
   Menu,
@@ -12,6 +11,9 @@ import {
   Tag,
   HelpCircle,
   Award,
+  MoreHorizontal,
+  MapPin,
+  Ticket,
 } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
@@ -33,8 +35,7 @@ type ActiveTarget =
  *
  * Renders a premium, app-style sticky top header (hamburger left, centred
  * event logo or name, passport shortcut on the right) plus a fixed bottom
- * mobile nav. The hamburger opens a slide-in drawer with all public
- * sections.
+ * mobile nav with Home, Map, Passport (prominent), Leader Board, More.
  */
 export function PublicEventNav({
   subdomain,
@@ -91,7 +92,7 @@ export function PublicEventNav({
     return false;
   };
 
-  const passportLabel = passportHref ? "Passport" : "Start passport";
+  const passportLabel = passportHref ? "View passport" : "Start passport";
   const passportTarget = passportHref ?? "/join";
 
   return (
@@ -144,11 +145,11 @@ export function PublicEventNav({
           {canRegister || passportHref ? (
             <a
               href={passportTarget}
-              aria-label="View passport"
+              aria-label={passportLabel}
               title={passportLabel}
               className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
             >
-              <Ticket className="h-5 w-5" />
+              <Stamp className="h-5 w-5" />
             </a>
           ) : (
             <span aria-hidden className="ml-auto h-10 w-10" />
@@ -156,7 +157,7 @@ export function PublicEventNav({
         </div>
       </header>
 
-      {/* Slide-in hamburger menu (works on mobile + desktop) */}
+      {/* Slide-in hamburger menu */}
       {menuOpen && (
         <MenuDrawer
           onClose={() => setMenuOpen(false)}
@@ -174,7 +175,7 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav */}
+      {/* Fixed bottom mobile nav: Home · Map · Passport (centre) · Leader Board · More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
@@ -185,68 +186,97 @@ export function PublicEventNav({
           color: "var(--event-primary-fg,#F6EFE2)",
         }}
       >
-        <ul className="mx-auto flex h-14 max-w-md items-stretch">
-          <BottomItem active={isActive("passport")} accent={accent}>
-            <a
-              href={passportTarget}
-              aria-current={isActive("passport") ? "page" : undefined}
-              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+        <ul className="mx-auto grid h-16 max-w-md grid-cols-5 items-stretch">
+          <BottomItem active={isActive("home")} accent={accent}>
+            <Link
+              to="/"
+              aria-current={isActive("home") ? "page" : undefined}
+              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: isActive("passport")
-                  ? accent
-                  : "var(--event-primary-fg,#F6EFE2)",
+                color: isActive("home") ? accent : "var(--event-primary-fg,#F6EFE2)",
               }}
             >
-              <Ticket className="h-5 w-5" />
-              <span>Passport</span>
-            </a>
+              <Home className="h-5 w-5" />
+              <span>Home</span>
+            </Link>
           </BottomItem>
-          {hasMap && (
-            <BottomItem active={isActive("map")} accent={accent}>
+
+          <BottomItem active={isActive("map")} accent={accent}>
+            {hasMap ? (
               <Link
                 to="/map"
                 aria-current={isActive("map") ? "page" : undefined}
-                className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("map")
-                    ? accent
-                    : "var(--event-primary-fg,#F6EFE2)",
+                  color: isActive("map") ? accent : "var(--event-primary-fg,#F6EFE2)",
                 }}
               >
                 <MapIcon className="h-5 w-5" />
-                <span>Trail Map</span>
+                <span>Map</span>
               </Link>
-            </BottomItem>
-          )}
-          <BottomItem active={isActive("venues")} accent={accent}>
-            <Link
-              to="/venues"
-              aria-current={isActive("venues") ? "page" : undefined}
-              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+            ) : (
+              <Link
+                to="/venues"
+                aria-current={isActive("venues") ? "page" : undefined}
+                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                style={{
+                  color: isActive("venues") ? accent : "var(--event-primary-fg,#F6EFE2)",
+                }}
+              >
+                <MapPin className="h-5 w-5" />
+                <span>Venues</span>
+              </Link>
+            )}
+          </BottomItem>
+
+          {/* Centre passport — visually prominent */}
+          <li className="relative flex items-center justify-center">
+            <a
+              href={passportTarget}
+              aria-label={passportLabel}
+              aria-current={isActive("passport") ? "page" : undefined}
+              className="-mt-6 grid h-14 w-14 place-items-center rounded-full shadow-lg ring-4 transition active:scale-95"
               style={{
-                color: isActive("venues")
+                background: accent,
+                color: "var(--event-primary-fg,#F6EFE2)",
+                // Ring tinted with the header colour so the floating button feels connected
+                // to the surrounding nav surface.
+                ["--tw-ring-color" as string]: primary,
+              }}
+            >
+              <Stamp className="h-6 w-6" />
+            </a>
+          </li>
+
+          <BottomItem active={isActive("leaderboard")} accent={accent}>
+            <Link
+              to="/leaderboard"
+              aria-current={isActive("leaderboard") ? "page" : undefined}
+              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+              style={{
+                color: isActive("leaderboard")
                   ? accent
                   : "var(--event-primary-fg,#F6EFE2)",
               }}
             >
-              <MapPin className="h-5 w-5" />
-              <span>Venues</span>
+              <Trophy className="h-5 w-5" />
+              <span>Leader Board</span>
             </Link>
           </BottomItem>
-          <BottomItem active={isActive("offers")} accent={accent}>
-            <Link
-              to="/offers"
-              aria-current={isActive("offers") ? "page" : undefined}
-              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+
+          <BottomItem active={menuOpen} accent={accent}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="More"
+              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: isActive("offers")
-                  ? accent
-                  : "var(--event-primary-fg,#F6EFE2)",
+                color: menuOpen ? accent : "var(--event-primary-fg,#F6EFE2)",
               }}
             >
-              <Tag className="h-5 w-5" />
-              <span>Offers</span>
-            </Link>
+              <MoreHorizontal className="h-5 w-5" />
+              <span>More</span>
+            </button>
           </BottomItem>
         </ul>
       </nav>
@@ -254,7 +284,7 @@ export function PublicEventNav({
       {/* Bottom-nav clearance: only on mobile while this nav is mounted */}
       <style>{`
         @media (max-width: 767px) {
-          body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+          body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
         }
       `}</style>
     </>
@@ -271,7 +301,7 @@ function BottomItem({
   children: React.ReactNode;
 }) {
   return (
-    <li className="relative flex flex-1">
+    <li className="relative flex">
       {children}
       {active && (
         <span
@@ -367,7 +397,7 @@ function MenuDrawer({
               <li>
                 {passportHref ? (
                   <a href={passportHref} onClick={onClose} className={rowClass}>
-                    <Ticket className="h-5 w-5 opacity-80" />
+                    <Stamp className="h-5 w-5 opacity-80" />
                     {passportLabel}
                   </a>
                 ) : (
@@ -401,7 +431,7 @@ function MenuDrawer({
             <li>
               <Link to="/leaderboard" onClick={onClose} className={rowClass}>
                 <Trophy className="h-5 w-5 opacity-80" />
-                Leaderboard
+                Leader Board
               </Link>
             </li>
             {hasAwards && (
