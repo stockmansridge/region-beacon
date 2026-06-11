@@ -52,6 +52,8 @@ type PublicEvent = {
   // before the migration is applied.
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
+  hero_overlay_color?: string | null;
+  hero_overlay_opacity?: number | null;
 };
 
 type PublicVenue = {
