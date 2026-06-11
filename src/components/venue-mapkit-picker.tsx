@@ -174,11 +174,14 @@ export function VenueMapKitPicker({
   const [diag, setDiag] = useState<MapkitDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [townHint, setTownHint] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchAttempted, setSearchAttempted] = useState(false);
   const [weakResults, setWeakResults] = useState(false);
+  const [showSearchDiag, setShowSearchDiag] = useState(false);
+  const [debugAttempts, setDebugAttempts] = useState<DebugAttempt[]>([]);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchSeqRef = useRef(0);
   const userLocRef = useRef<{ lat: number; lng: number } | null>(null);
