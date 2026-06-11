@@ -768,10 +768,13 @@ function BrandingEditor() {
           {form.page_background_key === "custom_color" && (
             <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
               <div>
-                <div className="text-sm font-semibold">Custom background colour</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+                  Advanced — custom colours
+                </div>
+                <div className="mt-1 text-sm font-semibold">Custom background colour</div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Pick a hex page background, and optionally a card background.
-                  These values are only applied while “Custom colour” is the selected page background.
+                  These values are only applied while “Custom” is the selected background style.
                 </p>
               </div>
               <Field label="Page background colour">
