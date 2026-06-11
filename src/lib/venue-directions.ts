@@ -32,3 +32,30 @@ export function buildAppleMapsDirectionsUrl(input: {
   }
   return `https://maps.apple.com/?${params.toString()}`;
 }
+
+/**
+ * Build a Google Maps "directions to" URL for a venue.
+ *
+ * Prefers coordinates; otherwise falls back to a Google Maps search by
+ * address. Returns null when neither lat/lng nor address is available so
+ * callers can hide the button cleanly.
+ */
+export function buildGoogleMapsDirectionsUrl(input: {
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+}): string | null {
+  const hasCoords =
+    typeof input.lat === "number" &&
+    typeof input.lng === "number" &&
+    Number.isFinite(input.lat) &&
+    Number.isFinite(input.lng);
+  if (hasCoords) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${input.lat},${input.lng}`;
+  }
+  const addr = (input.address ?? "").trim();
+  if (addr.length > 0) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`;
+  }
+  return null;
+}

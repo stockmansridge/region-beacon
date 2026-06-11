@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
-import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
+import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
@@ -156,8 +156,8 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         </div>
 
         <div className="px-4">
-          <div className="-mt-10 flex items-end gap-3">
-            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border-4 border-[var(--event-page-bg,#F6EFE2)] bg-[var(--event-card-bg,#FBF5E8)] shadow">
+          <div className="relative z-10 -mt-10 flex items-end gap-3">
+            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border-4 border-[var(--event-page-bg,#F6EFE2)] bg-[var(--event-card-bg,#FBF5E8)] shadow-lg">
               {logoUrl ? (
                 <img
                   src={logoUrl}
@@ -200,11 +200,6 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             </div>
           )}
 
-          {venue.address && (
-            <p className="mt-3 text-sm text-[var(--event-muted,#8A7E66)]">📍 {venue.address}</p>
-          )}
-
-
           {venue.description && (
             <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-body,#3D372C)]">
               {venue.description}
@@ -214,7 +209,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           {venue.offer_summary && (
             <div className="mt-5 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3">
               <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
-                About their offer
+                Offers
               </div>
               <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-body,#3D372C)]">
                 {venue.offer_summary}
@@ -224,8 +219,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
           <div className="mt-6 space-y-2">
             {(() => {
-              const directionsUrl = buildAppleMapsDirectionsUrl({
-                name: venue.name,
+              const directionsUrl = buildGoogleMapsDirectionsUrl({
                 address: venue.address,
                 lat: venue.lat,
                 lng: venue.lng,
@@ -237,7 +231,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                   rel="noopener noreferrer"
                   className="flex items-center justify-between rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm font-medium text-[var(--event-primary,#1F3D2B)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/40"
                 >
-                  <span>Get directions (Apple Maps)</span>
+                  <span>Get directions</span>
                   <span aria-hidden>↗</span>
                 </a>
               ) : null;
@@ -263,6 +257,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
               </a>
             )}
           </div>
+
 
           <VenueMiniMap
             name={venue.name}
