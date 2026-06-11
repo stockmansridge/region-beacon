@@ -16,7 +16,7 @@ export function PublicTrailTabs({
   return (
     <nav
       aria-label="Trail sections"
-      className="mb-5 grid grid-cols-2 border-b border-[var(--event-border,#E6DCC7)]"
+      className="mb-4 grid grid-cols-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-1 shadow-sm"
     >
       {tabs.map((t) => {
         const isActive = t.key === active;
@@ -25,19 +25,13 @@ export function PublicTrailTabs({
             key={t.key}
             to={t.to}
             className={
-              "relative flex items-center justify-center pb-3 pt-2 text-[12px] font-semibold uppercase tracking-[0.22em] transition " +
+              "flex items-center justify-center rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.2em] transition " +
               (isActive
-                ? "text-[var(--event-primary,#1F3D2B)]"
+                ? "bg-[var(--event-primary,#1F3D2B)] text-[var(--event-primary-fg,#F6EFE2)] shadow-sm"
                 : "text-[var(--event-muted,#8A7E66)] hover:text-[var(--event-primary,#1F3D2B)]")
             }
           >
             {t.label}
-            {isActive && (
-              <span
-                aria-hidden
-                className="absolute inset-x-6 -bottom-px h-[2px] rounded-full bg-[var(--event-primary,#1F3D2B)]"
-              />
-            )}
           </Link>
         );
       })}
