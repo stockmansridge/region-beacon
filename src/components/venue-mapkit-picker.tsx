@@ -315,126 +315,125 @@ export function VenueMapKitPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Build a Search/Autocomplete instance biased to Australia and (when
-  // available) the current map centre. Apple's Search supports both POI /
-  // business names and partial addresses — biasing the region dramatically
-  // improves match quality for short queries like "Crown" or "The Espy".
-  const buildSearchOptions = useCallback(() => {
+  // Promisified MapKit search over a given region.
+  const searchOnce = useCallback((q: string, region: any): Promise<any[]> => {
     const mapkit = window.mapkit;
-    if (!mapkit) return null;
-    // Continental AU bounding box (covers Tas + mainland; excludes external territories).
-    const auRegion = new mapkit.CoordinateRegion(
-      new mapkit.Coordinate(-25.2744, 133.7751),
-      new mapkit.CoordinateSpan(40, 45),
-    );
-    const opts: Record<string, unknown> = {
-      language: "en-AU",
-      region: auRegion,
-    };
-    // If the map has been moved by the user, prefer their current centre as
-    // a tighter hint while keeping the AU region constraint.
-    try {
-      const centre = mapRef.current?.center;
-      if (centre && typeof centre.latitude === "number") {
-        opts.coordinate = new mapkit.Coordinate(centre.latitude, centre.longitude);
+    if (!mapkit) return Promise.resolve([]);
+    return new Promise((resolve) => {
+      try {
+        const search = new mapkit.Search({ language: "en-AU", region });
+        search.search(q, (err: any, data: any) => {
+          if (err) { resolve([]); return; }
+          resolve(data?.places ?? []);
+        });
+      } catch {
+        resolve([]);
       }
-    } catch { /* ignore */ }
-    return opts;
+    });
   }, []);
 
-  const runSearch = useCallback(async () => {
+  // Staged, region-biased search:
+  //   1. tight region around best-known centre (event pin / venues / user)
+  //   2. wider regional fallback around the same centre
+  //   3. Australia-wide
+  //   4. query + " Australia" variant (still AU region) as a last resort
+  // Stops as soon as a stage yields good local (AU) candidates. Results are
+  // ranked (country, distance, name match, POI-ness) before display.
+  const stagedSearch = useCallback(async (q: string) => {
     const mapkit = window.mapkit;
-    const q = searchQuery.trim();
     if (!mapkit || !q) return;
+    const seq = ++searchSeqRef.current;
+    maybeRequestGeolocation();
     setSearchAttempted(true);
     setSearchError(null);
+    setWeakResults(false);
     setSearching(true);
+
+    const centre = getBestCentre();
+    const mkRegion = (c: { lat: number; lng: number }, span: number) =>
+      new mapkit.CoordinateRegion(new mapkit.Coordinate(c.lat, c.lng), new mapkit.CoordinateSpan(span, span));
+    const auRegion = new mapkit.CoordinateRegion(
+      new mapkit.Coordinate(AU_CENTROID.lat, AU_CENTROID.lng),
+      new mapkit.CoordinateSpan(40, 45),
+    );
+
+    const stages: Array<{ query: string; region: any }> = [];
+    if (centre) {
+      stages.push({ query: q, region: mkRegion(centre, 1.5) }); // ~local
+      stages.push({ query: q, region: mkRegion(centre, 8) });   // ~regional
+    }
+    stages.push({ query: q, region: auRegion });                 // Australia-wide
+    if (!/australia/i.test(q)) {
+      stages.push({ query: `${q} Australia`, region: auRegion }); // last resort
+    }
+
+    const seen = new Set<string>();
+    let collected: SearchResult[] = [];
+    const goodEnough = (rs: SearchResult[]) => rs.some((r) => r.isAU && r.score >= 60);
+
     try {
-      const opts = buildSearchOptions() ?? { language: "en-AU" };
-      const search = new mapkit.Search(opts);
-      search.search(q, (err: any, data: any) => {
-        setSearching(false);
-        if (err) {
-          setResults([]);
-          setSearchError(
-            "We couldn't reach Apple Maps just now. Try again, or set the address and lat/lng manually below.",
-          );
-          return;
+      for (const stage of stages) {
+        const places = await searchOnce(stage.query, stage.region);
+        if (seq !== searchSeqRef.current) return; // superseded by newer search
+        for (const p of places) {
+          const scored = scorePlace(p, q, centre);
+          if (!scored || seen.has(scored.id)) continue;
+          seen.add(scored.id);
+          collected.push(scored);
         }
-        const items = (data?.places ?? []).slice(0, 10).map((p: any, i: number) => ({
-          id: `${i}-${p.name ?? p.formattedAddress ?? "result"}`,
-          name: p.name ?? "",
-          address: p.formattedAddress ?? "",
-          lat: p.coordinate?.latitude ?? 0,
-          lng: p.coordinate?.longitude ?? 0,
-        }));
-        setResults(items);
-      });
+        if (goodEnough(collected)) break;
+      }
+
+      collected.sort((a, b) => b.score - a.score);
+      const hasAU = collected.some((r) => r.isAU);
+      // If we have plausible AU candidates, hide weak overseas noise entirely.
+      const display = (hasAU ? collected.filter((r) => r.isAU || r.score > 0) : collected).slice(0, 8);
+      if (seq !== searchSeqRef.current) return;
+      setResults(display);
+      // Weak-match warning: nothing Australian, or best match is far from the
+      // known event/user centre.
+      const top = display[0];
+      setWeakResults(
+        display.length > 0 &&
+          (!hasAU || (centre != null && top?.distanceKm != null && top.distanceKm > 500)),
+      );
+      setSearching(false);
     } catch {
+      if (seq !== searchSeqRef.current) return;
       setSearching(false);
       setResults([]);
       setSearchError("Search failed. Try again, or set the address manually below.");
     }
-  }, [searchQuery, buildSearchOptions]);
+  }, [getBestCentre, maybeRequestGeolocation, searchOnce]);
 
-  // Debounced live autocomplete as the user types. Falls back to runSearch
-  // if the SDK doesn't expose autocomplete (older MapKit builds).
+  const runSearch = useCallback(() => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    void stagedSearch(q);
+  }, [searchQuery, stagedSearch]);
+
+  // Debounced live search as the user types — same staged, ranked pipeline.
   useEffect(() => {
     if (status !== "ready") return;
-    const mapkit = window.mapkit;
-    if (!mapkit) return;
     const q = searchQuery.trim();
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    if (q.length < 2) {
-      setResults([]);
-      setSearchError(null);
-      setSearchAttempted(false);
+    if (q.length < 3) {
+      if (q.length === 0) {
+        setResults([]);
+        setSearchError(null);
+        setSearchAttempted(false);
+        setWeakResults(false);
+      }
       return;
     }
     searchDebounceRef.current = setTimeout(() => {
-      setSearchAttempted(true);
-      setSearchError(null);
-      const opts = buildSearchOptions() ?? { language: "en-AU" };
-      try {
-        const search = new mapkit.Search(opts);
-        // Prefer autocomplete when available — it returns POI + address
-        // suggestions for partial input far better than full search.
-        if (typeof search.autocomplete === "function") {
-          search.autocomplete(q, (err: any, data: any) => {
-            if (err) return;
-            const items = (data?.results ?? []).slice(0, 10).map((r: any, i: number) => {
-              const coord = r.coordinate ?? r.place?.coordinate ?? null;
-              return {
-                id: `ac-${i}-${r.displayLines?.join("|") ?? r.formattedAddress ?? ""}`,
-                name: r.displayLines?.[0] ?? r.place?.name ?? "",
-                address: r.displayLines?.slice(1).join(", ") ?? r.formattedAddress ?? r.place?.formattedAddress ?? "",
-                lat: coord?.latitude ?? 0,
-                lng: coord?.longitude ?? 0,
-              };
-            });
-            // Autocomplete results without coordinates can't be picked
-            // directly — drop those.
-            setResults(items.filter((x: { lat: number; lng: number }) => x.lat !== 0 || x.lng !== 0));
-          });
-        } else {
-          search.search(q, (err: any, data: any) => {
-            if (err) return;
-            const items = (data?.places ?? []).slice(0, 10).map((p: any, i: number) => ({
-              id: `${i}-${p.name ?? p.formattedAddress ?? "result"}`,
-              name: p.name ?? "",
-              address: p.formattedAddress ?? "",
-              lat: p.coordinate?.latitude ?? 0,
-              lng: p.coordinate?.longitude ?? 0,
-            }));
-            setResults(items);
-          });
-        }
-      } catch { /* ignore */ }
-    }, 280);
+      void stagedSearch(q);
+    }, 350);
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
-  }, [searchQuery, status, buildSearchOptions]);
+  }, [searchQuery, status, stagedSearch]);
 
   const pickResult = (r: { name: string; address: string; lat: number; lng: number }) => {
     const next: Partial<VenueMapKitValue> = {
