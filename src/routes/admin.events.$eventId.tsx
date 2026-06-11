@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { AdminEventAnnouncements } from "@/components/admin-event-announcements";
@@ -445,6 +445,17 @@ function EventDetail() {
   const [reloadKey, setReloadKey] = useState(0);
   const [planCode, setPlanCode] = useState<string>("free");
   const isFreePlan = planCode === "free";
+  // Centre point of existing venue pins — used to bias the Apple Maps
+  // venue-search picker towards the event's region.
+  const venueRegionHint = useMemo(() => {
+    const coords = (bundle?.venues ?? []).filter(
+      (v) => v.lat != null && v.lng != null && Number.isFinite(v.lat) && Number.isFinite(v.lng) && (v.lat !== 0 || v.lng !== 0),
+    );
+    if (coords.length === 0) return null;
+    const lat = coords.reduce((s, v) => s + (v.lat as number), 0) / coords.length;
+    const lng = coords.reduce((s, v) => s + (v.lng as number), 0) / coords.length;
+    return { lat, lng };
+  }, [bundle?.venues]);
   useEffect(() => {
     let cancelled = false;
     if (!agencyId) return;
@@ -3092,6 +3103,7 @@ function EventDetail() {
                           lng: venueForm.lng,
                         }}
                         nameIsBlank={venueForm.name.trim().length === 0}
+                        regionHint={venueRegionHint}
                         onChange={(next) =>
                           setVenueForm((prev) => (prev ? { ...prev, ...next } : prev))
                         }
@@ -3439,6 +3451,7 @@ function EventDetail() {
                           lng: venueForm.lng,
                         }}
                         nameIsBlank={venueForm.name.trim().length === 0}
+                        regionHint={venueRegionHint}
                         onChange={(next) =>
                           setVenueForm((prev) => (prev ? { ...prev, ...next } : prev))
                         }
