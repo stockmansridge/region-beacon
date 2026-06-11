@@ -187,7 +187,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, border_color, primary_text_color")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, border_color, primary_text_color, hero_overlay_color, hero_overlay_opacity")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
