@@ -53,6 +53,8 @@ export function TrailLanding({
   badge,
   noAppNote = "No app download required",
   footer,
+  heroOverlayColor,
+  heroOverlayOpacity,
 }: TrailLandingProps) {
   const initials = (monogram ?? eventName)
     .split(/\s+/)
@@ -64,8 +66,29 @@ export function TrailLanding({
 
   const hero = heroImageUrl ?? DEFAULT_HERO;
 
+  // Hero overlay: if the event sets a custom overlay colour/opacity, paint
+  // a flat tint. Otherwise fall back to the legacy 3-stop gradient so
+  // unbranded events look identical.
+  const overlayBaseColor = heroOverlayColor && /^#[0-9A-Fa-f]{6}$/.test(heroOverlayColor)
+    ? heroOverlayColor
+    : primaryColor;
+  const overlayOpacity =
+    typeof heroOverlayOpacity === "number" && Number.isFinite(heroOverlayOpacity)
+      ? Math.max(0, Math.min(1, heroOverlayOpacity / 100))
+      : null;
+  const overlayStyle: React.CSSProperties =
+    overlayOpacity !== null
+      ? { backgroundColor: overlayBaseColor, opacity: overlayOpacity }
+      : {
+          background: `linear-gradient(180deg, ${primaryColor}33 0%, ${primaryColor}AA 60%, ${primaryColor}F0 100%)`,
+        };
+
+  const rootStyle: React.CSSProperties = fontFamily
+    ? { fontFamily, ["--event-font" as any]: fontFamily }
+    : {};
+
   return (
-    <div className="mx-auto w-full max-w-md" style={fontFamily ? { fontFamily } : undefined}>
+    <div className="mx-auto w-full max-w-md" style={rootStyle}>
       {/* Hero */}
       <div className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
         <div className="relative h-[360px] w-full">
@@ -79,12 +102,8 @@ export function TrailLanding({
               }}
             />
           ) : null}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(180deg, ${primaryColor}33 0%, ${primaryColor}AA 60%, ${primaryColor}F0 100%)`,
-            }}
-          />
+          <div className="absolute inset-0" style={overlayStyle} />
+
           {badge && (
             <div
               className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-page-bg,#F6EFE2)]"
