@@ -36,6 +36,11 @@ function Dashboard() {
     fetchedAt: string;
   };
   const [planInfo, setPlanInfo] = useState<PlanDiag | null>(null);
+  const [planRaw, setPlanRaw] = useState<string | null>(null);
+  const [planRpcError, setPlanRpcError] = useState<string | null>(null);
+  const [agencyRowRaw, setAgencyRowRaw] = useState<string | null>(null);
+  const [agencyRowError, setAgencyRowError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [planRefreshKey, setPlanRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,15 +66,63 @@ function Dashboard() {
       // overrides (e.g. Enterprise comp) take effect even without an
       // agency_subscriptions row.
       const head = { count: "exact" as const, head: true };
-      const [events, venues, checkins, visitors, planRes] = await Promise.all([
+      const [events, venues, checkins, visitors, planRes, agencyRes, userRes] = await Promise.all([
         supabase.from("events").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("venues").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.from("checkins").select("id", head).eq("agency_id", agencyId),
         supabase.from("visitors").select("id", head).eq("agency_id", agencyId).is("deleted_at", null),
         supabase.rpc("get_agency_plan_limits", { _agency_id: agencyId }),
+        supabase
+          .from("agencies")
+          .select("id, name, slug, manual_plan_override, status")
+          .eq("id", agencyId)
+          .maybeSingle(),
+        supabase.auth.getUser(),
       ]);
 
       if (cancelled) return;
+
+      // --- Plan resolver diagnostic capture (raw, unsummarised) ---
+      setUserEmail(userRes.data?.user?.email ?? null);
+      setPlanRaw(planRes.data != null ? JSON.stringify(planRes.data, null, 2) : null);
+      setPlanRpcError(
+        planRes.error
+          ? JSON.stringify(
+              {
+                message: planRes.error.message,
+                code: planRes.error.code,
+                details: planRes.error.details,
+                hint: planRes.error.hint,
+              },
+              null,
+              2,
+            )
+          : null,
+      );
+      setAgencyRowRaw(agencyRes.data != null ? JSON.stringify(agencyRes.data, null, 2) : null);
+      setAgencyRowError(
+        agencyRes.error
+          ? JSON.stringify(
+              {
+                message: agencyRes.error.message,
+                code: agencyRes.error.code,
+                details: agencyRes.error.details,
+                hint: agencyRes.error.hint,
+              },
+              null,
+              2,
+            )
+          : null,
+      );
+      console.log("[plan-resolver-diagnostic]", {
+        agencyId,
+        agencyName: agency.selected?.name,
+        agencySlug: agency.selected?.slug,
+        rpcData: planRes.data,
+        rpcError: planRes.error,
+        agencyRow: agencyRes.data,
+        agencyRowError: agencyRes.error,
+      });
       const anyError = events.error || venues.error || checkins.error || visitors.error;
       if (anyError) {
         setError("Could not load dashboard stats.");
@@ -226,15 +279,36 @@ function Dashboard() {
       {/* Temporary plan diagnostics — behind the global Diagnostics toggle */}
       {agencyId && diagnosticsEnabled && (
         <div className="mb-5 rounded-[12px] border border-[#D9E2EF] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#64748B]">
-          <div className="mb-1 font-semibold text-[#111827]">Plan diagnostics (temporary)</div>
-          <div>agency_id: {agencyId}</div>
-          <div>effective_plan_code: {planInfo?.code ?? "(loading)"}</div>
-          <div>plan_source: {planInfo?.source ?? "—"}</div>
-          <div>manual_plan_override: {planInfo?.manualOverride ?? "—"}</div>
-          <div>subscription_plan_code: {planInfo?.subscriptionCode ?? "—"}</div>
-          <div>venue_limit: {planInfo ? (planInfo.venueLimit === null ? "unlimited" : planInfo.venueLimit) : "—"}</div>
-          <div>resolver: supabase.rpc(&quot;get_agency_plan_limits&quot;)</div>
+          <div className="mb-1 font-semibold text-[#111827]">Plan resolver diagnostic</div>
+          <div>workspace_org_name: {agency.selected?.name ?? "—"}</div>
+          <div>workspace_agency_id: {agencyId}</div>
+          <div>workspace_agency_slug: {agency.selected?.slug ?? "—"}</div>
+          <div>logged_in_user_email: {userEmail ?? "—"}</div>
+          <div>resolver: supabase.rpc(&quot;get_agency_plan_limits&quot;, {"{"} _agency_id: workspace_agency_id {"}"})</div>
           <div>fetched_at: {planInfo?.fetchedAt ?? "—"}</div>
+          <div className="mt-2 font-semibold text-[#111827]">get_agency_plan_limits raw response:</div>
+          <pre className="whitespace-pre-wrap break-all">{planRaw ?? "(no data returned)"}</pre>
+          {planRpcError && (
+            <>
+              <div className="mt-2 font-semibold text-[#B91C1C]">get_agency_plan_limits RPC error:</div>
+              <pre className="whitespace-pre-wrap break-all text-[#B91C1C]">{planRpcError}</pre>
+            </>
+          )}
+          <div className="mt-2 font-semibold text-[#111827]">direct agencies row (id, name, slug, manual_plan_override, status):</div>
+          <pre className="whitespace-pre-wrap break-all">{agencyRowRaw ?? "(no row returned — RLS may block direct read; compare agency_id above against System Admin row)"}</pre>
+          {agencyRowError && (
+            <>
+              <div className="mt-2 font-semibold text-[#B91C1C]">agencies lookup error:</div>
+              <pre className="whitespace-pre-wrap break-all text-[#B91C1C]">{agencyRowError}</pre>
+            </>
+          )}
+          <div className="mt-2">
+            parsed → effective_plan_code: {planInfo?.code ?? "(rpc not parsed — fell back to free)"} · plan_source:{" "}
+            {planInfo?.source ?? "—"} · venue_limit:{" "}
+            {planInfo ? (planInfo.venueLimit === null ? "unlimited" : planInfo.venueLimit) : "—"} ·
+            manual_plan_override: {planInfo?.manualOverride ?? "—"} · subscription_plan_code:{" "}
+            {planInfo?.subscriptionCode ?? "—"}
+          </div>
         </div>
       )}
 

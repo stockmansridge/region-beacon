@@ -937,6 +937,40 @@ function OrganisationsSection({
   const [copied, setCopied] = useState<string | null>(null);
   const [selected, setSelected] = useState<OrganisationRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<OrganisationRow | null>(null);
+  const [debugPlan, setDebugPlan] = useState<{ agencyId: string; text: string } | null>(null);
+
+  // Temporary "Debug plan" diagnostic: calls the live RPCs for one org and
+  // shows raw, unsummarised output so plan mismatches can be pinpointed.
+  const runDebugPlan = async (r: OrganisationRow) => {
+    const [limitsRes, effectiveRes] = await Promise.all([
+      supabase.rpc("get_agency_plan_limits", { _agency_id: r.agency_id }),
+      supabase.rpc("agency_effective_plan_code", { _agency_id: r.agency_id }),
+    ]);
+    const report = {
+      organisation_id: r.agency_id,
+      organisation_name: r.name,
+      slug: r.slug,
+      raw_manual_plan_override_from_list: r.manual_plan_override ?? null,
+      list_effective_plan_code: r.effective_plan_code ?? null,
+      displayed_plan_came_from:
+        r.effective_plan_code != null ? "rpc/list effective_plan_code" : "raw manual_plan_override column fallback",
+      get_agency_plan_limits: limitsRes.data ?? null,
+      get_agency_plan_limits_error: limitsRes.error
+        ? { message: limitsRes.error.message, code: limitsRes.error.code, details: limitsRes.error.details, hint: limitsRes.error.hint }
+        : null,
+      agency_effective_plan_code: effectiveRes.data ?? null,
+      agency_effective_plan_code_error: effectiveRes.error
+        ? { message: effectiveRes.error.message, code: effectiveRes.error.code, details: effectiveRes.error.details, hint: effectiveRes.error.hint }
+        : null,
+      fetched_at: new Date().toISOString(),
+    };
+    console.log("[debug-plan]", report);
+    setDebugPlan({ agencyId: r.agency_id, text: JSON.stringify(report, null, 2) });
+    const limits = (limitsRes.data ?? {}) as Record<string, unknown>;
+    toast.info(
+      `Debug plan ${r.slug ?? r.agency_id}: plan_code=${String(limits.plan_code ?? "?")} · plan_source=${String(limits.plan_source ?? "?")} · effective=${String(effectiveRes.data ?? "?")} (full JSON below the table + console)`,
+    );
+  };
 
   const load = async () => {
     setLoading(true);
@@ -1098,6 +1132,17 @@ function OrganisationsSection({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
+                          void runDebugPlan(r);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
+                        title="Debug plan resolution for this organisation"
+                      >
+                        Debug plan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setDeleteTarget(r);
                         }}
                         className="inline-flex items-center gap-1 rounded-[8px] border border-[#FECACA] bg-white px-2 py-1 text-xs font-medium text-[#991B1B] hover:bg-[#FEF2F2]"
@@ -1113,6 +1158,22 @@ function OrganisationsSection({
           </TableBody>
         </Table>
       </Card>
+
+      {debugPlan && (
+        <div className="rounded-[12px] border border-[#D9E2EF] bg-white px-4 py-3 font-mono text-[11px] leading-5 text-[#64748B]">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="font-semibold text-[#111827]">Debug plan (temporary)</span>
+            <button
+              type="button"
+              onClick={() => setDebugPlan(null)}
+              className="rounded border border-[#D9E2EF] px-2 py-0.5 text-xs hover:bg-[#F8FAFC]"
+            >
+              Close
+            </button>
+          </div>
+          <pre className="whitespace-pre-wrap break-all">{debugPlan.text}</pre>
+        </div>
+      )}
 
       <OrganisationDetailDrawer org={selected} onClose={() => setSelected(null)} onUpdated={load} />
       <DeleteOrganisationDialog
