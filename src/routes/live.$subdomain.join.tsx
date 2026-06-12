@@ -783,23 +783,35 @@ function SuccessScreen({
   }
 
   return (
-    <TrailShell
-      eventName={event.name}
-      primaryColor={primary}
-      accentColor={accent}
+    <EventPaletteScope
       paletteKey={event.palette_key ?? null}
       backgroundKey={event.page_background_key ?? null}
-      topLeft={
-        <Link
-          to="/"
-          className="text-xs font-semibold uppercase tracking-[0.18em]"
-          style={{ color: primary }}
-        >
-          ← Event
-        </Link>
-      }
+      primaryColor={primary}
+      accentColor={accent}
+      fontFamily={event.font_family ?? null}
+      className="min-h-screen"
     >
-      <div className="mx-auto w-full max-w-md">
+      <div className="px-4 pt-2">
+        <PublicAnnouncementBar subdomain={subdomain} />
+      </div>
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event.name}
+        primaryColor={primary}
+        accentColor={accent}
+        logoUrl={getEventAssetPublicUrl(event.logo_path)}
+        eventId={event.event_id}
+      />
+      <div className="mx-auto w-full max-w-md px-4 pb-12 pt-4">
+        <div className="mb-3">
+          <Link
+            to="/"
+            className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
+            ← Event
+          </Link>
+        </div>
         <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center shadow-sm">
           <div
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
@@ -825,8 +837,11 @@ function SuccessScreen({
             Welcome to the trail
           </div>
           <h1
-            className="font-trail-serif mt-2 text-2xl font-semibold"
-            style={{ color: primary }}
+            className="mt-2 text-2xl font-semibold"
+            style={{
+              color: "var(--event-card-fg, #1F3D2B)",
+              fontFamily: "var(--event-font, inherit)",
+            }}
           >
             Your passport is ready
           </h1>
@@ -879,9 +894,10 @@ function SuccessScreen({
 
         <div className="mt-4 flex justify-center"><PoweredByGetStampd variant="trail" /></div>
       </div>
-    </TrailShell>
+    </EventPaletteScope>
   );
 }
+
 
 function InfoScreen({
   event,
