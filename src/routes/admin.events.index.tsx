@@ -467,16 +467,6 @@ function Events() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        {!isArchived && hasSubdomain && domainStatus === "active" && (
-                          <a
-                            href={`https://${domain!.public_subdomain}.${SUBDOMAIN_ROOT}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
-                          >
-                            Preview
-                          </a>
-                        )}
                         {isArchived ? (
                           <>
                             <Link
@@ -497,6 +487,60 @@ function Events() {
                               </button>
                             )}
                           </>
+                        ) : isLive && hasSubdomain ? (
+                          <>
+                            <a
+                              href={`https://${domain!.public_subdomain}.${SUBDOMAIN_ROOT}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
+                            >
+                              View live site
+                            </a>
+                            <Link
+                              to="/admin/events/$eventId"
+                              params={{ eventId: e.id }}
+                              className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
+                            >
+                              Setup
+                            </Link>
+                          </>
+                        ) : isPublished && hasSubdomain && domainStatus === "pending" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => activatePublicAddress(e.id)}
+                              disabled={activatingId === e.id}
+                              className="inline-flex h-8 items-center rounded-[8px] bg-[#2F6FE4] px-3 text-xs font-semibold text-white hover:bg-[#1F56C5] disabled:opacity-50"
+                            >
+                              {activatingId === e.id ? "Activating…" : "Activate public address"}
+                            </button>
+                            <Link
+                              to="/admin/events/$eventId"
+                              params={{ eventId: e.id }}
+                              className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
+                            >
+                              Setup
+                            </Link>
+                          </>
+                        ) : isPublished && !hasSubdomain ? (
+                          <Link
+                            to="/admin/events/$eventId"
+                            params={{ eventId: e.id }}
+                            hash="section-public-address"
+                            className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
+                          >
+                            Reserve public address
+                          </Link>
+                        ) : !isPublished && hasSubdomain ? (
+                          <Link
+                            to="/admin/events/$eventId"
+                            params={{ eventId: e.id }}
+                            hash="section-public-address"
+                            className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
+                          >
+                            Publish
+                          </Link>
                         ) : (
                           <Link
                             to="/admin/events/$eventId"
