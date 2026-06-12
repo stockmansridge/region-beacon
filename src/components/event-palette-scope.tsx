@@ -158,6 +158,13 @@ export function EventPaletteScope({
   // treatments (gradients/patterns). Custom hex page bg is honoured
   // only when "custom_color" background is selected.
   const isCustomBackground = backgroundKey === "custom_color";
+  // Phase D: once a Brand Kit is selected, the legacy curated background
+  // treatments (which paint from the palette's pageBg) are no longer
+  // authoritative — the resolved `--event-page-bg` token wins. Same for
+  // events that set an explicit page_background_color hex.
+  const hasBrandKit = !!brandKitKey;
+  const hasExplicitPageBg =
+    !!pageBackgroundColor && HEX_RE.test(pageBackgroundColor);
   let bgStyle: React.CSSProperties = {};
   if (applyBackground) {
     if (
@@ -166,12 +173,15 @@ export function EventPaletteScope({
       HEX_RE.test(pageBackgroundColor)
     ) {
       bgStyle = { backgroundColor: pageBackgroundColor };
+    } else if (hasBrandKit || hasExplicitPageBg) {
+      // Paint directly from the resolved semantic token so the page bg
+      // matches the Brand Kit / explicit page_background_color rather
+      // than the legacy curated background treatment.
+      bgStyle = { backgroundColor: theme.pageBg };
     } else {
-      // Curated background treatments need an EventPalette; build from
-      // the base palette so style formulas (e.g. soft_tint mixing
-      // pageBg + primary) compute against the raw palette colours.
-      // Don't substitute theme.pageBg here — that's the RESOLVED bg
-      // hex and would cause the mix/tint to be applied twice.
+      // Legacy path: curated background treatments need an EventPalette;
+      // build from the base palette so style formulas (e.g. soft_tint
+      // mixing pageBg + primary) compute against the raw palette colours.
       const basePalette =
         paletteKey === "custom" || (!paletteKey && (primaryColor || accentColor))
           ? buildCustomPalette(primaryColor ?? null, accentColor ?? null)

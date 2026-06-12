@@ -65,6 +65,26 @@ type PublicEvent = {
   venue_label_plural?: string | null;
   hero_overlay_color?: string | null;
   hero_overlay_opacity?: number | null;
+  // Phase D — Brand Kit + semantic colour roles.
+  brand_kit_key?: string | null;
+  link_color?: string | null;
+  card_border_color?: string | null;
+  button_primary_bg?: string | null;
+  button_primary_fg?: string | null;
+  button_secondary_bg?: string | null;
+  button_secondary_fg?: string | null;
+  nav_fg_color?: string | null;
+  nav_muted_color?: string | null;
+  nav_active_fg_color?: string | null;
+  hero_bg_color?: string | null;
+  hero_fg_color?: string | null;
+  hero_accent_color?: string | null;
+  page_heading_color?: string | null;
+  page_body_color?: string | null;
+  page_muted_color?: string | null;
+  card_heading_color?: string | null;
+  card_body_color?: string | null;
+  card_muted_color?: string | null;
 };
 
 type PublicVenue = {
@@ -174,6 +194,19 @@ function LivePublicLoaded({
       borderColor={event.border_color ?? null}
       primaryTextColor={event.primary_text_color ?? null}
       navBackgroundColor={event.nav_background_color ?? null}
+      brandKitKey={event.brand_kit_key ?? null}
+      linkColor={event.link_color ?? null}
+      cardBorderColor={event.card_border_color ?? null}
+      buttonPrimaryBg={event.button_primary_bg ?? null}
+      buttonPrimaryFg={event.button_primary_fg ?? null}
+      buttonSecondaryBg={event.button_secondary_bg ?? null}
+      buttonSecondaryFg={event.button_secondary_fg ?? null}
+      navFgColor={event.nav_fg_color ?? null}
+      navMutedColor={event.nav_muted_color ?? null}
+      navActiveFgColor={event.nav_active_fg_color ?? null}
+      heroBgColor={event.hero_bg_color ?? null}
+      heroFgColor={event.hero_fg_color ?? null}
+      heroAccentColor={event.hero_accent_color ?? null}
       fontFamily={event.font_family ?? null}
       className="min-h-screen"
     >
