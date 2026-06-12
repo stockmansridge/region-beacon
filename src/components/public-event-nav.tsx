@@ -183,7 +183,7 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav: Home · Map · Passport (centre) · Leaders · More */}
+      {/* Fixed bottom mobile nav: Home · Passport · Map · Leaders · More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
@@ -205,6 +205,19 @@ export function PublicEventNav({
               <Home className="h-5 w-5" />
               <span>Home</span>
             </Link>
+          </BottomItem>
+
+          <BottomItem active={isActive("passport")} accent={accent}>
+            <a
+              href={passportTarget}
+              aria-label={passportLabel}
+              aria-current={isActive("passport") ? "page" : undefined}
+              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+              style={{ color: isActive("passport") ? navActiveFg : navMuted }}
+            >
+              <Stamp className="h-5 w-5" />
+              <span>Passport</span>
+            </a>
           </BottomItem>
 
           <BottomItem active={isActive("map") || isActive("venues")} accent={accent}>
@@ -229,19 +242,6 @@ export function PublicEventNav({
                 <span>Venues</span>
               </Link>
             )}
-          </BottomItem>
-
-          <BottomItem active={isActive("passport")} accent={accent}>
-            <a
-              href={passportTarget}
-              aria-label={passportLabel}
-              aria-current={isActive("passport") ? "page" : undefined}
-              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-              style={{ color: isActive("passport") ? navActiveFg : navMuted }}
-            >
-              <Stamp className="h-5 w-5" />
-              <span>Passport</span>
-            </a>
           </BottomItem>
 
           <BottomItem active={isActive("leaderboard")} accent={accent}>
