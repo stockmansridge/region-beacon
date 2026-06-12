@@ -79,6 +79,7 @@ type Branding = {
   card_muted_text_color: string | null;
   border_color: string | null;
   primary_text_color: string | null;
+  nav_background_color: string | null;
   hero_overlay_color: string | null;
   hero_overlay_opacity: number | null;
 };
@@ -117,6 +118,7 @@ type Form = {
   card_muted_text_color: string;
   border_color: string;
   primary_text_color: string;
+  nav_background_color: string;
   hero_overlay_color: string;
   hero_overlay_opacity: string; // empty string = inherit default
 };
@@ -155,6 +157,7 @@ function BrandingEditor() {
     card_muted_text_color: "",
     border_color: "",
     primary_text_color: "",
+    nav_background_color: "",
     hero_overlay_color: "",
     hero_overlay_opacity: "",
   });
@@ -208,7 +211,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, card_text_color, card_muted_text_color, border_color, primary_text_color, hero_overlay_color, hero_overlay_opacity")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, card_text_color, card_muted_text_color, border_color, primary_text_color, nav_background_color, hero_overlay_color, hero_overlay_opacity")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -259,6 +262,7 @@ function BrandingEditor() {
         card_muted_text_color: branding?.card_muted_text_color ?? "",
         border_color: branding?.border_color ?? "",
         primary_text_color: branding?.primary_text_color ?? "",
+        nav_background_color: branding?.nav_background_color ?? "",
         hero_overlay_color: branding?.hero_overlay_color ?? "",
         hero_overlay_opacity:
           branding?.hero_overlay_opacity != null
