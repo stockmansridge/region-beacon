@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrailShell } from "@/components/trail-shell";
+
 import { PublicEventNav } from "@/components/public-event-nav";
 import { classifyHost } from "@/components/host-router";
 import {
@@ -337,7 +337,7 @@ function PassportView({
   const [supportCopied, setSupportCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
-  const { paletteKey, backgroundKey } = branding;
+  
 
 
 
@@ -405,7 +405,7 @@ function PassportView({
   return (
     <>
       {subdomain && (
-        <div className="bg-[var(--event-page-bg,#F6EFE2)] px-4 pt-6">
+        <div className="px-4">
           <PublicEventNav
             subdomain={subdomain}
             eventName={eventName ?? "Your passport"}
@@ -418,48 +418,36 @@ function PassportView({
           />
         </div>
       )}
-      <TrailShell
-        eventName={eventName ?? "Your passport"}
-        primaryColor={PRIMARY}
-        accentColor={ACCENT}
-        paletteKey={paletteKey}
-        backgroundKey={backgroundKey}
-        showBottomNav={false}
-        topLeft={
-          <span
-            className="font-trail-serif text-base font-semibold"
-            style={{ color: PRIMARY }}
-          >
-            {eventName ?? "Your passport"}
-          </span>
-        }
+      <main
+        className="mx-auto w-full max-w-md px-4 pb-24 pt-4"
+        style={{ fontFamily: "var(--event-font, inherit)" }}
       >
-      <div className="mx-auto w-full max-w-md">
-        <div className="mb-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)]/80 hover:text-[var(--event-primary,#1F3D2B)]"
-          >
-            <span aria-hidden>←</span> Back to {eventName ?? "trail"}
-          </Link>
-        </div>
         <div className="text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: ACCENT }}
+            style={{ color: "var(--event-accent, " + ACCENT + ")" }}
           >
             My Passport
           </div>
           <h1
-            className="font-trail-serif mt-1 text-3xl font-semibold"
-            style={{ color: PRIMARY }}
+            className="mt-1 text-3xl font-semibold"
+            style={{
+              color: "var(--event-page-fg, " + PRIMARY + ")",
+              fontFamily: "var(--event-font, inherit)",
+            }}
           >
             {eventName ?? "Trail passport"}
           </h1>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+          <p
+            className="mt-1 text-[11px] uppercase tracking-[0.22em]"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
             Hi {greetingName}
           </p>
         </div>
+
+
+
 
 
         {/* Progress card */}
@@ -608,11 +596,11 @@ function PassportView({
           <PoweredByGetStampd variant="trail" />
         </div>
 
-      </div>
-    </TrailShell>
+      </main>
     </>
   );
 }
+
 
 function StampGrid({
   venues,
