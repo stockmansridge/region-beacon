@@ -151,6 +151,7 @@ function LivePublicLoaded({
     <EventPaletteScope
       paletteKey={event.palette_key ?? null}
       backgroundKey={event.page_background_key ?? null}
+      fontFamily={event.font_family ?? null}
       className="min-h-screen px-4 py-8"
     >
       {isAdminPreview && (
