@@ -1628,7 +1628,7 @@ function PaletteSelector({
   const selected = getPalette(value || null);
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-3">
       <div className="flex items-baseline justify-between">
         <div>
           <div className="text-sm font-semibold">Theme</div>
@@ -1868,7 +1868,7 @@ function BackgroundSelector({
     : null;
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-3">
       <div className="flex items-baseline justify-between">
         <div>
           <div className="text-sm font-semibold">Background style</div>
@@ -1966,7 +1966,7 @@ function FontPicker({
     selected?.stack ?? (value.trim() ? value.trim() : undefined);
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-3">
       <div>
         <div className="text-sm font-semibold text-[#111827]">Fonts</div>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -2107,7 +2107,7 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
   );
 
   return (
-    <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-4">
       <div>
         <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
           Advanced — custom colours
@@ -2429,7 +2429,7 @@ function HeroOverlayCard({
       : "#1F3D2B";
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-3">
       <div>
         <div className="text-sm font-semibold">Hero image fade</div>
         <p className="mt-1 text-xs text-muted-foreground">
