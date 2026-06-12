@@ -582,7 +582,7 @@ export function VenueTastingQrSection({
                         onClick={() => copyLink(row)}
                         className="inline-flex h-8 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
                       >
-                        Copy link
+                        Copy tasting QR link
                       </button>
                       <button
                         type="button"
