@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
@@ -162,6 +163,20 @@ function BrandingEditor() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Collapsible section states
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    theme: true,
+    customColours: form.palette_key === "custom",
+    backgroundStyle: !form.page_background_key,
+    textBorder: false,
+    heroFade: !(form.hero_overlay_color || form.hero_overlay_opacity),
+    fonts: !form.font_family,
+    pageContent: !(form.welcome_copy || form.venue_label_singular !== DEFAULT_VENUE_LABEL_SINGULAR),
+  });
+
+  const toggleSection = (key: string) =>
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+
   useEffect(() => {
     if (agency.status === "loading") return;
     if (!agencyId) {
@@ -259,6 +274,14 @@ function BrandingEditor() {
   }, [agency.status, agencyId, eventId, reloadKey]);
 
   // Dynamically load the selected Google Font so the preview reflects it.
+  useEffect(() => {
+    // Sync default collapse states when form values change (e.g. switching to custom palette)
+    setExpandedSections((prev) => ({
+      ...prev,
+      customColours: form.palette_key === "custom" ? true : prev.customColours,
+    }));
+  }, [form.palette_key]);
+
   useEffect(() => {
     const href = buildGoogleFontsHref([form.font_family]);
     if (!href) return;
@@ -791,337 +814,423 @@ function BrandingEditor() {
             </div>
           )}
 
-          <PaletteSelector
-            value={form.palette_key}
-            onChange={(key) => setForm({ ...form, palette_key: key })}
-            onApplyTheme={(p) =>
-              setForm((f) => ({
-                ...f,
-                palette_key: "custom",
-                primary_color: p.primary,
-                accent_color: p.accent,
-                page_background_color: p.pageBg,
-                card_background_color: p.cardBg,
-                text_color: p.heading ?? p.bodyText,
-                muted_text_color: p.mutedText,
-                border_color: p.border,
-                primary_text_color: p.primaryForeground,
-                // Switch background mode to honour the custom hex values.
-                page_background_key: "custom_color",
-              }))
-            }
-            disabled={!canEdit || saving}
-          />
-
-
-          {/* Custom brand colours — visible when the Custom palette is selected.
-              Exposes the core brand surfaces (primary button + its text, accent)
-              and the page/card backgrounds together so the user sees every
-              public-page colour role the theme controls in one place. The
-              remaining semantic text/border roles are edited in the
-              "Text & border colours" card just below. */}
-          {form.palette_key === "custom" && (
-            <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
-                  Advanced — custom colours
-                </div>
-                <div className="mt-1 text-sm font-semibold">Custom brand &amp; surface colours</div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  These power the primary button, accent highlights and the
-                  page/card surfaces on every public passport page. Click
-                  <span className="font-medium"> Apply to custom</span> on any
-                  theme above to pre-fill all fields, then change individual
-                  colours. Leave a field blank to inherit from the chosen theme.
-                </p>
-              </div>
-
-              <Field label="Primary button colour">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.primary_color) ? form.primary_color : "#1F3D2B"}
-                    onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.primary_color}
-                    onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-                    placeholder="#1F3D2B"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-
-              <Field label="Primary button text colour">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.primary_text_color) ? form.primary_text_color : "#FFFFFF"}
-                    onChange={(e) => setForm({ ...form, primary_text_color: e.target.value })}
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.primary_text_color}
-                    onChange={(e) => setForm({ ...form, primary_text_color: e.target.value })}
-                    placeholder="#FFFFFF"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-
-              <Field label="Accent colour">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.accent_color) ? form.accent_color : "#B5572A"}
-                    onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.accent_color}
-                    onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
-                    placeholder="#B5572A"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-
-              <Field label="Page background colour">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        page_background_color: e.target.value,
-                        // Ensure custom hex actually paints by switching the
-                        // background mode to honour the value.
-                        page_background_key: "custom_color",
-                      })
-                    }
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.page_background_color}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        page_background_color: e.target.value,
-                        page_background_key: "custom_color",
-                      })
-                    }
-                    placeholder="#F6EFE2"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-
-              <Field label="Card background colour">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        card_background_color: e.target.value,
-                        page_background_key: "custom_color",
-                      })
-                    }
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.card_background_color}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        card_background_color: e.target.value,
-                        page_background_key: "custom_color",
-                      })
-                    }
-                    placeholder="#FBF5E8"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-
-              <p className="text-[11px] text-muted-foreground">
-                Header/navigation and active-nav colours are derived
-                automatically from the primary &amp; accent colours plus the
-                primary-button text colour, so contrast stays readable on
-                dark themes. Card text, muted helper text and borders are
-                edited in the next section.
-              </p>
-            </div>
-          )}
-
-          <BackgroundSelector
-            value={form.page_background_key}
-            paletteKey={form.palette_key}
-            primaryColor={form.primary_color}
-            accentColor={form.accent_color}
-            onChange={(key) => setForm({ ...form, page_background_key: key })}
-            disabled={!canEdit || saving}
-          />
-
-          {/* Custom background hex inputs — visible when custom_color is selected */}
-          {form.page_background_key === "custom_color" && (
-            <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
-                  Advanced — custom colours
-                </div>
-                <div className="mt-1 text-sm font-semibold">Custom background colour</div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Pick a hex page background, and optionally a card background.
-                  These values are only applied while “Custom” is the selected background style.
-                </p>
-              </div>
-              <Field label="Page background colour">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
-                    onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.page_background_color}
-                    onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
-                    placeholder="#F6EFE2"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-              <Field label="Card background colour (optional)">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
-                    onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.card_background_color}
-                    onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
-                    placeholder="#FBF5E8"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-            </div>
-          )}
-
-          {/* ============== Semantic text & border colours ============== */}
-          <ColorRolesCard
-            form={form}
-            setForm={setForm}
-            disabled={!canEdit || saving}
-          />
-
-          <HeroOverlayCard
-            form={form}
-            setForm={setForm}
-            disabled={!canEdit || saving}
-          />
-
-
-
-          <FontPicker
-            value={form.font_family}
-            onChange={(value) => setForm({ ...form, font_family: value })}
-            disabled={!canEdit || saving}
-            eventName={event.name}
-          />
-
-
-          <Field label="Welcome copy">
-            <textarea
-              value={form.welcome_copy}
-              onChange={(e) => setForm({ ...form, welcome_copy: e.target.value })}
+          <CollapsibleSection
+            id="theme"
+            title="Theme"
+            subtitle={(() => {
+              const p = getPalette(form.palette_key || null);
+              return p ? p.label : form.palette_key === "custom" ? "Custom" : "None selected";
+            })()}
+            expanded={expandedSections.theme}
+            onToggle={() => toggleSection("theme")}
+          >
+            <PaletteSelector
+              value={form.palette_key}
+              onChange={(key) => setForm({ ...form, palette_key: key })}
+              onApplyTheme={(p) =>
+                setForm((f) => ({
+                  ...f,
+                  palette_key: "custom",
+                  primary_color: p.primary,
+                  accent_color: p.accent,
+                  page_background_color: p.pageBg,
+                  card_background_color: p.cardBg,
+                  text_color: p.heading ?? p.bodyText,
+                  muted_text_color: p.mutedText,
+                  border_color: p.border,
+                  primary_text_color: p.primaryForeground,
+                  // Switch background mode to honour the custom hex values.
+                  page_background_key: "custom_color",
+                }))
+              }
               disabled={!canEdit || saving}
-              maxLength={1000}
-              className="min-h-28 w-full rounded-[10px] border border-[#D9E2EF] bg-white p-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="A short welcome message for your visitors."
             />
-            <div className="mt-1 text-right text-xs text-muted-foreground">
-              {form.welcome_copy.length}/1000
-            </div>
-          </Field>
+          </CollapsibleSection>
 
-          {/* ============== Customer wording ============== */}
-          <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-            <div>
-              <div className="text-sm font-semibold">Customer wording</div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                What do you call the places visitors check in at? Use{" "}
-                <span className="font-medium">Wineries</span> for a wine trail,{" "}
-                <span className="font-medium">Restaurants</span> for a food festival,{" "}
-                <span className="font-medium">Stops</span> for a tourism trail. Defaults to{" "}
-                Venue / Venues.
-              </p>
-            </div>
 
-            <Field label="Singular venue label">
-              <input
-                type="text"
-                value={form.venue_label_singular}
-                onChange={(e) => setForm({ ...form, venue_label_singular: e.target.value })}
-                placeholder="Venue"
-                disabled={!canEdit || saving}
-                maxLength={VENUE_LABEL_MAX}
-                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <div className="mt-1 text-right text-xs text-muted-foreground">
-                {form.venue_label_singular.length}/{VENUE_LABEL_MAX}
+          {form.palette_key === "custom" && (
+            <CollapsibleSection
+              id="customColours"
+              title="Custom brand & surface colours"
+              subtitle={(() => {
+                const parts: string[] = [];
+                if (form.primary_color) parts.push("Primary");
+                if (form.accent_color) parts.push("Accent");
+                if (form.page_background_color) parts.push("Page bg");
+                if (form.card_background_color) parts.push("Card bg");
+                return parts.length ? parts.join(" · ") : "No custom colours set";
+              })()}
+              expanded={expandedSections.customColours}
+              onToggle={() => toggleSection("customColours")}
+            >
+              <div className="space-y-4">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+                    Advanced — custom colours
+                  </div>
+                  <div className="mt-1 text-sm font-semibold">Custom brand &amp; surface colours</div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    These power the primary button, accent highlights and the
+                    page/card surfaces on every public passport page. Click
+                    <span className="font-medium"> Apply to custom</span> on any
+                    theme above to pre-fill all fields, then change individual
+                    colours. Leave a field blank to inherit from the chosen theme.
+                  </p>
+                </div>
+
+                <Field label="Primary button colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.primary_color) ? form.primary_color : "#1F3D2B"}
+                      onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.primary_color}
+                      onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                      placeholder="#1F3D2B"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+
+                <Field label="Primary button text colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.primary_text_color) ? form.primary_text_color : "#FFFFFF"}
+                      onChange={(e) => setForm({ ...form, primary_text_color: e.target.value })}
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.primary_text_color}
+                      onChange={(e) => setForm({ ...form, primary_text_color: e.target.value })}
+                      placeholder="#FFFFFF"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+
+                <Field label="Accent colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.accent_color) ? form.accent_color : "#B5572A"}
+                      onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.accent_color}
+                      onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
+                      placeholder="#B5572A"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+
+                <Field label="Page background colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          page_background_color: e.target.value,
+                          // Ensure custom hex actually paints by switching the
+                          // background mode to honour the value.
+                          page_background_key: "custom_color",
+                        })
+                      }
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.page_background_color}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          page_background_color: e.target.value,
+                          page_background_key: "custom_color",
+                        })
+                      }
+                      placeholder="#F6EFE2"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+
+                <Field label="Card background colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          card_background_color: e.target.value,
+                          page_background_key: "custom_color",
+                        })
+                      }
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.card_background_color}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          card_background_color: e.target.value,
+                          page_background_key: "custom_color",
+                        })
+                      }
+                      placeholder="#FBF5E8"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+
+                <p className="text-[11px] text-muted-foreground">
+                  Header/navigation and active-nav colours are derived
+                  automatically from the primary &amp; accent colours plus the
+                  primary-button text colour, so contrast stays readable on
+                  dark themes. Card text, muted helper text and borders are
+                  edited in the next section.
+                </p>
               </div>
-            </Field>
+            </CollapsibleSection>
+          )}
 
-            <Field label="Plural venue label">
-              <input
-                type="text"
-                value={form.venue_label_plural}
-                onChange={(e) => setForm({ ...form, venue_label_plural: e.target.value })}
-                placeholder="Venues"
-                disabled={!canEdit || saving}
-                maxLength={VENUE_LABEL_MAX}
-                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <div className="mt-1 text-right text-xs text-muted-foreground">
-                {form.venue_label_plural.length}/{VENUE_LABEL_MAX}
+          <CollapsibleSection
+            id="backgroundStyle"
+            title="Background style"
+            subtitle={(() => {
+              const bg = getBackground(form.page_background_key || null);
+              return bg?.label ?? (form.page_background_key === "custom_color" ? "Custom colour" : "Default");
+            })()}
+            expanded={expandedSections.backgroundStyle}
+            onToggle={() => toggleSection("backgroundStyle")}
+          >
+            <BackgroundSelector
+              value={form.page_background_key}
+              paletteKey={form.palette_key}
+              primaryColor={form.primary_color}
+              accentColor={form.accent_color}
+              onChange={(key) => setForm({ ...form, page_background_key: key })}
+              disabled={!canEdit || saving}
+            />
+
+            {/* Custom background hex inputs — visible when custom_color is selected */}
+            {form.page_background_key === "custom_color" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+                    Advanced — custom colours
+                  </div>
+                  <div className="mt-1 text-sm font-semibold">Custom background colour</div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Pick a hex page background, and optionally a card background.
+                    These values are only applied while “Custom” is the selected background style.
+                  </p>
+                </div>
+                <Field label="Page background colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
+                      onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.page_background_color}
+                      onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
+                      placeholder="#F6EFE2"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+                <Field label="Card background colour (optional)">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
+                      onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.card_background_color}
+                      onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
+                      placeholder="#FBF5E8"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
               </div>
-            </Field>
-          </div>
+            )}
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="textBorder"
+            title="Text & border colours"
+            subtitle={(() => {
+              const parts: string[] = [];
+              if (form.text_color) parts.push("Page text");
+              if (form.card_text_color) parts.push("Card text");
+              if (form.border_color) parts.push("Border");
+              if (form.primary_text_color) parts.push("Button text");
+              return parts.length ? parts.join(" · ") : "Inheriting from palette";
+            })()}
+            warningCount={countTextBorderWarnings(form)}
+            expanded={expandedSections.textBorder}
+            onToggle={() => toggleSection("textBorder")}
+          >
+            <ColorRolesCard
+              form={form}
+              setForm={setForm}
+              disabled={!canEdit || saving}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="heroFade"
+            title="Hero image fade"
+            subtitle={(() => {
+              if (form.hero_overlay_color && form.hero_overlay_opacity) {
+                return `${form.hero_overlay_color} at ${form.hero_overlay_opacity}%`;
+              }
+              if (form.hero_overlay_color) return form.hero_overlay_color;
+              if (form.hero_overlay_opacity) return `${form.hero_overlay_opacity}% opacity`;
+              return "Default gradient";
+            })()}
+            expanded={expandedSections.heroFade}
+            onToggle={() => toggleSection("heroFade")}
+          >
+            <HeroOverlayCard
+              form={form}
+              setForm={setForm}
+              disabled={!canEdit || saving}
+            />
+          </CollapsibleSection>
+
+
+
+          <CollapsibleSection
+            id="fonts"
+            title="Fonts"
+            subtitle={form.font_family ? (getEventFont(form.font_family)?.label ?? form.font_family) : "Default (GetStampd)"}
+            expanded={expandedSections.fonts}
+            onToggle={() => toggleSection("fonts")}
+          >
+            <FontPicker
+              value={form.font_family}
+              onChange={(value) => setForm({ ...form, font_family: value })}
+              disabled={!canEdit || saving}
+              eventName={event.name}
+            />
+          </CollapsibleSection>
+
+
+          <CollapsibleSection
+            id="pageContent"
+            title="Page content"
+            subtitle={(() => {
+              const parts: string[] = [];
+              if (form.welcome_copy) parts.push("Welcome copy set");
+              const labelsCustom =
+                form.venue_label_singular !== DEFAULT_VENUE_LABEL_SINGULAR ||
+                form.venue_label_plural !== DEFAULT_VENUE_LABEL_PLURAL;
+              if (labelsCustom) parts.push("Custom labels");
+              return parts.length ? parts.join(" · ") : "Default wording";
+            })()}
+            expanded={expandedSections.pageContent}
+            onToggle={() => toggleSection("pageContent")}
+          >
+            <div className="space-y-4">
+              <Field label="Welcome copy">
+                <textarea
+                  value={form.welcome_copy}
+                  onChange={(e) => setForm({ ...form, welcome_copy: e.target.value })}
+                  disabled={!canEdit || saving}
+                  maxLength={1000}
+                  className="min-h-28 w-full rounded-[10px] border border-[#D9E2EF] bg-white p-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="A short welcome message for your visitors."
+                />
+                <div className="mt-1 text-right text-xs text-muted-foreground">
+                  {form.welcome_copy.length}/1000
+                </div>
+              </Field>
+
+              <div className="space-y-3">
+                <div>
+                  <div className="text-sm font-semibold">Customer wording</div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    What do you call the places visitors check in at? Use{" "}
+                    <span className="font-medium">Wineries</span> for a wine trail,{" "}
+                    <span className="font-medium">Restaurants</span> for a food festival,{" "}
+                    <span className="font-medium">Stops</span> for a tourism trail. Defaults to{" "}
+                    Venue / Venues.
+                  </p>
+                </div>
+
+                <Field label="Singular venue label">
+                  <input
+                    type="text"
+                    value={form.venue_label_singular}
+                    onChange={(e) => setForm({ ...form, venue_label_singular: e.target.value })}
+                    placeholder="Venue"
+                    disabled={!canEdit || saving}
+                    maxLength={VENUE_LABEL_MAX}
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <div className="mt-1 text-right text-xs text-muted-foreground">
+                    {form.venue_label_singular.length}/{VENUE_LABEL_MAX}
+                  </div>
+                </Field>
+
+                <Field label="Plural venue label">
+                  <input
+                    type="text"
+                    value={form.venue_label_plural}
+                    onChange={(e) => setForm({ ...form, venue_label_plural: e.target.value })}
+                    placeholder="Venues"
+                    disabled={!canEdit || saving}
+                    maxLength={VENUE_LABEL_MAX}
+                    className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <div className="mt-1 text-right text-xs text-muted-foreground">
+                    {form.venue_label_plural.length}/{VENUE_LABEL_MAX}
+                  </div>
+                </Field>
+              </div>
+            </div>
+          </CollapsibleSection>
         </div>
 
         {/* ============== RIGHT: sticky preview + uploads ============== */}
@@ -1519,7 +1628,7 @@ function PaletteSelector({
   const selected = getPalette(value || null);
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-3">
       <div className="flex items-baseline justify-between">
         <div>
           <div className="text-sm font-semibold">Theme</div>
@@ -1759,7 +1868,7 @@ function BackgroundSelector({
     : null;
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-3">
       <div className="flex items-baseline justify-between">
         <div>
           <div className="text-sm font-semibold">Background style</div>
@@ -1857,7 +1966,7 @@ function FontPicker({
     selected?.stack ?? (value.trim() ? value.trim() : undefined);
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-3">
       <div>
         <div className="text-sm font-semibold text-[#111827]">Fonts</div>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -1998,7 +2107,7 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
   );
 
   return (
-    <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-4">
       <div>
         <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
           Advanced — custom colours
@@ -2320,7 +2429,7 @@ function HeroOverlayCard({
       : "#1F3D2B";
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="space-y-3">
       <div>
         <div className="text-sm font-semibold">Hero image fade</div>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -2392,5 +2501,87 @@ function HeroOverlayCard({
   );
 }
 
+// ============================================================================
+// CollapsibleSection
+// ============================================================================
 
+function CollapsibleSection({
+  id,
+  title,
+  subtitle,
+  warningCount,
+  expanded,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  warningCount?: number;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left"
+        aria-expanded={expanded}
+        aria-controls={`section-${id}`}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-[#111827]">{title}</span>
+            {!!warningCount && (
+              <span
+                className="inline-flex h-5 items-center rounded-full bg-[#FEF2F2] px-1.5 text-[11px] font-semibold text-[#B91C1C]"
+                title={`${warningCount} contrast warning${warningCount > 1 ? "s" : ""}`}
+              >
+                {warningCount}
+              </span>
+            )}
+          </div>
+          {!expanded && subtitle && (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
+        <ChevronDown
+          size={18}
+          className={`shrink-0 text-[#64748B] transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {expanded && (
+        <div id={`section-${id}`} className="border-t border-[#E6ECF4] px-6 pb-6 pt-4">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function countTextBorderWarnings(form: Form): number {
+  const theme = resolveEventTheme({
+    palette_key: form.palette_key || null,
+    primary_color: form.primary_color || null,
+    accent_color: form.accent_color || null,
+    page_background_color: form.page_background_color || null,
+    card_background_color: form.card_background_color || null,
+    text_color: form.text_color || null,
+    muted_text_color: form.muted_text_color || null,
+    card_text_color: form.card_text_color || null,
+    card_muted_text_color: form.card_muted_text_color || null,
+    border_color: form.border_color || null,
+    primary_text_color: form.primary_text_color || null,
+    page_background_key: form.page_background_key || null,
+  });
+  let count = 0;
+  if (surfaceWarning(theme.pageText, theme.pageBg, "page background")) count++;
+  if (surfaceWarning(theme.pageMuted, theme.pageBg, "page background", 3)) count++;
+  if (surfaceWarning(theme.cardText, theme.cardBg, "card background")) count++;
+  if (surfaceWarning(theme.cardMuted, theme.cardBg, "card background", 3)) count++;
+  if (surfaceWarning(theme.primaryText, theme.primary, "primary button")) count++;
+  return count;
+}
 
