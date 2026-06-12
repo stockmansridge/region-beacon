@@ -183,7 +183,7 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav: Home · Map · Passport (centre) · Leaders · More */}
+      {/* Fixed bottom mobile nav: Home · Passport · Map · Leaders · More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
