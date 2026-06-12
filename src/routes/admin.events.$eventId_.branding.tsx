@@ -871,6 +871,10 @@ function BrandingEditor() {
                   muted_text_color: p.mutedText,
                   border_color: p.border,
                   primary_text_color: p.primaryForeground,
+                  // Default nav background to the palette primary so the
+                  // header/bottom nav match by default; the organiser can
+                  // override it under Navigation colours.
+                  nav_background_color: p.primary,
                   // Switch background mode to honour the custom hex values.
                   page_background_key: "custom_color",
                 }))
@@ -1289,6 +1293,7 @@ function BrandingEditor() {
               cardMutedTextColor={form.card_muted_text_color}
               borderColor={form.border_color}
               primaryTextColor={form.primary_text_color}
+              navBackgroundColor={form.nav_background_color}
               fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
               className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
             >
