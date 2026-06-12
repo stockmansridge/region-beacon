@@ -602,8 +602,18 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
 
         {!noCoords && unmappedVenues.length > 0 && (
-          <div className="mt-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4 text-xs text-[#3D372C]">
-            <p className="mb-2 font-semibold uppercase tracking-[0.18em] text-[#8A7E66]">
+          <div
+            className="mt-4 rounded-2xl border p-4 text-xs"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+              color: "var(--event-card-text)",
+            }}
+          >
+            <p
+              className="mb-2 font-semibold uppercase tracking-[0.18em]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               {labels.plural} without map locations
             </p>
             <ul className="space-y-1">
@@ -613,7 +623,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
                     to="/venues/$venueId"
                     params={{ venueId: v.venue_id ?? "" }}
                     className="underline-offset-2 hover:underline"
-                    style={{ color: primary }}
+                    style={{ color: "var(--event-link)" }}
                   >
                     {v.name ?? "Venue"}
                   </Link>
