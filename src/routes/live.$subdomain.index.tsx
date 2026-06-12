@@ -13,6 +13,8 @@ import { tenantHost } from "@/lib/domains";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { CollectPointsSection } from "@/components/collect-points-section";
 import { PassportProgressCard } from "@/components/passport-progress-card";
+import { PassportStampGrid } from "@/components/passport-stamp-grid";
+import { NextRewardCard } from "@/components/next-reward-card";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
