@@ -74,6 +74,8 @@ type Branding = {
   card_background_color: string | null;
   text_color: string | null;
   muted_text_color: string | null;
+  card_text_color: string | null;
+  card_muted_text_color: string | null;
   border_color: string | null;
   primary_text_color: string | null;
   hero_overlay_color: string | null;
@@ -110,6 +112,8 @@ type Form = {
   card_background_color: string;
   text_color: string;
   muted_text_color: string;
+  card_text_color: string;
+  card_muted_text_color: string;
   border_color: string;
   primary_text_color: string;
   hero_overlay_color: string;
