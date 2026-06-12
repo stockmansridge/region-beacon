@@ -1018,54 +1018,61 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
 }
 
 function RewardsSection({
-  eventId,
-  passportId,
+  awards,
+  nextAward,
 }: {
-  eventId: string | null;
-  passportId: string | null;
+  awards: PublicEventAward[] | null;
+  nextAward: PublicEventAward | null;
 }) {
-  const [awards, setAwards] = useState<PublicEventAward[] | null>(null);
-  useEffect(() => {
-    if (!eventId) {
-      setAwards([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const rows = await listPublicAwards(eventId, passportId);
-        if (!cancelled) setAwards(rows);
-      } catch {
-        if (!cancelled) setAwards([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [eventId, passportId]);
-
   // Loading: render nothing (avoids flashing defaults).
   if (awards == null) return null;
   // Empty: hide section entirely — the organiser hasn't configured awards.
   if (awards.length === 0) return null;
 
+  const allUnlocked = awards.every((a) => a.is_eligible);
+  const headingCopy = allUnlocked
+    ? "Trail complete"
+    : nextAward
+      ? nextAward.points_remaining > 0
+        ? "You’re getting close"
+        : "Next reward"
+      : "Keep collecting stamps";
+
   return (
     <section className="mt-5">
-      <div className="mb-2 flex items-baseline justify-between">
-        <h2
-          className="font-trail-serif text-lg font-semibold"
-          style={{ color: "var(--event-page-heading)" }}
-        >
-          Rewards
-        </h2>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <h2
+            className="font-trail-serif text-lg font-semibold"
+            style={{ color: "var(--event-page-heading)" }}
+          >
+            Rewards
+          </h2>
+          <p
+            className="mt-0.5 text-[12px]"
+            style={{ color: "var(--event-page-muted)" }}
+          >
+            {headingCopy}
+          </p>
+        </div>
         <Link
           to="/awards"
-          className="text-[11px] font-semibold uppercase tracking-[0.18em] underline-offset-2 hover:underline"
+          className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] underline-offset-2 hover:underline"
           style={{ color: "var(--event-link)" }}
         >
           View all
         </Link>
       </div>
+
+      <ul className="space-y-2">
+        {awards.map((a) => (
+          <AwardRow key={a.id} award={a} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 
       <ul className="space-y-2">
         {awards.map((a) => (
