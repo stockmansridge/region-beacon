@@ -238,7 +238,7 @@ export function PublicEventNav({
               className="-mt-6 grid h-14 w-14 place-items-center rounded-full shadow-lg ring-4 transition active:scale-95"
               style={{
                 background: accent,
-                color: "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                color: "var(--event-primary-fg,#F6EFE2)",
                 // Ring tinted with the header colour so the floating button feels connected
                 // to the surrounding nav surface.
                 ["--tw-ring-color" as string]: primary,
