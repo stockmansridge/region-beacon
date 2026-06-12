@@ -771,18 +771,28 @@ function BrandingEditor() {
           />
 
 
-          {/* Custom brand colours — only visible when the Custom palette is selected. */}
+          {/* Custom brand colours — visible when the Custom palette is selected.
+              Exposes the core brand surfaces (primary button + its text, accent)
+              and the page/card backgrounds together so the user sees every
+              public-page colour role the theme controls in one place. The
+              remaining semantic text/border roles are edited in the
+              "Text & border colours" card just below. */}
           {form.palette_key === "custom" && (
-            <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+            <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
                   Advanced — custom colours
                 </div>
-                <div className="mt-1 text-sm font-semibold">Custom brand colours</div>
+                <div className="mt-1 text-sm font-semibold">Custom brand &amp; surface colours</div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Used as the primary button colour and accent across the public pages. Leave blank to fall back to the GetStampd defaults.
+                  These power the primary button, accent highlights and the
+                  page/card surfaces on every public passport page. Click
+                  <span className="font-medium"> Apply to custom</span> on any
+                  theme above to pre-fill all fields, then change individual
+                  colours. Leave a field blank to inherit from the chosen theme.
                 </p>
               </div>
+
               <Field label="Primary button colour">
                 <div className="flex items-center gap-2">
                   <input
@@ -803,6 +813,28 @@ function BrandingEditor() {
                   />
                 </div>
               </Field>
+
+              <Field label="Primary button text colour">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(form.primary_text_color) ? form.primary_text_color : "#FFFFFF"}
+                    onChange={(e) => setForm({ ...form, primary_text_color: e.target.value })}
+                    disabled={!canEdit || saving}
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={form.primary_text_color}
+                    onChange={(e) => setForm({ ...form, primary_text_color: e.target.value })}
+                    placeholder="#FFFFFF"
+                    disabled={!canEdit || saving}
+                    maxLength={7}
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </Field>
+
               <Field label="Accent colour">
                 <div className="flex items-center gap-2">
                   <input
@@ -823,6 +855,82 @@ function BrandingEditor() {
                   />
                 </div>
               </Field>
+
+              <Field label="Page background colour">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        page_background_color: e.target.value,
+                        // Ensure custom hex actually paints by switching the
+                        // background mode to honour the value.
+                        page_background_key: "custom_color",
+                      })
+                    }
+                    disabled={!canEdit || saving}
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={form.page_background_color}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        page_background_color: e.target.value,
+                        page_background_key: "custom_color",
+                      })
+                    }
+                    placeholder="#F6EFE2"
+                    disabled={!canEdit || saving}
+                    maxLength={7}
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </Field>
+
+              <Field label="Card background colour">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        card_background_color: e.target.value,
+                        page_background_key: "custom_color",
+                      })
+                    }
+                    disabled={!canEdit || saving}
+                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={form.card_background_color}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        card_background_color: e.target.value,
+                        page_background_key: "custom_color",
+                      })
+                    }
+                    placeholder="#FBF5E8"
+                    disabled={!canEdit || saving}
+                    maxLength={7}
+                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </Field>
+
+              <p className="text-[11px] text-muted-foreground">
+                Header/navigation and active-nav colours are derived
+                automatically from the primary &amp; accent colours plus the
+                primary-button text colour, so contrast stays readable on
+                dark themes. Card text, muted helper text and borders are
+                edited in the next section.
+              </p>
             </div>
           )}
 
