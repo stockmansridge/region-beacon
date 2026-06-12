@@ -51,12 +51,7 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
 
   return (
     <EventPaletteScope
-      paletteKey={branding.paletteKey}
-      backgroundKey={branding.backgroundKey}
-      primaryColor={branding.primaryColor}
-      accentColor={branding.accentColor}
-      pageBackgroundColor={branding.pageBackgroundColor}
-      cardBackgroundColor={branding.cardBackgroundColor}
+      {...brandingScopeProps(branding)}
       className="min-h-screen px-4 py-4"
     >
       <div className="mx-auto max-w-5xl">

@@ -74,12 +74,7 @@ export function PublicLegalShell({
   const b = useEventBrandingKeys(subdomain);
   return (
     <EventPaletteScope
-      paletteKey={b.paletteKey}
-      backgroundKey={b.backgroundKey}
-      primaryColor={b.primaryColor}
-      accentColor={b.accentColor}
-      pageBackgroundColor={b.pageBackgroundColor}
-      cardBackgroundColor={b.cardBackgroundColor}
+      {...brandingScopeProps(b)}
       className="min-h-screen px-4 py-4"
     >
       <div className="mx-auto max-w-5xl">
