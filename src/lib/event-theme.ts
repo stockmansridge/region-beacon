@@ -101,6 +101,13 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
   const isCustomBg = input.page_background_key === "custom_color";
   const customPageBg = isCustomBg ? pickHex(input.page_background_color) : null;
   const customCardBg = isCustomBg ? pickHex(input.card_background_color) : null;
+  // For non-custom background styles, compute the resolved page bg from
+  // the chosen style so contrast checks (and any consumer reading
+  // --event-page-bg) reflect what the user actually sees on the page.
+  const resolvedPageBg = isCustomBg
+    ? (customPageBg ?? palette.pageBg)
+    : resolveBackgroundBaseHex(input.page_background_key ?? null, palette);
+
 
   const border = pickHex(input.border_color) ?? palette.border;
   const primaryText =
