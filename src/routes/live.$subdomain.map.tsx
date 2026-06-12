@@ -15,6 +15,10 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { matchRootDomain, tenantHost } from "@/lib/domains";
 import {
+  brandingScopeProps,
+  useEventBrandingKeys,
+} from "@/lib/use-event-palette";
+import {
   EMPTY_CURRENT_EVENT_PASSPORT,
   resolveCurrentEventPassport,
   type CurrentEventPassportResult,
