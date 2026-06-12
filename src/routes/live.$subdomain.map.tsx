@@ -493,12 +493,22 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
 
         {!hasPassport && (
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-xs text-[#3D372C]">
+          <div
+            className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-xs"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+              color: "var(--event-card-text)",
+            }}
+          >
             <span>Create a passport to track visited {labels.plural.toLowerCase()}.</span>
             <Link
               to="/join"
               className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
-              style={{ backgroundColor: accent, color: "#FBF5E8" }}
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
             >
               Start passport
             </Link>
