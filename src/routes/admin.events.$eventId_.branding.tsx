@@ -547,6 +547,29 @@ function BrandingEditor() {
       }
     }
 
+    // Fallback if nav_background_color column is missing on the
+    // production DB (migration `migrations-draft-event-nav-background`
+    // not yet applied). Retry without that key so the rest persists.
+    if (
+      writeErr &&
+      /nav_background_color/i.test(writeErr.message ?? "")
+    ) {
+      console.warn("[branding-save] nav background column missing, retrying without", {
+        message: writeErr.message,
+      });
+      const { nav_background_color: _nbc, ...rest } = payload;
+      payload = rest;
+      SELECT_COLS = SELECT_COLS.replace(`, ${NAV_COLS}`, "");
+      const retry = await writeRow(payload, mode);
+      savedRow = retry.row;
+      writeErr = retry.error;
+      if (!writeErr && nav_background_color) {
+        setSaveError(
+          "Saved core branding. The navigation background colour requires the database migration in supabase/migrations-draft-event-nav-background/.",
+        );
+      }
+    }
+
     // Fallback if hero overlay columns are missing on the production DB
     // (migration `migrations-draft-event-hero-overlay` not yet applied).
     if (
@@ -617,6 +640,7 @@ function BrandingEditor() {
       card_muted_text_color: saved.card_muted_text_color ?? card_muted_text_color ?? "",
       border_color: saved.border_color ?? border_color ?? "",
       primary_text_color: saved.primary_text_color ?? primary_text_color ?? "",
+      nav_background_color: saved.nav_background_color ?? nav_background_color ?? "",
       hero_overlay_color: saved.hero_overlay_color ?? hero_overlay_color ?? "",
       hero_overlay_opacity:
         saved.hero_overlay_opacity != null
