@@ -358,6 +358,7 @@ function BrandingEditor() {
     const card_muted_text_color = form.card_muted_text_color.trim();
     const border_color = form.border_color.trim();
     const primary_text_color = form.primary_text_color.trim();
+    const nav_background_color = form.nav_background_color.trim();
     const hero_overlay_color = form.hero_overlay_color.trim();
     const hero_overlay_opacity_str = form.hero_overlay_opacity.trim();
 
@@ -378,6 +379,7 @@ function BrandingEditor() {
       ["Card muted text colour", card_muted_text_color],
       ["Border colour", border_color],
       ["Primary button text colour", primary_text_color],
+      ["Navigation background colour", nav_background_color],
       ["Hero image overlay colour", hero_overlay_color],
     ] as const) {
       if (value && !HEX_RE.test(value)) {
@@ -415,6 +417,7 @@ function BrandingEditor() {
       card_muted_text_color: card_muted_text_color || null,
       border_color: border_color || null,
       primary_text_color: primary_text_color || null,
+      nav_background_color: nav_background_color || null,
       hero_overlay_color: hero_overlay_color || null,
       hero_overlay_opacity: hero_overlay_opacity_num,
     };
