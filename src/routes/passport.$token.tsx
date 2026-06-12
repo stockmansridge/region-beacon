@@ -927,49 +927,8 @@ function StampGrid({
   );
 }
 
-function SummaryCell({
-  label,
-  sublabel,
-  value,
-  compact = false,
-}: {
-  label: string;
-  sublabel?: string;
-  value: ReactNode;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      className="flex flex-col items-center justify-center px-3 py-4 text-center"
-      style={{ borderColor: "var(--event-card-border)" }}
-    >
-      <div
-        className={
-          compact
-            ? "flex min-h-[28px] items-center justify-center text-center font-trail-serif font-semibold leading-tight"
-            : "font-trail-serif text-2xl font-semibold leading-none"
-        }
-        style={{ color: "var(--event-card-heading)" }}
-      >
-        {value}
-      </div>
-      <div
-        className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em]"
-        style={{ color: "var(--event-card-heading)" }}
-      >
-        {label}
-      </div>
-      {sublabel ? (
-        <div
-          className="mt-0.5 text-[10px]"
-          style={{ color: "var(--event-card-muted)" }}
-        >
-          {sublabel}
-        </div>
-      ) : null}
-    </div>
-  );
-}
+
+
 
 
 function StampCell({ venue }: { venue: PassportStampVenue }) {
