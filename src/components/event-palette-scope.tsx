@@ -37,6 +37,7 @@ export function EventPaletteScope({
   cardMutedTextColor,
   borderColor,
   primaryTextColor,
+  navBackgroundColor,
   fontFamily,
   children,
   className,
@@ -54,6 +55,7 @@ export function EventPaletteScope({
   cardMutedTextColor?: string | null;
   borderColor?: string | null;
   primaryTextColor?: string | null;
+  navBackgroundColor?: string | null;
   fontFamily?: string | null;
   children: ReactNode;
   className?: string;
@@ -70,7 +72,8 @@ export function EventPaletteScope({
     (cardTextColor && HEX_RE.test(cardTextColor)) ||
     (cardMutedTextColor && HEX_RE.test(cardMutedTextColor)) ||
     (borderColor && HEX_RE.test(borderColor)) ||
-    (primaryTextColor && HEX_RE.test(primaryTextColor));
+    (primaryTextColor && HEX_RE.test(primaryTextColor)) ||
+    (navBackgroundColor && HEX_RE.test(navBackgroundColor));
 
   if (
     !explicitCurated &&
@@ -94,6 +97,7 @@ export function EventPaletteScope({
     card_muted_text_color: cardMutedTextColor ?? null,
     border_color: borderColor ?? null,
     primary_text_color: primaryTextColor ?? null,
+    nav_background_color: navBackgroundColor ?? null,
     page_background_key: backgroundKey ?? null,
   });
 

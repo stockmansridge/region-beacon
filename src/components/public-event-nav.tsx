@@ -64,7 +64,14 @@ export function PublicEventNav({
   eventId?: string | null;
 }) {
   void subdomain;
-  const primary = primaryColor ?? "var(--event-primary,#1F3D2B)";
+  // Header / bottom-nav / drawer surfaces consume the nav tokens so they
+  // can be themed independently of buttons. Tokens fall back to the
+  // primary colour when no nav background has been configured, which
+  // matches the historical behaviour for existing events.
+  const navBg = `var(--event-nav-bg, ${primaryColor ?? "var(--event-primary,#1F3D2B)"})`;
+  const navFg = `var(--event-nav-fg, var(--event-primary-fg,#F6EFE2))`;
+  const navMuted = `var(--event-nav-muted, var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))))`;
+  const navActiveFg = `var(--event-nav-active-fg, ${accentColor ?? "var(--event-accent,#B5572A)"})`;
   const accent = accentColor ?? "var(--event-accent,#B5572A)";
   const location = useLocation();
   const pathname = location.pathname;
@@ -101,14 +108,14 @@ export function PublicEventNav({
       <header
         className="sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
         style={{
-          background: primary,
+          background: navBg,
           borderColor: "color-mix(in oklab, white 12%, transparent)",
           paddingTop: "env(safe-area-inset-top)",
         }}
       >
         <div
           className="mx-auto grid h-14 max-w-2xl grid-cols-[44px_1fr_44px] items-center px-3"
-          style={{ color: "var(--event-primary-fg,#F6EFE2)" }}
+          style={{ color: navFg }}
         >
           <button
             type="button"
@@ -135,7 +142,7 @@ export function PublicEventNav({
             ) : (
               <span
                 className="truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"
-                style={{ color: "var(--event-primary-fg,#F6EFE2)" }}
+                style={{ color: navFg }}
               >
                 {eventName ?? "Event"}
               </span>
@@ -161,7 +168,8 @@ export function PublicEventNav({
       {menuOpen && (
         <MenuDrawer
           onClose={() => setMenuOpen(false)}
-          primary={primary}
+          navBg={navBg}
+          navFg={navFg}
           hasTerms={hasTerms}
           hasFaq={hasFaq}
           hasMap={hasMap}
@@ -181,9 +189,9 @@ export function PublicEventNav({
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
         style={{
           paddingBottom: "env(safe-area-inset-bottom)",
-          background: primary,
+          background: navBg,
           borderColor: "color-mix(in oklab, white 10%, transparent)",
-          color: "var(--event-primary-fg,#F6EFE2)",
+          color: navFg,
         }}
       >
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5 items-stretch">
@@ -193,7 +201,7 @@ export function PublicEventNav({
               aria-current={isActive("home") ? "page" : undefined}
               className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: isActive("home") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                color: isActive("home") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
               }}
             >
               <Home className="h-5 w-5" />
@@ -208,7 +216,7 @@ export function PublicEventNav({
                 aria-current={isActive("map") ? "page" : undefined}
                 className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("map") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                  color: isActive("map") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
                 }}
               >
                 <MapIcon className="h-5 w-5" />
@@ -220,7 +228,7 @@ export function PublicEventNav({
                 aria-current={isActive("venues") ? "page" : undefined}
                 className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("venues") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                  color: isActive("venues") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
                 }}
               >
                 <MapPin className="h-5 w-5" />
@@ -239,9 +247,9 @@ export function PublicEventNav({
               style={{
                 background: accent,
                 color: "var(--event-primary-fg,#F6EFE2)",
-                // Ring tinted with the header colour so the floating button feels connected
-                // to the surrounding nav surface.
-                ["--tw-ring-color" as string]: primary,
+                // Ring tinted with the nav surface so the floating button
+                // feels connected to the surrounding nav.
+                ["--tw-ring-color" as string]: navBg,
               }}
             >
               <Stamp className="h-6 w-6" />
@@ -255,8 +263,8 @@ export function PublicEventNav({
               className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
                 color: isActive("leaderboard")
-                  ? accent
-                  : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                  ? navActiveFg
+                  : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
               }}
             >
               <Trophy className="h-5 w-5" />
@@ -271,7 +279,7 @@ export function PublicEventNav({
               aria-label="More"
               className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: menuOpen ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                color: menuOpen ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
               }}
             >
               <MoreHorizontal className="h-5 w-5" />
@@ -316,7 +324,8 @@ function BottomItem({
 
 function MenuDrawer({
   onClose,
-  primary,
+  navBg,
+  navFg,
   hasTerms,
   hasFaq,
   hasMap,
@@ -329,7 +338,8 @@ function MenuDrawer({
   logoUrl,
 }: {
   onClose: () => void;
-  primary: string;
+  navBg: string;
+  navFg: string;
   hasTerms: boolean;
   hasFaq: boolean;
   hasMap: boolean;
@@ -355,8 +365,8 @@ function MenuDrawer({
       <aside
         className="absolute inset-y-0 left-0 flex h-full w-[82%] max-w-sm flex-col shadow-2xl animate-in slide-in-from-left"
         style={{
-          background: primary,
-          color: "var(--event-primary-fg,#F6EFE2)",
+          background: navBg,
+          color: navFg,
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}

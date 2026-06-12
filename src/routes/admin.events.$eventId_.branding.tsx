@@ -79,6 +79,7 @@ type Branding = {
   card_muted_text_color: string | null;
   border_color: string | null;
   primary_text_color: string | null;
+  nav_background_color: string | null;
   hero_overlay_color: string | null;
   hero_overlay_opacity: number | null;
 };
@@ -117,6 +118,7 @@ type Form = {
   card_muted_text_color: string;
   border_color: string;
   primary_text_color: string;
+  nav_background_color: string;
   hero_overlay_color: string;
   hero_overlay_opacity: string; // empty string = inherit default
 };
@@ -155,6 +157,7 @@ function BrandingEditor() {
     card_muted_text_color: "",
     border_color: "",
     primary_text_color: "",
+    nav_background_color: "",
     hero_overlay_color: "",
     hero_overlay_opacity: "",
   });
@@ -169,6 +172,7 @@ function BrandingEditor() {
     customColours: form.palette_key === "custom",
     backgroundStyle: !form.page_background_key,
     textBorder: false,
+    navColours: false,
     heroFade: !(form.hero_overlay_color || form.hero_overlay_opacity),
     fonts: !form.font_family,
     pageContent: !(form.welcome_copy || form.venue_label_singular !== DEFAULT_VENUE_LABEL_SINGULAR),
@@ -208,7 +212,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, card_text_color, card_muted_text_color, border_color, primary_text_color, hero_overlay_color, hero_overlay_opacity")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, card_text_color, card_muted_text_color, border_color, primary_text_color, nav_background_color, hero_overlay_color, hero_overlay_opacity")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -259,6 +263,7 @@ function BrandingEditor() {
         card_muted_text_color: branding?.card_muted_text_color ?? "",
         border_color: branding?.border_color ?? "",
         primary_text_color: branding?.primary_text_color ?? "",
+        nav_background_color: branding?.nav_background_color ?? "",
         hero_overlay_color: branding?.hero_overlay_color ?? "",
         hero_overlay_opacity:
           branding?.hero_overlay_opacity != null
@@ -354,6 +359,7 @@ function BrandingEditor() {
     const card_muted_text_color = form.card_muted_text_color.trim();
     const border_color = form.border_color.trim();
     const primary_text_color = form.primary_text_color.trim();
+    const nav_background_color = form.nav_background_color.trim();
     const hero_overlay_color = form.hero_overlay_color.trim();
     const hero_overlay_opacity_str = form.hero_overlay_opacity.trim();
 
@@ -374,6 +380,7 @@ function BrandingEditor() {
       ["Card muted text colour", card_muted_text_color],
       ["Border colour", border_color],
       ["Primary button text colour", primary_text_color],
+      ["Navigation background colour", nav_background_color],
       ["Hero image overlay colour", hero_overlay_color],
     ] as const) {
       if (value && !HEX_RE.test(value)) {
@@ -411,16 +418,18 @@ function BrandingEditor() {
       card_muted_text_color: card_muted_text_color || null,
       border_color: border_color || null,
       primary_text_color: primary_text_color || null,
+      nav_background_color: nav_background_color || null,
       hero_overlay_color: hero_overlay_color || null,
       hero_overlay_opacity: hero_overlay_opacity_num,
     };
 
     const NEW_TEXT_COLS = "text_color, muted_text_color, border_color, primary_text_color";
     const CARD_TEXT_COLS = "card_text_color, card_muted_text_color";
+    const NAV_COLS = "nav_background_color";
     const HERO_OVERLAY_COLS = "hero_overlay_color, hero_overlay_opacity";
     const BASE_SELECT_COLS =
       "logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color";
-    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${CARD_TEXT_COLS}, ${HERO_OVERLAY_COLS}`;
+    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${CARD_TEXT_COLS}, ${NAV_COLS}, ${HERO_OVERLAY_COLS}`;
 
     // 1. Re-check existence from the DB (don't rely on stale bundle.hasBranding).
     const { data: existing, error: existingErr } = await supabase
@@ -539,6 +548,29 @@ function BrandingEditor() {
       }
     }
 
+    // Fallback if nav_background_color column is missing on the
+    // production DB (migration `migrations-draft-event-nav-background`
+    // not yet applied). Retry without that key so the rest persists.
+    if (
+      writeErr &&
+      /nav_background_color/i.test(writeErr.message ?? "")
+    ) {
+      console.warn("[branding-save] nav background column missing, retrying without", {
+        message: writeErr.message,
+      });
+      const { nav_background_color: _nbc, ...rest } = payload;
+      payload = rest;
+      SELECT_COLS = SELECT_COLS.replace(`, ${NAV_COLS}`, "");
+      const retry = await writeRow(payload, mode);
+      savedRow = retry.row;
+      writeErr = retry.error;
+      if (!writeErr && nav_background_color) {
+        setSaveError(
+          "Saved core branding. The navigation background colour requires the database migration in supabase/migrations-draft-event-nav-background/.",
+        );
+      }
+    }
+
     // Fallback if hero overlay columns are missing on the production DB
     // (migration `migrations-draft-event-hero-overlay` not yet applied).
     if (
@@ -609,6 +641,7 @@ function BrandingEditor() {
       card_muted_text_color: saved.card_muted_text_color ?? card_muted_text_color ?? "",
       border_color: saved.border_color ?? border_color ?? "",
       primary_text_color: saved.primary_text_color ?? primary_text_color ?? "",
+      nav_background_color: saved.nav_background_color ?? nav_background_color ?? "",
       hero_overlay_color: saved.hero_overlay_color ?? hero_overlay_color ?? "",
       hero_overlay_opacity:
         saved.hero_overlay_opacity != null
@@ -839,6 +872,10 @@ function BrandingEditor() {
                   muted_text_color: p.mutedText,
                   border_color: p.border,
                   primary_text_color: p.primaryForeground,
+                  // Default nav background to the palette primary so the
+                  // header/bottom nav match by default; the organiser can
+                  // override it under Navigation colours.
+                  nav_background_color: p.primary,
                   // Switch background mode to honour the custom hex values.
                   page_background_key: "custom_color",
                 }))
@@ -1010,11 +1047,11 @@ function BrandingEditor() {
                 </Field>
 
                 <p className="text-[11px] text-muted-foreground">
-                  Header/navigation and active-nav colours are derived
-                  automatically from the primary &amp; accent colours plus the
-                  primary-button text colour, so contrast stays readable on
-                  dark themes. Card text, muted helper text and borders are
-                  edited in the next section.
+                  Card text, muted helper text and borders are edited in
+                  the next section. The mobile header and bottom nav have
+                  their own background colour under
+                  <span className="font-medium"> Navigation colours</span>;
+                  by default they follow the primary colour above.
                 </p>
               </div>
             </CollapsibleSection>
@@ -1117,6 +1154,26 @@ function BrandingEditor() {
               disabled={!canEdit || saving}
             />
           </CollapsibleSection>
+
+          <CollapsibleSection
+            id="navColours"
+            title="Navigation colours"
+            subtitle={
+              form.nav_background_color
+                ? `Header / bottom nav: ${form.nav_background_color}`
+                : "Following primary colour"
+            }
+            warningCount={countNavWarnings(form)}
+            expanded={expandedSections.navColours}
+            onToggle={() => toggleSection("navColours")}
+          >
+            <NavColoursCard
+              form={form}
+              setForm={setForm}
+              disabled={!canEdit || saving}
+            />
+          </CollapsibleSection>
+
 
           <CollapsibleSection
             id="heroFade"
@@ -1257,6 +1314,7 @@ function BrandingEditor() {
               cardMutedTextColor={form.card_muted_text_color}
               borderColor={form.border_color}
               primaryTextColor={form.primary_text_color}
+              navBackgroundColor={form.nav_background_color}
               fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
               className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
             >
@@ -2582,6 +2640,127 @@ function countTextBorderWarnings(form: Form): number {
   if (surfaceWarning(theme.cardText, theme.cardBg, "card background")) count++;
   if (surfaceWarning(theme.cardMuted, theme.cardBg, "card background", 3)) count++;
   if (surfaceWarning(theme.primaryText, theme.primary, "primary button")) count++;
+  return count;
+}
+
+// ============================================================================
+// NavColoursCard — single hex picker for the public header / bottom nav /
+// drawer background. Nav text colour is derived from the primary button
+// text colour so dark and light navs stay readable without an extra knob.
+// ============================================================================
+
+function NavColoursCard({
+  form,
+  setForm,
+  disabled,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  disabled?: boolean;
+}) {
+  const theme = resolveEventTheme({
+    palette_key: form.palette_key || null,
+    primary_color: form.primary_color || null,
+    accent_color: form.accent_color || null,
+    page_background_color: form.page_background_color || null,
+    card_background_color: form.card_background_color || null,
+    text_color: form.text_color || null,
+    muted_text_color: form.muted_text_color || null,
+    card_text_color: form.card_text_color || null,
+    card_muted_text_color: form.card_muted_text_color || null,
+    border_color: form.border_color || null,
+    primary_text_color: form.primary_text_color || null,
+    nav_background_color: form.nav_background_color || null,
+    page_background_key: form.page_background_key || null,
+  });
+
+  const navTextWarn = surfaceWarning(theme.navText, theme.navBg, "navigation background");
+  const usingFallback = !HEX_RE.test(form.nav_background_color);
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+          Advanced — navigation surface
+        </div>
+        <div className="mt-1 text-sm font-semibold">Header &amp; bottom nav background</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Controls the sticky top header, the mobile bottom navigation,
+          and the slide-out drawer. Leave blank to follow the primary
+          button colour. Nav text and icon colours are derived from the
+          primary button text colour so contrast stays readable.
+        </p>
+      </div>
+
+      <ColorRoleRow
+        label="Navigation background colour"
+        helper={
+          usingFallback
+            ? "Currently following the primary button colour. Pick a hex value to set the nav independently."
+            : "The header, bottom nav, and drawer all use this colour."
+        }
+        resolved={theme.navBg}
+        value={form.nav_background_color}
+        onChange={(v) => setForm({ ...form, nav_background_color: v })}
+        disabled={disabled}
+        warnings={navTextWarn ? [navTextWarn] : []}
+      />
+
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#475569]">
+          Preview
+        </div>
+        <div
+          className="mt-2 flex items-center justify-between rounded-[10px] px-3 py-2"
+          style={{ background: theme.navBg, color: theme.navText }}
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+            Event name
+          </span>
+          <span
+            className="inline-flex h-6 items-center rounded-full px-2 text-[10px] font-semibold"
+            style={{ background: theme.accent, color: theme.primaryText }}
+          >
+            Passport
+          </span>
+        </div>
+        <div
+          className="mt-2 grid grid-cols-3 gap-1 rounded-[10px] px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.12em]"
+          style={{ background: theme.navBg, color: theme.navMuted }}
+        >
+          <span className="text-center">Home</span>
+          <span className="text-center" style={{ color: theme.navActiveText }}>
+            Map
+          </span>
+          <span className="text-center">More</span>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Active nav items use the accent colour so they stay obvious
+          against the nav background.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function countNavWarnings(form: Form): number {
+  const theme = resolveEventTheme({
+    palette_key: form.palette_key || null,
+    primary_color: form.primary_color || null,
+    accent_color: form.accent_color || null,
+    page_background_color: form.page_background_color || null,
+    card_background_color: form.card_background_color || null,
+    text_color: form.text_color || null,
+    muted_text_color: form.muted_text_color || null,
+    card_text_color: form.card_text_color || null,
+    card_muted_text_color: form.card_muted_text_color || null,
+    border_color: form.border_color || null,
+    primary_text_color: form.primary_text_color || null,
+    nav_background_color: form.nav_background_color || null,
+    page_background_key: form.page_background_key || null,
+  });
+  let count = 0;
+  if (surfaceWarning(theme.navText, theme.navBg, "navigation background")) count++;
   return count;
 }
 
