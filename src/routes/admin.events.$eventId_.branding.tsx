@@ -74,6 +74,8 @@ type Branding = {
   card_background_color: string | null;
   text_color: string | null;
   muted_text_color: string | null;
+  card_text_color: string | null;
+  card_muted_text_color: string | null;
   border_color: string | null;
   primary_text_color: string | null;
   hero_overlay_color: string | null;
@@ -110,6 +112,8 @@ type Form = {
   card_background_color: string;
   text_color: string;
   muted_text_color: string;
+  card_text_color: string;
+  card_muted_text_color: string;
   border_color: string;
   primary_text_color: string;
   hero_overlay_color: string;
@@ -146,6 +150,8 @@ function BrandingEditor() {
     card_background_color: "",
     text_color: "",
     muted_text_color: "",
+    card_text_color: "",
+    card_muted_text_color: "",
     border_color: "",
     primary_text_color: "",
     hero_overlay_color: "",
@@ -187,7 +193,7 @@ function BrandingEditor() {
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         supabase
           .from("event_branding")
-          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, border_color, primary_text_color, hero_overlay_color, hero_overlay_opacity")
+          .select("logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color, text_color, muted_text_color, card_text_color, card_muted_text_color, border_color, primary_text_color, hero_overlay_color, hero_overlay_opacity")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle(),
@@ -234,6 +240,8 @@ function BrandingEditor() {
         card_background_color: branding?.card_background_color ?? "",
         text_color: branding?.text_color ?? "",
         muted_text_color: branding?.muted_text_color ?? "",
+        card_text_color: branding?.card_text_color ?? "",
+        card_muted_text_color: branding?.card_muted_text_color ?? "",
         border_color: branding?.border_color ?? "",
         primary_text_color: branding?.primary_text_color ?? "",
         hero_overlay_color: branding?.hero_overlay_color ?? "",
@@ -319,6 +327,8 @@ function BrandingEditor() {
     const card_background_color = form.card_background_color.trim();
     const text_color = form.text_color.trim();
     const muted_text_color = form.muted_text_color.trim();
+    const card_text_color = form.card_text_color.trim();
+    const card_muted_text_color = form.card_muted_text_color.trim();
     const border_color = form.border_color.trim();
     const primary_text_color = form.primary_text_color.trim();
     const hero_overlay_color = form.hero_overlay_color.trim();
@@ -335,8 +345,10 @@ function BrandingEditor() {
       return;
     }
     for (const [label, value] of [
-      ["Main text colour", text_color],
-      ["Muted text colour", muted_text_color],
+      ["Page text colour", text_color],
+      ["Page muted text colour", muted_text_color],
+      ["Card text colour", card_text_color],
+      ["Card muted text colour", card_muted_text_color],
       ["Border colour", border_color],
       ["Primary button text colour", primary_text_color],
       ["Hero image overlay colour", hero_overlay_color],
@@ -372,6 +384,8 @@ function BrandingEditor() {
       card_background_color: card_background_color || null,
       text_color: text_color || null,
       muted_text_color: muted_text_color || null,
+      card_text_color: card_text_color || null,
+      card_muted_text_color: card_muted_text_color || null,
       border_color: border_color || null,
       primary_text_color: primary_text_color || null,
       hero_overlay_color: hero_overlay_color || null,
@@ -379,10 +393,11 @@ function BrandingEditor() {
     };
 
     const NEW_TEXT_COLS = "text_color, muted_text_color, border_color, primary_text_color";
+    const CARD_TEXT_COLS = "card_text_color, card_muted_text_color";
     const HERO_OVERLAY_COLS = "hero_overlay_color, hero_overlay_opacity";
     const BASE_SELECT_COLS =
       "logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color";
-    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${HERO_OVERLAY_COLS}`;
+    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${CARD_TEXT_COLS}, ${HERO_OVERLAY_COLS}`;
 
     // 1. Re-check existence from the DB (don't rely on stale bundle.hasBranding).
     const { data: existing, error: existingErr } = await supabase
@@ -424,6 +439,32 @@ function BrandingEditor() {
     const mode: "update" | "insert" = existing ? "update" : "insert";
     let payload = fullPayload;
     let { row: savedRow, error: writeErr } = await writeRow(payload, mode);
+
+    // Fallback if the new card-surface text columns are missing on the
+    // production DB. Retry without them so the rest persists.
+    if (
+      writeErr &&
+      /(card_text_color|card_muted_text_color)/i.test(writeErr.message ?? "")
+    ) {
+      console.warn("[branding-save] card-text columns missing, retrying without", {
+        message: writeErr.message,
+      });
+      const {
+        card_text_color: _ctc,
+        card_muted_text_color: _cmtc,
+        ...rest
+      } = payload;
+      payload = rest;
+      SELECT_COLS = SELECT_COLS.replace(`, ${CARD_TEXT_COLS}`, "");
+      const retry = await writeRow(payload, mode);
+      savedRow = retry.row;
+      writeErr = retry.error;
+      if (!writeErr && (card_text_color || card_muted_text_color)) {
+        setSaveError(
+          "Saved core branding. The new card text/muted colours require the database migration in supabase/migrations-draft-event-card-text-colors/.",
+        );
+      }
+    }
 
     // Fallback if the new semantic text columns are missing on the
     // production DB (migration `migrations-draft-event-text-colors` not
@@ -541,6 +582,8 @@ function BrandingEditor() {
       card_background_color: saved.card_background_color ?? "",
       text_color: saved.text_color ?? text_color ?? "",
       muted_text_color: saved.muted_text_color ?? muted_text_color ?? "",
+      card_text_color: saved.card_text_color ?? card_text_color ?? "",
+      card_muted_text_color: saved.card_muted_text_color ?? card_muted_text_color ?? "",
       border_color: saved.border_color ?? border_color ?? "",
       primary_text_color: saved.primary_text_color ?? primary_text_color ?? "",
       hero_overlay_color: saved.hero_overlay_color ?? hero_overlay_color ?? "",
@@ -1101,6 +1144,8 @@ function BrandingEditor() {
               cardBackgroundColor={form.card_background_color}
               textColor={form.text_color}
               mutedTextColor={form.muted_text_color}
+              cardTextColor={form.card_text_color}
+              cardMutedTextColor={form.card_muted_text_color}
               borderColor={form.border_color}
               primaryTextColor={form.primary_text_color}
               fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
@@ -1915,19 +1960,42 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
     card_background_color: form.card_background_color || null,
     text_color: form.text_color || null,
     muted_text_color: form.muted_text_color || null,
+    card_text_color: form.card_text_color || null,
+    card_muted_text_color: form.card_muted_text_color || null,
     border_color: form.border_color || null,
     primary_text_color: form.primary_text_color || null,
     page_background_key: form.page_background_key || null,
   });
 
-  const textOnPage = surfaceWarning(theme.text, theme.pageBg, "page background");
-  const textOnCard = surfaceWarning(theme.text, theme.cardBg, "card background");
-  const mutedOnPage = surfaceWarning(theme.muted, theme.pageBg, "page background", 3);
-  const mutedOnCard = surfaceWarning(theme.muted, theme.cardBg, "card background", 3);
-  const primaryButton = surfaceWarning(theme.primaryText, theme.primary, "primary button");
-
-  const textWarnings = [textOnPage, textOnCard].filter(Boolean) as string[];
-  const mutedWarnings = [mutedOnPage, mutedOnCard].filter(Boolean) as string[];
+  // Page-surface contrast: page text vs page background.
+  const pageTextWarn = surfaceWarning(
+    theme.pageText,
+    theme.pageBg,
+    "page background",
+  );
+  const pageMutedWarn = surfaceWarning(
+    theme.pageMuted,
+    theme.pageBg,
+    "page background",
+    3,
+  );
+  // Card-surface contrast: card text vs card background.
+  const cardTextWarn = surfaceWarning(
+    theme.cardText,
+    theme.cardBg,
+    "card background",
+  );
+  const cardMutedWarn = surfaceWarning(
+    theme.cardMuted,
+    theme.cardBg,
+    "card background",
+    3,
+  );
+  const primaryButton = surfaceWarning(
+    theme.primaryText,
+    theme.primary,
+    "primary button",
+  );
 
   return (
     <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
@@ -1937,29 +2005,60 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
         </div>
         <div className="mt-1 text-sm font-semibold">Text &amp; border colours</div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Public passport pages use these four semantic colours everywhere.
-          Leave any field blank to inherit from the selected theme.
+          Page text controls copy that sits directly on the page background.
+          Card text controls copy inside cards (venue list, awards, FAQ
+          answers, leaderboard rows, etc.). Card colours fall back to the
+          page colours when left blank, so existing events keep their look.
         </p>
       </div>
 
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#475569]">
+        Page / background text
+      </div>
       <ColorRoleRow
-        label="Main text colour"
-        helper="Headings, venue names, body copy, leaderboard names, FAQ questions."
-        resolved={theme.text}
+        label="Page text colour"
+        helper="Body copy and headings drawn directly on the page background (welcome copy, section labels, hero subtitle)."
+        resolved={theme.pageText}
         value={form.text_color}
         onChange={(v) => setForm({ ...form, text_color: v })}
         disabled={disabled}
-        warnings={textWarnings}
+        warnings={pageTextWarn ? [pageTextWarn] : []}
       />
       <ColorRoleRow
-        label="Muted text"
-        helper="Used for secondary text on normal page and card backgrounds (descriptions, helper text, metadata). Header and navigation muted text is automatically adjusted for contrast."
-        resolved={theme.muted}
+        label="Page muted text colour"
+        helper="Helper / metadata text on the page background."
+        resolved={theme.pageMuted}
         value={form.muted_text_color}
         onChange={(v) => setForm({ ...form, muted_text_color: v })}
         disabled={disabled}
-        warnings={mutedWarnings}
+        warnings={pageMutedWarn ? [pageMutedWarn] : []}
       />
+
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#475569]">
+        Card / surface text
+      </div>
+      <ColorRoleRow
+        label="Card text colour"
+        helper="Headings, venue names and body copy inside cards. Leave blank to reuse the page text colour."
+        resolved={theme.cardText}
+        value={form.card_text_color}
+        onChange={(v) => setForm({ ...form, card_text_color: v })}
+        disabled={disabled}
+        warnings={cardTextWarn ? [cardTextWarn] : []}
+      />
+      <ColorRoleRow
+        label="Card muted text colour"
+        helper="Helper text, addresses, descriptions and metadata inside cards. Leave blank to reuse the page muted colour."
+        resolved={theme.cardMuted}
+        value={form.card_muted_text_color}
+        onChange={(v) => setForm({ ...form, card_muted_text_color: v })}
+        disabled={disabled}
+        warnings={cardMutedWarn ? [cardMutedWarn] : []}
+      />
+
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#475569]">
+        Borders &amp; brand
+      </div>
       <ColorRoleRow
         label="Border / divider colour"
         helper="Card borders, dividers, input outlines on the public pages."

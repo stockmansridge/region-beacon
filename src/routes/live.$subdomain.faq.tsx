@@ -5,7 +5,7 @@ import { tenantHost } from "@/lib/domains";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
@@ -51,12 +51,7 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
 
   return (
     <EventPaletteScope
-      paletteKey={branding.paletteKey}
-      backgroundKey={branding.backgroundKey}
-      primaryColor={branding.primaryColor}
-      accentColor={branding.accentColor}
-      pageBackgroundColor={branding.pageBackgroundColor}
-      cardBackgroundColor={branding.cardBackgroundColor}
+      {...brandingScopeProps(branding)}
       className="min-h-screen px-4 py-4"
     >
       <div className="mx-auto max-w-5xl">

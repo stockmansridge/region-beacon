@@ -13,7 +13,7 @@ import {
 
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { PoweredByGetStampd } from "@/components/brand";
-import { useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
@@ -153,12 +153,7 @@ function PassportPage() {
 
   return (
     <EventPaletteScope
-      paletteKey={branding.paletteKey}
-      backgroundKey={branding.backgroundKey}
-      primaryColor={branding.primaryColor}
-      accentColor={branding.accentColor}
-      pageBackgroundColor={branding.pageBackgroundColor}
-      cardBackgroundColor={branding.cardBackgroundColor}
+      {...brandingScopeProps(branding)}
       className="min-h-screen"
     >
       {!showInner ? (

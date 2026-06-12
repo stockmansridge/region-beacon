@@ -6,7 +6,7 @@ import { tenantHost } from "@/lib/domains";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
@@ -103,12 +103,7 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
 
   return (
     <EventPaletteScope
-      paletteKey={branding.paletteKey}
-      backgroundKey={branding.backgroundKey}
-      primaryColor={branding.primaryColor}
-      accentColor={branding.accentColor}
-      pageBackgroundColor={branding.pageBackgroundColor}
-      cardBackgroundColor={branding.cardBackgroundColor}
+      {...brandingScopeProps(branding)}
       className="min-h-screen px-4 py-4"
     >
       <div className="mx-auto max-w-5xl">

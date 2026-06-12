@@ -8,7 +8,7 @@ import { LegalBody } from "@/components/legal-body";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 
@@ -74,12 +74,7 @@ export function PublicLegalShell({
   const b = useEventBrandingKeys(subdomain);
   return (
     <EventPaletteScope
-      paletteKey={b.paletteKey}
-      backgroundKey={b.backgroundKey}
-      primaryColor={b.primaryColor}
-      accentColor={b.accentColor}
-      pageBackgroundColor={b.pageBackgroundColor}
-      cardBackgroundColor={b.cardBackgroundColor}
+      {...brandingScopeProps(b)}
       className="min-h-screen px-4 py-4"
     >
       <div className="mx-auto max-w-5xl">
