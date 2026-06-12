@@ -157,15 +157,18 @@ export function TrailLanding({
       {/* CTA card */}
       <div className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
         {welcomeCopy && (
-          <p className="text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{welcomeCopy}</p>
+          <p className="text-sm leading-relaxed text-[var(--event-text,#3D372C)]">{welcomeCopy}</p>
         )}
 
         <div className="mt-4 space-y-2.5">
           {primaryCta ?? (
             <button
               type="button"
-              className="h-12 w-full rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
-              style={{ backgroundColor: primaryColor }}
+              className="h-12 w-full rounded-full text-sm font-semibold tracking-wide shadow"
+              style={{
+                backgroundColor: "var(--event-primary)",
+                color: "var(--event-primary-fg)",
+              }}
             >
               Join the trail
             </button>
@@ -173,8 +176,12 @@ export function TrailLanding({
           {secondaryCta ?? (
             <button
               type="button"
-              className="h-11 w-full rounded-full border bg-transparent text-sm font-semibold tracking-wide"
-              style={{ borderColor: `${primaryColor}40`, color: primaryColor }}
+              className="h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
+              style={{
+                borderColor: "var(--event-border)",
+                backgroundColor: "transparent",
+                color: "var(--event-text)",
+              }}
             >
               I already have a passport
             </button>
