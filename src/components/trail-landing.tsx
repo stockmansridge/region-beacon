@@ -106,15 +106,15 @@ export function TrailLanding({
 
           {badge && (
             <div
-              className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-page-bg,#F6EFE2)]"
+              className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-primary-fg,#F6EFE2)]"
               style={{ backgroundColor: `${accentColor}E6` }}
             >
-              <span className="h-1 w-1 rounded-full bg-[var(--event-page-bg,#F6EFE2)]" />
+              <span className="h-1 w-1 rounded-full bg-[var(--event-primary-fg,#F6EFE2)]" />
               {badge}
             </div>
           )}
 
-          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-7 text-center text-[var(--event-page-bg,#F6EFE2)]">
+          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-7 text-center text-[var(--event-primary-fg,#F6EFE2)]">
             {logoUrl ? (
               <div
                 className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full"
@@ -148,7 +148,7 @@ export function TrailLanding({
               {eventName}
             </h1>
             {pitch && (
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--event-page-bg,#F6EFE2)]/85">{pitch}</p>
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--event-primary-fg,#F6EFE2)]/85">{pitch}</p>
             )}
           </div>
         </div>
