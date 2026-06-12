@@ -12,6 +12,7 @@ import {
 } from "@/lib/passport-stamps";
 
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
+import { pickNextReward } from "@/lib/use-passport-home-data";
 import { PoweredByGetStampd } from "@/components/brand";
 import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { EventPaletteScope } from "@/components/event-palette-scope";
