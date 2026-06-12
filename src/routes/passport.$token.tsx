@@ -477,7 +477,6 @@ function PassportView({
     }
   }
 
-  const statusLabel = (passport.status ?? "active").replace(/_/g, " ");
   const greetingName =
     passport.first_name?.trim() ||
     passport.full_name?.trim() ||
