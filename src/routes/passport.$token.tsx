@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrailShell } from "@/components/trail-shell";
+
 import { PublicEventNav } from "@/components/public-event-nav";
 import { classifyHost } from "@/components/host-router";
 import {
