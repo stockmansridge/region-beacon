@@ -396,6 +396,40 @@ function PassportView({
   const goal = totalVenues > 0 ? totalVenues : Math.max(stampedCount, 1);
   const pct = Math.min(100, Math.round((stampedCount / goal) * 100));
 
+  // Awards — lifted from RewardsSection so the summary tile can show
+  // tier / next-reward status using the same source of truth.
+  const [awards, setAwards] = useState<PublicEventAward[] | null>(null);
+  useEffect(() => {
+    if (!passport.event_id) {
+      setAwards([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await listPublicAwards(passport.event_id!, passport.passport_id);
+        if (!cancelled) setAwards(rows);
+      } catch {
+        if (!cancelled) setAwards([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [passport.event_id, passport.passport_id]);
+
+  // Points: same heuristic as use-passport-home-data — passport_points is
+  // computed server-side and identical across awards rows.
+  const pointsEarned: number | null =
+    awards && awards.length > 0
+      ? (awards.find((a) => typeof a.passport_points === "number")?.passport_points ?? null)
+      : null;
+  const unlockedAwards = awards?.filter((a) => a.is_eligible) ?? [];
+  const nextAward = awards ? pickNextReward(awards) : null;
+  const heroImageUrl = getEventAssetPublicUrl(branding.coverPath);
+  const heroLogoUrl = getEventAssetPublicUrl(branding.logoPath);
+
+
 
   async function copy() {
     try {
