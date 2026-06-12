@@ -1988,7 +1988,7 @@ function ColorRoleRow({
   value,
   onChange,
   disabled,
-  warning,
+  warnings,
 }: {
   label: string;
   helper: string;
@@ -1996,7 +1996,7 @@ function ColorRoleRow({
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
-  warning?: string | null;
+  warnings?: string[];
 }) {
   const HEX = /^#[0-9A-Fa-f]{6}$/;
   const pickerValue = HEX.test(value) ? value : resolved;
@@ -2033,27 +2033,30 @@ function ColorRoleRow({
           className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
-      {warning && (
+      {warnings && warnings.length > 0 && (
         <div
           role="alert"
-          className="rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[11px] leading-5 text-[#92400E]"
+          className="space-y-1 rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[11px] leading-5 text-[#92400E]"
         >
-          Low contrast: this text may be hard to read on the public passport. {warning}
+          {warnings.map((w, i) => (
+            <div key={i}>{w}</div>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function lowContrastWarning(
+function surfaceWarning(
   fg: string,
   bg: string,
+  surfaceLabel: string,
   threshold = 4.5,
 ): string | null {
   const ratio = contrastRatio(fg, bg);
   if (ratio == null) return null;
   if (ratio >= threshold) return null;
-  return `(${ratio.toFixed(2)}:1, needs ≥${threshold}:1)`;
+  return `Low contrast on ${surfaceLabel} (${ratio.toFixed(2)}:1, needs ≥${threshold}:1).`;
 }
 
 // ============================================================================
