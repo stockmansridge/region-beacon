@@ -62,7 +62,7 @@ type EditorState =
 
 type DrawState =
   | { mode: "closed" }
-  | { mode: "confirm"; award: AdminEventAward }
+  | { mode: "confirm"; award: AdminEventAward; error?: string | null }
   | { mode: "drawing"; award: AdminEventAward }
   | { mode: "result"; award: AdminEventAward; result: AwardDrawResult };
 
