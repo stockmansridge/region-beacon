@@ -3339,7 +3339,7 @@ function EventDetail() {
                 />
                 <div
                   ref={venueEditorRef}
-                  className="relative ml-auto flex h-full w-full max-w-3xl flex-col bg-white shadow-2xl"
+                  className="relative ml-auto flex h-full w-full flex-col bg-white shadow-2xl sm:w-[92vw] lg:w-[50vw] lg:min-w-[640px] lg:max-w-[900px]"
                 >
                   <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-[#E5E7EB] bg-white px-5 py-4">
                     <div className="min-w-0">
