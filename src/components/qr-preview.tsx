@@ -53,7 +53,15 @@ function isStaleChunkError(err: unknown): boolean {
  * Renders a QR code image from a URL, with a Download PNG action.
  * Generation happens entirely in the browser; nothing is stored or uploaded.
  */
-export function QrPreview({ value, downloadName = "qr-code", size = 160, poster }: Props) {
+export function QrPreview({
+  value,
+  downloadName = "qr-code",
+  size = 160,
+  poster,
+  pngButtonLabel = "Download QR PNG",
+  posterButtonLabel = "Download poster PDF",
+  awardsCaption,
+}: Props) {
   const normalisedValue = normaliseQrUrl(value);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
