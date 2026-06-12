@@ -192,7 +192,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
           <h1
             className="text-[28px] font-semibold leading-tight"
             style={{
-              color: "var(--event-page-fg, #1F3D2B)",
+              color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
@@ -200,19 +200,18 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
           </h1>
           <p
             className="mt-2 text-[13.5px] leading-relaxed"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
           >
             Visit the {labels.plural.toLowerCase()} to unlock these offers.
           </p>
         </div>
 
-
         {offers.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
+          <div className="rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
             <p>No offers have been listed yet.</p>
             <Link
               to="/venues"
-              className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+              className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.22em] text-[var(--event-link,var(--event-primary,#1F3D2B))] underline-offset-4 hover:underline"
             >
               Browse {labels.plural.toLowerCase()} →
             </Link>
