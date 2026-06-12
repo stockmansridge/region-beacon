@@ -277,11 +277,9 @@ function CheckinPage() {
             venue_id: string;
             passport_id: string;
             is_new: boolean;
+            venue_name?: string | null;
             points_awarded?: number | null;
-            points_already_awarded?: boolean | null;
-            total_points?: number | null;
-            venue_points?: number | null;
-            bonus_points?: number | null;
+            already_checked_in?: boolean | null;
           }
         | null;
       if (!row) {
@@ -292,16 +290,18 @@ function CheckinPage() {
         return;
       }
 
-      let venueName: string | null = null;
-      try {
-        const { data: v } = await supabase
-          .from("venues")
-          .select("name")
-          .eq("id", row.venue_id)
-          .maybeSingle();
-        venueName = (v as { name: string | null } | null)?.name ?? null;
-      } catch {
-        venueName = null;
+      let venueName: string | null = row.venue_name ?? null;
+      if (!venueName) {
+        try {
+          const { data: v } = await supabase
+            .from("venues")
+            .select("name")
+            .eq("id", row.venue_id)
+            .maybeSingle();
+          venueName = (v as { name: string | null } | null)?.name ?? null;
+        } catch {
+          venueName = null;
+        }
       }
 
       if (!cancelled) {
@@ -311,8 +311,8 @@ function CheckinPage() {
           passportToken: token,
           isNew: !!row.is_new,
           pointsAwarded: row.points_awarded ?? 0,
-          pointsAlreadyAwarded: !!row.points_already_awarded,
-          totalPoints: row.total_points ?? 0,
+          pointsAlreadyAwarded: !!row.already_checked_in,
+          totalPoints: 0,
         });
       }
     })();
@@ -336,8 +336,15 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
   }
 
   if (outcome.kind === "stamped") {
-    const title = outcome.isNew ? "You're checked in" : "Already stamped";
+    const venueLabel = outcome.venueName ?? "this venue";
+    const title = outcome.isNew ? "Check-in successful" : "Already checked in";
     const kicker = outcome.isNew ? "Stamp Collected" : "Already Collected";
+    const pts = outcome.pointsAwarded;
+    const pointsLine = outcome.isNew
+      ? pts > 0
+        ? `You earned ${pts} ${pts === 1 ? "point" : "points"} at ${venueLabel}.`
+        : `Stamp added at ${venueLabel}.`
+      : `You've already checked in at ${venueLabel}. No extra points were added.`;
     return (
       <TrailShell
         eventName="GetStampd"
@@ -372,21 +379,12 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
               <h1 className="font-trail-serif mt-2 text-[34px] font-semibold leading-tight">
                 {title}
               </h1>
-              {outcome.venueName && (
-                <p className="mt-1 text-base text-[var(--event-page-bg,#F6EFE2)]/90">{outcome.venueName}</p>
-              )}
-              {outcome.isNew && outcome.pointsAwarded > 0 ? (
-                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">
-                  You earned {outcome.pointsAwarded} points.
-                </p>
-              ) : !outcome.isNew ? (
-                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">
-                  This venue is already in your passport. Your points total has not changed.
-                </p>
-              ) : null}
-              {outcome.totalPoints > 0 && (
-                <p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
-                  Your total points: {outcome.totalPoints}
+              <p className="mt-3 text-base text-[var(--event-page-bg,#F6EFE2)]/90">
+                {pointsLine}
+              </p>
+              {outcome.isNew && (
+                <p className="mt-2 text-sm text-[var(--event-page-bg,#F6EFE2)]/80">
+                  Your passport has been updated.
                 </p>
               )}
             </div>
