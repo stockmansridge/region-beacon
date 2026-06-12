@@ -193,7 +193,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           </h1>
 
           {visited.kind === "visited" && (
-            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--event-primary,#1F3D2B)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-card-bg,#FBF5E8)]">
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--event-primary,#1F3D2B)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-primary-fg,#F6EFE2)]">
               ✓ Visited
               {visited.at && (
                 <span className="font-normal normal-case tracking-normal opacity-80">
@@ -208,7 +208,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             </div>
           )}
           {visited.kind === "no_passport" && (
-            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-1 text-[11px] font-medium text-[var(--event-body,#3D372C)]">
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-1 text-[11px] font-medium text-[var(--event-text,#3D372C)]">
               <span>Create a passport to track visited venues</span>
               <Link to="/join" className="font-semibold text-[var(--event-primary,#1F3D2B)] underline underline-offset-2">
                 Start
@@ -217,7 +217,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           )}
 
           {venue.description && (
-            <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-body,#3D372C)]">
+            <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-text,#3D372C)]">
               {venue.description}
             </p>
           )}
@@ -241,7 +241,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
                     Offer
                   </div>
-                  <p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-body,#3D372C)]">
+                  <p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-text,#3D372C)]">
                     {venue.offer_summary}
                   </p>
                 </div>
