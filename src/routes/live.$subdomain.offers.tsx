@@ -132,6 +132,17 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
     <EventPaletteScope
       paletteKey={event?.palette_key ?? null}
       backgroundKey={event?.page_background_key ?? null}
+      pageBackgroundColor={event?.page_background_color ?? null}
+      cardBackgroundColor={event?.card_background_color ?? null}
+      primaryColor={event?.primary_color ?? null}
+      accentColor={event?.accent_color ?? null}
+      textColor={event?.text_color ?? null}
+      mutedTextColor={event?.muted_text_color ?? null}
+      cardTextColor={event?.card_text_color ?? null}
+      cardMutedTextColor={event?.card_muted_text_color ?? null}
+      borderColor={event?.border_color ?? null}
+      primaryTextColor={event?.primary_text_color ?? null}
+      fontFamily={event?.font_family ?? null}
       className="min-h-screen px-4 pb-10"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
