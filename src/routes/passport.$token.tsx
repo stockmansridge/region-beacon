@@ -804,17 +804,17 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
         style={
           stamped
             ? {
-                backgroundColor: PRIMARY,
-                color: "var(--event-page-bg,#F6EFE2)",
+                backgroundColor: "var(--event-visited, var(--event-primary))",
+                color: "var(--event-button-primary-fg, var(--event-primary-fg))",
                 boxShadow:
-                  "inset 0 0 0 2px var(--event-page-bg,#F6EFE2), inset 0 0 0 4px rgba(31,61,43,0.65), 0 2px 6px rgba(31,61,43,0.18)",
+                  "inset 0 0 0 2px var(--event-card-bg), inset 0 0 0 4px color-mix(in srgb, var(--event-visited, var(--event-primary)) 65%, transparent), 0 2px 6px color-mix(in srgb, var(--event-visited, var(--event-primary)) 25%, transparent)",
               }
             : {
-                backgroundColor: "var(--event-page-bg,#F6EFE2)",
-                color: "var(--event-muted,#8A7E66)",
-                boxShadow: "inset 0 0 0 2px var(--event-border,#E6DCC7)",
+                backgroundColor: "var(--event-page-bg)",
+                color: "var(--event-card-muted)",
+                boxShadow: "inset 0 0 0 2px var(--event-card-border)",
                 backgroundImage:
-                  "repeating-linear-gradient(45deg, transparent 0 6px, rgba(138,126,102,0.06) 6px 7px)",
+                  "repeating-linear-gradient(45deg, transparent 0 6px, color-mix(in srgb, var(--event-card-muted) 12%, transparent) 6px 7px)",
               }
         }
       >
@@ -841,25 +841,34 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
         ) : (
           <span
             aria-hidden
-            className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#A89C82]"
+            className="text-[9px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--event-card-muted)", opacity: 0.85 }}
           >
             Empty
           </span>
         )}
       </div>
       <div
-        className={`mt-2 line-clamp-2 text-[12px] font-semibold leading-tight ${
-          stamped ? "" : "text-[var(--event-muted,#8A7E66)]"
-        }`}
-        style={stamped ? { color: PRIMARY } : undefined}
+        className="mt-2 line-clamp-2 text-[12px] font-semibold leading-tight"
+        style={{
+          color: stamped ? "var(--event-card-heading)" : "var(--event-card-muted)",
+        }}
       >
         {venue.venue_name ?? "Venue"}
       </div>
       {stamped && when && (
-        <div className="mt-0.5 text-[10px] text-[var(--event-muted,#8A7E66)]">{when}</div>
+        <div
+          className="mt-0.5 text-[10px]"
+          style={{ color: "var(--event-card-muted)" }}
+        >
+          {when}
+        </div>
       )}
       {!stamped && (
-        <div className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[#A89C82]">
+        <div
+          className="mt-0.5 text-[10px] uppercase tracking-[0.14em]"
+          style={{ color: "var(--event-card-muted)", opacity: 0.85 }}
+        >
           Not visited
         </div>
       )}
