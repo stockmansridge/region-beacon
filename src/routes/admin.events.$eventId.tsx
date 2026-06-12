@@ -4258,6 +4258,9 @@ function EventDetail() {
                                     <QrPreview
                                       value={built.url}
                                       downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+                                      pngButtonLabel="Download venue check-in QR (PNG)"
+                                      posterButtonLabel="Download venue check-in poster PDF"
+                                      awardsCaption={`This scan awards: ${qr?.entry_value ?? 1} point${(qr?.entry_value ?? 1) === 1 ? "" : "s"}`}
                                       poster={{
                                         eventName: event.name,
                                         venueName: v.name,
@@ -4281,7 +4284,7 @@ function EventDetail() {
                                   disabled={isBusy}
                                   className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                  {isBusy ? "Generating…" : "Generate QR"}
+                                  {isBusy ? "Generating…" : "Generate venue check-in QR"}
                                 </button>
                               )}
                             </td>
