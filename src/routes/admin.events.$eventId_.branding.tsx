@@ -424,10 +424,11 @@ function BrandingEditor() {
 
     const NEW_TEXT_COLS = "text_color, muted_text_color, border_color, primary_text_color";
     const CARD_TEXT_COLS = "card_text_color, card_muted_text_color";
+    const NAV_COLS = "nav_background_color";
     const HERO_OVERLAY_COLS = "hero_overlay_color, hero_overlay_opacity";
     const BASE_SELECT_COLS =
       "logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color";
-    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${CARD_TEXT_COLS}, ${HERO_OVERLAY_COLS}`;
+    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${CARD_TEXT_COLS}, ${NAV_COLS}, ${HERO_OVERLAY_COLS}`;
 
     // 1. Re-check existence from the DB (don't rely on stale bundle.hasBranding).
     const { data: existing, error: existingErr } = await supabase
