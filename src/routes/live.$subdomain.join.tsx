@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
-import { TrailShell } from "@/components/trail-shell";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
@@ -401,40 +401,41 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   }
 
   return (
-    <>
-      <div className="bg-[#F6EFE2] px-4 pt-6">
-        <PublicAnnouncementBar subdomain={subdomain} />
-        <PublicEventNav
-          subdomain={subdomain}
-          eventName={event.name}
-          primaryColor={primary}
-          accentColor={accent}
-          logoUrl={getEventAssetPublicUrl(event.logo_path)}
-          eventId={event.event_id}
-          hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
-          hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
-        />
-      </div>
-      <TrailShell
-        eventName={event.name}
-      primaryColor={primary}
-      accentColor={accent}
+    <EventPaletteScope
       paletteKey={event.palette_key ?? null}
       backgroundKey={event.page_background_key ?? null}
-      topLeft={
-        <Link
-          to="/"
-          className="text-xs font-semibold uppercase tracking-[0.18em]"
-          style={{ color: primary }}
-        >
-          ← Back
-        </Link>
-      }
+      primaryColor={event.primary_color ?? null}
+      accentColor={event.accent_color ?? null}
+      fontFamily={event.font_family ?? null}
+      className="min-h-screen"
     >
+      <div className="px-4 pt-2">
+        <PublicAnnouncementBar subdomain={subdomain} />
+      </div>
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event.name}
+        primaryColor={primary}
+        accentColor={accent}
+        logoUrl={getEventAssetPublicUrl(event.logo_path)}
+        eventId={event.event_id}
+        activeOverride="join"
+        hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
+        hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
+      />
       <div
-        className="mx-auto w-full max-w-md"
+        className="mx-auto w-full max-w-md px-4 pb-12 pt-4"
         style={event.font_family ? { fontFamily: event.font_family } : undefined}
       >
+        <div className="mb-3">
+          <Link
+            to="/"
+            className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
+            ← Back
+          </Link>
+        </div>
         <div className="mb-5 text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
@@ -443,15 +444,22 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             Start your passport
           </div>
           <h1
-            className="font-trail-serif mt-1 text-3xl font-semibold"
-            style={{ color: primary }}
+            className="mt-1 text-3xl font-semibold"
+            style={{
+              color: "var(--event-page-fg, #1F3D2B)",
+              fontFamily: "var(--event-font, inherit)",
+            }}
           >
             {event.name}
           </h1>
-          <p className="mt-2 text-sm text-[#3D372C]/80">
+          <p
+            className="mt-2 text-sm"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
             No app download required. Takes under a minute.
           </p>
         </div>
+
 
         {savedValidating && (
           <section
@@ -715,8 +723,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           box-shadow: 0 0 0 3px ${primary}22;
         }
       `}</style>
-    </TrailShell>
-    </>
+    </EventPaletteScope>
+
   );
 }
 
@@ -775,23 +783,35 @@ function SuccessScreen({
   }
 
   return (
-    <TrailShell
-      eventName={event.name}
-      primaryColor={primary}
-      accentColor={accent}
+    <EventPaletteScope
       paletteKey={event.palette_key ?? null}
       backgroundKey={event.page_background_key ?? null}
-      topLeft={
-        <Link
-          to="/"
-          className="text-xs font-semibold uppercase tracking-[0.18em]"
-          style={{ color: primary }}
-        >
-          ← Event
-        </Link>
-      }
+      primaryColor={primary}
+      accentColor={accent}
+      fontFamily={event.font_family ?? null}
+      className="min-h-screen"
     >
-      <div className="mx-auto w-full max-w-md">
+      <div className="px-4 pt-2">
+        <PublicAnnouncementBar subdomain={subdomain} />
+      </div>
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event.name}
+        primaryColor={primary}
+        accentColor={accent}
+        logoUrl={getEventAssetPublicUrl(event.logo_path)}
+        eventId={event.event_id}
+      />
+      <div className="mx-auto w-full max-w-md px-4 pb-12 pt-4">
+        <div className="mb-3">
+          <Link
+            to="/"
+            className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
+            ← Event
+          </Link>
+        </div>
         <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center shadow-sm">
           <div
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
@@ -817,8 +837,11 @@ function SuccessScreen({
             Welcome to the trail
           </div>
           <h1
-            className="font-trail-serif mt-2 text-2xl font-semibold"
-            style={{ color: primary }}
+            className="mt-2 text-2xl font-semibold"
+            style={{
+              color: "var(--event-card-fg, #1F3D2B)",
+              fontFamily: "var(--event-font, inherit)",
+            }}
           >
             Your passport is ready
           </h1>
@@ -871,9 +894,10 @@ function SuccessScreen({
 
         <div className="mt-4 flex justify-center"><PoweredByGetStampd variant="trail" /></div>
       </div>
-    </TrailShell>
+    </EventPaletteScope>
   );
 }
+
 
 function InfoScreen({
   event,
@@ -887,32 +911,54 @@ function InfoScreen({
   subdomain: string;
 }) {
   const primary = event.primary_color ?? "#1F3D2B";
+  const accent = event.accent_color ?? "#B5572A";
   return (
-    <TrailShell
-      eventName={event.name}
-      primaryColor={primary}
-      accentColor={event.accent_color ?? "#B5572A"}
+    <EventPaletteScope
       paletteKey={event.palette_key ?? null}
       backgroundKey={event.page_background_key ?? null}
-      topLeft={
-        <Link
-          to="/"
-          className="text-xs font-semibold uppercase tracking-[0.18em]"
-          style={{ color: primary }}
-        >
-          ← Back
-        </Link>
-      }
+      primaryColor={primary}
+      accentColor={accent}
+      fontFamily={event.font_family ?? null}
+      className="min-h-screen"
     >
-      <div className="mx-auto max-w-md rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
-        <h1 className="font-trail-serif text-2xl font-semibold" style={{ color: primary }}>
-          {title}
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">{message}</p>
+      <div className="px-4 pt-2">
+        <PublicAnnouncementBar subdomain={subdomain} />
       </div>
-    </TrailShell>
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event.name}
+        primaryColor={primary}
+        accentColor={accent}
+        logoUrl={getEventAssetPublicUrl(event.logo_path)}
+        eventId={event.event_id}
+      />
+      <div className="mx-auto w-full max-w-md px-4 pb-12 pt-4">
+        <div className="mb-3">
+          <Link
+            to="/"
+            className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
+            ← Back
+          </Link>
+        </div>
+        <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
+          <h1
+            className="text-2xl font-semibold"
+            style={{
+              color: "var(--event-card-fg, #1F3D2B)",
+              fontFamily: "var(--event-font, inherit)",
+            }}
+          >
+            {title}
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">{message}</p>
+        </div>
+      </div>
+    </EventPaletteScope>
   );
 }
+
 
 function NotLiveYet() {
   return (

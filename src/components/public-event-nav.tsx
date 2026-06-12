@@ -199,7 +199,7 @@ export function PublicEventNav({
             <Link
               to="/"
               aria-current={isActive("home") ? "page" : undefined}
-              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
               style={{ color: isActive("home") ? navActiveFg : navMuted }}
             >
               <Home className="h-5 w-5" />
@@ -212,7 +212,7 @@ export function PublicEventNav({
               <Link
                 to="/map"
                 aria-current={isActive("map") ? "page" : undefined}
-                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
                 style={{ color: isActive("map") ? navActiveFg : navMuted }}
               >
                 <MapIcon className="h-5 w-5" />
@@ -222,7 +222,7 @@ export function PublicEventNav({
               <Link
                 to="/venues"
                 aria-current={isActive("venues") ? "page" : undefined}
-                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
                 style={{ color: isActive("venues") ? navActiveFg : navMuted }}
               >
                 <MapPin className="h-5 w-5" />
@@ -265,7 +265,7 @@ export function PublicEventNav({
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="More"
-              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
               style={{ color: menuOpen ? navActiveFg : navMuted }}
             >
               <MoreHorizontal className="h-5 w-5" />
