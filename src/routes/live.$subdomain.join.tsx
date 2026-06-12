@@ -42,10 +42,33 @@ type PublicEvent = {
   accent_color: string | null;
   palette_key?: string | null;
   page_background_key?: string | null;
+  page_background_color?: string | null;
+  card_background_color?: string | null;
+  text_color?: string | null;
+  muted_text_color?: string | null;
+  card_text_color?: string | null;
+  card_muted_text_color?: string | null;
+  border_color?: string | null;
+  primary_text_color?: string | null;
+  nav_background_color?: string | null;
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
   current_terms_version_id: string | null;
+  // Phase D additions (optional — null on legacy events)
+  brand_kit_key?: string | null;
+  link_color?: string | null;
+  card_border_color?: string | null;
+  button_primary_bg?: string | null;
+  button_primary_fg?: string | null;
+  button_secondary_bg?: string | null;
+  button_secondary_fg?: string | null;
+  nav_fg_color?: string | null;
+  nav_muted_color?: string | null;
+  nav_active_fg_color?: string | null;
+  hero_bg_color?: string | null;
+  hero_fg_color?: string | null;
+  hero_accent_color?: string | null;
 };
 
 type LoadState =
