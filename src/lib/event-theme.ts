@@ -21,8 +21,13 @@ export type EventTheme = {
   cardBg: string;        // --event-card-bg
   primary: string;       // --event-primary
   primaryText: string;   // --event-primary-fg (text on primary)
-  text: string;          // --event-text       (main text)
-  muted: string;         // --event-muted      (helper text)
+  // Page-surface text (directly on page background).
+  pageText: string;      // --event-page-fg
+  pageMuted: string;     // --event-page-muted
+  // Card-surface text (inside card_bg surfaces). Falls back to page
+  // text when card-specific overrides are not set.
+  cardText: string;      // --event-card-fg
+  cardMuted: string;     // --event-card-muted
   accent: string;        // --event-accent
   border: string;        // --event-border
 };
@@ -33,9 +38,14 @@ export type BrandingInput = {
   accent_color?: string | null;
   page_background_color?: string | null;
   card_background_color?: string | null;
-  // New semantic-role columns. Optional; fall back to palette when null.
+  // Legacy single text/muted columns — fall back to both page and card
+  // surfaces when card-specific values are absent.
   text_color?: string | null;
   muted_text_color?: string | null;
+  // Card-surface overrides. When set, only the card surface uses them;
+  // the page surface continues to use text_color/muted_text_color.
+  card_text_color?: string | null;
+  card_muted_text_color?: string | null;
   border_color?: string | null;
   primary_text_color?: string | null;
   // Background key only influences whether custom page/card hex overrides
@@ -49,13 +59,14 @@ function pickHex(value: string | null | undefined): string | null {
 }
 
 /**
- * Resolve the active 8-role theme for an event row.
+ * Resolve the active theme for an event row.
  *
  * Precedence per role:
- *   1. Explicit semantic column on event_branding (text_color, …)
- *   2. Curated palette value (when palette_key resolves)
- *   3. Custom palette derived from primary_color / accent_color
- *   4. Default palette (classic_vineyard)
+ *   1. Card-specific override (card_text_color, card_muted_text_color)
+ *   2. Page-level explicit semantic column (text_color, muted_text_color, …)
+ *   3. Curated palette value
+ *   4. Custom palette derived from primary_color / accent_color
+ *   5. Default palette (classic_vineyard)
  *
  * Page/card backgrounds keep the existing rule: custom hex values only
  * take over when page_background_key === 'custom_color'.
@@ -81,19 +92,28 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
   const customPageBg = isCustomBg ? pickHex(input.page_background_color) : null;
   const customCardBg = isCustomBg ? pickHex(input.card_background_color) : null;
 
-  // Explicit semantic overrides win over palette values.
-  const text = pickHex(input.text_color) ?? palette.heading ?? palette.bodyText;
-  const muted = pickHex(input.muted_text_color) ?? palette.mutedText;
   const border = pickHex(input.border_color) ?? palette.border;
-  const primaryText = pickHex(input.primary_text_color) ?? palette.primaryForeground;
+  const primaryText =
+    pickHex(input.primary_text_color) ?? palette.primaryForeground;
+
+  // Page-surface text (lives directly on pageBg).
+  const pageText =
+    pickHex(input.text_color) ?? palette.heading ?? palette.bodyText;
+  const pageMuted = pickHex(input.muted_text_color) ?? palette.mutedText;
+  // Card-surface text overrides — fall back to page text so existing
+  // events keep their current look when card_*_color columns are NULL.
+  const cardText = pickHex(input.card_text_color) ?? pageText;
+  const cardMuted = pickHex(input.card_muted_text_color) ?? pageMuted;
 
   return {
     pageBg: customPageBg ?? palette.pageBg,
     cardBg: customCardBg ?? palette.cardBg,
     primary: palette.primary,
     primaryText,
-    text,
-    muted,
+    pageText,
+    pageMuted,
+    cardText,
+    cardMuted,
     accent: palette.accent,
     border,
   };
@@ -104,6 +124,13 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
  * element's `style` prop. Includes legacy aliases so older pages still
  * referencing --event-heading / --event-body / --event-visited /
  * --event-pin keep rendering until they are migrated.
+ *
+ * --event-text and --event-muted are aliased to the CARD surface
+ * variants because the vast majority of text on public pages lives
+ * inside cards. Components that paint text directly on the page
+ * background should switch to --event-page-fg / --event-page-muted to
+ * stay readable when the user picks contrasting page and card
+ * backgrounds.
  */
 export function themeCssVars(theme: EventTheme): CSSProperties {
   const style: Record<string, string> = {
@@ -111,8 +138,13 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     "--event-card-bg": theme.cardBg,
     "--event-primary": theme.primary,
     "--event-primary-fg": theme.primaryText,
-    "--event-text": theme.text,
-    "--event-muted": theme.muted,
+    "--event-page-fg": theme.pageText,
+    "--event-page-muted": theme.pageMuted,
+    "--event-card-fg": theme.cardText,
+    "--event-card-muted": theme.cardMuted,
+    // --event-text / --event-muted resolve to the card-surface values.
+    "--event-text": theme.cardText,
+    "--event-muted": theme.cardMuted,
     "--event-accent": theme.accent,
     "--event-border": theme.border,
     // Derived: secondary/muted text on primary/dark surfaces (header, bottom
@@ -121,8 +153,8 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     // Never use --event-muted on primary surfaces — use this instead.
     "--event-on-primary-muted": `color-mix(in srgb, ${theme.primaryText} 72%, transparent)`,
     // Legacy aliases — keep until every public page is migrated.
-    "--event-heading": theme.text,
-    "--event-body": theme.text,
+    "--event-heading": theme.cardText,
+    "--event-body": theme.cardText,
     "--event-visited": theme.primary,
     "--event-pin": theme.accent,
   };
