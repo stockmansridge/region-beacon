@@ -483,33 +483,70 @@ function PassportView({
     passport.full_name?.trim() ||
     "Visitor";
 
+  // Reward/tier copy used in the right-bottom of the summary card.
+  const tierTitle: string =
+    awards == null
+      ? "Loading rewards…"
+      : awards.length === 0
+        ? "More rewards ahead"
+        : totalVenues > 0 && stampedCount >= totalVenues
+          ? "Trail complete"
+          : nextAward
+            ? nextAward.title
+            : unlockedAwards.length > 0
+              ? "All unlocked"
+              : "Keep exploring";
+  const tierSub: string =
+    awards == null
+      ? "loading…"
+      : awards.length === 0
+        ? "stay tuned"
+        : nextAward
+          ? nextAward.points_remaining > 0
+            ? `${nextAward.points_remaining} pt${nextAward.points_remaining === 1 ? "" : "s"} to go`
+            : "ready to enter"
+          : unlockedAwards.length > 0
+            ? `${unlockedAwards.length} unlocked`
+            : "keep collecting";
+  const tierGlyph: string =
+    awards && awards.length > 0 && nextAward
+      ? "🎁"
+      : awards && unlockedAwards.length > 0
+        ? "★"
+        : "✨";
+
+  // Circular progress ring geometry (left side of summary card).
+  const ringSize = 116;
+  const ringStroke = 10;
+  const ringRadius = (ringSize - ringStroke) / 2;
+  const ringCirc = 2 * Math.PI * ringRadius;
+  const ringDash = (pct / 100) * ringCirc;
+
   return (
     <>
-      {subdomain && (
-        <div className="px-4">
-          <PublicEventNav
-            subdomain={subdomain}
-            eventName={eventName ?? "Your passport"}
-            primaryColor={PRIMARY}
-            accentColor={ACCENT}
-            logoUrl={getEventAssetPublicUrl(branding.logoPath)}
-            activeOverride="passport"
-            passportHref={passportUrl}
-            eventId={passport.event_id}
-          />
-        </div>
-      )}
-      <main
-        className="mx-auto w-full max-w-md px-4 pb-24 pt-4"
-        style={{ fontFamily: "var(--event-font, inherit)" }}
-      >
-        {/* Hero */}
+      {/* Full-bleed hero with overlaid header */}
+      <div className="relative">
+        {subdomain && (
+          <div className="absolute inset-x-0 top-0 z-40 px-4">
+            <PublicEventNav
+              subdomain={subdomain}
+              eventName={eventName ?? "Your passport"}
+              primaryColor={PRIMARY}
+              accentColor={ACCENT}
+              logoUrl={heroLogoUrl}
+              activeOverride="passport"
+              passportHref={passportUrl}
+              eventId={passport.event_id}
+              transparentHeader
+            />
+          </div>
+        )}
         <section
-          className="relative overflow-hidden rounded-3xl shadow-sm"
+          className="relative w-full overflow-hidden"
           style={{
             backgroundColor: "var(--event-hero-bg, var(--event-primary))",
             color: "var(--event-hero-fg, var(--event-primary-fg))",
-            minHeight: 220,
+            minHeight: 320,
           }}
         >
           {heroImageUrl ? (
@@ -524,155 +561,172 @@ function PassportView({
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(180deg, var(--event-hero-overlay, rgba(0,0,0,0.15)) 0%, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 100%)",
+                "linear-gradient(180deg, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 0%, var(--event-hero-overlay, rgba(0,0,0,0.2)) 40%, var(--event-hero-overlay-strong, rgba(0,0,0,0.65)) 100%)",
             }}
           />
-          <div className="relative flex min-h-[220px] flex-col justify-end p-5">
-            {heroLogoUrl ? (
-              <img
-                src={heroLogoUrl}
-                alt=""
-                className="mb-3 h-10 w-10 rounded-full bg-white/80 object-contain p-1 shadow"
-              />
-            ) : null}
+          <div className="relative mx-auto flex min-h-[320px] max-w-md flex-col justify-end px-5 pb-16 pt-24 sm:min-h-[360px]">
             <p
               className="text-[10px] font-semibold uppercase tracking-[0.32em]"
               style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
             >
               My Passport
             </p>
-            <h1
-              className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
-              style={{
-                color: "var(--event-hero-fg, var(--event-primary-fg))",
-                fontFamily: "var(--event-font, inherit)",
-                textShadow: "0 2px 12px rgba(0,0,0,0.35)",
-              }}
-            >
-              Hi {greetingName}! <span aria-hidden>👋</span>
-            </h1>
+            {passport.first_name?.trim() ? (
+              <h1
+                className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
+                style={{
+                  color: "var(--event-hero-fg, var(--event-primary-fg))",
+                  fontFamily: "var(--event-font, inherit)",
+                  textShadow: "0 2px 12px rgba(0,0,0,0.45)",
+                }}
+              >
+                Hi {passport.first_name.trim()}! <span aria-hidden>👋</span>
+              </h1>
+            ) : (
+              <h1
+                className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
+                style={{
+                  color: "var(--event-hero-fg, var(--event-primary-fg))",
+                  fontFamily: "var(--event-font, inherit)",
+                  textShadow: "0 2px 12px rgba(0,0,0,0.45)",
+                }}
+              >
+                Hi {greetingName}! <span aria-hidden>👋</span>
+              </h1>
+            )}
             <p
               className="mt-1 text-sm sm:text-base"
               style={{
                 color: "var(--event-hero-fg, var(--event-primary-fg))",
-                opacity: 0.92,
-                textShadow: "0 1px 8px rgba(0,0,0,0.35)",
+                opacity: 0.95,
+                textShadow: "0 1px 8px rgba(0,0,0,0.45)",
               }}
             >
               Let’s explore {eventName ?? "the trail"}.
             </p>
           </div>
         </section>
+      </div>
 
-        {/* Summary card — stamps · points · reward status */}
+      <main
+        className="mx-auto w-full max-w-md px-4 pb-24"
+        style={{ fontFamily: "var(--event-font, inherit)" }}
+      >
+        {/* Summary card — overlaps the bottom of the hero */}
         <section
-          className="mt-4 rounded-3xl border shadow-sm"
+          className="relative z-10 -mt-14 rounded-3xl border shadow-lg sm:-mt-16"
           style={{
             borderColor: "var(--event-card-border)",
             backgroundColor: "var(--event-card-bg)",
           }}
         >
-          <div className="grid grid-cols-3 divide-x" style={{ borderColor: "var(--event-card-border)" }}>
-            <SummaryCell
-              label={totalVenues === 1 ? labelSingular : labelPlural}
-              sublabel="visited"
-              value={
-                totalVenues > 0 ? (
-                  <>
-                    {stampedCount}
-                    <span
-                      className="text-base font-medium"
-                      style={{ color: "var(--event-card-muted)" }}
-                    >
-                      /{totalVenues}
-                    </span>
-                  </>
-                ) : (
-                  stampedCount
-                )
-              }
-            />
-            <SummaryCell
-              label="Points"
-              sublabel="earned"
-              value={pointsEarned ?? stampedCount}
-            />
-            <SummaryCell
-              label={
-                awards == null
-                  ? "Rewards"
-                  : awards.length === 0
-                    ? "Keep going"
-                    : totalVenues > 0 && stampedCount >= totalVenues
-                      ? "Trail complete"
-                      : unlockedAwards.length > 0 && !nextAward
-                        ? "All unlocked"
-                        : nextAward
-                          ? "Next reward"
-                          : "Keep exploring"
-              }
-              sublabel={
-                awards == null
-                  ? "loading…"
-                  : awards.length === 0
-                    ? "more rewards ahead"
-                    : nextAward
-                      ? nextAward.points_remaining > 0
-                        ? `${nextAward.points_remaining} pt${nextAward.points_remaining === 1 ? "" : "s"} to go`
-                        : "ready to enter"
-                      : unlockedAwards.length > 0
-                        ? `${unlockedAwards.length} unlocked`
-                        : "keep collecting"
-              }
-              value={
-                awards && awards.length > 0 && nextAward ? (
+          <div className="grid grid-cols-2 items-stretch">
+            {/* Left: visited progress ring */}
+            <div
+              className="flex flex-col items-center justify-center gap-2 px-3 py-5"
+              style={{
+                borderRight: "1px solid var(--event-card-border)",
+              }}
+            >
+              <div
+                className="relative"
+                style={{ width: ringSize, height: ringSize }}
+              >
+                <svg
+                  width={ringSize}
+                  height={ringSize}
+                  viewBox={`0 0 ${ringSize} ${ringSize}`}
+                  aria-hidden
+                >
+                  <circle
+                    cx={ringSize / 2}
+                    cy={ringSize / 2}
+                    r={ringRadius}
+                    fill="none"
+                    stroke="var(--event-card-border)"
+                    strokeWidth={ringStroke}
+                  />
+                  <circle
+                    cx={ringSize / 2}
+                    cy={ringSize / 2}
+                    r={ringRadius}
+                    fill="none"
+                    stroke="var(--event-button-primary-bg)"
+                    strokeWidth={ringStroke}
+                    strokeLinecap="round"
+                    strokeDasharray={`${ringDash} ${ringCirc}`}
+                    transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span
-                    className="font-trail-serif text-lg font-semibold leading-tight"
+                    className="font-trail-serif text-2xl font-semibold leading-none"
                     style={{ color: "var(--event-card-heading)" }}
                   >
-                    {nextAward.title}
+                    {stampedCount}
+                    {totalVenues > 0 ? (
+                      <span
+                        className="text-base font-medium"
+                        style={{ color: "var(--event-card-muted)" }}
+                      >
+                        /{totalVenues}
+                      </span>
+                    ) : null}
                   </span>
-                ) : awards && awards.length > 0 && unlockedAwards.length > 0 ? (
-                  <span aria-hidden className="text-2xl">★</span>
-                ) : (
-                  <span aria-hidden className="text-2xl">✨</span>
-                )
-              }
-              compact
-            />
-          </div>
-          {totalVenues > 0 && (
-            <div className="px-5 pb-4 pt-2">
-              <div
-                className="h-1.5 w-full overflow-hidden rounded-full"
-                style={{ backgroundColor: "var(--event-card-border)" }}
-              >
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: "var(--event-button-primary-bg)",
-                  }}
-                />
+                </div>
               </div>
               <div
-                className="mt-2 flex items-center justify-between text-[11px]"
+                className="text-center text-[11px] font-medium uppercase tracking-[0.18em]"
                 style={{ color: "var(--event-card-muted)" }}
               >
-                <span>
-                  {stampedCount} of {totalVenues}{" "}
-                  {totalVenues === 1
-                    ? labelSingular.toLowerCase()
-                    : labelPlural.toLowerCase()}{" "}
-                  visited
-                </span>
-                <span className="uppercase tracking-[0.18em]">
-                  Status · {statusLabel}
-                </span>
+                {totalVenues === 1 ? labelSingular : labelPlural} visited
               </div>
             </div>
-          )}
+
+            {/* Right: points (top) + tier (bottom) */}
+            <div className="flex flex-col">
+              <div
+                className="flex flex-1 flex-col items-center justify-center px-3 py-3 text-center"
+                style={{
+                  borderBottom: "1px solid var(--event-card-border)",
+                }}
+              >
+                <div
+                  className="font-trail-serif text-2xl font-semibold leading-none"
+                  style={{ color: "var(--event-card-heading)" }}
+                >
+                  {pointsEarned ?? stampedCount}
+                </div>
+                <div
+                  className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
+                  style={{ color: "var(--event-card-muted)" }}
+                >
+                  Points earned
+                </div>
+              </div>
+              <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
+                <div className="flex items-center gap-1.5">
+                  <span aria-hidden className="text-base leading-none">
+                    {tierGlyph}
+                  </span>
+                  <span
+                    className="font-trail-serif text-sm font-semibold leading-tight"
+                    style={{ color: "var(--event-card-heading)" }}
+                  >
+                    {tierTitle}
+                  </span>
+                </div>
+                <div
+                  className="text-[10px] font-medium uppercase tracking-[0.18em]"
+                  style={{ color: "var(--event-card-muted)" }}
+                >
+                  {tierSub}
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
+
 
         {/* Stamp grid */}
         <StampGrid
