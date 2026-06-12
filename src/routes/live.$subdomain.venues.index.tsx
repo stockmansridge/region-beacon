@@ -169,13 +169,16 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
         eventId={event?.event_id ?? null}
       />
       <div className="mx-auto max-w-md">
-        <PassportProgressCard
-          eventId={event?.event_id ?? null}
-          venueLabelPlural={labels.plural}
-        />
-        <div className="mt-4">
+        <div className="mt-2">
           <PublicTrailTabs active="venues" venueLabelPlural={labels.plural} />
         </div>
+        <div className="mt-4">
+          <PassportProgressCard
+            eventId={event?.event_id ?? null}
+            venueLabelPlural={labels.plural}
+          />
+        </div>
+
 
         {venues.length === 0 ? (
           <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-text,#3D372C)]">
