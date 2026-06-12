@@ -401,40 +401,41 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   }
 
   return (
-    <>
-      <div className="bg-[#F6EFE2] px-4 pt-6">
-        <PublicAnnouncementBar subdomain={subdomain} />
-        <PublicEventNav
-          subdomain={subdomain}
-          eventName={event.name}
-          primaryColor={primary}
-          accentColor={accent}
-          logoUrl={getEventAssetPublicUrl(event.logo_path)}
-          eventId={event.event_id}
-          hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
-          hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
-        />
-      </div>
-      <TrailShell
-        eventName={event.name}
-      primaryColor={primary}
-      accentColor={accent}
+    <EventPaletteScope
       paletteKey={event.palette_key ?? null}
       backgroundKey={event.page_background_key ?? null}
-      topLeft={
-        <Link
-          to="/"
-          className="text-xs font-semibold uppercase tracking-[0.18em]"
-          style={{ color: primary }}
-        >
-          ← Back
-        </Link>
-      }
+      primaryColor={event.primary_color ?? null}
+      accentColor={event.accent_color ?? null}
+      fontFamily={event.font_family ?? null}
+      className="min-h-screen"
     >
+      <div className="px-4 pt-2">
+        <PublicAnnouncementBar subdomain={subdomain} />
+      </div>
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event.name}
+        primaryColor={primary}
+        accentColor={accent}
+        logoUrl={getEventAssetPublicUrl(event.logo_path)}
+        eventId={event.event_id}
+        activeOverride="join"
+        hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
+        hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
+      />
       <div
-        className="mx-auto w-full max-w-md"
+        className="mx-auto w-full max-w-md px-4 pb-12 pt-4"
         style={event.font_family ? { fontFamily: event.font_family } : undefined}
       >
+        <div className="mb-3">
+          <Link
+            to="/"
+            className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
+            ← Back
+          </Link>
+        </div>
         <div className="mb-5 text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
@@ -443,15 +444,22 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             Start your passport
           </div>
           <h1
-            className="font-trail-serif mt-1 text-3xl font-semibold"
-            style={{ color: primary }}
+            className="mt-1 text-3xl font-semibold"
+            style={{
+              color: "var(--event-page-fg, #1F3D2B)",
+              fontFamily: "var(--event-font, inherit)",
+            }}
           >
             {event.name}
           </h1>
-          <p className="mt-2 text-sm text-[#3D372C]/80">
+          <p
+            className="mt-2 text-sm"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
             No app download required. Takes under a minute.
           </p>
         </div>
+
 
         {savedValidating && (
           <section
