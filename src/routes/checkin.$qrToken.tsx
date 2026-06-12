@@ -305,6 +305,13 @@ function CheckinPage() {
       }
 
       if (!cancelled) {
+        // Bust the public Home / Passport cache so the new stamp & points
+        // appear immediately when the visitor navigates back. Safe for
+        // duplicate scans — UI just refetches the same totals.
+        try {
+          const mod = await import("@/lib/use-passport-home-data");
+          mod.markPassportHomeDirty(null);
+        } catch { /* ignore */ }
         setOutcome({
           kind: "stamped",
           venueName,
