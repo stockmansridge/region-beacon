@@ -151,14 +151,16 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
 
   // Page surface
   const pageBg = pickHex(input.page_background_color) ?? kc?.page_background_color ?? legacyPageBg;
-  const pageText = pickHex(input.text_color) ?? kc?.text_color ?? palette.heading ?? palette.bodyText;
-  const pageMuted = pickHex(input.muted_text_color) ?? kc?.muted_text_color ?? palette.mutedText;
+  const pageText = pickHex(input.page_body_color) ?? pickHex(input.text_color) ?? kc?.text_color ?? palette.heading ?? palette.bodyText;
+  const pageHeading = pickHex(input.page_heading_color) ?? pickHex(input.text_color) ?? kc?.text_color ?? pageText;
+  const pageMuted = pickHex(input.page_muted_color) ?? pickHex(input.muted_text_color) ?? kc?.muted_text_color ?? palette.mutedText;
   const border = pickHex(input.border_color) ?? kc?.border_color ?? palette.border;
 
   // Card surface
   const cardBg = pickHex(input.card_background_color) ?? kc?.card_background_color ?? customCardBg ?? palette.cardBg;
-  const cardText = pickHex(input.card_text_color) ?? kc?.card_text_color ?? pageText;
-  const cardMuted = pickHex(input.card_muted_text_color) ?? kc?.card_muted_text_color ?? pageMuted;
+  const cardText = pickHex(input.card_body_color) ?? pickHex(input.card_text_color) ?? kc?.card_text_color ?? pageText;
+  const cardHeading = pickHex(input.card_heading_color) ?? pickHex(input.card_text_color) ?? kc?.card_text_color ?? cardText;
+  const cardMuted = pickHex(input.card_muted_color) ?? pickHex(input.card_muted_text_color) ?? kc?.card_muted_text_color ?? pageMuted;
   const cardBorder = pickHex(input.card_border_color) ?? kc?.card_border_color ?? border;
 
   // Brand / link
