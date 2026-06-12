@@ -99,7 +99,7 @@ function StampTile({
       <div
         aria-label={stamped ? `${name} — stamped` : `${name} — not yet stamped`}
         className={[
-          "relative grid aspect-square w-full place-items-center rounded-2xl border-2 transition",
+          "relative grid aspect-square w-full place-items-center overflow-hidden rounded-full border-2 transition",
           stamped ? "shadow-sm" : "border-dashed",
           dimmed ? "opacity-60" : "",
         ].join(" ")}
@@ -117,7 +117,7 @@ function StampTile({
             src={logoUrl}
             alt=""
             className={[
-              "h-3/4 w-3/4 rounded-xl object-contain",
+              "h-[78%] w-[78%] rounded-full object-contain",
               stamped ? "" : "opacity-50 grayscale",
             ].join(" ")}
             onError={(e) => {
@@ -138,7 +138,7 @@ function StampTile({
         )}
         <span
           aria-hidden
-          className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full shadow"
+          className="absolute -right-0.5 -top-0.5 grid h-6 w-6 place-items-center rounded-full shadow"
           style={
             stamped
               ? {

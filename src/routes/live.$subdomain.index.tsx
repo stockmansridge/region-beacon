@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { TrailLanding } from "@/components/trail-landing";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
@@ -12,9 +11,9 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { CollectPointsSection } from "@/components/collect-points-section";
-import { PassportProgressCard } from "@/components/passport-progress-card";
 import { PassportStampGrid } from "@/components/passport-stamp-grid";
 import { NextRewardCard } from "@/components/next-reward-card";
+import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
@@ -59,13 +58,10 @@ type PublicEvent = {
   welcome_copy: string | null;
   terms_url: string | null;
   current_terms_version_id: string | null;
-  // Added by the public RPC extension; optional so this code stays safe
-  // before the migration is applied.
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
   hero_overlay_color?: string | null;
   hero_overlay_opacity?: number | null;
-  // Phase D — Brand Kit + semantic colour roles.
   brand_kit_key?: string | null;
   link_color?: string | null;
   card_border_color?: string | null;
@@ -149,7 +145,10 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
 
   if (state.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
+      <div
+        className="flex min-h-screen items-center justify-center text-sm"
+        style={{ color: "var(--event-page-muted,#8A7E66)" }}
+      >
         Loading…
       </div>
     );
@@ -161,6 +160,44 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
 
   const { event, venues } = state;
   return <LivePublicLoaded subdomain={subdomain} event={event} venues={venues} />;
+}
+
+function useFirstNameFromPassportHref(passportHref: string | null): string | null {
+  const token = useMemo(() => {
+    if (!passportHref) return null;
+    const m = passportHref.match(/\/passport\/([^/?#]+)/);
+    return m?.[1] ?? null;
+  }, [passportHref]);
+  const [firstName, setFirstName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!token) {
+      setFirstName(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.rpc("get_passport_by_token", {
+          _raw_token: token,
+        });
+        if (cancelled) return;
+        const row = (data?.[0] ?? null) as
+          | { first_name?: string | null; full_name?: string | null }
+          | null;
+        const first =
+          row?.first_name?.trim() ||
+          row?.full_name?.trim().split(/\s+/)[0] ||
+          null;
+        setFirstName(first ?? null);
+      } catch {
+        if (!cancelled) setFirstName(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+  return firstName;
 }
 
 function LivePublicLoaded({
@@ -175,10 +212,64 @@ function LivePublicLoaded({
   const canRegister = Boolean(event.current_terms_version_id);
   const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
+  const firstName = useFirstNameFromPassportHref(passportHref);
+  const homeData = usePassportHomeData(event.event_id);
   const isAdminPreview =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("preview") === "1";
   const [previewDismissed, setPreviewDismissed] = useState(false);
+
+  const heroImageUrl = getEventAssetPublicUrl(event.cover_path);
+  const logoUrl = getEventAssetPublicUrl(event.logo_path);
+
+  // Summary card stats — driven by usePassportHomeData when a passport
+  // exists; falls back to event venue count for unregistered visitors.
+  const visited = homeData.hasPassport ? homeData.visited : 0;
+  const total = homeData.total > 0 ? homeData.total : venues.length;
+  const pct = total > 0 ? Math.min(100, Math.round((visited / total) * 100)) : 0;
+  const pointsEarned: number | null = homeData.hasPassport ? homeData.points : null;
+  const awards = homeData.awards;
+  const nextAward = awards.length > 0 ? pickNextReward(awards) : null;
+  const unlockedAwards = awards.filter((a) => a.is_eligible);
+
+  const tierTitle =
+    !homeData.hasPassport
+      ? "Start your passport"
+      : awards.length === 0
+        ? "More rewards ahead"
+        : total > 0 && visited >= total
+          ? "Trail complete"
+          : nextAward
+            ? nextAward.title
+            : unlockedAwards.length > 0
+              ? "All unlocked"
+              : "Keep exploring";
+  const tierSub =
+    !homeData.hasPassport
+      ? "tap to begin"
+      : awards.length === 0
+        ? "stay tuned"
+        : nextAward
+          ? nextAward.points_remaining > 0
+            ? `${nextAward.points_remaining} pt${nextAward.points_remaining === 1 ? "" : "s"} to go`
+            : "ready to enter"
+          : unlockedAwards.length > 0
+            ? `${unlockedAwards.length} unlocked`
+            : "keep collecting";
+  const tierGlyph =
+    awards.length > 0 && nextAward
+      ? "🎁"
+      : unlockedAwards.length > 0
+        ? "★"
+        : "✨";
+
+  // Circular progress ring geometry (left side of summary card)
+  const ringSize = 116;
+  const ringStroke = 10;
+  const ringRadius = (ringSize - ringStroke) / 2;
+  const ringCirc = 2 * Math.PI * ringRadius;
+  const ringDash = (pct / 100) * ringCirc;
+
   return (
     <EventPaletteScope
       paletteKey={event.palette_key ?? null}
@@ -234,123 +325,303 @@ function LivePublicLoaded({
           </button>
         </div>
       )}
-      <div className="px-4 pt-2">
-        <PublicAnnouncementBar subdomain={subdomain} />
-      </div>
-      <PublicEventNav
-        subdomain={subdomain}
-        eventName={event.name}
-        primaryColor={event.primary_color}
-        accentColor={event.accent_color}
-        logoUrl={getEventAssetPublicUrl(event.logo_path)}
-        hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
-        hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
-        canRegister={canRegister}
-        eventId={event.event_id}
-      />
 
-      {/* Hero */}
-      <div className="px-4">
-        <TrailLanding
-          eventName={event.name}
-          venueLabelPlural={venueLabels.plural}
-          pitch={event.description ?? undefined}
-          welcomeCopy={event.welcome_copy ?? undefined}
-          primaryColor={event.primary_color ?? undefined}
-          accentColor={event.accent_color ?? undefined}
-          fontFamily={event.font_family ?? undefined}
-          logoUrl={getEventAssetPublicUrl(event.logo_path)}
-          heroImageUrl={getEventAssetPublicUrl(event.cover_path)}
-          venueCount={venues.length}
-          venueNames={[]}
-          termsUrl={event.terms_url}
-          heroOverlayColor={event.hero_overlay_color ?? null}
-          heroOverlayOpacity={event.hero_overlay_opacity ?? null}
-          primaryCta={
-            passportHref ? (
-              <a
-                href={passportHref}
-                className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-                style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
-              >
-                View my passport
-              </a>
-            ) : canRegister ? (
-              <Link
-                to="/join"
-                className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-                style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
-              >
-                Start passport
-              </Link>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="h-12 w-full cursor-not-allowed rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
-                style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
-                title="Terms & privacy not configured yet"
-              >
-                Start passport — coming soon
-              </button>
-            )
-          }
-          secondaryCta={<span />}
-        />
-      </div>
+      {/* Full-bleed hero with overlaid header */}
+      <div className="relative">
+        <div className="absolute inset-x-0 top-0 z-40 px-4">
+          <PublicEventNav
+            subdomain={subdomain}
+            eventName={event.name}
+            primaryColor={event.primary_color}
+            accentColor={event.accent_color}
+            logoUrl={logoUrl}
+            hasTerms={Boolean(event.terms_url || event.current_terms_version_id)}
+            hasPrivacy={Boolean(event.terms_url || event.current_terms_version_id)}
+            canRegister={canRegister}
+            eventId={event.event_id}
+            activeOverride="home"
+            transparentHeader
+          />
+        </div>
 
-      {/* App-style stacked sections */}
-      <div className="mx-auto mt-5 flex max-w-md flex-col gap-5">
-        <PassportProgressCard
-          eventId={event.event_id}
-          venueLabelPlural={venueLabels.plural}
-          canRegister={canRegister}
-        />
-        <PassportStampGrid
-          eventId={event.event_id}
-          venueLabelPlural={venueLabels.plural}
-          canRegister={canRegister}
-        />
-        <NextRewardCard eventId={event.event_id} />
-
-        {/* Primary action */}
-        <section className="px-4">
-          <Link
-            to="/awards"
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
+        <section
+          className="relative w-full overflow-hidden"
+          style={{
+            backgroundColor: "var(--event-hero-bg, var(--event-primary))",
+            color: "var(--event-hero-fg, var(--event-primary-fg))",
+            minHeight: 340,
+          }}
+        >
+          {heroImageUrl ? (
+            <img
+              src={heroImageUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="eager"
+            />
+          ) : null}
+          <div
+            className="absolute inset-0"
             style={{
-              backgroundColor: "var(--event-primary,#1F3D2B)",
-              color: "var(--event-primary-fg,#F6EFE2)",
+              background:
+                "linear-gradient(180deg, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 0%, var(--event-hero-overlay, rgba(0,0,0,0.2)) 40%, var(--event-hero-overlay-strong, rgba(0,0,0,0.65)) 100%)",
             }}
-          >
-            View offers &amp; rewards
-          </Link>
+          />
+          <div className="relative mx-auto flex min-h-[340px] max-w-md flex-col justify-end px-5 pb-16 pt-24 sm:min-h-[380px]">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.32em]"
+              style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
+            >
+              Welcome
+            </p>
+            <h1
+              className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
+              style={{
+                color: "var(--event-hero-fg, var(--event-primary-fg))",
+                fontFamily: "var(--event-font, inherit)",
+                textShadow: "0 2px 12px rgba(0,0,0,0.45)",
+              }}
+            >
+              {firstName ? (
+                <>Hi {firstName}! <span aria-hidden>👋</span></>
+              ) : (
+                <>Let’s explore {event.name}</>
+              )}
+            </h1>
+            {firstName ? (
+              <p
+                className="mt-1 text-sm sm:text-base"
+                style={{
+                  color: "var(--event-hero-fg, var(--event-primary-fg))",
+                  opacity: 0.95,
+                  textShadow: "0 1px 8px rgba(0,0,0,0.45)",
+                }}
+              >
+                Let’s explore {event.name}.
+              </p>
+            ) : (
+              event.welcome_copy && (
+                <p
+                  className="mt-1 line-clamp-2 text-sm sm:text-base"
+                  style={{
+                    color: "var(--event-hero-fg, var(--event-primary-fg))",
+                    opacity: 0.95,
+                    textShadow: "0 1px 8px rgba(0,0,0,0.45)",
+                  }}
+                >
+                  {event.welcome_copy}
+                </p>
+              )
+            )}
+          </div>
+        </section>
+      </div>
+
+      <main
+        className="mx-auto w-full max-w-md px-4 pb-24"
+        style={{ fontFamily: "var(--event-font, inherit)" }}
+      >
+        <div className="pt-2">
+          <PublicAnnouncementBar subdomain={subdomain} />
+        </div>
+
+        {/* Summary card — overlaps the bottom of the hero */}
+        <section
+          className="relative z-10 -mt-14 rounded-3xl border shadow-lg sm:-mt-16"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
+          <div className="grid grid-cols-2 items-stretch">
+            {/* Left: visited progress ring */}
+            <div
+              className="flex flex-col items-center justify-center gap-2 px-3 py-5"
+              style={{ borderRight: "1px solid var(--event-card-border)" }}
+            >
+              <div className="relative" style={{ width: ringSize, height: ringSize }}>
+                <svg
+                  width={ringSize}
+                  height={ringSize}
+                  viewBox={`0 0 ${ringSize} ${ringSize}`}
+                  aria-hidden
+                >
+                  <circle
+                    cx={ringSize / 2}
+                    cy={ringSize / 2}
+                    r={ringRadius}
+                    fill="none"
+                    stroke="var(--event-card-border)"
+                    strokeWidth={ringStroke}
+                  />
+                  <circle
+                    cx={ringSize / 2}
+                    cy={ringSize / 2}
+                    r={ringRadius}
+                    fill="none"
+                    stroke="var(--event-button-primary-bg)"
+                    strokeWidth={ringStroke}
+                    strokeLinecap="round"
+                    strokeDasharray={`${ringDash} ${ringCirc}`}
+                    transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span
+                    className="font-trail-serif text-2xl font-semibold leading-none"
+                    style={{ color: "var(--event-card-heading)" }}
+                  >
+                    {visited}
+                    {total > 0 ? (
+                      <span
+                        className="text-base font-medium"
+                        style={{ color: "var(--event-card-muted)" }}
+                      >
+                        /{total}
+                      </span>
+                    ) : null}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="text-center text-[11px] font-medium uppercase tracking-[0.18em]"
+                style={{ color: "var(--event-card-muted)" }}
+              >
+                {total === 1 ? venueLabels.singular : venueLabels.plural} visited
+              </div>
+            </div>
+
+            {/* Right: points (top) + tier (bottom) */}
+            <div className="flex flex-col">
+              <div
+                className="flex flex-1 flex-col items-center justify-center px-3 py-3 text-center"
+                style={{ borderBottom: "1px solid var(--event-card-border)" }}
+              >
+                <div
+                  className="font-trail-serif text-2xl font-semibold leading-none"
+                  style={{ color: "var(--event-card-heading)" }}
+                >
+                  {pointsEarned ?? visited}
+                </div>
+                <div
+                  className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
+                  style={{ color: "var(--event-card-muted)" }}
+                >
+                  Points earned
+                </div>
+              </div>
+              <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
+                <div className="flex items-center gap-1.5">
+                  <span aria-hidden className="text-base leading-none">{tierGlyph}</span>
+                  <span
+                    className="font-trail-serif text-sm font-semibold leading-tight"
+                    style={{ color: "var(--event-card-heading)" }}
+                  >
+                    {tierTitle}
+                  </span>
+                </div>
+                <div
+                  className="text-[10px] font-medium uppercase tracking-[0.18em]"
+                  style={{ color: "var(--event-card-muted)" }}
+                >
+                  {tierSub}
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <div className="px-4">
+        {/* Primary CTA */}
+        <div className="mt-5">
+          {passportHref ? (
+            <a
+              href={passportHref}
+              className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide shadow"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
+            >
+              View my passport
+            </a>
+          ) : canRegister ? (
+            <Link
+              to="/join"
+              className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide shadow"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
+            >
+              Start passport
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="h-12 w-full cursor-not-allowed rounded-full text-sm font-semibold tracking-wide opacity-70 shadow"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
+              title="Terms & privacy not configured yet"
+            >
+              Start passport — coming soon
+            </button>
+          )}
+        </div>
+
+        {/* App-style stacked sections */}
+        <div className="mt-5 flex flex-col gap-5">
+          <PassportStampGrid
+            eventId={event.event_id}
+            venueLabelPlural={venueLabels.plural}
+            canRegister={canRegister}
+          />
+          <NextRewardCard eventId={event.event_id} />
+
+          <section>
+            <Link
+              to="/awards"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
+            >
+              View offers &amp; rewards
+            </Link>
+          </section>
+
           <CollectPointsSection
             eventId={event.event_id}
             primaryColor={event.primary_color}
             accentColor={event.accent_color}
             canRegister={canRegister}
           />
-        </div>
 
-        <div className="mb-8 flex flex-col items-center gap-3 px-4 text-center">
-          <Link
-            to="/venues"
-            className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
-          >
-            View {venueLabels.plural.toLowerCase()} →
-          </Link>
-          <Link
-            to="/leaderboard"
-            className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
-          >
-            View the points leaderboard →
-          </Link>
+          <div className="mb-4 flex flex-col items-center gap-3 text-center">
+            <Link
+              to="/venues"
+              className="text-xs font-medium uppercase tracking-[0.22em] underline-offset-4 hover:underline"
+              style={{ color: "var(--event-link)" }}
+            >
+              View {venueLabels.plural.toLowerCase()} →
+            </Link>
+            <Link
+              to="/leaderboard"
+              className="text-xs font-medium uppercase tracking-[0.22em] underline-offset-4 hover:underline"
+              style={{ color: "var(--event-link)" }}
+            >
+              View the points leaderboard →
+            </Link>
+          </div>
+
+          <div className="flex justify-center">
+            <PoweredByGetStampd variant="trail" />
+          </div>
         </div>
-      </div>
+      </main>
     </EventPaletteScope>
   );
 }
@@ -358,20 +629,40 @@ function LivePublicLoaded({
 
 function NotLiveYet() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
-      <div className="mx-auto max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-text,#1F3D2B)]">
+    <div
+      className="flex min-h-screen items-center justify-center px-6"
+      style={{ backgroundColor: "var(--event-page-bg,#F6EFE2)" }}
+    >
+      <div
+        className="mx-auto max-w-md rounded-3xl border p-8 text-center shadow-sm"
+        style={{
+          borderColor: "var(--event-card-border,#E6DCC7)",
+          backgroundColor: "var(--event-card-bg,#FBF5E8)",
+        }}
+      >
+        <div
+          className="mx-auto mb-4 h-12 w-12 rounded-full"
+          style={{
+            backgroundColor:
+              "color-mix(in srgb, var(--event-button-primary-bg,#1F3D2B) 14%, transparent)",
+          }}
+        />
+        <h1
+          className="font-trail-serif text-2xl font-semibold"
+          style={{ color: "var(--event-card-heading,#1F3D2B)" }}
+        >
           Event not live yet
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-text,#3D372C)]">
+        <p
+          className="mt-3 text-sm leading-relaxed"
+          style={{ color: "var(--event-card-text,#3D372C)" }}
+        >
           This passport experience isn't available right now. Please check back
           closer to the event, or contact the organiser for details.
         </p>
         <div className="mt-6 flex justify-center">
           <PoweredByGetStampd variant="trail" />
         </div>
-
       </div>
     </div>
   );
