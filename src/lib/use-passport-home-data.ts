@@ -74,13 +74,49 @@ async function loadOnce(eventId: string): Promise<PassportHomeData> {
   return fresh;
 }
 
+const INVALIDATE_EVENT = "passport-home-data:invalidate";
+const DIRTY_KEY = (eventId: string) => `gs.passport-home.dirty.${eventId}`;
+
+/** Drop any cached passport home data and notify mounted consumers to
+ *  refetch immediately. Use after a successful check-in. */
+export function invalidatePassportHomeData(eventId?: string | null) {
+  if (eventId) cache.delete(eventId);
+  else cache.clear();
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(
+        new CustomEvent(INVALIDATE_EVENT, { detail: { eventId: eventId ?? null } }),
+      );
+    } catch { /* ignore */ }
+  }
+}
+
+/** Persist a "dirty" flag so the next time Home mounts (e.g. after the
+ *  visitor taps "View event" from the check-in screen) it bypasses the
+ *  module cache even if the hook isn't already mounted. */
+export function markPassportHomeDirty(eventId?: string | null) {
+  if (typeof sessionStorage !== "undefined" && eventId) {
+    try { sessionStorage.setItem(DIRTY_KEY(eventId), "1"); } catch { /* ignore */ }
+  }
+  invalidatePassportHomeData(eventId);
+}
+
 export function usePassportHomeData(eventId: string | null | undefined): PassportHomeData {
   const [state, setState] = useState<PassportHomeData>(() => {
     if (!eventId) return { ...EMPTY, loading: false };
+    if (typeof sessionStorage !== "undefined") {
+      try {
+        if (sessionStorage.getItem(DIRTY_KEY(eventId))) {
+          sessionStorage.removeItem(DIRTY_KEY(eventId));
+          cache.delete(eventId);
+        }
+      } catch { /* ignore */ }
+    }
     const c = cache.get(eventId);
     if (c && Date.now() - c.at < TTL_MS) return c.data;
     return EMPTY;
   });
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +135,34 @@ export function usePassportHomeData(eventId: string | null | undefined): Passpor
     });
     return () => {
       cancelled = true;
+    };
+  }, [eventId, version]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !eventId) return;
+    const onInvalidate = (e: Event) => {
+      const detail = (e as CustomEvent<{ eventId: string | null }>).detail;
+      if (!detail?.eventId || detail.eventId === eventId) {
+        cache.delete(eventId);
+        setVersion((v) => v + 1);
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (typeof sessionStorage === "undefined") return;
+      try {
+        if (sessionStorage.getItem(DIRTY_KEY(eventId))) {
+          sessionStorage.removeItem(DIRTY_KEY(eventId));
+          cache.delete(eventId);
+          setVersion((v) => v + 1);
+        }
+      } catch { /* ignore */ }
+    };
+    window.addEventListener(INVALIDATE_EVENT, onInvalidate);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener(INVALIDATE_EVENT, onInvalidate);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [eventId]);
 
