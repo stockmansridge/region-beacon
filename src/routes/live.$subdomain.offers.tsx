@@ -129,7 +129,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
   if (state.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-page-muted,var(--event-muted,#8A7E66))]">
         Loading…
       </div>
     );
@@ -157,6 +157,20 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
       cardMutedTextColor={event?.card_muted_text_color ?? null}
       borderColor={event?.border_color ?? null}
       primaryTextColor={event?.primary_text_color ?? null}
+      navBackgroundColor={event?.nav_background_color ?? null}
+      brandKitKey={event?.brand_kit_key ?? null}
+      linkColor={event?.link_color ?? null}
+      cardBorderColor={event?.card_border_color ?? null}
+      buttonPrimaryBg={event?.button_primary_bg ?? null}
+      buttonPrimaryFg={event?.button_primary_fg ?? null}
+      buttonSecondaryBg={event?.button_secondary_bg ?? null}
+      buttonSecondaryFg={event?.button_secondary_fg ?? null}
+      navFgColor={event?.nav_fg_color ?? null}
+      navMutedColor={event?.nav_muted_color ?? null}
+      navActiveFgColor={event?.nav_active_fg_color ?? null}
+      heroBgColor={event?.hero_bg_color ?? null}
+      heroFgColor={event?.hero_fg_color ?? null}
+      heroAccentColor={event?.hero_accent_color ?? null}
       fontFamily={event?.font_family ?? null}
       className="min-h-screen px-4 pb-10"
     >
