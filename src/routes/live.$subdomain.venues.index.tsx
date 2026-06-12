@@ -271,7 +271,7 @@ function HeroThumb({ path, visited }: { path: string | null; visited: boolean })
   const url = getVenueAssetPublicUrl(path);
   return (
     <div
-      className="relative aspect-[3/4] min-h-full w-full overflow-hidden sm:aspect-[4/5]"
+      className="relative h-full min-h-[140px] w-full overflow-hidden"
       style={{
         background:
           "color-mix(in oklab, var(--event-primary,#1F3D2B) 10%, var(--event-card-bg,#FBF5E8))",
