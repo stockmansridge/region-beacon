@@ -29,11 +29,13 @@ export type EventTheme = {
   primary: string;       // --event-primary
   primaryText: string;   // --event-primary-fg (text on primary)
   // Page-surface text (directly on page background).
-  pageText: string;      // --event-page-fg
+  pageHeading: string;   // --event-page-heading
+  pageText: string;      // --event-page-fg / --event-page-text
   pageMuted: string;     // --event-page-muted
   // Card-surface text (inside card_bg surfaces). Falls back to page
   // text when card-specific overrides are not set.
-  cardText: string;      // --event-card-fg
+  cardHeading: string;   // --event-card-heading
+  cardText: string;      // --event-card-fg / --event-card-text
   cardMuted: string;     // --event-card-muted
   accent: string;        // --event-accent
   border: string;        // --event-border (page surface)
