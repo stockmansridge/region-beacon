@@ -162,7 +162,10 @@ function PassportPage() {
       className="min-h-screen"
     >
       {!showInner ? (
-        <div className="flex min-h-screen items-center justify-center text-sm text-[var(--event-muted,#8A7E66)]">
+        <div
+          className="flex min-h-screen items-center justify-center text-sm"
+          style={{ color: "var(--event-page-muted)" }}
+        >
           Loading your passport…
         </div>
       ) : state.kind === "not_found" ? (
