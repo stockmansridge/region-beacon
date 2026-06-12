@@ -191,8 +191,8 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
   return {
     pageBg, cardBg,
     primary, primaryText,
-    pageText, pageMuted,
-    cardText, cardMuted,
+    pageHeading, pageText, pageMuted,
+    cardHeading, cardText, cardMuted,
     accent, border, cardBorder, link,
     buttonPrimaryBg, buttonPrimaryFg,
     buttonSecondaryBg, buttonSecondaryFg,
