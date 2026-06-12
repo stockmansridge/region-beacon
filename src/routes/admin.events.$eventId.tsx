@@ -2896,7 +2896,7 @@ function EventDetail() {
             />
           </Section>
 
-          <Section title="Marketing assets" id="section-marketing" tab="overview" description="Printable poster with a QR code linking to your public event page.">
+          <Section title="Event start QR &amp; poster" id="section-marketing" tab="overview" description="The QR visitors scan from posters, flyers, and signage to start or open their passport. This is different from the per-venue check-in QRs.">
             <AdminEventPoster
               canEdit={canEdit}
               event={{
