@@ -285,13 +285,34 @@ function PassportNotFound({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
-      <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+    <div
+      className="flex min-h-screen items-center justify-center px-6"
+      style={{ backgroundColor: "var(--event-page-bg)" }}
+    >
+      <div
+        className="mx-auto w-full max-w-md rounded-3xl border p-8 text-center shadow-sm"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
+      >
+        <div
+          className="mx-auto mb-4 h-12 w-12 rounded-full"
+          style={{
+            backgroundColor:
+              "color-mix(in srgb, var(--event-button-primary-bg) 14%, transparent)",
+          }}
+        />
+        <h1
+          className="font-trail-serif text-2xl font-semibold"
+          style={{ color: "var(--event-card-heading)" }}
+        >
           Passport link not found or replaced
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
+        <p
+          className="mt-3 text-sm leading-relaxed"
+          style={{ color: "var(--event-card-text)" }}
+        >
           This passport link is no longer valid. If you re-registered, the
           newest link is the only working one. You can register again for this
           trail to get a fresh passport.
@@ -299,25 +320,42 @@ function PassportNotFound({
         <div className="mt-6 flex flex-col gap-2">
           <a
             href="/join"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-6 text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
+            className="inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-semibold tracking-wide shadow"
+            style={{
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
+            }}
           >
             Register again for this trail
           </a>
           <a
             href="/"
-            className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 bg-transparent text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
+            className="inline-flex h-11 items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide"
+            style={{
+              borderColor: "var(--event-button-secondary-border)",
+              color: "var(--event-button-secondary-fg)",
+              backgroundColor: "var(--event-button-secondary-bg)",
+            }}
           >
             Back to trail home
           </a>
           <button
             type="button"
             onClick={copySupport}
-            className="mt-1 inline-flex h-9 items-center justify-center rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] px-4 text-xs font-medium text-[var(--event-body,#3D372C)]"
+            className="mt-1 inline-flex h-9 items-center justify-center rounded-full border px-4 text-xs font-medium"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-page-bg)",
+              color: "var(--event-card-text)",
+            }}
           >
             {copied ? "Copied support details" : "Copy support details"}
           </button>
         </div>
-        <p className="mt-3 text-[10px] text-[var(--event-muted,#8A7E66)]">
+        <p
+          className="mt-3 text-[10px]"
+          style={{ color: "var(--event-card-muted)" }}
+        >
           Support details do not include your full passport link or any visitor
           personal information.
         </p>
