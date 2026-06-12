@@ -464,14 +464,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   }
 
   return (
-    <EventPaletteScope
-      paletteKey={event.palette_key ?? null}
-      backgroundKey={event.page_background_key ?? null}
-      primaryColor={event.primary_color ?? null}
-      accentColor={event.accent_color ?? null}
-      fontFamily={event.font_family ?? null}
-      className="min-h-screen"
-    >
+    <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
       <div className="px-4 pt-2">
         <PublicAnnouncementBar subdomain={subdomain} />
       </div>
@@ -494,7 +487,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           <Link
             to="/"
             className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             ← Back
           </Link>
@@ -502,14 +495,14 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         <div className="mb-5 text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: accent }}
+            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
           >
             Start your passport
           </div>
           <h1
             className="mt-1 text-3xl font-semibold"
             style={{
-              color: "var(--event-page-fg, #1F3D2B)",
+              color: "var(--event-page-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
@@ -517,7 +510,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           </h1>
           <p
             className="mt-2 text-sm"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             No app download required. Takes under a minute.
           </p>
@@ -526,7 +519,12 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
         {savedValidating && (
           <section
-            className="mb-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 text-center text-sm text-[#8A7E66] shadow-sm"
+            className="mb-5 rounded-3xl border p-5 text-center text-sm shadow-sm"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+              color: "var(--event-card-muted)",
+            }}
           >
             Checking your saved passport…
           </section>
@@ -535,21 +533,24 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         {!savedValidating && saved?.access_token && !showRegisterAgain && (
           <section
             className="mb-5 rounded-3xl border p-5 shadow-sm"
-            style={{ borderColor: `${primary}33`, backgroundColor: "#FBF5E8" }}
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+            }}
           >
             <div
               className="text-[10px] font-medium uppercase tracking-[0.32em]"
-              style={{ color: accent }}
+              style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
             >
               Welcome back
             </div>
             <h2
               className="font-trail-serif mt-1 text-xl font-semibold"
-              style={{ color: primary }}
+              style={{ color: "var(--event-card-heading)" }}
             >
               You already have a passport for this trail
             </h2>
-            <p className="mt-2 text-sm text-[#3D372C]/80">
+            <p className="mt-2 text-sm" style={{ color: "var(--event-card-text)" }}>
               We found a passport saved on this device. Continue where you left
               off, or register again to issue a new passport link (your older
               link will stop working).
@@ -558,8 +559,11 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
               <Link
                 to="/passport/$token"
                 params={{ token: saved.access_token }}
-                className="flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-                style={{ backgroundColor: primary }}
+                className="flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide shadow"
+                style={{
+                  backgroundColor: "var(--event-button-primary-bg)",
+                  color: "var(--event-button-primary-fg)",
+                }}
               >
                 Continue to passport
               </Link>
@@ -567,7 +571,11 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 type="button"
                 onClick={() => setShowRegisterAgain(true)}
                 className="h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
-                style={{ borderColor: `${primary}40`, color: primary, backgroundColor: "transparent" }}
+                style={{
+                  borderColor: "var(--event-button-secondary-border)",
+                  color: "var(--event-button-secondary-fg)",
+                  backgroundColor: "var(--event-button-secondary-bg)",
+                }}
               >
                 Register again / replace passport
               </button>
@@ -579,9 +587,9 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           <div
             className="mb-4 rounded-xl border px-3 py-2 text-sm"
             style={{
-              borderColor: `${accent}55`,
-              backgroundColor: `${accent}10`,
-              color: "#5A2410",
+              borderColor: `color-mix(in srgb, var(--event-accent) 35%, transparent)`,
+              backgroundColor: `color-mix(in srgb, var(--event-accent) 10%, transparent)`,
+              color: "var(--event-card-text)",
             }}
           >
             {staleNotice}
@@ -589,7 +597,10 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         )}
 
         {!savedValidating && (!saved?.access_token || showRegisterAgain) && (
-          <p className="mb-3 text-center text-[11px] text-[#8A7E66]">
+          <p
+            className="mb-3 text-center text-[11px]"
+            style={{ color: "var(--event-page-muted)" }}
+          >
             Already registered? Enter the same email below — we'll issue a new
             passport link and any older link will stop working.
           </p>
@@ -599,14 +610,22 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
         {!savedValidating && (!saved?.access_token || showRegisterAgain) && <form
           onSubmit={onSubmit}
-          className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
+          className="rounded-3xl border p-5 shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
           noValidate
         >
           {topError && (
             <div
               role="alert"
-              className="mb-4 rounded-xl border border-[#E8B5A3] bg-[#FBE3D6] px-3 py-2 text-sm"
-              style={{ color: "#7A2E13" }}
+              className="mb-4 rounded-xl border px-3 py-2 text-sm"
+              style={{
+                borderColor: "#E8B5A3",
+                backgroundColor: "#FBE3D6",
+                color: "#7A2E13",
+              }}
             >
               <div>{topError}</div>
               {debugInfo && (
@@ -688,26 +707,38 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             }
           />
 
-          <label className="mt-3 flex items-start gap-3 text-sm text-[#3D372C]">
+          <label
+            className="mt-3 flex items-start gap-3 text-sm"
+            style={{ color: "var(--event-card-text)" }}
+          >
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-[#C9BFA8]"
+              className="mt-0.5 h-4 w-4 rounded"
               checked={form.marketing_opt_in}
               onChange={(e) => update("marketing_opt_in", e.target.checked)}
-              style={{ accentColor: primary }}
+              style={{
+                accentColor: "var(--event-button-primary-bg)",
+                borderColor: "var(--event-card-border)",
+              }}
             />
             <span>
               Send me updates about this event and future trails (optional).
             </span>
           </label>
 
-          <label className="mt-3 flex items-start gap-3 text-sm text-[#3D372C]">
+          <label
+            className="mt-3 flex items-start gap-3 text-sm"
+            style={{ color: "var(--event-card-text)" }}
+          >
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-[#C9BFA8]"
+              className="mt-0.5 h-4 w-4 rounded"
               checked={form.accept_terms}
               onChange={(e) => update("accept_terms", e.target.checked)}
-              style={{ accentColor: primary }}
+              style={{
+                accentColor: "var(--event-button-primary-bg)",
+                borderColor: "var(--event-card-border)",
+              }}
             />
             <span>
               I accept the{" "}
@@ -716,7 +747,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
-                style={{ color: accent }}
+                style={{ color: "var(--event-link)" }}
               >
                 terms
               </Link>{" "}
@@ -726,7 +757,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
-                style={{ color: accent }}
+                style={{ color: "var(--event-link)" }}
               >
                 privacy policy
               </Link>
@@ -742,13 +773,19 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           <button
             type="submit"
             disabled={submitting}
-            className="mt-5 h-12 w-full rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow disabled:opacity-60"
-            style={{ backgroundColor: primary }}
+            className="mt-5 h-12 w-full rounded-full text-sm font-semibold tracking-wide shadow disabled:opacity-60"
+            style={{
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
+            }}
           >
             {submitting ? "Creating passport…" : "Create my passport"}
           </button>
 
-          <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
+          <p
+            className="mt-3 text-center text-[11px] uppercase tracking-[0.22em]"
+            style={{ color: "var(--event-card-muted)" }}
+          >
             No app download required
           </p>
         </form>}
@@ -774,16 +811,16 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           width: 100%;
           height: 44px;
           border-radius: 12px;
-          border: 1px solid #E6DCC7;
-          background: #F6EFE2;
+          border: 1px solid var(--event-card-border);
+          background: var(--event-page-bg);
           padding: 0 14px;
           font-size: 15px;
-          color: #2A2620;
+          color: var(--event-card-text);
           outline: none;
         }
         .trail-input:focus {
-          border-color: ${primary};
-          box-shadow: 0 0 0 3px ${primary}22;
+          border-color: var(--event-button-primary-bg);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--event-button-primary-bg) 22%, transparent);
         }
       `}</style>
     </EventPaletteScope>
