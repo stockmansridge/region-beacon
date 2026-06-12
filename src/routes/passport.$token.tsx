@@ -834,18 +834,26 @@ function StampGrid({
 
   return (
     <section className="mt-6">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2
-          className="font-trail-serif text-lg font-semibold"
-          style={{ color: "var(--event-page-heading)" }}
-        >
-          Stamp collection
-        </h2>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <h2
+            className="font-trail-serif text-lg font-semibold"
+            style={{ color: "var(--event-page-heading)" }}
+          >
+            Your Passport
+          </h2>
+          <p
+            className="mt-0.5 text-[12px]"
+            style={{ color: "var(--event-page-muted)" }}
+          >
+            Collect stamps as you visit each stop.
+          </p>
+        </div>
         <span
-          className="text-[10px] font-medium uppercase tracking-[0.22em]"
+          className="shrink-0 text-[10px] font-medium uppercase tracking-[0.22em]"
           style={{ color: "var(--event-page-muted)" }}
         >
-          Tap a {labelSingular.toLowerCase()} for details
+          Tap for details
         </span>
       </div>
       <div
@@ -864,6 +872,51 @@ function StampGrid({
     </section>
   );
 }
+
+function SummaryCell({
+  label,
+  sublabel,
+  value,
+  compact = false,
+}: {
+  label: string;
+  sublabel?: string;
+  value: React.ReactNode;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center px-3 py-4 text-center"
+      style={{ borderColor: "var(--event-card-border)" }}
+    >
+      <div
+        className={
+          compact
+            ? "flex min-h-[28px] items-center justify-center text-center font-trail-serif font-semibold leading-tight"
+            : "font-trail-serif text-2xl font-semibold leading-none"
+        }
+        style={{ color: "var(--event-card-heading)" }}
+      >
+        {value}
+      </div>
+      <div
+        className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em]"
+        style={{ color: "var(--event-card-heading)" }}
+      >
+        {label}
+      </div>
+      {sublabel ? (
+        <div
+          className="mt-0.5 text-[10px]"
+          style={{ color: "var(--event-card-muted)" }}
+        >
+          {sublabel}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 
 function StampCell({ venue }: { venue: PassportStampVenue }) {
   const stamped = !!venue.is_stamped;
