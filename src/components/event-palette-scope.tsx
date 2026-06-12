@@ -114,19 +114,16 @@ export function EventPaletteScope({
     ) {
       bgStyle = { backgroundColor: pageBackgroundColor };
     } else {
-      // Curated background treatments need an EventPalette; build a
-      // minimal one from the resolved theme so gradients still derive
-      // from the right primary/accent.
+      // Curated background treatments need an EventPalette; build from
+      // the base palette so style formulas (e.g. soft_tint mixing
+      // pageBg + primary) compute against the raw palette colours.
+      // Don't substitute theme.pageBg here — that's the RESOLVED bg
+      // hex and would cause the mix/tint to be applied twice.
       const basePalette =
         paletteKey === "custom" || (!paletteKey && (primaryColor || accentColor))
           ? buildCustomPalette(primaryColor ?? null, accentColor ?? null)
           : getPaletteOrDefault(paletteKey);
-      const paletteForBg = {
-        ...basePalette,
-        pageBg: theme.pageBg,
-        cardBg: theme.cardBg,
-      };
-      bgStyle = getBackgroundOrDefault(backgroundKey).build(paletteForBg);
+      bgStyle = getBackgroundOrDefault(backgroundKey).build(basePalette);
     }
   }
 
