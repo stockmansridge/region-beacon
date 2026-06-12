@@ -659,7 +659,12 @@ function MapSupportDetails({ buildReport }: { buildReport: () => string }) {
       <button
         type="button"
         onClick={handleCopy}
-        className="rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3D372C]"
+        className="rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em]"
+        style={{
+          borderColor: "var(--event-button-secondary-border)",
+          backgroundColor: "var(--event-button-secondary-bg)",
+          color: "var(--event-button-secondary-fg)",
+        }}
       >
         {copied ? "Copied support details" : "Copy support details"}
       </button>
