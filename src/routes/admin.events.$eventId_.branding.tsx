@@ -1046,11 +1046,11 @@ function BrandingEditor() {
                 </Field>
 
                 <p className="text-[11px] text-muted-foreground">
-                  Header/navigation and active-nav colours are derived
-                  automatically from the primary &amp; accent colours plus the
-                  primary-button text colour, so contrast stays readable on
-                  dark themes. Card text, muted helper text and borders are
-                  edited in the next section.
+                  Card text, muted helper text and borders are edited in
+                  the next section. The mobile header and bottom nav have
+                  their own background colour under
+                  <span className="font-medium"> Navigation colours</span>;
+                  by default they follow the primary colour above.
                 </p>
               </div>
             </CollapsibleSection>
