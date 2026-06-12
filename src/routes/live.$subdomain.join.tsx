@@ -883,14 +883,7 @@ function SuccessScreen({
   }
 
   return (
-    <EventPaletteScope
-      paletteKey={event.palette_key ?? null}
-      backgroundKey={event.page_background_key ?? null}
-      primaryColor={primary}
-      accentColor={accent}
-      fontFamily={event.font_family ?? null}
-      className="min-h-screen"
-    >
+    <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
       <div className="px-4 pt-2">
         <PublicAnnouncementBar subdomain={subdomain} />
       </div>
@@ -907,15 +900,24 @@ function SuccessScreen({
           <Link
             to="/"
             className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             ← Event
           </Link>
         </div>
-        <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center shadow-sm">
+        <div
+          className="rounded-3xl border p-6 text-center shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
           <div
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-            style={{ backgroundColor: `${primary}14`, color: primary }}
+            style={{
+              backgroundColor: `color-mix(in srgb, var(--event-button-primary-bg) 14%, transparent)`,
+              color: "var(--event-button-primary-bg)",
+            }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -932,31 +934,43 @@ function SuccessScreen({
           </div>
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: accent }}
+            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
           >
             Welcome to the trail
           </div>
           <h1
             className="mt-2 text-2xl font-semibold"
             style={{
-              color: "var(--event-card-fg, #1F3D2B)",
+              color: "var(--event-card-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
             Your passport is ready
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
+          <p
+            className="mt-3 text-sm leading-relaxed"
+            style={{ color: "var(--event-card-text)" }}
+          >
             Your private passport link is below. Save it — it's the only way
             back into your passport on a new device.
           </p>
 
-          <div className="mt-5 rounded-2xl border border-[#E6DCC7] bg-[#F6EFE2] p-3 text-left">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#8A7E66]">
+          <div
+            className="mt-5 rounded-2xl border p-3 text-left"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-page-bg)",
+            }}
+          >
+            <div
+              className="text-[10px] font-medium uppercase tracking-[0.18em]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               Your passport link
             </div>
             <div
               className="mt-1 break-all font-mono text-xs"
-              style={{ color: primary }}
+              style={{ color: "var(--event-link)" }}
             >
               {passportUrl}
             </div>
@@ -965,8 +979,11 @@ function SuccessScreen({
           <Link
             to="/passport/$token"
             params={{ token }}
-            className="mt-4 flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-            style={{ backgroundColor: primary }}
+            className="mt-4 flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide shadow"
+            style={{
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
+            }}
           >
             Open my passport
           </Link>
@@ -974,7 +991,11 @@ function SuccessScreen({
             type="button"
             onClick={copy}
             className="mt-2 h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
-            style={{ borderColor: `${primary}40`, color: primary, backgroundColor: "transparent" }}
+            style={{
+              borderColor: "var(--event-button-secondary-border)",
+              color: "var(--event-button-secondary-fg)",
+              backgroundColor: "var(--event-button-secondary-bg)",
+            }}
           >
             {copied ? "Copied!" : "Copy passport link"}
           </button>
@@ -982,9 +1003,9 @@ function SuccessScreen({
           <div
             className="mt-4 rounded-xl border px-3 py-2 text-left text-xs"
             style={{
-              borderColor: `${accent}55`,
-              backgroundColor: `${accent}10`,
-              color: "#5A2410",
+              borderColor: `color-mix(in srgb, var(--event-accent) 35%, transparent)`,
+              backgroundColor: `color-mix(in srgb, var(--event-accent) 10%, transparent)`,
+              color: "var(--event-card-text)",
             }}
           >
             <strong>Save this link.</strong> It is your private passport access
