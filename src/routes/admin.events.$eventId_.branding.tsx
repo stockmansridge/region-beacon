@@ -174,6 +174,9 @@ function BrandingEditor() {
     pageContent: !(form.welcome_copy || form.venue_label_singular !== DEFAULT_VENUE_LABEL_SINGULAR),
   });
 
+  const toggleSection = (key: string) =>
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+
   useEffect(() => {
     if (agency.status === "loading") return;
     if (!agencyId) {
