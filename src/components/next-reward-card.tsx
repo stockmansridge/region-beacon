@@ -23,28 +23,41 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
     <section className="px-4">
       <Link
         to="/awards"
-        className="block rounded-3xl border bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm transition hover:shadow-md"
-        style={{ borderColor: "var(--event-border,#E6DCC7)" }}
+        className="block rounded-3xl border p-4 shadow-sm transition hover:shadow-md"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
       >
         <div className="flex items-start gap-3">
           <div
             className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
             style={{
-              backgroundColor: "var(--event-accent,#B5572A)",
-              color: "var(--event-primary-fg,#F6EFE2)",
+              backgroundColor: "var(--event-hero-accent, var(--event-accent))",
+              color:
+                "var(--event-button-primary-fg, var(--event-primary-fg))",
             }}
           >
             <Gift className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.28em]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               Next reward
             </p>
-            <p className="mt-0.5 truncate text-[15px] font-semibold text-[var(--event-card-fg,var(--event-text,#1F3D2B))]">
+            <p
+              className="mt-0.5 truncate text-[15px] font-semibold"
+              style={{ color: "var(--event-card-heading)" }}
+            >
               {next.title}
             </p>
             {next.description && (
-              <p className="mt-0.5 line-clamp-2 text-[12px] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+              <p
+                className="mt-0.5 line-clamp-2 text-[12px]"
+                style={{ color: "var(--event-card-muted)" }}
+              >
                 {next.description}
               </p>
             )}
@@ -56,18 +69,22 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
             className="h-2 w-full overflow-hidden rounded-full"
             style={{
               backgroundColor:
-                "color-mix(in srgb, var(--event-border,#E6DCC7) 80%, transparent)",
+                "color-mix(in srgb, var(--event-card-border) 80%, transparent)",
             }}
           >
             <div
               className="h-full rounded-full transition-all"
               style={{
                 width: `${pct}%`,
-                backgroundColor: "var(--event-accent,#B5572A)",
+                backgroundColor:
+                  "var(--event-hero-accent, var(--event-accent))",
               }}
             />
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-[11px] font-medium text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+          <div
+            className="mt-1.5 flex items-center justify-between text-[11px] font-medium"
+            style={{ color: "var(--event-card-muted)" }}
+          >
             <span>
               {have} / {required} pts
             </span>
@@ -80,7 +97,10 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
             </span>
           </div>
           {next.requires_all_locations && !next.is_eligible && (
-            <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+            <p
+              className="mt-1 text-[10px] uppercase tracking-[0.18em]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               Requires all locations
             </p>
           )}

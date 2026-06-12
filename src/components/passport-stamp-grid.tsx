@@ -31,12 +31,18 @@ export function PassportStampGrid({
     <section className="px-4">
       <div className="mb-3 flex items-end justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-page-muted,var(--event-muted,#8A7E66))]">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.28em]"
+            style={{ color: "var(--event-page-muted)" }}
+          >
             Your passport
           </p>
           <h2
-            className="mt-0.5 text-lg font-semibold text-[var(--event-page-fg,var(--event-text,#1F3D2B))]"
-            style={{ fontFamily: "var(--event-font)" }}
+            className="mt-0.5 text-lg font-semibold"
+            style={{
+              color: "var(--event-page-heading)",
+              fontFamily: "var(--event-font)",
+            }}
           >
             Stamp collection
           </h2>
@@ -46,8 +52,8 @@ export function PassportStampGrid({
             to="/join"
             className="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
             style={{
-              backgroundColor: "var(--event-primary,#1F3D2B)",
-              color: "var(--event-primary-fg,#F6EFE2)",
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
             }}
           >
             Start
@@ -94,11 +100,17 @@ function StampTile({
         aria-label={stamped ? `${name} — stamped` : `${name} — not yet stamped`}
         className={[
           "relative grid aspect-square w-full place-items-center rounded-2xl border-2 transition",
-          stamped
-            ? "border-[var(--event-accent,#B5572A)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm"
-            : "border-dashed border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]/60",
+          stamped ? "shadow-sm" : "border-dashed",
           dimmed ? "opacity-60" : "",
         ].join(" ")}
+        style={{
+          borderColor: stamped
+            ? "var(--event-pin, var(--event-accent))"
+            : "var(--event-card-border)",
+          backgroundColor: stamped
+            ? "var(--event-card-bg)"
+            : "color-mix(in srgb, var(--event-card-bg) 60%, transparent)",
+        }}
       >
         {logoUrl ? (
           <img
@@ -114,29 +126,32 @@ function StampTile({
           />
         ) : (
           <span
-            className={[
-              "text-base font-semibold tracking-wider",
-              stamped
-                ? "text-[var(--event-primary,#1F3D2B)]"
-                : "text-[var(--event-page-muted,var(--event-muted,#8A7E66))]",
-            ].join(" ")}
+            className="text-base font-semibold tracking-wider"
+            style={{
+              color: stamped
+                ? "var(--event-visited, var(--event-primary))"
+                : "var(--event-page-muted)",
+            }}
           >
             {initials || "—"}
           </span>
         )}
         <span
           aria-hidden
-          className={[
-            "absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full shadow",
-            stamped ? "" : "bg-[var(--event-card-bg,#FBF5E8)] ring-1 ring-[var(--event-border,#E6DCC7)]",
-          ].join(" ")}
+          className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full shadow"
           style={
             stamped
               ? {
-                  backgroundColor: "var(--event-accent,#B5572A)",
-                  color: "var(--event-primary-fg,#F6EFE2)",
+                  backgroundColor: "var(--event-pin, var(--event-accent))",
+                  color:
+                    "var(--event-button-primary-fg, var(--event-primary-fg))",
                 }
-              : { color: "var(--event-page-muted,var(--event-muted,#8A7E66))" }
+              : {
+                  backgroundColor: "var(--event-card-bg)",
+                  color: "var(--event-page-muted)",
+                  boxShadow:
+                    "inset 0 0 0 1px var(--event-card-border)",
+                }
           }
         >
           {stamped ? <Check className="h-3.5 w-3.5" /> : <StampIcon className="h-3 w-3" />}
@@ -144,7 +159,8 @@ function StampTile({
       </div>
       <span
         title={name}
-        className="line-clamp-1 w-full text-center text-[10px] font-medium text-[var(--event-page-fg,var(--event-text,#1F3D2B))]"
+        className="line-clamp-1 w-full text-center text-[10px] font-medium"
+        style={{ color: "var(--event-page-heading)" }}
       >
         {name}
       </span>

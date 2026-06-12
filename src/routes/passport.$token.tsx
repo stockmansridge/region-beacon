@@ -58,6 +58,11 @@ type LoadState =
       stamps: PassportStampState;
     };
 
+// PRIMARY / ACCENT are kept as hex fallbacks for the PublicEventNav prop
+// surface (it still takes raw hex colours). All in-page colour usage on
+// this route is driven by the semantic --event-* tokens emitted by
+// EventPaletteScope; these constants are not consulted by card/page
+// chrome anymore.
 const PRIMARY = "#1F3D2B";
 const ACCENT = "#B5572A";
 
@@ -157,7 +162,10 @@ function PassportPage() {
       className="min-h-screen"
     >
       {!showInner ? (
-        <div className="flex min-h-screen items-center justify-center text-sm text-[var(--event-muted,#8A7E66)]">
+        <div
+          className="flex min-h-screen items-center justify-center text-sm"
+          style={{ color: "var(--event-page-muted)" }}
+        >
           Loading your passport…
         </div>
       ) : state.kind === "not_found" ? (
@@ -277,13 +285,34 @@ function PassportNotFound({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
-      <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+    <div
+      className="flex min-h-screen items-center justify-center px-6"
+      style={{ backgroundColor: "var(--event-page-bg)" }}
+    >
+      <div
+        className="mx-auto w-full max-w-md rounded-3xl border p-8 text-center shadow-sm"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
+      >
+        <div
+          className="mx-auto mb-4 h-12 w-12 rounded-full"
+          style={{
+            backgroundColor:
+              "color-mix(in srgb, var(--event-button-primary-bg) 14%, transparent)",
+          }}
+        />
+        <h1
+          className="font-trail-serif text-2xl font-semibold"
+          style={{ color: "var(--event-card-heading)" }}
+        >
           Passport link not found or replaced
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
+        <p
+          className="mt-3 text-sm leading-relaxed"
+          style={{ color: "var(--event-card-text)" }}
+        >
           This passport link is no longer valid. If you re-registered, the
           newest link is the only working one. You can register again for this
           trail to get a fresh passport.
@@ -291,25 +320,42 @@ function PassportNotFound({
         <div className="mt-6 flex flex-col gap-2">
           <a
             href="/join"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-6 text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
+            className="inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-semibold tracking-wide shadow"
+            style={{
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
+            }}
           >
             Register again for this trail
           </a>
           <a
             href="/"
-            className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 bg-transparent text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
+            className="inline-flex h-11 items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide"
+            style={{
+              borderColor: "var(--event-button-secondary-border)",
+              color: "var(--event-button-secondary-fg)",
+              backgroundColor: "var(--event-button-secondary-bg)",
+            }}
           >
             Back to trail home
           </a>
           <button
             type="button"
             onClick={copySupport}
-            className="mt-1 inline-flex h-9 items-center justify-center rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] px-4 text-xs font-medium text-[var(--event-body,#3D372C)]"
+            className="mt-1 inline-flex h-9 items-center justify-center rounded-full border px-4 text-xs font-medium"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-page-bg)",
+              color: "var(--event-card-text)",
+            }}
           >
             {copied ? "Copied support details" : "Copy support details"}
           </button>
         </div>
-        <p className="mt-3 text-[10px] text-[var(--event-muted,#8A7E66)]">
+        <p
+          className="mt-3 text-[10px]"
+          style={{ color: "var(--event-card-muted)" }}
+        >
           Support details do not include your full passport link or any visitor
           personal information.
         </p>
@@ -425,14 +471,14 @@ function PassportView({
         <div className="text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: "var(--event-accent, " + ACCENT + ")" }}
+            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
           >
             My Passport
           </div>
           <h1
             className="mt-1 text-3xl font-semibold"
             style={{
-              color: "var(--event-page-fg, " + PRIMARY + ")",
+              color: "var(--event-page-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
@@ -440,7 +486,7 @@ function PassportView({
           </h1>
           <p
             className="mt-1 text-[11px] uppercase tracking-[0.22em]"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             Hi {greetingName}
           </p>
@@ -451,16 +497,22 @@ function PassportView({
 
 
         {/* Progress card */}
-        <section className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center shadow-sm">
+        <section
+          className="mt-5 rounded-3xl border p-6 text-center shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
           <div className="relative mx-auto h-32 w-32">
             <svg viewBox="0 0 120 120" className="h-32 w-32 -rotate-90">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="var(--event-border,#E6DCC7)" strokeWidth="10" />
+              <circle cx="60" cy="60" r="52" fill="none" stroke="var(--event-card-border)" strokeWidth="10" />
               <circle
                 cx="60"
                 cy="60"
                 r="52"
                 fill="none"
-                stroke={PRIMARY}
+                stroke="var(--event-button-primary-bg)"
                 strokeWidth="10"
                 strokeLinecap="round"
                 strokeDasharray={2 * Math.PI * 52}
@@ -470,14 +522,17 @@ function PassportView({
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <div
                 className="font-trail-serif text-3xl font-semibold"
-                style={{ color: PRIMARY }}
+                style={{ color: "var(--event-card-heading)" }}
               >
                 {stampedCount}
                 {totalVenues > 0 ? (
-                  <span className="text-base text-[var(--event-muted,#8A7E66)]">/{totalVenues}</span>
+                  <span className="text-base" style={{ color: "var(--event-card-muted)" }}>/{totalVenues}</span>
                 ) : null}
               </div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+              <div
+                className="text-[10px] font-medium uppercase tracking-[0.22em]"
+                style={{ color: "var(--event-card-muted)" }}
+              >
                 stamps
               </div>
             </div>
@@ -486,7 +541,7 @@ function PassportView({
           {totalVenues > 0 && (
             <p
               className="mt-4 text-sm font-medium"
-              style={{ color: PRIMARY }}
+              style={{ color: "var(--event-card-heading)" }}
             >
               {stampedCount} of {totalVenues}{" "}
               {totalVenues === 1
@@ -498,19 +553,31 @@ function PassportView({
 
           {totalVenues > 0 && stampedCount >= totalVenues ? (
             <div
-              className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--event-page-bg,#F6EFE2)]"
-              style={{ backgroundColor: PRIMARY }}
+              className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
             >
               <span aria-hidden>★</span>
               Trail complete
             </div>
           ) : (
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-body,#3D372C)]">
+            <div
+              className="mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
+              style={{
+                borderColor: "var(--event-card-border)",
+                backgroundColor: "var(--event-page-bg)",
+                color: "var(--event-card-text)",
+              }}
+            >
               <span
                 className="h-1.5 w-1.5 rounded-full"
                 style={{
                   backgroundColor:
-                    passport.status === "completed" ? PRIMARY : ACCENT,
+                    passport.status === "completed"
+                      ? "var(--event-visited, var(--event-primary))"
+                      : "var(--event-pin, var(--event-accent))",
                 }}
               />
               Status · {statusLabel}
@@ -532,18 +599,30 @@ function PassportView({
         />
 
         {/* Visitor details */}
-        <section className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
-          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+        <section
+          className="mt-5 rounded-3xl border p-5 shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
+          <div
+            className="text-[10px] font-medium uppercase tracking-[0.22em]"
+            style={{ color: "var(--event-card-muted)" }}
+          >
             Passport holder
           </div>
           <div
             className="mt-1 font-trail-serif text-lg font-semibold"
-            style={{ color: PRIMARY }}
+            style={{ color: "var(--event-card-heading)" }}
           >
             {passport.full_name ?? "Visitor"}
           </div>
           {passport.email && (
-            <div className="mt-0.5 text-sm text-[var(--event-body,#3D372C)]/80 break-all">
+            <div
+              className="mt-0.5 break-all text-sm"
+              style={{ color: "var(--event-card-text)", opacity: 0.85 }}
+            >
               {passport.email}
             </div>
           )}
@@ -551,30 +630,48 @@ function PassportView({
 
 
         {/* Copy link */}
-        <section className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
-          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+        <section
+          className="mt-5 rounded-3xl border p-5 shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
+          <div
+            className="text-[10px] font-medium uppercase tracking-[0.22em]"
+            style={{ color: "var(--event-card-muted)" }}
+          >
             Your private passport link
           </div>
           <div
-            className="mt-2 break-all rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] p-3 font-mono text-xs"
-            style={{ color: PRIMARY }}
+            className="mt-2 break-all rounded-2xl border p-3 font-mono text-xs"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-page-bg)",
+              color: "var(--event-link)",
+            }}
           >
             {passportUrl}
           </div>
           <button
             type="button"
             onClick={copy}
-            className="mt-3 h-11 w-full rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
-            style={{ backgroundColor: PRIMARY }}
+            className="mt-3 h-11 w-full rounded-full text-sm font-semibold tracking-wide shadow"
+            style={{
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
+            }}
           >
             {copied ? "Copied!" : "Copy passport link"}
           </button>
           <div
             className="mt-3 rounded-xl border px-3 py-2 text-left text-xs"
             style={{
-              borderColor: `${ACCENT}55`,
-              backgroundColor: `${ACCENT}10`,
-              color: "#5A2410",
+              borderColor:
+                "color-mix(in srgb, var(--event-accent) 35%, transparent)",
+              backgroundColor:
+                "color-mix(in srgb, var(--event-accent) 10%, transparent)",
+              color: "var(--event-card-text)",
             }}
           >
             <strong>Save this link.</strong> It is the only way back into your
@@ -583,11 +680,19 @@ function PassportView({
           <button
             type="button"
             onClick={copySupportDetails}
-            className="mt-3 h-9 w-full rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] text-xs font-semibold tracking-wide text-[var(--event-body,#3D372C)]"
+            className="mt-3 h-9 w-full rounded-full border text-xs font-semibold tracking-wide"
+            style={{
+              borderColor: "var(--event-button-secondary-border)",
+              backgroundColor: "var(--event-button-secondary-bg)",
+              color: "var(--event-button-secondary-fg)",
+            }}
           >
             {supportCopied ? "Copied support details" : "Copy support details"}
           </button>
-          <p className="mt-2 text-[10px] leading-snug text-[var(--event-muted,#8A7E66)]">
+          <p
+            className="mt-2 text-[10px] leading-snug"
+            style={{ color: "var(--event-card-muted)" }}
+          >
             Support details exclude your full passport link and visitor details.
           </p>
         </section>
@@ -614,11 +719,24 @@ function StampGrid({
   if (venues.length === 0) {
     return (
       <section className="mt-5">
-        <div className="rounded-3xl border border-dashed border-[#C9A24A]/50 bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center">
-          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#C9A24A]">
+        <div
+          className="rounded-3xl border border-dashed p-6 text-center"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--event-hero-accent, var(--event-accent)) 50%, transparent)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
+          <div
+            className="text-[10px] font-medium uppercase tracking-[0.22em]"
+            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
+          >
             No {labelPlural.toLowerCase()} configured
           </div>
-          <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]">
+          <p
+            className="mt-2 text-sm"
+            style={{ color: "var(--event-card-text)" }}
+          >
             The event organiser hasn't published any {labelPlural.toLowerCase()} yet.
           </p>
         </div>
@@ -631,15 +749,24 @@ function StampGrid({
       <div className="mb-3 flex items-baseline justify-between">
         <h2
           className="font-trail-serif text-lg font-semibold"
-          style={{ color: PRIMARY }}
+          style={{ color: "var(--event-page-heading)" }}
         >
           Stamp collection
         </h2>
-        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+        <span
+          className="text-[10px] font-medium uppercase tracking-[0.22em]"
+          style={{ color: "var(--event-page-muted)" }}
+        >
           Tap a {labelSingular.toLowerCase()} for details
         </span>
       </div>
-      <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
+      <div
+        className="rounded-3xl border p-5 shadow-sm"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
+      >
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4">
           {venues.map((v) => (
             <StampCell key={v.venue_id} venue={v} />
@@ -677,17 +804,17 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
         style={
           stamped
             ? {
-                backgroundColor: PRIMARY,
-                color: "var(--event-page-bg,#F6EFE2)",
+                backgroundColor: "var(--event-visited, var(--event-primary))",
+                color: "var(--event-button-primary-fg, var(--event-primary-fg))",
                 boxShadow:
-                  "inset 0 0 0 2px var(--event-page-bg,#F6EFE2), inset 0 0 0 4px rgba(31,61,43,0.65), 0 2px 6px rgba(31,61,43,0.18)",
+                  "inset 0 0 0 2px var(--event-card-bg), inset 0 0 0 4px color-mix(in srgb, var(--event-visited, var(--event-primary)) 65%, transparent), 0 2px 6px color-mix(in srgb, var(--event-visited, var(--event-primary)) 25%, transparent)",
               }
             : {
-                backgroundColor: "var(--event-page-bg,#F6EFE2)",
-                color: "var(--event-muted,#8A7E66)",
-                boxShadow: "inset 0 0 0 2px var(--event-border,#E6DCC7)",
+                backgroundColor: "var(--event-page-bg)",
+                color: "var(--event-card-muted)",
+                boxShadow: "inset 0 0 0 2px var(--event-card-border)",
                 backgroundImage:
-                  "repeating-linear-gradient(45deg, transparent 0 6px, rgba(138,126,102,0.06) 6px 7px)",
+                  "repeating-linear-gradient(45deg, transparent 0 6px, color-mix(in srgb, var(--event-card-muted) 12%, transparent) 6px 7px)",
               }
         }
       >
@@ -714,25 +841,34 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
         ) : (
           <span
             aria-hidden
-            className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#A89C82]"
+            className="text-[9px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--event-card-muted)", opacity: 0.85 }}
           >
             Empty
           </span>
         )}
       </div>
       <div
-        className={`mt-2 line-clamp-2 text-[12px] font-semibold leading-tight ${
-          stamped ? "" : "text-[var(--event-muted,#8A7E66)]"
-        }`}
-        style={stamped ? { color: PRIMARY } : undefined}
+        className="mt-2 line-clamp-2 text-[12px] font-semibold leading-tight"
+        style={{
+          color: stamped ? "var(--event-card-heading)" : "var(--event-card-muted)",
+        }}
       >
         {venue.venue_name ?? "Venue"}
       </div>
       {stamped && when && (
-        <div className="mt-0.5 text-[10px] text-[var(--event-muted,#8A7E66)]">{when}</div>
+        <div
+          className="mt-0.5 text-[10px]"
+          style={{ color: "var(--event-card-muted)" }}
+        >
+          {when}
+        </div>
       )}
       {!stamped && (
-        <div className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[#A89C82]">
+        <div
+          className="mt-0.5 text-[10px] uppercase tracking-[0.14em]"
+          style={{ color: "var(--event-card-muted)", opacity: 0.85 }}
+        >
           Not visited
         </div>
       )}
@@ -777,13 +913,14 @@ function RewardsSection({
       <div className="mb-2 flex items-baseline justify-between">
         <h2
           className="font-trail-serif text-lg font-semibold"
-          style={{ color: PRIMARY }}
+          style={{ color: "var(--event-page-heading)" }}
         >
           Rewards
         </h2>
         <Link
           to="/awards"
-          className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)] underline-offset-2 hover:underline"
+          className="text-[11px] font-semibold uppercase tracking-[0.18em] underline-offset-2 hover:underline"
+          style={{ color: "var(--event-link)" }}
         >
           View all
         </Link>
@@ -805,26 +942,38 @@ function AwardRow({ award }: { award: PublicEventAward }) {
     : 0;
   return (
     <li
-      className={`rounded-2xl border p-4 shadow-sm ${
-        unlocked
-          ? "border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]"
-          : "border-dashed border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]/70"
-      }`}
+      className={`rounded-2xl border p-4 shadow-sm ${unlocked ? "" : "border-dashed"}`}
+      style={{
+        borderColor: "var(--event-card-border)",
+        backgroundColor: unlocked
+          ? "var(--event-card-bg)"
+          : "color-mix(in srgb, var(--event-card-bg) 70%, transparent)",
+      }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div
             className="font-trail-serif text-sm font-semibold"
-            style={{ color: unlocked ? PRIMARY : "var(--event-text,#3D372C)" }}
+            style={{
+              color: unlocked
+                ? "var(--event-card-heading)"
+                : "var(--event-card-text)",
+            }}
           >
             {award.title}
           </div>
           {award.description && (
-            <p className="mt-1 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
+            <p
+              className="mt-1 text-[12.5px] leading-snug"
+              style={{ color: "var(--event-card-text)" }}
+            >
               {award.description}
             </p>
           )}
-          <div className="mt-1.5 text-[11px] text-[var(--event-muted,#8A7E66)]">
+          <div
+            className="mt-1.5 text-[11px]"
+            style={{ color: "var(--event-card-muted)" }}
+          >
             {award.points_required} {award.points_required === 1 ? "pt" : "pts"} required
             {award.requires_all_locations ? " · all locations" : ""}
             {!unlocked && award.points_remaining > 0
@@ -836,19 +985,31 @@ function AwardRow({ award }: { award: PublicEventAward }) {
           className="inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
           style={
             unlocked
-              ? { backgroundColor: PRIMARY, color: "var(--event-primary-fg,#F6EFE2)" }
-              : { border: `1px solid ${ACCENT}55`, color: ACCENT }
+              ? {
+                  backgroundColor: "var(--event-button-primary-bg)",
+                  color: "var(--event-button-primary-fg)",
+                }
+              : {
+                  border:
+                    "1px solid color-mix(in srgb, var(--event-accent) 35%, transparent)",
+                  color: "var(--event-accent)",
+                }
           }
         >
           {unlocked ? "✓ Entered" : "Locked"}
         </span>
       </div>
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--event-border,#E6DCC7)]">
+      <div
+        className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
+        style={{ backgroundColor: "var(--event-card-border)" }}
+      >
         <div
           className="h-full rounded-full transition-all"
           style={{
             width: `${pct}%`,
-            backgroundColor: unlocked ? PRIMARY : ACCENT,
+            backgroundColor: unlocked
+              ? "var(--event-button-primary-bg)"
+              : "var(--event-accent)",
           }}
         />
       </div>
