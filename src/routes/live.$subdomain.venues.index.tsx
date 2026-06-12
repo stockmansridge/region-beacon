@@ -62,11 +62,27 @@ type EventRow = {
   card_muted_text_color?: string | null;
   border_color?: string | null;
   primary_text_color?: string | null;
+  nav_background_color?: string | null;
+  brand_kit_key?: string | null;
+  link_color?: string | null;
+  card_border_color?: string | null;
+  button_primary_bg?: string | null;
+  button_primary_fg?: string | null;
+  button_secondary_bg?: string | null;
+  button_secondary_fg?: string | null;
+  nav_fg_color?: string | null;
+  nav_muted_color?: string | null;
+  nav_active_fg_color?: string | null;
+  hero_bg_color?: string | null;
+  hero_fg_color?: string | null;
+  hero_accent_color?: string | null;
   font_family?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
   logo_path?: string | null;
+  cover_path?: string | null;
 };
+
 
 type State =
   | { kind: "loading" }
@@ -142,6 +158,8 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
     (v) => typeof v.points_value === "number" && (v.points_value ?? 0) > 0,
   );
 
+  const heroImageUrl = getEventAssetPublicUrl(event?.cover_path ?? null);
+
   return (
     <EventPaletteScope
       paletteKey={event?.palette_key ?? null}
@@ -156,20 +174,84 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
       cardMutedTextColor={event?.card_muted_text_color ?? null}
       borderColor={event?.border_color ?? null}
       primaryTextColor={event?.primary_text_color ?? null}
+      navBackgroundColor={event?.nav_background_color ?? null}
+      brandKitKey={event?.brand_kit_key ?? null}
+      linkColor={event?.link_color ?? null}
+      cardBorderColor={event?.card_border_color ?? null}
+      buttonPrimaryBg={event?.button_primary_bg ?? null}
+      buttonPrimaryFg={event?.button_primary_fg ?? null}
+      buttonSecondaryBg={event?.button_secondary_bg ?? null}
+      buttonSecondaryFg={event?.button_secondary_fg ?? null}
+      navFgColor={event?.nav_fg_color ?? null}
+      navMutedColor={event?.nav_muted_color ?? null}
+      navActiveFgColor={event?.nav_active_fg_color ?? null}
+      heroBgColor={event?.hero_bg_color ?? null}
+      heroFgColor={event?.hero_fg_color ?? null}
+      heroAccentColor={event?.hero_accent_color ?? null}
       fontFamily={event?.font_family ?? null}
-      className="min-h-screen px-4 pb-10"
+      className="min-h-screen pb-10"
     >
+      {/* Full-bleed hero with overlaid header */}
+      <div className="relative">
+        <div className="absolute inset-x-0 top-0 z-40 px-4">
+          <PublicEventNav
+            subdomain={subdomain}
+            eventName={event?.name}
+            primaryColor={event?.primary_color}
+            accentColor={event?.accent_color}
+            logoUrl={logoUrl}
+            eventId={event?.event_id ?? null}
+            transparentHeader
+          />
+        </div>
+
+        <section
+          className="relative w-full overflow-hidden"
+          style={{
+            backgroundColor: "var(--event-hero-bg, var(--event-primary))",
+            color: "var(--event-hero-fg, var(--event-primary-fg))",
+            minHeight: 260,
+          }}
+        >
+          {heroImageUrl ? (
+            <img
+              src={heroImageUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="eager"
+            />
+          ) : null}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 0%, var(--event-hero-overlay, rgba(0,0,0,0.2)) 45%, var(--event-hero-overlay-strong, rgba(0,0,0,0.6)) 100%)",
+            }}
+          />
+          <div className="relative mx-auto flex min-h-[260px] max-w-md flex-col justify-end px-5 pb-10 pt-24 sm:min-h-[300px]">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.32em]"
+              style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
+            >
+              {labels.plural}
+            </p>
+            <h1
+              className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
+              style={{
+                color: "var(--event-hero-fg, var(--event-primary-fg))",
+                fontFamily: "var(--event-font, inherit)",
+                textShadow: "0 2px 12px rgba(0,0,0,0.45)",
+              }}
+            >
+              {event?.name ?? "Explore"}
+            </h1>
+          </div>
+        </section>
+      </div>
+
       <PublicAnnouncementBar subdomain={subdomain} />
-      <PublicEventNav
-        subdomain={subdomain}
-        eventName={event?.name}
-        primaryColor={event?.primary_color}
-        accentColor={event?.accent_color}
-        logoUrl={logoUrl}
-        eventId={event?.event_id ?? null}
-      />
-      <div className="mx-auto max-w-md">
-        <div className="mt-2">
+      <div className="mx-auto max-w-md px-4">
+        <div className="mt-4">
           <PublicTrailTabs active="venues" venueLabelPlural={labels.plural} />
         </div>
         <div className="mt-4">
@@ -178,6 +260,8 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
             venueLabelPlural={labels.plural}
           />
         </div>
+
+
 
 
         {venues.length === 0 ? (
