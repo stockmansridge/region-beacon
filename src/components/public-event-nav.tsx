@@ -199,7 +199,7 @@ export function PublicEventNav({
             <Link
               to="/"
               aria-current={isActive("home") ? "page" : undefined}
-              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
               style={{ color: isActive("home") ? navActiveFg : navMuted }}
             >
               <Home className="h-5 w-5" />
