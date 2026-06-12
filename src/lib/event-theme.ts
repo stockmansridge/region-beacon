@@ -134,7 +134,7 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
   const navActiveText = palette.accent;
 
   return {
-    pageBg: customPageBg ?? palette.pageBg,
+    pageBg: resolvedPageBg,
     cardBg: customCardBg ?? palette.cardBg,
     primary: palette.primary,
     primaryText,
