@@ -121,7 +121,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
             Venue not found
           </h1>
-          <p className="mt-3 text-sm text-[var(--event-body,#3D372C)]">
+          <p className="mt-3 text-sm text-[var(--event-text,#3D372C)]">
             This venue isn't available right now.
           </p>
           <Link
