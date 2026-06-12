@@ -1,28 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { Gift } from "lucide-react";
-import type { PublicEventAward } from "@/lib/event-awards";
+import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 
 /**
  * Surfaces the next configured award the visitor is working toward.
- * Hidden entirely when no awards are configured for the event — never
- * shows synthetic Bronze/Silver/Gold tiers.
+ * Hidden entirely when no awards are configured — never shows synthetic
+ * Bronze/Silver/Gold tiers.
  */
-export function NextRewardCard({
-  awards,
-  hasPassport,
-}: {
-  awards: PublicEventAward[];
-  hasPassport: boolean;
-}) {
-  if (!awards || awards.length === 0) return null;
-
-  // First award not yet eligible, sorted by sort_order then points_required.
-  const sorted = [...awards].sort(
-    (a, b) =>
-      (a.sort_order ?? 0) - (b.sort_order ?? 0) ||
-      a.points_required - b.points_required,
-  );
-  const next = sorted.find((a) => !a.is_eligible) ?? sorted[sorted.length - 1];
+export function NextRewardCard({ eventId }: { eventId: string | null }) {
+  const data = usePassportHomeData(eventId);
+  if (data.loading) return null;
+  const next = pickNextReward(data.awards) ?? data.awards[0];
   if (!next) return null;
 
   const required = Math.max(0, next.points_required);
@@ -84,7 +72,7 @@ export function NextRewardCard({
               {have} / {required} pts
             </span>
             <span>
-              {hasPassport
+              {data.hasPassport
                 ? next.is_eligible
                   ? "Ready to claim"
                   : `${remaining} to go`

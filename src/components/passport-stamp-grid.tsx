@@ -2,27 +2,30 @@ import { Check, Stamp as StampIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { PassportStampVenue } from "@/lib/passport-stamps";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
+import { usePassportHomeData } from "@/lib/use-passport-home-data";
 
 /**
  * Mobile-app style passport stamp grid. Renders one tile per participating
- * venue: visited venues show a "stamped" treatment (accent ring + check),
- * unvisited tiles show a muted placeholder. Driven entirely by
- * loadPassportStampState — no synthetic stamps.
+ * venue. Visited tiles show a stamped treatment; unvisited tiles show a
+ * muted placeholder. Driven entirely by the passport-stamps RPC — no
+ * synthetic stamps.
  */
 export function PassportStampGrid({
-  venues,
-  hasPassport,
-  venueLabelPlural,
-  startHref,
+  eventId,
+  venueLabelPlural = "venues",
+  canRegister = true,
 }: {
-  venues: PassportStampVenue[];
-  hasPassport: boolean;
-  venueLabelPlural: string;
-  startHref: string;
+  eventId: string | null;
+  venueLabelPlural?: string;
+  canRegister?: boolean;
 }) {
+  const data = usePassportHomeData(eventId);
+  if (data.loading) return null;
+  const { hasPassport, venues } = data;
   if (!hasPassport && venues.length === 0) return null;
 
-  const display = venues.length > 0 ? venues : placeholderTiles(8);
+  const display: PassportStampVenue[] =
+    venues.length > 0 ? venues : placeholderTiles(8);
 
   return (
     <section className="px-4">
@@ -38,9 +41,9 @@ export function PassportStampGrid({
             Stamp collection
           </h2>
         </div>
-        {!hasPassport && (
+        {!hasPassport && canRegister && (
           <Link
-            to={startHref as "/join"}
+            to="/join"
             className="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
             style={{
               backgroundColor: "var(--event-primary,#1F3D2B)",
@@ -55,10 +58,14 @@ export function PassportStampGrid({
       <ul className="grid grid-cols-4 gap-3 sm:grid-cols-5">
         {display.map((v, i) => (
           <li key={v.venue_id ?? `placeholder-${i}`}>
-            <StampTile venue={v} dimmed={!hasPassport} venueLabel={venueLabelPlural} />
+            <StampTile venue={v} dimmed={!hasPassport} />
           </li>
         ))}
       </ul>
+
+      <p className="sr-only">
+        {data.visited} of {data.total} {venueLabelPlural.toLowerCase()} stamped.
+      </p>
     </section>
   );
 }
@@ -66,13 +73,10 @@ export function PassportStampGrid({
 function StampTile({
   venue,
   dimmed,
-  venueLabel,
 }: {
   venue: PassportStampVenue;
   dimmed: boolean;
-  venueLabel: string;
 }) {
-  void venueLabel;
   const stamped = venue.is_stamped;
   const logoUrl = getVenueAssetPublicUrl(venue.venue_logo_path);
   const name = venue.venue_name ?? "Venue";
@@ -102,7 +106,7 @@ function StampTile({
             alt=""
             className={[
               "h-3/4 w-3/4 rounded-xl object-contain",
-              stamped ? "" : "grayscale opacity-50",
+              stamped ? "" : "opacity-50 grayscale",
             ].join(" ")}
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = "none";
@@ -120,25 +124,23 @@ function StampTile({
             {initials || "—"}
           </span>
         )}
-        {stamped ? (
-          <span
-            aria-hidden
-            className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full shadow"
-            style={{
-              backgroundColor: "var(--event-accent,#B5572A)",
-              color: "var(--event-primary-fg,#F6EFE2)",
-            }}
-          >
-            <Check className="h-3.5 w-3.5" />
-          </span>
-        ) : (
-          <span
-            aria-hidden
-            className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full bg-[var(--event-card-bg,#FBF5E8)] text-[var(--event-page-muted,var(--event-muted,#8A7E66))] ring-1 ring-[var(--event-border,#E6DCC7)]"
-          >
-            <StampIcon className="h-3 w-3" />
-          </span>
-        )}
+        <span
+          aria-hidden
+          className={[
+            "absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full shadow",
+            stamped ? "" : "bg-[var(--event-card-bg,#FBF5E8)] ring-1 ring-[var(--event-border,#E6DCC7)]",
+          ].join(" ")}
+          style={
+            stamped
+              ? {
+                  backgroundColor: "var(--event-accent,#B5572A)",
+                  color: "var(--event-primary-fg,#F6EFE2)",
+                }
+              : { color: "var(--event-page-muted,var(--event-muted,#8A7E66))" }
+          }
+        >
+          {stamped ? <Check className="h-3.5 w-3.5" /> : <StampIcon className="h-3 w-3" />}
+        </span>
       </div>
       <span
         title={name}
