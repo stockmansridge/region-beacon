@@ -1957,7 +1957,7 @@ function BackgroundSelector({
   const activeBg = getBackground(value || null);
   const isCustomMode = value === "custom_color";
   const inheritedLabel = activeBg?.label ?? "Default";
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = useState(false);
   const copyHex = async () => {
     try {
       await navigator.clipboard.writeText(resolvedHex);
