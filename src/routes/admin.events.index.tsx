@@ -389,7 +389,7 @@ function Events() {
                 // events with an active public subdomain).
                 void activation;
                 const isLive = !isArchived && isPublished && domainActive;
-                const liveLabel = isArchived ? "Archived" : isLive ? "Live" : "Not live";
+                const liveLabel = isArchived ? "ARCHIVED" : isLive ? "LIVE" : "NOT LIVE";
                 const liveClass = isArchived
                   ? "bg-[#F1F5F9] text-[#475569]"
                   : isLive
