@@ -1920,13 +1920,14 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
     page_background_key: form.page_background_key || null,
   });
 
-  const warnings = {
-    textOnPage: lowContrastWarning(theme.text, theme.pageBg),
-    textOnCard: lowContrastWarning(theme.text, theme.cardBg),
-    mutedOnPage: lowContrastWarning(theme.muted, theme.pageBg, 3),
-    mutedOnCard: lowContrastWarning(theme.muted, theme.cardBg, 3),
-    primaryButton: lowContrastWarning(theme.primaryText, theme.primary),
-  };
+  const textOnPage = surfaceWarning(theme.text, theme.pageBg, "page background");
+  const textOnCard = surfaceWarning(theme.text, theme.cardBg, "card background");
+  const mutedOnPage = surfaceWarning(theme.muted, theme.pageBg, "page background", 3);
+  const mutedOnCard = surfaceWarning(theme.muted, theme.cardBg, "card background", 3);
+  const primaryButton = surfaceWarning(theme.primaryText, theme.primary, "primary button");
+
+  const textWarnings = [textOnPage, textOnCard].filter(Boolean) as string[];
+  const mutedWarnings = [mutedOnPage, mutedOnCard].filter(Boolean) as string[];
 
   return (
     <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
@@ -1948,7 +1949,7 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
         value={form.text_color}
         onChange={(v) => setForm({ ...form, text_color: v })}
         disabled={disabled}
-        warning={warnings.textOnPage ?? warnings.textOnCard}
+        warnings={textWarnings}
       />
       <ColorRoleRow
         label="Muted text"
@@ -1957,7 +1958,7 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
         value={form.muted_text_color}
         onChange={(v) => setForm({ ...form, muted_text_color: v })}
         disabled={disabled}
-        warning={warnings.mutedOnCard ?? warnings.mutedOnPage}
+        warnings={mutedWarnings}
       />
       <ColorRoleRow
         label="Border / divider colour"
@@ -1974,7 +1975,7 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
         value={form.primary_text_color}
         onChange={(v) => setForm({ ...form, primary_text_color: v })}
         disabled={disabled}
-        warning={warnings.primaryButton}
+        warnings={primaryButton ? [primaryButton] : []}
       />
     </div>
   );
