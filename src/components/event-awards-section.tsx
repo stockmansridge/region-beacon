@@ -602,6 +602,8 @@ function DrawDialog({
   const isRedraw = !!award.latest_draw_id;
   const result = state.mode === "result" ? state.result : null;
   const drawing = state.mode === "drawing";
+  const errorMsg = state.mode === "confirm" ? state.error ?? null : null;
+  const noEligible = award.eligible_count === 0;
 
   return (
     <Dialog
@@ -609,7 +611,7 @@ function DrawDialog({
       onOpenChange={(o) => {
         if (!o) {
           if (state.mode === "result") onClose();
-          else onCancel();
+          else if (!drawing) onCancel();
         }
       }}
     >
@@ -637,11 +639,28 @@ function DrawDialog({
                 new draw record and keep the old result in history.
               </p>
             )}
+            {errorMsg && (
+              <p
+                role="alert"
+                className="rounded border border-red-300 bg-red-50 p-2 text-xs text-red-900"
+              >
+                Draw failed: {errorMsg}
+              </p>
+            )}
             <DialogFooter>
-              <Button variant="outline" onClick={onCancel} disabled={drawing}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={drawing}
+              >
                 Cancel
               </Button>
-              <Button onClick={() => void onConfirm()} disabled={drawing}>
+              <Button
+                type="button"
+                onClick={() => void onConfirm()}
+                disabled={drawing || noEligible}
+              >
                 {drawing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Drawing…
