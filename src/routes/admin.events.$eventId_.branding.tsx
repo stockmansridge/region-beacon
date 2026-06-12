@@ -34,6 +34,7 @@ import {
   type EventBackgroundKey,
   getBackground,
   getModernStyleKey,
+  resolveBackgroundBaseHex,
 } from "@/lib/event-backgrounds";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveEventTheme } from "@/lib/event-theme";
@@ -1072,7 +1073,22 @@ function BrandingEditor() {
               paletteKey={form.palette_key}
               primaryColor={form.primary_color}
               accentColor={form.accent_color}
+              pageBackgroundColor={form.page_background_color}
               onChange={(key) => setForm({ ...form, page_background_key: key })}
+              onApplyToCustomPageBg={(hex) =>
+                setForm((f) => ({
+                  ...f,
+                  page_background_key: "custom_color",
+                  page_background_color: hex,
+                }))
+              }
+              onApplyToCustomCardBg={(hex) =>
+                setForm((f) => ({
+                  ...f,
+                  page_background_key: "custom_color",
+                  card_background_color: hex,
+                }))
+              }
               disabled={!canEdit || saving}
             />
 
@@ -1900,14 +1916,20 @@ function BackgroundSelector({
   paletteKey,
   primaryColor,
   accentColor,
+  pageBackgroundColor,
   onChange,
+  onApplyToCustomPageBg,
+  onApplyToCustomCardBg,
   disabled,
 }: {
   value: string;
   paletteKey: string;
   primaryColor?: string;
   accentColor?: string;
+  pageBackgroundColor?: string;
   onChange: (key: string) => void;
+  onApplyToCustomPageBg?: (hex: string) => void;
+  onApplyToCustomCardBg?: (hex: string) => void;
   disabled?: boolean;
 }) {
   const palette = (() => {
@@ -1924,6 +1946,28 @@ function BackgroundSelector({
   const recommended = recommendedKey
     ? MODERN_BACKGROUND_STYLES.find((b) => b.key === recommendedKey)
     : null;
+
+  // Resolve the actual flat hex behind the current background style so
+  // organisers can see, copy, and re-use what the preview is rendering.
+  const resolvedHex = resolveBackgroundBaseHex(
+    value || null,
+    palette,
+    pageBackgroundColor || null,
+  ).toUpperCase();
+  const activeBg = getBackground(value || null);
+  const isCustomMode = value === "custom_color";
+  const inheritedLabel = activeBg?.label ?? "Default";
+  const [copied, setCopied] = useState(false);
+  const copyHex = async () => {
+    try {
+      await navigator.clipboard.writeText(resolvedHex);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
 
   return (
     <div className="space-y-3">
@@ -1986,6 +2030,69 @@ function BackgroundSelector({
             </button>
           );
         })}
+      </div>
+
+      {/* Resolved background colour — shows the actual flat hex behind
+          the selected style so organisers can copy it or apply it to
+          their custom Page / Card background fields. */}
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3">
+        <div className="flex items-center gap-3">
+          <span
+            className="block h-10 w-10 shrink-0 rounded-[8px] border"
+            style={{ backgroundColor: resolvedHex, borderColor: palette.border }}
+            aria-hidden
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+              Resolved page background
+            </div>
+            <div className="mt-0.5 flex items-baseline gap-2">
+              <span className="font-mono text-sm font-semibold text-[#111827]">
+                {resolvedHex}
+              </span>
+              <span className="truncate text-[11px] text-muted-foreground">
+                {isCustomMode
+                  ? "From your custom page background colour"
+                  : `Inherited from ${inheritedLabel}`}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={copyHex}
+            disabled={disabled}
+            className="shrink-0 rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#334155] hover:border-[#94A3B8] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {copied ? "Copied" : "Copy hex"}
+          </button>
+        </div>
+        {!isCustomMode && (onApplyToCustomPageBg || onApplyToCustomCardBg) && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {onApplyToCustomPageBg && (
+              <button
+                type="button"
+                onClick={() => onApplyToCustomPageBg(resolvedHex)}
+                disabled={disabled}
+                className="rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#334155] hover:border-[#94A3B8] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Apply to Page background
+              </button>
+            )}
+            {onApplyToCustomCardBg && (
+              <button
+                type="button"
+                onClick={() => onApplyToCustomCardBg(resolvedHex)}
+                disabled={disabled}
+                className="rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#334155] hover:border-[#94A3B8] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Apply to Card background
+              </button>
+            )}
+            <span className="self-center text-[11px] text-muted-foreground">
+              Switches mode to <span className="font-medium">Custom</span> so the value sticks.
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Hint that a legacy key is still saved so admins can move forward. */}
