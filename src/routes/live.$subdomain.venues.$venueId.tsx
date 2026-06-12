@@ -300,7 +300,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
           <Link
             to="/scan"
-            className="mt-6 flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-center text-sm font-semibold text-[var(--event-page-bg,#F6EFE2)] shadow transition hover:opacity-95"
+            className="mt-6 flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-center text-sm font-semibold text-[var(--event-primary-fg,#F6EFE2)] shadow transition hover:opacity-95"
             style={{ backgroundColor: "var(--event-primary,#1F3D2B)" }}
           >
             <span aria-hidden>📷</span>
