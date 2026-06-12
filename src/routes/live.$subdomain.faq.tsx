@@ -62,6 +62,7 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
           logoUrl={getEventAssetPublicUrl(branding.logoPath)}
           primaryColor={branding.primaryColor}
           accentColor={branding.accentColor}
+          transparentHeader
         />
       </div>
 
