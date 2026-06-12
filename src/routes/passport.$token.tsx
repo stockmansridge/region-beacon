@@ -719,11 +719,24 @@ function StampGrid({
   if (venues.length === 0) {
     return (
       <section className="mt-5">
-        <div className="rounded-3xl border border-dashed border-[#C9A24A]/50 bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center">
-          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#C9A24A]">
+        <div
+          className="rounded-3xl border border-dashed p-6 text-center"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--event-hero-accent, var(--event-accent)) 50%, transparent)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
+          <div
+            className="text-[10px] font-medium uppercase tracking-[0.22em]"
+            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
+          >
             No {labelPlural.toLowerCase()} configured
           </div>
-          <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]">
+          <p
+            className="mt-2 text-sm"
+            style={{ color: "var(--event-card-text)" }}
+          >
             The event organiser hasn't published any {labelPlural.toLowerCase()} yet.
           </p>
         </div>
@@ -736,15 +749,24 @@ function StampGrid({
       <div className="mb-3 flex items-baseline justify-between">
         <h2
           className="font-trail-serif text-lg font-semibold"
-          style={{ color: PRIMARY }}
+          style={{ color: "var(--event-page-heading)" }}
         >
           Stamp collection
         </h2>
-        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+        <span
+          className="text-[10px] font-medium uppercase tracking-[0.22em]"
+          style={{ color: "var(--event-page-muted)" }}
+        >
           Tap a {labelSingular.toLowerCase()} for details
         </span>
       </div>
-      <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
+      <div
+        className="rounded-3xl border p-5 shadow-sm"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
+      >
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4">
           {venues.map((v) => (
             <StampCell key={v.venue_id} venue={v} />
