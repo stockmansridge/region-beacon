@@ -38,6 +38,20 @@ export function EventPaletteScope({
   borderColor,
   primaryTextColor,
   navBackgroundColor,
+  // Phase D — Brand Kit additions (all optional, all fall back).
+  brandKitKey,
+  linkColor,
+  cardBorderColor,
+  buttonPrimaryBg,
+  buttonPrimaryFg,
+  buttonSecondaryBg,
+  buttonSecondaryFg,
+  navFgColor,
+  navMutedColor,
+  navActiveFgColor,
+  heroBgColor,
+  heroFgColor,
+  heroAccentColor,
   fontFamily,
   children,
   className,
@@ -56,6 +70,19 @@ export function EventPaletteScope({
   borderColor?: string | null;
   primaryTextColor?: string | null;
   navBackgroundColor?: string | null;
+  brandKitKey?: string | null;
+  linkColor?: string | null;
+  cardBorderColor?: string | null;
+  buttonPrimaryBg?: string | null;
+  buttonPrimaryFg?: string | null;
+  buttonSecondaryBg?: string | null;
+  buttonSecondaryFg?: string | null;
+  navFgColor?: string | null;
+  navMutedColor?: string | null;
+  navActiveFgColor?: string | null;
+  heroBgColor?: string | null;
+  heroFgColor?: string | null;
+  heroAccentColor?: string | null;
   fontFamily?: string | null;
   children: ReactNode;
   className?: string;
@@ -73,7 +100,20 @@ export function EventPaletteScope({
     (cardMutedTextColor && HEX_RE.test(cardMutedTextColor)) ||
     (borderColor && HEX_RE.test(borderColor)) ||
     (primaryTextColor && HEX_RE.test(primaryTextColor)) ||
-    (navBackgroundColor && HEX_RE.test(navBackgroundColor));
+    (navBackgroundColor && HEX_RE.test(navBackgroundColor)) ||
+    !!brandKitKey ||
+    (linkColor && HEX_RE.test(linkColor)) ||
+    (cardBorderColor && HEX_RE.test(cardBorderColor)) ||
+    (buttonPrimaryBg && HEX_RE.test(buttonPrimaryBg)) ||
+    (buttonPrimaryFg && HEX_RE.test(buttonPrimaryFg)) ||
+    (buttonSecondaryBg && HEX_RE.test(buttonSecondaryBg)) ||
+    (buttonSecondaryFg && HEX_RE.test(buttonSecondaryFg)) ||
+    (navFgColor && HEX_RE.test(navFgColor)) ||
+    (navMutedColor && HEX_RE.test(navMutedColor)) ||
+    (navActiveFgColor && HEX_RE.test(navActiveFgColor)) ||
+    (heroBgColor && HEX_RE.test(heroBgColor)) ||
+    (heroFgColor && HEX_RE.test(heroFgColor)) ||
+    (heroAccentColor && HEX_RE.test(heroAccentColor));
 
   if (
     !explicitCurated &&
@@ -99,6 +139,19 @@ export function EventPaletteScope({
     primary_text_color: primaryTextColor ?? null,
     nav_background_color: navBackgroundColor ?? null,
     page_background_key: backgroundKey ?? null,
+    brand_kit_key: brandKitKey ?? null,
+    link_color: linkColor ?? null,
+    card_border_color: cardBorderColor ?? null,
+    button_primary_bg: buttonPrimaryBg ?? null,
+    button_primary_fg: buttonPrimaryFg ?? null,
+    button_secondary_bg: buttonSecondaryBg ?? null,
+    button_secondary_fg: buttonSecondaryFg ?? null,
+    nav_fg_color: navFgColor ?? null,
+    nav_muted_color: navMutedColor ?? null,
+    nav_active_fg_color: navActiveFgColor ?? null,
+    hero_bg_color: heroBgColor ?? null,
+    hero_fg_color: heroFgColor ?? null,
+    hero_accent_color: heroAccentColor ?? null,
   });
 
   // Page background painting still respects the curated background
