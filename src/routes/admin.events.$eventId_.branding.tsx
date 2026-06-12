@@ -163,6 +163,17 @@ function BrandingEditor() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Collapsible section states
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    theme: true,
+    customColours: form.palette_key === "custom",
+    backgroundStyle: !form.page_background_key,
+    textBorder: false,
+    heroFade: !(form.hero_overlay_color || form.hero_overlay_opacity),
+    fonts: !form.font_family,
+    pageContent: !(form.welcome_copy || form.venue_label_singular !== DEFAULT_VENUE_LABEL_SINGULAR),
+  });
+
   useEffect(() => {
     if (agency.status === "loading") return;
     if (!agencyId) {
