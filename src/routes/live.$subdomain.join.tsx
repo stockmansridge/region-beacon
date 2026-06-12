@@ -42,10 +42,33 @@ type PublicEvent = {
   accent_color: string | null;
   palette_key?: string | null;
   page_background_key?: string | null;
+  page_background_color?: string | null;
+  card_background_color?: string | null;
+  text_color?: string | null;
+  muted_text_color?: string | null;
+  card_text_color?: string | null;
+  card_muted_text_color?: string | null;
+  border_color?: string | null;
+  primary_text_color?: string | null;
+  nav_background_color?: string | null;
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
   current_terms_version_id: string | null;
+  // Phase D additions (optional — null on legacy events)
+  brand_kit_key?: string | null;
+  link_color?: string | null;
+  card_border_color?: string | null;
+  button_primary_bg?: string | null;
+  button_primary_fg?: string | null;
+  button_secondary_bg?: string | null;
+  button_secondary_fg?: string | null;
+  nav_fg_color?: string | null;
+  nav_muted_color?: string | null;
+  nav_active_fg_color?: string | null;
+  hero_bg_color?: string | null;
+  hero_fg_color?: string | null;
+  hero_accent_color?: string | null;
 };
 
 type LoadState =
@@ -90,6 +113,46 @@ function friendlyError(raw: string | undefined): string {
     return "Terms have been updated. Refresh and try again.";
   return "Could not create your passport. Please try again.";
 }
+
+/**
+ * Build the full prop bag for <EventPaletteScope> from a PublicEvent
+ * row, including Phase D Brand Kit fields. Centralised so every
+ * surface on this page (form, success, info screens) resolves the
+ * exact same theme.
+ */
+function paletteProps(event: PublicEvent) {
+  return {
+    paletteKey: event.palette_key ?? null,
+    backgroundKey: event.page_background_key ?? null,
+    primaryColor: event.primary_color ?? null,
+    accentColor: event.accent_color ?? null,
+    pageBackgroundColor: event.page_background_color ?? null,
+    cardBackgroundColor: event.card_background_color ?? null,
+    textColor: event.text_color ?? null,
+    mutedTextColor: event.muted_text_color ?? null,
+    cardTextColor: event.card_text_color ?? null,
+    cardMutedTextColor: event.card_muted_text_color ?? null,
+    borderColor: event.border_color ?? null,
+    primaryTextColor: event.primary_text_color ?? null,
+    navBackgroundColor: event.nav_background_color ?? null,
+    brandKitKey: event.brand_kit_key ?? null,
+    linkColor: event.link_color ?? null,
+    cardBorderColor: event.card_border_color ?? null,
+    buttonPrimaryBg: event.button_primary_bg ?? null,
+    buttonPrimaryFg: event.button_primary_fg ?? null,
+    buttonSecondaryBg: event.button_secondary_bg ?? null,
+    buttonSecondaryFg: event.button_secondary_fg ?? null,
+    navFgColor: event.nav_fg_color ?? null,
+    navMutedColor: event.nav_muted_color ?? null,
+    navActiveFgColor: event.nav_active_fg_color ?? null,
+    heroBgColor: event.hero_bg_color ?? null,
+    heroFgColor: event.hero_fg_color ?? null,
+    heroAccentColor: event.hero_accent_color ?? null,
+    fontFamily: event.font_family ?? null,
+  };
+}
+
+
 
 export function LiveJoinPage({ subdomain }: { subdomain: string }) {
 
@@ -401,14 +464,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   }
 
   return (
-    <EventPaletteScope
-      paletteKey={event.palette_key ?? null}
-      backgroundKey={event.page_background_key ?? null}
-      primaryColor={event.primary_color ?? null}
-      accentColor={event.accent_color ?? null}
-      fontFamily={event.font_family ?? null}
-      className="min-h-screen"
-    >
+    <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
       <div className="px-4 pt-2">
         <PublicAnnouncementBar subdomain={subdomain} />
       </div>
@@ -431,7 +487,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           <Link
             to="/"
             className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             ← Back
           </Link>
@@ -439,14 +495,14 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         <div className="mb-5 text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: accent }}
+            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
           >
             Start your passport
           </div>
           <h1
             className="mt-1 text-3xl font-semibold"
             style={{
-              color: "var(--event-page-fg, #1F3D2B)",
+              color: "var(--event-page-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
@@ -454,7 +510,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           </h1>
           <p
             className="mt-2 text-sm"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             No app download required. Takes under a minute.
           </p>
@@ -463,7 +519,12 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
         {savedValidating && (
           <section
-            className="mb-5 rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 text-center text-sm text-[#8A7E66] shadow-sm"
+            className="mb-5 rounded-3xl border p-5 text-center text-sm shadow-sm"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+              color: "var(--event-card-muted)",
+            }}
           >
             Checking your saved passport…
           </section>
@@ -472,21 +533,24 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         {!savedValidating && saved?.access_token && !showRegisterAgain && (
           <section
             className="mb-5 rounded-3xl border p-5 shadow-sm"
-            style={{ borderColor: `${primary}33`, backgroundColor: "#FBF5E8" }}
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+            }}
           >
             <div
               className="text-[10px] font-medium uppercase tracking-[0.32em]"
-              style={{ color: accent }}
+              style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
             >
               Welcome back
             </div>
             <h2
               className="font-trail-serif mt-1 text-xl font-semibold"
-              style={{ color: primary }}
+              style={{ color: "var(--event-card-heading)" }}
             >
               You already have a passport for this trail
             </h2>
-            <p className="mt-2 text-sm text-[#3D372C]/80">
+            <p className="mt-2 text-sm" style={{ color: "var(--event-card-text)" }}>
               We found a passport saved on this device. Continue where you left
               off, or register again to issue a new passport link (your older
               link will stop working).
@@ -495,8 +559,11 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
               <Link
                 to="/passport/$token"
                 params={{ token: saved.access_token }}
-                className="flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-                style={{ backgroundColor: primary }}
+                className="flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide shadow"
+                style={{
+                  backgroundColor: "var(--event-button-primary-bg)",
+                  color: "var(--event-button-primary-fg)",
+                }}
               >
                 Continue to passport
               </Link>
@@ -504,7 +571,11 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 type="button"
                 onClick={() => setShowRegisterAgain(true)}
                 className="h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
-                style={{ borderColor: `${primary}40`, color: primary, backgroundColor: "transparent" }}
+                style={{
+                  borderColor: "var(--event-button-secondary-border)",
+                  color: "var(--event-button-secondary-fg)",
+                  backgroundColor: "var(--event-button-secondary-bg)",
+                }}
               >
                 Register again / replace passport
               </button>
@@ -516,9 +587,9 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           <div
             className="mb-4 rounded-xl border px-3 py-2 text-sm"
             style={{
-              borderColor: `${accent}55`,
-              backgroundColor: `${accent}10`,
-              color: "#5A2410",
+              borderColor: `color-mix(in srgb, var(--event-accent) 35%, transparent)`,
+              backgroundColor: `color-mix(in srgb, var(--event-accent) 10%, transparent)`,
+              color: "var(--event-card-text)",
             }}
           >
             {staleNotice}
@@ -526,7 +597,10 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         )}
 
         {!savedValidating && (!saved?.access_token || showRegisterAgain) && (
-          <p className="mb-3 text-center text-[11px] text-[#8A7E66]">
+          <p
+            className="mb-3 text-center text-[11px]"
+            style={{ color: "var(--event-page-muted)" }}
+          >
             Already registered? Enter the same email below — we'll issue a new
             passport link and any older link will stop working.
           </p>
@@ -536,14 +610,22 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
         {!savedValidating && (!saved?.access_token || showRegisterAgain) && <form
           onSubmit={onSubmit}
-          className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-5 shadow-sm"
+          className="rounded-3xl border p-5 shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
           noValidate
         >
           {topError && (
             <div
               role="alert"
-              className="mb-4 rounded-xl border border-[#E8B5A3] bg-[#FBE3D6] px-3 py-2 text-sm"
-              style={{ color: "#7A2E13" }}
+              className="mb-4 rounded-xl border px-3 py-2 text-sm"
+              style={{
+                borderColor: "#E8B5A3",
+                backgroundColor: "#FBE3D6",
+                color: "#7A2E13",
+              }}
             >
               <div>{topError}</div>
               {debugInfo && (
@@ -625,26 +707,38 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             }
           />
 
-          <label className="mt-3 flex items-start gap-3 text-sm text-[#3D372C]">
+          <label
+            className="mt-3 flex items-start gap-3 text-sm"
+            style={{ color: "var(--event-card-text)" }}
+          >
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-[#C9BFA8]"
+              className="mt-0.5 h-4 w-4 rounded"
               checked={form.marketing_opt_in}
               onChange={(e) => update("marketing_opt_in", e.target.checked)}
-              style={{ accentColor: primary }}
+              style={{
+                accentColor: "var(--event-button-primary-bg)",
+                borderColor: "var(--event-card-border)",
+              }}
             />
             <span>
               Send me updates about this event and future trails (optional).
             </span>
           </label>
 
-          <label className="mt-3 flex items-start gap-3 text-sm text-[#3D372C]">
+          <label
+            className="mt-3 flex items-start gap-3 text-sm"
+            style={{ color: "var(--event-card-text)" }}
+          >
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-[#C9BFA8]"
+              className="mt-0.5 h-4 w-4 rounded"
               checked={form.accept_terms}
               onChange={(e) => update("accept_terms", e.target.checked)}
-              style={{ accentColor: primary }}
+              style={{
+                accentColor: "var(--event-button-primary-bg)",
+                borderColor: "var(--event-card-border)",
+              }}
             />
             <span>
               I accept the{" "}
@@ -653,7 +747,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
-                style={{ color: accent }}
+                style={{ color: "var(--event-link)" }}
               >
                 terms
               </Link>{" "}
@@ -663,7 +757,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
-                style={{ color: accent }}
+                style={{ color: "var(--event-link)" }}
               >
                 privacy policy
               </Link>
@@ -679,13 +773,19 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           <button
             type="submit"
             disabled={submitting}
-            className="mt-5 h-12 w-full rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow disabled:opacity-60"
-            style={{ backgroundColor: primary }}
+            className="mt-5 h-12 w-full rounded-full text-sm font-semibold tracking-wide shadow disabled:opacity-60"
+            style={{
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
+            }}
           >
             {submitting ? "Creating passport…" : "Create my passport"}
           </button>
 
-          <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[#8A7E66]">
+          <p
+            className="mt-3 text-center text-[11px] uppercase tracking-[0.22em]"
+            style={{ color: "var(--event-card-muted)" }}
+          >
             No app download required
           </p>
         </form>}
@@ -711,16 +811,16 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           width: 100%;
           height: 44px;
           border-radius: 12px;
-          border: 1px solid #E6DCC7;
-          background: #F6EFE2;
+          border: 1px solid var(--event-card-border);
+          background: var(--event-page-bg);
           padding: 0 14px;
           font-size: 15px;
-          color: #2A2620;
+          color: var(--event-card-text);
           outline: none;
         }
         .trail-input:focus {
-          border-color: ${primary};
-          box-shadow: 0 0 0 3px ${primary}22;
+          border-color: var(--event-button-primary-bg);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--event-button-primary-bg) 22%, transparent);
         }
       `}</style>
     </EventPaletteScope>
@@ -743,9 +843,21 @@ function Field({
 }) {
   return (
     <div className="mb-3">
-      <label className="mb-1 flex items-center justify-between text-xs font-medium uppercase tracking-[0.16em] text-[#7A6F5C]">
-        <span>{label}{required && <span className="text-[#B5572A]"> *</span>}</span>
-        {optional && <span className="text-[10px] text-[#A89C82]">Optional</span>}
+      <label
+        className="mb-1 flex items-center justify-between text-xs font-medium uppercase tracking-[0.16em]"
+        style={{ color: "var(--event-card-muted)" }}
+      >
+        <span>
+          {label}
+          {required && (
+            <span style={{ color: "var(--event-hero-accent, var(--event-accent))" }}> *</span>
+          )}
+        </span>
+        {optional && (
+          <span className="text-[10px]" style={{ color: "var(--event-card-muted)", opacity: 0.75 }}>
+            Optional
+          </span>
+        )}
       </label>
       {input}
       {error && (
@@ -783,14 +895,7 @@ function SuccessScreen({
   }
 
   return (
-    <EventPaletteScope
-      paletteKey={event.palette_key ?? null}
-      backgroundKey={event.page_background_key ?? null}
-      primaryColor={primary}
-      accentColor={accent}
-      fontFamily={event.font_family ?? null}
-      className="min-h-screen"
-    >
+    <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
       <div className="px-4 pt-2">
         <PublicAnnouncementBar subdomain={subdomain} />
       </div>
@@ -807,15 +912,24 @@ function SuccessScreen({
           <Link
             to="/"
             className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             ← Event
           </Link>
         </div>
-        <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center shadow-sm">
+        <div
+          className="rounded-3xl border p-6 text-center shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
           <div
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-            style={{ backgroundColor: `${primary}14`, color: primary }}
+            style={{
+              backgroundColor: `color-mix(in srgb, var(--event-button-primary-bg) 14%, transparent)`,
+              color: "var(--event-button-primary-bg)",
+            }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -832,31 +946,43 @@ function SuccessScreen({
           </div>
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: accent }}
+            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
           >
             Welcome to the trail
           </div>
           <h1
             className="mt-2 text-2xl font-semibold"
             style={{
-              color: "var(--event-card-fg, #1F3D2B)",
+              color: "var(--event-card-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
             Your passport is ready
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
+          <p
+            className="mt-3 text-sm leading-relaxed"
+            style={{ color: "var(--event-card-text)" }}
+          >
             Your private passport link is below. Save it — it's the only way
             back into your passport on a new device.
           </p>
 
-          <div className="mt-5 rounded-2xl border border-[#E6DCC7] bg-[#F6EFE2] p-3 text-left">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#8A7E66]">
+          <div
+            className="mt-5 rounded-2xl border p-3 text-left"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-page-bg)",
+            }}
+          >
+            <div
+              className="text-[10px] font-medium uppercase tracking-[0.18em]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               Your passport link
             </div>
             <div
               className="mt-1 break-all font-mono text-xs"
-              style={{ color: primary }}
+              style={{ color: "var(--event-link)" }}
             >
               {passportUrl}
             </div>
@@ -865,8 +991,11 @@ function SuccessScreen({
           <Link
             to="/passport/$token"
             params={{ token }}
-            className="mt-4 flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-            style={{ backgroundColor: primary }}
+            className="mt-4 flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide shadow"
+            style={{
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
+            }}
           >
             Open my passport
           </Link>
@@ -874,7 +1003,11 @@ function SuccessScreen({
             type="button"
             onClick={copy}
             className="mt-2 h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
-            style={{ borderColor: `${primary}40`, color: primary, backgroundColor: "transparent" }}
+            style={{
+              borderColor: "var(--event-button-secondary-border)",
+              color: "var(--event-button-secondary-fg)",
+              backgroundColor: "var(--event-button-secondary-bg)",
+            }}
           >
             {copied ? "Copied!" : "Copy passport link"}
           </button>
@@ -882,9 +1015,9 @@ function SuccessScreen({
           <div
             className="mt-4 rounded-xl border px-3 py-2 text-left text-xs"
             style={{
-              borderColor: `${accent}55`,
-              backgroundColor: `${accent}10`,
-              color: "#5A2410",
+              borderColor: `color-mix(in srgb, var(--event-accent) 35%, transparent)`,
+              backgroundColor: `color-mix(in srgb, var(--event-accent) 10%, transparent)`,
+              color: "var(--event-card-text)",
             }}
           >
             <strong>Save this link.</strong> It is your private passport access
@@ -913,14 +1046,7 @@ function InfoScreen({
   const primary = event.primary_color ?? "#1F3D2B";
   const accent = event.accent_color ?? "#B5572A";
   return (
-    <EventPaletteScope
-      paletteKey={event.palette_key ?? null}
-      backgroundKey={event.page_background_key ?? null}
-      primaryColor={primary}
-      accentColor={accent}
-      fontFamily={event.font_family ?? null}
-      className="min-h-screen"
-    >
+    <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
       <div className="px-4 pt-2">
         <PublicAnnouncementBar subdomain={subdomain} />
       </div>
@@ -937,22 +1063,33 @@ function InfoScreen({
           <Link
             to="/"
             className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             ← Back
           </Link>
         </div>
-        <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
+        <div
+          className="rounded-3xl border p-8 text-center shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
           <h1
             className="text-2xl font-semibold"
             style={{
-              color: "var(--event-card-fg, #1F3D2B)",
+              color: "var(--event-card-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
             {title}
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">{message}</p>
+          <p
+            className="mt-3 text-sm leading-relaxed"
+            style={{ color: "var(--event-card-text)" }}
+          >
+            {message}
+          </p>
         </div>
       </div>
     </EventPaletteScope>

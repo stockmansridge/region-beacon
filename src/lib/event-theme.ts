@@ -29,11 +29,13 @@ export type EventTheme = {
   primary: string;       // --event-primary
   primaryText: string;   // --event-primary-fg (text on primary)
   // Page-surface text (directly on page background).
-  pageText: string;      // --event-page-fg
+  pageHeading: string;   // --event-page-heading
+  pageText: string;      // --event-page-fg / --event-page-text
   pageMuted: string;     // --event-page-muted
   // Card-surface text (inside card_bg surfaces). Falls back to page
   // text when card-specific overrides are not set.
-  cardText: string;      // --event-card-fg
+  cardHeading: string;   // --event-card-heading
+  cardText: string;      // --event-card-fg / --event-card-text
   cardMuted: string;     // --event-card-muted
   accent: string;        // --event-accent
   border: string;        // --event-border (page surface)
@@ -86,6 +88,14 @@ export type BrandingInput = {
   hero_bg_color?: string | null;
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
+
+  // ---- Phase D Pass 2 — heading/body/muted split (all optional) ----
+  page_heading_color?: string | null;
+  page_body_color?: string | null;
+  page_muted_color?: string | null;
+  card_heading_color?: string | null;
+  card_body_color?: string | null;
+  card_muted_color?: string | null;
 };
 
 function pickHex(value: string | null | undefined): string | null {
@@ -141,14 +151,16 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
 
   // Page surface
   const pageBg = pickHex(input.page_background_color) ?? kc?.page_background_color ?? legacyPageBg;
-  const pageText = pickHex(input.text_color) ?? kc?.text_color ?? palette.heading ?? palette.bodyText;
-  const pageMuted = pickHex(input.muted_text_color) ?? kc?.muted_text_color ?? palette.mutedText;
+  const pageText = pickHex(input.page_body_color) ?? pickHex(input.text_color) ?? kc?.text_color ?? palette.heading ?? palette.bodyText;
+  const pageHeading = pickHex(input.page_heading_color) ?? pickHex(input.text_color) ?? kc?.text_color ?? pageText;
+  const pageMuted = pickHex(input.page_muted_color) ?? pickHex(input.muted_text_color) ?? kc?.muted_text_color ?? palette.mutedText;
   const border = pickHex(input.border_color) ?? kc?.border_color ?? palette.border;
 
   // Card surface
   const cardBg = pickHex(input.card_background_color) ?? kc?.card_background_color ?? customCardBg ?? palette.cardBg;
-  const cardText = pickHex(input.card_text_color) ?? kc?.card_text_color ?? pageText;
-  const cardMuted = pickHex(input.card_muted_text_color) ?? kc?.card_muted_text_color ?? pageMuted;
+  const cardText = pickHex(input.card_body_color) ?? pickHex(input.card_text_color) ?? kc?.card_text_color ?? pageText;
+  const cardHeading = pickHex(input.card_heading_color) ?? pickHex(input.card_text_color) ?? kc?.card_text_color ?? cardText;
+  const cardMuted = pickHex(input.card_muted_color) ?? pickHex(input.card_muted_text_color) ?? kc?.card_muted_text_color ?? pageMuted;
   const cardBorder = pickHex(input.card_border_color) ?? kc?.card_border_color ?? border;
 
   // Brand / link
@@ -179,8 +191,8 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
   return {
     pageBg, cardBg,
     primary, primaryText,
-    pageText, pageMuted,
-    cardText, cardMuted,
+    pageHeading, pageText, pageMuted,
+    cardHeading, cardText, cardMuted,
     accent, border, cardBorder, link,
     buttonPrimaryBg, buttonPrimaryFg,
     buttonSecondaryBg, buttonSecondaryFg,
@@ -204,8 +216,12 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     // Page / card surfaces
     "--event-page-bg": theme.pageBg,
     "--event-card-bg": theme.cardBg,
+    "--event-page-heading": theme.pageHeading,
+    "--event-page-text": theme.pageText,
     "--event-page-fg": theme.pageText,
     "--event-page-muted": theme.pageMuted,
+    "--event-card-heading": theme.cardHeading,
+    "--event-card-text": theme.cardText,
     "--event-card-fg": theme.cardText,
     "--event-card-muted": theme.cardMuted,
     "--event-border": theme.border,
@@ -220,6 +236,7 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     "--event-button-primary-fg": theme.buttonPrimaryFg,
     "--event-button-secondary-bg": theme.buttonSecondaryBg,
     "--event-button-secondary-fg": theme.buttonSecondaryFg,
+    "--event-button-secondary-border": `color-mix(in srgb, ${theme.buttonSecondaryFg} 24%, transparent)`,
     // Navigation
     "--event-nav-bg": theme.navBg,
     "--event-nav-fg": theme.navText,
@@ -230,12 +247,14 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     "--event-hero-bg": theme.heroBg,
     "--event-hero-fg": theme.heroFg,
     "--event-hero-accent": theme.heroAccent,
+    "--event-hero-overlay": `color-mix(in srgb, ${theme.heroBg} 70%, transparent)`,
+    "--event-hero-overlay-strong": `color-mix(in srgb, ${theme.heroBg} 88%, transparent)`,
     // Derived: muted text on primary/dark surfaces.
     "--event-on-primary-muted": `color-mix(in srgb, ${theme.primaryText} 72%, transparent)`,
     // ---- Legacy aliases — keep until every public page is migrated ----
     "--event-text": theme.cardText,
     "--event-muted": theme.cardMuted,
-    "--event-heading": theme.cardText,
+    "--event-heading": theme.cardHeading,
     "--event-body": theme.cardText,
     "--event-visited": theme.primary,
     "--event-pin": theme.accent,
