@@ -308,12 +308,12 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 function NotLiveYet() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
-      <div className="mx-auto max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-md rounded-3xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
         <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
           Event not live yet
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--event-card-text,var(--event-body,#3D372C))]">
           This passport experience isn't available right now. Please check back
           closer to the event, or contact the organiser for details.
         </p>
