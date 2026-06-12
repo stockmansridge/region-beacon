@@ -196,7 +196,7 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav: Home · Passport · Map · Leaders · More */}
+      {/* Fixed bottom mobile nav: Passport · Map · Leaders · Offers · More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
@@ -211,17 +211,6 @@ export function PublicEventNav({
           className="mx-auto grid h-16 max-w-md"
           style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}
         >
-          <li className="h-full min-w-0">
-            <Link
-              to="/"
-              aria-current={isActive("home") ? "page" : undefined}
-              className={bottomItemClass}
-              style={{ color: isActive("home") ? navActiveFg : navMuted }}
-            >
-              <BottomItemContent icon={<Home className="h-5 w-5" />} label="Home" />
-            </Link>
-          </li>
-
           <li className="h-full min-w-0">
             <a
               href={passportTarget}
@@ -264,6 +253,17 @@ export function PublicEventNav({
               style={{ color: isActive("leaderboard") ? navActiveFg : navMuted }}
             >
               <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Leaders" />
+            </Link>
+          </li>
+
+          <li className="h-full min-w-0">
+            <Link
+              to="/offers"
+              aria-current={isActive("offers") ? "page" : undefined}
+              className={bottomItemClass}
+              style={{ color: isActive("offers") ? navActiveFg : navMuted }}
+            >
+              <BottomItemContent icon={<Tag className="h-5 w-5" />} label="Offers" />
             </Link>
           </li>
 
