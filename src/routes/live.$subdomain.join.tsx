@@ -1034,14 +1034,7 @@ function InfoScreen({
   const primary = event.primary_color ?? "#1F3D2B";
   const accent = event.accent_color ?? "#B5572A";
   return (
-    <EventPaletteScope
-      paletteKey={event.palette_key ?? null}
-      backgroundKey={event.page_background_key ?? null}
-      primaryColor={primary}
-      accentColor={accent}
-      fontFamily={event.font_family ?? null}
-      className="min-h-screen"
-    >
+    <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
       <div className="px-4 pt-2">
         <PublicAnnouncementBar subdomain={subdomain} />
       </div>
@@ -1058,22 +1051,33 @@ function InfoScreen({
           <Link
             to="/"
             className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             ← Back
           </Link>
         </div>
-        <div className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-8 text-center shadow-sm">
+        <div
+          className="rounded-3xl border p-8 text-center shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
           <h1
             className="text-2xl font-semibold"
             style={{
-              color: "var(--event-card-fg, #1F3D2B)",
+              color: "var(--event-card-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
             {title}
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">{message}</p>
+          <p
+            className="mt-3 text-sm leading-relaxed"
+            style={{ color: "var(--event-card-text)" }}
+          >
+            {message}
+          </p>
         </div>
       </div>
     </EventPaletteScope>
