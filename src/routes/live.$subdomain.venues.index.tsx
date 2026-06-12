@@ -158,7 +158,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
         </div>
 
         {venues.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
+          <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-text,#3D372C)]">
             No {labels.plural.toLowerCase()} listed yet. Check back soon.
           </div>
         ) : (
