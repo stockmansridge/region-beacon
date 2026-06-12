@@ -173,7 +173,22 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
   const logoUrl = getVenueAssetPublicUrl(venue.logo_path);
 
   return (
-    <EventPaletteScope paletteKey={state.paletteKey} backgroundKey={state.backgroundKey} className="min-h-screen pb-12">
+    <EventPaletteScope
+      paletteKey={state.brand?.palette_key ?? null}
+      backgroundKey={state.brand?.page_background_key ?? null}
+      pageBackgroundColor={state.brand?.page_background_color ?? null}
+      cardBackgroundColor={state.brand?.card_background_color ?? null}
+      primaryColor={state.brand?.primary_color ?? null}
+      accentColor={state.brand?.accent_color ?? null}
+      textColor={state.brand?.text_color ?? null}
+      mutedTextColor={state.brand?.muted_text_color ?? null}
+      cardTextColor={state.brand?.card_text_color ?? null}
+      cardMutedTextColor={state.brand?.card_muted_text_color ?? null}
+      borderColor={state.brand?.border_color ?? null}
+      primaryTextColor={state.brand?.primary_text_color ?? null}
+      fontFamily={state.brand?.font_family ?? null}
+      className="min-h-screen pb-12"
+    >
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} /></div>
       <div className="mx-auto max-w-md">
