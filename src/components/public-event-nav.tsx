@@ -294,19 +294,11 @@ function BottomItem({
   accent: string;
   children: React.ReactNode;
 }) {
-  return (
-    <li className="relative flex">
-      {children}
-      {active && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[3px] w-10 rounded-b-full"
-          style={{ backgroundColor: accent }}
-        />
-      )}
-    </li>
-  );
+  void active;
+  void accent;
+  return <li className="flex">{children}</li>;
 }
+
 
 function MenuDrawer({
   onClose,

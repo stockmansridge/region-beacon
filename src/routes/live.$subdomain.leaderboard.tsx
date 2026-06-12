@@ -202,19 +202,29 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
 function Header({ subdomain }: { subdomain: string }) {
   return (
-    <div className="mb-6 text-center">
+    <div className="mb-6">
       <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--event-accent,#B5572A)]">
         {subdomain}.getstampd.com.au
       </p>
-      <h1 className="font-trail-serif mt-2 text-3xl font-semibold text-[var(--event-primary,#1F3D2B)] sm:text-4xl">
+      <h1
+        className="mt-2 text-3xl font-semibold sm:text-4xl"
+        style={{
+          color: "var(--event-page-fg, #1F3D2B)",
+          fontFamily: "var(--event-font, inherit)",
+        }}
+      >
         Leaderboard
       </h1>
-      <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]/80">
+      <p
+        className="mt-2 text-sm"
+        style={{ color: "var(--event-page-muted, #8A7E66)" }}
+      >
         Ranked by total points. Passport stamps are still shown so you can track venue progress.
       </p>
     </div>
   );
 }
+
 
 function Card({ children }: { children: React.ReactNode }) {
   return (

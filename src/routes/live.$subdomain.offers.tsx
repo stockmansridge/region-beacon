@@ -160,13 +160,23 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         </div>
 
         <div className="mb-5 mt-6 px-1">
-          <h1 className="font-trail-serif text-[28px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+          <h1
+            className="text-[28px] font-semibold leading-tight"
+            style={{
+              color: "var(--event-page-fg, #1F3D2B)",
+              fontFamily: "var(--event-font, inherit)",
+            }}
+          >
             Special Offers
           </h1>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--event-muted,#8A7E66)]">
+          <p
+            className="mt-2 text-[13.5px] leading-relaxed"
+            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+          >
             Visit the {labels.plural.toLowerCase()} to unlock these offers.
           </p>
         </div>
+
 
         {offers.length === 0 ? (
           <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">

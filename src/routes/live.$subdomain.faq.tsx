@@ -79,9 +79,13 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
               {eventInfo.event_name}
             </p>
           )}
-          <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+          <h1
+            className="mt-1 text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]"
+            style={{ fontFamily: "var(--event-font, inherit)" }}
+          >
             FAQ / Info
           </h1>
+
 
           <div className="mt-6 space-y-6">
             {faq.kind === "loading" && (
