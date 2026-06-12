@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrailShell } from "@/components/trail-shell";
+import { EventPaletteScope } from "@/components/event-palette-scope";
 import { classifyHost } from "@/components/host-router";
 import { useEventBrandingKeys } from "@/lib/use-event-palette";
 
