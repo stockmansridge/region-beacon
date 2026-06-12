@@ -1144,6 +1144,8 @@ function BrandingEditor() {
               cardBackgroundColor={form.card_background_color}
               textColor={form.text_color}
               mutedTextColor={form.muted_text_color}
+              cardTextColor={form.card_text_color}
+              cardMutedTextColor={form.card_muted_text_color}
               borderColor={form.border_color}
               primaryTextColor={form.primary_text_color}
               fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
