@@ -49,6 +49,7 @@ export function PublicEventNav({
   activeOverride,
   passportHref: passportHrefOverride,
   eventId,
+  transparentHeader = false,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -62,6 +63,12 @@ export function PublicEventNav({
   activeOverride?: ActiveTarget | "join";
   passportHref?: string;
   eventId?: string | null;
+  /**
+   * When true, the top header renders with no background fill, no border,
+   * and no bottom margin so it can overlay a hero image. The bottom nav and
+   * drawer behaviour are unchanged.
+   */
+  transparentHeader?: boolean;
 }) {
   void subdomain;
   // Header / bottom-nav / drawer surfaces consume the nav tokens so they
