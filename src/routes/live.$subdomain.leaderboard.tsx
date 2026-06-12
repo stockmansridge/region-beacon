@@ -5,7 +5,7 @@ import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
@@ -53,7 +53,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [eventId, setEventId] = useState<string | null>(null);
   const branding = useEventBrandingKeys(subdomain);
-  const { paletteKey, backgroundKey } = branding;
+  // paletteKey/backgroundKey now flow via brandingScopeProps below.
 
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   }, [subdomain]);
 
   return (
-    <EventPaletteScope paletteKey={paletteKey} backgroundKey={backgroundKey} className="min-h-screen px-4 py-8 sm:py-12">
+    <EventPaletteScope {...brandingScopeProps(branding)} className="min-h-screen px-4 py-8 sm:py-12">
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
