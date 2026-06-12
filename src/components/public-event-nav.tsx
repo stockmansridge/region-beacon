@@ -49,6 +49,7 @@ export function PublicEventNav({
   activeOverride,
   passportHref: passportHrefOverride,
   eventId,
+  transparentHeader = false,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -62,6 +63,12 @@ export function PublicEventNav({
   activeOverride?: ActiveTarget | "join";
   passportHref?: string;
   eventId?: string | null;
+  /**
+   * When true, the top header renders with no background fill, no border,
+   * and no bottom margin so it can overlay a hero image. The bottom nav and
+   * drawer behaviour are unchanged.
+   */
+  transparentHeader?: boolean;
 }) {
   void subdomain;
   // Header / bottom-nav / drawer surfaces consume the nav tokens so they
@@ -106,10 +113,16 @@ export function PublicEventNav({
     <>
       {/* Sticky app-style header */}
       <header
-        className="sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
+        className={
+          transparentHeader
+            ? "sticky top-0 z-40 -mx-4"
+            : "sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
+        }
         style={{
-          background: navBg,
-          borderColor: "color-mix(in oklab, white 12%, transparent)",
+          background: transparentHeader ? "transparent" : navBg,
+          borderColor: transparentHeader
+            ? "transparent"
+            : "color-mix(in oklab, white 12%, transparent)",
           paddingTop: "env(safe-area-inset-top)",
         }}
       >
