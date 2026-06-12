@@ -723,8 +723,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           box-shadow: 0 0 0 3px ${primary}22;
         }
       `}</style>
-    </TrailShell>
-    </>
+    </EventPaletteScope>
+
   );
 }
 
