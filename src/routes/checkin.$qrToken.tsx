@@ -336,8 +336,15 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
   }
 
   if (outcome.kind === "stamped") {
-    const title = outcome.isNew ? "You're checked in" : "Already stamped";
+    const venueLabel = outcome.venueName ?? "this venue";
+    const title = outcome.isNew ? "Check-in successful" : "Already checked in";
     const kicker = outcome.isNew ? "Stamp Collected" : "Already Collected";
+    const pts = outcome.pointsAwarded;
+    const pointsLine = outcome.isNew
+      ? pts > 0
+        ? `You earned ${pts} ${pts === 1 ? "point" : "points"} at ${venueLabel}.`
+        : `Stamp added at ${venueLabel}.`
+      : `You've already checked in at ${venueLabel}. No extra points were added.`;
     return (
       <TrailShell
         eventName="GetStampd"
@@ -372,21 +379,12 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
               <h1 className="font-trail-serif mt-2 text-[34px] font-semibold leading-tight">
                 {title}
               </h1>
-              {outcome.venueName && (
-                <p className="mt-1 text-base text-[var(--event-page-bg,#F6EFE2)]/90">{outcome.venueName}</p>
-              )}
-              {outcome.isNew && outcome.pointsAwarded > 0 ? (
-                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">
-                  You earned {outcome.pointsAwarded} points.
-                </p>
-              ) : !outcome.isNew ? (
-                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">
-                  This venue is already in your passport. Your points total has not changed.
-                </p>
-              ) : null}
-              {outcome.totalPoints > 0 && (
-                <p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
-                  Your total points: {outcome.totalPoints}
+              <p className="mt-3 text-base text-[var(--event-page-bg,#F6EFE2)]/90">
+                {pointsLine}
+              </p>
+              {outcome.isNew && (
+                <p className="mt-2 text-sm text-[var(--event-page-bg,#F6EFE2)]/80">
+                  Your passport has been updated.
                 </p>
               )}
             </div>
