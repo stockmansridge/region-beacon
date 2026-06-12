@@ -150,7 +150,7 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
             {error && (
               <p className="text-sm text-destructive">Could not load awards: {error}</p>
             )}
-            {awards != null && awards.length === 0 && (
+            {!error && awards != null && awards.length === 0 && (
               <p className="text-sm text-[var(--event-muted,#8A7E66)]">
                 No awards have been added yet.
               </p>
