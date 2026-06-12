@@ -70,7 +70,7 @@ export function PublicEventNav({
   // matches the historical behaviour for existing events.
   const navBg = `var(--event-nav-bg, ${primaryColor ?? "var(--event-primary,#1F3D2B)"})`;
   const navFg = `var(--event-nav-fg, var(--event-primary-fg,#F6EFE2))`;
-  const navMuted = `var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))`;
+  const navMuted = `var(--event-nav-muted, var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))))`;
   const navActiveFg = `var(--event-nav-active-fg, ${accentColor ?? "var(--event-accent,#B5572A)"})`;
   const accent = accentColor ?? "var(--event-accent,#B5572A)";
   const location = useLocation();
@@ -201,7 +201,7 @@ export function PublicEventNav({
               aria-current={isActive("home") ? "page" : undefined}
               className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: isActive("home") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                color: isActive("home") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
               }}
             >
               <Home className="h-5 w-5" />
@@ -216,7 +216,7 @@ export function PublicEventNav({
                 aria-current={isActive("map") ? "page" : undefined}
                 className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("map") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                  color: isActive("map") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
                 }}
               >
                 <MapIcon className="h-5 w-5" />
@@ -228,7 +228,7 @@ export function PublicEventNav({
                 aria-current={isActive("venues") ? "page" : undefined}
                 className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("venues") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                  color: isActive("venues") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
                 }}
               >
                 <MapPin className="h-5 w-5" />
@@ -264,7 +264,7 @@ export function PublicEventNav({
               style={{
                 color: isActive("leaderboard")
                   ? accent
-                  : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                  : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
               }}
             >
               <Trophy className="h-5 w-5" />
@@ -279,7 +279,7 @@ export function PublicEventNav({
               aria-label="More"
               className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: menuOpen ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+                color: menuOpen ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
               }}
             >
               <MoreHorizontal className="h-5 w-5" />
