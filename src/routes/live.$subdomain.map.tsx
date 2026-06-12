@@ -904,22 +904,36 @@ function UploadedEventMap({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]"
+        className="block overflow-hidden rounded-2xl border"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
         aria-label={`${eventName} event map — open full size`}
       >
         <img
           src={url}
           alt={`${eventName} event map`}
-          className="w-full rounded-xl bg-white object-contain"
+          className="w-full rounded-xl object-contain"
         />
       </a>
     );
   }
 
   if (isPdf) {
+    void primary;
     return (
-      <div className="rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center">
-        <p className="mb-3 text-sm text-[#3D372C]">
+      <div
+        className="rounded-2xl border p-6 text-center"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
+      >
+        <p
+          className="mb-3 text-sm"
+          style={{ color: "var(--event-card-text)" }}
+        >
           The organiser has provided a downloadable site map.
         </p>
         <a
@@ -927,7 +941,10 @@ function UploadedEventMap({
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider"
-          style={{ backgroundColor: primary, color: "#FBF5E8" }}
+          style={{
+            backgroundColor: "var(--event-button-primary-bg)",
+            color: "var(--event-button-primary-fg)",
+          }}
         >
           Open event map
         </a>
