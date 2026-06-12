@@ -255,16 +255,22 @@ export function EventAwardsSection({
           state={draw}
           onCancel={() => setDraw({ mode: "closed" })}
           onConfirm={async () => {
-            if (draw.mode !== "confirm") return;
+            if (draw.mode !== "confirm" && draw.mode !== "drawing") return;
             const award = draw.award;
             setDraw({ mode: "drawing", award });
             try {
               const result = await drawAwardWinner(award.id);
               setDraw({ mode: "result", award, result });
+              toast.success(
+                `Winner drawn: ${result.winner_participant_name ?? "—"}`,
+              );
               refresh();
             } catch (e) {
-              toast.error(formatErr(e));
-              setDraw({ mode: "confirm", award });
+              // eslint-disable-next-line no-console
+              console.error("[awards] draw_event_award_winner failed", e);
+              const msg = formatErr(e);
+              toast.error(msg);
+              setDraw({ mode: "confirm", award, error: msg });
             }
           }}
           onClose={() => {
