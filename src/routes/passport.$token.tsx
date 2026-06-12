@@ -445,8 +445,8 @@ function PassportView({
             Hi {greetingName}
           </p>
         </div>
-        {/* paletteKey/backgroundKey are applied by the parent EventPaletteScope */}
-        {void paletteKey, void backgroundKey, null}
+
+
 
 
 
