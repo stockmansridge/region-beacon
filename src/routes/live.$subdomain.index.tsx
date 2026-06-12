@@ -44,6 +44,15 @@ type PublicEvent = {
   accent_color: string | null;
   palette_key?: string | null;
   page_background_key?: string | null;
+  page_background_color?: string | null;
+  card_background_color?: string | null;
+  text_color?: string | null;
+  muted_text_color?: string | null;
+  card_text_color?: string | null;
+  card_muted_text_color?: string | null;
+  border_color?: string | null;
+  primary_text_color?: string | null;
+  nav_background_color?: string | null;
   font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
@@ -147,16 +156,28 @@ function LivePublicLoaded({
   const isAdminPreview =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("preview") === "1";
+  const [previewDismissed, setPreviewDismissed] = useState(false);
   return (
     <EventPaletteScope
       paletteKey={event.palette_key ?? null}
       backgroundKey={event.page_background_key ?? null}
+      primaryColor={event.primary_color ?? null}
+      accentColor={event.accent_color ?? null}
+      pageBackgroundColor={event.page_background_color ?? null}
+      cardBackgroundColor={event.card_background_color ?? null}
+      textColor={event.text_color ?? null}
+      mutedTextColor={event.muted_text_color ?? null}
+      cardTextColor={event.card_text_color ?? null}
+      cardMutedTextColor={event.card_muted_text_color ?? null}
+      borderColor={event.border_color ?? null}
+      primaryTextColor={event.primary_text_color ?? null}
+      navBackgroundColor={event.nav_background_color ?? null}
       fontFamily={event.font_family ?? null}
       className="min-h-screen px-4 py-8"
     >
-      {isAdminPreview && (
+      {isAdminPreview && !previewDismissed && (
         <div
-          className="fixed left-1/2 top-3 z-50 max-w-[92vw] -translate-x-1/2 rounded-2xl border border-amber-300 bg-amber-100/95 px-4 py-2 text-[11px] text-amber-900 shadow"
+          className="fixed left-1/2 top-3 z-50 max-w-[92vw] -translate-x-1/2 rounded-2xl border border-amber-300 bg-amber-100/95 px-4 py-2 pr-10 text-[11px] text-amber-900 shadow"
           role="status"
         >
           <div className="flex items-center gap-2 font-semibold uppercase tracking-[0.18em]">
@@ -168,6 +189,14 @@ function LivePublicLoaded({
             customer actions use the live event flow. Customer actions taken here may
             create real passports, check-ins, and points for this event.
           </p>
+          <button
+            type="button"
+            onClick={() => setPreviewDismissed(true)}
+            aria-label="Dismiss admin preview notice"
+            className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-amber-900 hover:bg-amber-200/80 active:bg-amber-300/80"
+          >
+            <span aria-hidden className="text-base leading-none">×</span>
+          </button>
         </div>
       )}
       <PublicAnnouncementBar subdomain={subdomain} />
