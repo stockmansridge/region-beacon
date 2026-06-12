@@ -1073,7 +1073,22 @@ function BrandingEditor() {
               paletteKey={form.palette_key}
               primaryColor={form.primary_color}
               accentColor={form.accent_color}
+              pageBackgroundColor={form.page_background_color}
               onChange={(key) => setForm({ ...form, page_background_key: key })}
+              onApplyToCustomPageBg={(hex) =>
+                setForm((f) => ({
+                  ...f,
+                  page_background_key: "custom_color",
+                  page_background_color: hex,
+                }))
+              }
+              onApplyToCustomCardBg={(hex) =>
+                setForm((f) => ({
+                  ...f,
+                  page_background_key: "custom_color",
+                  card_background_color: hex,
+                }))
+              }
               disabled={!canEdit || saving}
             />
 
