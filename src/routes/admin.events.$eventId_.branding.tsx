@@ -2523,7 +2523,7 @@ function CollapsibleSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className="overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <button
         type="button"
         onClick={onToggle}
@@ -2553,7 +2553,7 @@ function CollapsibleSection({
         />
       </button>
       {expanded && (
-        <div id={`section-${id}`} className="border-t border-[#E6ECF4] px-6 pb-6 pt-2">
+        <div id={`section-${id}`} className="border-t border-[#E6ECF4] px-6 pb-6 pt-4">
           {children}
         </div>
       )}
