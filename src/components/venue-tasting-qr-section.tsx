@@ -618,6 +618,8 @@ export function VenueTastingQrSection({
                       value={url}
                       downloadName={`getstampd-tasting-${sanitizeFilename(venueName)}-${sanitizeFilename(row.label)}`}
                       size={180}
+                      pngButtonLabel="Download tasting QR (PNG)"
+                      awardsCaption={`This scan awards: ${row.points} point${row.points === 1 ? "" : "s"} (tasting/extra)`}
                     />
                   </div>
                 )}
