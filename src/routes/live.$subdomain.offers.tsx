@@ -236,7 +236,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                   <Link
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
-                    className="group relative flex items-stretch gap-4 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-4 pr-16 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                    className="group relative flex items-stretch gap-4 overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 pr-16 shadow-sm transition hover:border-[var(--event-link,var(--event-primary,#1F3D2B))]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-link,var(--event-primary,#1F3D2B))]"
                     aria-label={`View ${v.name ?? "venue"} offer`}
                   >
                     {/* Offer icon badge (left) */}
@@ -250,14 +250,14 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
                     {/* Content (middle) */}
                     <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
-                      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+                      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
                         {v.name ?? "Venue"}
                       </p>
-                      <p className="mt-1 line-clamp-2 font-trail-serif text-[17px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)]">
+                      <p className="mt-1 line-clamp-2 font-trail-serif text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
                         {offerTitle}
                       </p>
                       {offerBody && (
-                        <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
+                        <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-body,#3D372C))]">
                           {offerBody}
                         </p>
                       )}
@@ -279,16 +279,13 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                       )}
                     </div>
 
-
-
-
                     {/* Strong circular chevron (far right) */}
                     <span
                       aria-hidden
                       className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full shadow-sm transition group-hover:translate-x-0.5"
                       style={{
-                        background: "var(--event-primary,#1F3D2B)",
-                        color: "var(--event-primary-fg,#F6EFE2)",
+                        background: "var(--event-button-primary-bg, var(--event-primary, #1F3D2B))",
+                        color: "var(--event-button-primary-fg, var(--event-primary-fg, #F6EFE2))",
                       }}
                     >
                       <ChevronRight className="h-5 w-5" />
