@@ -2502,6 +2502,9 @@ function EventDetail() {
             <QrPreview
               value={built.url}
               downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+              pngButtonLabel="Download venue check-in QR (PNG)"
+              posterButtonLabel="Download venue check-in poster PDF"
+              awardsCaption={`This scan awards: ${qr.entry_value ?? 1} point${(qr.entry_value ?? 1) === 1 ? "" : "s"}`}
               poster={{
                 eventName: event.name,
                 venueName: v.name,
