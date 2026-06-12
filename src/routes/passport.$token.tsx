@@ -11,7 +11,7 @@ import {
   type PassportStampVenue,
 } from "@/lib/passport-stamps";
 
-import { computeDefaultRewardTiers, type RewardTier } from "@/lib/passport-rewards";
+import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { PoweredByGetStampd } from "@/components/brand";
 import { useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { EventPaletteScope } from "@/components/event-palette-scope";
@@ -539,12 +539,10 @@ function PassportView({
           labelPlural={labelPlural}
         />
 
-        {/* Rewards */}
+        {/* Rewards — sourced from configured event_awards. Hidden when none. */}
         <RewardsSection
-          stampedCount={stampedCount}
-          totalVenues={totalVenues}
-          labelSingular={labelSingular}
-          labelPlural={labelPlural}
+          eventId={passport.event_id}
+          passportId={passport.passport_id}
         />
 
         {/* Visitor details */}
@@ -757,19 +755,36 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
 }
 
 function RewardsSection({
-  stampedCount,
-  totalVenues,
-  labelSingular,
-  labelPlural,
+  eventId,
+  passportId,
 }: {
-  stampedCount: number;
-  totalVenues: number;
-  labelSingular: string;
-  labelPlural: string;
+  eventId: string | null;
+  passportId: string | null;
 }) {
-  const summary = computeDefaultRewardTiers(stampedCount, totalVenues);
-  const unit = (n: number) =>
-    n === 1 ? labelSingular.toLowerCase() : labelPlural.toLowerCase();
+  const [awards, setAwards] = useState<PublicEventAward[] | null>(null);
+  useEffect(() => {
+    if (!eventId) {
+      setAwards([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await listPublicAwards(eventId, passportId);
+        if (!cancelled) setAwards(rows);
+      } catch {
+        if (!cancelled) setAwards([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId, passportId]);
+
+  // Loading: render nothing (avoids flashing defaults).
+  if (awards == null) return null;
+  // Empty: hide section entirely — the organiser hasn't configured awards.
+  if (awards.length === 0) return null;
 
   return (
     <section className="mt-5">
@@ -780,96 +795,66 @@ function RewardsSection({
         >
           Rewards
         </h2>
-        <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
-          Default tiers
-        </span>
+        <Link
+          to="/awards"
+          className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)] underline-offset-2 hover:underline"
+        >
+          View all
+        </Link>
       </div>
 
       <ul className="space-y-2">
-        {summary.tiers.map((tier) => (
-          <RewardTierRow
-            key={tier.key}
-            tier={tier}
-            unit={unit(tier.threshold)}
-            stampedCount={stampedCount}
-          />
+        {awards.map((a) => (
+          <AwardRow key={a.id} award={a} />
         ))}
-
-        {/* Major prize draw placeholder — surfaced once admin reward editor ships */}
-        <li className="rounded-2xl border border-dashed border-[#C9A24A]/50 bg-[var(--event-card-bg,#FBF5E8)] p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div
-                className="font-trail-serif text-sm font-semibold"
-                style={{ color: PRIMARY }}
-              >
-                Major prize draw
-              </div>
-              <div className="mt-0.5 text-[11px] text-[var(--event-muted,#8A7E66)]">
-                Coming soon — eligibility rules will be set by the event organiser.
-              </div>
-            </div>
-            <span
-              className="inline-flex h-7 items-center rounded-full border px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
-              style={{ borderColor: `${ACCENT}55`, color: ACCENT }}
-            >
-              TBA
-            </span>
-          </div>
-        </li>
       </ul>
-
-      <p className="mt-2 text-[11px] text-[var(--event-muted,#8A7E66)]">
-        Default event rewards shown until the organiser publishes custom tiers.
-      </p>
     </section>
   );
 }
 
-function RewardTierRow({
-  tier,
-  unit,
-  stampedCount,
-}: {
-  tier: RewardTier;
-  unit: string;
-  stampedCount: number;
-}) {
-  const pct = Math.round(tier.progress * 100);
-  const remaining = Math.max(0, tier.threshold - stampedCount);
+function AwardRow({ award }: { award: PublicEventAward }) {
+  const unlocked = award.is_eligible;
+  const pct = award.points_required > 0
+    ? Math.min(100, Math.round((award.passport_points / award.points_required) * 100))
+    : 0;
   return (
     <li
       className={`rounded-2xl border p-4 shadow-sm ${
-        tier.unlocked
+        unlocked
           ? "border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]"
-          : "border-dashed border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)]/60"
+          : "border-dashed border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]/70"
       }`}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div
             className="font-trail-serif text-sm font-semibold"
-            style={{ color: tier.unlocked ? PRIMARY : "var(--event-muted,#8A7E66)" }}
+            style={{ color: unlocked ? PRIMARY : "var(--event-text,#3D372C)" }}
           >
-            {tier.label} · Visit {tier.threshold} {unit}
+            {award.title}
           </div>
-          <div className="mt-0.5 text-[11px] text-[var(--event-muted,#8A7E66)]">
-            {tier.unlocked
-              ? "Unlocked"
-              : remaining === 1
-                ? `1 more ${unit.replace(/s$/, "")} to unlock`
-                : `${remaining} more to unlock`}
+          {award.description && (
+            <p className="mt-1 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
+              {award.description}
+            </p>
+          )}
+          <div className="mt-1.5 text-[11px] text-[var(--event-muted,#8A7E66)]">
+            {award.points_required} {award.points_required === 1 ? "pt" : "pts"} required
+            {award.requires_all_locations ? " · all locations" : ""}
+            {!unlocked && award.points_remaining > 0
+              ? ` · ${award.points_remaining} more to enter`
+              : ""}
           </div>
         </div>
         <span
-          className="inline-flex h-7 items-center rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+          className="inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
           style={
-            tier.unlocked
-              ? { backgroundColor: PRIMARY, color: "var(--event-page-bg,#F6EFE2)" }
+            unlocked
+              ? { backgroundColor: PRIMARY, color: "var(--event-primary-fg,#F6EFE2)" }
               : { border: `1px solid ${ACCENT}55`, color: ACCENT }
           }
         >
-          {tier.unlocked ? "✓ Unlocked" : "Locked"}
+          {unlocked ? "✓ Entered" : "Locked"}
         </span>
       </div>
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--event-border,#E6DCC7)]">
@@ -877,11 +862,12 @@ function RewardTierRow({
           className="h-full rounded-full transition-all"
           style={{
             width: `${pct}%`,
-            backgroundColor: tier.unlocked ? PRIMARY : ACCENT,
+            backgroundColor: unlocked ? PRIMARY : ACCENT,
           }}
         />
       </div>
     </li>
   );
 }
+
 
