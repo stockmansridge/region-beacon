@@ -1,0 +1,21 @@
+-- Extends get_public_event_by_domain to return the new Brand Kit columns.
+-- Drop + create preserves the existing SECURITY DEFINER + grants pattern
+-- used by previous drafts. Copy the previous body verbatim and add the
+-- new SELECT columns; do NOT modify any existing column ordering — only
+-- append.
+--
+-- This file is a TEMPLATE: before applying, paste the current production
+-- body of get_public_event_by_domain and append:
+--
+--     eb.brand_kit_key,
+--     eb.brand_kit_version,
+--     eb.hero_bg_color, eb.hero_fg_color, eb.hero_accent_color,
+--     eb.button_primary_bg, eb.button_primary_fg,
+--     eb.button_secondary_bg, eb.button_secondary_fg,
+--     eb.nav_fg_color, eb.nav_muted_color, eb.nav_active_fg_color,
+--     eb.card_border_color,
+--     eb.link_color
+--
+-- and the matching RETURNS TABLE entries. Grants to remain:
+--   revoke all on function public.get_public_event_by_domain(text) from public;
+--   grant execute on function public.get_public_event_by_domain(text) to anon, authenticated;
