@@ -404,9 +404,10 @@ export function AdminEventRewards({
       )}
 
       <div className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
-        <span className="font-medium text-[#111827]">Prize draw rules</span> —
-        Prize draw rules are configured by backend rules where available. Public
-        reward tiers only affect visitor-facing progress and leaderboard display.
+        <span className="font-medium text-[#111827]">Looking for prizes or a major prize draw?</span>{" "}
+        Configure unlockable rewards, prizes, and draw entries in the
+        Awards &amp; rewards section. These tiers only control milestone
+        progress display.
       </div>
     </div>
   );
