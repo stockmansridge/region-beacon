@@ -86,6 +86,7 @@ const EMPTY: EventBrandingKeys = {
   cardBodyColor: null,
   cardMutedColor: null,
   logoPath: null,
+  coverPath: null,
   fontFamily: null,
   ready: false,
 };
