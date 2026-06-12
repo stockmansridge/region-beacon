@@ -121,38 +121,38 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
       <div className="mx-auto mt-6 max-w-2xl">
         <Link
           to="/"
-          className="inline-flex items-center text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+          className="inline-flex items-center text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-link,var(--event-primary,#1F3D2B))] underline-offset-4 hover:underline"
         >
           ← Back to event
         </Link>
 
-        <div className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm sm:p-10">
+        <div className="mt-4 rounded-3xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm sm:p-10">
           {eventInfo.event_name && (
-            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-page-muted,var(--event-muted,#8A7E66))]">
               {eventInfo.event_name}
             </p>
           )}
           <h1
-            className="mt-1 text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]"
+            className="mt-1 text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]"
             style={{ fontFamily: "var(--event-font, inherit)" }}
           >
             Rewards & prizes
           </h1>
 
-          <p className="mt-2 text-sm text-[var(--event-text,#3D372C)]">
+          <p className="mt-2 text-sm text-[var(--event-page-text,var(--event-text,#3D372C))]">
             Earn points by checking in at venues to unlock rewards and enter
             prize draws.
           </p>
 
           <div className="mt-6 space-y-4">
             {awards == null && (
-              <p className="text-sm text-[var(--event-muted,#8A7E66)]">Loading…</p>
+              <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">Loading…</p>
             )}
             {error && (
               <p className="text-sm text-destructive">Could not load rewards: {error}</p>
             )}
             {!error && awards != null && awards.length === 0 && (
-              <p className="text-sm text-[var(--event-muted,#8A7E66)]">
+              <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
                 No rewards have been added for this event yet.
               </p>
             )}
@@ -189,7 +189,7 @@ function AwardCard({
       : `${award.eligible_count} ${award.eligible_count === 1 ? "person is" : "people are"} currently in this draw`;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]">
+    <div className="overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)]">
       {award.image_url && (
         <img
           src={award.image_url}
@@ -199,24 +199,24 @@ function AwardCard({
       )}
       <div className="p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h2 className="text-lg font-semibold text-[var(--event-primary,#1F3D2B)]">
+          <h2 className="text-lg font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
             {award.title}
           </h2>
           <StatusBadge status={status} />
         </div>
         {award.description && (
-          <p className="mt-1 text-sm text-[var(--event-body,#3D372C)]">
+          <p className="mt-1 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
             {award.description}
           </p>
         )}
-        <p className="mt-2 text-xs uppercase tracking-wide text-[var(--event-muted,#8A7E66)]">
+        <p className="mt-2 text-xs uppercase tracking-wide text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
           {award.points_required} {award.points_required === 1 ? "point" : "points"} required
           {award.requires_all_locations ? " · All locations" : ""}
         </p>
-        <p className="mt-3 text-sm text-[var(--event-body,#3D372C)]">
+        <p className="mt-3 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
           <StatusMessage award={award} status={status} hasPassport={hasPassport} />
         </p>
-        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--event-primary,#1F3D2B)]">
+        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
           <Trophy className="h-3.5 w-3.5" /> {entrantCopy}
         </p>
       </div>
