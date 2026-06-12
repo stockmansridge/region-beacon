@@ -1916,14 +1916,20 @@ function BackgroundSelector({
   paletteKey,
   primaryColor,
   accentColor,
+  pageBackgroundColor,
   onChange,
+  onApplyToCustomPageBg,
+  onApplyToCustomCardBg,
   disabled,
 }: {
   value: string;
   paletteKey: string;
   primaryColor?: string;
   accentColor?: string;
+  pageBackgroundColor?: string;
   onChange: (key: string) => void;
+  onApplyToCustomPageBg?: (hex: string) => void;
+  onApplyToCustomCardBg?: (hex: string) => void;
   disabled?: boolean;
 }) {
   const palette = (() => {
@@ -1940,6 +1946,28 @@ function BackgroundSelector({
   const recommended = recommendedKey
     ? MODERN_BACKGROUND_STYLES.find((b) => b.key === recommendedKey)
     : null;
+
+  // Resolve the actual flat hex behind the current background style so
+  // organisers can see, copy, and re-use what the preview is rendering.
+  const resolvedHex = resolveBackgroundBaseHex(
+    value || null,
+    palette,
+    pageBackgroundColor || null,
+  ).toUpperCase();
+  const activeBg = getBackground(value || null);
+  const isCustomMode = value === "custom_color";
+  const inheritedLabel = activeBg?.label ?? "Default";
+  const [copied, setCopied] = React.useState(false);
+  const copyHex = async () => {
+    try {
+      await navigator.clipboard.writeText(resolvedHex);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
 
   return (
     <div className="space-y-3">
