@@ -13,6 +13,8 @@ import { tenantHost } from "@/lib/domains";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { CollectPointsSection } from "@/components/collect-points-section";
 import { PassportProgressCard } from "@/components/passport-progress-card";
+import { PassportStampGrid } from "@/components/passport-stamp-grid";
+import { NextRewardCard } from "@/components/next-reward-card";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
@@ -173,7 +175,7 @@ function LivePublicLoaded({
       primaryTextColor={event.primary_text_color ?? null}
       navBackgroundColor={event.nav_background_color ?? null}
       fontFamily={event.font_family ?? null}
-      className="min-h-screen px-4 py-8"
+      className="min-h-screen"
     >
       {isAdminPreview && !previewDismissed && (
         <div
@@ -199,7 +201,9 @@ function LivePublicLoaded({
           </button>
         </div>
       )}
-      <PublicAnnouncementBar subdomain={subdomain} />
+      <div className="px-4 pt-2">
+        <PublicAnnouncementBar subdomain={subdomain} />
+      </div>
       <PublicEventNav
         subdomain={subdomain}
         eventName={event.name}
@@ -211,76 +215,108 @@ function LivePublicLoaded({
         canRegister={canRegister}
         eventId={event.event_id}
       />
-      <TrailLanding
-        eventName={event.name}
-        venueLabelPlural={venueLabels.plural}
-        pitch={event.description ?? undefined}
-        welcomeCopy={event.welcome_copy ?? undefined}
-        primaryColor={event.primary_color ?? undefined}
-        accentColor={event.accent_color ?? undefined}
-        fontFamily={event.font_family ?? undefined}
-        logoUrl={getEventAssetPublicUrl(event.logo_path)}
-        heroImageUrl={getEventAssetPublicUrl(event.cover_path)}
-        venueCount={venues.length}
-        venueNames={venues.map((v) => v.name)}
-        termsUrl={event.terms_url}
-        heroOverlayColor={event.hero_overlay_color ?? null}
-        heroOverlayOpacity={event.hero_overlay_opacity ?? null}
-        primaryCta={
-          passportHref ? (
-            <a
-              href={passportHref}
-              className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-              style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
-            >
-              View my passport
-            </a>
-          ) : canRegister ? (
-            <Link
-              to="/join"
-              className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-              style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
-            >
-              Start passport
-            </Link>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className="h-12 w-full cursor-not-allowed rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
-              style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
-              title="Terms & privacy not configured yet"
-            >
-              Start passport — coming soon
-            </button>
-          )
-        }
-        secondaryCta={<span />}
-      />
-      <PassportProgressCard
-        eventId={event.event_id}
-        venueLabelPlural={venueLabels.plural}
-        canRegister={canRegister}
-      />
-      <CollectPointsSection
-        eventId={event.event_id}
-        primaryColor={event.primary_color}
-        accentColor={event.accent_color}
-        canRegister={canRegister}
-      />
-      <div className="mx-auto mt-6 flex max-w-md flex-col items-center gap-3 text-center">
-        <Link
-          to="/venues"
-          className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
-        >
-          View {venueLabels.plural.toLowerCase()} →
-        </Link>
-        <Link
-          to="/leaderboard"
-          className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
-        >
-          View the points leaderboard →
-        </Link>
+
+      {/* Hero */}
+      <div className="px-4">
+        <TrailLanding
+          eventName={event.name}
+          venueLabelPlural={venueLabels.plural}
+          pitch={event.description ?? undefined}
+          welcomeCopy={event.welcome_copy ?? undefined}
+          primaryColor={event.primary_color ?? undefined}
+          accentColor={event.accent_color ?? undefined}
+          fontFamily={event.font_family ?? undefined}
+          logoUrl={getEventAssetPublicUrl(event.logo_path)}
+          heroImageUrl={getEventAssetPublicUrl(event.cover_path)}
+          venueCount={venues.length}
+          venueNames={[]}
+          termsUrl={event.terms_url}
+          heroOverlayColor={event.hero_overlay_color ?? null}
+          heroOverlayOpacity={event.hero_overlay_opacity ?? null}
+          primaryCta={
+            passportHref ? (
+              <a
+                href={passportHref}
+                className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+                style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
+              >
+                View my passport
+              </a>
+            ) : canRegister ? (
+              <Link
+                to="/join"
+                className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
+                style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
+              >
+                Start passport
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="h-12 w-full cursor-not-allowed rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
+                style={{ backgroundColor: event.primary_color ?? "#1F3D2B" }}
+                title="Terms & privacy not configured yet"
+              >
+                Start passport — coming soon
+              </button>
+            )
+          }
+          secondaryCta={<span />}
+        />
+      </div>
+
+      {/* App-style stacked sections */}
+      <div className="mx-auto mt-5 flex max-w-md flex-col gap-5">
+        <PassportProgressCard
+          eventId={event.event_id}
+          venueLabelPlural={venueLabels.plural}
+          canRegister={canRegister}
+        />
+        <PassportStampGrid
+          eventId={event.event_id}
+          venueLabelPlural={venueLabels.plural}
+          canRegister={canRegister}
+        />
+        <NextRewardCard eventId={event.event_id} />
+
+        {/* Primary action */}
+        <section className="px-4">
+          <Link
+            to="/awards"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
+            style={{
+              backgroundColor: "var(--event-primary,#1F3D2B)",
+              color: "var(--event-primary-fg,#F6EFE2)",
+            }}
+          >
+            View offers &amp; rewards
+          </Link>
+        </section>
+
+        <div className="px-4">
+          <CollectPointsSection
+            eventId={event.event_id}
+            primaryColor={event.primary_color}
+            accentColor={event.accent_color}
+            canRegister={canRegister}
+          />
+        </div>
+
+        <div className="mb-8 flex flex-col items-center gap-3 px-4 text-center">
+          <Link
+            to="/venues"
+            className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+          >
+            View {venueLabels.plural.toLowerCase()} →
+          </Link>
+          <Link
+            to="/leaderboard"
+            className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+          >
+            View the points leaderboard →
+          </Link>
+        </div>
       </div>
     </EventPaletteScope>
   );

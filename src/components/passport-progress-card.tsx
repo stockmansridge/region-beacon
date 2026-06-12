@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { MapPin, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
-import { loadPassportStampState } from "@/lib/passport-stamps";
+import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 
 /**
- * Compact, app-like progress summary card. Shows visited / total venues
- * for the current passport on this event, or a CTA to start a passport.
+ * Large app-style progress summary card. Shows visitor's current passport
+ * progress (visited / total venues), points earned, and a hint toward the
+ * next configured reward.
  *
- * Uses central event theme variables so it inherits the event's branding.
+ * Container-style component: fetches its own data from
+ * `usePassportHomeData`, which is module-cached so multiple consumers on
+ * the same page (this card + stamp grid + next-reward card) share a
+ * single load.
  */
 export function PassportProgressCard({
   eventId,
@@ -18,94 +21,104 @@ export function PassportProgressCard({
   venueLabelPlural?: string;
   canRegister?: boolean;
 }) {
-  const [state, setState] = useState<
-    | { kind: "loading" }
-    | { kind: "no_passport" }
-    | { kind: "ready"; visited: number; total: number; href: string }
-  >({ kind: "loading" });
+  const data = usePassportHomeData(eventId);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!eventId) {
-      setState({ kind: "no_passport" });
-      return;
-    }
-    (async () => {
-      const passport = await resolveCurrentEventPassport(eventId);
-      if (cancelled) return;
-      if (!passport.token) {
-        setState({ kind: "no_passport" });
-        return;
-      }
-      const stamps = await loadPassportStampState(passport.token);
-      if (cancelled) return;
-      setState({
-        kind: "ready",
-        visited: stamps.visitedCount,
-        total: stamps.totalVenueCount || stamps.allVenues.length,
-        href: passport.passportHref ?? `/passport/${passport.token}`,
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [eventId]);
+  if (data.loading) return null;
 
-  if (state.kind === "loading") return null;
-
-  if (state.kind === "no_passport") {
+  if (!data.hasPassport) {
     if (!canRegister) return null;
     return (
-      <div className="mx-auto mt-4 flex max-w-md items-center justify-between gap-3 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 shadow-sm">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-muted,#8A7E66)]">
-            Your passport
-          </p>
-          <p className="mt-0.5 truncate text-[13px] font-medium text-[var(--event-body,#3D372C)]">
-            Start collecting stamps at participating {venueLabelPlural.toLowerCase()}.
-          </p>
-        </div>
-        <Link
-          to="/join"
-          className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--event-primary-fg,#F6EFE2)]"
-          style={{ backgroundColor: "var(--event-primary,#1F3D2B)" }}
+      <section className="px-4">
+        <div
+          className="flex items-center justify-between gap-3 rounded-3xl border bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm"
+          style={{ borderColor: "var(--event-border,#E6DCC7)" }}
         >
-          Start
-        </Link>
-      </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+              Your passport
+            </p>
+            <p className="mt-1 text-[14px] font-medium text-[var(--event-card-fg,var(--event-text,#3D372C))]">
+              Start collecting stamps at participating {venueLabelPlural.toLowerCase()}.
+            </p>
+          </div>
+          <Link
+            to="/join"
+            className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.14em]"
+            style={{
+              backgroundColor: "var(--event-primary,#1F3D2B)",
+              color: "var(--event-primary-fg,#F6EFE2)",
+            }}
+          >
+            Start
+          </Link>
+        </div>
+      </section>
     );
   }
 
-  const { visited, total, href } = state;
+  const { visited, total, points, awards, passportHref } = data;
   const pct = total > 0 ? Math.min(100, Math.round((visited / total) * 100)) : 0;
+  const href = passportHref ?? "/passport";
+  const next = pickNextReward(awards);
+  const nextRewardLabel = next?.title ?? null;
+  const nextRewardRemaining = next ? Math.max(0, next.points_remaining) : null;
 
   return (
-    <a
-      href={href}
-      className="mx-auto mt-4 flex max-w-md items-center gap-3 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/40 hover:shadow-md"
-    >
-      <ProgressRing pct={pct} />
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-muted,#8A7E66)]">
-          Trail progress
-        </p>
-        <p className="mt-0.5 truncate text-[15px] font-semibold text-[var(--event-primary,#1F3D2B)]">
-          {visited} of {total} {venueLabelPlural.toLowerCase()} visited
-        </p>
-      </div>
-      <span
-        aria-hidden
-        className="shrink-0 rounded-full bg-[var(--event-primary,#1F3D2B)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--event-primary-fg,#F6EFE2)]"
+    <section className="px-4">
+      <a
+        href={href}
+        className="block rounded-3xl border bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm transition hover:shadow-md"
+        style={{ borderColor: "var(--event-border,#E6DCC7)" }}
       >
-        Passport →
-      </span>
-    </a>
+        <div className="flex items-center gap-5">
+          <ProgressRing pct={pct} visited={visited} total={total} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+              Progress
+            </p>
+            <p
+              className="mt-0.5 text-[17px] font-semibold leading-tight text-[var(--event-card-fg,var(--event-text,#1F3D2B))]"
+              style={{ fontFamily: "var(--event-font)" }}
+            >
+              {visited} / {total} {venueLabelPlural.toLowerCase()} visited
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+              {points !== null && (
+                <span className="inline-flex items-center gap-1">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span className="font-semibold text-[var(--event-card-fg,var(--event-text,#1F3D2B))]">
+                    {points}
+                  </span>{" "}
+                  points earned
+                </span>
+              )}
+              {nextRewardLabel && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {nextRewardRemaining && nextRewardRemaining > 0
+                    ? `${nextRewardRemaining} pts to ${nextRewardLabel}`
+                    : `Next: ${nextRewardLabel}`}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </a>
+    </section>
   );
 }
 
-function ProgressRing({ pct }: { pct: number }) {
-  const size = 44;
-  const stroke = 4;
+function ProgressRing({
+  pct,
+  visited,
+  total,
+}: {
+  pct: number;
+  visited: number;
+  total: number;
+}) {
+  const size = 84;
+  const stroke = 8;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = (pct / 100) * c;
@@ -123,8 +136,7 @@ function ProgressRing({ pct }: { pct: number }) {
         r={r}
         fill="none"
         strokeWidth={stroke}
-        className="text-[var(--event-border,#E6DCC7)]"
-        stroke="currentColor"
+        stroke="var(--event-border,#E6DCC7)"
       />
       <circle
         cx={size / 2}
@@ -133,19 +145,36 @@ function ProgressRing({ pct }: { pct: number }) {
         fill="none"
         strokeWidth={stroke}
         strokeLinecap="round"
-        stroke="var(--event-primary,#1F3D2B)"
+        stroke="var(--event-accent,#B5572A)"
         strokeDasharray={`${dash} ${c - dash}`}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
       <text
         x="50%"
-        y="50%"
+        y="46%"
         dominantBaseline="central"
         textAnchor="middle"
-        className="fill-[var(--event-primary,#1F3D2B)]"
-        style={{ fontSize: 12, fontWeight: 700 }}
+        style={{
+          fontSize: 22,
+          fontWeight: 700,
+          fill: "var(--event-card-fg, var(--event-text,#1F3D2B))",
+        }}
       >
-        {pct}%
+        {visited}
+      </text>
+      <text
+        x="50%"
+        y="68%"
+        dominantBaseline="central"
+        textAnchor="middle"
+        style={{
+          fontSize: 9,
+          fontWeight: 600,
+          letterSpacing: 1.5,
+          fill: "var(--event-card-muted, var(--event-muted,#8A7E66))",
+        }}
+      >
+        of {Math.max(0, total | 0)}
       </text>
     </svg>
   );

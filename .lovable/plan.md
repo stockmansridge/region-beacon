@@ -1,46 +1,63 @@
-# GetStampd Stabilisation Sprint
+# Public Home / Passport Redesign Plan
 
-I'll work through the 8 issues in priority order, investigating root causes before patching. Below is the plan and approach for each.
+## Scope decision
 
-## 1. Public passport/QR links fail on mobile
-**Investigate:**
-- `src/routes/passport.$token.tsx` and `src/routes/live.$subdomain.*` loading.
-- `HostRouter` rewrite logic for `/passport/:token` on tenant subdomains.
-- `get_passport_by_token` RPC: confirm `anon` GRANT/RLS allows lookup without a logged-in session.
-- QR poster URL generation (`qr-poster.ts`) — confirm it builds a fully-qualified tenant URL.
-- Any `localStorage`/`window` access at module scope that breaks SSR/first paint on mobile.
+Apply the new layout to the **public Home route** (`src/routes/live.$subdomain.index.tsx`) — it is the page customers land on after scanning the event poster QR. The existing `passport.$token.tsx` page stays as-is for now (it already works as the deep passport view linked from the new Home).
 
-**Likely fix:** add a `/passport/:token` host-rewrite/passthrough so subdomains resolve, ensure the route's data fetch is anon-safe, and remove any SSR-unsafe top-level browser globals.
+Rationale: the reference image is a landing/overview experience (hero + progress + stamps + next reward + CTA + bottom nav). That's the role of Home. Touching `passport.$token.tsx` in the same pass would double the surface area and risk regressing check-in/QR flows.
 
-## 2. Events dashboard "Public Website Status = NOT LIVE" while published
-**Investigate:** `admin.events.index.tsx` and the helper computing status. Should be `published === true AND exists(event_domains where is_primary AND status='active')`. Fix the join/RPC selection so the chip reflects the real live state.
+## Route & nav mapping (non-breaking)
 
-## 3. Awards page "[object Object]" error
-**Investigate:** `live.$subdomain.awards.tsx` → `listPublicAwards()` in `src/lib/event-awards.ts`. The catch block stringifies via `String(e)` which yields `[object Object]` for Supabase error objects. Fix by extracting `error.message ?? error.details ?? JSON.stringify(error)`. Also verify the RPC GRANT/RLS allows anon reads of configured awards and that an empty/anonymous passport doesn't surface as a hard error.
+Keep route file structure and `redeem_checkin` untouched. Only change labels/icons and the order in `PublicEventNav`:
 
-## 4. Rewards showing default tiers + Major prize draw
-**Investigate:** Public rewards source (likely `passport-rewards.ts` / rewards section component). Remove the hardcoded Bronze/Silver/Gold/Major-prize fallback when an event has configured rewards. Only render configured rows. Hide Major prize draw entirely unless it's a real configured entity.
+| Slot | Label | Route | Notes |
+|---|---|---|---|
+| 1 | Home | `/` | unchanged |
+| 2 | Passport | `/passport` (resolves to current token via existing `useCurrentEventPassport`; falls back to `/join`) | replaces "Map" in the bottom 5 |
+| 3 | Rewards | `/awards` | existing awards route |
+| 4 | Offers | `/offers` | existing offers route |
+| 5 | More | drawer (Map, Leaderboard, FAQ, Terms, Privacy) | move Map + Leaderboard into the existing "More" drawer |
 
-## 5. Venue detail hero image stretched/cropped
-**Fix:** wrap hero in `<AspectRatio ratio={16/9}>` (or 4/3) with `object-cover object-center` so it scales predictably on all viewports.
+No routes added or removed. Map and Leaderboard remain reachable from More.
 
-## 6. Public venue card wasted space
-**Fix:** reduce image height on mobile, increase description clamp to ~3 lines, tighten padding. Mobile-first.
+## Sections to build on Home
 
-## 7. Hardcoded `bg-white`/`text-slate-*`/`text-gray-*` on public passport surfaces
-**Fix:** sweep public components (`public-event-nav`, `trail-landing`, `passport.*`, `live.$subdomain.*`, `venue-public-profile-dialog`, etc.) replacing hardcoded colours with `--event-*` tokens (`bg-[var(--event-card-bg)]`, `text-[var(--event-body)]`, `text-[var(--event-muted)]`, `border-[var(--event-border)]`). Verify dark themes are readable.
+1. **App shell** — drop the `max-w-md` boxing on Home only; use full-width with inner padding so the page feels immersive on mobile. Keep `EventPaletteScope` wrapper so all `--event-*` tokens still drive the look.
+2. **Hero header** — existing menu (left) + logo (center) + passport icon (right) already in `PublicEventNav`. Add greeting line ("Hi {firstName}!" when passport known, else "Welcome") + event headline using `font-family: var(--event-font)`. Hero image uses existing `event.cover_path`.
+3. **Progress summary card** — extend `PassportProgressCard`:
+   - large circular ring (visited/total)
+   - points earned (sum from points ledger via existing `get_passport_points_summary` if present, else fall back to stamp count × default — TBD in implementation; if no RPC, hide points row)
+   - "Next reward: {name}" derived from configured awards (skip if none)
+4. **Passport stamp grid** — new `PassportStampGrid` component. Source: `loadPassportStampState(token)` (already returns all venues with `is_stamped`). Renders tiles with venue initial/logo; stamped tiles get a check + accent ring; unvisited tiles are muted. If no passport yet, render a "Start passport" CTA tile grid placeholder.
+5. **Next reward card** — uses configured awards via existing `event-awards` lib. If 0 configured → omit card entirely (no Bronze/Silver/Gold defaults). Show requirement text + progress bar + "N to go".
+6. **Primary CTA** — full-width branded "View offers & rewards" → `/awards` (or `/offers` if no awards configured).
+7. **Bottom nav** — update `PublicEventNav` 5 slots as above with lucide icons (Home, Ticket, Gift, Tag, Menu).
 
-## 8. Venue QR "Could not save entry value" opaque error
-**Investigate:** `venue-tasting-qr-section.tsx` / `event-bonus-codes-section.tsx`. Surface `error.message` + `error.details` in the toast, clear error on success, and verify `entry_value` column update permissions for `authenticated`.
+## Data sources (existing only)
 
-## Deliverables
-- Code changes per item.
-- Draft SQL migration(s) if RLS/GRANT changes are needed (Awards anon read, entry_value update policy).
-- Root-cause + test-steps report at the end (desktop + mobile manual steps).
+- Event: `get_public_event_by_domain` ✓
+- Venues: `get_public_event_venues` ✓
+- Passport + stamps: `loadPassportStampState` ✓
+- Awards: existing `event-awards` lib (need to check if a public-by-event RPC exists; if not, reuse what `awards.tsx` already calls)
+- Points: check whether a points summary is exposed publicly. If not exposed, the points line on the progress card will be **omitted** rather than faked.
 
-## Notes
-- I'll batch reads aggressively to keep this efficient.
-- I won't change admin styling.
-- Any SQL needed will be in a `supabase/migrations-draft-*` folder for you to apply.
+No new tables. No changes to `redeem_checkin`, points, or awards logic.
 
-Shall I proceed?
+## Files to change
+
+- `src/routes/live.$subdomain.index.tsx` — restructure body
+- `src/components/passport-progress-card.tsx` — expand into full progress card (ring + points + next reward hint)
+- `src/components/public-event-nav.tsx` — bottom nav reshuffle + icons
+- **NEW** `src/components/passport-stamp-grid.tsx` — stamp tiles grid
+- **NEW** `src/components/next-reward-card.tsx` — next reward progress card
+- Possibly small additions to `src/lib/passport-stamps.ts` if points need to be surfaced
+
+No changes to: `passport.$token.tsx`, check-in routes, RPCs, migrations.
+
+## Open questions before I code
+
+1. **Points exposure** — is there an existing public RPC that returns the visitor's points total for an event by passport token? If not, OK to omit the "X points earned" line for now? (Avoids faking data.)
+2. **Awards source** — should the "Next reward" card read the same awards list that `/awards` shows publicly, or is there a configured-rewards-with-thresholds table I should use? Confirm which lib/RPC.
+3. **Nav change scope** — OK to swap Map out of the bottom 5 and into "More" globally on the public event nav? Or keep Map in bottom 5 and drop Leaderboard instead?
+
+Once you confirm those, I'll implement in one pass and verify on mobile preview.
