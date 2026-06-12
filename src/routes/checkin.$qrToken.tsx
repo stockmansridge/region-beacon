@@ -5,16 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { PoweredByGetStampd } from "@/components/brand";
 import { classifyHost } from "@/components/host-router";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 
 export const Route = createFileRoute("/checkin/$qrToken")({
   head: () => ({ meta: [{ title: "Check in — GetStampd" }] }),
   component: CheckinPage,
 });
-
-const PRIMARY = "#1F3D2B";
-const ACCENT = "#B5572A";
-const GOLD = "#C9A24A";
 
 type StoredPassport = {
   passport_id?: string;
@@ -333,98 +329,96 @@ function CheckinPage() {
 
 function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }) {
   const subdomain = getSubdomain();
-  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
-  if (outcome.kind === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
-        Recording your stamp…
-      </div>
-    );
-  }
-
-  if (outcome.kind === "stamped") {
-    const venueLabel = outcome.venueName ?? "this venue";
-    const title = outcome.isNew ? "Check-in successful" : "Already checked in";
-    const kicker = outcome.isNew ? "Stamp Collected" : "Already Collected";
-    const pts = outcome.pointsAwarded;
-    const pointsLine = outcome.isNew
-      ? pts > 0
-        ? `You earned ${pts} ${pts === 1 ? "point" : "points"} at ${venueLabel}.`
-        : `Stamp added at ${venueLabel}.`
-      : `You've already checked in at ${venueLabel}. No extra points were added.`;
-    return (
-      <EventPaletteScope
-        paletteKey={paletteKey}
-        backgroundKey={backgroundKey}
-        className="min-h-screen px-4 py-8"
-      >
-        <div className="mx-auto w-full max-w-md">
-          <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(0,0,0,0.45)]">
-            <div
-              className="relative h-[420px] w-full"
-              style={{
-                background:
-                  "linear-gradient(160deg, var(--event-primary," +
-                  PRIMARY +
-                  ") 0%, color-mix(in oklab, var(--event-primary," +
-                  PRIMARY +
-                  ") 70%, black) 100%)",
-              }}
-            >
-              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-primary-fg,#F6EFE2)]">
-                <div
-                  className="flex h-20 w-20 items-center justify-center rounded-full border-2"
-                  style={{
-                    borderColor: "var(--event-accent," + ACCENT + ")",
-                    backgroundColor:
-                      "color-mix(in oklab, var(--event-primary," + PRIMARY + ") 88%, transparent)",
-                    boxShadow:
-                      "0 0 0 6px color-mix(in oklab, var(--event-accent," + ACCENT + ") 18%, transparent)",
-                  }}
-                >
-                  <Check
-                    className="h-9 w-9"
-                    style={{ color: "var(--event-accent," + GOLD + ")" }}
-                  />
-                </div>
-                <div
-                  className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em]"
-                  style={{ color: "var(--event-accent," + GOLD + ")" }}
-                >
-                  {kicker}
-                </div>
-                <h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
-                  {title}
-                </h1>
-                <p className="mt-3 text-base text-[var(--event-primary-fg,#F6EFE2)]/90">
-                  {pointsLine}
-                </p>
-                {outcome.isNew && (
-                  <p className="mt-2 text-sm text-[var(--event-primary-fg,#F6EFE2)]/80">
-                    Your passport has been updated.
-                  </p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <div className="mt-5 space-y-2.5">
-            <Link
-              to="/passport/$token"
-              params={{ token: outcome.passportToken }}
-              className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-primary-fg,#F6EFE2)] shadow"
-              style={{ backgroundColor: "var(--event-primary," + PRIMARY + ")" }}
-            >
-              View my passport
-            </Link>
+  const branding = useEventBrandingKeys(subdomain);
+  return (
+    <EventPaletteScope {...brandingScopeProps(branding)} className="min-h-screen">
+      {outcome.kind === "loading" && (
+        <div className="flex min-h-screen items-center justify-center text-sm text-[var(--event-page-muted)]">
+          Recording your stamp…
+        </div>
+      )}
+      {outcome.kind === "stamped" && (
+        <div className="px-4 py-8">
+          <div className="mx-auto w-full max-w-md">
+            <StampedCheckinView outcome={outcome} />
           </div>
         </div>
-      </EventPaletteScope>
-    );
+      )}
+      {outcome.kind !== "loading" && outcome.kind !== "stamped" && (
+        <CheckinFailureCard outcome={outcome} qrToken={qrToken} />
+      )}
+    </EventPaletteScope>
+  );
+}
 
-  }
+function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { kind: "stamped" }> }) {
+  const venueLabel = outcome.venueName ?? "this venue";
+  const title = outcome.isNew ? "Check-in successful" : "Already checked in";
+  const kicker = outcome.isNew ? "Stamp Collected" : "Already Collected";
+  const pts = outcome.pointsAwarded;
+  const pointsLine = outcome.isNew
+    ? pts > 0
+      ? `You earned ${pts} ${pts === 1 ? "point" : "points"} at ${venueLabel}.`
+      : `Stamp added at ${venueLabel}.`
+    : `You've already checked in at ${venueLabel}. No extra points were added.`;
+  return (
+    <>
+      <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(0,0,0,0.45)]">
+        <div
+          className="relative h-[420px] w-full"
+          style={{
+            background:
+              "linear-gradient(160deg, var(--event-primary) 0%, color-mix(in oklab, var(--event-primary) 70%, black) 100%)",
+          }}
+        >
+          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-primary-fg)]">
+            <div
+              className="flex h-20 w-20 items-center justify-center rounded-full border-2"
+              style={{
+                borderColor: "var(--event-accent)",
+                backgroundColor:
+                  "color-mix(in oklab, var(--event-primary) 88%, transparent)",
+                boxShadow:
+                  "0 0 0 6px color-mix(in oklab, var(--event-accent) 18%, transparent)",
+              }}
+            >
+              <Check
+                className="h-9 w-9"
+                style={{ color: "var(--event-accent)" }}
+              />
+            </div>
+            <div
+              className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em]"
+              style={{ color: "var(--event-accent)" }}
+            >
+              {kicker}
+            </div>
+            <h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
+              {title}
+            </h1>
+            <p className="mt-3 text-base text-[var(--event-primary-fg)]/90">
+              {pointsLine}
+            </p>
+            {outcome.isNew && (
+              <p className="mt-2 text-sm text-[var(--event-primary-fg)]/80">
+                Your passport has been updated.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
 
-  return <CheckinFailureCard outcome={outcome} qrToken={qrToken} />;
+      <div className="mt-5 space-y-2.5">
+        <Link
+          to="/passport/$token"
+          params={{ token: outcome.passportToken }}
+          className="flex h-12 w-full items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
+        >
+          View my passport
+        </Link>
+      </div>
+    </>
+  );
 }
 
 function CheckinFailureCard({
@@ -516,24 +510,24 @@ function CheckinFailureCard({
     otherPassports.length > 0 ? otherPassports[0].access_token! : null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6 py-10">
-      <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">{title}</h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{body}</p>
+    <div className="flex min-h-screen items-center justify-center px-6 py-10">
+      <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--event-card-border)] bg-[var(--event-card-bg)] p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-card-heading)]/10" />
+        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-card-heading)]">{title}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--event-card-text)]">{body}</p>
 
         <div className="mt-6 flex flex-col gap-2">
           {outcome.kind === "no_passport_for_event" ? (
             <>
               <a
                 href={joinHref}
-                className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
               >
                 Create passport for this trail
               </a>
               <a
                 href="/"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 bg-transparent text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-button-secondary-border)] bg-[var(--event-button-secondary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-secondary-fg)]"
               >
                 Back to trail home
               </a>
@@ -541,7 +535,7 @@ function CheckinFailureCard({
                 <Link
                   to="/passport/$token"
                   params={{ token: otherPassportToken }}
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-transparent text-xs font-medium tracking-wide text-[var(--event-body,#3D372C)] underline underline-offset-2"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-transparent text-xs font-medium tracking-wide text-[var(--event-link)] underline underline-offset-2"
                 >
                   Open saved passport from another trail
                 </Link>
@@ -551,13 +545,13 @@ function CheckinFailureCard({
             <>
               <a
                 href="/passport"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
               >
                 Open my passport
               </a>
               <a
                 href="/"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 bg-transparent text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-button-secondary-border)] bg-[var(--event-button-secondary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-secondary-fg)]"
               >
                 Back to home
               </a>
@@ -566,7 +560,7 @@ function CheckinFailureCard({
           <button
             type="button"
             onClick={copySupport}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--event-primary,#1F3D2B)]/20 bg-transparent text-xs font-medium tracking-wide text-[var(--event-body,#3D372C)] hover:bg-[var(--event-primary,#1F3D2B)]/5"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--event-card-border)] bg-transparent text-xs font-medium tracking-wide text-[var(--event-card-muted)] hover:bg-[var(--event-card-border)]/30"
           >
             <Copy className="h-3.5 w-3.5" />
             {copied ? "Copied support details" : "Copy support details"}
