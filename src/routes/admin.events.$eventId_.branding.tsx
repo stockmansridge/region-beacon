@@ -34,6 +34,7 @@ import {
   type EventBackgroundKey,
   getBackground,
   getModernStyleKey,
+  resolveBackgroundBaseHex,
 } from "@/lib/event-backgrounds";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveEventTheme } from "@/lib/event-theme";
