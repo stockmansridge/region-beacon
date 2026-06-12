@@ -272,6 +272,14 @@ function BrandingEditor() {
 
   // Dynamically load the selected Google Font so the preview reflects it.
   useEffect(() => {
+    // Sync default collapse states when form values change (e.g. switching to custom palette)
+    setExpandedSections((prev) => ({
+      ...prev,
+      customColours: form.palette_key === "custom" ? true : prev.customColours,
+    }));
+  }, [form.palette_key]);
+
+  useEffect(() => {
     const href = buildGoogleFontsHref([form.font_family]);
     if (!href) return;
     const existing = document.querySelector<HTMLLinkElement>(
