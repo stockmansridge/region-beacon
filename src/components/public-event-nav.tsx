@@ -231,22 +231,18 @@ export function PublicEventNav({
             )}
           </BottomItem>
 
-          {/* Centre passport — visually prominent */}
-          <li className="relative flex items-center justify-center">
+          <BottomItem active={isActive("passport")} accent={accent}>
             <a
               href={passportTarget}
               aria-label={passportLabel}
               aria-current={isActive("passport") ? "page" : undefined}
-              className="-mt-6 grid h-14 w-14 place-items-center rounded-full shadow-lg ring-4 transition active:scale-95"
-              style={{
-                background: accent,
-                color: "var(--event-primary-fg,#F6EFE2)",
-                ["--tw-ring-color" as string]: navBg,
-              }}
+              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+              style={{ color: isActive("passport") ? navActiveFg : navMuted }}
             >
-              <Stamp className="h-6 w-6" />
+              <Stamp className="h-5 w-5" />
+              <span>Passport</span>
             </a>
-          </li>
+          </BottomItem>
 
           <BottomItem active={isActive("leaderboard")} accent={accent}>
             <Link
