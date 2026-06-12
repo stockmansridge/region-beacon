@@ -5,6 +5,11 @@
 
 begin;
 
+-- 0) pgcrypto for digest(). Supabase installs it under the `extensions` schema.
+create extension if not exists pgcrypto with schema extensions;
+
+
+
 -- 1) venue_qr_codes.entry_value
 alter table public.venue_qr_codes
   add column if not exists entry_value int not null default 1;
@@ -75,7 +80,7 @@ returns table (
 )
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   q record;
@@ -107,7 +112,7 @@ begin
   select pp.id as passport_id, pp.agency_id, pp.event_id, pp.visitor_id
     into p
   from public.passports pp
-  where pp.access_token_hash = digest(_passport_token, 'sha256');
+  where pp.access_token_hash = extensions.digest(_passport_token::text, 'sha256'::text);
 
   if p.passport_id is null then
     raise exception 'passport_not_found';
