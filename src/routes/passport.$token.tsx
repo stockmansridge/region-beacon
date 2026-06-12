@@ -881,7 +881,7 @@ function SummaryCell({
 }: {
   label: string;
   sublabel?: string;
-  value: React.ReactNode;
+  value: ReactNode;
   compact?: boolean;
 }) {
   return (
