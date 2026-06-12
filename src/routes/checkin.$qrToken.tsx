@@ -277,11 +277,9 @@ function CheckinPage() {
             venue_id: string;
             passport_id: string;
             is_new: boolean;
+            venue_name?: string | null;
             points_awarded?: number | null;
-            points_already_awarded?: boolean | null;
-            total_points?: number | null;
-            venue_points?: number | null;
-            bonus_points?: number | null;
+            already_checked_in?: boolean | null;
           }
         | null;
       if (!row) {
@@ -292,16 +290,18 @@ function CheckinPage() {
         return;
       }
 
-      let venueName: string | null = null;
-      try {
-        const { data: v } = await supabase
-          .from("venues")
-          .select("name")
-          .eq("id", row.venue_id)
-          .maybeSingle();
-        venueName = (v as { name: string | null } | null)?.name ?? null;
-      } catch {
-        venueName = null;
+      let venueName: string | null = row.venue_name ?? null;
+      if (!venueName) {
+        try {
+          const { data: v } = await supabase
+            .from("venues")
+            .select("name")
+            .eq("id", row.venue_id)
+            .maybeSingle();
+          venueName = (v as { name: string | null } | null)?.name ?? null;
+        } catch {
+          venueName = null;
+        }
       }
 
       if (!cancelled) {
@@ -311,8 +311,8 @@ function CheckinPage() {
           passportToken: token,
           isNew: !!row.is_new,
           pointsAwarded: row.points_awarded ?? 0,
-          pointsAlreadyAwarded: !!row.points_already_awarded,
-          totalPoints: row.total_points ?? 0,
+          pointsAlreadyAwarded: !!row.already_checked_in,
+          totalPoints: 0,
         });
       }
     })();
