@@ -110,6 +110,7 @@ function Events() {
   const [reloadKey, setReloadKey] = useState(0);
   const [filter, setFilter] = useState<EventFilter>("active");
   const [unarchivingId, setUnarchivingId] = useState<string | null>(null);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
 
   const [open, setOpen] = useState(false);
 
@@ -253,6 +254,33 @@ function Events() {
     }
   }
 
+  async function activatePublicAddress(eventId: string) {
+    setActivatingId(eventId);
+    try {
+      const { data, error } = await supabase.rpc("claim_event_subdomain" as never, {
+        _event_id: eventId,
+        _subdomain: null,
+      } as never);
+      const res = (Array.isArray(data) ? data[0] : data) as
+        | { ok?: boolean; message?: string; domain_status_after?: string }
+        | null;
+      if (error) {
+        toast.error(`Could not activate public address: ${error.message}`);
+        return;
+      }
+      if (res?.ok && res.domain_status_after === "active") {
+        toast.success("Public address activated — your public site is live.");
+      } else {
+        toast.info(String(res?.message ?? "Public address could not be activated yet."));
+      }
+      setReloadKey((k) => k + 1);
+    } finally {
+      setActivatingId(null);
+    }
+  }
+
+
+
 
   return (
     <>
@@ -361,7 +389,7 @@ function Events() {
                 // events with an active public subdomain).
                 void activation;
                 const isLive = !isArchived && isPublished && domainActive;
-                const liveLabel = isArchived ? "Archived" : isLive ? "Live" : "Not live";
+                const liveLabel = isArchived ? "ARCHIVED" : isLive ? "LIVE" : "NOT LIVE";
                 const liveClass = isArchived
                   ? "bg-[#F1F5F9] text-[#475569]"
                   : isLive
@@ -439,16 +467,6 @@ function Events() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        {!isArchived && hasSubdomain && domainStatus === "active" && (
-                          <a
-                            href={`https://${domain!.public_subdomain}.${SUBDOMAIN_ROOT}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
-                          >
-                            Preview
-                          </a>
-                        )}
                         {isArchived ? (
                           <>
                             <Link
@@ -469,6 +487,60 @@ function Events() {
                               </button>
                             )}
                           </>
+                        ) : isLive && hasSubdomain ? (
+                          <>
+                            <a
+                              href={`https://${domain!.public_subdomain}.${SUBDOMAIN_ROOT}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
+                            >
+                              View live site
+                            </a>
+                            <Link
+                              to="/admin/events/$eventId"
+                              params={{ eventId: e.id }}
+                              className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
+                            >
+                              Setup
+                            </Link>
+                          </>
+                        ) : isPublished && hasSubdomain && domainStatus === "pending" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => activatePublicAddress(e.id)}
+                              disabled={activatingId === e.id}
+                              className="inline-flex h-8 items-center rounded-[8px] bg-[#2F6FE4] px-3 text-xs font-semibold text-white hover:bg-[#1F56C5] disabled:opacity-50"
+                            >
+                              {activatingId === e.id ? "Activating…" : "Activate public address"}
+                            </button>
+                            <Link
+                              to="/admin/events/$eventId"
+                              params={{ eventId: e.id }}
+                              className="text-sm text-[#64748B] hover:text-[#111827] hover:underline"
+                            >
+                              Setup
+                            </Link>
+                          </>
+                        ) : isPublished && !hasSubdomain ? (
+                          <Link
+                            to="/admin/events/$eventId"
+                            params={{ eventId: e.id }}
+                            hash="section-public-address"
+                            className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
+                          >
+                            Reserve public address
+                          </Link>
+                        ) : !isPublished && hasSubdomain ? (
+                          <Link
+                            to="/admin/events/$eventId"
+                            params={{ eventId: e.id }}
+                            hash="section-public-address"
+                            className="text-sm font-semibold text-[#2F6FE4] hover:text-[#1F56C5] hover:underline"
+                          >
+                            Publish
+                          </Link>
                         ) : (
                           <Link
                             to="/admin/events/$eventId"

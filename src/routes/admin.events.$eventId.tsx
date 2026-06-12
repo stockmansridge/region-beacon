@@ -2739,6 +2739,9 @@ function EventDetail() {
               domains={domains}
               activation={activation}
               isPlatformAdmin={agency.isPlatformAdmin}
+              isFreePlan={isFreePlan}
+              planCode={planCode}
+              planSource={planInfo?.source ?? null}
               onChanged={() => setReloadKey((k) => k + 1)}
             />
           </div>
@@ -6278,6 +6281,9 @@ function GoLivePanel({
   domains,
   activation,
   isPlatformAdmin,
+  isFreePlan,
+  planCode,
+  planSource,
   onChanged,
 }: {
   agencyId: string | null;
@@ -6286,6 +6292,9 @@ function GoLivePanel({
   domains: Domain[];
   activation: Activation | null;
   isPlatformAdmin: boolean;
+  isFreePlan: boolean;
+  planCode: string;
+  planSource: string | null;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -6300,10 +6309,18 @@ function GoLivePanel({
     null;
   const primaryDomain = primarySubdomain ?? primaryCustom;
 
+  // Activation gate is automatic on Free plan, Enterprise, and any
+  // manual_override agency — mirrors public.event_is_publishable(). For
+  // those plans the public site goes live as soon as event_status =
+  // 'published' AND a primary domain is 'active'.
+  const activationAutoPass =
+    isFreePlan || planCode === "enterprise" || planSource === "manual_override";
+
   const eventPass = eventStatus === "published";
   const domainPass = !!primaryDomain && primaryDomain.status === "active";
   const activationStatus = activation?.status ?? "unpaid";
-  const activationPass = activationStatus === "active" || activationStatus === "comp";
+  const activationPassRaw = activationStatus === "active" || activationStatus === "comp";
+  const activationPass = activationPassRaw || activationAutoPass;
   const allPass = eventPass && domainPass && activationPass;
 
   const publicUrl = primarySubdomain?.public_subdomain
@@ -6413,8 +6430,18 @@ function GoLivePanel({
         <GateCard
           title="Commercial activation"
           pass={activationPass}
-          value={activationStatus}
-          hint={activationPass ? "Active or comp" : "Must be active or comp"}
+          value={activationAutoPass && !activationPassRaw ? "not required" : activationStatus}
+          hint={
+            activationAutoPass && !activationPassRaw
+              ? planSource === "manual_override"
+                ? "Not required (manual override)"
+                : planCode === "enterprise"
+                  ? "Not required on Enterprise"
+                  : "Not required on Free plan"
+              : activationPass
+                ? "Active or comp"
+                : "Must be active or comp"
+          }
         />
       </div>
 
@@ -6444,7 +6471,7 @@ function GoLivePanel({
               ? primaryDomain
                 ? `Not live because public address is ${primaryDomain.status}.`
                 : "Not live because no public address is claimed."
-              : "Not live because commercial activation is inactive."}
+              : "Not live because commercial activation is inactive. (This is required on paid plans only — Free, Enterprise, and manual-override agencies skip this step.)"}
       </div>
 
       {primarySubdomain?.public_subdomain && (
