@@ -1958,19 +1958,42 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
     card_background_color: form.card_background_color || null,
     text_color: form.text_color || null,
     muted_text_color: form.muted_text_color || null,
+    card_text_color: form.card_text_color || null,
+    card_muted_text_color: form.card_muted_text_color || null,
     border_color: form.border_color || null,
     primary_text_color: form.primary_text_color || null,
     page_background_key: form.page_background_key || null,
   });
 
-  const textOnPage = surfaceWarning(theme.text, theme.pageBg, "page background");
-  const textOnCard = surfaceWarning(theme.text, theme.cardBg, "card background");
-  const mutedOnPage = surfaceWarning(theme.muted, theme.pageBg, "page background", 3);
-  const mutedOnCard = surfaceWarning(theme.muted, theme.cardBg, "card background", 3);
-  const primaryButton = surfaceWarning(theme.primaryText, theme.primary, "primary button");
-
-  const textWarnings = [textOnPage, textOnCard].filter(Boolean) as string[];
-  const mutedWarnings = [mutedOnPage, mutedOnCard].filter(Boolean) as string[];
+  // Page-surface contrast: page text vs page background.
+  const pageTextWarn = surfaceWarning(
+    theme.pageText,
+    theme.pageBg,
+    "page background",
+  );
+  const pageMutedWarn = surfaceWarning(
+    theme.pageMuted,
+    theme.pageBg,
+    "page background",
+    3,
+  );
+  // Card-surface contrast: card text vs card background.
+  const cardTextWarn = surfaceWarning(
+    theme.cardText,
+    theme.cardBg,
+    "card background",
+  );
+  const cardMutedWarn = surfaceWarning(
+    theme.cardMuted,
+    theme.cardBg,
+    "card background",
+    3,
+  );
+  const primaryButton = surfaceWarning(
+    theme.primaryText,
+    theme.primary,
+    "primary button",
+  );
 
   return (
     <div className="space-y-4 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
@@ -1980,29 +2003,60 @@ function ColorRolesCard({ form, setForm, disabled }: ColorRolesCardProps) {
         </div>
         <div className="mt-1 text-sm font-semibold">Text &amp; border colours</div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Public passport pages use these four semantic colours everywhere.
-          Leave any field blank to inherit from the selected theme.
+          Page text controls copy that sits directly on the page background.
+          Card text controls copy inside cards (venue list, awards, FAQ
+          answers, leaderboard rows, etc.). Card colours fall back to the
+          page colours when left blank, so existing events keep their look.
         </p>
       </div>
 
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#475569]">
+        Page / background text
+      </div>
       <ColorRoleRow
-        label="Main text colour"
-        helper="Headings, venue names, body copy, leaderboard names, FAQ questions."
-        resolved={theme.text}
+        label="Page text colour"
+        helper="Body copy and headings drawn directly on the page background (welcome copy, section labels, hero subtitle)."
+        resolved={theme.pageText}
         value={form.text_color}
         onChange={(v) => setForm({ ...form, text_color: v })}
         disabled={disabled}
-        warnings={textWarnings}
+        warnings={pageTextWarn ? [pageTextWarn] : []}
       />
       <ColorRoleRow
-        label="Muted text"
-        helper="Used for secondary text on normal page and card backgrounds (descriptions, helper text, metadata). Header and navigation muted text is automatically adjusted for contrast."
-        resolved={theme.muted}
+        label="Page muted text colour"
+        helper="Helper / metadata text on the page background."
+        resolved={theme.pageMuted}
         value={form.muted_text_color}
         onChange={(v) => setForm({ ...form, muted_text_color: v })}
         disabled={disabled}
-        warnings={mutedWarnings}
+        warnings={pageMutedWarn ? [pageMutedWarn] : []}
       />
+
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#475569]">
+        Card / surface text
+      </div>
+      <ColorRoleRow
+        label="Card text colour"
+        helper="Headings, venue names and body copy inside cards. Leave blank to reuse the page text colour."
+        resolved={theme.cardText}
+        value={form.card_text_color}
+        onChange={(v) => setForm({ ...form, card_text_color: v })}
+        disabled={disabled}
+        warnings={cardTextWarn ? [cardTextWarn] : []}
+      />
+      <ColorRoleRow
+        label="Card muted text colour"
+        helper="Helper text, addresses, descriptions and metadata inside cards. Leave blank to reuse the page muted colour."
+        resolved={theme.cardMuted}
+        value={form.card_muted_text_color}
+        onChange={(v) => setForm({ ...form, card_muted_text_color: v })}
+        disabled={disabled}
+        warnings={cardMutedWarn ? [cardMutedWarn] : []}
+      />
+
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#475569]">
+        Borders &amp; brand
+      </div>
       <ColorRoleRow
         label="Border / divider colour"
         helper="Card borders, dividers, input outlines on the public pages."
