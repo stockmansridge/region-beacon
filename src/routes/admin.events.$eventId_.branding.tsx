@@ -2643,3 +2643,124 @@ function countTextBorderWarnings(form: Form): number {
   return count;
 }
 
+// ============================================================================
+// NavColoursCard — single hex picker for the public header / bottom nav /
+// drawer background. Nav text colour is derived from the primary button
+// text colour so dark and light navs stay readable without an extra knob.
+// ============================================================================
+
+function NavColoursCard({
+  form,
+  setForm,
+  disabled,
+}: {
+  form: Form;
+  setForm: React.Dispatch<React.SetStateAction<Form>>;
+  disabled?: boolean;
+}) {
+  const theme = resolveEventTheme({
+    palette_key: form.palette_key || null,
+    primary_color: form.primary_color || null,
+    accent_color: form.accent_color || null,
+    page_background_color: form.page_background_color || null,
+    card_background_color: form.card_background_color || null,
+    text_color: form.text_color || null,
+    muted_text_color: form.muted_text_color || null,
+    card_text_color: form.card_text_color || null,
+    card_muted_text_color: form.card_muted_text_color || null,
+    border_color: form.border_color || null,
+    primary_text_color: form.primary_text_color || null,
+    nav_background_color: form.nav_background_color || null,
+    page_background_key: form.page_background_key || null,
+  });
+
+  const navTextWarn = surfaceWarning(theme.navText, theme.navBg, "navigation background");
+  const usingFallback = !HEX_RE.test(form.nav_background_color);
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+          Advanced — navigation surface
+        </div>
+        <div className="mt-1 text-sm font-semibold">Header &amp; bottom nav background</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Controls the sticky top header, the mobile bottom navigation,
+          and the slide-out drawer. Leave blank to follow the primary
+          button colour. Nav text and icon colours are derived from the
+          primary button text colour so contrast stays readable.
+        </p>
+      </div>
+
+      <ColorRoleRow
+        label="Navigation background colour"
+        helper={
+          usingFallback
+            ? "Currently following the primary button colour. Pick a hex value to set the nav independently."
+            : "The header, bottom nav, and drawer all use this colour."
+        }
+        resolved={theme.navBg}
+        value={form.nav_background_color}
+        onChange={(v) => setForm({ ...form, nav_background_color: v })}
+        disabled={disabled}
+        warnings={navTextWarn ? [navTextWarn] : []}
+      />
+
+      <div className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#475569]">
+          Preview
+        </div>
+        <div
+          className="mt-2 flex items-center justify-between rounded-[10px] px-3 py-2"
+          style={{ background: theme.navBg, color: theme.navText }}
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+            Event name
+          </span>
+          <span
+            className="inline-flex h-6 items-center rounded-full px-2 text-[10px] font-semibold"
+            style={{ background: theme.accent, color: theme.primaryText }}
+          >
+            Passport
+          </span>
+        </div>
+        <div
+          className="mt-2 grid grid-cols-3 gap-1 rounded-[10px] px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.12em]"
+          style={{ background: theme.navBg, color: theme.navMuted }}
+        >
+          <span className="text-center">Home</span>
+          <span className="text-center" style={{ color: theme.navActiveText }}>
+            Map
+          </span>
+          <span className="text-center">More</span>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Active nav items use the accent colour so they stay obvious
+          against the nav background.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function countNavWarnings(form: Form): number {
+  const theme = resolveEventTheme({
+    palette_key: form.palette_key || null,
+    primary_color: form.primary_color || null,
+    accent_color: form.accent_color || null,
+    page_background_color: form.page_background_color || null,
+    card_background_color: form.card_background_color || null,
+    text_color: form.text_color || null,
+    muted_text_color: form.muted_text_color || null,
+    card_text_color: form.card_text_color || null,
+    card_muted_text_color: form.card_muted_text_color || null,
+    border_color: form.border_color || null,
+    primary_text_color: form.primary_text_color || null,
+    nav_background_color: form.nav_background_color || null,
+    page_background_key: form.page_background_key || null,
+  });
+  let count = 0;
+  if (surfaceWarning(theme.navText, theme.navBg, "navigation background")) count++;
+  return count;
+}
+
