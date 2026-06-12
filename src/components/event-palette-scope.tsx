@@ -33,6 +33,8 @@ export function EventPaletteScope({
   cardBackgroundColor,
   textColor,
   mutedTextColor,
+  cardTextColor,
+  cardMutedTextColor,
   borderColor,
   primaryTextColor,
   fontFamily,
@@ -48,6 +50,8 @@ export function EventPaletteScope({
   cardBackgroundColor?: string | null;
   textColor?: string | null;
   mutedTextColor?: string | null;
+  cardTextColor?: string | null;
+  cardMutedTextColor?: string | null;
   borderColor?: string | null;
   primaryTextColor?: string | null;
   fontFamily?: string | null;
@@ -63,6 +67,8 @@ export function EventPaletteScope({
   const hasSemanticOverride =
     (textColor && HEX_RE.test(textColor)) ||
     (mutedTextColor && HEX_RE.test(mutedTextColor)) ||
+    (cardTextColor && HEX_RE.test(cardTextColor)) ||
+    (cardMutedTextColor && HEX_RE.test(cardMutedTextColor)) ||
     (borderColor && HEX_RE.test(borderColor)) ||
     (primaryTextColor && HEX_RE.test(primaryTextColor));
 
@@ -84,6 +90,8 @@ export function EventPaletteScope({
     card_background_color: cardBackgroundColor ?? null,
     text_color: textColor ?? null,
     muted_text_color: mutedTextColor ?? null,
+    card_text_color: cardTextColor ?? null,
+    card_muted_text_color: cardMutedTextColor ?? null,
     border_color: borderColor ?? null,
     primary_text_color: primaryTextColor ?? null,
     page_background_key: backgroundKey ?? null,
