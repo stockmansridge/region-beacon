@@ -108,14 +108,14 @@ export function PublicEventNav({
       <header
         className="sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
         style={{
-          background: primary,
+          background: navBg,
           borderColor: "color-mix(in oklab, white 12%, transparent)",
           paddingTop: "env(safe-area-inset-top)",
         }}
       >
         <div
           className="mx-auto grid h-14 max-w-2xl grid-cols-[44px_1fr_44px] items-center px-3"
-          style={{ color: "var(--event-primary-fg,#F6EFE2)" }}
+          style={{ color: navFg }}
         >
           <button
             type="button"
@@ -142,7 +142,7 @@ export function PublicEventNav({
             ) : (
               <span
                 className="truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"
-                style={{ color: "var(--event-primary-fg,#F6EFE2)" }}
+                style={{ color: navFg }}
               >
                 {eventName ?? "Event"}
               </span>
@@ -168,7 +168,8 @@ export function PublicEventNav({
       {menuOpen && (
         <MenuDrawer
           onClose={() => setMenuOpen(false)}
-          primary={primary}
+          navBg={navBg}
+          navFg={navFg}
           hasTerms={hasTerms}
           hasFaq={hasFaq}
           hasMap={hasMap}
@@ -188,9 +189,9 @@ export function PublicEventNav({
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
         style={{
           paddingBottom: "env(safe-area-inset-bottom)",
-          background: primary,
+          background: navBg,
           borderColor: "color-mix(in oklab, white 10%, transparent)",
-          color: "var(--event-primary-fg,#F6EFE2)",
+          color: navFg,
         }}
       >
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5 items-stretch">
@@ -246,9 +247,9 @@ export function PublicEventNav({
               style={{
                 background: accent,
                 color: "var(--event-primary-fg,#F6EFE2)",
-                // Ring tinted with the header colour so the floating button feels connected
-                // to the surrounding nav surface.
-                ["--tw-ring-color" as string]: primary,
+                // Ring tinted with the nav surface so the floating button
+                // feels connected to the surrounding nav.
+                ["--tw-ring-color" as string]: navBg,
               }}
             >
               <Stamp className="h-6 w-6" />
