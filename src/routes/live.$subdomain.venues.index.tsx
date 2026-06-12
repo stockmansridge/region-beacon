@@ -183,19 +183,19 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                       to="/venues/$venueId"
                       params={{ venueId: vid }}
                       aria-label={`View ${v.name ?? "venue"} details`}
-                      className="grid grid-cols-[42%_1fr] items-stretch focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                      className="grid grid-cols-[38%_1fr] items-stretch focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
                     >
                       <HeroThumb
                         path={v.cover_path ?? v.logo_path}
                         visited={visited}
                       />
-                      <div className="flex min-w-0 flex-col justify-between p-3.5">
+                      <div className="flex min-w-0 flex-col justify-between gap-2 p-3">
                         <div className="min-w-0">
-                          <p className="line-clamp-2 font-trail-serif text-[17px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+                          <p className="line-clamp-2 font-trail-serif text-[16px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
                             {v.name ?? "Unnamed"}
                           </p>
                           {v.description && (
-                            <p className="mt-1.5 line-clamp-3 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
+                            <p className="mt-1 line-clamp-4 text-[12px] leading-snug text-[var(--event-body,#3D372C)]">
                               {v.description}
                             </p>
                           )}
@@ -206,7 +206,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                               v.offer_display_foreground_colour,
                             );
                             return (
-                              <div className="mt-2">
+                              <div className="mt-1.5">
                                 <span
                                   className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
                                   style={{
@@ -273,7 +273,7 @@ function HeroThumb({ path, visited }: { path: string | null; visited: boolean })
   const url = getVenueAssetPublicUrl(path);
   return (
     <div
-      className="relative aspect-[4/5] min-h-full w-full overflow-hidden"
+      className="relative aspect-[3/4] min-h-full w-full overflow-hidden sm:aspect-[4/5]"
       style={{
         background:
           "color-mix(in oklab, var(--event-primary,#1F3D2B) 10%, var(--event-card-bg,#FBF5E8))",
