@@ -172,6 +172,7 @@ function BrandingEditor() {
     customColours: form.palette_key === "custom",
     backgroundStyle: !form.page_background_key,
     textBorder: false,
+    navColours: false,
     heroFade: !(form.hero_overlay_color || form.hero_overlay_opacity),
     fonts: !form.font_family,
     pageContent: !(form.welcome_copy || form.venue_label_singular !== DEFAULT_VENUE_LABEL_SINGULAR),
