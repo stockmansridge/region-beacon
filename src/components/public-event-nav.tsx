@@ -72,7 +72,7 @@ export function PublicEventNav({
   const navFg = `var(--event-nav-fg, var(--event-primary-fg,#F6EFE2))`;
   const navMuted = `var(--event-nav-muted, var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))))`;
   const navActiveFg = `var(--event-nav-active-fg, ${accentColor ?? "var(--event-accent,#B5572A)"})`;
-  const accent = accentColor ?? "var(--event-accent,#B5572A)";
+  
   const location = useLocation();
   const pathname = location.pathname;
   const { passportHref: derivedPassportHref } = useCurrentEventPassport(eventId);
