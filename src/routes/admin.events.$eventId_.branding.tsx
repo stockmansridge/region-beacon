@@ -1155,6 +1155,26 @@ function BrandingEditor() {
           </CollapsibleSection>
 
           <CollapsibleSection
+            id="navColours"
+            title="Navigation colours"
+            subtitle={
+              form.nav_background_color
+                ? `Header / bottom nav: ${form.nav_background_color}`
+                : "Following primary colour"
+            }
+            warningCount={countNavWarnings(form)}
+            expanded={expandedSections.navColours}
+            onToggle={() => toggleSection("navColours")}
+          >
+            <NavColoursCard
+              form={form}
+              setForm={setForm}
+              disabled={!canEdit || saving}
+            />
+          </CollapsibleSection>
+
+
+          <CollapsibleSection
             id="heroFade"
             title="Hero image fade"
             subtitle={(() => {
