@@ -206,13 +206,18 @@ export function QrPreview({
           )}
         </div>
       )}
+      {awardsCaption && (
+        <div className="rounded-md border border-[#BFDBFE] bg-[#EFF6FF] px-2.5 py-1 text-xs font-semibold text-[#1D4ED8]">
+          {awardsCaption}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={downloadPng}
           className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
         >
-          Download QR PNG
+          {pngButtonLabel}
         </button>
         {poster && (
           <button
@@ -221,7 +226,7 @@ export function QrPreview({
             disabled={posterBusy}
             className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
           >
-            {posterBusy ? "Generating…" : "Download poster PDF"}
+            {posterBusy ? "Generating…" : posterButtonLabel}
           </button>
         )}
       </div>
