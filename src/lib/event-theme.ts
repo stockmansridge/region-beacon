@@ -216,8 +216,12 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     // Page / card surfaces
     "--event-page-bg": theme.pageBg,
     "--event-card-bg": theme.cardBg,
+    "--event-page-heading": theme.pageHeading,
+    "--event-page-text": theme.pageText,
     "--event-page-fg": theme.pageText,
     "--event-page-muted": theme.pageMuted,
+    "--event-card-heading": theme.cardHeading,
+    "--event-card-text": theme.cardText,
     "--event-card-fg": theme.cardText,
     "--event-card-muted": theme.cardMuted,
     "--event-border": theme.border,
@@ -232,6 +236,7 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     "--event-button-primary-fg": theme.buttonPrimaryFg,
     "--event-button-secondary-bg": theme.buttonSecondaryBg,
     "--event-button-secondary-fg": theme.buttonSecondaryFg,
+    "--event-button-secondary-border": `color-mix(in srgb, ${theme.buttonSecondaryFg} 24%, transparent)`,
     // Navigation
     "--event-nav-bg": theme.navBg,
     "--event-nav-fg": theme.navText,
@@ -242,12 +247,14 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     "--event-hero-bg": theme.heroBg,
     "--event-hero-fg": theme.heroFg,
     "--event-hero-accent": theme.heroAccent,
+    "--event-hero-overlay": `color-mix(in srgb, ${theme.heroBg} 70%, transparent)`,
+    "--event-hero-overlay-strong": `color-mix(in srgb, ${theme.heroBg} 88%, transparent)`,
     // Derived: muted text on primary/dark surfaces.
     "--event-on-primary-muted": `color-mix(in srgb, ${theme.primaryText} 72%, transparent)`,
     // ---- Legacy aliases — keep until every public page is migrated ----
     "--event-text": theme.cardText,
     "--event-muted": theme.cardMuted,
-    "--event-heading": theme.cardText,
+    "--event-heading": theme.cardHeading,
     "--event-body": theme.cardText,
     "--event-visited": theme.primary,
     "--event-pin": theme.accent,
