@@ -154,6 +154,7 @@ function TenantEventPage() {
       accentColor={event.accent_color ?? null}
       pageBackgroundColor={event.page_background_color ?? null}
       cardBackgroundColor={event.card_background_color ?? null}
+      fontFamily={event.font_family ?? null}
       className="min-h-screen px-4 py-8"
     >
       <TrailLanding
