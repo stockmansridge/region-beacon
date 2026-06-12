@@ -503,119 +503,173 @@ function PassportView({
         className="mx-auto w-full max-w-md px-4 pb-24 pt-4"
         style={{ fontFamily: "var(--event-font, inherit)" }}
       >
-        <div className="text-center">
-          <div
-            className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
-          >
-            My Passport
-          </div>
-          <h1
-            className="mt-1 text-3xl font-semibold"
-            style={{
-              color: "var(--event-page-heading)",
-              fontFamily: "var(--event-font, inherit)",
-            }}
-          >
-            {eventName ?? "Trail passport"}
-          </h1>
-          <p
-            className="mt-1 text-[11px] uppercase tracking-[0.22em]"
-            style={{ color: "var(--event-page-muted)" }}
-          >
-            Hi {greetingName}
-          </p>
-        </div>
-
-
-
-
-
-        {/* Progress card */}
+        {/* Hero */}
         <section
-          className="mt-5 rounded-3xl border p-6 text-center shadow-sm"
+          className="relative overflow-hidden rounded-3xl shadow-sm"
+          style={{
+            backgroundColor: "var(--event-hero-bg, var(--event-primary))",
+            color: "var(--event-hero-fg, var(--event-primary-fg))",
+            minHeight: 220,
+          }}
+        >
+          {heroImageUrl ? (
+            <img
+              src={heroImageUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="eager"
+            />
+          ) : null}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, var(--event-hero-overlay, rgba(0,0,0,0.15)) 0%, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 100%)",
+            }}
+          />
+          <div className="relative flex min-h-[220px] flex-col justify-end p-5">
+            {heroLogoUrl ? (
+              <img
+                src={heroLogoUrl}
+                alt=""
+                className="mb-3 h-10 w-10 rounded-full bg-white/80 object-contain p-1 shadow"
+              />
+            ) : null}
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.32em]"
+              style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
+            >
+              My Passport
+            </p>
+            <h1
+              className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
+              style={{
+                color: "var(--event-hero-fg, var(--event-primary-fg))",
+                fontFamily: "var(--event-font, inherit)",
+                textShadow: "0 2px 12px rgba(0,0,0,0.35)",
+              }}
+            >
+              Hi {greetingName}! <span aria-hidden>👋</span>
+            </h1>
+            <p
+              className="mt-1 text-sm sm:text-base"
+              style={{
+                color: "var(--event-hero-fg, var(--event-primary-fg))",
+                opacity: 0.92,
+                textShadow: "0 1px 8px rgba(0,0,0,0.35)",
+              }}
+            >
+              Let’s explore {eventName ?? "the trail"}.
+            </p>
+          </div>
+        </section>
+
+        {/* Summary card — stamps · points · reward status */}
+        <section
+          className="mt-4 rounded-3xl border shadow-sm"
           style={{
             borderColor: "var(--event-card-border)",
             backgroundColor: "var(--event-card-bg)",
           }}
         >
-          <div className="relative mx-auto h-32 w-32">
-            <svg viewBox="0 0 120 120" className="h-32 w-32 -rotate-90">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="var(--event-card-border)" strokeWidth="10" />
-              <circle
-                cx="60"
-                cy="60"
-                r="52"
-                fill="none"
-                stroke="var(--event-button-primary-bg)"
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 52}
-                strokeDashoffset={(1 - pct / 100) * 2 * Math.PI * 52}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="grid grid-cols-3 divide-x" style={{ borderColor: "var(--event-card-border)" }}>
+            <SummaryCell
+              label={totalVenues === 1 ? labelSingular : labelPlural}
+              sublabel="visited"
+              value={
+                totalVenues > 0 ? (
+                  <>
+                    {stampedCount}
+                    <span
+                      className="text-base font-medium"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      /{totalVenues}
+                    </span>
+                  </>
+                ) : (
+                  stampedCount
+                )
+              }
+            />
+            <SummaryCell
+              label="Points"
+              sublabel="earned"
+              value={pointsEarned ?? stampedCount}
+            />
+            <SummaryCell
+              label={
+                awards == null
+                  ? "Rewards"
+                  : awards.length === 0
+                    ? "Keep going"
+                    : totalVenues > 0 && stampedCount >= totalVenues
+                      ? "Trail complete"
+                      : unlockedAwards.length > 0 && !nextAward
+                        ? "All unlocked"
+                        : nextAward
+                          ? "Next reward"
+                          : "Keep exploring"
+              }
+              sublabel={
+                awards == null
+                  ? "loading…"
+                  : awards.length === 0
+                    ? "more rewards ahead"
+                    : nextAward
+                      ? nextAward.points_remaining > 0
+                        ? `${nextAward.points_remaining} pt${nextAward.points_remaining === 1 ? "" : "s"} to go`
+                        : "ready to enter"
+                      : unlockedAwards.length > 0
+                        ? `${unlockedAwards.length} unlocked`
+                        : "keep collecting"
+              }
+              value={
+                awards && awards.length > 0 && nextAward ? (
+                  <span
+                    className="font-trail-serif text-lg font-semibold leading-tight"
+                    style={{ color: "var(--event-card-heading)" }}
+                  >
+                    {nextAward.title}
+                  </span>
+                ) : awards && awards.length > 0 && unlockedAwards.length > 0 ? (
+                  <span aria-hidden className="text-2xl">★</span>
+                ) : (
+                  <span aria-hidden className="text-2xl">✨</span>
+                )
+              }
+              compact
+            />
+          </div>
+          {totalVenues > 0 && (
+            <div className="px-5 pb-4 pt-2">
               <div
-                className="font-trail-serif text-3xl font-semibold"
-                style={{ color: "var(--event-card-heading)" }}
+                className="h-1.5 w-full overflow-hidden rounded-full"
+                style={{ backgroundColor: "var(--event-card-border)" }}
               >
-                {stampedCount}
-                {totalVenues > 0 ? (
-                  <span className="text-base" style={{ color: "var(--event-card-muted)" }}>/{totalVenues}</span>
-                ) : null}
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${pct}%`,
+                    backgroundColor: "var(--event-button-primary-bg)",
+                  }}
+                />
               </div>
               <div
-                className="text-[10px] font-medium uppercase tracking-[0.22em]"
+                className="mt-2 flex items-center justify-between text-[11px]"
                 style={{ color: "var(--event-card-muted)" }}
               >
-                stamps
+                <span>
+                  {stampedCount} of {totalVenues}{" "}
+                  {totalVenues === 1
+                    ? labelSingular.toLowerCase()
+                    : labelPlural.toLowerCase()}{" "}
+                  visited
+                </span>
+                <span className="uppercase tracking-[0.18em]">
+                  Status · {statusLabel}
+                </span>
               </div>
-            </div>
-          </div>
-
-          {totalVenues > 0 && (
-            <p
-              className="mt-4 text-sm font-medium"
-              style={{ color: "var(--event-card-heading)" }}
-            >
-              {stampedCount} of {totalVenues}{" "}
-              {totalVenues === 1
-                ? labelSingular.toLowerCase()
-                : labelPlural.toLowerCase()}{" "}
-              visited
-            </p>
-          )}
-
-          {totalVenues > 0 && stampedCount >= totalVenues ? (
-            <div
-              className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]"
-              style={{
-                backgroundColor: "var(--event-button-primary-bg)",
-                color: "var(--event-button-primary-fg)",
-              }}
-            >
-              <span aria-hidden>★</span>
-              Trail complete
-            </div>
-          ) : (
-            <div
-              className="mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
-              style={{
-                borderColor: "var(--event-card-border)",
-                backgroundColor: "var(--event-page-bg)",
-                color: "var(--event-card-text)",
-              }}
-            >
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{
-                  backgroundColor:
-                    passport.status === "completed"
-                      ? "var(--event-visited, var(--event-primary))"
-                      : "var(--event-pin, var(--event-accent))",
-                }}
-              />
-              Status · {statusLabel}
             </div>
           )}
         </section>
@@ -628,10 +682,9 @@ function PassportView({
         />
 
         {/* Rewards — sourced from configured event_awards. Hidden when none. */}
-        <RewardsSection
-          eventId={passport.event_id}
-          passportId={passport.passport_id}
-        />
+        <RewardsSection awards={awards} nextAward={nextAward} />
+
+
 
         {/* Visitor details */}
         <section
