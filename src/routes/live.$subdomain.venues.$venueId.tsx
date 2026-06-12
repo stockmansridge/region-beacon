@@ -144,7 +144,13 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} /></div>
       <div className="mx-auto max-w-md">
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-[var(--event-primary,#1F3D2B)]/10 sm:aspect-[21/9]">
+        <div
+          className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/9]"
+          style={{
+            background:
+              "color-mix(in oklab, var(--event-primary,#1F3D2B) 12%, var(--event-card-bg,#FBF5E8))",
+          }}
+        >
           {coverUrl ? (
             <img
               src={coverUrl}
@@ -152,7 +158,11 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
               className="absolute inset-0 h-full w-full object-cover object-center"
               loading="eager"
             />
-          ) : null}
+          ) : (
+            <div className="absolute inset-0 grid place-items-center font-trail-serif text-5xl font-semibold text-[var(--event-primary,#1F3D2B)]/40">
+              {venue.name.slice(0, 1).toUpperCase()}
+            </div>
+          )}
           <Link
             to="/venues"
             className="absolute left-3 top-3 rounded-full bg-[var(--event-card-bg,#FBF5E8)]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] shadow"
