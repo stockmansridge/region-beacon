@@ -13,6 +13,7 @@ import {
   getPalette,
   getPaletteOrDefault,
 } from "@/lib/event-palettes";
+import { resolveBackgroundBaseHex } from "@/lib/event-backgrounds";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
