@@ -6281,6 +6281,9 @@ function GoLivePanel({
   domains,
   activation,
   isPlatformAdmin,
+  isFreePlan,
+  planCode,
+  planSource,
   onChanged,
 }: {
   agencyId: string | null;
@@ -6289,6 +6292,9 @@ function GoLivePanel({
   domains: Domain[];
   activation: Activation | null;
   isPlatformAdmin: boolean;
+  isFreePlan: boolean;
+  planCode: string;
+  planSource: string | null;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -6303,10 +6309,18 @@ function GoLivePanel({
     null;
   const primaryDomain = primarySubdomain ?? primaryCustom;
 
+  // Activation gate is automatic on Free plan, Enterprise, and any
+  // manual_override agency — mirrors public.event_is_publishable(). For
+  // those plans the public site goes live as soon as event_status =
+  // 'published' AND a primary domain is 'active'.
+  const activationAutoPass =
+    isFreePlan || planCode === "enterprise" || planSource === "manual_override";
+
   const eventPass = eventStatus === "published";
   const domainPass = !!primaryDomain && primaryDomain.status === "active";
   const activationStatus = activation?.status ?? "unpaid";
-  const activationPass = activationStatus === "active" || activationStatus === "comp";
+  const activationPassRaw = activationStatus === "active" || activationStatus === "comp";
+  const activationPass = activationPassRaw || activationAutoPass;
   const allPass = eventPass && domainPass && activationPass;
 
   const publicUrl = primarySubdomain?.public_subdomain
