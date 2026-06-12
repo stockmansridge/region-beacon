@@ -2201,23 +2201,57 @@ function EventDetail() {
 
   async function saveQrEntryValue(venueId: string, raw: string) {
     if (!agencyId || !canEdit) return;
+    const venueRow = venues.find((vv) => vv.id === venueId);
+    const venueLabel = venueRow?.name ?? venueId;
     const parsed = Number.parseInt(raw, 10);
     if (!Number.isFinite(parsed) || parsed < 1 || parsed > 100) {
-      setQrActionError("Entry value must be a whole number between 1 and 100.");
+      setQrActionError(
+        `Entry value for "${venueLabel}" must be a whole number between 1 and 100 (got "${raw}").`,
+      );
       return;
     }
     setQrActionError(null);
+    setQrSupportDetails(null);
     setQrEntrySavingId(venueId);
-    const { error } = await supabase
+    const { data: updRows, error } = await supabase
       .from("venue_qr_codes")
       .update({ entry_value: parsed })
       .eq("venue_id", venueId)
       .eq("event_id", eventId)
       .eq("agency_id", agencyId)
-      .eq("status", "active");
+      .eq("status", "active")
+      .select("id");
     setQrEntrySavingId(null);
     if (error) {
-      setQrActionError("Could not save entry value. Please try again.");
+      const code = (error as { code?: string }).code ?? "unknown";
+      const details = (error as { details?: string }).details ?? null;
+      const hint = (error as { hint?: string }).hint ?? null;
+      setQrActionError(
+        `Could not save entry value for "${venueLabel}": ${
+          error.message ?? "unknown error"
+        }${details ? ` · ${details}` : ""}${hint ? ` · hint: ${hint}` : ""} (code ${code})`,
+      );
+      setQrSupportDetails(
+        JSON.stringify(
+          {
+            timestamp: new Date().toISOString(),
+            action: "save_entry_value",
+            event_id: eventId,
+            venue_id: venueId,
+            venue_name: venueLabel,
+            entry_value: parsed,
+            supabase_error: { code, message: error.message ?? null, details, hint },
+          },
+          null,
+          2,
+        ),
+      );
+      return;
+    }
+    if (!updRows || updRows.length === 0) {
+      setQrActionError(
+        `No active QR row to update for "${venueLabel}". Generate a QR for this venue first, then set its entry value.`,
+      );
       return;
     }
     setQrEntryDraft((m) => {

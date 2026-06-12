@@ -144,17 +144,18 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} /></div>
       <div className="mx-auto max-w-md">
-        <div className="relative aspect-[3/1] w-full overflow-hidden bg-[var(--event-primary,#1F3D2B)]/10">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-[var(--event-primary,#1F3D2B)]/10 sm:aspect-[21/9]">
           {coverUrl ? (
             <img
               src={coverUrl}
               alt=""
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              loading="eager"
             />
           ) : null}
           <Link
             to="/venues"
-            className="absolute left-3 top-3 rounded-full bg-[var(--event-page-bg,#F6EFE2)]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] shadow"
+            className="absolute left-3 top-3 rounded-full bg-[var(--event-card-bg,#FBF5E8)]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] shadow"
           >
             ← Back
           </Link>

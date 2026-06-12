@@ -355,8 +355,12 @@ function Events() {
                 const isArchived = e.deleted_at != null;
                 const isPublished = e.status === "published";
                 const domainActive = domainStatus === "active";
-                const activationLive = activation === "active" || activation === "comp";
-                const isLive = !isArchived && isPublished && domainActive && activationLive;
+                // Live = published + active primary domain. The activation
+                // row is optional metadata and must not block the LIVE
+                // indicator (issue: dashboard showed NOT LIVE for published
+                // events with an active public subdomain).
+                void activation;
+                const isLive = !isArchived && isPublished && domainActive;
                 const liveLabel = isArchived ? "Archived" : isLive ? "Live" : "Not live";
                 const liveClass = isArchived
                   ? "bg-[#F1F5F9] text-[#475569]"

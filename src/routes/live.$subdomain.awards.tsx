@@ -71,7 +71,27 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
         if (!cancelled) setAwards(rows);
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : String(e));
+          // PostgrestError is a plain object — String(e) yields
+          // "[object Object]". Extract the real fields.
+          const err = e as {
+            message?: string;
+            details?: string;
+            hint?: string;
+            code?: string;
+          } | null;
+          const parts = [
+            err?.message,
+            err?.details,
+            err?.hint ? `hint: ${err.hint}` : null,
+            err?.code ? `code ${err.code}` : null,
+          ].filter(Boolean);
+          const msg =
+            e instanceof Error
+              ? e.message
+              : parts.length > 0
+                ? parts.join(" · ")
+                : "Could not load awards.";
+          setError(msg);
           setAwards([]);
         }
       }
