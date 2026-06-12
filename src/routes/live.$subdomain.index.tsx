@@ -65,6 +65,26 @@ type PublicEvent = {
   venue_label_plural?: string | null;
   hero_overlay_color?: string | null;
   hero_overlay_opacity?: number | null;
+  // Phase D — Brand Kit + semantic colour roles.
+  brand_kit_key?: string | null;
+  link_color?: string | null;
+  card_border_color?: string | null;
+  button_primary_bg?: string | null;
+  button_primary_fg?: string | null;
+  button_secondary_bg?: string | null;
+  button_secondary_fg?: string | null;
+  nav_fg_color?: string | null;
+  nav_muted_color?: string | null;
+  nav_active_fg_color?: string | null;
+  hero_bg_color?: string | null;
+  hero_fg_color?: string | null;
+  hero_accent_color?: string | null;
+  page_heading_color?: string | null;
+  page_body_color?: string | null;
+  page_muted_color?: string | null;
+  card_heading_color?: string | null;
+  card_body_color?: string | null;
+  card_muted_color?: string | null;
 };
 
 type PublicVenue = {
