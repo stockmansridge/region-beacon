@@ -14,6 +14,16 @@ type Props = {
   downloadName?: string;
   /** Rendered size in CSS pixels. The PNG itself is rendered at higher resolution. */
   size?: number;
+  /** Label for the PNG download button. Defaults to "Download QR PNG". */
+  pngButtonLabel?: string;
+  /** Label for the poster download button. Defaults to "Download poster PDF". */
+  posterButtonLabel?: string;
+  /**
+   * Optional plain-language sentence shown above the action buttons, e.g.
+   * "This scan awards: 3 points". Use to make the purpose of the QR
+   * obvious to organisers before they print it.
+   */
+  awardsCaption?: string;
   /**
    * Optional poster context. When provided, a "Download poster PDF" button is
    * shown which generates an A4 poster client-side using the same URL as the
