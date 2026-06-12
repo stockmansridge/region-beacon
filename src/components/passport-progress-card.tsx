@@ -30,14 +30,23 @@ export function PassportProgressCard({
     return (
       <section className="px-4">
         <div
-          className="flex items-center justify-between gap-3 rounded-3xl border bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm"
-          style={{ borderColor: "var(--event-border,#E6DCC7)" }}
+          className="flex items-center justify-between gap-3 rounded-3xl border p-4 shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
         >
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.28em]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               Your passport
             </p>
-            <p className="mt-1 text-[14px] font-medium text-[var(--event-card-fg,var(--event-text,#3D372C))]">
+            <p
+              className="mt-1 text-[14px] font-medium"
+              style={{ color: "var(--event-card-text)" }}
+            >
               Start collecting stamps at participating {venueLabelPlural.toLowerCase()}.
             </p>
           </div>
@@ -45,8 +54,8 @@ export function PassportProgressCard({
             to="/join"
             className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.14em]"
             style={{
-              backgroundColor: "var(--event-primary,#1F3D2B)",
-              color: "var(--event-primary-fg,#F6EFE2)",
+              backgroundColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-fg)",
             }}
           >
             Start
@@ -67,26 +76,41 @@ export function PassportProgressCard({
     <section className="px-4">
       <a
         href={href}
-        className="block rounded-3xl border bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm transition hover:shadow-md"
-        style={{ borderColor: "var(--event-border,#E6DCC7)" }}
+        className="block rounded-3xl border p-5 shadow-sm transition hover:shadow-md"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
       >
         <div className="flex items-center gap-5">
           <ProgressRing pct={pct} visited={visited} total={total} />
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.28em]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               Progress
             </p>
             <p
-              className="mt-0.5 text-[17px] font-semibold leading-tight text-[var(--event-card-fg,var(--event-text,#1F3D2B))]"
-              style={{ fontFamily: "var(--event-font)" }}
+              className="mt-0.5 text-[17px] font-semibold leading-tight"
+              style={{
+                color: "var(--event-card-heading)",
+                fontFamily: "var(--event-font)",
+              }}
             >
               {visited} / {total} {venueLabelPlural.toLowerCase()} visited
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+            <div
+              className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               {points !== null && (
                 <span className="inline-flex items-center gap-1">
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span className="font-semibold text-[var(--event-card-fg,var(--event-text,#1F3D2B))]">
+                  <span
+                    className="font-semibold"
+                    style={{ color: "var(--event-card-heading)" }}
+                  >
                     {points}
                   </span>{" "}
                   points earned
@@ -136,7 +160,7 @@ function ProgressRing({
         r={r}
         fill="none"
         strokeWidth={stroke}
-        stroke="var(--event-border,#E6DCC7)"
+        stroke="var(--event-card-border)"
       />
       <circle
         cx={size / 2}
@@ -145,7 +169,7 @@ function ProgressRing({
         fill="none"
         strokeWidth={stroke}
         strokeLinecap="round"
-        stroke="var(--event-accent,#B5572A)"
+        stroke="var(--event-hero-accent, var(--event-accent))"
         strokeDasharray={`${dash} ${c - dash}`}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
@@ -157,7 +181,7 @@ function ProgressRing({
         style={{
           fontSize: 22,
           fontWeight: 700,
-          fill: "var(--event-card-fg, var(--event-text,#1F3D2B))",
+          fill: "var(--event-card-heading)",
         }}
       >
         {visited}
@@ -171,7 +195,7 @@ function ProgressRing({
           fontSize: 9,
           fontWeight: 600,
           letterSpacing: 1.5,
-          fill: "var(--event-card-muted, var(--event-muted,#8A7E66))",
+          fill: "var(--event-card-muted)",
         }}
       >
         of {Math.max(0, total | 0)}
