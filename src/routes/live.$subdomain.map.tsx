@@ -15,6 +15,10 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { matchRootDomain, tenantHost } from "@/lib/domains";
 import {
+  brandingScopeProps,
+  useEventBrandingKeys,
+} from "@/lib/use-event-palette";
+import {
   EMPTY_CURRENT_EVENT_PASSPORT,
   resolveCurrentEventPassport,
   type CurrentEventPassportResult,
@@ -96,6 +100,7 @@ const INITIAL_DIAG: MapDiagnostics = {
 };
 
 export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
+  const branding = useEventBrandingKeys(subdomain);
   const fetchToken = useServerFn(getMapkitToken);
   const [event, setEvent] = useState<EventRow | null>(null);
   const [venues, setVenues] = useState<VenueRow[]>([]);
@@ -436,7 +441,13 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+      <div
+        className="flex min-h-screen items-center justify-center text-sm"
+        style={{
+          backgroundColor: "var(--event-page-bg)",
+          color: "var(--event-page-muted)",
+        }}
+      >
         Loading…
       </div>
     );
@@ -445,19 +456,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
   return (
     <EventPaletteScope
-      paletteKey={event?.palette_key ?? null}
-      backgroundKey={event?.page_background_key ?? null}
-      pageBackgroundColor={event?.page_background_color ?? null}
-      cardBackgroundColor={event?.card_background_color ?? null}
-      primaryColor={event?.primary_color ?? null}
-      accentColor={event?.accent_color ?? null}
-      textColor={event?.text_color ?? null}
-      mutedTextColor={event?.muted_text_color ?? null}
-      cardTextColor={event?.card_text_color ?? null}
-      cardMutedTextColor={event?.card_muted_text_color ?? null}
-      borderColor={event?.border_color ?? null}
-      primaryTextColor={event?.primary_text_color ?? null}
-      fontFamily={event?.font_family ?? null}
+      {...brandingScopeProps(branding)}
       className="min-h-screen px-4 py-6"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
@@ -476,7 +475,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
           <h1
             className="text-2xl font-semibold"
             style={{
-              color: "var(--event-page-fg, #1F3D2B)",
+              color: "var(--event-page-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
@@ -485,7 +484,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
           {hasPassport && totalCount > 0 && (
             <p
               className="mt-1 text-xs uppercase tracking-[0.18em]"
-              style={{ color: "var(--event-page-muted, #8A7E66)" }}
+              style={{ color: "var(--event-page-muted)" }}
             >
               {visitedCount} of {totalCount} {labels.plural.toLowerCase()} visited
             </p>
@@ -494,12 +493,22 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
 
         {!hasPassport && (
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-xs text-[#3D372C]">
+          <div
+            className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-xs"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+              color: "var(--event-card-text)",
+            }}
+          >
             <span>Create a passport to track visited {labels.plural.toLowerCase()}.</span>
             <Link
               to="/join"
               className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
-              style={{ backgroundColor: accent, color: "#FBF5E8" }}
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
             >
               Start passport
             </Link>
@@ -526,11 +535,24 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
           <div className="relative">
             <div
               ref={mapContainerRef}
-              className="h-[70vh] min-h-[460px] w-full overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#1F3D2B]/10"
+              className="h-[70vh] min-h-[460px] w-full overflow-hidden rounded-2xl border"
+              style={{
+                borderColor: "var(--event-card-border)",
+                backgroundColor:
+                  "color-mix(in srgb, var(--event-primary) 10%, transparent)",
+              }}
             />
             {hasPassport && totalCount > 0 && (
               <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center px-3">
-                <div className="pointer-events-auto flex gap-1 rounded-full border border-[#E6DCC7] bg-[#FBF5E8]/95 p-1 text-xs shadow-sm backdrop-blur">
+                <div
+                  className="pointer-events-auto flex gap-1 rounded-full border p-1 text-xs shadow-sm backdrop-blur"
+                  style={{
+                    borderColor: "var(--event-card-border)",
+                    backgroundColor:
+                      "color-mix(in srgb, var(--event-nav-bg) 95%, transparent)",
+                    color: "var(--event-nav-fg)",
+                  }}
+                >
                   {(
                     [
                       { k: "all", label: "All" },
@@ -546,8 +568,12 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
                         onClick={() => setFilter(f.k)}
                         className="rounded-full px-3 py-1 font-medium transition"
                         style={{
-                          backgroundColor: active ? primary : "transparent",
-                          color: active ? "#FBF5E8" : primary,
+                          backgroundColor: active
+                            ? "var(--event-nav-active-fg)"
+                            : "transparent",
+                          color: active
+                            ? "var(--event-nav-bg)"
+                            : "var(--event-nav-fg)",
                         }}
                       >
                         {f.label}
@@ -576,8 +602,18 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
 
         {!noCoords && unmappedVenues.length > 0 && (
-          <div className="mt-4 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4 text-xs text-[#3D372C]">
-            <p className="mb-2 font-semibold uppercase tracking-[0.18em] text-[#8A7E66]">
+          <div
+            className="mt-4 rounded-2xl border p-4 text-xs"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+              color: "var(--event-card-text)",
+            }}
+          >
+            <p
+              className="mb-2 font-semibold uppercase tracking-[0.18em]"
+              style={{ color: "var(--event-card-muted)" }}
+            >
               {labels.plural} without map locations
             </p>
             <ul className="space-y-1">
@@ -587,7 +623,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
                     to="/venues/$venueId"
                     params={{ venueId: v.venue_id ?? "" }}
                     className="underline-offset-2 hover:underline"
-                    style={{ color: primary }}
+                    style={{ color: "var(--event-link)" }}
                   >
                     {v.name ?? "Venue"}
                   </Link>
@@ -623,7 +659,12 @@ function MapSupportDetails({ buildReport }: { buildReport: () => string }) {
       <button
         type="button"
         onClick={handleCopy}
-        className="rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3D372C]"
+        className="rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em]"
+        style={{
+          borderColor: "var(--event-button-secondary-border)",
+          backgroundColor: "var(--event-button-secondary-bg)",
+          color: "var(--event-button-secondary-fg)",
+        }}
       >
         {copied ? "Copied support details" : "Copy support details"}
       </button>
@@ -645,6 +686,7 @@ function SelectedVenueCard({
   onClose: () => void;
 }) {
   void primary;
+  void accent;
   const img = getVenueAssetPublicUrl(venue.cover_path ?? venue.logo_path);
   const directions = buildAppleMapsDirectionsUrl({
     name: venue.name,
@@ -653,19 +695,31 @@ function SelectedVenueCard({
     lng: venue.lng ?? null,
   });
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-lg">
+    <div
+      className="relative overflow-hidden rounded-2xl border shadow-lg"
+      style={{
+        borderColor: "var(--event-card-border)",
+        backgroundColor: "var(--event-card-bg)",
+      }}
+    >
       <button
         type="button"
         onClick={onClose}
         aria-label="Close venue card"
-        className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-base text-[var(--event-body,#3D372C)] shadow-sm hover:bg-white"
+        className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full shadow-sm"
+        style={{
+          backgroundColor: "var(--event-button-secondary-bg)",
+          color: "var(--event-button-secondary-fg)",
+          borderWidth: 1,
+          borderColor: "var(--event-button-secondary-border)",
+        }}
       >
         ×
       </button>
       <Link
         to="/venues/$venueId"
         params={{ venueId: venue.venue_id ?? "" }}
-        className="flex items-stretch gap-3 p-2.5 pr-10 transition hover:bg-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+        className="flex items-stretch gap-3 p-2.5 pr-10 transition focus:outline-none focus-visible:ring-2"
         style={{ minHeight: 96 }}
       >
         {img ? (
@@ -676,36 +730,57 @@ function SelectedVenueCard({
             loading="lazy"
           />
         ) : (
-          <div className="h-20 w-20 flex-shrink-0 rounded-xl bg-[var(--event-primary,#1F3D2B)]/10" />
+          <div
+            className="h-20 w-20 flex-shrink-0 rounded-xl"
+            style={{
+              backgroundColor:
+                "color-mix(in srgb, var(--event-primary) 10%, transparent)",
+            }}
+          />
         )}
         <div className="flex min-w-0 flex-1 flex-col justify-center">
           <div className="flex items-center gap-2">
-            <p className="truncate font-trail-serif text-[16px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
+            <p
+              className="truncate font-trail-serif text-[16px] font-semibold leading-tight"
+              style={{ color: "var(--event-card-heading)" }}
+            >
               {venue.name ?? "Venue"}
             </p>
             {visited ? (
               <span
-                className="shrink-0 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--event-primary-fg,#FBF5E8)]"
+                className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{
+                  backgroundColor: "var(--event-primary)",
+                  color: "var(--event-primary-fg)",
+                }}
               >
                 ✓ Visited
               </span>
             ) : (
               <span
                 aria-label="Not visited"
-                className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-[var(--event-muted,#8A7E66)] text-[10px] text-[var(--event-muted,#8A7E66)]"
+                className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full border border-dashed text-[10px]"
+                style={{
+                  borderColor: "var(--event-card-muted)",
+                  color: "var(--event-card-muted)",
+                }}
               >
                 ○
               </span>
             )}
           </div>
           {venue.description && (
-            <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[var(--event-body,#3D372C)]">
+            <p
+              className="mt-1 line-clamp-2 text-[12px] leading-snug"
+              style={{ color: "var(--event-card-text)" }}
+            >
               {venue.description}
             </p>
           )}
           <div className="mt-1.5 flex items-center gap-3">
             <span
-              className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--event-primary,#1F3D2B)]"
+              className="text-[11px] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: "var(--event-link)" }}
             >
               View details
             </span>
@@ -716,7 +791,7 @@ function SelectedVenueCard({
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: accent }}
+                style={{ color: "var(--event-link)" }}
               >
                 <span aria-hidden>📍</span> Directions ↗
               </a>
@@ -725,7 +800,8 @@ function SelectedVenueCard({
         </div>
         <span
           aria-hidden
-          className="flex flex-shrink-0 items-center text-2xl text-[var(--event-primary,#1F3D2B)]"
+          className="flex flex-shrink-0 items-center text-2xl"
+          style={{ color: "var(--event-card-muted)" }}
         >
           ›
         </span>
@@ -793,7 +869,11 @@ function MapFallbackList({
               style={{ color: primary }}
             >
               <span className="font-semibold">{v.name}</span>
-              {v.address && <span className="block text-xs text-[#8A7E66]">{v.address}</span>}
+              {v.address && (
+                <span className="block text-xs text-amber-800/80">
+                  {v.address}
+                </span>
+              )}
             </Link>
           </li>
         ))}
@@ -824,22 +904,36 @@ function UploadedEventMap({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]"
+        className="block overflow-hidden rounded-2xl border"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
         aria-label={`${eventName} event map — open full size`}
       >
         <img
           src={url}
           alt={`${eventName} event map`}
-          className="w-full rounded-xl bg-white object-contain"
+          className="w-full rounded-xl object-contain"
         />
       </a>
     );
   }
 
   if (isPdf) {
+    void primary;
     return (
-      <div className="rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center">
-        <p className="mb-3 text-sm text-[#3D372C]">
+      <div
+        className="rounded-2xl border p-6 text-center"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
+      >
+        <p
+          className="mb-3 text-sm"
+          style={{ color: "var(--event-card-text)" }}
+        >
           The organiser has provided a downloadable site map.
         </p>
         <a
@@ -847,7 +941,10 @@ function UploadedEventMap({
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider"
-          style={{ backgroundColor: primary, color: "#FBF5E8" }}
+          style={{
+            backgroundColor: "var(--event-button-primary-bg)",
+            color: "var(--event-button-primary-fg)",
+          }}
         >
           Open event map
         </a>
