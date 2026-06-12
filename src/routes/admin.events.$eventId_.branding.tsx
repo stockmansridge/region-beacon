@@ -2412,5 +2412,87 @@ function HeroOverlayCard({
   );
 }
 
+// ============================================================================
+// CollapsibleSection
+// ============================================================================
 
+function CollapsibleSection({
+  id,
+  title,
+  subtitle,
+  warningCount,
+  expanded,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  warningCount?: number;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-[16px] border border-[#D9E2EF] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left"
+        aria-expanded={expanded}
+        aria-controls={`section-${id}`}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-[#111827]">{title}</span>
+            {!!warningCount && (
+              <span
+                className="inline-flex h-5 items-center rounded-full bg-[#FEF2F2] px-1.5 text-[11px] font-semibold text-[#B91C1C]"
+                title={`${warningCount} contrast warning${warningCount > 1 ? "s" : ""}`}
+              >
+                {warningCount}
+              </span>
+            )}
+          </div>
+          {!expanded && subtitle && (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
+        <ChevronDown
+          size={18}
+          className={`shrink-0 text-[#64748B] transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {expanded && (
+        <div id={`section-${id}`} className="border-t border-[#E6ECF4] px-6 pb-6 pt-2">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function countTextBorderWarnings(form: Form): number {
+  const theme = resolveEventTheme({
+    palette_key: form.palette_key || null,
+    primary_color: form.primary_color || null,
+    accent_color: form.accent_color || null,
+    page_background_color: form.page_background_color || null,
+    card_background_color: form.card_background_color || null,
+    text_color: form.text_color || null,
+    muted_text_color: form.muted_text_color || null,
+    card_text_color: form.card_text_color || null,
+    card_muted_text_color: form.card_muted_text_color || null,
+    border_color: form.border_color || null,
+    primary_text_color: form.primary_text_color || null,
+    page_background_key: form.page_background_key || null,
+  });
+  let count = 0;
+  if (surfaceWarning(theme.pageText, theme.pageBg, "page background")) count++;
+  if (surfaceWarning(theme.pageMuted, theme.pageBg, "page background", 3)) count++;
+  if (surfaceWarning(theme.cardText, theme.cardBg, "card background")) count++;
+  if (surfaceWarning(theme.cardMuted, theme.cardBg, "card background", 3)) count++;
+  if (surfaceWarning(theme.primaryText, theme.primary, "primary button")) count++;
+  return count;
+}
 
