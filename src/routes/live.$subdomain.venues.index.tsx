@@ -158,7 +158,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
         </div>
 
         {venues.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
+          <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-text,#3D372C)]">
             No {labels.plural.toLowerCase()} listed yet. Check back soon.
           </div>
         ) : (
@@ -183,46 +183,44 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                       to="/venues/$venueId"
                       params={{ venueId: vid }}
                       aria-label={`View ${v.name ?? "venue"} details`}
-                      className="grid grid-cols-[38%_1fr] items-stretch focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                      className="grid grid-cols-[112px_minmax(0,1fr)] items-stretch focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)] sm:grid-cols-[140px_minmax(0,1fr)]"
                     >
                       <HeroThumb
                         path={v.cover_path ?? v.logo_path}
                         visited={visited}
                       />
-                      <div className="flex min-w-0 flex-col justify-between gap-2 p-3">
-                        <div className="min-w-0">
-                          <p className="line-clamp-2 font-trail-serif text-[16px] font-semibold leading-tight text-[var(--event-primary,#1F3D2B)]">
-                            {v.name ?? "Unnamed"}
+                      <div className="flex min-w-0 flex-col gap-1.5 p-3">
+                        <p className="font-trail-serif text-[16px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)] break-words">
+                          {v.name ?? "Unnamed"}
+                        </p>
+                        {v.description && (
+                          <p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-text,#3D372C)] sm:line-clamp-4">
+                            {v.description}
                           </p>
-                          {v.description && (
-                            <p className="mt-1 line-clamp-4 text-[12px] leading-snug text-[var(--event-body,#3D372C)]">
-                              {v.description}
-                            </p>
-                          )}
-                          {hasOffer && (() => {
-                            const OfferIcon = resolveOfferIcon(v.offer_display_icon);
-                            const badgeStyle = resolveOfferBadgeStyle(
-                              v.offer_display_colour,
-                              v.offer_display_foreground_colour,
-                            );
-                            return (
-                              <div className="mt-1.5">
-                                <span
-                                  className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                                  style={{
-                                    backgroundColor: badgeStyle.background,
-                                    color: badgeStyle.color,
-                                  }}
-                                >
-                                  <OfferIcon className="h-3 w-3" aria-hidden />
-                                  <span className="truncate">
-                                    {v.offer_summary!.split("\n")[0].slice(0, 40)}
-                                  </span>
+                        )}
+                        {hasOffer && (() => {
+                          const OfferIcon = resolveOfferIcon(v.offer_display_icon);
+                          const badgeStyle = resolveOfferBadgeStyle(
+                            v.offer_display_colour,
+                            v.offer_display_foreground_colour,
+                          );
+                          return (
+                            <div className="mt-auto pt-1">
+                              <span
+                                className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                                style={{
+                                  backgroundColor: badgeStyle.background,
+                                  color: badgeStyle.color,
+                                }}
+                              >
+                                <OfferIcon className="h-3 w-3" aria-hidden />
+                                <span className="truncate">
+                                  {v.offer_summary!.split("\n")[0].slice(0, 40)}
                                 </span>
-                              </div>
-                            );
-                          })()}
-                        </div>
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </Link>
                     {(directionsUrl || showPoints) && (
@@ -273,7 +271,7 @@ function HeroThumb({ path, visited }: { path: string | null; visited: boolean })
   const url = getVenueAssetPublicUrl(path);
   return (
     <div
-      className="relative aspect-[3/4] min-h-full w-full overflow-hidden sm:aspect-[4/5]"
+      className="relative h-full min-h-[140px] w-full overflow-hidden"
       style={{
         background:
           "color-mix(in oklab, var(--event-primary,#1F3D2B) 10%, var(--event-card-bg,#FBF5E8))",
@@ -329,7 +327,7 @@ function NotLiveYet() {
         <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           Event not live yet
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--event-text,#3D372C)]">
           This passport experience isn't available right now. Please check back
           closer to the event, or contact the organiser for details.
         </p>
