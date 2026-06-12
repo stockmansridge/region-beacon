@@ -1410,42 +1410,49 @@ function PaletteSelector({
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-        {palettes.map((p) => (
-          <PaletteCard
-            key={p.key}
-            palette={p}
-            active={p.key === value}
-            disabled={disabled}
-            onSelect={() => onChange(p.key as EventPaletteKey)}
-            onApply={onApplyTheme ? () => onApplyTheme(p) : undefined}
-          />
-        ))}
+      {/* Scrollable theme grid — shows ~1.5 rows so users see there's more
+          without the editor page becoming excessively tall. */}
+      <div
+        className="max-h-[280px] overflow-y-auto rounded-[10px] border border-[#EEF2F7] bg-[#FAFBFD] p-2"
+        aria-label="Theme presets (scrollable)"
+      >
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {palettes.map((p) => (
+            <PaletteCard
+              key={p.key}
+              palette={p}
+              active={p.key === value}
+              disabled={disabled}
+              onSelect={() => onChange(p.key as EventPaletteKey)}
+              onApply={onApplyTheme ? () => onApplyTheme(p) : undefined}
+            />
+          ))}
 
-        {/* Custom palette card */}
-        <button
-          type="button"
-          onClick={() => onChange("custom")}
-          disabled={disabled}
-          className={`group flex flex-col gap-2 rounded-[12px] border p-2 text-left transition disabled:opacity-50 ${
-            value === "custom"
-              ? "border-[#2F6FE4] ring-2 ring-[#2F6FE4]/30"
-              : "border-[#D9E2EF] hover:border-[#94A3B8]"
-          }`}
-        >
-          <div
-            className="flex h-[78px] items-center justify-center rounded-[8px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] text-2xl"
-            aria-hidden
+          {/* Custom palette card */}
+          <button
+            type="button"
+            onClick={() => onChange("custom")}
+            disabled={disabled}
+            className={`group flex flex-col gap-2 rounded-[12px] border p-2 text-left transition disabled:opacity-50 ${
+              value === "custom"
+                ? "border-[#2F6FE4] ring-2 ring-[#2F6FE4]/30"
+                : "border-[#D9E2EF] hover:border-[#94A3B8]"
+            }`}
           >
-            🎨
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-[#111827]">Custom</div>
-            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-              Build your own colour scheme below.
+            <div
+              className="flex h-[78px] items-center justify-center rounded-[8px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] text-2xl"
+              aria-hidden
+            >
+              🎨
             </div>
-          </div>
-        </button>
+            <div>
+              <div className="text-sm font-semibold text-[#111827]">Custom</div>
+              <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                Build your own colour scheme below.
+              </div>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   );
