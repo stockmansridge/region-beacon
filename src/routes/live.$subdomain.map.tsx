@@ -869,7 +869,11 @@ function MapFallbackList({
               style={{ color: primary }}
             >
               <span className="font-semibold">{v.name}</span>
-              {v.address && <span className="block text-xs text-[#8A7E66]">{v.address}</span>}
+              {v.address && (
+                <span className="block text-xs text-amber-800/80">
+                  {v.address}
+                </span>
+              )}
             </Link>
           </li>
         ))}
