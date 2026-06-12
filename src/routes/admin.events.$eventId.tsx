@@ -2349,6 +2349,20 @@ function EventDetail() {
 
     return (
       <div className="space-y-4 rounded-[12px] border border-[#E6ECF4] bg-white p-4">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-sm font-semibold text-[#111827]">Venue check-in QR</h4>
+            <span className="inline-flex items-center rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#1D4ED8]">
+              Place at the venue
+            </span>
+          </div>
+          <p className="text-xs leading-5 text-muted-foreground">
+            Visitors scan this QR <strong>at the venue</strong> to collect their
+            stamp and earn points. Do not confuse this with the Event start QR
+            on your posters.
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <span className="font-medium text-[#111827]">Status:</span>
           {hasActiveQr ? (
@@ -2365,34 +2379,44 @@ function EventDetail() {
               Issued {fmt(qr.issued_at)}
             </span>
           )}
+          {hasActiveQr && (
+            <span className="inline-flex items-center rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2 py-0.5 text-[11px] font-semibold text-[#1D4ED8]">
+              Awards {qr!.entry_value ?? 1} point{(qr!.entry_value ?? 1) === 1 ? "" : "s"} per scan
+            </span>
+          )}
         </div>
 
         {!hasActiveQr ? (
           canEdit ? (
-            <button
-              type="button"
-              onClick={() => generateOrRotateQr(v.id, false)}
-              disabled={isBusy}
-              className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isBusy ? "Generating…" : "Generate QR"}
-            </button>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Generate a venue check-in QR to let visitors collect stamps here.
+              </p>
+              <button
+                type="button"
+                onClick={() => generateOrRotateQr(v.id, false)}
+                disabled={isBusy}
+                className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isBusy ? "Generating…" : "Generate venue check-in QR"}
+              </button>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No QR generated yet.
+              No venue check-in QR generated yet.
             </p>
           )
         ) : !built ? (
-          <p className="text-sm text-muted-foreground">QR link unavailable.</p>
+          <p className="text-sm text-muted-foreground">Venue check-in link unavailable.</p>
         ) : built.isFallback ? (
           <p className="text-sm text-amber-700 dark:text-amber-400">
-            A public address is required before the QR link can be shown.
+            A public address is required before the venue check-in link can be shown.
           </p>
         ) : (
           <>
             <div className="space-y-1.5">
               <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                QR link
+                Venue check-in link
               </p>
               <a
                 href={built.url}
@@ -2411,7 +2435,7 @@ function EventDetail() {
                     disabled={isBusy}
                     className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
+                    {qrCopiedVenueId === v.id ? "Copied" : "Copy venue check-in link"}
                   </button>
                   <a
                     href={built.url}
@@ -2478,6 +2502,9 @@ function EventDetail() {
             <QrPreview
               value={built.url}
               downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+              pngButtonLabel="Download venue check-in QR (PNG)"
+              posterButtonLabel="Download venue check-in poster PDF"
+              awardsCaption={`This scan awards: ${qr.entry_value ?? 1} point${(qr.entry_value ?? 1) === 1 ? "" : "s"}`}
               poster={{
                 eventName: event.name,
                 venueName: v.name,
@@ -2869,7 +2896,7 @@ function EventDetail() {
             />
           </Section>
 
-          <Section title="Marketing assets" id="section-marketing" tab="overview" description="Printable poster with a QR code linking to your public event page.">
+          <Section title="Event start QR &amp; poster" id="section-marketing" tab="overview" description="The QR visitors scan from posters, flyers, and signage to start or open their passport. This is different from the per-venue check-in QRs.">
             <AdminEventPoster
               canEdit={canEdit}
               event={{
@@ -4035,7 +4062,7 @@ function EventDetail() {
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="px-3 py-2 font-medium">Active QR</th>
                       <th className="px-3 py-2 font-medium">Issued</th>
-                      {canEdit && showVenueQrControls && <th className="px-3 py-2 font-medium">QR link</th>}
+                      {canEdit && showVenueQrControls && <th className="px-3 py-2 font-medium">Venue check-in link</th>}
                       {canEdit && showVenueQrControls && <th className="px-3 py-2 font-medium">QR controls</th>}
                       {canEdit && <th className="px-3 py-2 font-medium">Actions</th>}
                     </tr>
@@ -4146,7 +4173,7 @@ function EventDetail() {
                                       disabled={isBusy}
                                       className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                     >
-                                      {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
+                                      {qrCopiedVenueId === v.id ? "Copied" : "Copy venue check-in link"}
                                     </button>
                                     <a
                                       href={built.url}
@@ -4231,6 +4258,9 @@ function EventDetail() {
                                     <QrPreview
                                       value={built.url}
                                       downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
+                                      pngButtonLabel="Download venue check-in QR (PNG)"
+                                      posterButtonLabel="Download venue check-in poster PDF"
+                                      awardsCaption={`This scan awards: ${qr?.entry_value ?? 1} point${(qr?.entry_value ?? 1) === 1 ? "" : "s"}`}
                                       poster={{
                                         eventName: event.name,
                                         venueName: v.name,
@@ -4254,7 +4284,7 @@ function EventDetail() {
                                   disabled={isBusy}
                                   className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                  {isBusy ? "Generating…" : "Generate QR"}
+                                  {isBusy ? "Generating…" : "Generate venue check-in QR"}
                                 </button>
                               )}
                             </td>
