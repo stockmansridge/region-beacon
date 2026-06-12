@@ -131,9 +131,13 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
               {eventInfo.event_name}
             </p>
           )}
-          <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+          <h1
+            className="mt-1 text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]"
+            style={{ fontFamily: "var(--event-font, inherit)" }}
+          >
             Rewards & prizes
           </h1>
+
           <p className="mt-2 text-sm text-[var(--event-text,#3D372C)]">
             Earn points by checking in at venues to unlock rewards and enter
             prize draws.
