@@ -153,7 +153,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
         {state.kind === "loading" && (
           <Card>
-            <p className="text-center text-sm text-[var(--event-muted,#8A7E66)]">Loading…</p>
+            <p className="text-center text-sm text-[var(--event-card-muted)]">Loading…</p>
           </Card>
         )}
 
@@ -190,7 +190,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
         <div className="mt-8 text-center">
           <Link
             to="/"
-            className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+            className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-link)] underline-offset-4 hover:underline"
           >
             ← Back to event
           </Link>
@@ -203,13 +203,13 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 function Header({ subdomain }: { subdomain: string }) {
   return (
     <div className="mb-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--event-accent,#B5572A)]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--event-hero-accent)]">
         {subdomain}.getstampd.com.au
       </p>
       <h1
         className="mt-2 text-3xl font-semibold sm:text-4xl"
         style={{
-          color: "var(--event-page-fg, #1F3D2B)",
+          color: "var(--event-page-heading)",
           fontFamily: "var(--event-font, inherit)",
         }}
       >
@@ -217,7 +217,7 @@ function Header({ subdomain }: { subdomain: string }) {
       </h1>
       <p
         className="mt-2 text-sm"
-        style={{ color: "var(--event-page-muted, #8A7E66)" }}
+        style={{ color: "var(--event-page-muted)" }}
       >
         Ranked by total points. Passport stamps are still shown so you can track venue progress.
       </p>
@@ -228,7 +228,7 @@ function Header({ subdomain }: { subdomain: string }) {
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm">
+    <div className="rounded-3xl border border-[var(--event-card-border)] bg-[var(--event-card-bg)] p-6 shadow-sm">
       {children}
     </div>
   );
@@ -237,11 +237,11 @@ function Card({ children }: { children: React.ReactNode }) {
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <Card>
-      <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
-      <h2 className="font-trail-serif text-center text-xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+      <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-[var(--event-page-heading)]/10" />
+      <h2 className="font-trail-serif text-center text-xl font-semibold text-[var(--event-page-heading)]">
         {title}
       </h2>
-      <p className="mx-auto mt-2 max-w-sm text-center text-sm leading-relaxed text-[var(--event-body,#3D372C)]/80">
+      <p className="mx-auto mt-2 max-w-sm text-center text-sm leading-relaxed text-[var(--event-card-text)]/80">
         {body}
       </p>
     </Card>
@@ -250,11 +250,11 @@ function EmptyState({ title, body }: { title: string; body: string }) {
 
 function tierColor(tier: string | null): { bg: string; fg: string } {
   const t = (tier ?? "").toLowerCase();
-  if (t === "complete") return { bg: "var(--event-primary,#1F3D2B)", fg: "var(--event-page-bg,#F6EFE2)" };
+  if (t === "complete") return { bg: "var(--event-page-heading)", fg: "var(--event-page-bg)" };
   if (t === "gold") return { bg: "#C9A24A", fg: "#1F1A12" };
   if (t === "silver") return { bg: "#B8B0A0", fg: "#1F1A12" };
-  if (t === "bronze") return { bg: "var(--event-accent,#B5572A)", fg: "var(--event-page-bg,#F6EFE2)" };
-  return { bg: "var(--event-border,#E6DCC7)", fg: "var(--event-body,#3D372C)" };
+  if (t === "bronze") return { bg: "var(--event-accent)", fg: "var(--event-page-bg)" };
+  return { bg: "var(--event-card-border)", fg: "var(--event-card-text)" };
 }
 
 function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
@@ -268,11 +268,11 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
         return (
           <li
             key={`${r.rank}-${r.display_name}-${i}`}
-            className="flex items-center gap-4 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 shadow-sm"
+            className="flex items-center gap-4 rounded-2xl border border-[var(--event-card-border)] bg-[var(--event-card-bg)] px-4 py-3 shadow-sm"
           >
             <RankBadge rank={r.rank ?? i + 1} />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-trail-serif text-base font-semibold text-[var(--event-primary,#1F3D2B)]">
+              <p className="truncate font-trail-serif text-base font-semibold text-[var(--event-card-heading)]">
                 {r.display_name ?? "Guest"}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -285,7 +285,7 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
                   </span>
                 )}
                 {r.is_completed && (
-                  <span className="inline-flex items-center rounded-full bg-[var(--event-primary,#1F3D2B)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)]">
+                  <span className="inline-flex items-center rounded-full bg-[var(--event-card-heading)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-card-heading)]">
                     Completed
                   </span>
                 )}
@@ -293,21 +293,21 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
             </div>
             <div className="text-right">
               {points !== null && (
-                <div className="text-lg font-semibold text-[var(--event-accent,#B5572A)]">
+                <div className="text-lg font-semibold text-[var(--event-link)]">
                   {points}
-                  <span className="ml-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]">
+                  <span className="ml-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
                     pts
                   </span>
                 </div>
               )}
               {stamps !== null && (
-                <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]">
+                <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
                   {stamps} {stamps === 1 ? "stamp" : "stamps"}
                 </div>
               )}
               {(r.venue_points !== null || r.bonus_points !== null) &&
                 (r.venue_points ?? 0) + (r.bonus_points ?? 0) > 0 && (
-                  <div className="mt-0.5 text-[10px] text-[var(--event-muted,#8A7E66)]">
+                  <div className="mt-0.5 text-[10px] text-[var(--event-card-muted)]">
                     {r.venue_points ?? 0} venue · {r.bonus_points ?? 0} bonus
                   </div>
                 )}
@@ -328,11 +328,11 @@ function RankBadge({ rank }: { rank: number }) {
     : silver
       ? "#B8B0A0"
       : bronze
-        ? "var(--event-accent,#B5572A)"
-        : "var(--event-primary,#1F3D2B)";
+        ? "var(--event-accent)"
+        : "var(--event-card-heading)";
   return (
     <div
-      className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-[var(--event-page-bg,#F6EFE2)]"
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-[var(--event-page-bg)]"
       style={{ backgroundColor: bg }}
     >
       {rank}
@@ -342,7 +342,7 @@ function RankBadge({ rank }: { rank: number }) {
 
 function PrivacyNote() {
   return (
-    <p className="mx-auto mt-6 max-w-md text-center text-[11px] leading-relaxed text-[var(--event-muted,#8A7E66)]">
+    <p className="mx-auto mt-6 max-w-md text-center text-[11px] leading-relaxed text-[var(--event-page-muted)]">
       Names are shown according to the organiser's privacy settings. We never
       publish email, phone, postcode, or full names.
     </p>
@@ -353,9 +353,9 @@ function SupportDetailsBlock({ details }: { details: SupportDetails }) {
   const [copied, setCopied] = useState(false);
   const text = JSON.stringify(details, null, 2);
   return (
-    <div className="mx-auto mt-4 max-w-md rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-4 text-left">
+    <div className="mx-auto mt-4 max-w-md rounded-2xl border border-[var(--event-card-border)] bg-[var(--event-card-bg)] p-4 text-left">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--event-muted,#8A7E66)]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
           Support details
         </p>
         <button
@@ -369,15 +369,15 @@ function SupportDetailsBlock({ details }: { details: SupportDetails }) {
               // ignore clipboard failure
             }
           }}
-          className="rounded-full border border-[var(--event-border,#E6DCC7)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)] hover:bg-[var(--event-primary,#1F3D2B)]/5"
+          className="rounded-full border border-[var(--event-button-secondary-border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-button-secondary-fg)] hover:bg-[var(--event-button-secondary-fg)]/5"
         >
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all text-[10px] leading-snug text-[var(--event-body,#3D372C)]">
+      <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all text-[10px] leading-snug text-[var(--event-card-text)]">
         {text}
       </pre>
-      <p className="mt-2 text-[10px] text-[var(--event-muted,#8A7E66)]">
+      <p className="mt-2 text-[10px] text-[var(--event-card-muted)]">
         If this keeps happening, paste these details to the organiser. No
         personal data is included.
       </p>
