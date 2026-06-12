@@ -327,6 +327,8 @@ function BrandingEditor() {
     const card_background_color = form.card_background_color.trim();
     const text_color = form.text_color.trim();
     const muted_text_color = form.muted_text_color.trim();
+    const card_text_color = form.card_text_color.trim();
+    const card_muted_text_color = form.card_muted_text_color.trim();
     const border_color = form.border_color.trim();
     const primary_text_color = form.primary_text_color.trim();
     const hero_overlay_color = form.hero_overlay_color.trim();
@@ -343,8 +345,10 @@ function BrandingEditor() {
       return;
     }
     for (const [label, value] of [
-      ["Main text colour", text_color],
-      ["Muted text colour", muted_text_color],
+      ["Page text colour", text_color],
+      ["Page muted text colour", muted_text_color],
+      ["Card text colour", card_text_color],
+      ["Card muted text colour", card_muted_text_color],
       ["Border colour", border_color],
       ["Primary button text colour", primary_text_color],
       ["Hero image overlay colour", hero_overlay_color],
@@ -380,6 +384,8 @@ function BrandingEditor() {
       card_background_color: card_background_color || null,
       text_color: text_color || null,
       muted_text_color: muted_text_color || null,
+      card_text_color: card_text_color || null,
+      card_muted_text_color: card_muted_text_color || null,
       border_color: border_color || null,
       primary_text_color: primary_text_color || null,
       hero_overlay_color: hero_overlay_color || null,
@@ -387,10 +393,11 @@ function BrandingEditor() {
     };
 
     const NEW_TEXT_COLS = "text_color, muted_text_color, border_color, primary_text_color";
+    const CARD_TEXT_COLS = "card_text_color, card_muted_text_color";
     const HERO_OVERLAY_COLS = "hero_overlay_color, hero_overlay_opacity";
     const BASE_SELECT_COLS =
       "logo_path, cover_path, primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, palette_key, page_background_key, page_background_color, card_background_color";
-    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${HERO_OVERLAY_COLS}`;
+    let SELECT_COLS = `${BASE_SELECT_COLS}, ${NEW_TEXT_COLS}, ${CARD_TEXT_COLS}, ${HERO_OVERLAY_COLS}`;
 
     // 1. Re-check existence from the DB (don't rely on stale bundle.hasBranding).
     const { data: existing, error: existingErr } = await supabase
