@@ -114,6 +114,46 @@ function friendlyError(raw: string | undefined): string {
   return "Could not create your passport. Please try again.";
 }
 
+/**
+ * Build the full prop bag for <EventPaletteScope> from a PublicEvent
+ * row, including Phase D Brand Kit fields. Centralised so every
+ * surface on this page (form, success, info screens) resolves the
+ * exact same theme.
+ */
+function paletteProps(event: PublicEvent) {
+  return {
+    paletteKey: event.palette_key ?? null,
+    backgroundKey: event.page_background_key ?? null,
+    primaryColor: event.primary_color ?? null,
+    accentColor: event.accent_color ?? null,
+    pageBackgroundColor: event.page_background_color ?? null,
+    cardBackgroundColor: event.card_background_color ?? null,
+    textColor: event.text_color ?? null,
+    mutedTextColor: event.muted_text_color ?? null,
+    cardTextColor: event.card_text_color ?? null,
+    cardMutedTextColor: event.card_muted_text_color ?? null,
+    borderColor: event.border_color ?? null,
+    primaryTextColor: event.primary_text_color ?? null,
+    navBackgroundColor: event.nav_background_color ?? null,
+    brandKitKey: event.brand_kit_key ?? null,
+    linkColor: event.link_color ?? null,
+    cardBorderColor: event.card_border_color ?? null,
+    buttonPrimaryBg: event.button_primary_bg ?? null,
+    buttonPrimaryFg: event.button_primary_fg ?? null,
+    buttonSecondaryBg: event.button_secondary_bg ?? null,
+    buttonSecondaryFg: event.button_secondary_fg ?? null,
+    navFgColor: event.nav_fg_color ?? null,
+    navMutedColor: event.nav_muted_color ?? null,
+    navActiveFgColor: event.nav_active_fg_color ?? null,
+    heroBgColor: event.hero_bg_color ?? null,
+    heroFgColor: event.hero_fg_color ?? null,
+    heroAccentColor: event.hero_accent_color ?? null,
+    fontFamily: event.font_family ?? null,
+  };
+}
+
+
+
 export function LiveJoinPage({ subdomain }: { subdomain: string }) {
 
   const [state, setState] = useState<LoadState>({ kind: "loading" });
