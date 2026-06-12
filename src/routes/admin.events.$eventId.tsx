@@ -6471,7 +6471,7 @@ function GoLivePanel({
               ? primaryDomain
                 ? `Not live because public address is ${primaryDomain.status}.`
                 : "Not live because no public address is claimed."
-              : "Not live because commercial activation is inactive."}
+              : "Not live because commercial activation is inactive. (This is required on paid plans only — Free, Enterprise, and manual-override agencies skip this step.)"}
       </div>
 
       {primarySubdomain?.public_subdomain && (
