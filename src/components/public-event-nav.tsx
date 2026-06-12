@@ -263,7 +263,7 @@ export function PublicEventNav({
               className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
                 color: isActive("leaderboard")
-                  ? accent
+                  ? navActiveFg
                   : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
               }}
             >
