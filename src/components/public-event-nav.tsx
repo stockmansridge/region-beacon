@@ -35,7 +35,7 @@ type ActiveTarget =
  *
  * Renders a premium, app-style sticky top header (hamburger left, centred
  * event logo or name, passport shortcut on the right) plus a fixed bottom
- * mobile nav with Home, Map, Passport (prominent), Leader Board, More.
+ * mobile nav with Home, Map, Passport (prominent), Leaderboard, More.
  */
 export function PublicEventNav({
   subdomain,
@@ -183,7 +183,7 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav: Home · Map · Passport (centre) · Leader Board · More */}
+      {/* Fixed bottom mobile nav: Home · Map · Passport (centre) · Leaderboard · More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
@@ -441,7 +441,7 @@ function MenuDrawer({
             <li>
               <Link to="/leaderboard" onClick={onClose} className={rowClass}>
                 <Trophy className="h-5 w-5 opacity-80" />
-                Leader Board
+                Leaderboard
               </Link>
             </li>
             {hasAwards && (
