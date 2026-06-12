@@ -1020,70 +1020,81 @@ function BrandingEditor() {
             </CollapsibleSection>
           )}
 
-          <BackgroundSelector
-            value={form.page_background_key}
-            paletteKey={form.palette_key}
-            primaryColor={form.primary_color}
-            accentColor={form.accent_color}
-            onChange={(key) => setForm({ ...form, page_background_key: key })}
-            disabled={!canEdit || saving}
-          />
+          <CollapsibleSection
+            id="backgroundStyle"
+            title="Background style"
+            subtitle={(() => {
+              const bg = getBackground(form.page_background_key || null);
+              return bg?.label ?? (form.page_background_key === "custom_color" ? "Custom colour" : "Default");
+            })()}
+            expanded={expandedSections.backgroundStyle}
+            onToggle={() => toggleSection("backgroundStyle")}
+          >
+            <BackgroundSelector
+              value={form.page_background_key}
+              paletteKey={form.palette_key}
+              primaryColor={form.primary_color}
+              accentColor={form.accent_color}
+              onChange={(key) => setForm({ ...form, page_background_key: key })}
+              disabled={!canEdit || saving}
+            />
 
-          {/* Custom background hex inputs — visible when custom_color is selected */}
-          {form.page_background_key === "custom_color" && (
-            <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
-                  Advanced — custom colours
+            {/* Custom background hex inputs — visible when custom_color is selected */}
+            {form.page_background_key === "custom_color" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+                    Advanced — custom colours
+                  </div>
+                  <div className="mt-1 text-sm font-semibold">Custom background colour</div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Pick a hex page background, and optionally a card background.
+                    These values are only applied while “Custom” is the selected background style.
+                  </p>
                 </div>
-                <div className="mt-1 text-sm font-semibold">Custom background colour</div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Pick a hex page background, and optionally a card background.
-                  These values are only applied while “Custom” is the selected background style.
-                </p>
+                <Field label="Page background colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
+                      onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.page_background_color}
+                      onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
+                      placeholder="#F6EFE2"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
+                <Field label="Card background colour (optional)">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
+                      onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
+                      disabled={!canEdit || saving}
+                      className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={form.card_background_color}
+                      onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
+                      placeholder="#FBF5E8"
+                      disabled={!canEdit || saving}
+                      maxLength={7}
+                      className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </Field>
               </div>
-              <Field label="Page background colour">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.page_background_color) ? form.page_background_color : "#FFFFFF"}
-                    onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.page_background_color}
-                    onChange={(e) => setForm({ ...form, page_background_color: e.target.value })}
-                    placeholder="#F6EFE2"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-              <Field label="Card background colour (optional)">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={HEX_RE.test(form.card_background_color) ? form.card_background_color : "#FFFFFF"}
-                    onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
-                    disabled={!canEdit || saving}
-                    className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={form.card_background_color}
-                    onChange={(e) => setForm({ ...form, card_background_color: e.target.value })}
-                    placeholder="#FBF5E8"
-                    disabled={!canEdit || saving}
-                    maxLength={7}
-                    className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </Field>
-            </div>
-          )}
+            )}
+          </CollapsibleSection>
 
           {/* ============== Semantic text & border colours ============== */}
           <ColorRolesCard
