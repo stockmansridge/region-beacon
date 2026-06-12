@@ -440,6 +440,32 @@ function BrandingEditor() {
     let payload = fullPayload;
     let { row: savedRow, error: writeErr } = await writeRow(payload, mode);
 
+    // Fallback if the new card-surface text columns are missing on the
+    // production DB. Retry without them so the rest persists.
+    if (
+      writeErr &&
+      /(card_text_color|card_muted_text_color)/i.test(writeErr.message ?? "")
+    ) {
+      console.warn("[branding-save] card-text columns missing, retrying without", {
+        message: writeErr.message,
+      });
+      const {
+        card_text_color: _ctc,
+        card_muted_text_color: _cmtc,
+        ...rest
+      } = payload;
+      payload = rest;
+      SELECT_COLS = SELECT_COLS.replace(`, ${CARD_TEXT_COLS}`, "");
+      const retry = await writeRow(payload, mode);
+      savedRow = retry.row;
+      writeErr = retry.error;
+      if (!writeErr && (card_text_color || card_muted_text_color)) {
+        setSaveError(
+          "Saved core branding. The new card text/muted colours require the database migration in supabase/migrations-draft-event-card-text-colors/.",
+        );
+      }
+    }
+
     // Fallback if the new semantic text columns are missing on the
     // production DB (migration `migrations-draft-event-text-colors` not
     // yet applied). Retry without those keys so the rest persists.
@@ -556,6 +582,8 @@ function BrandingEditor() {
       card_background_color: saved.card_background_color ?? "",
       text_color: saved.text_color ?? text_color ?? "",
       muted_text_color: saved.muted_text_color ?? muted_text_color ?? "",
+      card_text_color: saved.card_text_color ?? card_text_color ?? "",
+      card_muted_text_color: saved.card_muted_text_color ?? card_muted_text_color ?? "",
       border_color: saved.border_color ?? border_color ?? "",
       primary_text_color: saved.primary_text_color ?? primary_text_color ?? "",
       hero_overlay_color: saved.hero_overlay_color ?? hero_overlay_color ?? "",
