@@ -30,6 +30,12 @@ export type EventTheme = {
   cardMuted: string;     // --event-card-muted
   accent: string;        // --event-accent
   border: string;        // --event-border
+  // Navigation surface (sticky top header, mobile bottom nav, drawer).
+  navBg: string;         // --event-nav-bg
+  navText: string;       // --event-nav-fg
+  navMuted: string;      // --event-nav-muted
+  navActiveBg: string;   // --event-nav-active-bg
+  navActiveText: string; // --event-nav-active-fg
 };
 
 export type BrandingInput = {
@@ -48,6 +54,9 @@ export type BrandingInput = {
   card_muted_text_color?: string | null;
   border_color?: string | null;
   primary_text_color?: string | null;
+  // Navigation surface background (header, bottom nav, drawer). When
+  // null, falls back to primary_color so existing events look identical.
+  nav_background_color?: string | null;
   // Background key only influences whether custom page/card hex overrides
   // are honoured (parity with existing EventPaletteScope behaviour).
   page_background_key?: string | null;
@@ -105,6 +114,17 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
   const cardText = pickHex(input.card_text_color) ?? pageText;
   const cardMuted = pickHex(input.card_muted_text_color) ?? pageMuted;
 
+  const navBg = pickHex(input.nav_background_color) ?? palette.primary;
+  // Nav text/muted derive from primaryText so contrast on a dark nav
+  // surface stays readable regardless of the page/card text colours.
+  const navText = primaryText;
+  const navMuted = `color-mix(in srgb, ${navText} 72%, transparent)`;
+  // Subtle active pill behind the icon, tinted with nav text colour.
+  const navActiveBg = `color-mix(in srgb, ${navText} 12%, transparent)`;
+  // Keep the historical accent-based active indicator so the active item
+  // remains visually obvious even when nav bg ≈ accent.
+  const navActiveText = palette.accent;
+
   return {
     pageBg: customPageBg ?? palette.pageBg,
     cardBg: customCardBg ?? palette.cardBg,
@@ -116,6 +136,11 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
     cardMuted,
     accent: palette.accent,
     border,
+    navBg,
+    navText,
+    navMuted,
+    navActiveBg,
+    navActiveText,
   };
 }
 
@@ -147,6 +172,13 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     "--event-muted": theme.cardMuted,
     "--event-accent": theme.accent,
     "--event-border": theme.border,
+    // Navigation surface tokens — header, bottom nav, drawer paint from
+    // these so the nav can be styled independently of buttons.
+    "--event-nav-bg": theme.navBg,
+    "--event-nav-fg": theme.navText,
+    "--event-nav-muted": theme.navMuted,
+    "--event-nav-active-bg": theme.navActiveBg,
+    "--event-nav-active-fg": theme.navActiveText,
     // Derived: secondary/muted text on primary/dark surfaces (header, bottom
     // nav, drawer). Derived from --event-primary-fg so it stays readable on
     // --event-primary regardless of the event's content Muted Text choice.
