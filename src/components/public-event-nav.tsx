@@ -113,10 +113,16 @@ export function PublicEventNav({
     <>
       {/* Sticky app-style header */}
       <header
-        className="sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
+        className={
+          transparentHeader
+            ? "sticky top-0 z-40 -mx-4"
+            : "sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
+        }
         style={{
-          background: navBg,
-          borderColor: "color-mix(in oklab, white 12%, transparent)",
+          background: transparentHeader ? "transparent" : navBg,
+          borderColor: transparentHeader
+            ? "transparent"
+            : "color-mix(in oklab, white 12%, transparent)",
           paddingTop: "env(safe-area-inset-top)",
         }}
       >
