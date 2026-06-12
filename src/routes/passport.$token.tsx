@@ -596,11 +596,11 @@ function PassportView({
           <PoweredByGetStampd variant="trail" />
         </div>
 
-      </div>
-    </TrailShell>
+      </main>
     </>
   );
 }
+
 
 function StampGrid({
   venues,
