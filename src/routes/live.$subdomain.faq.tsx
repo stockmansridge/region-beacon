@@ -5,7 +5,7 @@ import { tenantHost } from "@/lib/domains";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
