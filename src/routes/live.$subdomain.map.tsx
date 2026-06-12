@@ -441,7 +441,13 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6EFE2] text-sm text-[#8A7E66]">
+      <div
+        className="flex min-h-screen items-center justify-center text-sm"
+        style={{
+          backgroundColor: "var(--event-page-bg)",
+          color: "var(--event-page-muted)",
+        }}
+      >
         Loading…
       </div>
     );
@@ -450,19 +456,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
   return (
     <EventPaletteScope
-      paletteKey={event?.palette_key ?? null}
-      backgroundKey={event?.page_background_key ?? null}
-      pageBackgroundColor={event?.page_background_color ?? null}
-      cardBackgroundColor={event?.card_background_color ?? null}
-      primaryColor={event?.primary_color ?? null}
-      accentColor={event?.accent_color ?? null}
-      textColor={event?.text_color ?? null}
-      mutedTextColor={event?.muted_text_color ?? null}
-      cardTextColor={event?.card_text_color ?? null}
-      cardMutedTextColor={event?.card_muted_text_color ?? null}
-      borderColor={event?.border_color ?? null}
-      primaryTextColor={event?.primary_text_color ?? null}
-      fontFamily={event?.font_family ?? null}
+      {...brandingScopeProps(branding)}
       className="min-h-screen px-4 py-6"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
@@ -481,7 +475,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
           <h1
             className="text-2xl font-semibold"
             style={{
-              color: "var(--event-page-fg, #1F3D2B)",
+              color: "var(--event-page-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
@@ -490,7 +484,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
           {hasPassport && totalCount > 0 && (
             <p
               className="mt-1 text-xs uppercase tracking-[0.18em]"
-              style={{ color: "var(--event-page-muted, #8A7E66)" }}
+              style={{ color: "var(--event-page-muted)" }}
             >
               {visitedCount} of {totalCount} {labels.plural.toLowerCase()} visited
             </p>
