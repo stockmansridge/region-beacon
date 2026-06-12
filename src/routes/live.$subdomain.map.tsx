@@ -686,6 +686,7 @@ function SelectedVenueCard({
   onClose: () => void;
 }) {
   void primary;
+  void accent;
   const img = getVenueAssetPublicUrl(venue.cover_path ?? venue.logo_path);
   const directions = buildAppleMapsDirectionsUrl({
     name: venue.name,
