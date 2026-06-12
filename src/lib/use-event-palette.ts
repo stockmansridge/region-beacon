@@ -45,6 +45,8 @@ export type EventBrandingKeys = {
   cardMutedColor: string | null;
   /** Storage path of the event logo, if uploaded. */
   logoPath: string | null;
+  /** Storage path of the event cover image, if uploaded. */
+  coverPath: string | null;
   /** CSS font-family stack chosen for the event. */
   fontFamily: string | null;
   ready: boolean;
