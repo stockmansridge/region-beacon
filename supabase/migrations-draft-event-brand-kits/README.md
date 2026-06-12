@@ -8,16 +8,22 @@ look identical to today.
 
 ## Files
 1. `01_event_branding_brand_kit_columns.sql` — adds `brand_kit_key`,
-   `brand_kit_version`, and the new semantic colour columns. All
-   nullable. Adds `~* '^#[0-9a-f]{6}$'` format CHECKs matching the
-   existing colour-column pattern.
-2. `02_extend_get_public_event_by_domain_brand_kit.sql` — drop+create
-   of `get_public_event_by_domain` so the RPC returns the new columns.
-   SECURITY DEFINER + grants preserved verbatim.
+   `brand_kit_version`, and the new semantic colour columns (hero,
+   buttons, navigation, card border, link). All nullable + hex CHECK.
+2. `03_event_branding_heading_body_columns.sql` — adds the explicit
+   heading / body / muted split columns for page and card surfaces:
+   `page_heading_color`, `page_body_color`, `page_muted_color`,
+   `card_heading_color`, `card_body_color`, `card_muted_color`.
+3. `02_extend_get_public_event_by_domain_brand_kit.sql` — drop+create of
+   `get_public_event_by_domain` so the RPC returns the full Phase D
+   shape (Brand Kit selection, heading/body/muted, buttons, nav, hero,
+   link, card border) while keeping every previously returned column in
+   place for fallback. SECURITY DEFINER + anon/authenticated EXECUTE
+   grants preserved verbatim.
 
 ## Apply order
-Run `01` then `02`. Both are idempotent (`add column if not exists`,
-`create or replace function`).
+Run `01`, then `03`, then `02`. All are idempotent
+(`add column if not exists`, `create or replace function`).
 
 ## Rollback
 ```sql
