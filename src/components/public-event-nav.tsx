@@ -183,7 +183,7 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav: Home · Map · Passport (centre) · Leaderboard · More */}
+      {/* Fixed bottom mobile nav: Home · Passport · Rewards · Offers · More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
@@ -201,7 +201,7 @@ export function PublicEventNav({
               aria-current={isActive("home") ? "page" : undefined}
               className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: isActive("home") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
+                color: isActive("home") ? navActiveFg : navMuted,
               }}
             >
               <Home className="h-5 w-5" />
@@ -209,66 +209,62 @@ export function PublicEventNav({
             </Link>
           </BottomItem>
 
-          <BottomItem active={isActive("map")} accent={accent}>
-            {hasMap ? (
-              <Link
-                to="/map"
-                aria-current={isActive("map") ? "page" : undefined}
-                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
-                style={{
-                  color: isActive("map") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
-                }}
-              >
-                <MapIcon className="h-5 w-5" />
-                <span>Map</span>
-              </Link>
-            ) : (
-              <Link
-                to="/venues"
-                aria-current={isActive("venues") ? "page" : undefined}
-                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
-                style={{
-                  color: isActive("venues") ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
-                }}
-              >
-                <MapPin className="h-5 w-5" />
-                <span>Venues</span>
-              </Link>
-            )}
-          </BottomItem>
-
-          {/* Centre passport — visually prominent */}
-          <li className="relative flex items-center justify-center">
+          <BottomItem active={isActive("passport")} accent={accent}>
             <a
               href={passportTarget}
               aria-label={passportLabel}
               aria-current={isActive("passport") ? "page" : undefined}
-              className="-mt-6 grid h-14 w-14 place-items-center rounded-full shadow-lg ring-4 transition active:scale-95"
+              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                background: accent,
-                color: "var(--event-primary-fg,#F6EFE2)",
-                // Ring tinted with the nav surface so the floating button
-                // feels connected to the surrounding nav.
-                ["--tw-ring-color" as string]: navBg,
+                color: isActive("passport") ? navActiveFg : navMuted,
               }}
             >
-              <Stamp className="h-6 w-6" />
+              <Stamp className="h-5 w-5" />
+              <span>Passport</span>
             </a>
-          </li>
+          </BottomItem>
 
-          <BottomItem active={isActive("leaderboard")} accent={accent}>
+          {hasAwards ? (
+            <BottomItem active={pathname === "/awards"} accent={accent}>
+              <Link
+                to="/awards"
+                aria-current={pathname === "/awards" ? "page" : undefined}
+                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                style={{
+                  color: pathname === "/awards" ? navActiveFg : navMuted,
+                }}
+              >
+                <Award className="h-5 w-5" />
+                <span>Rewards</span>
+              </Link>
+            </BottomItem>
+          ) : (
+            <BottomItem active={isActive("leaderboard")} accent={accent}>
+              <Link
+                to="/leaderboard"
+                aria-current={isActive("leaderboard") ? "page" : undefined}
+                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                style={{
+                  color: isActive("leaderboard") ? navActiveFg : navMuted,
+                }}
+              >
+                <Trophy className="h-5 w-5" />
+                <span>Leaders</span>
+              </Link>
+            </BottomItem>
+          )}
+
+          <BottomItem active={isActive("offers")} accent={accent}>
             <Link
-              to="/leaderboard"
-              aria-current={isActive("leaderboard") ? "page" : undefined}
-              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+              to="/offers"
+              aria-current={isActive("offers") ? "page" : undefined}
+              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: isActive("leaderboard")
-                  ? navActiveFg
-                  : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
+                color: isActive("offers") ? navActiveFg : navMuted,
               }}
             >
-              <Trophy className="h-5 w-5" />
-              <span>Leaders</span>
+              <Tag className="h-5 w-5" />
+              <span>Offers</span>
             </Link>
           </BottomItem>
 
@@ -279,7 +275,7 @@ export function PublicEventNav({
               aria-label="More"
               className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: menuOpen ? navActiveFg : "var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))",
+                color: menuOpen ? navActiveFg : navMuted,
               }}
             >
               <MoreHorizontal className="h-5 w-5" />
