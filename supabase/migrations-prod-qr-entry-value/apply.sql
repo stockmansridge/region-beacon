@@ -58,6 +58,9 @@ create index if not exists idx_checkins_passport_value
   on public.checkins (passport_id, entry_value);
 
 -- 3) Patch redeem_checkin to read entry_value defensively via COALESCE.
+-- Drop first because the live return type differs from this definition.
+drop function if exists public.redeem_checkin(text, text, inet, text);
+
 create or replace function public.redeem_checkin(
   _qr_token text,
   _passport_token text,
