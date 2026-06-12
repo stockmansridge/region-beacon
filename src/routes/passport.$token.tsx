@@ -146,7 +146,10 @@ function PassportPage() {
   // Always wrap output in EventPaletteScope so the chosen event background
   // is applied on the first painted frame (no cream flash). Until branding
   // resolves we render a neutral, non-cream placeholder.
-  const showInner = branding.ready && state.kind !== "loading";
+  // Only gate on passport state — branding is best-effort and must not
+  // block the page from rendering on mobile if the public event RPC is
+  // slow or temporarily unreachable.
+  const showInner = state.kind !== "loading";
 
   return (
     <EventPaletteScope
@@ -160,7 +163,7 @@ function PassportPage() {
     >
       {!showInner ? (
         <div className="flex min-h-screen items-center justify-center text-sm text-[var(--event-muted,#8A7E66)]">
-          {state.kind === "loading" || !branding.ready ? "Loading your passport…" : null}
+          Loading your passport…
         </div>
       ) : state.kind === "not_found" ? (
         <PassportNotFound token={token} diagnostics={state.diagnostics} branding={branding} />
