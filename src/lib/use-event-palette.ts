@@ -20,6 +20,8 @@ export type EventBrandingKeys = {
   cardMutedTextColor: string | null;
   borderColor: string | null;
   primaryTextColor: string | null;
+  /** Hex background colour for header/bottom nav/drawer. Nullable. */
+  navBackgroundColor: string | null;
   /** Storage path of the event logo, if uploaded. */
   logoPath: string | null;
   /** CSS font-family stack chosen for the event. */
@@ -40,6 +42,7 @@ const EMPTY: EventBrandingKeys = {
   cardMutedTextColor: null,
   borderColor: null,
   primaryTextColor: null,
+  navBackgroundColor: null,
   logoPath: null,
   fontFamily: null,
   ready: false,
@@ -65,6 +68,7 @@ export function brandingScopeProps(b: EventBrandingKeys) {
     cardMutedTextColor: b.cardMutedTextColor,
     borderColor: b.borderColor,
     primaryTextColor: b.primaryTextColor,
+    navBackgroundColor: b.navBackgroundColor,
     fontFamily: b.fontFamily,
   };
 }
@@ -100,6 +104,7 @@ export function useEventBrandingKeys(
           card_muted_text_color?: string | null;
           border_color?: string | null;
           primary_text_color?: string | null;
+          nav_background_color?: string | null;
           logo_path?: string | null;
           font_family?: string | null;
         } | null;
@@ -116,6 +121,7 @@ export function useEventBrandingKeys(
           cardMutedTextColor: row?.card_muted_text_color ?? null,
           borderColor: row?.border_color ?? null,
           primaryTextColor: row?.primary_text_color ?? null,
+          navBackgroundColor: row?.nav_background_color ?? null,
           logoPath: row?.logo_path ?? null,
           fontFamily: row?.font_family ?? null,
           ready: true,
