@@ -100,6 +100,7 @@ const INITIAL_DIAG: MapDiagnostics = {
 };
 
 export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
+  const branding = useEventBrandingKeys(subdomain);
   const fetchToken = useServerFn(getMapkitToken);
   const [event, setEvent] = useState<EventRow | null>(null);
   const [venues, setVenues] = useState<VenueRow[]>([]);
