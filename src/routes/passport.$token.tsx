@@ -497,16 +497,22 @@ function PassportView({
 
 
         {/* Progress card */}
-        <section className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center shadow-sm">
+        <section
+          className="mt-5 rounded-3xl border p-6 text-center shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
           <div className="relative mx-auto h-32 w-32">
             <svg viewBox="0 0 120 120" className="h-32 w-32 -rotate-90">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="var(--event-border,#E6DCC7)" strokeWidth="10" />
+              <circle cx="60" cy="60" r="52" fill="none" stroke="var(--event-card-border)" strokeWidth="10" />
               <circle
                 cx="60"
                 cy="60"
                 r="52"
                 fill="none"
-                stroke={PRIMARY}
+                stroke="var(--event-button-primary-bg)"
                 strokeWidth="10"
                 strokeLinecap="round"
                 strokeDasharray={2 * Math.PI * 52}
@@ -516,14 +522,17 @@ function PassportView({
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <div
                 className="font-trail-serif text-3xl font-semibold"
-                style={{ color: PRIMARY }}
+                style={{ color: "var(--event-card-heading)" }}
               >
                 {stampedCount}
                 {totalVenues > 0 ? (
-                  <span className="text-base text-[var(--event-muted,#8A7E66)]">/{totalVenues}</span>
+                  <span className="text-base" style={{ color: "var(--event-card-muted)" }}>/{totalVenues}</span>
                 ) : null}
               </div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+              <div
+                className="text-[10px] font-medium uppercase tracking-[0.22em]"
+                style={{ color: "var(--event-card-muted)" }}
+              >
                 stamps
               </div>
             </div>
@@ -532,7 +541,7 @@ function PassportView({
           {totalVenues > 0 && (
             <p
               className="mt-4 text-sm font-medium"
-              style={{ color: PRIMARY }}
+              style={{ color: "var(--event-card-heading)" }}
             >
               {stampedCount} of {totalVenues}{" "}
               {totalVenues === 1
@@ -544,19 +553,31 @@ function PassportView({
 
           {totalVenues > 0 && stampedCount >= totalVenues ? (
             <div
-              className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--event-page-bg,#F6EFE2)]"
-              style={{ backgroundColor: PRIMARY }}
+              className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
             >
               <span aria-hidden>★</span>
               Trail complete
             </div>
           ) : (
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-page-bg,#F6EFE2)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-body,#3D372C)]">
+            <div
+              className="mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
+              style={{
+                borderColor: "var(--event-card-border)",
+                backgroundColor: "var(--event-page-bg)",
+                color: "var(--event-card-text)",
+              }}
+            >
               <span
                 className="h-1.5 w-1.5 rounded-full"
                 style={{
                   backgroundColor:
-                    passport.status === "completed" ? PRIMARY : ACCENT,
+                    passport.status === "completed"
+                      ? "var(--event-visited, var(--event-primary))"
+                      : "var(--event-pin, var(--event-accent))",
                 }}
               />
               Status · {statusLabel}
