@@ -64,7 +64,14 @@ export function PublicEventNav({
   eventId?: string | null;
 }) {
   void subdomain;
-  const primary = primaryColor ?? "var(--event-primary,#1F3D2B)";
+  // Header / bottom-nav / drawer surfaces consume the nav tokens so they
+  // can be themed independently of buttons. Tokens fall back to the
+  // primary colour when no nav background has been configured, which
+  // matches the historical behaviour for existing events.
+  const navBg = `var(--event-nav-bg, ${primaryColor ?? "var(--event-primary,#1F3D2B)"})`;
+  const navFg = `var(--event-nav-fg, var(--event-primary-fg,#F6EFE2))`;
+  const navMuted = `var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent)))`;
+  const navActiveFg = `var(--event-nav-active-fg, ${accentColor ?? "var(--event-accent,#B5572A)"})`;
   const accent = accentColor ?? "var(--event-accent,#B5572A)";
   const location = useLocation();
   const pathname = location.pathname;
