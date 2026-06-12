@@ -62,7 +62,7 @@ type EditorState =
 
 type DrawState =
   | { mode: "closed" }
-  | { mode: "confirm"; award: AdminEventAward }
+  | { mode: "confirm"; award: AdminEventAward; error?: string | null }
   | { mode: "drawing"; award: AdminEventAward }
   | { mode: "result"; award: AdminEventAward; result: AwardDrawResult };
 
@@ -255,16 +255,22 @@ export function EventAwardsSection({
           state={draw}
           onCancel={() => setDraw({ mode: "closed" })}
           onConfirm={async () => {
-            if (draw.mode !== "confirm") return;
+            if (draw.mode !== "confirm" && draw.mode !== "drawing") return;
             const award = draw.award;
             setDraw({ mode: "drawing", award });
             try {
               const result = await drawAwardWinner(award.id);
               setDraw({ mode: "result", award, result });
+              toast.success(
+                `Winner drawn: ${result.winner_participant_name ?? "—"}`,
+              );
               refresh();
             } catch (e) {
-              toast.error(formatErr(e));
-              setDraw({ mode: "confirm", award });
+              // eslint-disable-next-line no-console
+              console.error("[awards] draw_event_award_winner failed", e);
+              const msg = formatErr(e);
+              toast.error(msg);
+              setDraw({ mode: "confirm", award, error: msg });
             }
           }}
           onClose={() => {
@@ -596,6 +602,8 @@ function DrawDialog({
   const isRedraw = !!award.latest_draw_id;
   const result = state.mode === "result" ? state.result : null;
   const drawing = state.mode === "drawing";
+  const errorMsg = state.mode === "confirm" ? state.error ?? null : null;
+  const noEligible = award.eligible_count === 0;
 
   return (
     <Dialog
@@ -603,7 +611,7 @@ function DrawDialog({
       onOpenChange={(o) => {
         if (!o) {
           if (state.mode === "result") onClose();
-          else onCancel();
+          else if (!drawing) onCancel();
         }
       }}
     >
@@ -631,11 +639,28 @@ function DrawDialog({
                 new draw record and keep the old result in history.
               </p>
             )}
+            {errorMsg && (
+              <p
+                role="alert"
+                className="rounded border border-red-300 bg-red-50 p-2 text-xs text-red-900"
+              >
+                Draw failed: {errorMsg}
+              </p>
+            )}
             <DialogFooter>
-              <Button variant="outline" onClick={onCancel} disabled={drawing}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={drawing}
+              >
                 Cancel
               </Button>
-              <Button onClick={() => void onConfirm()} disabled={drawing}>
+              <Button
+                type="button"
+                onClick={() => void onConfirm()}
+                disabled={drawing || noEligible}
+              >
                 {drawing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Drawing…
