@@ -47,6 +47,15 @@ type EventRow = {
   accent_color: string | null;
   palette_key?: string | null;
   page_background_key?: string | null;
+  page_background_color?: string | null;
+  card_background_color?: string | null;
+  text_color?: string | null;
+  muted_text_color?: string | null;
+  card_text_color?: string | null;
+  card_muted_text_color?: string | null;
+  border_color?: string | null;
+  primary_text_color?: string | null;
+  font_family?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
   logo_path?: string | null;
