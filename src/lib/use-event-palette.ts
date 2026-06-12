@@ -45,6 +45,8 @@ export type EventBrandingKeys = {
   cardMutedColor: string | null;
   /** Storage path of the event logo, if uploaded. */
   logoPath: string | null;
+  /** Storage path of the event cover image, if uploaded. */
+  coverPath: string | null;
   /** CSS font-family stack chosen for the event. */
   fontFamily: string | null;
   ready: boolean;
@@ -84,6 +86,7 @@ const EMPTY: EventBrandingKeys = {
   cardBodyColor: null,
   cardMutedColor: null,
   logoPath: null,
+  coverPath: null,
   fontFamily: null,
   ready: false,
 };
@@ -178,6 +181,7 @@ export function useEventBrandingKeys(
           card_body_color?: string | null;
           card_muted_color?: string | null;
           logo_path?: string | null;
+          cover_path?: string | null;
           font_family?: string | null;
         } | null;
         setKeys({
@@ -214,6 +218,7 @@ export function useEventBrandingKeys(
           cardBodyColor: row?.card_body_color ?? null,
           cardMutedColor: row?.card_muted_color ?? null,
           logoPath: row?.logo_path ?? null,
+          coverPath: row?.cover_path ?? null,
           fontFamily: row?.font_family ?? null,
           ready: true,
         });
