@@ -219,6 +219,17 @@ function LivePublicLoaded({
     new URLSearchParams(window.location.search).get("preview") === "1";
   const [previewDismissed, setPreviewDismissed] = useState(false);
 
+  // Once a returning visitor has a verified passport for this event, the
+  // Passport page is their home — redirect them there instead of rendering
+  // the marketing/landing home. Admin preview keeps the landing visible.
+  useEffect(() => {
+    if (isAdminPreview) return;
+    if (typeof window === "undefined") return;
+    if (passportHref && window.location.pathname !== passportHref) {
+      window.location.replace(passportHref);
+    }
+  }, [passportHref, isAdminPreview]);
+
   const heroImageUrl = getEventAssetPublicUrl(event.cover_path);
   const logoUrl = getEventAssetPublicUrl(event.logo_path);
 
