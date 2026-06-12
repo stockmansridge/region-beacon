@@ -324,7 +324,8 @@ function BottomItem({
 
 function MenuDrawer({
   onClose,
-  primary,
+  navBg,
+  navFg,
   hasTerms,
   hasFaq,
   hasMap,
@@ -337,7 +338,8 @@ function MenuDrawer({
   logoUrl,
 }: {
   onClose: () => void;
-  primary: string;
+  navBg: string;
+  navFg: string;
   hasTerms: boolean;
   hasFaq: boolean;
   hasMap: boolean;
@@ -363,8 +365,8 @@ function MenuDrawer({
       <aside
         className="absolute inset-y-0 left-0 flex h-full w-[82%] max-w-sm flex-col shadow-2xl animate-in slide-in-from-left"
         style={{
-          background: primary,
-          color: "var(--event-primary-fg,#F6EFE2)",
+          background: navBg,
+          color: navFg,
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
