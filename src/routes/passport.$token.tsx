@@ -58,6 +58,11 @@ type LoadState =
       stamps: PassportStampState;
     };
 
+// PRIMARY / ACCENT are kept as hex fallbacks for the PublicEventNav prop
+// surface (it still takes raw hex colours). All in-page colour usage on
+// this route is driven by the semantic --event-* tokens emitted by
+// EventPaletteScope; these constants are not consulted by card/page
+// chrome anymore.
 const PRIMARY = "#1F3D2B";
 const ACCENT = "#B5572A";
 
