@@ -254,6 +254,33 @@ function Events() {
     }
   }
 
+  async function activatePublicAddress(eventId: string) {
+    setActivatingId(eventId);
+    try {
+      const { data, error } = await supabase.rpc("claim_event_subdomain" as never, {
+        _event_id: eventId,
+        _subdomain: null,
+      } as never);
+      const res = (Array.isArray(data) ? data[0] : data) as
+        | { ok?: boolean; message?: string; domain_status_after?: string }
+        | null;
+      if (error) {
+        toast.error(`Could not activate public address: ${error.message}`);
+        return;
+      }
+      if (res?.ok && res.domain_status_after === "active") {
+        toast.success("Public address activated — your public site is live.");
+      } else {
+        toast.info(String(res?.message ?? "Public address could not be activated yet."));
+      }
+      setReloadKey((k) => k + 1);
+    } finally {
+      setActivatingId(null);
+    }
+  }
+
+
+
 
   return (
     <>
