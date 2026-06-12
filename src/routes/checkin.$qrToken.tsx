@@ -354,36 +354,48 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
         backgroundKey={backgroundKey}
         showBottomNav={false}
       >
-        <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
+        <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(0,0,0,0.45)]">
           <div
             className="relative h-[420px] w-full"
-            style={{ background: `linear-gradient(160deg, ${PRIMARY} 0%, #14271C 100%)` }}
+            style={{
+              background:
+                "linear-gradient(160deg, var(--event-primary," +
+                PRIMARY +
+                ") 0%, color-mix(in oklab, var(--event-primary," +
+                PRIMARY +
+                ") 70%, black) 100%)",
+            }}
           >
-            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-page-bg,#F6EFE2)]">
+            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-primary-fg,#F6EFE2)]">
               <div
                 className="flex h-20 w-20 items-center justify-center rounded-full border-2"
                 style={{
-                  borderColor: GOLD,
-                  backgroundColor: `${PRIMARY}E6`,
-                  boxShadow: `0 0 0 6px ${GOLD}22`,
+                  borderColor: "var(--event-accent," + ACCENT + ")",
+                  backgroundColor:
+                    "color-mix(in oklab, var(--event-primary," + PRIMARY + ") 88%, transparent)",
+                  boxShadow:
+                    "0 0 0 6px color-mix(in oklab, var(--event-accent," + ACCENT + ") 18%, transparent)",
                 }}
               >
-                <Check className="h-9 w-9" style={{ color: GOLD }} />
+                <Check
+                  className="h-9 w-9"
+                  style={{ color: "var(--event-accent," + GOLD + ")" }}
+                />
               </div>
               <div
                 className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em]"
-                style={{ color: GOLD }}
+                style={{ color: "var(--event-accent," + GOLD + ")" }}
               >
                 {kicker}
               </div>
               <h1 className="font-trail-serif mt-2 text-[34px] font-semibold leading-tight">
                 {title}
               </h1>
-              <p className="mt-3 text-base text-[var(--event-page-bg,#F6EFE2)]/90">
+              <p className="mt-3 text-base text-[var(--event-primary-fg,#F6EFE2)]/90">
                 {pointsLine}
               </p>
               {outcome.isNew && (
-                <p className="mt-2 text-sm text-[var(--event-page-bg,#F6EFE2)]/80">
+                <p className="mt-2 text-sm text-[var(--event-primary-fg,#F6EFE2)]/80">
                   Your passport has been updated.
                 </p>
               )}
@@ -395,8 +407,8 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
           <Link
             to="/passport/$token"
             params={{ token: outcome.passportToken }}
-            className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
-            style={{ backgroundColor: PRIMARY }}
+            className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-primary-fg,#F6EFE2)] shadow"
+            style={{ backgroundColor: "var(--event-primary," + PRIMARY + ")" }}
           >
             View my passport
           </Link>

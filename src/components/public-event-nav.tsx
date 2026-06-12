@@ -193,7 +193,7 @@ export function PublicEventNav({
               aria-current={isActive("home") ? "page" : undefined}
               className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: isActive("home") ? accent : "var(--event-primary-fg,#F6EFE2)",
+                color: isActive("home") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
               }}
             >
               <Home className="h-5 w-5" />
@@ -208,7 +208,7 @@ export function PublicEventNav({
                 aria-current={isActive("map") ? "page" : undefined}
                 className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("map") ? accent : "var(--event-primary-fg,#F6EFE2)",
+                  color: isActive("map") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
                 }}
               >
                 <MapIcon className="h-5 w-5" />
@@ -220,7 +220,7 @@ export function PublicEventNav({
                 aria-current={isActive("venues") ? "page" : undefined}
                 className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("venues") ? accent : "var(--event-primary-fg,#F6EFE2)",
+                  color: isActive("venues") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
                 }}
               >
                 <MapPin className="h-5 w-5" />
@@ -256,7 +256,7 @@ export function PublicEventNav({
               style={{
                 color: isActive("leaderboard")
                   ? accent
-                  : "var(--event-primary-fg,#F6EFE2)",
+                  : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
               }}
             >
               <Trophy className="h-5 w-5" />
@@ -271,7 +271,7 @@ export function PublicEventNav({
               aria-label="More"
               className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: menuOpen ? accent : "var(--event-primary-fg,#F6EFE2)",
+                color: menuOpen ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
               }}
             >
               <MoreHorizontal className="h-5 w-5" />
