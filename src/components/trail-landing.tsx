@@ -203,7 +203,7 @@ export function TrailLanding({
               </div>
               <div
                 className="font-trail-serif mt-1 text-3xl font-semibold"
-                style={{ color: primaryColor }}
+                style={{ color: "var(--event-primary)" }}
               >
                 {venueCount ?? venueNames?.length ?? 0}
                 <span className="ml-1 text-sm font-medium text-[var(--event-muted,#8A7E66)]">{venueLabelPlural.toLowerCase()}</span>
@@ -211,7 +211,10 @@ export function TrailLanding({
             </div>
             <div
               className="rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
-              style={{ backgroundColor: `${goldColor}33`, color: accentColor }}
+              style={{
+                backgroundColor: "var(--event-accent)",
+                color: "var(--event-primary-fg)",
+              }}
             >
               Collect stamps
             </div>
@@ -222,7 +225,7 @@ export function TrailLanding({
               {venueNames.slice(0, 6).map((n, i) => (
                 <li
                   key={`${n}-${i}`}
-                  className="flex items-center gap-3 rounded-xl border border-[#EFE6D2] bg-[var(--event-page-bg,#F6EFE2)] px-3 py-2 text-sm text-[var(--event-body,#3D372C)]"
+                  className="flex items-center gap-3 rounded-xl border border-[var(--event-border,#EFE6D2)] bg-[var(--event-page-bg,#F6EFE2)] px-3 py-2 text-sm text-[var(--event-text,#3D372C)]"
                 >
                   <span
                     className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold"
