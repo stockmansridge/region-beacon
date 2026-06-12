@@ -1074,14 +1074,6 @@ function RewardsSection({
 }
 
 
-      <ul className="space-y-2">
-        {awards.map((a) => (
-          <AwardRow key={a.id} award={a} />
-        ))}
-      </ul>
-    </section>
-  );
-}
 
 function AwardRow({ award }: { award: PublicEventAward }) {
   const unlocked = award.is_eligible;
