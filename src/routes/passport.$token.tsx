@@ -471,14 +471,14 @@ function PassportView({
         <div className="text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: "var(--event-accent, " + ACCENT + ")" }}
+            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
           >
             My Passport
           </div>
           <h1
             className="mt-1 text-3xl font-semibold"
             style={{
-              color: "var(--event-page-fg, " + PRIMARY + ")",
+              color: "var(--event-page-heading)",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
@@ -486,7 +486,7 @@ function PassportView({
           </h1>
           <p
             className="mt-1 text-[11px] uppercase tracking-[0.22em]"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted)" }}
           >
             Hi {greetingName}
           </p>
