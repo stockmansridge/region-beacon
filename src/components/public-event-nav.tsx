@@ -183,7 +183,7 @@ export function PublicEventNav({
           paddingBottom: "env(safe-area-inset-bottom)",
           background: primary,
           borderColor: "color-mix(in oklab, white 10%, transparent)",
-          color: "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
+          color: "var(--event-primary-fg,#F6EFE2)",
         }}
       >
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5 items-stretch">
