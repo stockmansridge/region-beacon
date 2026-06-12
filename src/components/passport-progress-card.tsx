@@ -1,37 +1,31 @@
 import { MapPin, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 
 /**
- * Large app-style progress summary card. Shows the visitor's current
- * passport progress (visited / total venues), points earned, and a hint
- * toward the next reward when one is configured.
+ * Large app-style progress summary card. Shows visitor's current passport
+ * progress (visited / total venues), points earned, and a hint toward the
+ * next configured reward.
  *
- * Pure presentation — all data is passed in from the page so the home
- * route can share one fetch across the progress card, stamp grid, and
- * next reward card.
+ * Container-style component: fetches its own data from
+ * `usePassportHomeData`, which is module-cached so multiple consumers on
+ * the same page (this card + stamp grid + next-reward card) share a
+ * single load.
  */
 export function PassportProgressCard({
-  hasPassport,
-  visited,
-  total,
-  points,
-  nextRewardLabel,
-  nextRewardRemaining,
+  eventId,
   venueLabelPlural = "venues",
-  passportHref,
   canRegister = true,
 }: {
-  hasPassport: boolean;
-  visited: number;
-  total: number;
-  points: number | null;
-  nextRewardLabel: string | null;
-  nextRewardRemaining: number | null;
+  eventId: string | null;
   venueLabelPlural?: string;
-  passportHref: string | null;
   canRegister?: boolean;
 }) {
-  if (!hasPassport) {
+  const data = usePassportHomeData(eventId);
+
+  if (data.loading) return null;
+
+  if (!data.hasPassport) {
     if (!canRegister) return null;
     return (
       <section className="px-4">
@@ -62,8 +56,12 @@ export function PassportProgressCard({
     );
   }
 
+  const { visited, total, points, awards, passportHref } = data;
   const pct = total > 0 ? Math.min(100, Math.round((visited / total) * 100)) : 0;
   const href = passportHref ?? "/passport";
+  const next = pickNextReward(awards);
+  const nextRewardLabel = next?.title ?? null;
+  const nextRewardRemaining = next ? Math.max(0, next.points_remaining) : null;
 
   return (
     <section className="px-4">
@@ -124,7 +122,6 @@ function ProgressRing({
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = (pct / 100) * c;
-  void total;
   return (
     <svg
       width={size}
