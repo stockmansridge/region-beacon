@@ -55,10 +55,25 @@ type EventRow = {
   card_muted_text_color?: string | null;
   border_color?: string | null;
   primary_text_color?: string | null;
+  nav_background_color?: string | null;
+  brand_kit_key?: string | null;
+  link_color?: string | null;
+  card_border_color?: string | null;
+  button_primary_bg?: string | null;
+  button_primary_fg?: string | null;
+  button_secondary_bg?: string | null;
+  button_secondary_fg?: string | null;
+  nav_fg_color?: string | null;
+  nav_muted_color?: string | null;
+  nav_active_fg_color?: string | null;
+  hero_bg_color?: string | null;
+  hero_fg_color?: string | null;
+  hero_accent_color?: string | null;
   font_family?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
   logo_path?: string | null;
+  cover_path?: string | null;
 };
 
 type OfferVenue = VenueRow & { offer_summary: string };
@@ -114,7 +129,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
   if (state.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-page-muted,var(--event-muted,#8A7E66))]">
         Loading…
       </div>
     );
@@ -142,6 +157,20 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
       cardMutedTextColor={event?.card_muted_text_color ?? null}
       borderColor={event?.border_color ?? null}
       primaryTextColor={event?.primary_text_color ?? null}
+      navBackgroundColor={event?.nav_background_color ?? null}
+      brandKitKey={event?.brand_kit_key ?? null}
+      linkColor={event?.link_color ?? null}
+      cardBorderColor={event?.card_border_color ?? null}
+      buttonPrimaryBg={event?.button_primary_bg ?? null}
+      buttonPrimaryFg={event?.button_primary_fg ?? null}
+      buttonSecondaryBg={event?.button_secondary_bg ?? null}
+      buttonSecondaryFg={event?.button_secondary_fg ?? null}
+      navFgColor={event?.nav_fg_color ?? null}
+      navMutedColor={event?.nav_muted_color ?? null}
+      navActiveFgColor={event?.nav_active_fg_color ?? null}
+      heroBgColor={event?.hero_bg_color ?? null}
+      heroFgColor={event?.hero_fg_color ?? null}
+      heroAccentColor={event?.hero_accent_color ?? null}
       fontFamily={event?.font_family ?? null}
       className="min-h-screen px-4 pb-10"
     >
@@ -163,7 +192,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
           <h1
             className="text-[28px] font-semibold leading-tight"
             style={{
-              color: "var(--event-page-fg, #1F3D2B)",
+              color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
               fontFamily: "var(--event-font, inherit)",
             }}
           >
@@ -171,19 +200,18 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
           </h1>
           <p
             className="mt-2 text-[13.5px] leading-relaxed"
-            style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
           >
             Visit the {labels.plural.toLowerCase()} to unlock these offers.
           </p>
         </div>
 
-
         {offers.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-body,#3D372C)]">
+          <div className="rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
             <p>No offers have been listed yet.</p>
             <Link
               to="/venues"
-              className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
+              className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.22em] text-[var(--event-link,var(--event-primary,#1F3D2B))] underline-offset-4 hover:underline"
             >
               Browse {labels.plural.toLowerCase()} →
             </Link>
@@ -208,7 +236,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                   <Link
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
-                    className="group relative flex items-stretch gap-4 overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-4 pr-16 shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+                    className="group relative flex items-stretch gap-4 overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 pr-16 shadow-sm transition hover:border-[var(--event-link,var(--event-primary,#1F3D2B))]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-link,var(--event-primary,#1F3D2B))]"
                     aria-label={`View ${v.name ?? "venue"} offer`}
                   >
                     {/* Offer icon badge (left) */}
@@ -222,14 +250,14 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
                     {/* Content (middle) */}
                     <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
-                      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+                      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
                         {v.name ?? "Venue"}
                       </p>
-                      <p className="mt-1 line-clamp-2 font-trail-serif text-[17px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)]">
+                      <p className="mt-1 line-clamp-2 font-trail-serif text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
                         {offerTitle}
                       </p>
                       {offerBody && (
-                        <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
+                        <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-body,#3D372C))]">
                           {offerBody}
                         </p>
                       )}
@@ -251,16 +279,13 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                       )}
                     </div>
 
-
-
-
                     {/* Strong circular chevron (far right) */}
                     <span
                       aria-hidden
                       className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full shadow-sm transition group-hover:translate-x-0.5"
                       style={{
-                        background: "var(--event-primary,#1F3D2B)",
-                        color: "var(--event-primary-fg,#F6EFE2)",
+                        background: "var(--event-button-primary-bg, var(--event-primary, #1F3D2B))",
+                        color: "var(--event-button-primary-fg, var(--event-primary-fg, #F6EFE2))",
                       }}
                     >
                       <ChevronRight className="h-5 w-5" />
@@ -283,12 +308,12 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 function NotLiveYet() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6">
-      <div className="mx-auto max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-md rounded-3xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
         <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
           Event not live yet
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--event-card-text,var(--event-body,#3D372C))]">
           This passport experience isn't available right now. Please check back
           closer to the event, or contact the organiser for details.
         </p>
