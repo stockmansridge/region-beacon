@@ -5,6 +5,11 @@
 
 begin;
 
+-- 0) pgcrypto for digest(). Supabase installs it under the `extensions` schema.
+create extension if not exists pgcrypto with schema extensions;
+
+
+
 -- 1) venue_qr_codes.entry_value
 alter table public.venue_qr_codes
   add column if not exists entry_value int not null default 1;
