@@ -181,6 +181,7 @@ export function useEventBrandingKeys(
           card_body_color?: string | null;
           card_muted_color?: string | null;
           logo_path?: string | null;
+          cover_path?: string | null;
           font_family?: string | null;
         } | null;
         setKeys({
