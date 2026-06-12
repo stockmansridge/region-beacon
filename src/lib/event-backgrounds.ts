@@ -363,3 +363,50 @@ export function getBackgroundStyle(
   const background = getBackgroundOrDefault(backgroundKey);
   return background.build(palette);
 }
+
+/**
+ * Resolve the effective FLAT page background hex actually rendered for
+ * a given background style + palette. Used by the Branding editor to
+ * (a) display the resolved hex the organiser sees in the preview and
+ * (b) feed contrast warnings the real background colour rather than
+ * the raw palette pageBg.
+ *
+ * For gradient / textured styles this returns the dominant base hex
+ * the gradient/texture is painted over.
+ */
+export function resolveBackgroundBaseHex(
+  backgroundKey: string | null | undefined,
+  palette: EventPalette,
+  customPageHex?: string | null,
+): string {
+  const HEX = /^#[0-9A-Fa-f]{6}$/;
+  const key = backgroundKey ?? DEFAULT_BACKGROUND_KEY;
+  switch (key) {
+    case "soft_tint":
+      return mix(palette.pageBg, palette.primary, 0.06);
+    case "dark_premium":
+      return mix(palette.primary, "#0B0B0F", 0.55);
+    case "custom_color":
+      return customPageHex && HEX.test(customPageHex) ? customPageHex : palette.pageBg;
+    case "soft_green_tint":
+      return "#EEF4EC";
+    case "pale_blue":
+      return "#EAF1F7";
+    case "soft_gold":
+      return "#F6EFD9";
+    case "warm_paper":
+      return mix(palette.pageBg, "#F5EBD2", 0.5);
+    case "country_texture":
+      return mix(palette.pageBg, "#C9A86A", 0.18);
+    case "festival_glow":
+      return mix(palette.pageBg, "#FFFFFF", 0.25);
+    case "clean":
+    case "clean_light":
+    case "gradient":
+    case "soft_gradient":
+    case "subtle_texture":
+    case "vineyard_lines":
+    default:
+      return palette.pageBg;
+  }
+}
