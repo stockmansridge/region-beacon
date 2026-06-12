@@ -473,15 +473,25 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
       <div className="mx-auto mt-4 max-w-5xl">
         <div className="mb-3">
-          <h1 className="font-trail-serif text-2xl font-semibold" style={{ color: primary }}>
+          <h1
+            className="text-2xl font-semibold"
+            style={{
+              color: "var(--event-page-fg, #1F3D2B)",
+              fontFamily: "var(--event-font, inherit)",
+            }}
+          >
             Trail Map
           </h1>
           {hasPassport && totalCount > 0 && (
-            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#8A7E66]">
+            <p
+              className="mt-1 text-xs uppercase tracking-[0.18em]"
+              style={{ color: "var(--event-page-muted, #8A7E66)" }}
+            >
               {visitedCount} of {totalCount} {labels.plural.toLowerCase()} visited
             </p>
           )}
         </div>
+
 
         {!hasPassport && (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-3 text-xs text-[#3D372C]">
