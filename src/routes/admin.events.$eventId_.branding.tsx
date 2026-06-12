@@ -35,7 +35,6 @@ import {
   BRAND_KIT_VERSION,
   type BrandKit,
   type BrandKitKey,
-  brandKitWritePayload,
   getBrandKit,
 } from "@/lib/event-brand-kits";
 
