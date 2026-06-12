@@ -207,6 +207,19 @@ export function PublicEventNav({
             </Link>
           </BottomItem>
 
+          <BottomItem active={isActive("passport")} accent={accent}>
+            <a
+              href={passportTarget}
+              aria-label={passportLabel}
+              aria-current={isActive("passport") ? "page" : undefined}
+              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+              style={{ color: isActive("passport") ? navActiveFg : navMuted }}
+            >
+              <Stamp className="h-5 w-5" />
+              <span>Passport</span>
+            </a>
+          </BottomItem>
+
           <BottomItem active={isActive("map") || isActive("venues")} accent={accent}>
             {hasMap ? (
               <Link
@@ -229,19 +242,6 @@ export function PublicEventNav({
                 <span>Venues</span>
               </Link>
             )}
-          </BottomItem>
-
-          <BottomItem active={isActive("passport")} accent={accent}>
-            <a
-              href={passportTarget}
-              aria-label={passportLabel}
-              aria-current={isActive("passport") ? "page" : undefined}
-              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
-              style={{ color: isActive("passport") ? navActiveFg : navMuted }}
-            >
-              <Stamp className="h-5 w-5" />
-              <span>Passport</span>
-            </a>
           </BottomItem>
 
           <BottomItem active={isActive("leaderboard")} accent={accent}>
