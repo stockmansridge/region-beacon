@@ -72,7 +72,7 @@ export function PublicEventNav({
   const navFg = `var(--event-nav-fg, var(--event-primary-fg,#F6EFE2))`;
   const navMuted = `var(--event-nav-muted, var(--event-nav-muted, var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))))`;
   const navActiveFg = `var(--event-nav-active-fg, ${accentColor ?? "var(--event-accent,#B5572A)"})`;
-  const accent = accentColor ?? "var(--event-accent,#B5572A)";
+  
   const location = useLocation();
   const pathname = location.pathname;
   const { passportHref: derivedPassportHref } = useCurrentEventPassport(eventId);
@@ -194,80 +194,77 @@ export function PublicEventNav({
           color: navFg,
         }}
       >
-        <ul className="mx-auto grid h-16 max-w-md grid-cols-5 items-stretch">
-          <BottomItem active={isActive("home")} accent={accent}>
+        <ul
+          className="mx-auto grid h-16 max-w-md"
+          style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}
+        >
+          <li className="h-full min-w-0">
             <Link
               to="/"
               aria-current={isActive("home") ? "page" : undefined}
-              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+              className={bottomItemClass}
               style={{ color: isActive("home") ? navActiveFg : navMuted }}
             >
-              <Home className="h-5 w-5" />
-              <span>Home</span>
+              <BottomItemContent icon={<Home className="h-5 w-5" />} label="Home" />
             </Link>
-          </BottomItem>
+          </li>
 
-          <BottomItem active={isActive("passport")} accent={accent}>
+          <li className="h-full min-w-0">
             <a
               href={passportTarget}
               aria-label={passportLabel}
               aria-current={isActive("passport") ? "page" : undefined}
-              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+              className={bottomItemClass}
               style={{ color: isActive("passport") ? navActiveFg : navMuted }}
             >
-              <Stamp className="h-5 w-5" />
-              <span>Passport</span>
+              <BottomItemContent icon={<Stamp className="h-5 w-5" />} label="Passport" />
             </a>
-          </BottomItem>
+          </li>
 
-          <BottomItem active={isActive("map") || isActive("venues")} accent={accent}>
+          <li className="h-full min-w-0">
             {hasMap ? (
               <Link
                 to="/map"
                 aria-current={isActive("map") ? "page" : undefined}
-                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                className={bottomItemClass}
                 style={{ color: isActive("map") ? navActiveFg : navMuted }}
               >
-                <MapIcon className="h-5 w-5" />
-                <span>Map</span>
+                <BottomItemContent icon={<MapIcon className="h-5 w-5" />} label="Map" />
               </Link>
             ) : (
               <Link
                 to="/venues"
                 aria-current={isActive("venues") ? "page" : undefined}
-                className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+                className={bottomItemClass}
                 style={{ color: isActive("venues") ? navActiveFg : navMuted }}
               >
-                <MapPin className="h-5 w-5" />
-                <span>Venues</span>
+                <BottomItemContent icon={<MapPin className="h-5 w-5" />} label="Venues" />
               </Link>
             )}
-          </BottomItem>
+          </li>
 
-          <BottomItem active={isActive("leaderboard")} accent={accent}>
+          <li className="h-full min-w-0">
             <Link
               to="/leaderboard"
               aria-current={isActive("leaderboard") ? "page" : undefined}
-              className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+              className={bottomItemClass}
               style={{ color: isActive("leaderboard") ? navActiveFg : navMuted }}
             >
-              <Trophy className="h-5 w-5" />
-              <span>Leaders</span>
+              <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Leaders" />
             </Link>
-          </BottomItem>
+          </li>
 
-          <BottomItem active={menuOpen} accent={accent}>
+          <li className="h-full min-w-0">
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="More"
-              className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
+              className={bottomItemClass}
               style={{ color: menuOpen ? navActiveFg : navMuted }}
             >
-              <MoreHorizontal className="h-5 w-5" />
-              <span>More</span>
+              <BottomItemContent icon={<MoreHorizontal className="h-5 w-5" />} label="More" />
             </button>
-          </BottomItem>
+          </li>
         </ul>
       </nav>
 
@@ -281,18 +278,27 @@ export function PublicEventNav({
   );
 }
 
-function BottomItem({
-  active,
-  accent,
-  children,
+/**
+ * Shared classes for every bottom-nav item (links and the More button alike).
+ * One fixed-height column: 24px icon row + 16px label row, identical padding,
+ * no margins/transforms, colour is the only thing that changes when active.
+ */
+const bottomItemClass =
+  "flex h-full w-full appearance-none flex-col items-center justify-center border-0 bg-transparent p-0 m-0 font-semibold uppercase tracking-[0.12em] transition-colors";
+
+function BottomItemContent({
+  icon,
+  label,
 }: {
-  active: boolean;
-  accent: string;
-  children: React.ReactNode;
+  icon: React.ReactNode;
+  label: string;
 }) {
-  void active;
-  void accent;
-  return <li className="flex">{children}</li>;
+  return (
+    <>
+      <span className="flex h-6 w-6 items-center justify-center">{icon}</span>
+      <span className="h-4 text-[10px] leading-4 whitespace-nowrap">{label}</span>
+    </>
+  );
 }
 
 
