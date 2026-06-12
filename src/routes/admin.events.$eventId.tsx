@@ -6430,8 +6430,18 @@ function GoLivePanel({
         <GateCard
           title="Commercial activation"
           pass={activationPass}
-          value={activationStatus}
-          hint={activationPass ? "Active or comp" : "Must be active or comp"}
+          value={activationAutoPass && !activationPassRaw ? "not required" : activationStatus}
+          hint={
+            activationAutoPass && !activationPassRaw
+              ? planSource === "manual_override"
+                ? "Not required (manual override)"
+                : planCode === "enterprise"
+                  ? "Not required on Enterprise"
+                  : "Not required on Free plan"
+              : activationPass
+                ? "Active or comp"
+                : "Must be active or comp"
+          }
         />
       </div>
 
