@@ -269,18 +269,20 @@ export function AdminEventRewards({
     <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h3 className="text-base font-semibold text-[#111827]">Reward tiers</h3>
+          <h3 className="text-base font-semibold text-[#111827]">Leaderboard tiers</h3>
           <p className="text-sm leading-6 text-[#64748B]">
-            Reward tiers control the ladder shown on the public leaderboard and
-            visitor passport. They do not change existing check-ins.
+            Optional milestone tiers (e.g. Bronze / Silver / Gold) shown on the
+            public leaderboard and visitor passport progress bar. These do not
+            create prizes — to set up unlockable rewards, prizes, or a major
+            prize draw, use the <span className="font-medium text-[#111827]">Awards &amp; rewards</span> section.
           </p>
         </div>
       </div>
 
       {rows.length === 0 ? (
         <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
-          No reward tiers configured yet. Visitors will see the default Bronze /
-          Silver / Gold ladder until custom tiers are added.
+          No leaderboard tiers configured. Add tiers to show milestone progress,
+          or leave empty to hide the milestone ladder entirely.
         </div>
       ) : (
         <div className="space-y-3">
