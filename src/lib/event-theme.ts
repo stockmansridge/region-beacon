@@ -88,6 +88,14 @@ export type BrandingInput = {
   hero_bg_color?: string | null;
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
+
+  // ---- Phase D Pass 2 — heading/body/muted split (all optional) ----
+  page_heading_color?: string | null;
+  page_body_color?: string | null;
+  page_muted_color?: string | null;
+  card_heading_color?: string | null;
+  card_body_color?: string | null;
+  card_muted_color?: string | null;
 };
 
 function pickHex(value: string | null | undefined): string | null {
