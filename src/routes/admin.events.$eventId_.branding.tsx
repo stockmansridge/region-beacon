@@ -1096,27 +1096,65 @@ function BrandingEditor() {
             )}
           </CollapsibleSection>
 
-          {/* ============== Semantic text & border colours ============== */}
-          <ColorRolesCard
-            form={form}
-            setForm={setForm}
-            disabled={!canEdit || saving}
-          />
+          <CollapsibleSection
+            id="textBorder"
+            title="Text & border colours"
+            subtitle={(() => {
+              const parts: string[] = [];
+              if (form.text_color) parts.push("Page text");
+              if (form.card_text_color) parts.push("Card text");
+              if (form.border_color) parts.push("Border");
+              if (form.primary_text_color) parts.push("Button text");
+              return parts.length ? parts.join(" · ") : "Inheriting from palette";
+            })()}
+            warningCount={countTextBorderWarnings(form)}
+            expanded={expandedSections.textBorder}
+            onToggle={() => toggleSection("textBorder")}
+          >
+            <ColorRolesCard
+              form={form}
+              setForm={setForm}
+              disabled={!canEdit || saving}
+            />
+          </CollapsibleSection>
 
-          <HeroOverlayCard
-            form={form}
-            setForm={setForm}
-            disabled={!canEdit || saving}
-          />
+          <CollapsibleSection
+            id="heroFade"
+            title="Hero image fade"
+            subtitle={(() => {
+              if (form.hero_overlay_color && form.hero_overlay_opacity) {
+                return `${form.hero_overlay_color} at ${form.hero_overlay_opacity}%`;
+              }
+              if (form.hero_overlay_color) return form.hero_overlay_color;
+              if (form.hero_overlay_opacity) return `${form.hero_overlay_opacity}% opacity`;
+              return "Default gradient";
+            })()}
+            expanded={expandedSections.heroFade}
+            onToggle={() => toggleSection("heroFade")}
+          >
+            <HeroOverlayCard
+              form={form}
+              setForm={setForm}
+              disabled={!canEdit || saving}
+            />
+          </CollapsibleSection>
 
 
 
-          <FontPicker
-            value={form.font_family}
-            onChange={(value) => setForm({ ...form, font_family: value })}
-            disabled={!canEdit || saving}
-            eventName={event.name}
-          />
+          <CollapsibleSection
+            id="fonts"
+            title="Fonts"
+            subtitle={form.font_family ? (getEventFont(form.font_family)?.label ?? form.font_family) : "Default (GetStampd)"}
+            expanded={expandedSections.fonts}
+            onToggle={() => toggleSection("fonts")}
+          >
+            <FontPicker
+              value={form.font_family}
+              onChange={(value) => setForm({ ...form, font_family: value })}
+              disabled={!canEdit || saving}
+              eventName={event.name}
+            />
+          </CollapsibleSection>
 
 
           <Field label="Welcome copy">
