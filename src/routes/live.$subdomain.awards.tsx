@@ -137,10 +137,11 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
             </p>
           )}
           <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
-            Awards
+            Rewards & prizes
           </h1>
-          <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]">
-            Earn points and unlock prize draws as you visit locations.
+          <p className="mt-2 text-sm text-[var(--event-text,#3D372C)]">
+            Earn points by checking in at venues to unlock rewards and enter
+            prize draws.
           </p>
 
           <div className="mt-6 space-y-4">
@@ -148,11 +149,11 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
               <p className="text-sm text-[var(--event-muted,#8A7E66)]">Loading…</p>
             )}
             {error && (
-              <p className="text-sm text-destructive">Could not load awards: {error}</p>
+              <p className="text-sm text-destructive">Could not load rewards: {error}</p>
             )}
             {!error && awards != null && awards.length === 0 && (
               <p className="text-sm text-[var(--event-muted,#8A7E66)]">
-                No awards have been added yet.
+                No rewards have been added for this event yet.
               </p>
             )}
             {awards?.map((a) => (

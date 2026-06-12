@@ -122,13 +122,15 @@ export function EventAwardsSection({
         </p>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Prizes participants can unlock by earning points and/or visiting all locations.
+          Rewards, prizes, and draw entries participants can unlock by earning
+          points and/or visiting all locations. Each one appears in the public
+          passport Rewards section and on the public Awards page.
         </p>
         {canEdit && (
           <Button size="sm" onClick={() => setEditor({ mode: "create" })}>
-            Add award
+            Add reward
           </Button>
         )}
       </div>
@@ -138,9 +140,13 @@ export function EventAwardsSection({
       ) : awards.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[#D9E2EF] bg-[#F8FAFC] p-8 text-center">
           <Trophy className="mx-auto h-8 w-8 text-[#64748B]" />
-          <p className="mt-2 text-sm font-medium text-[#111827]">No awards yet</p>
+          <p className="mt-2 text-sm font-medium text-[#111827]">
+            No rewards have been created yet
+          </p>
           <p className="mt-1 text-xs text-[#64748B]">
-            Create an award to give participants something to aim for.
+            Add your first reward or prize to show it in the public passport. To
+            run a major prize draw, create a reward named “Major prize draw”
+            with the points required to enter.
           </p>
           {canEdit && (
             <Button
@@ -148,7 +154,7 @@ export function EventAwardsSection({
               size="sm"
               onClick={() => setEditor({ mode: "create" })}
             >
-              Create your first award
+              Create your first reward
             </Button>
           )}
         </div>

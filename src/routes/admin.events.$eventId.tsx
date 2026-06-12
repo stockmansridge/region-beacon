@@ -3237,7 +3237,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Reward tiers" id="section-rewards" tab="leaderboard">
+          <Section title="Leaderboard tiers" id="section-rewards" tab="leaderboard" description="Optional Bronze / Silver / Gold style milestones shown on the public leaderboard and passport progress bar. Prizes and prize draws are configured under Awards & rewards.">
             <AdminEventRewards
               agencyId={event.agency_id}
               eventId={event.id}
@@ -4418,10 +4418,10 @@ function EventDetail() {
           </Section>
 
           <Section
-            title="Awards"
+            title="Awards & rewards"
             id="section-awards"
             tab="awards"
-            description="Prizes participants can unlock by reaching a points threshold and/or visiting every location. Run a randomised winner draw once an event is complete."
+            description="Create the rewards, prizes, and draw entries participants can earn during this event. These appear in the public passport Rewards section and Awards page. To run a major prize draw, create an award named “Major prize draw” and set the points (and/or all-locations rule) required to enter."
           >
             {agencyId ? (
               <EventAwardsSection
