@@ -2435,7 +2435,7 @@ function EventDetail() {
                     disabled={isBusy}
                     className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {qrCopiedVenueId === v.id ? "Copied" : "Copy link"}
+                    {qrCopiedVenueId === v.id ? "Copied" : "Copy venue check-in link"}
                   </button>
                   <a
                     href={built.url}
