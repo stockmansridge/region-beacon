@@ -183,7 +183,7 @@ export function PublicEventNav({
           paddingBottom: "env(safe-area-inset-bottom)",
           background: primary,
           borderColor: "color-mix(in oklab, white 10%, transparent)",
-          color: "var(--event-primary-fg,#F6EFE2)",
+          color: "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
         }}
       >
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5 items-stretch">
@@ -193,7 +193,7 @@ export function PublicEventNav({
               aria-current={isActive("home") ? "page" : undefined}
               className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: isActive("home") ? accent : "var(--event-primary-fg,#F6EFE2)",
+                color: isActive("home") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
               }}
             >
               <Home className="h-5 w-5" />
@@ -208,7 +208,7 @@ export function PublicEventNav({
                 aria-current={isActive("map") ? "page" : undefined}
                 className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("map") ? accent : "var(--event-primary-fg,#F6EFE2)",
+                  color: isActive("map") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
                 }}
               >
                 <MapIcon className="h-5 w-5" />
@@ -220,7 +220,7 @@ export function PublicEventNav({
                 aria-current={isActive("venues") ? "page" : undefined}
                 className="flex h-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{
-                  color: isActive("venues") ? accent : "var(--event-primary-fg,#F6EFE2)",
+                  color: isActive("venues") ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
                 }}
               >
                 <MapPin className="h-5 w-5" />
@@ -238,7 +238,7 @@ export function PublicEventNav({
               className="-mt-6 grid h-14 w-14 place-items-center rounded-full shadow-lg ring-4 transition active:scale-95"
               style={{
                 background: accent,
-                color: "var(--event-primary-fg,#F6EFE2)",
+                color: "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
                 // Ring tinted with the header colour so the floating button feels connected
                 // to the surrounding nav surface.
                 ["--tw-ring-color" as string]: primary,
@@ -256,7 +256,7 @@ export function PublicEventNav({
               style={{
                 color: isActive("leaderboard")
                   ? accent
-                  : "var(--event-primary-fg,#F6EFE2)",
+                  : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
               }}
             >
               <Trophy className="h-5 w-5" />
@@ -271,7 +271,7 @@ export function PublicEventNav({
               aria-label="More"
               className="flex h-full w-full flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               style={{
-                color: menuOpen ? accent : "var(--event-primary-fg,#F6EFE2)",
+                color: menuOpen ? accent : "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
               }}
             >
               <MoreHorizontal className="h-5 w-5" />
@@ -356,7 +356,7 @@ function MenuDrawer({
         className="absolute inset-y-0 left-0 flex h-full w-[82%] max-w-sm flex-col shadow-2xl animate-in slide-in-from-left"
         style={{
           background: primary,
-          color: "var(--event-primary-fg,#F6EFE2)",
+          color: "var(--event-on-primary-muted, color-mix(in srgb, #F6EFE2 72%, transparent))",
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
