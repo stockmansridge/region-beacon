@@ -1353,6 +1353,26 @@ function EventDetail() {
     setReloadKey((k) => k + 1);
   }
 
+  // Close the venue editor overlay with Escape (unless a save is in flight).
+  useEffect(() => {
+    if (venueEditingId === null) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && !venueSaving) {
+        e.stopPropagation();
+        cancelVenueEdit();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    // Lock background scroll while the drawer is open.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venueEditingId, venueSaving]);
+
   async function saveVenue() {
     if (!venueForm || !agencyId || !bundle || !venueEditingId) return;
     const route = "client saveVenue in src/routes/admin.events.$eventId.tsx";
@@ -3305,7 +3325,43 @@ function EventDetail() {
               </div>
             )}
             {venueEditingId !== null && venueForm && (
-              <div ref={venueEditorRef} className="mb-5 space-y-5 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+              <div
+                className="fixed inset-0 z-50 flex"
+                role="dialog"
+                aria-modal="true"
+                aria-label={venueEditingId === "new" ? "New venue" : "Edit venue"}
+              >
+                <div
+                  className="absolute inset-0 bg-black/40"
+                  aria-hidden
+                  // Backdrop click is intentionally a no-op to avoid losing
+                  // unsaved edits — admin must use Close, Discard, or Save.
+                />
+                <div
+                  ref={venueEditorRef}
+                  className="relative ml-auto flex h-full w-full max-w-3xl flex-col bg-white shadow-2xl"
+                >
+                  <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-[#E5E7EB] bg-white px-5 py-4">
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+                        {venueEditingId === "new" ? "New venue" : "Edit venue"}
+                      </div>
+                      <div className="mt-0.5 truncate text-base font-semibold text-[#111827]">
+                        {venueForm.name?.trim() ||
+                          (venueEditingId === "new" ? "Untitled venue" : "—")}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={cancelVenueEdit}
+                      disabled={venueSaving}
+                      aria-label="Close venue editor"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#D9E2EF] bg-white text-[#475569] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <span aria-hidden className="text-xl leading-none">×</span>
+                    </button>
+                  </div>
+                  <div className="flex-1 space-y-5 overflow-y-auto p-6">
                 <div className="flex items-center justify-between gap-3">
                   <h4 className="text-base font-semibold text-[#111827]">
                     {venueEditingId === "new" ? "New venue" : "Edit venue details"}
@@ -3953,6 +4009,8 @@ function EventDetail() {
                 </>
 
                 )}
+                  </div>
+                </div>
               </div>
             )}
             {(() => {
