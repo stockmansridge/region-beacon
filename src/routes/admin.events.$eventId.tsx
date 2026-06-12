@@ -2739,6 +2739,9 @@ function EventDetail() {
               domains={domains}
               activation={activation}
               isPlatformAdmin={agency.isPlatformAdmin}
+              isFreePlan={isFreePlan}
+              planCode={planCode}
+              planSource={planInfo?.source ?? null}
               onChanged={() => setReloadKey((k) => k + 1)}
             />
           </div>
