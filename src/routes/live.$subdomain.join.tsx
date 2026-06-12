@@ -843,9 +843,21 @@ function Field({
 }) {
   return (
     <div className="mb-3">
-      <label className="mb-1 flex items-center justify-between text-xs font-medium uppercase tracking-[0.16em] text-[#7A6F5C]">
-        <span>{label}{required && <span className="text-[#B5572A]"> *</span>}</span>
-        {optional && <span className="text-[10px] text-[#A89C82]">Optional</span>}
+      <label
+        className="mb-1 flex items-center justify-between text-xs font-medium uppercase tracking-[0.16em]"
+        style={{ color: "var(--event-card-muted)" }}
+      >
+        <span>
+          {label}
+          {required && (
+            <span style={{ color: "var(--event-hero-accent, var(--event-accent))" }}> *</span>
+          )}
+        </span>
+        {optional && (
+          <span className="text-[10px]" style={{ color: "var(--event-card-muted)", opacity: 0.75 }}>
+            Optional
+          </span>
+        )}
       </label>
       {input}
       {error && (
