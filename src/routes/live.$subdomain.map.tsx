@@ -535,11 +535,24 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
           <div className="relative">
             <div
               ref={mapContainerRef}
-              className="h-[70vh] min-h-[460px] w-full overflow-hidden rounded-2xl border border-[#E6DCC7] bg-[#1F3D2B]/10"
+              className="h-[70vh] min-h-[460px] w-full overflow-hidden rounded-2xl border"
+              style={{
+                borderColor: "var(--event-card-border)",
+                backgroundColor:
+                  "color-mix(in srgb, var(--event-primary) 10%, transparent)",
+              }}
             />
             {hasPassport && totalCount > 0 && (
               <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center px-3">
-                <div className="pointer-events-auto flex gap-1 rounded-full border border-[#E6DCC7] bg-[#FBF5E8]/95 p-1 text-xs shadow-sm backdrop-blur">
+                <div
+                  className="pointer-events-auto flex gap-1 rounded-full border p-1 text-xs shadow-sm backdrop-blur"
+                  style={{
+                    borderColor: "var(--event-card-border)",
+                    backgroundColor:
+                      "color-mix(in srgb, var(--event-nav-bg) 95%, transparent)",
+                    color: "var(--event-nav-fg)",
+                  }}
+                >
                   {(
                     [
                       { k: "all", label: "All" },
@@ -555,8 +568,12 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
                         onClick={() => setFilter(f.k)}
                         className="rounded-full px-3 py-1 font-medium transition"
                         style={{
-                          backgroundColor: active ? primary : "transparent",
-                          color: active ? "#FBF5E8" : primary,
+                          backgroundColor: active
+                            ? "var(--event-nav-active-fg)"
+                            : "transparent",
+                          color: active
+                            ? "var(--event-nav-bg)"
+                            : "var(--event-nav-fg)",
                         }}
                       >
                         {f.label}
