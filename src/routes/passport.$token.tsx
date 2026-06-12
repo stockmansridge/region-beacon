@@ -913,13 +913,14 @@ function RewardsSection({
       <div className="mb-2 flex items-baseline justify-between">
         <h2
           className="font-trail-serif text-lg font-semibold"
-          style={{ color: PRIMARY }}
+          style={{ color: "var(--event-page-heading)" }}
         >
           Rewards
         </h2>
         <Link
           to="/awards"
-          className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--event-primary,#1F3D2B)] underline-offset-2 hover:underline"
+          className="text-[11px] font-semibold uppercase tracking-[0.18em] underline-offset-2 hover:underline"
+          style={{ color: "var(--event-link)" }}
         >
           View all
         </Link>
@@ -941,26 +942,38 @@ function AwardRow({ award }: { award: PublicEventAward }) {
     : 0;
   return (
     <li
-      className={`rounded-2xl border p-4 shadow-sm ${
-        unlocked
-          ? "border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]"
-          : "border-dashed border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]/70"
-      }`}
+      className={`rounded-2xl border p-4 shadow-sm ${unlocked ? "" : "border-dashed"}`}
+      style={{
+        borderColor: "var(--event-card-border)",
+        backgroundColor: unlocked
+          ? "var(--event-card-bg)"
+          : "color-mix(in srgb, var(--event-card-bg) 70%, transparent)",
+      }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div
             className="font-trail-serif text-sm font-semibold"
-            style={{ color: unlocked ? PRIMARY : "var(--event-text,#3D372C)" }}
+            style={{
+              color: unlocked
+                ? "var(--event-card-heading)"
+                : "var(--event-card-text)",
+            }}
           >
             {award.title}
           </div>
           {award.description && (
-            <p className="mt-1 text-[12.5px] leading-snug text-[var(--event-body,#3D372C)]">
+            <p
+              className="mt-1 text-[12.5px] leading-snug"
+              style={{ color: "var(--event-card-text)" }}
+            >
               {award.description}
             </p>
           )}
-          <div className="mt-1.5 text-[11px] text-[var(--event-muted,#8A7E66)]">
+          <div
+            className="mt-1.5 text-[11px]"
+            style={{ color: "var(--event-card-muted)" }}
+          >
             {award.points_required} {award.points_required === 1 ? "pt" : "pts"} required
             {award.requires_all_locations ? " · all locations" : ""}
             {!unlocked && award.points_remaining > 0
@@ -972,19 +985,31 @@ function AwardRow({ award }: { award: PublicEventAward }) {
           className="inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
           style={
             unlocked
-              ? { backgroundColor: PRIMARY, color: "var(--event-primary-fg,#F6EFE2)" }
-              : { border: `1px solid ${ACCENT}55`, color: ACCENT }
+              ? {
+                  backgroundColor: "var(--event-button-primary-bg)",
+                  color: "var(--event-button-primary-fg)",
+                }
+              : {
+                  border:
+                    "1px solid color-mix(in srgb, var(--event-accent) 35%, transparent)",
+                  color: "var(--event-accent)",
+                }
           }
         >
           {unlocked ? "✓ Entered" : "Locked"}
         </span>
       </div>
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--event-border,#E6DCC7)]">
+      <div
+        className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
+        style={{ backgroundColor: "var(--event-card-border)" }}
+      >
         <div
           className="h-full rounded-full transition-all"
           style={{
             width: `${pct}%`,
-            backgroundColor: unlocked ? PRIMARY : ACCENT,
+            backgroundColor: unlocked
+              ? "var(--event-button-primary-bg)"
+              : "var(--event-accent)",
           }}
         />
       </div>
