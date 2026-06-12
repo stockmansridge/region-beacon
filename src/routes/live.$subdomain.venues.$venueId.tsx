@@ -41,10 +41,36 @@ type VenueRow = {
   order_index: number | null;
 };
 
+type EventBrand = {
+  event_id?: string;
+  name?: string;
+  logo_path?: string | null;
+  palette_key?: string | null;
+  page_background_key?: string | null;
+  page_background_color?: string | null;
+  card_background_color?: string | null;
+  primary_color?: string | null;
+  accent_color?: string | null;
+  text_color?: string | null;
+  muted_text_color?: string | null;
+  card_text_color?: string | null;
+  card_muted_text_color?: string | null;
+  border_color?: string | null;
+  primary_text_color?: string | null;
+  font_family?: string | null;
+};
+
 type State =
   | { kind: "loading" }
   | { kind: "not_found" }
-  | { kind: "ready"; venue: VenueRow; eventId: string | null; eventName: string | null; eventLogoPath: string | null; paletteKey: string | null; backgroundKey: string | null };
+  | {
+      kind: "ready";
+      venue: VenueRow;
+      eventId: string | null;
+      eventName: string | null;
+      eventLogoPath: string | null;
+      brand: EventBrand | null;
+    };
 
 type VisitedState =
   | { kind: "none" }
@@ -78,8 +104,15 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         setState({ kind: "not_found" });
         return;
       }
-      const evt = (evtData?.[0] ?? null) as { event_id?: string; name?: string; logo_path?: string | null; palette_key?: string | null; page_background_key?: string | null } | null;
-      setState({ kind: "ready", venue: row, eventId: evt?.event_id ?? null, eventName: evt?.name ?? null, eventLogoPath: evt?.logo_path ?? null, paletteKey: evt?.palette_key ?? null, backgroundKey: evt?.page_background_key ?? null });
+      const evt = (evtData?.[0] ?? null) as EventBrand | null;
+      setState({
+        kind: "ready",
+        venue: row,
+        eventId: evt?.event_id ?? null,
+        eventName: evt?.name ?? null,
+        eventLogoPath: evt?.logo_path ?? null,
+        brand: evt,
+      });
 
       if (!evt?.event_id) return;
       try {
