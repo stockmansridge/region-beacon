@@ -188,6 +188,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       borderColor={state.brand?.border_color ?? null}
       primaryTextColor={state.brand?.primary_text_color ?? null}
       fontFamily={state.brand?.font_family ?? null}
+      headingFontFamily={state.brand?.heading_font_family ?? null}
       className="min-h-screen pb-12"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
