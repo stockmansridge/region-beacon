@@ -90,6 +90,7 @@ const EMPTY: EventBrandingKeys = {
   logoPath: null,
   coverPath: null,
   fontFamily: null,
+  headingFontFamily: null,
   ready: false,
 };
 
