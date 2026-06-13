@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { AdminEventAnnouncements } from "@/components/admin-event-announcements";
 import { AdminEventRewards } from "@/components/admin-event-rewards";
-import { AdminEventPoster } from "@/components/admin-event-poster";
+// AdminEventPoster removed — replaced by dedicated /admin/events/$id/posters route.
 import { QrPreview } from "@/components/qr-preview";
 import { BonusCodesSection } from "@/components/event-bonus-codes-section";
 import { AdminEventParticipantsSection } from "@/components/admin-event-participants-section";
@@ -27,7 +27,7 @@ import { VenueMapKitPicker } from "@/components/venue-mapkit-picker";
 import { EventTermsDialog } from "@/components/event-terms-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
-import { posterFilename } from "@/lib/qr-poster";
+// posterFilename removed — Posters page owns its own filename helper.
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAuth } from "@/hooks/use-auth";
 import { PUBLIC_TENANT_ROOT_DOMAIN, tenantHost, tenantUrl } from "@/lib/domains";
