@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { resolveEventTheme, themeCssVars } from "@/lib/event-theme";
 import { getBackground, getBackgroundOrDefault } from "@/lib/event-backgrounds";
 import {
@@ -6,6 +6,7 @@ import {
   getPalette,
   getPaletteOrDefault,
 } from "@/lib/event-palettes";
+import { buildGoogleFontsHref } from "@/lib/event-fonts";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
