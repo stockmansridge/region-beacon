@@ -55,6 +55,7 @@ type PublicEvent = {
   primary_text_color?: string | null;
   nav_background_color?: string | null;
   font_family: string | null;
+  heading_font_family?: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
   current_terms_version_id: string | null;
