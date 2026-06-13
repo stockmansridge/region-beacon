@@ -410,9 +410,9 @@ function BrandingEditor() {
     return () => { cancelled = true; };
   }, [agency.status, agencyId, eventId, reloadKey]);
 
-  // Lazy-load the chosen Google Font.
+  // Lazy-load the chosen Google Font(s) — both body and heading.
   useEffect(() => {
-    const href = buildGoogleFontsHref([form.font_family]);
+    const href = buildGoogleFontsHref([form.font_family, form.heading_font_family]);
     if (!href) return;
     if (document.querySelector(`link[data-event-font="${href}"]`)) return;
     const link = document.createElement("link");
@@ -420,7 +420,7 @@ function BrandingEditor() {
     link.href = href;
     link.dataset.eventFont = href;
     document.head.appendChild(link);
-  }, [form.font_family]);
+  }, [form.font_family, form.heading_font_family]);
 
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
