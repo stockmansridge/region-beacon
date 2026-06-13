@@ -118,6 +118,22 @@ export function EventPaletteScope({
     (heroFgColor && HEX_RE.test(heroFgColor)) ||
     (heroAccentColor && HEX_RE.test(heroAccentColor));
 
+  // Lazy-load Google Fonts for the body + heading families when the
+  // chosen value matches a known EVENT_FONTS entry. Idempotent. Called
+  // unconditionally so React's rules-of-hooks are respected even if we
+  // bail out below with an unstyled wrapper.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const href = buildGoogleFontsHref([fontFamily, headingFontFamily]);
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [fontFamily, headingFontFamily]);
+
   if (
     !explicitCurated &&
     !hasCustomPalette &&
