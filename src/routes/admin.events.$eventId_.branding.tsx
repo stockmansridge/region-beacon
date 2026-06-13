@@ -129,6 +129,7 @@ type Bundle = {
 
 type Form = {
   font_family: string;
+  heading_font_family: string;
   welcome_copy: string;
   terms_url: string;
   venue_label_singular: string;
