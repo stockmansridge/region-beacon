@@ -204,6 +204,20 @@ export function EventPaletteScope({
       ? { ["--event-heading-font" as any]: headingFontFamily }
       : {}),
   };
+
+  // Lazy-load Google Fonts for the body + heading families when the
+  // chosen value matches a known EVENT_FONTS entry. Idempotent.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const href = buildGoogleFontsHref([fontFamily, headingFontFamily]);
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [fontFamily, headingFontFamily]);
   return (
     <div className={className} style={style}>
       {children}
