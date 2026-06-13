@@ -199,6 +199,9 @@ export function EventPaletteScope({
     ...(fontFamily
       ? { fontFamily, ["--event-font" as any]: fontFamily }
       : {}),
+    ...(headingFontFamily
+      ? { ["--event-heading-font" as any]: headingFontFamily }
+      : {}),
   };
   return (
     <div className={className} style={style}>
