@@ -2915,23 +2915,27 @@ function EventDetail() {
             />
           </Section>
 
-          <Section title="Event start QR &amp; poster" id="section-marketing" tab="overview" description="The QR visitors scan from posters, flyers, and signage to start or open their passport. This is different from the per-venue check-in QRs.">
-            <AdminEventPoster
-              canEdit={canEdit}
-              event={{
-                name: event.name,
-                slug: event.slug,
-                public_slug: event.public_slug,
-                description: event.description,
-                starts_at: event.starts_at,
-                ends_at: event.ends_at,
-                timezone: event.timezone,
-              }}
-              branding={branding}
-              logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-              coverUrl={getEventAssetPublicUrl(branding?.cover_path)}
-              activePublicSubdomain={activeSubdomain}
-            />
+          <Section title="Posters" id="section-marketing" tab="overview" description="Printable A4 posters for your event trail and each venue. Uses your event branding, hero image, and active QR codes.">
+            <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold">Event &amp; venue posters</h3>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Generate a printable A4 Event Trail Poster and one A4 Venue
+                    Poster per active venue. Posters use your event branding
+                    and embed the correct QR codes for the event landing page
+                    and each venue check-in.
+                  </p>
+                </div>
+                <Link
+                  to="/admin/events/$eventId/posters"
+                  params={{ eventId: event.id }}
+                  className="inline-flex h-10 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5]"
+                >
+                  Open Posters →
+                </Link>
+              </div>
+            </div>
           </Section>
 
 
