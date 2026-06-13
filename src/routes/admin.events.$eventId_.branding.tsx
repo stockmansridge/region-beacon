@@ -173,6 +173,7 @@ type Form = {
 
 const EMPTY_FORM: Form = {
   font_family: "",
+  heading_font_family: "",
   welcome_copy: "",
   terms_url: "",
   venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
