@@ -4316,21 +4316,7 @@ function EventDetail() {
                                       value={built.url}
                                       downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
                                       pngButtonLabel="Download venue check-in QR (PNG)"
-                                      posterButtonLabel="Download venue check-in poster PDF"
                                       awardsCaption={`This scan awards: ${qr?.entry_value ?? 1} point${(qr?.entry_value ?? 1) === 1 ? "" : "s"}`}
-                                      poster={{
-                                        eventName: event.name,
-                                        venueName: v.name,
-                                        logoUrl: getEventAssetPublicUrl(branding?.logo_path),
-                                        primaryColor: branding?.primary_color ?? null,
-                                        accentColor: branding?.accent_color ?? null,
-                                        offerSummary: offerSummaryByVenue.get(v.id) ?? null,
-                                        entryValue: qr?.entry_value ?? null,
-                                        filename: posterFilename(
-                                          event.public_slug ?? event.slug,
-                                          v.name,
-                                        ),
-                                      }}
                                     />
                                   )}
                                 </div>
