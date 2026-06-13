@@ -218,7 +218,7 @@ const COLOUR_FORM_KEYS: ReadonlyArray<keyof Form> = [
 ];
 
 const SELECT_COLS = [
-  "logo_path", "cover_path", "font_family", "welcome_copy", "terms_url",
+  "logo_path", "cover_path", "font_family", "heading_font_family", "welcome_copy", "terms_url",
   "venue_label_singular", "venue_label_plural",
   "primary_color", "accent_color", "link_color",
   "page_background_color", "text_color", "muted_text_color", "border_color",
