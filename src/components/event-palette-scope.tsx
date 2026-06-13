@@ -85,6 +85,7 @@ export function EventPaletteScope({
   heroFgColor?: string | null;
   heroAccentColor?: string | null;
   fontFamily?: string | null;
+  headingFontFamily?: string | null;
   children: ReactNode;
   className?: string;
   applyBackground?: boolean;
