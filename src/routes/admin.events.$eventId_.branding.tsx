@@ -506,6 +506,7 @@ function BrandingEditor() {
     // Card heading mirrors into card_text_color for the same reason.
     const fullPayload: Record<string, unknown> = {
       font_family: font_family || null,
+      heading_font_family: heading_font_family || null,
       welcome_copy: welcome_copy || null,
       terms_url: terms_url || null,
       venue_label_singular,
