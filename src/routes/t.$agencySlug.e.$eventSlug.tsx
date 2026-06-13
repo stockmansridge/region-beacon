@@ -32,6 +32,7 @@ type PublicEvent = {
   primary_color: string | null;
   accent_color: string | null;
   font_family: string | null;
+  heading_font_family?: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
   current_terms_version_id: string | null;
@@ -155,6 +156,7 @@ function TenantEventPage() {
       pageBackgroundColor={event.page_background_color ?? null}
       cardBackgroundColor={event.card_background_color ?? null}
       fontFamily={event.font_family ?? null}
+      headingFontFamily={event.heading_font_family ?? null}
       className="min-h-screen px-4 py-8"
     >
       <TrailLanding
@@ -165,6 +167,7 @@ function TenantEventPage() {
         primaryColor={event.primary_color ?? undefined}
         accentColor={event.accent_color ?? undefined}
         fontFamily={event.font_family ?? undefined}
+        headingFontFamily={event.heading_font_family ?? undefined}
         logoUrl={getEventAssetPublicUrl(event.logo_path)}
         heroImageUrl={getEventAssetPublicUrl(event.cover_path)}
         venueCount={venues.length}

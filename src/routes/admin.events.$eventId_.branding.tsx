@@ -58,6 +58,7 @@ type Branding = {
   logo_path: string | null;
   cover_path: string | null;
   font_family: string | null;
+  heading_font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
   venue_label_singular: string | null;
@@ -128,6 +129,7 @@ type Bundle = {
 
 type Form = {
   font_family: string;
+  heading_font_family: string;
   welcome_copy: string;
   terms_url: string;
   venue_label_singular: string;
@@ -171,6 +173,7 @@ type Form = {
 
 const EMPTY_FORM: Form = {
   font_family: "",
+  heading_font_family: "",
   welcome_copy: "",
   terms_url: "",
   venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
@@ -215,7 +218,7 @@ const COLOUR_FORM_KEYS: ReadonlyArray<keyof Form> = [
 ];
 
 const SELECT_COLS = [
-  "logo_path", "cover_path", "font_family", "welcome_copy", "terms_url",
+  "logo_path", "cover_path", "font_family", "heading_font_family", "welcome_copy", "terms_url",
   "venue_label_singular", "venue_label_plural",
   "primary_color", "accent_color", "link_color",
   "page_background_color", "text_color", "muted_text_color", "border_color",
@@ -235,6 +238,7 @@ function brandingToForm(b: Branding | null): Form {
   if (!b) return EMPTY_FORM;
   return {
     font_family: b.font_family ?? "",
+    heading_font_family: b.heading_font_family ?? "",
     welcome_copy: b.welcome_copy ?? "",
     terms_url: b.terms_url ?? "",
     venue_label_singular: b.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
@@ -406,9 +410,9 @@ function BrandingEditor() {
     return () => { cancelled = true; };
   }, [agency.status, agencyId, eventId, reloadKey]);
 
-  // Lazy-load the chosen Google Font.
+  // Lazy-load the chosen Google Font(s) — both body and heading.
   useEffect(() => {
-    const href = buildGoogleFontsHref([form.font_family]);
+    const href = buildGoogleFontsHref([form.font_family, form.heading_font_family]);
     if (!href) return;
     if (document.querySelector(`link[data-event-font="${href}"]`)) return;
     const link = document.createElement("link");
@@ -416,7 +420,7 @@ function BrandingEditor() {
     link.href = href;
     link.dataset.eventFont = href;
     document.head.appendChild(link);
-  }, [form.font_family]);
+  }, [form.font_family, form.heading_font_family]);
 
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
@@ -460,7 +464,11 @@ function BrandingEditor() {
 
     const font_family = trim(form.font_family);
     if (font_family && !isSupportedEventFont(font_family)) {
-      setValidationError("Pick a font from the list."); return;
+      setValidationError("Pick a body font from the list."); return;
+    }
+    const heading_font_family = trim(form.heading_font_family);
+    if (heading_font_family && !isSupportedEventFont(heading_font_family)) {
+      setValidationError("Pick a heading font from the list."); return;
     }
     const welcome_copy = trim(form.welcome_copy);
     if (welcome_copy.length > 1000) {
@@ -498,6 +506,7 @@ function BrandingEditor() {
     // Card heading mirrors into card_text_color for the same reason.
     const fullPayload: Record<string, unknown> = {
       font_family: font_family || null,
+      heading_font_family: heading_font_family || null,
       welcome_copy: welcome_copy || null,
       terms_url: terms_url || null,
       venue_label_singular,
@@ -786,6 +795,7 @@ function BrandingEditor() {
               onApplyKit={applyBrandKit}
               onClear={() => setForm({ ...EMPTY_FORM,
                 font_family: form.font_family,
+                heading_font_family: form.heading_font_family,
                 welcome_copy: form.welcome_copy,
                 terms_url: form.terms_url,
                 venue_label_singular: form.venue_label_singular,
@@ -965,13 +975,19 @@ function BrandingEditor() {
           <CollapsibleSection
             id="fonts"
             title="Fonts"
-            subtitle={form.font_family ? (getEventFont(form.font_family)?.label ?? form.font_family) : "Default (GetStampd)"}
+            subtitle={(() => {
+              const h = form.heading_font_family ? (getEventFont(form.heading_font_family)?.label ?? form.heading_font_family) : "—";
+              const b = form.font_family ? (getEventFont(form.font_family)?.label ?? form.font_family) : "Default";
+              return `Heading: ${h} · Body: ${b}`;
+            })()}
             expanded={expanded.fonts}
             onToggle={() => toggle("fonts")}
           >
-            <FontPicker
-              value={form.font_family}
-              onChange={(value) => setForm({ ...form, font_family: value })}
+            <FontPickers
+              headingValue={form.heading_font_family}
+              bodyValue={form.font_family}
+              onHeadingChange={(value) => setForm({ ...form, heading_font_family: value })}
+              onBodyChange={(value) => setForm({ ...form, font_family: value })}
               disabled={!canEdit || saving}
               eventName={event.name}
             />
@@ -1055,6 +1071,7 @@ function BrandingEditor() {
               heroFgColor={form.hero_fg_color}
               heroAccentColor={form.hero_accent_color}
               fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
+              headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || null)}
               className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
             >
               <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]"
@@ -1068,6 +1085,7 @@ function BrandingEditor() {
                 primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
                 accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
                 fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
+                headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
                 venueCount={venueCount}
                 venueLabelPlural={venueLabels.plural}
                 logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
@@ -1456,55 +1474,102 @@ function HeroOverlayCard({
 }
 
 // ============================================================================
-// FontPicker
+// FontPickers — separate heading + body font dropdowns.
 // ============================================================================
-function FontPicker({
-  value, onChange, disabled, eventName,
+function FontSelect({
+  value, onChange, disabled, label,
 }: {
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
-  eventName: string;
+  label: string;
 }) {
   const selected = getEventFont(value);
   const selectValue = selected ? selected.value : value.trim() ? "__unknown__" : "";
-  const previewStack = selected?.stack ?? (value.trim() ? value.trim() : undefined);
   return (
-    <div className="space-y-3">
+    <Field label={label}>
+      <select value={selectValue} onChange={(e) => { const n = e.target.value; if (n !== "__unknown__") onChange(n); }}
+        disabled={disabled}
+        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+        <option value="">Default (GetStampd)</option>
+        {selectValue === "__unknown__" && (
+          <option value="__unknown__" disabled>{value.trim()} (unavailable — pick a font below)</option>
+        )}
+        {(["Display", "Serif", "Sans"] as const).map((cat) => {
+          const fonts = EVENT_FONTS.filter((f) => f.category === cat);
+          if (fonts.length === 0) return null;
+          return (
+            <optgroup key={cat} label={cat}>
+              {fonts.map((f) => (<option key={f.value} value={f.value}>{f.label}</option>))}
+            </optgroup>
+          );
+        })}
+      </select>
+    </Field>
+  );
+}
+
+function FontPickers({
+  headingValue, bodyValue, onHeadingChange, onBodyChange, disabled, eventName,
+}: {
+  headingValue: string;
+  bodyValue: string;
+  onHeadingChange: (v: string) => void;
+  onBodyChange: (v: string) => void;
+  disabled?: boolean;
+  eventName: string;
+}) {
+  const headingStack =
+    getEventFont(headingValue)?.stack ?? (headingValue.trim() || undefined);
+  const bodyStack =
+    getEventFont(bodyValue)?.stack ?? (bodyValue.trim() || undefined);
+  // Heading font falls back to body font when unset.
+  const heroPreviewStack = headingStack ?? bodyStack;
+  return (
+    <div className="space-y-4">
       <div>
-        <div className="text-sm font-semibold text-[#111827]">Heading / brand font</div>
+        <div className="text-sm font-semibold text-[#111827]">Event heading font</div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Leave on <span className="font-medium">Default</span> to use the GetStampd house font.
+          Used for the main event name over hero images. Leave on <span className="font-medium">Default</span> to inherit the body font.
         </p>
       </div>
-      <Field label="Brand font">
-        <select value={selectValue} onChange={(e) => { const n = e.target.value; if (n !== "__unknown__") onChange(n); }}
-          disabled={disabled}
-          className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-          <option value="">Default (GetStampd)</option>
-          {selectValue === "__unknown__" && (
-            <option value="__unknown__" disabled>{value.trim()} (unavailable — pick a font below)</option>
-          )}
-          {(["Sans", "Serif", "Display"] as const).map((cat) => {
-            const fonts = EVENT_FONTS.filter((f) => f.category === cat);
-            if (fonts.length === 0) return null;
-            return (
-              <optgroup key={cat} label={cat}>
-                {fonts.map((f) => (<option key={f.value} value={f.value}>{f.label}</option>))}
-              </optgroup>
-            );
-          })}
-        </select>
-      </Field>
-      <div className="space-y-2 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
+      <FontSelect
+        label="Heading font"
+        value={headingValue}
+        onChange={onHeadingChange}
+        disabled={disabled}
+      />
+
+      <div className="pt-2">
+        <div className="text-sm font-semibold text-[#111827]">Body font</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Used for buttons, cards, venue text, offers, FAQ, terms and most page content.
+        </p>
+      </div>
+      <FontSelect
+        label="Body font"
+        value={bodyValue}
+        onChange={onBodyChange}
+        disabled={disabled}
+      />
+
+      <div className="space-y-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
         <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">Font preview</div>
-        <div style={previewStack ? { fontFamily: previewStack } : undefined}>
-          <div className="text-2xl font-semibold leading-tight text-[#111827]">
+        <div style={heroPreviewStack ? { fontFamily: heroPreviewStack } : undefined}>
+          <div className="text-3xl font-semibold leading-tight text-[#111827]">
             {eventName || "Explore Orange Wine Trail"}
           </div>
-          <p className="mt-2 text-sm leading-6 text-[#334155]">
+        </div>
+        <div style={bodyStack ? { fontFamily: bodyStack } : undefined}>
+          <p className="text-sm leading-6 text-[#334155]">
             Collect stamps as you visit participating venues and unlock rewards along the way.
           </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="inline-flex h-8 items-center rounded-[8px] bg-[#2F6FE4] px-3 text-[12px] font-semibold text-white">
+              Sample button
+            </span>
+            <span className="text-[12px] text-[#64748B]">Card and interface text</span>
+          </div>
         </div>
       </div>
     </div>

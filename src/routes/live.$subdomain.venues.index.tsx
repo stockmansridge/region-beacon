@@ -77,6 +77,7 @@ type EventRow = {
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
   font_family?: string | null;
+  heading_font_family?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
   logo_path?: string | null;
@@ -189,6 +190,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
       heroFgColor={event?.hero_fg_color ?? null}
       heroAccentColor={event?.hero_accent_color ?? null}
       fontFamily={event?.font_family ?? null}
+      headingFontFamily={event?.heading_font_family ?? null}
       className="min-h-screen pb-10"
     >
       {/* Full-bleed hero with overlaid header */}
@@ -236,10 +238,9 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
               {labels.plural}
             </p>
             <h1
-              className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
+              className="font-event-heading mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
               style={{
                 color: "var(--event-hero-fg, var(--event-primary-fg))",
-                fontFamily: "var(--event-font, inherit)",
                 textShadow: "0 2px 12px rgba(0,0,0,0.45)",
               }}
             >

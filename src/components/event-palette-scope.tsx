@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { resolveEventTheme, themeCssVars } from "@/lib/event-theme";
 import { getBackground, getBackgroundOrDefault } from "@/lib/event-backgrounds";
 import {
@@ -6,6 +6,7 @@ import {
   getPalette,
   getPaletteOrDefault,
 } from "@/lib/event-palettes";
+import { buildGoogleFontsHref } from "@/lib/event-fonts";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -53,6 +54,7 @@ export function EventPaletteScope({
   heroFgColor,
   heroAccentColor,
   fontFamily,
+  headingFontFamily,
   children,
   className,
   applyBackground = true,
@@ -84,6 +86,7 @@ export function EventPaletteScope({
   heroFgColor?: string | null;
   heroAccentColor?: string | null;
   fontFamily?: string | null;
+  headingFontFamily?: string | null;
   children: ReactNode;
   className?: string;
   applyBackground?: boolean;
@@ -115,12 +118,29 @@ export function EventPaletteScope({
     (heroFgColor && HEX_RE.test(heroFgColor)) ||
     (heroAccentColor && HEX_RE.test(heroAccentColor));
 
+  // Lazy-load Google Fonts for the body + heading families when the
+  // chosen value matches a known EVENT_FONTS entry. Idempotent. Called
+  // unconditionally so React's rules-of-hooks are respected even if we
+  // bail out below with an unstyled wrapper.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const href = buildGoogleFontsHref([fontFamily, headingFontFamily]);
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [fontFamily, headingFontFamily]);
+
   if (
     !explicitCurated &&
     !hasCustomPalette &&
     !explicitBackground &&
     !hasSemanticOverride &&
-    !fontFamily
+    !fontFamily &&
+    !headingFontFamily
   ) {
     return <div className={className}>{children}</div>;
   }
@@ -195,6 +215,9 @@ export function EventPaletteScope({
     ...bgStyle,
     ...(fontFamily
       ? { fontFamily, ["--event-font" as any]: fontFamily }
+      : {}),
+    ...(headingFontFamily
+      ? { ["--event-heading-font" as any]: headingFontFamily }
       : {}),
   };
   return (

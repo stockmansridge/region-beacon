@@ -55,6 +55,7 @@ type PublicEvent = {
   primary_text_color?: string | null;
   nav_background_color?: string | null;
   font_family: string | null;
+  heading_font_family?: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
   current_terms_version_id: string | null;
@@ -310,6 +311,7 @@ function LivePublicLoaded({
       heroFgColor={event.hero_fg_color ?? null}
       heroAccentColor={event.hero_accent_color ?? null}
       fontFamily={event.font_family ?? null}
+      headingFontFamily={event.heading_font_family ?? null}
       className="min-h-screen"
     >
       {isAdminPreview && !previewDismissed && (
@@ -386,10 +388,9 @@ function LivePublicLoaded({
               Welcome
             </p>
             <h1
-              className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
+              className="font-event-heading mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
               style={{
                 color: "var(--event-hero-fg, var(--event-primary-fg))",
-                fontFamily: "var(--event-font, inherit)",
                 textShadow: "0 2px 12px rgba(0,0,0,0.45)",
               }}
             >

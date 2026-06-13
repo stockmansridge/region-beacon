@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
+import { buildGoogleFontsHref } from "@/lib/event-fonts";
 
 export type EventBrandingKeys = {
   paletteKey: string | null;
@@ -49,6 +50,8 @@ export type EventBrandingKeys = {
   coverPath: string | null;
   /** CSS font-family stack chosen for the event. */
   fontFamily: string | null;
+  /** Separate heading font for hero event titles. Falls back to fontFamily. */
+  headingFontFamily: string | null;
   ready: boolean;
 };
 
@@ -88,6 +91,7 @@ const EMPTY: EventBrandingKeys = {
   logoPath: null,
   coverPath: null,
   fontFamily: null,
+  headingFontFamily: null,
   ready: false,
 };
 
@@ -126,6 +130,7 @@ export function brandingScopeProps(b: EventBrandingKeys) {
     heroFgColor: b.heroFgColor,
     heroAccentColor: b.heroAccentColor,
     fontFamily: b.fontFamily,
+    headingFontFamily: b.headingFontFamily,
   };
 }
 
@@ -183,6 +188,7 @@ export function useEventBrandingKeys(
           logo_path?: string | null;
           cover_path?: string | null;
           font_family?: string | null;
+          heading_font_family?: string | null;
         } | null;
         setKeys({
           paletteKey: row?.palette_key ?? null,
@@ -220,6 +226,7 @@ export function useEventBrandingKeys(
           logoPath: row?.logo_path ?? null,
           coverPath: row?.cover_path ?? null,
           fontFamily: row?.font_family ?? null,
+          headingFontFamily: row?.heading_font_family ?? null,
           ready: true,
         });
       } catch {
@@ -230,6 +237,21 @@ export function useEventBrandingKeys(
       cancelled = true;
     };
   }, [subdomain]);
+
+  // Lazy-load Google Fonts for the body + heading families. Idempotent —
+  // skips if a link with the same href is already injected.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const href = buildGoogleFontsHref([keys.fontFamily, keys.headingFontFamily]);
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [keys.fontFamily, keys.headingFontFamily]);
+
   return keys;
 }
 

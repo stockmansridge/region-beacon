@@ -14,6 +14,8 @@ export type TrailLandingProps = {
   accentColor?: string;
   goldColor?: string;
   fontFamily?: string;
+  /** Heading font for the hero event title. Falls back to fontFamily. */
+  headingFontFamily?: string;
   heroImageUrl?: string | null;
   logoUrl?: string | null;
   venueCount?: number;
@@ -42,6 +44,7 @@ export function TrailLanding({
   accentColor = "#B5572A",
   goldColor = "#C9A24A",
   fontFamily,
+  headingFontFamily,
   heroImageUrl,
   logoUrl,
   venueCount,
@@ -83,9 +86,10 @@ export function TrailLanding({
           background: `linear-gradient(180deg, ${primaryColor}33 0%, ${primaryColor}AA 60%, ${primaryColor}F0 100%)`,
         };
 
-  const rootStyle: React.CSSProperties = fontFamily
-    ? { fontFamily, ["--event-font" as any]: fontFamily }
-    : {};
+  const rootStyle: React.CSSProperties = {
+    ...(fontFamily ? { fontFamily, ["--event-font" as any]: fontFamily } : {}),
+    ...(headingFontFamily ? { ["--event-heading-font" as any]: headingFontFamily } : {}),
+  };
 
   return (
     <div className="mx-auto w-full max-w-md" style={rootStyle}>
@@ -144,7 +148,7 @@ export function TrailLanding({
             <div className="text-[10px] font-medium uppercase tracking-[0.32em]" style={{ color: goldColor }}>
               {subtitle}
             </div>
-            <h1 className="font-trail-serif mt-2 text-[34px] font-semibold leading-[1.05]">
+            <h1 className="font-event-heading mt-2 text-[34px] font-semibold leading-[1.05]">
               {eventName}
             </h1>
             {pitch && (
