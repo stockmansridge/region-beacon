@@ -36,6 +36,7 @@ import {
   listAwardDrawHistory,
   saveAward,
   uploadAwardImage,
+  voidAwardDraw,
 } from "@/lib/event-awards";
 
 function formatErr(e: unknown): string {
@@ -235,7 +236,7 @@ export function EventAwardsSection({
         </ul>
       )}
 
-      <DrawHistory rows={history} />
+      <DrawHistory rows={history} canEdit={canEdit} onVoided={refresh} />
 
       {editor.mode !== "closed" && (
         <AwardEditorDialog
@@ -314,7 +315,17 @@ export function EventAwardsSection({
   );
 }
 
-function DrawHistory({ rows }: { rows: AwardDrawHistoryRow[] | null }) {
+function DrawHistory({
+  rows,
+  canEdit,
+  onVoided,
+}: {
+  rows: AwardDrawHistoryRow[] | null;
+  canEdit: boolean;
+  onVoided: () => void;
+}) {
+  const [voiding, setVoiding] = useState<AwardDrawHistoryRow | null>(null);
+
   if (!rows) return null;
   if (rows.length === 0) {
     return (
@@ -328,7 +339,7 @@ function DrawHistory({ rows }: { rows: AwardDrawHistoryRow[] | null }) {
     <div className="rounded-xl border border-[#E2E8F0] bg-white">
       <div className="border-b border-[#E2E8F0] p-4">
         <h4 className="text-sm font-semibold text-[#0F172A]">Award draw history</h4>
-        <p className="mt-1 text-xs text-[#64748B]">Newest first.</p>
+        <p className="mt-1 text-xs text-[#64748B]">Newest first. Voided draws stay in history for audit.</p>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
@@ -339,24 +350,152 @@ function DrawHistory({ rows }: { rows: AwardDrawHistoryRow[] | null }) {
               <th className="px-4 py-2 text-left">Email</th>
               <th className="px-4 py-2 text-left">Entrants</th>
               <th className="px-4 py-2 text-left">Drawn at</th>
+              <th className="px-4 py-2 text-left">Status</th>
+              {canEdit && <th className="px-4 py-2 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-[#E2E8F0]">
-                <td className="px-4 py-2 font-medium text-[#0F172A]">{r.award_title}</td>
-                <td className="px-4 py-2">{r.winner_participant_name ?? "—"}</td>
-                <td className="px-4 py-2 text-[#475569]">
-                  {r.winner_participant_email ?? "—"}
-                </td>
-                <td className="px-4 py-2">{r.eligible_count}</td>
-                <td className="px-4 py-2 text-[#475569]">{formatDateTime(r.drawn_at)}</td>
-              </tr>
-            ))}
+            {rows.map((r) => {
+              const voided = !!r.voided_at;
+              return (
+                <tr key={r.id} className="border-t border-[#E2E8F0]">
+                  <td className="px-4 py-2 font-medium text-[#0F172A]">{r.award_title}</td>
+                  <td className={`px-4 py-2 ${voided ? "text-[#94A3B8] line-through" : ""}`}>
+                    {r.winner_participant_name ?? "—"}
+                  </td>
+                  <td className={`px-4 py-2 ${voided ? "text-[#94A3B8] line-through" : "text-[#475569]"}`}>
+                    {r.winner_participant_email ?? "—"}
+                  </td>
+                  <td className="px-4 py-2">{r.eligible_count}</td>
+                  <td className="px-4 py-2 text-[#475569]">{formatDateTime(r.drawn_at)}</td>
+                  <td className="px-4 py-2">
+                    {voided ? (
+                      <div className="flex flex-col gap-0.5">
+                        <Badge variant="secondary" className="w-fit bg-[#FEE2E2] text-[#991B1B]">
+                          Voided
+                        </Badge>
+                        {r.void_reason && (
+                          <span className="text-[11px] text-[#64748B]">{r.void_reason}</span>
+                        )}
+                        {r.voided_at && (
+                          <span className="text-[11px] text-[#94A3B8]">
+                            {formatDateTime(r.voided_at)}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <Badge variant="secondary" className="bg-[#DCFCE7] text-[#166534]">
+                        Active
+                      </Badge>
+                    )}
+                  </td>
+                  {canEdit && (
+                    <td className="px-4 py-2 text-right">
+                      {!voided && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setVoiding(r)}
+                        >
+                          Undo draw
+                        </Button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+
+      {voiding && (
+        <VoidDrawDialog
+          row={voiding}
+          onCancel={() => setVoiding(null)}
+          onDone={() => {
+            setVoiding(null);
+            onVoided();
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function VoidDrawDialog({
+  row,
+  onCancel,
+  onDone,
+}: {
+  row: AwardDrawHistoryRow;
+  onCancel: () => void;
+  onDone: () => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && !busy && onCancel()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Undo winner draw?</DialogTitle>
+          <DialogDescription>
+            This marks the draw for "{row.award_title}" as voided and allows
+            you to redraw a winner. The original draw stays in history for
+            audit purposes and is not deleted.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="void-reason">Reason (optional)</Label>
+          <Textarea
+            id="void-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Reason, e.g. wrong award selected"
+            rows={3}
+            disabled={busy}
+          />
+          {error && (
+            <p className="rounded border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+              {error}
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError(null);
+              try {
+                await voidAwardDraw(row.id, reason.trim() || null);
+                toast.success("Draw undone.");
+                onDone();
+              } catch (e) {
+                const msg = formatErr(e);
+                setError(msg);
+                toast.error(`Undo failed: ${msg}`);
+                setBusy(false);
+              }
+            }}
+          >
+            {busy ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Undoing…
+              </span>
+            ) : (
+              "Undo draw"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
