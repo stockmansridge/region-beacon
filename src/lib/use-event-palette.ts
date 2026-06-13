@@ -187,6 +187,7 @@ export function useEventBrandingKeys(
           logo_path?: string | null;
           cover_path?: string | null;
           font_family?: string | null;
+          heading_font_family?: string | null;
         } | null;
         setKeys({
           paletteKey: row?.palette_key ?? null,
