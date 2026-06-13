@@ -70,6 +70,7 @@ import { Route as LiveSubdomainVenuesIndexRouteImport } from './routes/live.$sub
 import { Route as TAgencySlugEEventSlugRouteImport } from './routes/t.$agencySlug.e.$eventSlug'
 import { Route as LiveSubdomainVenuesVenueIdRouteImport } from './routes/live.$subdomain.venues.$venueId'
 import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
+import { Route as AdminEventsEventIdPostersRouteImport } from './routes/admin.events.$eventId_.posters'
 import { Route as AdminEventsEventIdLeaderboardRouteImport } from './routes/admin.events.$eventId_.leaderboard'
 import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId_.branding'
 
@@ -383,6 +384,12 @@ const AdminEventsEventIdPreviewRoute =
     path: '/admin/events/$eventId/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminEventsEventIdPostersRoute =
+  AdminEventsEventIdPostersRouteImport.update({
+    id: '/events/$eventId_/posters',
+    path: '/events/$eventId/posters',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminEventsEventIdLeaderboardRoute =
   AdminEventsEventIdLeaderboardRouteImport.update({
     id: '/events/$eventId_/leaderboard',
@@ -456,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
+  '/admin/events/$eventId/posters': typeof AdminEventsEventIdPostersRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
@@ -520,6 +528,7 @@ export interface FileRoutesByTo {
   '/live/$subdomain': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
+  '/admin/events/$eventId/posters': typeof AdminEventsEventIdPostersRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
@@ -586,6 +595,7 @@ export interface FileRoutesById {
   '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
   '/admin/events/$eventId_/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
+  '/admin/events/$eventId_/posters': typeof AdminEventsEventIdPostersRoute
   '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/'
     | '/admin/events/$eventId/branding'
     | '/admin/events/$eventId/leaderboard'
+    | '/admin/events/$eventId/posters'
     | '/admin/events/$eventId/preview'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
@@ -717,6 +728,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain'
     | '/admin/events/$eventId/branding'
     | '/admin/events/$eventId/leaderboard'
+    | '/admin/events/$eventId/posters'
     | '/admin/events/$eventId/preview'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
@@ -782,6 +794,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/'
     | '/admin/events/$eventId_/branding'
     | '/admin/events/$eventId_/leaderboard'
+    | '/admin/events/$eventId_/posters'
     | '/admin_/events/$eventId/preview'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
@@ -1270,6 +1283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsEventIdPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/events/$eventId_/posters': {
+      id: '/admin/events/$eventId_/posters'
+      path: '/events/$eventId/posters'
+      fullPath: '/admin/events/$eventId/posters'
+      preLoaderRoute: typeof AdminEventsEventIdPostersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events/$eventId_/leaderboard': {
       id: '/admin/events/$eventId_/leaderboard'
       path: '/events/$eventId/leaderboard'
@@ -1299,6 +1319,7 @@ interface AdminRouteChildren {
   AdminEventsIndexRoute: typeof AdminEventsIndexRoute
   AdminEventsEventIdBrandingRoute: typeof AdminEventsEventIdBrandingRoute
   AdminEventsEventIdLeaderboardRoute: typeof AdminEventsEventIdLeaderboardRoute
+  AdminEventsEventIdPostersRoute: typeof AdminEventsEventIdPostersRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1313,6 +1334,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEventsIndexRoute: AdminEventsIndexRoute,
   AdminEventsEventIdBrandingRoute: AdminEventsEventIdBrandingRoute,
   AdminEventsEventIdLeaderboardRoute: AdminEventsEventIdLeaderboardRoute,
+  AdminEventsEventIdPostersRoute: AdminEventsEventIdPostersRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -1396,13 +1418,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
