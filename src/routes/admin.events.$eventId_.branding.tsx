@@ -975,13 +975,19 @@ function BrandingEditor() {
           <CollapsibleSection
             id="fonts"
             title="Fonts"
-            subtitle={form.font_family ? (getEventFont(form.font_family)?.label ?? form.font_family) : "Default (GetStampd)"}
+            subtitle={(() => {
+              const h = form.heading_font_family ? (getEventFont(form.heading_font_family)?.label ?? form.heading_font_family) : "—";
+              const b = form.font_family ? (getEventFont(form.font_family)?.label ?? form.font_family) : "Default";
+              return `Heading: ${h} · Body: ${b}`;
+            })()}
             expanded={expanded.fonts}
             onToggle={() => toggle("fonts")}
           >
-            <FontPicker
-              value={form.font_family}
-              onChange={(value) => setForm({ ...form, font_family: value })}
+            <FontPickers
+              headingValue={form.heading_font_family}
+              bodyValue={form.font_family}
+              onHeadingChange={(value) => setForm({ ...form, heading_font_family: value })}
+              onBodyChange={(value) => setForm({ ...form, font_family: value })}
               disabled={!canEdit || saving}
               eventName={event.name}
             />
