@@ -53,6 +53,7 @@ export function EventPaletteScope({
   heroFgColor,
   heroAccentColor,
   fontFamily,
+  headingFontFamily,
   children,
   className,
   applyBackground = true,
