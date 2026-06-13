@@ -70,6 +70,7 @@ type EventRow = {
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
   font_family?: string | null;
+  heading_font_family?: string | null;
   venue_label_singular?: string | null;
   venue_label_plural?: string | null;
   logo_path?: string | null;
