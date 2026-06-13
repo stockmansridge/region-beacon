@@ -122,7 +122,8 @@ export function EventPaletteScope({
     !hasCustomPalette &&
     !explicitBackground &&
     !hasSemanticOverride &&
-    !fontFamily
+    !fontFamily &&
+    !headingFontFamily
   ) {
     return <div className={className}>{children}</div>;
   }
