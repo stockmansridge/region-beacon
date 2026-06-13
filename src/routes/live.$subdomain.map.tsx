@@ -468,7 +468,6 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         logoUrl={getEventAssetPublicUrl(event?.logo_path ?? null)}
         activeOverride="map"
         eventId={event?.event_id ?? null}
-        transparentHeader
       />
 
       <div className="mx-auto mt-4 max-w-5xl">

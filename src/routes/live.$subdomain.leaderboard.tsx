@@ -147,7 +147,6 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
         logoUrl={getEventAssetPublicUrl(branding.logoPath)}
         primaryColor={branding.primaryColor}
         accentColor={branding.accentColor}
-        transparentHeader
       />
       <div className="mx-auto max-w-xl">
         <Header subdomain={subdomain} />
