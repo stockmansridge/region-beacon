@@ -217,13 +217,13 @@ function PostersPage() {
             .eq("status", "active")
             .in("venue_id", activeVenues.map((v) => v.id));
           if (qrRes.error && /entry_value/.test(qrRes.error.message ?? "")) {
-            qrRes = await supabase
+            qrRes = (await supabase
               .from("venue_qr_codes")
               .select(baseCols)
               .eq("agency_id", agencyId)
               .eq("event_id", ev.id)
               .eq("status", "active")
-              .in("venue_id", activeVenues.map((v) => v.id));
+              .in("venue_id", activeVenues.map((v) => v.id))) as any;
           }
           if (cancelled) return;
           if (qrRes.error) throw qrRes.error;
