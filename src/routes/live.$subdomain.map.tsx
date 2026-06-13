@@ -457,7 +457,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   return (
     <EventPaletteScope
       {...brandingScopeProps(branding)}
-      className="min-h-screen px-4 py-6"
+      className="min-h-screen px-4 pb-6"
     >
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav

@@ -138,7 +138,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   }, [subdomain]);
 
   return (
-    <EventPaletteScope {...brandingScopeProps(branding)} className="min-h-screen px-4 py-8 sm:py-12">
+    <EventPaletteScope {...brandingScopeProps(branding)} className="min-h-screen px-4 pb-8 sm:pb-12">
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
