@@ -388,10 +388,9 @@ function LivePublicLoaded({
               Welcome
             </p>
             <h1
-              className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
+              className="font-event-heading mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
               style={{
                 color: "var(--event-hero-fg, var(--event-primary-fg))",
-                fontFamily: "var(--event-font, inherit)",
                 textShadow: "0 2px 12px rgba(0,0,0,0.45)",
               }}
             >
