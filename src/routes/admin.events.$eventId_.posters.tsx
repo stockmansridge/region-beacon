@@ -118,7 +118,7 @@ function PostersPage() {
 
   // ---------- Load ----------
   useEffect(() => {
-    if (!user || !agencyId) return;
+    if (!userId || !agencyId) return;
     let cancelled = false;
     (async () => {
       setState("loading");
@@ -282,7 +282,7 @@ function PostersPage() {
     return () => {
       cancelled = true;
     };
-  }, [eventId, agencyId, user]);
+  }, [eventId, agencyId, userId]);
 
   // Preload Google Fonts used by the event branding so the export
   // snapshot captures the right typefaces. The default page fonts
@@ -516,7 +516,7 @@ function PostersPage() {
   if (state === "loading") {
     return (
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <PageHeader title="Posters" subtitle="Loading event…" />
+        <PageHeader title="Posters" description="Loading event…" />
       </div>
     );
   }
@@ -525,7 +525,7 @@ function PostersPage() {
       <div className="mx-auto max-w-3xl px-6 py-10">
         <PageHeader
           title="Posters"
-          subtitle={errorMsg ?? "We couldn't load this event."}
+          description={errorMsg ?? "We couldn't load this event."}
         />
         <Link
           to="/admin/events/$eventId"
@@ -568,7 +568,7 @@ function PostersPage() {
     <div className="mx-auto max-w-6xl px-6 py-8">
       <PageHeader
         title="Posters"
-        subtitle={`Printable A4 posters for ${event.name}.`}
+        description={`Printable A4 posters for ${event.name}.`}
       />
       <div className="mt-2 mb-6 flex flex-wrap items-center gap-3 text-sm">
         <Link
