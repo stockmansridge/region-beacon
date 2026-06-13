@@ -237,6 +237,21 @@ export function useEventBrandingKeys(
       cancelled = true;
     };
   }, [subdomain]);
+
+  // Lazy-load Google Fonts for the body + heading families. Idempotent —
+  // skips if a link with the same href is already injected.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const href = buildGoogleFontsHref([keys.fontFamily, keys.headingFontFamily]);
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [keys.fontFamily, keys.headingFontFamily]);
+
   return keys;
 }
 
