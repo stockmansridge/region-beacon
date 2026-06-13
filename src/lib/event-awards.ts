@@ -53,7 +53,33 @@ export type AwardDrawHistoryRow = {
   drawn_by: string | null;
   drawn_at: string;
   notes: string | null;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_reason: string | null;
 };
+
+export type VoidAwardDrawResult = {
+  id: string;
+  award_id: string;
+  event_id: string;
+  voided_at: string;
+  voided_by: string | null;
+  void_reason: string | null;
+};
+
+export async function voidAwardDraw(
+  drawId: string,
+  reason: string | null,
+): Promise<VoidAwardDrawResult> {
+  const { data, error } = await supabase.rpc("void_event_award_draw" as never, {
+    p_draw_id: drawId,
+    p_reason: reason,
+  } as never);
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error("Void returned no result");
+  return row as VoidAwardDrawResult;
+}
 
 export type PublicEventAward = {
   id: string;
