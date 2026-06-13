@@ -92,8 +92,10 @@ type AwardRow = {
 
 function PostersPage() {
   const { eventId } = Route.useParams();
-  const { user } = useAuth();
-  const { agencyId } = useAgencyContext();
+  const auth = useAuth();
+  const agencyCtx = useAgencyContext();
+  const userId = auth.session?.user?.id ?? null;
+  const agencyId = agencyCtx.selected?.id ?? null;
 
   const [state, setState] = useState<"loading" | "ready" | "error" | "denied">(
     "loading",
