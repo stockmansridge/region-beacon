@@ -464,7 +464,11 @@ function BrandingEditor() {
 
     const font_family = trim(form.font_family);
     if (font_family && !isSupportedEventFont(font_family)) {
-      setValidationError("Pick a font from the list."); return;
+      setValidationError("Pick a body font from the list."); return;
+    }
+    const heading_font_family = trim(form.heading_font_family);
+    if (heading_font_family && !isSupportedEventFont(heading_font_family)) {
+      setValidationError("Pick a heading font from the list."); return;
     }
     const welcome_copy = trim(form.welcome_copy);
     if (welcome_copy.length > 1000) {
