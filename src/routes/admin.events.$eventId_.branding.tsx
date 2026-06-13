@@ -58,6 +58,7 @@ type Branding = {
   logo_path: string | null;
   cover_path: string | null;
   font_family: string | null;
+  heading_font_family: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
   venue_label_singular: string | null;
