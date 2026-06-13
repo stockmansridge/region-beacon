@@ -1,10 +1,14 @@
 // Curated list of fonts available for event branding.
 //
 // Each entry's `value` is what gets persisted into `event_branding.font_family`
-// (a plain CSS font-family string). The `stack` includes safe fallbacks so the
-// public page still renders if the Google Font fails to load. `googleFamily`
-// is the Google Fonts CSS2 family spec (with weights). Fonts that are
-// system-only have `googleFamily: null`.
+// or `event_branding.heading_font_family` (plain CSS family strings). The
+// `stack` includes safe fallbacks so the public page still renders if the
+// Google Font fails to load. `googleFamily` is the Google Fonts CSS2 family
+// spec (with weights). Fonts that are system-only have `googleFamily: null`.
+//
+// The same list powers both the heading and body dropdowns. Heading-friendly
+// (display/serif) options are grouped under "Display" / "Serif"; body-friendly
+// options under "Sans" / "Serif".
 
 export type EventFontOption = {
   value: string; // primary family name persisted to DB
@@ -15,6 +19,7 @@ export type EventFontOption = {
 };
 
 export const EVENT_FONTS: EventFontOption[] = [
+  // ---------- Sans ----------
   {
     value: "Inter",
     label: "Inter",
@@ -58,6 +63,35 @@ export const EVENT_FONTS: EventFontOption[] = [
     category: "Sans",
   },
   {
+    value: "Work Sans",
+    label: "Work Sans",
+    stack: "'Work Sans', ui-sans-serif, system-ui, sans-serif",
+    googleFamily: "Work+Sans:wght@400;500;600;700",
+    category: "Sans",
+  },
+  {
+    value: "Manrope",
+    label: "Manrope",
+    stack: "'Manrope', ui-sans-serif, system-ui, sans-serif",
+    googleFamily: "Manrope:wght@400;500;600;700",
+    category: "Sans",
+  },
+  {
+    value: "Nunito",
+    label: "Nunito (rounded)",
+    stack: "'Nunito', ui-sans-serif, system-ui, sans-serif",
+    googleFamily: "Nunito:wght@400;500;600;700",
+    category: "Sans",
+  },
+  {
+    value: "Quicksand",
+    label: "Quicksand (rounded)",
+    stack: "'Quicksand', ui-sans-serif, system-ui, sans-serif",
+    googleFamily: "Quicksand:wght@400;500;600;700",
+    category: "Sans",
+  },
+  // ---------- Serif ----------
+  {
     value: "Fraunces",
     label: "Fraunces",
     stack: "'Fraunces', Georgia, ui-serif, serif",
@@ -77,6 +111,49 @@ export const EVENT_FONTS: EventFontOption[] = [
     stack: "'Lora', Georgia, ui-serif, serif",
     googleFamily: "Lora:wght@400;500;600;700",
     category: "Serif",
+  },
+  {
+    value: "Cormorant Garamond",
+    label: "Cormorant Garamond (elegant)",
+    stack: "'Cormorant Garamond', Georgia, ui-serif, serif",
+    googleFamily: "Cormorant+Garamond:wght@400;500;600;700",
+    category: "Serif",
+  },
+  {
+    value: "EB Garamond",
+    label: "EB Garamond (classic)",
+    stack: "'EB Garamond', Georgia, ui-serif, serif",
+    googleFamily: "EB+Garamond:wght@400;500;600;700",
+    category: "Serif",
+  },
+  {
+    value: "Merriweather",
+    label: "Merriweather",
+    stack: "'Merriweather', Georgia, ui-serif, serif",
+    googleFamily: "Merriweather:wght@400;700",
+    category: "Serif",
+  },
+  // ---------- Display / luxury ----------
+  {
+    value: "DM Serif Display",
+    label: "DM Serif Display (luxury)",
+    stack: "'DM Serif Display', Georgia, ui-serif, serif",
+    googleFamily: "DM+Serif+Display:wght@400",
+    category: "Display",
+  },
+  {
+    value: "Italiana",
+    label: "Italiana (premium)",
+    stack: "'Italiana', Georgia, ui-serif, serif",
+    googleFamily: "Italiana:wght@400",
+    category: "Display",
+  },
+  {
+    value: "Marcellus",
+    label: "Marcellus (gallery)",
+    stack: "'Marcellus', Georgia, ui-serif, serif",
+    googleFamily: "Marcellus:wght@400",
+    category: "Display",
   },
 ];
 
