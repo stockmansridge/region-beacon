@@ -86,7 +86,6 @@ export function PublicLegalShell({
           logoUrl={getEventAssetPublicUrl(b.logoPath)}
           primaryColor={b.primaryColor}
           accentColor={b.accentColor}
-          transparentHeader
         />
       </div>
       <div className="mx-auto mt-6 max-w-2xl">
