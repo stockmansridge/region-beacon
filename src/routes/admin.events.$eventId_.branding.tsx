@@ -1,4 +1,13 @@
 import { ChevronDown } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
@@ -421,6 +430,19 @@ function BrandingEditor() {
     link.dataset.eventFont = href;
     document.head.appendChild(link);
   }, [form.font_family, form.heading_font_family]);
+
+  // Preload every supported event font so the Branding font dropdowns
+  // can render each option in its own typeface for preview.
+  useEffect(() => {
+    const href = buildGoogleFontsHref(EVENT_FONTS.map((f) => f.value));
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, []);
 
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
@@ -1485,26 +1507,48 @@ function FontSelect({
   label: string;
 }) {
   const selected = getEventFont(value);
-  const selectValue = selected ? selected.value : value.trim() ? "__unknown__" : "";
+  const isUnknown = !selected && value.trim().length > 0;
+  const selectValue = selected ? selected.value : isUnknown ? "__unknown__" : "__default__";
+  const triggerStack = selected?.stack;
   return (
     <Field label={label}>
-      <select value={selectValue} onChange={(e) => { const n = e.target.value; if (n !== "__unknown__") onChange(n); }}
+      <Select
+        value={selectValue}
+        onValueChange={(n) => {
+          if (n === "__unknown__") return;
+          onChange(n === "__default__" ? "" : n);
+        }}
         disabled={disabled}
-        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-        <option value="">Default (GetStampd)</option>
-        {selectValue === "__unknown__" && (
-          <option value="__unknown__" disabled>{value.trim()} (unavailable — pick a font below)</option>
-        )}
-        {(["Display", "Serif", "Sans"] as const).map((cat) => {
-          const fonts = EVENT_FONTS.filter((f) => f.category === cat);
-          if (fonts.length === 0) return null;
-          return (
-            <optgroup key={cat} label={cat}>
-              {fonts.map((f) => (<option key={f.value} value={f.value}>{f.label}</option>))}
-            </optgroup>
-          );
-        })}
-      </select>
+      >
+        <SelectTrigger
+          className="h-10 w-full rounded-[10px] border-[#D9E2EF] bg-white px-3 text-sm text-[#111827]"
+          style={triggerStack ? { fontFamily: triggerStack } : undefined}
+        >
+          <SelectValue placeholder="Default (GetStampd)" />
+        </SelectTrigger>
+        <SelectContent className="max-h-[360px]">
+          <SelectItem value="__default__">Default (GetStampd)</SelectItem>
+          {isUnknown && (
+            <SelectItem value="__unknown__" disabled>
+              {value.trim()} (unavailable — pick a font below)
+            </SelectItem>
+          )}
+          {(["Display", "Serif", "Sans"] as const).map((cat) => {
+            const fonts = EVENT_FONTS.filter((f) => f.category === cat);
+            if (fonts.length === 0) return null;
+            return (
+              <SelectGroup key={cat}>
+                <SelectLabel>{cat}</SelectLabel>
+                {fonts.map((f) => (
+                  <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.stack }}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            );
+          })}
+        </SelectContent>
+      </Select>
     </Field>
   );
 }
