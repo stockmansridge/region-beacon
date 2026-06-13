@@ -32,6 +32,7 @@ type PublicEvent = {
   primary_color: string | null;
   accent_color: string | null;
   font_family: string | null;
+  heading_font_family?: string | null;
   welcome_copy: string | null;
   terms_url: string | null;
   current_terms_version_id: string | null;
