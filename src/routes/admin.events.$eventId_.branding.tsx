@@ -422,6 +422,19 @@ function BrandingEditor() {
     document.head.appendChild(link);
   }, [form.font_family, form.heading_font_family]);
 
+  // Preload every supported event font so the Branding font dropdowns
+  // can render each option in its own typeface for preview.
+  useEffect(() => {
+    const href = buildGoogleFontsHref(EVENT_FONTS.map((f) => f.value));
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, []);
+
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
 
