@@ -238,6 +238,7 @@ function brandingToForm(b: Branding | null): Form {
   if (!b) return EMPTY_FORM;
   return {
     font_family: b.font_family ?? "",
+    heading_font_family: b.heading_font_family ?? "",
     welcome_copy: b.welcome_copy ?? "",
     terms_url: b.terms_url ?? "",
     venue_label_singular: b.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
