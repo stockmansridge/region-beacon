@@ -70,6 +70,8 @@ $$;
 grant execute on function public.void_event_award_draw(uuid, text) to authenticated;
 
 -- 3. get_event_award_draws_admin — include void status -----------------------
+drop function if exists public.get_event_award_draws_admin(uuid);
+
 create or replace function public.get_event_award_draws_admin(p_event_id uuid)
 returns table (
   id                         uuid,
