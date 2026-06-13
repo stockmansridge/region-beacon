@@ -49,6 +49,8 @@ export type EventBrandingKeys = {
   coverPath: string | null;
   /** CSS font-family stack chosen for the event. */
   fontFamily: string | null;
+  /** Separate heading font for hero event titles. Falls back to fontFamily. */
+  headingFontFamily: string | null;
   ready: boolean;
 };
 
