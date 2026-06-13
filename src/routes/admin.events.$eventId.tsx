@@ -2523,22 +2523,18 @@ function EventDetail() {
               value={built.url}
               downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
               pngButtonLabel="Download venue check-in QR (PNG)"
-              posterButtonLabel="Download venue check-in poster PDF"
               awardsCaption={`This scan awards: ${qr.entry_value ?? 1} point${(qr.entry_value ?? 1) === 1 ? "" : "s"}`}
-              poster={{
-                eventName: event.name,
-                venueName: v.name,
-                logoUrl: getEventAssetPublicUrl(branding?.logo_path),
-                primaryColor: branding?.primary_color ?? null,
-                accentColor: branding?.accent_color ?? null,
-                offerSummary: offerSummaryByVenue.get(v.id) ?? null,
-                entryValue: qr.entry_value ?? null,
-                filename: posterFilename(
-                  event.public_slug ?? event.slug,
-                  v.name,
-                ),
-              }}
             />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Need a printable A4 venue poster?{" "}
+              <Link
+                to="/admin/events/$eventId/posters"
+                params={{ eventId: event.id }}
+                className="font-medium text-[#1D4ED8] hover:underline"
+              >
+                Open the Posters page →
+              </Link>
+            </p>
           </>
         )}
 
