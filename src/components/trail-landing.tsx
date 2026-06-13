@@ -86,9 +86,10 @@ export function TrailLanding({
           background: `linear-gradient(180deg, ${primaryColor}33 0%, ${primaryColor}AA 60%, ${primaryColor}F0 100%)`,
         };
 
-  const rootStyle: React.CSSProperties = fontFamily
-    ? { fontFamily, ["--event-font" as any]: fontFamily }
-    : {};
+  const rootStyle: React.CSSProperties = {
+    ...(fontFamily ? { fontFamily, ["--event-font" as any]: fontFamily } : {}),
+    ...(headingFontFamily ? { ["--event-heading-font" as any]: headingFontFamily } : {}),
+  };
 
   return (
     <div className="mx-auto w-full max-w-md" style={rootStyle}>
