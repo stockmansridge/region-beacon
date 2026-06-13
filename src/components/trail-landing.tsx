@@ -148,7 +148,7 @@ export function TrailLanding({
             <div className="text-[10px] font-medium uppercase tracking-[0.32em]" style={{ color: goldColor }}>
               {subtitle}
             </div>
-            <h1 className="font-trail-serif mt-2 text-[34px] font-semibold leading-[1.05]">
+            <h1 className="font-event-heading mt-2 text-[34px] font-semibold leading-[1.05]">
               {eventName}
             </h1>
             {pitch && (
