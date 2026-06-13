@@ -52,7 +52,7 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
   return (
     <EventPaletteScope
       {...brandingScopeProps(branding)}
-      className="min-h-screen px-4 py-4"
+      className="min-h-screen px-4 pb-4"
     >
       <div className="mx-auto max-w-5xl">
         <PublicEventNav
