@@ -129,6 +129,7 @@ export function brandingScopeProps(b: EventBrandingKeys) {
     heroFgColor: b.heroFgColor,
     heroAccentColor: b.heroAccentColor,
     fontFamily: b.fontFamily,
+    headingFontFamily: b.headingFontFamily,
   };
 }
 
