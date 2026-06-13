@@ -156,6 +156,7 @@ function TenantEventPage() {
       pageBackgroundColor={event.page_background_color ?? null}
       cardBackgroundColor={event.card_background_color ?? null}
       fontFamily={event.font_family ?? null}
+      headingFontFamily={event.heading_font_family ?? null}
       className="min-h-screen px-4 py-8"
     >
       <TrailLanding
@@ -166,6 +167,7 @@ function TenantEventPage() {
         primaryColor={event.primary_color ?? undefined}
         accentColor={event.accent_color ?? undefined}
         fontFamily={event.font_family ?? undefined}
+        headingFontFamily={event.heading_font_family ?? undefined}
         logoUrl={getEventAssetPublicUrl(event.logo_path)}
         heroImageUrl={getEventAssetPublicUrl(event.cover_path)}
         venueCount={venues.length}
