@@ -114,25 +114,7 @@ export function VenuePoster({ data, capture = false, previewScale, id }: Props) 
             {data.venueName}
           </div>
         </div>
-        {/* CTA badge sitting on hero bottom edge */}
-        <div
-          style={{
-            position: "absolute",
-            left: 56,
-            bottom: 32,
-            background: branding.accentColor,
-            color: accentFg,
-            padding: "12px 20px",
-            borderRadius: 999,
-            fontSize: 14,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.14em",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-          }}
-        >
-          ★ Collect your stamp here
-        </div>
+        {/* CTA badge removed — QR card below is the primary CTA */}
       </div>
 
       {/* QR ACTION CARD — overlaps hero */}
