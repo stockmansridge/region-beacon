@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
+import { buildGoogleFontsHref } from "@/lib/event-fonts";
 
 export type EventBrandingKeys = {
   paletteKey: string | null;
