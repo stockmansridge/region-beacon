@@ -190,6 +190,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
       heroFgColor={event?.hero_fg_color ?? null}
       heroAccentColor={event?.hero_accent_color ?? null}
       fontFamily={event?.font_family ?? null}
+      headingFontFamily={event?.heading_font_family ?? null}
       className="min-h-screen pb-10"
     >
       {/* Full-bleed hero with overlaid header */}
