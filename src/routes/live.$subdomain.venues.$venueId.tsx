@@ -58,6 +58,7 @@ type EventBrand = {
   border_color?: string | null;
   primary_text_color?: string | null;
   font_family?: string | null;
+  heading_font_family?: string | null;
 };
 
 type State =
