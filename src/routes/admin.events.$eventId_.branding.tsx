@@ -795,6 +795,7 @@ function BrandingEditor() {
               onApplyKit={applyBrandKit}
               onClear={() => setForm({ ...EMPTY_FORM,
                 font_family: form.font_family,
+                heading_font_family: form.heading_font_family,
                 welcome_copy: form.welcome_copy,
                 terms_url: form.terms_url,
                 venue_label_singular: form.venue_label_singular,
