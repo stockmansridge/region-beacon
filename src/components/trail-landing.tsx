@@ -44,6 +44,7 @@ export function TrailLanding({
   accentColor = "#B5572A",
   goldColor = "#C9A24A",
   fontFamily,
+  headingFontFamily,
   heroImageUrl,
   logoUrl,
   venueCount,
