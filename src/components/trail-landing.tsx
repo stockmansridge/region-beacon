@@ -14,6 +14,8 @@ export type TrailLandingProps = {
   accentColor?: string;
   goldColor?: string;
   fontFamily?: string;
+  /** Heading font for the hero event title. Falls back to fontFamily. */
+  headingFontFamily?: string;
   heroImageUrl?: string | null;
   logoUrl?: string | null;
   venueCount?: number;
