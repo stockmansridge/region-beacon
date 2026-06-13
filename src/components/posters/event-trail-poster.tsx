@@ -172,25 +172,7 @@ export function EventTrailPoster({ data, capture = false, previewScale, id }: Pr
             Explore. Collect stamps. Get rewarded.
           </div>
         </div>
-        {/* CTA badge on hero bottom edge */}
-        <div
-          style={{
-            position: "absolute",
-            left: 56,
-            bottom: 36,
-            background: branding.accentColor,
-            color: accentFg,
-            padding: "13px 22px",
-            borderRadius: 999,
-            fontSize: 14,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.16em",
-            boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
-          }}
-        >
-          ★ Scan · Visit · Collect · Win
-        </div>
+        {/* CTA badge removed — QR card below is the primary CTA */}
       </div>
 
       {/* QR ACTION CARD — overlaps hero */}
