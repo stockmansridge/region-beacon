@@ -1474,55 +1474,102 @@ function HeroOverlayCard({
 }
 
 // ============================================================================
-// FontPicker
+// FontPickers — separate heading + body font dropdowns.
 // ============================================================================
-function FontPicker({
-  value, onChange, disabled, eventName,
+function FontSelect({
+  value, onChange, disabled, label,
 }: {
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
-  eventName: string;
+  label: string;
 }) {
   const selected = getEventFont(value);
   const selectValue = selected ? selected.value : value.trim() ? "__unknown__" : "";
-  const previewStack = selected?.stack ?? (value.trim() ? value.trim() : undefined);
   return (
-    <div className="space-y-3">
+    <Field label={label}>
+      <select value={selectValue} onChange={(e) => { const n = e.target.value; if (n !== "__unknown__") onChange(n); }}
+        disabled={disabled}
+        className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+        <option value="">Default (GetStampd)</option>
+        {selectValue === "__unknown__" && (
+          <option value="__unknown__" disabled>{value.trim()} (unavailable — pick a font below)</option>
+        )}
+        {(["Display", "Serif", "Sans"] as const).map((cat) => {
+          const fonts = EVENT_FONTS.filter((f) => f.category === cat);
+          if (fonts.length === 0) return null;
+          return (
+            <optgroup key={cat} label={cat}>
+              {fonts.map((f) => (<option key={f.value} value={f.value}>{f.label}</option>))}
+            </optgroup>
+          );
+        })}
+      </select>
+    </Field>
+  );
+}
+
+function FontPickers({
+  headingValue, bodyValue, onHeadingChange, onBodyChange, disabled, eventName,
+}: {
+  headingValue: string;
+  bodyValue: string;
+  onHeadingChange: (v: string) => void;
+  onBodyChange: (v: string) => void;
+  disabled?: boolean;
+  eventName: string;
+}) {
+  const headingStack =
+    getEventFont(headingValue)?.stack ?? (headingValue.trim() || undefined);
+  const bodyStack =
+    getEventFont(bodyValue)?.stack ?? (bodyValue.trim() || undefined);
+  // Heading font falls back to body font when unset.
+  const heroPreviewStack = headingStack ?? bodyStack;
+  return (
+    <div className="space-y-4">
       <div>
-        <div className="text-sm font-semibold text-[#111827]">Heading / brand font</div>
+        <div className="text-sm font-semibold text-[#111827]">Event heading font</div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Leave on <span className="font-medium">Default</span> to use the GetStampd house font.
+          Used for the main event name over hero images. Leave on <span className="font-medium">Default</span> to inherit the body font.
         </p>
       </div>
-      <Field label="Brand font">
-        <select value={selectValue} onChange={(e) => { const n = e.target.value; if (n !== "__unknown__") onChange(n); }}
-          disabled={disabled}
-          className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-          <option value="">Default (GetStampd)</option>
-          {selectValue === "__unknown__" && (
-            <option value="__unknown__" disabled>{value.trim()} (unavailable — pick a font below)</option>
-          )}
-          {(["Sans", "Serif", "Display"] as const).map((cat) => {
-            const fonts = EVENT_FONTS.filter((f) => f.category === cat);
-            if (fonts.length === 0) return null;
-            return (
-              <optgroup key={cat} label={cat}>
-                {fonts.map((f) => (<option key={f.value} value={f.value}>{f.label}</option>))}
-              </optgroup>
-            );
-          })}
-        </select>
-      </Field>
-      <div className="space-y-2 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
+      <FontSelect
+        label="Heading font"
+        value={headingValue}
+        onChange={onHeadingChange}
+        disabled={disabled}
+      />
+
+      <div className="pt-2">
+        <div className="text-sm font-semibold text-[#111827]">Body font</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Used for buttons, cards, venue text, offers, FAQ, terms and most page content.
+        </p>
+      </div>
+      <FontSelect
+        label="Body font"
+        value={bodyValue}
+        onChange={onBodyChange}
+        disabled={disabled}
+      />
+
+      <div className="space-y-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
         <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">Font preview</div>
-        <div style={previewStack ? { fontFamily: previewStack } : undefined}>
-          <div className="text-2xl font-semibold leading-tight text-[#111827]">
+        <div style={heroPreviewStack ? { fontFamily: heroPreviewStack } : undefined}>
+          <div className="text-3xl font-semibold leading-tight text-[#111827]">
             {eventName || "Explore Orange Wine Trail"}
           </div>
-          <p className="mt-2 text-sm leading-6 text-[#334155]">
+        </div>
+        <div style={bodyStack ? { fontFamily: bodyStack } : undefined}>
+          <p className="text-sm leading-6 text-[#334155]">
             Collect stamps as you visit participating venues and unlock rewards along the way.
           </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="inline-flex h-8 items-center rounded-[8px] bg-[#2F6FE4] px-3 text-[12px] font-semibold text-white">
+              Sample button
+            </span>
+            <span className="text-[12px] text-[#64748B]">Card and interface text</span>
+          </div>
         </div>
       </div>
     </div>
