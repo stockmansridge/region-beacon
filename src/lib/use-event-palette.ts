@@ -225,6 +225,7 @@ export function useEventBrandingKeys(
           logoPath: row?.logo_path ?? null,
           coverPath: row?.cover_path ?? null,
           fontFamily: row?.font_family ?? null,
+          headingFontFamily: row?.heading_font_family ?? null,
           ready: true,
         });
       } catch {
