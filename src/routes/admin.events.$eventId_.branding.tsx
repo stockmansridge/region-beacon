@@ -1071,6 +1071,7 @@ function BrandingEditor() {
               heroFgColor={form.hero_fg_color}
               heroAccentColor={form.hero_accent_color}
               fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
+              headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || null)}
               className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
             >
               <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]"
@@ -1084,6 +1085,7 @@ function BrandingEditor() {
                 primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
                 accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
                 fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
+                headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
                 venueCount={venueCount}
                 venueLabelPlural={venueLabels.plural}
                 logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
