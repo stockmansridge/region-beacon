@@ -2531,6 +2531,7 @@ function EventDetail() {
               value={built.url}
               downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
               pngButtonLabel="Download venue check-in QR (PNG)"
+              caption={v.name}
               awardsCaption={`This scan awards: ${qr.entry_value ?? 1} point${(qr.entry_value ?? 1) === 1 ? "" : "s"}`}
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
