@@ -9,6 +9,7 @@ import { matchRootDomain } from "@/lib/domains";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/scan")({
@@ -51,10 +52,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   const [manual, setManual] = useState("");
   const [hasPassport, setHasPassport] = useState<boolean | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
-  const [paletteKey, setPaletteKey] = useState<string | null>(null);
-  const [backgroundKey, setBackgroundKey] = useState<string | null>(null);
-  const [eventName, setEventName] = useState<string | null>(null);
-  const [logoPath, setLogoPath] = useState<string | null>(null);
+  const [event, setEvent] = useState<Record<string, unknown> | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -63,16 +61,14 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       const host = tenantHost(subdomain);
       const { data } = await supabase.rpc("get_public_event_by_domain", { _hostname: host });
       if (cancelled) return;
-      const evt = (data?.[0] ?? null) as { event_id?: string; name?: string; logo_path?: string | null; palette_key?: string | null; page_background_key?: string | null } | null;
-      const eid = evt?.event_id ?? null;
+      const raw = (data?.[0] ?? null) as Record<string, unknown> | null;
+      const evt = raw ? (applyPaletteToEvent(raw as never) as unknown as Record<string, unknown>) : null;
+      const eid = (evt?.event_id as string | undefined) ?? null;
       setEventId(eid);
-      setPaletteKey(evt?.palette_key ?? null);
-      setBackgroundKey(evt?.page_background_key ?? null);
-      setEventName(evt?.name ?? null);
-      setLogoPath(evt?.logo_path ?? null);
+      setEvent(evt);
       if (eid && typeof localStorage !== "undefined") {
-        const raw = localStorage.getItem(`gs.passport.${eid}`);
-        setHasPassport(!!raw);
+        const stored = localStorage.getItem(`gs.passport.${eid}`);
+        setHasPassport(!!stored);
       } else {
         setHasPassport(false);
       }
@@ -116,10 +112,52 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
     }, null, 2);
   };
 
+  const evt = event ?? {};
+  const g = <T,>(k: string) => (evt[k] as T | null | undefined) ?? null;
+
   return (
-    <EventPaletteScope paletteKey={paletteKey} backgroundKey={backgroundKey} className="min-h-screen pb-12">
+    <EventPaletteScope
+      paletteKey={g<string>("palette_key")}
+      backgroundKey={g<string>("page_background_key")}
+      pageBackgroundColor={g<string>("page_background_color")}
+      cardBackgroundColor={g<string>("card_background_color")}
+      primaryColor={g<string>("primary_color")}
+      accentColor={g<string>("accent_color")}
+      textColor={g<string>("text_color")}
+      mutedTextColor={g<string>("muted_text_color")}
+      cardTextColor={g<string>("card_text_color")}
+      cardMutedTextColor={g<string>("card_muted_text_color")}
+      borderColor={g<string>("border_color")}
+      primaryTextColor={g<string>("primary_text_color")}
+      navBackgroundColor={g<string>("nav_background_color")}
+      brandKitKey={g<string>("brand_kit_key")}
+      linkColor={g<string>("link_color")}
+      cardBorderColor={g<string>("card_border_color")}
+      buttonPrimaryBg={g<string>("button_primary_bg")}
+      buttonPrimaryFg={g<string>("button_primary_fg")}
+      buttonSecondaryBg={g<string>("button_secondary_bg")}
+      buttonSecondaryFg={g<string>("button_secondary_fg")}
+      navFgColor={g<string>("nav_fg_color")}
+      navMutedColor={g<string>("nav_muted_color")}
+      navActiveFgColor={g<string>("nav_active_fg_color")}
+      heroBgColor={g<string>("hero_bg_color")}
+      heroFgColor={g<string>("hero_fg_color")}
+      heroAccentColor={g<string>("hero_accent_color")}
+      fontFamily={g<string>("font_family")}
+      headingFontFamily={g<string>("heading_font_family")}
+      className="min-h-screen pb-12"
+    >
       <PublicAnnouncementBar subdomain={subdomain} />
-      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={eventId} eventName={eventName} logoUrl={getEventAssetPublicUrl(logoPath)} /></div>
+      <div className="px-4">
+        <PublicEventNav
+          subdomain={subdomain}
+          eventId={eventId}
+          eventName={g<string>("name")}
+          primaryColor={g<string>("primary_color")}
+          accentColor={g<string>("accent_color")}
+          logoUrl={getEventAssetPublicUrl(g<string>("logo_path"))}
+        />
+      </div>
       <div className="mx-auto max-w-md px-4 pt-4">
         <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           Scan venue QR
