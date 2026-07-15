@@ -454,7 +454,7 @@ function VoidDrawDialog({
             id="void-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason, e.g. wrong award selected"
+            placeholder="Reason, e.g. wrong prize selected"
             rows={3}
             disabled={busy}
           />
