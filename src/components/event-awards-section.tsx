@@ -570,7 +570,7 @@ function AwardEditorDialog({
         status,
         sortOrder: Number.isFinite(so) ? so : 0,
       });
-      toast.success(isEdit ? "Award updated" : "Award created");
+      toast.success(isEdit ? "Prize updated" : "Prize created");
       onSaved();
     } catch (e) {
       setError(formatErr(e));
@@ -583,9 +583,9 @@ function AwardEditorDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit award" : "Create award"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit prize" : "Create prize"}</DialogTitle>
           <DialogDescription>
-            Awards become unlockable once a participant meets the criteria below.
+            Prizes become unlockable once a participant meets the criteria below.
           </DialogDescription>
         </DialogHeader>
 
