@@ -346,7 +346,7 @@ function DrawHistory({
         <table className="min-w-full text-sm">
           <thead className="bg-[#F8FAFC] text-[11px] uppercase tracking-wider text-[#64748B]">
             <tr>
-              <th className="px-4 py-2 text-left">Award</th>
+              <th className="px-4 py-2 text-left">Prize</th>
               <th className="px-4 py-2 text-left">Winner</th>
               <th className="px-4 py-2 text-left">Email</th>
               <th className="px-4 py-2 text-left">Entrants</th>
