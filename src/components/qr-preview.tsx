@@ -193,6 +193,14 @@ export function QrPreview({
         height={size}
         className="rounded-md border bg-white p-2"
       />
+      {caption && (
+        <div
+          style={{ fontFamily: "Arial, sans-serif" }}
+          className="max-w-full break-words text-sm font-medium text-foreground"
+        >
+          {caption}
+        </div>
+      )}
       {poster?.venueName && (
         <div className="space-y-0.5 text-xs">
           <div className="font-semibold text-foreground">
