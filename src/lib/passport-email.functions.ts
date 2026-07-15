@@ -54,7 +54,8 @@ export const sendPassportEmail = createServerFn({ method: "POST" })
         console.warn("[passport-email] missing gateway keys; skipping send");
         return { sent: false, reason: "not_configured" as const };
       }
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { getSupabaseAdmin } = await import("@/integrations/supabase/admin.server");
+      const supabaseAdmin = getSupabaseAdmin();
       const { data: rows, error } = await supabaseAdmin.rpc("get_passport_by_token", {
         _raw_token: data.token,
       });
