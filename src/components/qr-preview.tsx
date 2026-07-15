@@ -94,13 +94,81 @@ export function QrPreview({
         const mod = (await import("qrcode")) as unknown as { default?: typeof import("qrcode") } & typeof import("qrcode");
         const QRCode = mod.default ?? mod;
         // Render at 4x for a crisp downloadable PNG.
+        const qrPx = size * 4;
         const url = await QRCode.toDataURL(normalisedValue, {
           errorCorrectionLevel: "M",
           margin: 2,
-          width: size * 4,
+          width: qrPx,
           color: { dark: "#000000", light: "#ffffff" },
         });
-        if (!cancelled) setDataUrl(url);
+        const trimmedCaption = caption?.trim();
+        if (!trimmedCaption) {
+          if (!cancelled) setDataUrl(url);
+          return;
+        }
+        // Composite QR + Arial caption into a single PNG so downloads
+        // include the label under the code.
+        const img = new Image();
+        img.src = url;
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("QR image failed to load"));
+        });
+        const fontPx = Math.max(24, Math.round(qrPx * 0.06));
+        const lineHeight = Math.round(fontPx * 1.2);
+        const paddingTop = Math.round(fontPx * 0.6);
+        const paddingBottom = Math.round(fontPx * 0.8);
+        const maxLines = 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = qrPx;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          if (!cancelled) setDataUrl(url);
+          return;
+        }
+        // Word-wrap into up to `maxLines` lines with ellipsis on overflow.
+        ctx.font = `bold ${fontPx}px Arial, sans-serif`;
+        const maxWidth = qrPx - fontPx; // side padding
+        const words = trimmedCaption.split(/\s+/);
+        const lines: string[] = [];
+        let current = "";
+        for (const word of words) {
+          const attempt = current ? `${current} ${word}` : word;
+          if (ctx.measureText(attempt).width <= maxWidth) {
+            current = attempt;
+          } else {
+            if (current) lines.push(current);
+            current = word;
+            if (lines.length === maxLines) break;
+          }
+        }
+        if (current && lines.length < maxLines) lines.push(current);
+        if (lines.length === maxLines) {
+          // If there are leftover words, ellipsize the last line.
+          const joined = lines.join(" ");
+          if (joined.length < trimmedCaption.length) {
+            let last = lines[maxLines - 1];
+            while (last.length > 0 && ctx.measureText(`${last}…`).width > maxWidth) {
+              last = last.slice(0, -1);
+            }
+            lines[maxLines - 1] = `${last}…`;
+          }
+        }
+        const captionBand = paddingTop + lines.length * lineHeight + paddingBottom;
+        canvas.height = qrPx + captionBand;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, qrPx, qrPx);
+        ctx.fillStyle = "#000000";
+        ctx.font = `bold ${fontPx}px Arial, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        lines.forEach((line, i) => {
+          const y = qrPx + paddingTop + i * lineHeight + lineHeight / 2;
+          ctx.fillText(line, canvas.width / 2, y);
+        });
+        const composed = canvas.toDataURL("image/png");
+        if (!cancelled) setDataUrl(composed);
       } catch (err: unknown) {
         // eslint-disable-next-line no-console
         console.error("[qr-preview] failed to render QR", { value: normalisedValue, err });
@@ -188,19 +256,11 @@ export function QrPreview({
     <div className="flex flex-col items-start gap-2">
       <img
         src={dataUrl}
-        alt="QR code"
-        width={size}
-        height={size}
+        alt={caption ? `QR code for ${caption}` : "QR code"}
+        style={{ width: size, height: "auto" }}
         className="rounded-md border bg-white p-2"
       />
-      {caption && (
-        <div
-          style={{ fontFamily: "Arial, sans-serif" }}
-          className="max-w-full break-words text-sm font-medium text-foreground"
-        >
-          {caption}
-        </div>
-      )}
+
       {poster?.venueName && (
         <div className="space-y-0.5 text-xs">
           <div className="font-semibold text-foreground">
