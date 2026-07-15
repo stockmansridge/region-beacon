@@ -25,6 +25,12 @@ type Props = {
    */
   awardsCaption?: string;
   /**
+   * Optional short name shown directly under the QR image in plain
+   * Arial. Use so organisers can tell single QR codes apart at a glance
+   * without generating a full poster.
+   */
+  caption?: string;
+  /**
    * Optional poster context. When provided, a "Download poster PDF" button is
    * shown which generates an A4 poster client-side using the same URL as the
    * QR image. Nothing is uploaded or stored.
