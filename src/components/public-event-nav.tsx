@@ -128,7 +128,7 @@ export function PublicEventNav({
         }}
       >
         <div
-          className="mx-auto grid h-14 max-w-2xl grid-cols-[44px_1fr_44px] items-center px-3"
+          className="mx-auto grid h-14 max-w-2xl grid-cols-[44px_1fr_auto] items-center px-3"
           style={{ color: navFg }}
         >
           <button
