@@ -414,7 +414,7 @@ function LivePublicLoaded({
             ) : (
               event.welcome_copy && (
                 <p
-                  className="mt-1 line-clamp-2 text-sm sm:text-base"
+                  className="mt-1 whitespace-pre-line text-sm sm:text-base"
                   style={{
                     color: "var(--event-hero-fg, var(--event-primary-fg))",
                     opacity: 0.95,
@@ -522,23 +522,44 @@ function LivePublicLoaded({
                   Points earned
                 </div>
               </div>
-              <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
-                <div className="flex items-center gap-1.5">
-                  <span aria-hidden className="text-base leading-none">{tierGlyph}</span>
-                  <span
-                    className="font-trail-serif text-sm font-semibold leading-tight"
-                    style={{ color: "var(--event-card-heading)" }}
-                  >
-                    {tierTitle}
-                  </span>
-                </div>
-                <div
-                  className="text-[10px] font-medium uppercase tracking-[0.18em]"
-                  style={{ color: "var(--event-card-muted)" }}
-                >
-                  {tierSub}
-                </div>
-              </div>
+              {(() => {
+                const tileInner = (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span aria-hidden className="text-base leading-none">{tierGlyph}</span>
+                      <span
+                        className="font-trail-serif text-sm font-semibold leading-tight"
+                        style={{ color: "var(--event-card-heading)" }}
+                      >
+                        {tierTitle}
+                      </span>
+                    </div>
+                    <div
+                      className="text-[10px] font-medium uppercase tracking-[0.18em]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      {tierSub}
+                    </div>
+                  </>
+                );
+                const startable = !homeData.hasPassport && canRegister;
+                if (startable) {
+                  return (
+                    <Link
+                      to="/join"
+                      aria-label="Start your passport"
+                      className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center transition hover:opacity-90"
+                    >
+                      {tileInner}
+                    </Link>
+                  );
+                }
+                return (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
+                    {tileInner}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </section>
@@ -624,7 +645,7 @@ function LivePublicLoaded({
           />
           <NextRewardCard eventId={event.event_id} />
 
-          <section>
+          <section className="flex flex-col gap-3">
             <Link
               to="/awards"
               className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
@@ -634,6 +655,16 @@ function LivePublicLoaded({
               }}
             >
               View prizes
+            </Link>
+            <Link
+              to="/venues"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
+            >
+              View {venueLabels.plural.toLowerCase()} & offers
             </Link>
           </section>
 

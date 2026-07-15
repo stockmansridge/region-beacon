@@ -1,30 +1,34 @@
-## What I checked
+## Changes to public event home page (`src/routes/live.$subdomain.index.tsx`)
 
-- **Resend connector**: connected, gateway working. A test send from `passports@getstampd.com.au` to `delivered@resend.dev` just returned HTTP 200 with a real message id — so the from-address is verified and the API key is authorised to send.
-- **Server logs**: no `passport-email` logs in the last hour on either the published or preview deployment. That means the `sendPassportEmail` server function was **never actually called** for the signup you tested.
-- **Wiring**: `src/routes/live.$subdomain.join.tsx` line 437 does call `sendPassportEmail(...)` after `register_visitor` succeeds, and the connector + code are correct.
+### 1. Show full welcome copy in the hero
+The hero paragraph currently uses `line-clamp-2` (line 417), so welcome copy longer than two lines is truncated with `…`. Remove `line-clamp-2` so the full copy is displayed. Keep the existing text shadow / color styling.
 
-## Most likely cause
+### 2. Make the "Start your passport – tap to begin" tile clickable
+In the summary card, the bottom-right tier tile shows:
+- Title: `Start your passport`
+- Subtitle: `tap to begin`
 
-The Share button + passport-email code has not been **published** yet. Server functions in TanStack Start are part of the app bundle — they only go live on `getstampd.com.au` and event subdomains after you click **Publish → Update**. If the signup you tested was on the live site (a `*.getstampd.com.au` subdomain), it hit the old bundle that has no `sendPassportEmail` call, which explains: no email + no server logs.
+when the visitor has no passport yet. Today it's plain text. Wrap that tile in a `<Link to="/join">` (using TanStack Router `Link`, same route the primary CTA already uses) only when `!homeData.hasPassport && canRegister`. In other states it stays as static text (no link).
 
-If you tested on the preview URL and still got nothing, that's a different problem — but there'd be a log line, and there isn't one.
+- Preserve existing layout, colours, and typography.
+- Add a subtle `hover:opacity-90` and a proper `aria-label="Start your passport"`.
+- When `canRegister` is false (terms not configured), leave the tile non-interactive to match the disabled primary CTA behaviour.
 
-## Plan
+### 3. Add "View Venues & Offers" button under "View prizes"
+Immediately after the `View prizes` `<Link>` section (currently ending at line ~638), add a second `<Link to="/venues">` styled identically (same className, same inline style tokens `--event-button-primary-bg` / `--event-button-primary-fg`, same rounded-full h-12 shadow). Label: `View venues & offers` (use the event's plural venue label when available, e.g. `View wineries & offers`).
 
-1. **Publish the app** (you click Update in the Publish dialog). That's the single action most likely to fix this.
-2. After publishing, do one test signup on the live subdomain, then I'll pull the `passport-email` server logs to confirm the send happened and Resend accepted it.
-3. If, after publishing, the logs show a failure (e.g. Resend 4xx, missing key, RPC lookup miss), I'll fix the specific error — most likely candidates are:
-   - Email landed in the recipient's **spam/junk** (very common on first sends from a new domain — worth checking before anything else).
-   - The `get_passport_by_token` RPC didn't return an `email` for the row (would need a small tweak to the lookup).
-4. Add a tiny bit of extra observability so the next diagnosis is one step, not three:
-   - Log the recipient domain (not the full address) and the Resend message id on success.
-   - Log the exact Resend error body on failure (already logged, but include the `to` domain for context).
+The `/venues` route already renders `PublicTrailTabs` with the `venues` tab active by default, so no changes to the tabs component or the venues route are required — linking to `/venues` satisfies "slider defaulted to the Venue tab".
 
-No user-facing changes in this plan — just publish + verify + minor log polish. If you'd rather I also surface a subtle "email sent to you@…" line on the success screen (using the actual address the user typed) so it's obvious when the send worked, say the word and I'll add it.
+## Out of scope
+- No admin, database, RLS, or server-function changes.
+- No changes to `/offers`, `/awards`, or the tabs component.
+- No changes to branding, palette, or fonts.
 
-## Ask
+## Test steps
+1. On a public event home page with a long `welcome_copy`, confirm the hero shows the full text (no `…`).
+2. Without a passport, tap the "Start your passport / tap to begin" tile in the summary card → navigates to `/join`.
+3. With a passport already registered, that tile shows the next-prize / tier text as today and is not a link.
+4. Scroll to the "View prizes" button — a matching "View venues & offers" button sits directly below and navigates to `/venues` with the Venues tab active.
 
-Can you confirm:
-- Did you test on the **published** site (a `*.getstampd.com.au` subdomain) or the **preview** URL?
-- Have you checked the recipient's **spam folder**?
+## Rollback
+Revert the single file `src/routes/live.$subdomain.index.tsx`.
