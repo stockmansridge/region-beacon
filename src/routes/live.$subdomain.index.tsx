@@ -645,7 +645,7 @@ function LivePublicLoaded({
           />
           <NextRewardCard eventId={event.event_id} />
 
-          <section>
+          <section className="flex flex-col gap-3">
             <Link
               to="/awards"
               className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
@@ -655,6 +655,16 @@ function LivePublicLoaded({
               }}
             >
               View prizes
+            </Link>
+            <Link
+              to="/venues"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
+            >
+              View {venueLabels.plural.toLowerCase()} & offers
             </Link>
           </section>
 
