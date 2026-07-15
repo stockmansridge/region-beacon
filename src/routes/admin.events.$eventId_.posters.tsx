@@ -284,6 +284,62 @@ function PostersPage() {
     };
   }, [eventId, agencyId, userId]);
 
+  // Re-fetch just the QR rows (entry_value can change on the Overview tab).
+  // Called on window focus / visibility so returning to this tab after
+  // editing a venue's stamp value reflects the new number without a full
+  // page reload.
+  const refreshQrCodes = useCallback(async () => {
+    if (!agencyId || !event || venues.length === 0) return;
+    const activeVenues = venues;
+    const baseCols = "venue_id, token, status";
+    let qrRes = await supabase
+      .from("venue_qr_codes")
+      .select(`${baseCols}, entry_value`)
+      .eq("agency_id", agencyId)
+      .eq("event_id", event.id)
+      .eq("status", "active")
+      .in("venue_id", activeVenues.map((v) => v.id));
+    if (qrRes.error && /entry_value/.test(qrRes.error.message ?? "")) {
+      qrRes = (await supabase
+        .from("venue_qr_codes")
+        .select(baseCols)
+        .eq("agency_id", agencyId)
+        .eq("event_id", event.id)
+        .eq("status", "active")
+        .in("venue_id", activeVenues.map((v) => v.id))) as any;
+    }
+    if (qrRes.error) {
+      console.error("[posters] refresh qr failed", qrRes.error);
+      return;
+    }
+    const map = new Map<string, QrRow>();
+    for (const r of (qrRes.data ?? []) as any[]) {
+      if (!map.has(r.venue_id)) {
+        map.set(r.venue_id, {
+          venue_id: r.venue_id,
+          token: r.token,
+          status: r.status,
+          entry_value: r.entry_value ?? null,
+        });
+      }
+    }
+    setQrByVenue(map);
+  }, [agencyId, event, venues]);
+
+  useEffect(() => {
+    if (state !== "ready") return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshQrCodes();
+    };
+    const onFocus = () => void refreshQrCodes();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [state, refreshQrCodes]);
+
   // Preload Google Fonts used by the event branding so the export
   // snapshot captures the right typefaces. The default page fonts
   // already include common fallbacks.
