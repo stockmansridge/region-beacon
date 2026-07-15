@@ -12,6 +12,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticPanel } from "@/components/diagnostic-panel";
+import { sendPassportEmail } from "@/lib/passport-email.functions";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
   component: function LiveJoinRoute() {
@@ -430,6 +431,15 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
       } catch {
         // localStorage unavailable — token still shown on success screen
       }
+
+      // Fire-and-forget: email the passport link to the new visitor. The
+      // success screen still shows the link if this fails, so we never block.
+      void sendPassportEmail({ data: { token: row.access_token } }).catch((e) => {
+        // eslint-disable-next-line no-console
+        console.warn("passport email failed", e);
+      });
+
+
 
       // If user was redirected from a venue QR scan, send them back there.
       const returnTo = consumeReturnTo(event.event_id);
