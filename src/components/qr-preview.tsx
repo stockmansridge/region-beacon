@@ -67,6 +67,7 @@ export function QrPreview({
   pngButtonLabel = "Download QR PNG",
   posterButtonLabel = "Download poster PDF",
   awardsCaption,
+  caption,
 }: Props) {
   const normalisedValue = normaliseQrUrl(value);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
