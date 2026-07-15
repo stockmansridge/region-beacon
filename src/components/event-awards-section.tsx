@@ -114,10 +114,10 @@ export function EventAwardsSection({
     <div className="space-y-6">
       {loadError && (
         <p className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-          Could not load awards: {loadError}
+          Could not load prizes: {loadError}
           <br />
           <span className="text-xs">
-            If this mentions a missing function, the awards SQL migration has not been
+            If this mentions a missing function, the prizes SQL migration has not been
             applied yet (see <code>supabase/migrations-draft-event-awards/</code>).
           </span>
         </p>
@@ -125,16 +125,17 @@ export function EventAwardsSection({
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Rewards, prizes, and draw entries participants can unlock by earning
+          Prizes and draw entries participants can unlock by earning
           points and/or visiting all locations. Each one appears in the public
-          passport Rewards section and on the public Awards page.
+          passport Prizes section and on the public Prizes page.
         </p>
         {canEdit && (
           <Button size="sm" onClick={() => setEditor({ mode: "create" })}>
-            Add reward
+            Add prize
           </Button>
         )}
       </div>
+
 
       {awards == null ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
