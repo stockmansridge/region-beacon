@@ -762,7 +762,7 @@ function DrawDialog({
               <DialogTitle>Draw winner for "{award.title}"?</DialogTitle>
               <DialogDescription>
                 This will randomly select one winner from the currently eligible
-                participants. The draw will be saved in the award history.
+                participants. The draw will be saved in the prize history.
               </DialogDescription>
             </DialogHeader>
             <ul className="space-y-1 rounded-lg bg-[#F8FAFC] p-3 text-sm text-[#0F172A]">
