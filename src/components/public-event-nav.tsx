@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   MapPin,
   Ticket,
+  Share2,
 } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
