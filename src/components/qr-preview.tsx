@@ -256,19 +256,11 @@ export function QrPreview({
     <div className="flex flex-col items-start gap-2">
       <img
         src={dataUrl}
-        alt="QR code"
-        width={size}
-        height={size}
+        alt={caption ? `QR code for ${caption}` : "QR code"}
+        style={{ width: size, height: "auto" }}
         className="rounded-md border bg-white p-2"
       />
-      {caption && (
-        <div
-          style={{ fontFamily: "Arial, sans-serif" }}
-          className="max-w-full break-words text-sm font-medium text-foreground"
-        >
-          {caption}
-        </div>
-      )}
+
       {poster?.venueName && (
         <div className="space-y-0.5 text-xs">
           <div className="font-semibold text-foreground">
