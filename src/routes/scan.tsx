@@ -52,10 +52,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   const [manual, setManual] = useState("");
   const [hasPassport, setHasPassport] = useState<boolean | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
-  const [paletteKey, setPaletteKey] = useState<string | null>(null);
-  const [backgroundKey, setBackgroundKey] = useState<string | null>(null);
-  const [eventName, setEventName] = useState<string | null>(null);
-  const [logoPath, setLogoPath] = useState<string | null>(null);
+  const [event, setEvent] = useState<Record<string, unknown> | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -64,16 +61,14 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       const host = tenantHost(subdomain);
       const { data } = await supabase.rpc("get_public_event_by_domain", { _hostname: host });
       if (cancelled) return;
-      const evt = (data?.[0] ?? null) as { event_id?: string; name?: string; logo_path?: string | null; palette_key?: string | null; page_background_key?: string | null } | null;
-      const eid = evt?.event_id ?? null;
+      const raw = (data?.[0] ?? null) as Record<string, unknown> | null;
+      const evt = raw ? (applyPaletteToEvent(raw as never) as unknown as Record<string, unknown>) : null;
+      const eid = (evt?.event_id as string | undefined) ?? null;
       setEventId(eid);
-      setPaletteKey(evt?.palette_key ?? null);
-      setBackgroundKey(evt?.page_background_key ?? null);
-      setEventName(evt?.name ?? null);
-      setLogoPath(evt?.logo_path ?? null);
+      setEvent(evt);
       if (eid && typeof localStorage !== "undefined") {
-        const raw = localStorage.getItem(`gs.passport.${eid}`);
-        setHasPassport(!!raw);
+        const stored = localStorage.getItem(`gs.passport.${eid}`);
+        setHasPassport(!!stored);
       } else {
         setHasPassport(false);
       }
