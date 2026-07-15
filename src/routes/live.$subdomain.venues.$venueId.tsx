@@ -80,9 +80,18 @@ type VisitedState =
   | { kind: "not_visited" }
   | { kind: "visited"; at: string | null };
 
+type BonusChallenge = {
+  bonus_code_id: string;
+  name: string;
+  description: string | null;
+  points_value: number;
+  is_claimed: boolean;
+};
+
 export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: string; venueId: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [visited, setVisited] = useState<VisitedState>({ kind: "none" });
+  const [bonusChallenges, setBonusChallenges] = useState<BonusChallenge[]>([]);
 
 
   useEffect(() => {
