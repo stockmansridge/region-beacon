@@ -2587,7 +2587,81 @@ function EventDetail() {
   return (
     <>
       <PageHeader
-        title={event.name}
+        title={
+          renamingName !== null ? (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!agencyId) return;
+                const next = renamingName.trim();
+                if (!next) {
+                  toast.error("Event name cannot be empty.");
+                  return;
+                }
+                if (next === event.name) {
+                  setRenamingName(null);
+                  return;
+                }
+                setRenamingBusy(true);
+                const { error } = await supabase
+                  .from("events")
+                  .update({ name: next })
+                  .eq("id", event.id)
+                  .eq("agency_id", agencyId);
+                setRenamingBusy(false);
+                if (error) {
+                  toast.error(`Could not rename event: ${error.message}`);
+                  return;
+                }
+                toast.success("Event renamed.");
+                setRenamingName(null);
+                setReloadKey((k) => k + 1);
+              }}
+            >
+              <input
+                autoFocus
+                value={renamingName}
+                onChange={(e) => setRenamingName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setRenamingName(null);
+                }}
+                disabled={renamingBusy}
+                maxLength={120}
+                className="h-10 min-w-[16rem] rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-2xl font-semibold tracking-[-0.02em] text-[#111827] outline-none focus:border-[#94A3B8]"
+              />
+              <button
+                type="submit"
+                disabled={renamingBusy}
+                className="inline-flex h-9 items-center rounded-[10px] bg-[#111827] px-3 text-sm font-semibold text-white hover:bg-[#0B1220] disabled:opacity-50"
+              >
+                {renamingBusy ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setRenamingName(null)}
+                disabled={renamingBusy}
+                className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <span className="inline-flex items-center gap-2">
+              <span>{event.name}</span>
+              <button
+                type="button"
+                onClick={() => setRenamingName(event.name ?? "")}
+                title="Rename event"
+                aria-label="Rename event"
+                className="inline-flex h-8 items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 text-xs font-semibold text-[#334155] hover:bg-[#F8FAFC]"
+              >
+                <span aria-hidden>✎</span>
+                <span>Edit</span>
+              </button>
+            </span>
+          )
+        }
         description={undefined}
         actions={
           <div className="flex flex-wrap items-center gap-3">
