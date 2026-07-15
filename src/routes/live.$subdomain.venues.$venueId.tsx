@@ -325,6 +325,107 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             );
           })()}
 
+          {bonusChallenges.length > 0 && (
+            <div className="mt-5 space-y-3">
+              {bonusChallenges.map((challenge) => (
+                <article
+                  key={challenge.bonus_code_id}
+                  className="rounded-2xl border p-4 shadow-sm"
+                  style={{
+                    borderColor: "var(--event-border,#E6DCC7)",
+                    backgroundColor:
+                      "color-mix(in oklab, var(--event-primary,#1F3D2B) 6%, var(--event-card-bg,#FBF5E8))",
+                  }}
+                >
+                  <div
+                    className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em]"
+                    style={{ color: "var(--event-muted,#8A7E66)" }}
+                  >
+                    <Star
+                      className="h-3.5 w-3.5"
+                      style={{
+                        color: "var(--event-accent,#B5572A)",
+                        fill: "var(--event-accent,#B5572A)",
+                      }}
+                      aria-hidden
+                    />
+                    Bonus challenge
+                  </div>
+
+                  <div className="mt-3 flex gap-3">
+                    <span
+                      className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full border"
+                      style={{
+                        borderColor: "var(--event-border,#E6DCC7)",
+                        backgroundColor: "var(--event-card-bg,#FBF5E8)",
+                        color: "var(--event-primary,#1F3D2B)",
+                      }}
+                      aria-hidden
+                    >
+                      <Users className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3
+                        className="font-trail-serif text-[16px] font-semibold leading-snug"
+                        style={{ color: "var(--event-primary,#1F3D2B)" }}
+                      >
+                        {challenge.name}
+                      </h3>
+                      <p
+                        className="mt-0.5 text-[13px]"
+                        style={{ color: "var(--event-muted,#8A7E66)" }}
+                      >
+                        Earn +{challenge.points_value} bonus points
+                      </p>
+                    </div>
+                  </div>
+
+                  {challenge.description && (
+                    <p
+                      className="mt-3 whitespace-pre-line text-[14px] leading-relaxed"
+                      style={{ color: "var(--event-text,#3D372C)" }}
+                    >
+                      {challenge.description}
+                    </p>
+                  )}
+
+                  <div className="mt-4 flex">
+                    <span
+                      className="inline-flex items-center justify-center gap-1.5 rounded-full border px-4 py-1.5 text-[12px] font-medium"
+                      style={
+                        challenge.is_claimed
+                          ? {
+                              borderColor: "var(--event-primary,#1F3D2B)",
+                              backgroundColor: "var(--event-primary,#1F3D2B)",
+                              color: "var(--event-primary-fg,#F6EFE2)",
+                            }
+                          : {
+                              borderColor: "var(--event-border,#E6DCC7)",
+                              backgroundColor: "var(--event-card-bg,#FBF5E8)",
+                              color: "var(--event-muted,#8A7E66)",
+                            }
+                      }
+                    >
+                      {challenge.is_claimed ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" aria-hidden />
+                          Completed
+                        </>
+                      ) : (
+                        <>
+                          <Circle className="h-3 w-3" aria-hidden />
+                          Not completed
+                        </>
+                      )}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+
+
           <div className="mt-6 space-y-2">
             {(() => {
               const directionsUrl = buildGoogleMapsDirectionsUrl({
