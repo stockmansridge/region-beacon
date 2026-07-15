@@ -114,10 +114,10 @@ export function EventAwardsSection({
     <div className="space-y-6">
       {loadError && (
         <p className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-          Could not load awards: {loadError}
+          Could not load prizes: {loadError}
           <br />
           <span className="text-xs">
-            If this mentions a missing function, the awards SQL migration has not been
+            If this mentions a missing function, the prizes SQL migration has not been
             applied yet (see <code>supabase/migrations-draft-event-awards/</code>).
           </span>
         </p>
@@ -125,16 +125,17 @@ export function EventAwardsSection({
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Rewards, prizes, and draw entries participants can unlock by earning
+          Prizes and draw entries participants can unlock by earning
           points and/or visiting all locations. Each one appears in the public
-          passport Rewards section and on the public Awards page.
+          passport Prizes section and on the public Prizes page.
         </p>
         {canEdit && (
           <Button size="sm" onClick={() => setEditor({ mode: "create" })}>
-            Add reward
+            Add prize
           </Button>
         )}
       </div>
+
 
       {awards == null ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
@@ -142,11 +143,11 @@ export function EventAwardsSection({
         <div className="rounded-xl border border-dashed border-[#D9E2EF] bg-[#F8FAFC] p-8 text-center">
           <Trophy className="mx-auto h-8 w-8 text-[#64748B]" />
           <p className="mt-2 text-sm font-medium text-[#111827]">
-            No rewards have been created yet
+            No prizes have been created yet
           </p>
           <p className="mt-1 text-xs text-[#64748B]">
-            Add your first reward or prize to show it in the public passport. To
-            run a major prize draw, create a reward named “Major prize draw”
+            Add your first prize to show it in the public passport. To
+            run a major prize draw, create a prize named “Major prize draw”
             with the points required to enter.
           </p>
           {canEdit && (
@@ -155,7 +156,7 @@ export function EventAwardsSection({
               size="sm"
               onClick={() => setEditor({ mode: "create" })}
             >
-              Create your first reward
+              Create your first prize
             </Button>
           )}
         </div>
@@ -287,7 +288,7 @@ export function EventAwardsSection({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete "{deleting.title}"?</AlertDialogTitle>
               <AlertDialogDescription>
-                This hides the award from the public page and from this list. Previous
+                This hides the prize from the public page and from this list. Previous
                 draw history is kept.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -297,7 +298,7 @@ export function EventAwardsSection({
                 onClick={async () => {
                   try {
                     await deleteAward(deleting.id);
-                    toast.success("Award deleted");
+                    toast.success("Prize deleted");
                     setDeleting(null);
                     refresh();
                   } catch (e) {
@@ -330,7 +331,7 @@ function DrawHistory({
   if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-        <h4 className="text-sm font-semibold text-[#0F172A]">Award draw history</h4>
+        <h4 className="text-sm font-semibold text-[#0F172A]">Prize draw history</h4>
         <p className="mt-1 text-xs text-[#64748B]">No draws have been recorded yet.</p>
       </div>
     );
@@ -338,14 +339,14 @@ function DrawHistory({
   return (
     <div className="rounded-xl border border-[#E2E8F0] bg-white">
       <div className="border-b border-[#E2E8F0] p-4">
-        <h4 className="text-sm font-semibold text-[#0F172A]">Award draw history</h4>
+        <h4 className="text-sm font-semibold text-[#0F172A]">Prize draw history</h4>
         <p className="mt-1 text-xs text-[#64748B]">Newest first. Voided draws stay in history for audit.</p>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="bg-[#F8FAFC] text-[11px] uppercase tracking-wider text-[#64748B]">
             <tr>
-              <th className="px-4 py-2 text-left">Award</th>
+              <th className="px-4 py-2 text-left">Prize</th>
               <th className="px-4 py-2 text-left">Winner</th>
               <th className="px-4 py-2 text-left">Email</th>
               <th className="px-4 py-2 text-left">Entrants</th>
@@ -453,7 +454,7 @@ function VoidDrawDialog({
             id="void-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason, e.g. wrong award selected"
+            placeholder="Reason, e.g. wrong prize selected"
             rows={3}
             disabled={busy}
           />
@@ -569,7 +570,7 @@ function AwardEditorDialog({
         status,
         sortOrder: Number.isFinite(so) ? so : 0,
       });
-      toast.success(isEdit ? "Award updated" : "Award created");
+      toast.success(isEdit ? "Prize updated" : "Prize created");
       onSaved();
     } catch (e) {
       setError(formatErr(e));
@@ -582,9 +583,9 @@ function AwardEditorDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit award" : "Create award"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit prize" : "Create prize"}</DialogTitle>
           <DialogDescription>
-            Awards become unlockable once a participant meets the criteria below.
+            Prizes become unlockable once a participant meets the criteria below.
           </DialogDescription>
         </DialogHeader>
 
@@ -696,7 +697,7 @@ function AwardEditorDialog({
             <div>
               <Label htmlFor="award-status">Active</Label>
               <p className="text-xs text-muted-foreground">
-                Disabled awards are hidden from the public page.
+                Disabled prizes are hidden from the public page.
               </p>
             </div>
             <Switch
@@ -761,7 +762,7 @@ function DrawDialog({
               <DialogTitle>Draw winner for "{award.title}"?</DialogTitle>
               <DialogDescription>
                 This will randomly select one winner from the currently eligible
-                participants. The draw will be saved in the award history.
+                participants. The draw will be saved in the prize history.
               </DialogDescription>
             </DialogHeader>
             <ul className="space-y-1 rounded-lg bg-[#F8FAFC] p-3 text-sm text-[#0F172A]">

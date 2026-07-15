@@ -451,6 +451,7 @@ export function BonusCodesSection({
                       value={url}
                       downloadName={`getstampd-bonus-code-${sanitizeFilename(row.name)}`}
                       size={180}
+                      caption={row.name}
                     />
                   </div>
                 )}

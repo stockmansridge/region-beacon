@@ -25,6 +25,12 @@ type Props = {
    */
   awardsCaption?: string;
   /**
+   * Optional short name shown directly under the QR image in plain
+   * Arial. Use so organisers can tell single QR codes apart at a glance
+   * without generating a full poster.
+   */
+  caption?: string;
+  /**
    * Optional poster context. When provided, a "Download poster PDF" button is
    * shown which generates an A4 poster client-side using the same URL as the
    * QR image. Nothing is uploaded or stored.
@@ -61,6 +67,7 @@ export function QrPreview({
   pngButtonLabel = "Download QR PNG",
   posterButtonLabel = "Download poster PDF",
   awardsCaption,
+  caption,
 }: Props) {
   const normalisedValue = normaliseQrUrl(value);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
@@ -186,6 +193,14 @@ export function QrPreview({
         height={size}
         className="rounded-md border bg-white p-2"
       />
+      {caption && (
+        <div
+          style={{ fontFamily: "Arial, sans-serif" }}
+          className="max-w-full break-words text-sm font-medium text-foreground"
+        >
+          {caption}
+        </div>
+      )}
       {poster?.venueName && (
         <div className="space-y-0.5 text-xs">
           <div className="font-semibold text-foreground">

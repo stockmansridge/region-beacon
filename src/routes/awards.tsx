@@ -6,9 +6,9 @@ import { NonTenantNotice } from "@/components/non-tenant-notice";
 export const Route = createFileRoute("/awards")({
   head: () => ({
     meta: [
-      { title: "Awards — GetStampd" },
-      { name: "description", content: "View awards and achievements on GetStampd digital stamp trails — badges, milestones and recognition for top participants." },
-      { name: "keywords", content: "GetStampd, GetStamped, stamp trail awards, badges, achievements, tourism recognition" },
+      { title: "Prizes — GetStampd" },
+      { name: "description", content: "View prizes and prize draws on GetStampd digital stamp trails — check in at venues to earn points and unlock prizes." },
+      { name: "keywords", content: "GetStampd, GetStamped, stamp trail prizes, prize draws, tourism recognition" },
     ],
   }),
   component: AwardsCleanRoute,

@@ -45,7 +45,7 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
               className="text-[10px] font-semibold uppercase tracking-[0.28em]"
               style={{ color: "var(--event-card-muted)" }}
             >
-              Next reward
+              Next prize
             </p>
             <p
               className="mt-0.5 truncate text-[15px] font-semibold"

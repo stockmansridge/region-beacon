@@ -1,63 +1,89 @@
-# Public Home / Passport Redesign Plan
+## 1. Rename "Awards / Rewards" → "Prizes" (copy-only)
 
-## Scope decision
+Global relabel across admin and public UI. No route renames, no DB/RPC/type renames — internal identifiers (`awards`, `AwardsPage`, `EventAwardsSection`, RPC names, table names, `/awards` URL) stay so nothing else breaks.
 
-Apply the new layout to the **public Home route** (`src/routes/live.$subdomain.index.tsx`) — it is the page customers land on after scanning the event poster QR. The existing `passport.$token.tsx` page stays as-is for now (it already works as the deep passport view linked from the new Home).
+Files:
+- `src/routes/admin.events.$eventId.tsx`
+  - Tab label `{ key: "awards", label: "Awards" }` → `"Prizes"`.
+  - Section `title="Awards & rewards"` → `"Prizes"`; update its description ("Create the prizes and draw entries…").
+  - Any inline copy referencing "Awards" in the leaderboard-tiers description → "Prizes".
+- `src/components/event-awards-section.tsx`
+  - Buttons: "Add reward" / "Add award" → **"Add prize"**.
+  - Section headings: "Draw history" / "Awards draw history" → **"Prize draw history"**.
+  - Loading / empty / error strings mentioning "awards" → "prizes".
+  - Dialog titles ("Draw a winner", "Void draw") stay; surrounding "award" copy → "prize".
+- `src/routes/live.$subdomain.awards.tsx`
+  - Page heading "Rewards & prizes" → **"Prizes"**.
+  - Subcopy and empty-state ("No rewards have been added…") → prize wording.
+  - `head()` title "Awards" → "Prizes".
+- `src/routes/awards.tsx` `head()` title "Awards — GetStampd" → "Prizes — GetStampd" and matching description.
+- `src/components/next-reward-card.tsx` "Next reward" label → **"Next prize"**.
+- `src/routes/live.$subdomain.index.tsx` any user-facing "reward(s)" strings in the summary tile → "prize(s)".
+- `src/routes/passport.$token.tsx` summary-tile copy referencing rewards/awards → prize wording (variable names untouched).
 
-Rationale: the reference image is a landing/overview experience (hero + progress + stamps + next reward + CTA + bottom nav). That's the role of Home. Touching `passport.$token.tsx` in the same pass would double the surface area and risk regressing check-in/QR flows.
+No changes to `event-awards` lib, migrations, or route paths.
 
-## Route & nav mapping (non-breaking)
+## 2. Show the event QR code in the Public Address card (Overview tab)
 
-Keep route file structure and `redeem_checkin` untouched. Only change labels/icons and the order in `PublicEventNav`:
+In `src/routes/admin.events.$eventId.tsx`, inside the Public Address section, when `subdomainRow.status === "active"` and a subdomain is set, render a `<QrPreview>` that encodes `https://<subdomain>.getstampd.com.au` (the public event home). Add:
 
-| Slot | Label | Route | Notes |
-|---|---|---|---|
-| 1 | Home | `/` | unchanged |
-| 2 | Passport | `/passport` (resolves to current token via existing `useCurrentEventPassport`; falls back to `/join`) | replaces "Map" in the bottom 5 |
-| 3 | Rewards | `/awards` | existing awards route |
-| 4 | Offers | `/offers` | existing offers route |
-| 5 | More | drawer (Map, Leaderboard, FAQ, Terms, Privacy) | move Map + Leaderboard into the existing "More" drawer |
+- Small heading "Event QR code".
+- `<QrPreview value={publicUrl} downloadName={`event-${subdomain}-qr`} pngButtonLabel="Download event QR (PNG)" caption="Event: <event name>" />` (see item 3 for the new `caption` prop).
+- Short helper text: "Print or share this to send visitors straight to your event home page."
 
-No routes added or removed. Map and Leaderboard remain reachable from More.
+Hidden while pending / not claimed.
 
-## Sections to build on Home
+## 3. Add plain-Arial name caption under every single QR code
 
-1. **App shell** — drop the `max-w-md` boxing on Home only; use full-width with inner padding so the page feels immersive on mobile. Keep `EventPaletteScope` wrapper so all `--event-*` tokens still drive the look.
-2. **Hero header** — existing menu (left) + logo (center) + passport icon (right) already in `PublicEventNav`. Add greeting line ("Hi {firstName}!" when passport known, else "Welcome") + event headline using `font-family: var(--event-font)`. Hero image uses existing `event.cover_path`.
-3. **Progress summary card** — extend `PassportProgressCard`:
-   - large circular ring (visited/total)
-   - points earned (sum from points ledger via existing `get_passport_points_summary` if present, else fall back to stamp count × default — TBD in implementation; if no RPC, hide points row)
-   - "Next reward: {name}" derived from configured awards (skip if none)
-4. **Passport stamp grid** — new `PassportStampGrid` component. Source: `loadPassportStampState(token)` (already returns all venues with `is_stamped`). Renders tiles with venue initial/logo; stamped tiles get a check + accent ring; unvisited tiles are muted. If no passport yet, render a "Start passport" CTA tile grid placeholder.
-5. **Next reward card** — uses configured awards via existing `event-awards` lib. If 0 configured → omit card entirely (no Bronze/Silver/Gold defaults). Show requirement text + progress bar + "N to go".
-6. **Primary CTA** — full-width branded "View offers & rewards" → `/awards` (or `/offers` if no awards configured).
-7. **Bottom nav** — update `PublicEventNav` 5 slots as above with lucide icons (Home, Ticket, Gift, Tag, Menu).
+Extend `src/components/qr-preview.tsx` with a new optional prop:
 
-## Data sources (existing only)
+```ts
+caption?: string; // plain name shown directly under the QR image
+```
 
-- Event: `get_public_event_by_domain` ✓
-- Venues: `get_public_event_venues` ✓
-- Passport + stamps: `loadPassportStampState` ✓
-- Awards: existing `event-awards` lib (need to check if a public-by-event RPC exists; if not, reuse what `awards.tsx` already calls)
-- Points: check whether a points summary is exposed publicly. If not exposed, the points line on the progress card will be **omitted** rather than faked.
+Render below the `<img>` (and above the existing `poster.venueName` block, which stays for A4 poster metadata) as:
 
-No new tables. No changes to `redeem_checkin`, points, or awards logic.
+```tsx
+{caption && (
+  <div style={{ fontFamily: "Arial, sans-serif" }} className="text-sm font-medium text-foreground">
+    {caption}
+  </div>
+)}
+```
 
-## Files to change
+Then pass `caption` from every single-QR call site:
 
-- `src/routes/live.$subdomain.index.tsx` — restructure body
-- `src/components/passport-progress-card.tsx` — expand into full progress card (ring + points + next reward hint)
-- `src/components/public-event-nav.tsx` — bottom nav reshuffle + icons
-- **NEW** `src/components/passport-stamp-grid.tsx` — stamp tiles grid
-- **NEW** `src/components/next-reward-card.tsx` — next reward progress card
-- Possibly small additions to `src/lib/passport-stamps.ts` if points need to be surfaced
+- `src/routes/admin.events.$eventId.tsx` venue QR previews (2 sites, lines ~2530 and ~4327): `caption={v.name}`.
+- `src/components/event-bonus-codes-section.tsx` (line ~450): `caption={<bonus code label / name>}`.
+- `src/components/venue-tasting-qr-section.tsx` (line ~617): `caption={<tasting QR label>}`.
+- New event QR in Public Address (item 2): `caption={event.name}`.
 
-No changes to: `passport.$token.tsx`, check-in routes, RPCs, migrations.
+No A4 poster layout is generated — this is a plain text label under the on-screen QR.
 
-## Open questions before I code
+## 4. Poster stamp value must reflect the current per-QR entry value
 
-1. **Points exposure** — is there an existing public RPC that returns the visitor's points total for an event by passport token? If not, OK to omit the "X points earned" line for now? (Avoids faking data.)
-2. **Awards source** — should the "Next reward" card read the same awards list that `/awards` shows publicly, or is there a configured-rewards-with-thresholds table I should use? Confirm which lib/RPC.
-3. **Nav change scope** — OK to swap Map out of the bottom 5 and into "More" globally on the public event nav? Or keep Map in bottom 5 and drop Leaderboard instead?
+Symptom: on `/admin/events/$eventId/posters`, the venue poster still shows the previous `X stamps per scan` after the value is updated in Overview.
 
-Once you confirm those, I'll implement in one pass and verify on mobile preview.
+Root cause: `admin.events.$eventId_.posters.tsx` loads `venue_qr_codes.entry_value` once on mount into `qrByVenue` and never refetches, so leaving the tab and coming back with a stale page (or Back/Forward cache) shows the old number.
+
+Fix in `src/routes/admin.events.$eventId_.posters.tsx`:
+
+1. Move the QR-codes fetch into a named async function and re-run it on `window` focus / `visibilitychange` (`document.visibilityState === 'visible'`).
+2. Add a small "Refresh" button in the page header that re-runs the same fetch and updates `qrByVenue`.
+3. Ensure `venuePosterDataById` recomputes (already keyed on `qrByVenue`).
+4. Sanity: `stampValue: qr?.entry_value ?? 1` stays, and `src/components/posters/venue-poster.tsx`'s `stampsCopy` already reads from `data.stampValue`, so no poster-render change needed once the fetch is fresh.
+
+No schema changes.
+
+## 5. Public home CTA: "View offers & rewards" → "View Prizes"
+
+`src/routes/live.$subdomain.index.tsx` line 604: change button text `View offers & rewards` → **`View prizes`**. Link target (`/awards`) unchanged.
+
+## Verification
+
+- Typecheck passes (`tsgo`).
+- Admin tab shows "Prizes"; section header, "Add prize", and "Prize draw history" render.
+- Public `/awards` page title and heading say "Prizes"; home CTA says "View prizes".
+- Public Address card shows Event QR when active, hidden otherwise.
+- Each single QR (venue, bonus, tasting, event) shows the QR name in Arial directly beneath it.
+- Update a venue's stamp value in Overview → open Posters → the venue poster's "N stamps per scan" reflects the new value after auto-refresh or clicking Refresh.

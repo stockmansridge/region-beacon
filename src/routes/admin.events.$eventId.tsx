@@ -371,7 +371,7 @@ const EVENT_TABS: Array<{ key: EventTabKey; label: string }> = [
   { key: "venues", label: "Venues" },
   { key: "bonuscodes", label: "Bonus Codes" },
   { key: "bulkimport", label: "Bulk Import" },
-  { key: "awards", label: "Awards" },
+  { key: "awards", label: "Prizes" },
   { key: "checkin", label: "Check-in" },
   { key: "participants", label: "Participants" },
   { key: "leaderboard", label: "Leaderboard" },
@@ -2531,6 +2531,7 @@ function EventDetail() {
               value={built.url}
               downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
               pngButtonLabel="Download venue check-in QR (PNG)"
+              caption={v.name}
               awardsCaption={`This scan awards: ${qr.entry_value ?? 1} point${(qr.entry_value ?? 1) === 1 ? "" : "s"}`}
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -3295,7 +3296,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Leaderboard tiers" id="section-rewards" tab="leaderboard" description="Optional Bronze / Silver / Gold style milestones shown on the public leaderboard and passport progress bar. Prizes and prize draws are configured under Awards & rewards.">
+          <Section title="Leaderboard tiers" id="section-rewards" tab="leaderboard" description="Optional Bronze / Silver / Gold style milestones shown on the public leaderboard and passport progress bar. Prizes and prize draws are configured under Prizes.">
             <AdminEventRewards
               agencyId={event.agency_id}
               eventId={event.id}
@@ -4328,6 +4329,7 @@ function EventDetail() {
                                       value={built.url}
                                       downloadName={qrFilename(event.public_slug ?? event.slug, v.name)}
                                       pngButtonLabel="Download venue check-in QR (PNG)"
+                                      caption={v.name}
                                       awardsCaption={`This scan awards: ${qr?.entry_value ?? 1} point${(qr?.entry_value ?? 1) === 1 ? "" : "s"}`}
                                     />
                                   )}
@@ -4503,10 +4505,10 @@ function EventDetail() {
           </Section>
 
           <Section
-            title="Awards & rewards"
+            title="Prizes"
             id="section-awards"
             tab="awards"
-            description="Create the rewards, prizes, and draw entries participants can earn during this event. These appear in the public passport Rewards section and Awards page. To run a major prize draw, create an award named “Major prize draw” and set the points (and/or all-locations rule) required to enter."
+            description="Create the prizes and draw entries participants can earn during this event. These appear in the public passport Prizes section and Prizes page. To run a major prize draw, create a prize named “Major prize draw” and set the points (and/or all-locations rule) required to enter."
           >
             {agencyId ? (
               <EventAwardsSection
@@ -4516,7 +4518,7 @@ function EventDetail() {
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                Select an agency to manage awards.
+                Select an agency to manage prizes.
               </p>
             )}
           </Section>
@@ -6001,11 +6003,30 @@ function PublicAddressCard({
             </div>
           )}
           {!editing && subdomainRow.status === "active" && (
-            <div className="text-sm text-muted-foreground">
-              Active — your public site is live at this address. You can change it at any time using <span className="font-medium">Change address</span> above.
-              The old address will stop working after the change. Changing the address does not turn the event on or off.
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>
+                Active — your public site is live at this address. You can change it at any time using <span className="font-medium">Change address</span> above.
+                The old address will stop working after the change. Changing the address does not turn the event on or off.
+              </p>
+              {subdomainRow.public_subdomain && (
+                <div className="rounded-md border bg-white p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
+                    Event QR code
+                  </div>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Print or share this to send visitors straight to your event home page.
+                  </p>
+                  <QrPreview
+                    value={`https://${subdomainRow.public_subdomain}.getstampd.com.au`}
+                    downloadName={`event-${subdomainRow.public_subdomain}-qr`}
+                    pngButtonLabel="Download event QR (PNG)"
+                    caption={eventName}
+                  />
+                </div>
+              )}
             </div>
           )}
+
 
           {editing && (
             <div className="space-y-3">

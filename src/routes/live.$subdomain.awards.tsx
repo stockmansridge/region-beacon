@@ -12,7 +12,7 @@ import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/live/$subdomain/awards")({
-  head: () => ({ meta: [{ title: "Awards" }] }),
+  head: () => ({ meta: [{ title: "Prizes" }] }),
   component: function AwardsRoute() {
     const { subdomain } = Route.useParams();
     return <AwardsPage subdomain={subdomain} />;
@@ -135,11 +135,11 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
             className="mt-1 text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]"
             style={{ fontFamily: "var(--event-font, inherit)" }}
           >
-            Rewards & prizes
+            Prizes
           </h1>
 
           <p className="mt-2 text-sm text-[var(--event-page-text,var(--event-text,#3D372C))]">
-            Earn points by checking in at venues to unlock rewards and enter
+            Earn points by checking in at venues to unlock prizes and enter
             prize draws.
           </p>
 
@@ -148,11 +148,11 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
               <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">Loading…</p>
             )}
             {error && (
-              <p className="text-sm text-destructive">Could not load rewards: {error}</p>
+              <p className="text-sm text-destructive">Could not load prizes: {error}</p>
             )}
             {!error && awards != null && awards.length === 0 && (
               <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
-                No rewards have been added for this event yet.
+                No prizes have been added for this event yet.
               </p>
             )}
             {awards?.map((a) => (
