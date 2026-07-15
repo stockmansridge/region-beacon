@@ -31,6 +31,16 @@ previous production migration.
 
 Run `apply.sql` in the production SQL editor. Safe to re-run.
 
+This is the only production SQL you need for the loop: it fixes both observed
+runtime failures in the live function body:
+
+- `function digest(text, unknown) does not exist`
+- `column reference "event_id" is ambiguous`
+
+The older `migrations-prod-claim-bonus-code-ambiguous-fix` and
+`migrations-prod-claim-bonus-code-digest-fix` folders have also been updated to
+the same final body so re-running an older folder cannot regress production.
+
 ## Verify
 
 Scan a bonus QR with a valid event passport. Expected result is either
