@@ -12,7 +12,7 @@ import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/live/$subdomain/awards")({
-  head: () => ({ meta: [{ title: "Awards" }] }),
+  head: () => ({ meta: [{ title: "Prizes" }] }),
   component: function AwardsRoute() {
     const { subdomain } = Route.useParams();
     return <AwardsPage subdomain={subdomain} />;
