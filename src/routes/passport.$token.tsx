@@ -485,9 +485,9 @@ function PassportView({
   // Reward/tier copy used in the right-bottom of the summary card.
   const tierTitle: string =
     awards == null
-      ? "Loading rewards…"
+      ? "Loading prizes…"
       : awards.length === 0
-        ? "More rewards ahead"
+        ? "More prizes ahead"
         : totalVenues > 0 && stampedCount >= totalVenues
           ? "Trail complete"
           : nextAward
