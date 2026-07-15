@@ -1801,6 +1801,14 @@ function EventDetail() {
           venueEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       } else {
+        // Flush any pending Stamp value (venue_qr_codes.entry_value) draft
+        // for this venue as part of the same top-level Save so the QR points
+        // don't silently lag the number shown in the editor.
+        const pendingDraft = qrEntryDraft.get(venueEditingId);
+        const currentEntry = String(qrByVenue.get(venueEditingId)?.entry_value ?? 1);
+        if (pendingDraft !== undefined && pendingDraft !== currentEntry) {
+          await saveQrEntryValue(venueEditingId, pendingDraft);
+        }
         setVenueEditingId(null);
         setVenueForm(null);
         setMapPickerOpen(false);
