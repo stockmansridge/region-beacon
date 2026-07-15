@@ -112,11 +112,20 @@ export const sendPassportEmail = createServerFn({ method: "POST" })
           html,
         }),
       });
+      const toDomain = email.split("@")[1] ?? "unknown";
       if (!response.ok) {
         const body = await response.text();
-        console.error(`[passport-email] resend failed [${response.status}]: ${body}`);
+        console.error(`[passport-email] resend failed [${response.status}] to=@${toDomain} event=${eventId}: ${body}`);
         return { sent: false, reason: "send_failed" as const, status: response.status };
       }
+      let messageId = "unknown";
+      try {
+        const json = (await response.clone().json()) as { id?: string };
+        if (json?.id) messageId = json.id;
+      } catch {
+        // non-JSON success body; ignore
+      }
+      console.log(`[passport-email] sent to=@${toDomain} event=${eventId} message_id=${messageId}`);
       return { sent: true as const };
     } catch (err) {
       console.error("[passport-email] unexpected error", err);
