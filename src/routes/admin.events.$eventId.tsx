@@ -575,6 +575,8 @@ function EventDetail() {
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
+  const [renamingName, setRenamingName] = useState<string | null>(null);
+  const [renamingBusy, setRenamingBusy] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState<EditForm | null>(null);
