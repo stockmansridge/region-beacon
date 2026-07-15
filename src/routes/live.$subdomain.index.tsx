@@ -522,23 +522,44 @@ function LivePublicLoaded({
                   Points earned
                 </div>
               </div>
-              <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
-                <div className="flex items-center gap-1.5">
-                  <span aria-hidden className="text-base leading-none">{tierGlyph}</span>
-                  <span
-                    className="font-trail-serif text-sm font-semibold leading-tight"
-                    style={{ color: "var(--event-card-heading)" }}
-                  >
-                    {tierTitle}
-                  </span>
-                </div>
-                <div
-                  className="text-[10px] font-medium uppercase tracking-[0.18em]"
-                  style={{ color: "var(--event-card-muted)" }}
-                >
-                  {tierSub}
-                </div>
-              </div>
+              {(() => {
+                const tileInner = (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span aria-hidden className="text-base leading-none">{tierGlyph}</span>
+                      <span
+                        className="font-trail-serif text-sm font-semibold leading-tight"
+                        style={{ color: "var(--event-card-heading)" }}
+                      >
+                        {tierTitle}
+                      </span>
+                    </div>
+                    <div
+                      className="text-[10px] font-medium uppercase tracking-[0.18em]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      {tierSub}
+                    </div>
+                  </>
+                );
+                const startable = !homeData.hasPassport && canRegister;
+                if (startable) {
+                  return (
+                    <Link
+                      to="/join"
+                      aria-label="Start your passport"
+                      className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center transition hover:opacity-90"
+                    >
+                      {tileInner}
+                    </Link>
+                  );
+                }
+                return (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
+                    {tileInner}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </section>
