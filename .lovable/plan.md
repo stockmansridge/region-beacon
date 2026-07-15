@@ -1,40 +1,92 @@
-## Bake the QR caption into the downloaded image
+## 1. Share button on the public event page
 
-Right now the `caption` prop on `QrPreview` renders as HTML text below the `<img>` on the page. It is not part of the PNG file, so when an organiser downloads the QR and prints/shares it, the name is missing.
+**File:** `src/routes/live.$subdomain.index.tsx`
 
-Change: composite the QR + caption into a single PNG on a canvas, use that composite as both the on-page preview and the downloaded file. Remove the separate HTML caption line so we don't render the name twice.
+Add a **Share** button in the hero/CTA area (next to the existing "Join" / "View prizes" buttons — same visual weight as an outline button).
 
-### Files
+Behaviour (client-side only, no backend):
 
-**`src/components/qr-preview.tsx`**
+```ts
+async function shareEvent() {
+  const url = `https://${subdomain}.getstampd.com.au`;
+  const subject = `Come join me at ${event.name}`;
+  const text = `Come join me at ${event.name} on GetStampd — ${url}`;
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
+      await navigator.share({ title: subject, text, url });
+      return;
+    } catch (err) {
+      // AbortError = user dismissed the share sheet; fall through only on real failure
+      if ((err as DOMException)?.name === "AbortError") return;
+    }
+  }
+  // Fallback: open the device's email composer
+  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`${text}`)}`;
+  window.location.href = mailto;
+}
+```
 
-In the existing client-only effect (after `QRCode.toDataURL(...)`):
+Notes:
+- Button copy: **Share**, with a small share icon (unicode arrow or an inline SVG — no new deps).
+- Rendered only when event is live (same condition already used to render the join CTA).
+- No analytics, no backend call.
 
-1. Create an offscreen `<canvas>` sized at the QR render resolution (`size * 4` wide) with extra height for a caption band when `caption` is set — roughly `size * 4 + captionBandHeight` (e.g. +80px at 4x scale, tuned so the label reads clearly at the on-screen `size` too).
-2. Fill the canvas white.
-3. Draw the QR data URL (loaded into an `Image`) at the top.
-4. If `caption` is provided:
-   - `ctx.fillStyle = "#000"`
-   - `ctx.font` = bold Arial at a size proportional to the QR (e.g. `${Math.round(size * 4 * 0.06)}px Arial, sans-serif`)
-   - `ctx.textAlign = "center"`, `textBaseline = "middle"`
-   - Wrap the caption to fit the canvas width (simple word-wrap, max 2 lines, ellipsis on overflow) so long venue names don't clip.
-   - Draw centered in the caption band.
-5. `canvas.toDataURL("image/png")` becomes the new `dataUrl` stored in state — this is what the `<img>` displays and what `downloadPng` saves. The file is now self-contained: QR + Arial name.
-6. Remove the JSX block that renders `caption` as separate HTML text below the `<img>` (added in the previous change), so the name isn't duplicated.
+## 2. Passport-link email on signup (via Resend)
 
-Keep the existing:
-- `awardsCaption` chip (that's a separate UI hint, not part of the printable QR).
-- `poster.venueName` metadata block (drives the A4 poster PDF, unrelated).
-- Poster PDF generation path unchanged — `generateQrPosterPdf` already composes its own layout from `checkinUrl`.
+**Setup (one-time, before build):**
+1. Add the **Resend** connector (App connector, gateway-backed). This exposes `RESEND_API_KEY` and `LOVABLE_API_KEY` to server functions automatically.
+2. User verifies `getstampd.com.au` (or a subdomain like `mail.getstampd.com.au`) in the Resend dashboard so the "from" address can be `passports@getstampd.com.au`.
 
-### Call sites
+**New server function:** `src/lib/passport-email.functions.ts`
 
-No changes — `caption` is already passed from the four sites (venue QR, bonus codes, tasting QR, event QR in Public Address). They now automatically get the baked-in label.
+Signature (unauthenticated — visitors are anonymous):
+```ts
+sendPassportEmail({ token: string })
+```
 
-### Verification
+Handler flow:
+1. Load `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` inside the handler (admin client via `await import("@/integrations/supabase/client.server")`).
+2. Call the existing `get_passport_by_token(_access_token: token)` RPC to resolve:
+   - visitor `email`, `first_name`
+   - event `id`, `name`, `public_slug`, `subdomain`
+3. If not found → return `{ sent: false }` silently (don't leak whether token exists).
+4. Build the passport URL: `https://<subdomain>.getstampd.com.au/passport/<token>` (fall back to `https://getstampd.com.au/passport/<token>` if no subdomain).
+5. POST to `https://connector-gateway.lovable.dev/resend/emails` with headers `Authorization: Bearer ${LOVABLE_API_KEY}` + `X-Connection-Api-Key: ${RESEND_API_KEY}`, body:
+   ```json
+   {
+     "from": "GetStampd <passports@getstampd.com.au>",
+     "to": ["<visitor email>"],
+     "subject": "Your passport for <Event Name>",
+     "html": "<simple branded template with a big 'Open my passport' button linking to the passport URL, plus the raw URL as fallback text>"
+   }
+   ```
+6. Check `response.ok`; on non-OK, log status + body server-side and return `{ sent: false, error: "…" }` (do NOT throw — the passport was already created successfully, email is best-effort).
 
+Email HTML: plain inline-styled template — GetStampd wordmark at top, "Hi <first_name>," greeting, one paragraph ("Here's the link to your passport for <Event Name>. Bookmark this email so you can always find your way back."), a prominent CTA button, the raw link below it, and a short footer. No external assets required.
+
+**Call site:** `src/routes/live.$subdomain.join.tsx`
+
+After the `register_visitor` RPC succeeds (line ~440, right before `setSuccess(...)`), fire-and-forget:
+
+```ts
+import { useServerFn } from "@tanstack/react-start";
+import { sendPassportEmail } from "@/lib/passport-email.functions";
+// ...
+const sendPassportEmailFn = useServerFn(sendPassportEmail);
+// after row is resolved:
+void sendPassportEmailFn({ data: { token: row.access_token } }).catch((e) => {
+  // silent — success screen still shows the link
+  console.warn("passport email failed", e);
+});
+```
+
+The user still sees the same success screen with the passport link — email is a convenience, not a blocker. If email fails they lose nothing.
+
+**Auth emails stay as-is.** This does not touch Supabase Auth's email flow; it's a one-off transactional send.
+
+## Verification
+
+- Share button appears on the public home when the event is live. On iOS/Android Safari & Chrome it opens the native share sheet; on desktop Chrome/Firefox/Safari it opens the default mail client with subject `Come join me at <Event Name>` and the URL in the body.
+- After completing the join form with a real email, the inbox receives an email titled "Your passport for <Event Name>" containing a working link to `/passport/<token>` on the event subdomain.
+- Deleting/blocking the Resend key does not break signup — the success screen still shows and the console logs a warning.
 - Typecheck passes.
-- Each single QR preview on screen shows the QR with the name in Arial directly under it, as one image.
-- Clicking "Download QR PNG" saves a PNG that includes the Arial name beneath the QR.
-- Long names wrap to 2 lines and don't overflow the canvas.
-- A4 poster PDF output is unchanged.
