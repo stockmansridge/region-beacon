@@ -5907,62 +5907,70 @@ function PublicAddressCard({
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 text-sm">
-        <div className="grid gap-2 sm:grid-cols-[180px_1fr] items-center">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Public event code</span>
-          <span className="font-mono">{publicSlug ?? "—"}</span>
+        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-[160px_1fr] items-center">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Public event code</span>
+            <span className="font-mono">{publicSlug ?? "—"}</span>
 
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Claimed subdomain</span>
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="font-mono">
-              {subdomainRow?.public_subdomain
-                ? `${subdomainRow.public_subdomain}.getstampd.com.au`
-                : "—"}
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Claimed subdomain</span>
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="font-mono">
+                {subdomainRow?.public_subdomain
+                  ? `${subdomainRow.public_subdomain}.getstampd.com.au`
+                  : "—"}
+              </span>
+              {subdomainRow && canEdit && !editing && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const confirmed = window.confirm(
+                      "Changing the public address will invalidate every existing QR code and printed link for this event. Visitors using the old address or old QR codes will no longer reach your event.\n\nAfter saving, you must download and reprint the new QR codes generated at the new address.\n\nContinue?",
+                    );
+                    if (!confirmed) return;
+                    setEditing(true);
+                    setEditInput(subdomainRow.public_subdomain ?? "");
+                    setEditAvailability({ kind: "idle" });
+                    setEditError(null);
+                  }}
+                  className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted"
+                >
+                  Change address
+                </button>
+              )}
             </span>
-            {subdomainRow && canEdit && !editing && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(true);
-                  setEditInput(subdomainRow.public_subdomain ?? "");
-                  setEditAvailability({ kind: "idle" });
-                  setEditError(null);
-                }}
-                className="inline-flex h-7 items-center rounded-md border bg-background px-2 text-[11px] font-medium hover:bg-muted"
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-[180px_1fr] items-center">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Subdomain status</span>
+            <span>
+              <StatusPill status={subdomainRow?.status ?? "not_claimed"} />
+            </span>
+
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Public website status</span>
+            <span className="flex flex-wrap items-center gap-2">
+              <span
+                className={
+                  "rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide " +
+                  (isArchived
+                    ? "bg-muted text-muted-foreground"
+                    : isLivePublished
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                      : "bg-muted text-muted-foreground")
+                }
               >
-                Change address
-              </button>
-            )}
-          </span>
-
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Subdomain status</span>
-          <span>
-            <StatusPill status={subdomainRow?.status ?? "not_claimed"} />
-          </span>
-
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Public website status</span>
-          <span className="flex flex-wrap items-center gap-2">
-            <span
-              className={
-                "rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide " +
-                (isArchived
-                  ? "bg-muted text-muted-foreground"
-                  : isLivePublished
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                    : "bg-muted text-muted-foreground")
-              }
-            >
-              {isArchived ? "Archived" : isLivePublished ? "Live" : "Not live"}
+                {isArchived ? "Archived" : isLivePublished ? "Live" : "Not live"}
+              </span>
+              {!isArchived && canEdit && (
+                <EventLiveToggleButton
+                  agencyId={agencyId}
+                  eventId={eventId}
+                  isLive={isLivePublished}
+                  hasPendingSubdomain={subdomainRow?.status === "pending"}
+                  onChanged={onChanged}
+                />
+              )}
             </span>
-            {!isArchived && canEdit && (
-              <EventLiveToggleButton
-                agencyId={agencyId}
-                eventId={eventId}
-                isLive={isLivePublished}
-                hasPendingSubdomain={subdomainRow?.status === "pending"}
-                onChanged={onChanged}
-              />
-            )}
-          </span>
+          </div>
         </div>
         {!isArchived && (
           <p className="mt-3 text-xs text-muted-foreground">
