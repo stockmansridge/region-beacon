@@ -441,7 +441,7 @@ function MenuDrawer({
               <li>
                 <Link to="/awards" onClick={onClose} className={rowClass}>
                   <Award className="h-5 w-5 opacity-80" />
-                  Awards
+                  Rewards
                 </Link>
               </li>
             )}
