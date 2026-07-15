@@ -288,7 +288,7 @@ export function EventAwardsSection({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete "{deleting.title}"?</AlertDialogTitle>
               <AlertDialogDescription>
-                This hides the award from the public page and from this list. Previous
+                This hides the prize from the public page and from this list. Previous
                 draw history is kept.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -298,7 +298,7 @@ export function EventAwardsSection({
                 onClick={async () => {
                   try {
                     await deleteAward(deleting.id);
-                    toast.success("Award deleted");
+                    toast.success("Prize deleted");
                     setDeleting(null);
                     refresh();
                   } catch (e) {
