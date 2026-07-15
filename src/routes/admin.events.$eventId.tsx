@@ -6003,11 +6003,30 @@ function PublicAddressCard({
             </div>
           )}
           {!editing && subdomainRow.status === "active" && (
-            <div className="text-sm text-muted-foreground">
-              Active — your public site is live at this address. You can change it at any time using <span className="font-medium">Change address</span> above.
-              The old address will stop working after the change. Changing the address does not turn the event on or off.
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>
+                Active — your public site is live at this address. You can change it at any time using <span className="font-medium">Change address</span> above.
+                The old address will stop working after the change. Changing the address does not turn the event on or off.
+              </p>
+              {subdomainRow.public_subdomain && (
+                <div className="rounded-md border bg-white p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
+                    Event QR code
+                  </div>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Print or share this to send visitors straight to your event home page.
+                  </p>
+                  <QrPreview
+                    value={`https://${subdomainRow.public_subdomain}.getstampd.com.au`}
+                    downloadName={`event-${subdomainRow.public_subdomain}-qr`}
+                    pngButtonLabel="Download event QR (PNG)"
+                    caption={eventName}
+                  />
+                </div>
+              )}
             </div>
           )}
+
 
           {editing && (
             <div className="space-y-3">
