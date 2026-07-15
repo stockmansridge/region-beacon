@@ -9,6 +9,7 @@ import { matchRootDomain } from "@/lib/domains";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/scan")({
