@@ -601,7 +601,7 @@ function LivePublicLoaded({
                 color: "var(--event-button-primary-fg)",
               }}
             >
-              View offers &amp; rewards
+              View prizes
             </Link>
           </section>
 
