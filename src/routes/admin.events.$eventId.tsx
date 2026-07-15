@@ -4503,10 +4503,10 @@ function EventDetail() {
           </Section>
 
           <Section
-            title="Awards & rewards"
+            title="Prizes"
             id="section-awards"
             tab="awards"
-            description="Create the rewards, prizes, and draw entries participants can earn during this event. These appear in the public passport Rewards section and Awards page. To run a major prize draw, create an award named “Major prize draw” and set the points (and/or all-locations rule) required to enter."
+            description="Create the prizes and draw entries participants can earn during this event. These appear in the public passport Prizes section and Prizes page. To run a major prize draw, create a prize named “Major prize draw” and set the points (and/or all-locations rule) required to enter."
           >
             {agencyId ? (
               <EventAwardsSection
@@ -4516,7 +4516,7 @@ function EventDetail() {
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                Select an agency to manage awards.
+                Select an agency to manage prizes.
               </p>
             )}
           </Section>
