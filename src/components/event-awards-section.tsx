@@ -331,7 +331,7 @@ function DrawHistory({
   if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-        <h4 className="text-sm font-semibold text-[#0F172A]">Award draw history</h4>
+        <h4 className="text-sm font-semibold text-[#0F172A]">Prize draw history</h4>
         <p className="mt-1 text-xs text-[#64748B]">No draws have been recorded yet.</p>
       </div>
     );
@@ -339,7 +339,7 @@ function DrawHistory({
   return (
     <div className="rounded-xl border border-[#E2E8F0] bg-white">
       <div className="border-b border-[#E2E8F0] p-4">
-        <h4 className="text-sm font-semibold text-[#0F172A]">Award draw history</h4>
+        <h4 className="text-sm font-semibold text-[#0F172A]">Prize draw history</h4>
         <p className="mt-1 text-xs text-[#64748B]">Newest first. Voided draws stay in history for audit.</p>
       </div>
       <div className="overflow-x-auto">
