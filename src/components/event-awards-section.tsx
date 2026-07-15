@@ -697,7 +697,7 @@ function AwardEditorDialog({
             <div>
               <Label htmlFor="award-status">Active</Label>
               <p className="text-xs text-muted-foreground">
-                Disabled awards are hidden from the public page.
+                Disabled prizes are hidden from the public page.
               </p>
             </div>
             <Switch
