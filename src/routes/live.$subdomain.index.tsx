@@ -581,7 +581,39 @@ function LivePublicLoaded({
               Start passport — coming soon
             </button>
           )}
+          <button
+            type="button"
+            onClick={async () => {
+              const url = `https://${subdomain}.getstampd.com.au`;
+              const subject = `Come join me at ${event.name}`;
+              const text = `Come join me at ${event.name} on GetStampd — ${url}`;
+              if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+                try {
+                  await navigator.share({ title: subject, text, url });
+                  return;
+                } catch (err) {
+                  if ((err as DOMException)?.name === "AbortError") return;
+                }
+              }
+              const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+              window.location.href = mailto;
+            }}
+            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 text-sm font-semibold tracking-wide"
+            style={{
+              borderColor: "var(--event-button-primary-bg)",
+              color: "var(--event-button-primary-bg)",
+              backgroundColor: "transparent",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+            Share
+          </button>
         </div>
+
 
         {/* App-style stacked sections */}
         <div className="mt-5 flex flex-col gap-5">
