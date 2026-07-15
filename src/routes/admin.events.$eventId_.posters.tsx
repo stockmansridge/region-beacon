@@ -634,6 +634,14 @@ function PostersPage() {
         >
           ← Back to event
         </Link>
+        <button
+          type="button"
+          onClick={() => void refreshQrCodes()}
+          className="inline-flex h-9 items-center rounded-md border bg-background px-3 hover:bg-muted"
+          title="Refetch venue QR values so poster stamps-per-scan reflects the latest edits."
+        >
+          Refresh QR values
+        </button>
         {publicUrl && (
           <a
             href={publicUrl}
