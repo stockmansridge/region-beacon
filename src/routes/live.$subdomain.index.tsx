@@ -414,7 +414,7 @@ function LivePublicLoaded({
             ) : (
               event.welcome_copy && (
                 <p
-                  className="mt-1 line-clamp-2 text-sm sm:text-base"
+                  className="mt-1 whitespace-pre-line text-sm sm:text-base"
                   style={{
                     color: "var(--event-hero-fg, var(--event-primary-fg))",
                     opacity: 0.95,
