@@ -163,18 +163,53 @@ export function PublicEventNav({
             )}
           </Link>
 
-          {canRegister || passportHref ? (
-            <a
-              href={passportTarget}
-              aria-label={passportLabel}
-              title={passportLabel}
-              className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={async () => {
+                const url = typeof window !== "undefined" ? window.location.href : "";
+                const title = eventName ?? "Check this out";
+                const text = eventName
+                  ? `Come join me at ${eventName} on GetStampd`
+                  : "Check this out on GetStampd";
+                if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+                  try {
+                    await navigator.share({ title, text, url });
+                    return;
+                  } catch (err) {
+                    if ((err as DOMException)?.name === "AbortError") return;
+                  }
+                }
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    return;
+                  } catch {
+                    /* fall through */
+                  }
+                }
+                const mailto = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${text} — ${url}`)}`;
+                window.location.href = mailto;
+              }}
+              aria-label="Share"
+              title="Share"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
             >
-              <Stamp className="h-5 w-5" />
-            </a>
-          ) : (
-            <span aria-hidden className="ml-auto h-10 w-10" />
-          )}
+              <Share2 className="h-5 w-5" />
+            </button>
+            {canRegister || passportHref ? (
+              <a
+                href={passportTarget}
+                aria-label={passportLabel}
+                title={passportLabel}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
+              >
+                <Stamp className="h-5 w-5" />
+              </a>
+            ) : (
+              <span aria-hidden className="h-10 w-10" />
+            )}
+          </div>
         </div>
       </header>
 
