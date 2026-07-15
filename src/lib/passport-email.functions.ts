@@ -3,23 +3,30 @@ import { z } from "zod";
 
 const inputSchema = z.object({ token: z.string().min(8).max(200) });
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function buildHtml(params: { firstName: string; eventName: string; passportUrl: string }): string {
-  const { firstName, eventName, passportUrl } = params;
-  const greetingName = firstName?.trim() ? esc(firstName.trim()) : "there";
-  const evt = esc(eventName);
-  const url = esc(passportUrl);
-  return `<!doctype html>
+/**
+ * Sends the passport link to the visitor's email after signup.
+ * Best-effort: never throws — signup already succeeded before this runs.
+ * Looks up email/name/event via the service-role client from the token so
+ * the caller cannot inject arbitrary recipients.
+ */
+export const sendPassportEmail = createServerFn({ method: "POST" })
+  .inputValidator((raw: unknown) => inputSchema.parse(raw))
+  .handler(async ({ data }) => {
+    try {
+      const gatewayUrl = "https://connector-gateway.lovable.dev/resend";
+      const escapeHtml = (s: string): string =>
+        s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      const buildHtml = (params: { firstName: string; eventName: string; passportUrl: string }): string => {
+        const { firstName, eventName, passportUrl } = params;
+        const greetingName = firstName?.trim() ? escapeHtml(firstName.trim()) : "there";
+        const evt = escapeHtml(eventName);
+        const url = escapeHtml(passportUrl);
+        return `<!doctype html>
 <html><body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:24px 0;">
     <tr><td align="center">
@@ -36,18 +43,7 @@ function buildHtml(params: { firstName: string; eventName: string; passportUrl: 
     </td></tr>
   </table>
 </body></html>`;
-}
-
-/**
- * Sends the passport link to the visitor's email after signup.
- * Best-effort: never throws — signup already succeeded before this runs.
- * Looks up email/name/event via the service-role client from the token so
- * the caller cannot inject arbitrary recipients.
- */
-export const sendPassportEmail = createServerFn({ method: "POST" })
-  .inputValidator((raw: unknown) => inputSchema.parse(raw))
-  .handler(async ({ data }) => {
-    try {
+      };
       const lovableKey = process.env.LOVABLE_API_KEY;
       const resendKey = process.env.RESEND_API_KEY;
       if (!lovableKey || !resendKey) {
@@ -98,7 +94,7 @@ export const sendPassportEmail = createServerFn({ method: "POST" })
 
       const html = buildHtml({ firstName, eventName, passportUrl });
 
-      const response = await fetch(`${GATEWAY_URL}/emails`, {
+      const response = await fetch(`${gatewayUrl}/emails`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
