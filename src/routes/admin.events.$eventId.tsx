@@ -3295,7 +3295,7 @@ function EventDetail() {
           </Section>
 
 
-          <Section title="Leaderboard tiers" id="section-rewards" tab="leaderboard" description="Optional Bronze / Silver / Gold style milestones shown on the public leaderboard and passport progress bar. Prizes and prize draws are configured under Awards & rewards.">
+          <Section title="Leaderboard tiers" id="section-rewards" tab="leaderboard" description="Optional Bronze / Silver / Gold style milestones shown on the public leaderboard and passport progress bar. Prizes and prize draws are configured under Prizes.">
             <AdminEventRewards
               agencyId={event.agency_id}
               eventId={event.id}
