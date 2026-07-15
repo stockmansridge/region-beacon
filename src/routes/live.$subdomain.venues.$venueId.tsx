@@ -126,22 +126,38 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       });
 
       if (!evt?.event_id) return;
+      let passportToken: string | null = null;
       try {
         const passport = await resolveCurrentEventPassport(evt.event_id);
+        passportToken = passport.token ?? null;
         if (!passport.token) {
           setVisited({ kind: "no_passport" });
-          return;
-        }
-        const stamps = await loadPassportStampState(passport.token);
-        if (cancelled) return;
-        const stamp = stamps.allVenues.find((s) => String(s.venue_id) === String(venueId));
-        if (stamp?.is_stamped) {
-          setVisited({ kind: "visited", at: stamp.checked_in_at ?? null });
         } else {
-          setVisited({ kind: "not_visited" });
+          const stamps = await loadPassportStampState(passport.token);
+          if (cancelled) return;
+          const stamp = stamps.allVenues.find((s) => String(s.venue_id) === String(venueId));
+          if (stamp?.is_stamped) {
+            setVisited({ kind: "visited", at: stamp.checked_in_at ?? null });
+          } else {
+            setVisited({ kind: "not_visited" });
+          }
         }
       } catch {
         /* ignore */
+      }
+
+      try {
+        const { data: bonusData } = await (supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: BonusChallenge[] | null }>)(
+          "get_public_event_bonus_challenges",
+          { _hostname: host, _passport_token: passportToken },
+        );
+        if (cancelled) return;
+        setBonusChallenges(Array.isArray(bonusData) ? bonusData : []);
+      } catch {
+        /* ignore — bonus challenges are optional */
       }
     })();
     return () => {
