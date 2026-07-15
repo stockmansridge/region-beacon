@@ -13,6 +13,7 @@ import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
+import { Star, Users, Check, Circle } from "lucide-react";
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
