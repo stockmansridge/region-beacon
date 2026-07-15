@@ -1,6 +1,10 @@
 -- Production fix: claim_bonus_code fails with
 --   42883 -- function digest(text, unknown) does not exist
 --
+-- IMPORTANT: this file has been updated to the same final loop-breaker body as
+-- migrations-prod-claim-bonus-code-final-ambiguous-fix/apply.sql. Running this
+-- older folder must not reintroduce the ON CONFLICT ambiguity bug.
+--
 -- Cause: the function body calls `digest(_passport_token, 'sha256')`
 -- unqualified. pgcrypto lives in the `extensions` schema on Supabase,
 -- and this function's search_path is `public`, so digest() is not
@@ -33,6 +37,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 declare
   b record;
   p record;
@@ -99,21 +104,31 @@ begin
     return;
   end if;
 
-  -- 4. Insert points award (idempotent via unique index).
-  insert into public.participant_point_awards (
-    agency_id, event_id, participant_id,
-    award_type, source_id, points_awarded, metadata
-  )
-  values (
-    p.agency_id, p.p_event_id, p.passport_id,
-    'bonus', b.bonus_id, coalesce(b.points_value, 0),
-    jsonb_build_object('bonus_code_id', b.bonus_id, 'bonus_code_name', b.name)
-  )
-  on conflict (event_id, participant_id, award_type, source_id)
-  where source_id is not null
-  do nothing;
+  -- 4. Insert points award. Avoid bare ON CONFLICT column names because this
+  -- function has an OUT column called event_id.
+  begin
+    insert into public.participant_point_awards (
+      agency_id, event_id, participant_id,
+      award_type, source_id, points_awarded, metadata
+    )
+    select
+      p.agency_id, p.p_event_id, p.passport_id,
+      'bonus', b.bonus_id, coalesce(b.points_value, 0),
+      jsonb_build_object('bonus_code_id', b.bonus_id, 'bonus_code_name', b.name)
+    where not exists (
+      select 1
+      from public.participant_point_awards ppa
+      where ppa.event_id = b.b_event_id
+        and ppa.participant_id = p.passport_id
+        and ppa.award_type = 'bonus'
+        and ppa.source_id = b.bonus_id
+    );
 
-  get diagnostics v_inserted = row_count;
+    get diagnostics v_inserted = row_count;
+  exception
+    when unique_violation then
+      v_inserted := 0;
+  end;
   if v_inserted > 0 then
     v_awarded := coalesce(b.points_value, 0);
     v_already := false;
