@@ -1,92 +1,30 @@
-## 1. Share button on the public event page
+## What I checked
 
-**File:** `src/routes/live.$subdomain.index.tsx`
+- **Resend connector**: connected, gateway working. A test send from `passports@getstampd.com.au` to `delivered@resend.dev` just returned HTTP 200 with a real message id — so the from-address is verified and the API key is authorised to send.
+- **Server logs**: no `passport-email` logs in the last hour on either the published or preview deployment. That means the `sendPassportEmail` server function was **never actually called** for the signup you tested.
+- **Wiring**: `src/routes/live.$subdomain.join.tsx` line 437 does call `sendPassportEmail(...)` after `register_visitor` succeeds, and the connector + code are correct.
 
-Add a **Share** button in the hero/CTA area (next to the existing "Join" / "View prizes" buttons — same visual weight as an outline button).
+## Most likely cause
 
-Behaviour (client-side only, no backend):
+The Share button + passport-email code has not been **published** yet. Server functions in TanStack Start are part of the app bundle — they only go live on `getstampd.com.au` and event subdomains after you click **Publish → Update**. If the signup you tested was on the live site (a `*.getstampd.com.au` subdomain), it hit the old bundle that has no `sendPassportEmail` call, which explains: no email + no server logs.
 
-```ts
-async function shareEvent() {
-  const url = `https://${subdomain}.getstampd.com.au`;
-  const subject = `Come join me at ${event.name}`;
-  const text = `Come join me at ${event.name} on GetStampd — ${url}`;
-  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-    try {
-      await navigator.share({ title: subject, text, url });
-      return;
-    } catch (err) {
-      // AbortError = user dismissed the share sheet; fall through only on real failure
-      if ((err as DOMException)?.name === "AbortError") return;
-    }
-  }
-  // Fallback: open the device's email composer
-  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`${text}`)}`;
-  window.location.href = mailto;
-}
-```
+If you tested on the preview URL and still got nothing, that's a different problem — but there'd be a log line, and there isn't one.
 
-Notes:
-- Button copy: **Share**, with a small share icon (unicode arrow or an inline SVG — no new deps).
-- Rendered only when event is live (same condition already used to render the join CTA).
-- No analytics, no backend call.
+## Plan
 
-## 2. Passport-link email on signup (via Resend)
+1. **Publish the app** (you click Update in the Publish dialog). That's the single action most likely to fix this.
+2. After publishing, do one test signup on the live subdomain, then I'll pull the `passport-email` server logs to confirm the send happened and Resend accepted it.
+3. If, after publishing, the logs show a failure (e.g. Resend 4xx, missing key, RPC lookup miss), I'll fix the specific error — most likely candidates are:
+   - Email landed in the recipient's **spam/junk** (very common on first sends from a new domain — worth checking before anything else).
+   - The `get_passport_by_token` RPC didn't return an `email` for the row (would need a small tweak to the lookup).
+4. Add a tiny bit of extra observability so the next diagnosis is one step, not three:
+   - Log the recipient domain (not the full address) and the Resend message id on success.
+   - Log the exact Resend error body on failure (already logged, but include the `to` domain for context).
 
-**Setup (one-time, before build):**
-1. Add the **Resend** connector (App connector, gateway-backed). This exposes `RESEND_API_KEY` and `LOVABLE_API_KEY` to server functions automatically.
-2. User verifies `getstampd.com.au` (or a subdomain like `mail.getstampd.com.au`) in the Resend dashboard so the "from" address can be `passports@getstampd.com.au`.
+No user-facing changes in this plan — just publish + verify + minor log polish. If you'd rather I also surface a subtle "email sent to you@…" line on the success screen (using the actual address the user typed) so it's obvious when the send worked, say the word and I'll add it.
 
-**New server function:** `src/lib/passport-email.functions.ts`
+## Ask
 
-Signature (unauthenticated — visitors are anonymous):
-```ts
-sendPassportEmail({ token: string })
-```
-
-Handler flow:
-1. Load `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` inside the handler (admin client via `await import("@/integrations/supabase/client.server")`).
-2. Call the existing `get_passport_by_token(_access_token: token)` RPC to resolve:
-   - visitor `email`, `first_name`
-   - event `id`, `name`, `public_slug`, `subdomain`
-3. If not found → return `{ sent: false }` silently (don't leak whether token exists).
-4. Build the passport URL: `https://<subdomain>.getstampd.com.au/passport/<token>` (fall back to `https://getstampd.com.au/passport/<token>` if no subdomain).
-5. POST to `https://connector-gateway.lovable.dev/resend/emails` with headers `Authorization: Bearer ${LOVABLE_API_KEY}` + `X-Connection-Api-Key: ${RESEND_API_KEY}`, body:
-   ```json
-   {
-     "from": "GetStampd <passports@getstampd.com.au>",
-     "to": ["<visitor email>"],
-     "subject": "Your passport for <Event Name>",
-     "html": "<simple branded template with a big 'Open my passport' button linking to the passport URL, plus the raw URL as fallback text>"
-   }
-   ```
-6. Check `response.ok`; on non-OK, log status + body server-side and return `{ sent: false, error: "…" }` (do NOT throw — the passport was already created successfully, email is best-effort).
-
-Email HTML: plain inline-styled template — GetStampd wordmark at top, "Hi <first_name>," greeting, one paragraph ("Here's the link to your passport for <Event Name>. Bookmark this email so you can always find your way back."), a prominent CTA button, the raw link below it, and a short footer. No external assets required.
-
-**Call site:** `src/routes/live.$subdomain.join.tsx`
-
-After the `register_visitor` RPC succeeds (line ~440, right before `setSuccess(...)`), fire-and-forget:
-
-```ts
-import { useServerFn } from "@tanstack/react-start";
-import { sendPassportEmail } from "@/lib/passport-email.functions";
-// ...
-const sendPassportEmailFn = useServerFn(sendPassportEmail);
-// after row is resolved:
-void sendPassportEmailFn({ data: { token: row.access_token } }).catch((e) => {
-  // silent — success screen still shows the link
-  console.warn("passport email failed", e);
-});
-```
-
-The user still sees the same success screen with the passport link — email is a convenience, not a blocker. If email fails they lose nothing.
-
-**Auth emails stay as-is.** This does not touch Supabase Auth's email flow; it's a one-off transactional send.
-
-## Verification
-
-- Share button appears on the public home when the event is live. On iOS/Android Safari & Chrome it opens the native share sheet; on desktop Chrome/Firefox/Safari it opens the default mail client with subject `Come join me at <Event Name>` and the URL in the body.
-- After completing the join form with a real email, the inbox receives an email titled "Your passport for <Event Name>" containing a working link to `/passport/<token>` on the event subdomain.
-- Deleting/blocking the Resend key does not break signup — the success screen still shows and the console logs a warning.
-- Typecheck passes.
+Can you confirm:
+- Did you test on the **published** site (a `*.getstampd.com.au` subdomain) or the **preview** URL?
+- Have you checked the recipient's **spam folder**?
