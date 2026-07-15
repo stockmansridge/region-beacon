@@ -976,6 +976,21 @@ function SuccessScreen({
             Your private passport link is below. Save it — it's the only way
             back into your passport on a new device.
           </p>
+          <div
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-page-bg)",
+              color: "var(--event-card-text)",
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 4h16v16H4z" />
+              <path d="m4 6 8 7 8-7" />
+            </svg>
+            We've emailed you the link too
+          </div>
+
 
           <div
             className="mt-5 rounded-2xl border p-3 text-left"
