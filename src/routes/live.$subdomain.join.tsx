@@ -12,6 +12,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticPanel } from "@/components/diagnostic-panel";
+import { sendPassportEmail } from "@/lib/passport-email.functions";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
   component: function LiveJoinRoute() {
