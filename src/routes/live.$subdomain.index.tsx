@@ -248,7 +248,7 @@ function LivePublicLoaded({
     !homeData.hasPassport
       ? "Start your passport"
       : awards.length === 0
-        ? "More rewards ahead"
+        ? "More prizes ahead"
         : total > 0 && visited >= total
           ? "Trail complete"
           : nextAward
