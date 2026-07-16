@@ -130,10 +130,11 @@ export function DemoEventNav({
               onClick={() => {
                 if (typeof window === "undefined") return;
                 const url = window.location.href;
-                if (typeof navigator !== "undefined" && "share" in navigator) {
-                  navigator.share({ title: eventName, url }).catch(() => undefined);
-                } else if (navigator?.clipboard) {
-                  navigator.clipboard.writeText(url).catch(() => undefined);
+                const nav = typeof navigator !== "undefined" ? navigator : null;
+                if (nav && typeof nav.share === "function") {
+                  nav.share({ title: eventName, url }).catch(() => undefined);
+                } else if (nav && nav.clipboard) {
+                  nav.clipboard.writeText(url).catch(() => undefined);
                 }
               }}
             >
