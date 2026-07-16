@@ -4,7 +4,7 @@ import { DemoShell } from "@/components/demo/demo-shell";
 import { DEMO_VENUES, useDemoPassport, DEMO_EVENT } from "@/lib/demo-cargo-road";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 
-export const Route = createFileRoute("/demo/wineries/")({
+export const Route = createFileRoute("/demo/wineries")({
   head: () => ({ meta: [{ title: `Wineries — ${DEMO_EVENT.name} demo` }] }),
   component: DemoWineries,
 });
@@ -93,12 +93,13 @@ function DemoWineries() {
                       View venue
                     </Link>
                     <a
-                      href={buildGoogleMapsDirectionsUrl({
-                        lat: v.lat,
-                        lng: v.lng,
-                        address: v.address,
-                        name: v.name,
-                      })}
+                      href={
+                        buildGoogleMapsDirectionsUrl({
+                          lat: v.lat,
+                          lng: v.lng,
+                          address: v.address,
+                        }) ?? "#"
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-1 rounded-full border px-3 py-2 text-xs font-semibold"
