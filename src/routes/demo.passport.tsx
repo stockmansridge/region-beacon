@@ -1,181 +1,236 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { TrailShell } from "@/components/trail-shell";
-import { Check, Lock, Stamp } from "lucide-react";
-
-const PRIMARY = "#1F3D2B";
-const ACCENT = "#B5572A";
-const GOLD = "#C9A24A";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Check, Stamp, Lock, RotateCcw } from "lucide-react";
+import { DemoShell } from "@/components/demo/demo-shell";
+import {
+  DEMO_EVENT,
+  DEMO_VENUES,
+  DEMO_AWARDS,
+  useDemoPassport,
+} from "@/lib/demo-cargo-road";
 
 export const Route = createFileRoute("/demo/passport")({
-  head: () => ({
-    meta: [
-      { title: "My passport — Cargo Road Wine Trail" },
-      { name: "description", content: "Visitor passport preview." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: `My passport — ${DEMO_EVENT.name} demo` }] }),
   component: DemoPassport,
 });
 
-const stops = [
-  { name: "Swinging Bridge Wines", done: true },
-  { name: "Stockman's Ridge Vineyard", done: true },
-  { name: "See Saw Wine", done: true },
-  { name: "Cargo Road Wines", done: false },
-  { name: "Brangayne of Orange", done: false },
-  { name: "Ross Hill Wines", done: false },
-  { name: "Philip Shaw Wines", done: false },
-  { name: "Angullong Cellar Door", done: false },
-];
-
-const rewards = [
-  { at: 3, label: "Welcome glass", unlocked: true },
-  { at: 5, label: "Trail tote", unlocked: false },
-  { at: 8, label: "Mixed dozen entry", unlocked: false },
-];
-
 function DemoPassport() {
-  const completed = stops.filter((s) => s.done).length;
-  const total = stops.length;
-  const pct = Math.round((completed / total) * 100);
-  const radius = 56;
-  const circumference = 2 * Math.PI * radius;
-  const dash = (pct / 100) * circumference;
+  const passport = useDemoPassport();
+  const total = DEMO_VENUES.length;
+  const visited = passport.visited;
+  const pct = total > 0 ? Math.round((visited / total) * 100) : 0;
+  const ringSize = 132;
+  const ringStroke = 10;
+  const ringRadius = (ringSize - ringStroke) / 2;
+  const ringCirc = 2 * Math.PI * ringRadius;
+  const ringDash = (pct / 100) * ringCirc;
 
   return (
-    <TrailShell
-      eventName="Cargo Road Wine Trail"
-      monogram="CR"
-      primaryColor={PRIMARY}
-      accentColor={ACCENT}
-      showBottomNav
-      activeNav="passport"
-      venueLabelPlural="Wineries"
-    >
-      <div className="mb-3 rounded-full border border-dashed border-[#C9A24A]/60 bg-[#FBF5E8] px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-[#8A7E66]">
-        Demo · sample progress
-      </div>
+    <DemoShell activeNav="passport">
+      <main className="pb-20">
+        {/* Progress hero */}
+        <section
+          className="rounded-3xl border p-6 text-center shadow-sm"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+          }}
+        >
+          <div
+            className="text-[10px] font-medium uppercase tracking-[0.28em]"
+            style={{ color: "var(--event-accent)" }}
+          >
+            Your Passport
+          </div>
+          <h1
+            className="mt-1 text-2xl font-semibold"
+            style={{ color: "var(--event-card-heading)" }}
+          >
+            {DEMO_EVENT.name}
+          </h1>
 
-      {/* Progress hero */}
-      <section className="rounded-3xl border border-[#E6DCC7] bg-[#FBF5E8] p-6 text-center shadow-sm">
-        <div className="text-[10px] font-medium uppercase tracking-[0.28em]" style={{ color: GOLD }}>
-          Your Passport
-        </div>
-        <h1 className="font-trail-serif mt-1 text-2xl font-semibold" style={{ color: PRIMARY }}>
-          Cargo Road Wine Trail
-        </h1>
-
-        <div className="relative mx-auto mt-5 h-36 w-36">
-          <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
-            <circle
-              cx="70"
-              cy="70"
-              r={radius}
-              fill="none"
-              stroke="#EFE6D2"
-              strokeWidth="10"
-            />
-            <circle
-              cx="70"
-              cy="70"
-              r={radius}
-              fill="none"
-              stroke={ACCENT}
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeDasharray={`${dash} ${circumference}`}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="font-trail-serif text-4xl font-semibold" style={{ color: PRIMARY }}>
-              {completed}
-              <span className="text-base text-[#8A7E66]">/{total}</span>
-            </div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8A7E66]">
-              Stamps
+          <div className="relative mx-auto mt-5" style={{ width: ringSize, height: ringSize }}>
+            <svg width={ringSize} height={ringSize} viewBox={`0 0 ${ringSize} ${ringSize}`} aria-hidden>
+              <circle
+                cx={ringSize / 2}
+                cy={ringSize / 2}
+                r={ringRadius}
+                fill="none"
+                stroke="var(--event-card-border)"
+                strokeWidth={ringStroke}
+              />
+              <circle
+                cx={ringSize / 2}
+                cy={ringSize / 2}
+                r={ringRadius}
+                fill="none"
+                stroke="var(--event-accent)"
+                strokeWidth={ringStroke}
+                strokeLinecap="round"
+                strokeDasharray={`${ringDash} ${ringCirc}`}
+                transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-4xl font-semibold" style={{ color: "var(--event-card-heading)" }}>
+                {visited}
+                <span className="text-base" style={{ color: "var(--event-card-muted)" }}>
+                  /{total}
+                </span>
+              </div>
+              <div
+                className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                style={{ color: "var(--event-card-muted)" }}
+              >
+                Stamps
+              </div>
             </div>
           </div>
-        </div>
 
-        <p className="mt-4 text-sm text-[#3D372C]">
-          {total - completed} stops to go until the next reward.
-        </p>
-      </section>
+          <p className="mt-4 text-sm" style={{ color: "var(--event-text)" }}>
+            {visited === 0
+              ? "Scan the QR at any winery to earn your first stamp."
+              : visited >= total
+                ? "Trail complete — you've collected every stamp!"
+                : `${total - visited} stops to go until the trail is complete.`}
+          </p>
+          <div className="mt-2 text-sm font-semibold" style={{ color: "var(--event-primary)" }}>
+            {passport.points} points earned
+          </div>
+        </section>
 
-      {/* Rewards */}
-      <section className="mt-5">
-        <SectionTitle>Rewards</SectionTitle>
-        <div className="mt-2 space-y-2">
-          {rewards.map((r) => (
-            <div
-              key={r.label}
-              className="flex items-center gap-3 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-3"
-            >
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-[11px] font-bold"
-                style={{
-                  backgroundColor: r.unlocked ? `${GOLD}33` : "#EFE6D2",
-                  color: r.unlocked ? ACCENT : "#8A7E66",
-                }}
-              >
-                {r.at}
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-[#2A2620]">{r.label}</div>
-                <div className="text-[11px] uppercase tracking-[0.18em] text-[#8A7E66]">
-                  {r.unlocked ? "Unlocked" : `At ${r.at} stamps`}
+        {/* Rewards */}
+        <section className="mt-5">
+          <SectionTitle>Prizes</SectionTitle>
+          <div className="mt-2 space-y-2">
+            {DEMO_AWARDS.map((r) => {
+              const unlocked = passport.points >= r.points_required;
+              return (
+                <div
+                  key={r.award_id}
+                  className="flex items-center gap-3 rounded-2xl border p-3"
+                  style={{
+                    borderColor: "var(--event-card-border)",
+                    backgroundColor: "var(--event-card-bg)",
+                  }}
+                >
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-[11px] font-bold"
+                    style={{
+                      backgroundColor: unlocked
+                        ? "color-mix(in srgb, var(--event-accent) 20%, transparent)"
+                        : "color-mix(in srgb, var(--event-card-border) 60%, transparent)",
+                      color: unlocked ? "var(--event-accent)" : "var(--event-card-muted)",
+                    }}
+                  >
+                    {r.points_required}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold" style={{ color: "var(--event-card-heading)" }}>
+                      {r.title}
+                    </div>
+                    <div
+                      className="text-[11px] uppercase tracking-[0.18em]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      {unlocked ? "Unlocked" : `At ${r.points_required} pts`}
+                    </div>
+                  </div>
+                  {unlocked ? (
+                    <Check className="h-4 w-4" style={{ color: "var(--event-primary)" }} />
+                  ) : (
+                    <Lock className="h-4 w-4" style={{ color: "var(--event-card-muted)" }} />
+                  )}
                 </div>
-              </div>
-              {r.unlocked ? (
-                <Check className="h-4 w-4" style={{ color: PRIMARY }} />
-              ) : (
-                <Lock className="h-4 w-4 text-[#8A7E66]" />
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
 
-      {/* Stops */}
-      <section className="mt-6">
-        <SectionTitle>Stops</SectionTitle>
-        <ul className="mt-2 space-y-2">
-          {stops.map((s, i) => (
-            <li
-              key={s.name}
-              className="flex items-center gap-3 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-3"
-            >
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{
-                  backgroundColor: s.done ? PRIMARY : "#EFE6D2",
-                  color: s.done ? GOLD : "#8A7E66",
-                  boxShadow: s.done ? `inset 0 0 0 1px ${GOLD}80` : undefined,
-                }}
-              >
-                {s.done ? <Stamp className="h-4 w-4" /> : <span className="text-[11px] font-semibold">{String(i + 1).padStart(2, "0")}</span>}
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-[#2A2620]">{s.name}</div>
-                <div className="text-[11px] uppercase tracking-[0.18em] text-[#8A7E66]">
-                  {s.done ? "Stamped" : "Scan QR at venue"}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </TrailShell>
+        {/* Stops */}
+        <section className="mt-6">
+          <SectionTitle>Stops</SectionTitle>
+          <ul className="mt-2 space-y-2">
+            {DEMO_VENUES.map((v, i) => {
+              const done = passport.hasStamp(v.venue_id);
+              return (
+                <li key={v.venue_id}>
+                  <Link
+                    to="/demo/wineries/$venueId"
+                    params={{ venueId: v.venue_id }}
+                    className="flex items-center gap-3 rounded-2xl border p-3 transition hover:shadow-sm"
+                    style={{
+                      borderColor: "var(--event-card-border)",
+                      backgroundColor: "var(--event-card-bg)",
+                    }}
+                  >
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-xl"
+                      style={{
+                        backgroundColor: done
+                          ? "var(--event-primary)"
+                          : "color-mix(in srgb, var(--event-card-border) 60%, transparent)",
+                        color: done ? "var(--event-accent)" : "var(--event-card-muted)",
+                      }}
+                    >
+                      {done ? (
+                        <Stamp className="h-4 w-4" />
+                      ) : (
+                        <span className="text-[11px] font-semibold">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div
+                        className="text-sm font-semibold"
+                        style={{ color: "var(--event-card-heading)" }}
+                      >
+                        {v.name}
+                      </div>
+                      <div
+                        className="text-[11px] uppercase tracking-[0.18em]"
+                        style={{ color: "var(--event-card-muted)" }}
+                      >
+                        {done ? "Stamped" : "Scan QR at venue"}
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/* Reset demo */}
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={() => passport.reset()}
+            className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{
+              borderColor: "var(--event-card-border)",
+              color: "var(--event-muted)",
+            }}
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Reset demo
+          </button>
+        </div>
+      </main>
+    </DemoShell>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="h-px flex-1 bg-[#E6DCC7]" />
-      <h2 className="font-trail-serif text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: PRIMARY }}>
+      <div className="h-px flex-1" style={{ backgroundColor: "var(--event-card-border)" }} />
+      <h2
+        className="text-sm font-semibold uppercase tracking-[0.2em]"
+        style={{ color: "var(--event-primary)" }}
+      >
         {children}
       </h2>
-      <div className="h-px flex-1 bg-[#E6DCC7]" />
+      <div className="h-px flex-1" style={{ backgroundColor: "var(--event-card-border)" }} />
     </div>
   );
 }
