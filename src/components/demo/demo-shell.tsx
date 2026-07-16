@@ -92,7 +92,8 @@ export function DemoShell({
     >
       {transparentHeader ? (
         <div className="relative">
-          <div className="absolute inset-x-0 top-0 z-40 px-4">
+          <DemoTopBar />
+          <div className="absolute inset-x-0 top-[40px] z-40 px-4">
             <DemoEventNav
               eventName={DEMO_EVENT.name}
               primaryColor={DEMO_EVENT.primary_color}
@@ -106,18 +107,21 @@ export function DemoShell({
           {children}
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-md px-4">
-          <DemoEventNav
-            eventName={DEMO_EVENT.name}
-            primaryColor={DEMO_EVENT.primary_color}
-            accentColor={DEMO_EVENT.accent_color}
-            logoUrl={logoUrl}
-            hasPassport={passport.registered}
-            activeOverride={activeNav}
-          />
-          {showBanner && <DemoBanner />}
-          {children}
-        </div>
+        <>
+          <DemoTopBar />
+          <div className="mx-auto w-full max-w-md px-4">
+            <DemoEventNav
+              eventName={DEMO_EVENT.name}
+              primaryColor={DEMO_EVENT.primary_color}
+              accentColor={DEMO_EVENT.accent_color}
+              logoUrl={logoUrl}
+              hasPassport={passport.registered}
+              activeOverride={activeNav}
+            />
+            {showBanner && <DemoBanner />}
+            {children}
+          </div>
+        </>
       )}
     </EventPaletteScope>
   );
