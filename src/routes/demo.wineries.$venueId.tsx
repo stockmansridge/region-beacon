@@ -1,297 +1,251 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { TrailShell } from "@/components/trail-shell";
-import { Check, MapPin, Phone, Globe, ArrowLeft, Clock } from "lucide-react";
-
-const PRIMARY = "#1F3D2B";
-const ACCENT = "#B5572A";
-const CREAM = "#F6EFE2";
-
-type VenueDetail = {
-  id: string;
-  name: string;
-  description: string;
-  address: string;
-  phone: string;
-  website: string;
-  hours: string;
-  visited: boolean;
-  imageColor: string;
-};
-
-const DETAILS: Record<string, VenueDetail> = {
-  stockmans: {
-    id: "stockmans",
-    name: "Stockman's Ridge Wines",
-    description:
-      "Award-winning cool-climate wines in a relaxed country setting. Taste their signature Shiraz and Chardonnay while enjoying panoramic vineyard views.",
-    address: "235 Canobolas Road, Orange NSW 2800",
-    phone: "(02) 6365 3279",
-    website: "stockmansridge.com.au",
-    hours: "Fri–Sun 10am–5pm",
-    visited: true,
-    imageColor: "#3d5c3f",
-  },
-  rowlee: {
-    id: "rowlee",
-    name: "Rowlee Wines",
-    description:
-      "A family-owned boutique winery producing elegant, hand-crafted wines. Their cellar door offers a intimate tasting experience with vineyard views.",
-    address: "245 Nashdale Lane, Nashdale NSW 2800",
-    phone: "(02) 6365 3344",
-    website: "rowlee.com.au",
-    hours: "Thu–Mon 11am–5pm",
-    visited: true,
-    imageColor: "#8b4513",
-  },
-  nashdale: {
-    id: "nashdale",
-    name: "Nashdale Lane",
-    description:
-      "A rustic cellar door surrounded by rolling hills and vines. Specialising in small-batch wines with a focus on sustainability and terroir.",
-    address: "123 Nashdale Road, Nashdale NSW 2800",
-    phone: "(02) 6365 1122",
-    website: "nashdalelane.com.au",
-    hours: "Fri–Sun 10am–4pm",
-    visited: false,
-    imageColor: "#6b4226",
-  },
-  ferment: {
-    id: "ferment",
-    name: "Ferment",
-    description:
-      "An urban cellar door in the heart of Orange. Natural wines, craft ferments, and a curated selection of local produce in a contemporary space.",
-    address: "142 Summer Street, Orange NSW 2800",
-    phone: "(02) 6360 8888",
-    website: "fermentorange.com.au",
-    hours: "Wed–Sun 12pm–8pm",
-    visited: false,
-    imageColor: "#7a4e3e",
-  },
-  heifer: {
-    id: "heifer",
-    name: "Heifer Station Wines",
-    description:
-      "A charming vineyard with a fun, approachable tasting experience. Known for their bold reds and friendly, knowledgeable staff.",
-    address: "1032 The Escort Way, Borenore NSW 2800",
-    phone: "(02) 6365 7788",
-    website: "heiferstation.com.au",
-    hours: "Fri–Sun 10am–5pm",
-    visited: false,
-    imageColor: "#4a5d23",
-  },
-  cargo: {
-    id: "cargo",
-    name: "Cargo Road Cellars",
-    description:
-      "Boutique family vineyard specialising in Chardonnay and Pinot Noir. A warm welcome awaits at their intimate cellar door.",
-    address: "487 Cargo Road, Cargo NSW 2804",
-    phone: "(02) 6365 4455",
-    website: "cargoroadcellars.com.au",
-    hours: "Sat–Sun 11am–4pm",
-    visited: false,
-    imageColor: "#5c4033",
-  },
-  smallacres: {
-    id: "smallacres",
-    name: "Small Acres Cyder",
-    description:
-      "Craft cider made from heritage apples grown in the Orange region. Their tasting room offers a refreshing alternative to traditional wine trails.",
-    address: "155 Boree Lane, Borenore NSW 2800",
-    phone: "(02) 6365 2233",
-    website: "smallacrescyder.com.au",
-    hours: "Fri–Sun 11am–5pm",
-    visited: false,
-    imageColor: "#8fbc8f",
-  },
-  agrestic: {
-    id: "agrestic",
-    name: "The Agrestic Grocer",
-    description:
-      "A gourmet grocer and providore celebrating local produce. Stop in for artisan cheeses, charcuterie, and curated wine selections.",
-    address: "219 Summer Street, Orange NSW 2800",
-    phone: "(02) 6360 3333",
-    website: "theagrestic.com.au",
-    hours: "Tue–Sun 9am–5pm",
-    visited: false,
-    imageColor: "#a0522d",
-  },
-};
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { Navigation, MapPin, Tag, Star, Check, Circle, Stamp } from "lucide-react";
+import { DemoShell } from "@/components/demo/demo-shell";
+import {
+  DEMO_EVENT,
+  DEMO_VENUES,
+  DEMO_OFFERS,
+  DEMO_BONUS_CHALLENGES,
+  useDemoPassport,
+} from "@/lib/demo-cargo-road";
+import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/demo/wineries/$venueId")({
-  head: () => ({
-    meta: [
-      { title: "Venue — GetStampd Demo" },
-      { name: "description", content: "Demo venue detail preview." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: `Winery — ${DEMO_EVENT.name} demo` }] }),
   component: DemoVenueDetail,
+  notFoundComponent: () => (
+    <DemoShell>
+      <div className="py-16 text-center text-sm" style={{ color: "var(--event-muted)" }}>
+        Winery not found in demo.
+        <div className="mt-3">
+          <Link to="/demo/wineries" className="underline">
+            Back to wineries
+          </Link>
+        </div>
+      </div>
+    </DemoShell>
+  ),
 });
 
 function DemoVenueDetail() {
   const { venueId } = Route.useParams();
-  const venue = DETAILS[venueId] ?? DETAILS["stockmans"];
+  const venue = DEMO_VENUES.find((v) => v.venue_id === venueId);
+  const passport = useDemoPassport();
+  if (!venue) throw notFound();
+
+  const offer = DEMO_OFFERS.find((o) => o.venue_id === venue.venue_id) ?? null;
+  const done = passport.hasStamp(venue.venue_id);
+  const directions = buildGoogleMapsDirectionsUrl({
+    lat: venue.lat,
+    lng: venue.lng,
+    address: venue.address,
+  });
 
   return (
-    <TrailShell
-      eventName="Orange Wine Trail"
-      monogram="OW"
-      primaryColor={PRIMARY}
-      accentColor={ACCENT}
-      showBottomNav
-      activeNav="wineries"
-      venueLabelPlural="Wineries"
-      topLeft={
-        <Link
-          to="/demo/wineries"
-          className="flex items-center gap-1 text-sm font-medium"
-          style={{ color: PRIMARY }}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Link>
-      }
-    >
-      {/* Hero image placeholder */}
-      <div
-        className="relative -mx-4 -mt-5 h-56 w-[calc(100%+2rem)] overflow-hidden"
-        style={{ backgroundColor: venue.imageColor }}
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <WineIcon className="h-16 w-16 text-white/20" />
-        </div>
-        {/* Gradient overlay */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)",
-          }}
-        />
-        {/* Visited badge */}
-        {venue.visited && (
-          <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
-            style={{ color: PRIMARY }}
+    <DemoShell activeNav="venues">
+      <main className="pb-20">
+        {/* Header */}
+        <div className="flex items-start gap-3">
+          <div
+            className="flex h-14 w-14 flex-none items-center justify-center rounded-2xl"
+            style={{
+              backgroundColor: done
+                ? "var(--event-primary)"
+                : "color-mix(in srgb, var(--event-primary) 12%, transparent)",
+              color: done ? "var(--event-accent)" : "var(--event-primary)",
+            }}
           >
-            <Check className="h-3.5 w-3.5" strokeWidth={3} />
-            Visited
+            {done ? <Check className="h-6 w-6" /> : <Stamp className="h-6 w-6" />}
           </div>
-        )}
-        {/* Name overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h1 className="font-trail-serif text-2xl font-semibold text-white">
-            {venue.name}
-          </h1>
+          <div className="min-w-0 flex-1">
+            <h1
+              className="text-xl font-semibold leading-tight"
+              style={{ color: "var(--event-heading)" }}
+            >
+              {venue.name}
+            </h1>
+            <div
+              className="mt-1 flex items-start gap-1 text-xs"
+              style={{ color: "var(--event-muted)" }}
+            >
+              <MapPin className="mt-0.5 h-3 w-3 flex-none" />
+              <span>{venue.address}</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="mt-5 space-y-5">
-        {/* Description */}
-        <p className="text-sm leading-relaxed text-[#5A5348]">
+        <p
+          className="mt-4 rounded-2xl border p-4 text-sm leading-relaxed"
+          style={{
+            borderColor: "var(--event-card-border)",
+            backgroundColor: "var(--event-card-bg)",
+            color: "var(--event-card-text)",
+          }}
+        >
           {venue.description}
         </p>
 
-        {/* Info cards */}
-        <div className="space-y-2.5">
-          <InfoRow icon={<MapPin className="h-4 w-4" />}>
-            {venue.address}
-          </InfoRow>
-          <InfoRow icon={<Phone className="h-4 w-4" />}>
-            {venue.phone}
-          </InfoRow>
-          <InfoRow icon={<Globe className="h-4 w-4" />}>
-            {venue.website}
-          </InfoRow>
-          <InfoRow icon={<Clock className="h-4 w-4" />}>
-            {venue.hours}
-          </InfoRow>
+        {/* CTAs */}
+        <div className="mt-4 flex gap-2">
+          {done ? (
+            <div
+              className="flex-1 rounded-full py-3 text-center text-sm font-semibold"
+              style={{
+                backgroundColor: "color-mix(in srgb, var(--event-primary) 15%, transparent)",
+                color: "var(--event-primary)",
+              }}
+            >
+              ✓ Stamped
+            </div>
+          ) : (
+            <Link
+              to="/demo/checkin/$venueId"
+              params={{ venueId: venue.venue_id }}
+              className="flex-1 rounded-full py-3 text-center text-sm font-semibold shadow"
+              style={{
+                backgroundColor: "var(--event-button-primary-bg)",
+                color: "var(--event-button-primary-fg)",
+              }}
+            >
+              Check in here
+            </Link>
+          )}
+          {directions ? (
+            <a
+              href={directions}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1 rounded-full border px-4 py-3 text-sm font-semibold"
+              style={{
+                borderColor: "var(--event-card-border)",
+                color: "var(--event-primary)",
+              }}
+            >
+              <Navigation className="h-4 w-4" /> Directions
+            </a>
+          ) : null}
         </div>
 
-        {/* Visit state card */}
-        <div
-          className="flex items-center gap-3 rounded-2xl border p-4"
-          style={{
-            borderColor: venue.visited ? `${PRIMARY}20` : "#E6DCC7",
-            backgroundColor: venue.visited ? `${PRIMARY}08` : "#FBF5E8",
-          }}
-        >
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-full"
+        {/* Offer */}
+        {offer ? (
+          <section
+            className="mt-5 rounded-2xl border p-4"
             style={{
-              backgroundColor: venue.visited ? PRIMARY : "transparent",
-              color: venue.visited ? CREAM : ACCENT,
-              border: venue.visited ? undefined : `2px solid ${ACCENT}`,
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
             }}
           >
-            {venue.visited ? (
-              <Check className="h-4 w-4" strokeWidth={3} />
-            ) : (
-              <MapPin className="h-4 w-4" />
-            )}
-          </div>
-          <div>
-            <div
-              className="text-sm font-semibold"
-              style={{ color: venue.visited ? PRIMARY : ACCENT }}
+            <div className="flex items-center gap-2">
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: "color-mix(in srgb, var(--event-accent) 18%, transparent)",
+                  color: "var(--event-accent)",
+                }}
+              >
+                <Tag className="h-4 w-4" />
+              </div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.22em]" style={{ color: "var(--event-accent)" }}>
+                Passport offer
+              </div>
+            </div>
+            <div className="mt-2 text-base font-semibold" style={{ color: "var(--event-card-heading)" }}>
+              {offer.title}
+            </div>
+            <p className="mt-1 text-sm" style={{ color: "var(--event-card-text)" }}>
+              {offer.description}
+            </p>
+            <div className="mt-2 text-xs" style={{ color: "var(--event-card-muted)" }}>
+              {offer.redemption_instructions}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Bonus challenges */}
+        {DEMO_BONUS_CHALLENGES.length > 0 ? (
+          <section className="mt-5">
+            <h2
+              className="text-xs font-semibold uppercase tracking-[0.22em]"
+              style={{ color: "var(--event-muted)" }}
             >
-              {venue.visited ? "You've visited here" : "Not yet visited"}
+              Bonus challenges
+            </h2>
+            <div className="mt-2 space-y-2">
+              {DEMO_BONUS_CHALLENGES.map((b) => {
+                const claimed = passport.hasBonus(b.bonus_id);
+                return (
+                  <div
+                    key={b.bonus_id}
+                    className="rounded-2xl border p-4"
+                    style={{
+                      borderColor: "var(--event-card-border)",
+                      backgroundColor: "var(--event-card-bg)",
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2">
+                        <Star
+                          className="mt-0.5 h-5 w-5 flex-none"
+                          style={{ color: "var(--event-accent)" }}
+                        />
+                        <div>
+                          <div
+                            className="text-sm font-semibold"
+                            style={{ color: "var(--event-card-heading)" }}
+                          >
+                            {b.name}
+                          </div>
+                          <div
+                            className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                            style={{ color: "var(--event-accent)" }}
+                          >
+                            +{b.points} pts
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                        style={{
+                          backgroundColor: claimed
+                            ? "color-mix(in srgb, var(--event-primary) 15%, transparent)"
+                            : "color-mix(in srgb, var(--event-card-border) 60%, transparent)",
+                          color: claimed ? "var(--event-primary)" : "var(--event-card-muted)",
+                        }}
+                      >
+                        {claimed ? (
+                          <>
+                            <Check className="h-3 w-3" /> Done
+                          </>
+                        ) : (
+                          <>
+                            <Circle className="h-3 w-3" /> Open
+                          </>
+                        )}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm" style={{ color: "var(--event-card-text)" }}>
+                      {b.description}
+                    </p>
+                    {!claimed ? (
+                      <button
+                        type="button"
+                        onClick={() => passport.claimBonus(b.bonus_id)}
+                        className="mt-3 inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold"
+                        style={{
+                          borderColor: "var(--event-accent)",
+                          color: "var(--event-accent)",
+                        }}
+                      >
+                        Simulate bonus scan
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
-            <div className="text-[11px] text-[#7A6F5C]">
-              {venue.visited
-                ? "Stamp collected on your passport"
-                : "Visit and check in to collect your stamp"}
-            </div>
-          </div>
-        </div>
-
-        {/* Back link */}
-        <Link
-          to="/demo/wineries"
-          className="flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition active:scale-[0.98]"
-          style={{
-            borderColor: PRIMARY,
-            color: PRIMARY,
-            backgroundColor: CREAM,
-          }}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to wineries
-        </Link>
-      </div>
-    </TrailShell>
-  );
-}
-
-function InfoRow({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start gap-3 text-sm text-[#2A2620]">
-      <span className="mt-0.5 text-[#7A6F5C]">{icon}</span>
-      <span>{children}</span>
-    </div>
-  );
-}
-
-function WineIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M8 22h8" />
-      <path d="M7 10h10" />
-      <path d="M9.5 10L9 3.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5L15 10" />
-      <path d="M12 10v12" />
-    </svg>
+          </section>
+        ) : null}
+      </main>
+    </DemoShell>
   );
 }

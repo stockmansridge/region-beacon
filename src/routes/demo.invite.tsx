@@ -1,108 +1,126 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TrailShell } from "@/components/trail-shell";
-import { UserPlus, Share2, ArrowLeft, Sparkles } from "lucide-react";
-
-const PRIMARY = "#1F3D2B";
-const ACCENT = "#B5572A";
+import { Copy, Mail, MessageCircle, Share2 } from "lucide-react";
+import { DemoShell } from "@/components/demo/demo-shell";
+import { DEMO_EVENT } from "@/lib/demo-cargo-road";
 
 export const Route = createFileRoute("/demo/invite")({
-  head: () => ({
-    meta: [
-      { title: "Invite friends — GetStampd Demo" },
-      { name: "description", content: "Demo invite friends preview." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: `Invite friends — ${DEMO_EVENT.name} demo` }] }),
   component: DemoInvite,
 });
 
 function DemoInvite() {
+  const url = "https://getstampd.com.au/demo";
+  const message = `Come explore ${DEMO_EVENT.name} with me on GetStampd — ${url}`;
+
   return (
-    <TrailShell
-      eventName="Cargo Road Wine Trail"
-      monogram="CR"
-      primaryColor={PRIMARY}
-      accentColor={ACCENT}
-      showBottomNav
-      activeNav="more"
-      venueLabelPlural="Wineries"
-    >
-      <div className="mb-3 rounded-full border border-dashed border-[#C9A24A]/60 bg-[#FBF5E8] px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-[#8A7E66]">
-        Demo · sample invite screen
-      </div>
-
-      <section className="relative overflow-hidden rounded-3xl border border-[#1F3D2B]/40 bg-gradient-to-br from-[#162A1F] via-[#1F3D2B] to-[#264A35] p-7 text-[#F6EFE2] shadow-lg">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#C9A24A]/20" />
-        <div className="absolute -bottom-12 -left-12 h-44 w-44 rounded-full bg-[#B5572A]/20" />
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, #C9A24A 1px, transparent 1.5px), radial-gradient(circle at 70% 80%, #F6EFE2 1px, transparent 1.5px)", backgroundSize: "32px 32px, 48px 48px" }} />
-        <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#F6D98A]">
-            <Sparkles className="h-3 w-3" />
-            Better together
-          </div>
-          <h1 className="font-trail-serif mt-3 text-3xl font-semibold leading-tight">
-            Trail together,<br />earn together.
-          </h1>
-          <p className="mt-3 text-sm text-[#E8DFCB]">
-            Bring a friend along the wine trail. When they collect their first stamp,
-            you both get a bonus entry into the prize draw.
-          </p>
-        </div>
-      </section>
-
-      <section className="mt-5 space-y-3">
-        <button
-          className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold text-[#F6EFE2] shadow-sm transition hover:opacity-95"
-          style={{ backgroundColor: PRIMARY }}
-          onClick={() => {}}
-        >
-          <UserPlus className="h-4 w-4" />
+    <DemoShell activeNav="more">
+      <main className="pb-20">
+        <h1 className="text-xl font-semibold" style={{ color: "var(--event-heading)" }}>
           Invite friends
-        </button>
-        <button
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3.5 text-sm font-semibold transition hover:bg-[#FBF5E8]"
-          style={{ borderColor: ACCENT, color: ACCENT }}
-          onClick={() => {}}
-        >
-          <Share2 className="h-4 w-4" />
-          Share your passport
-        </button>
-      </section>
-
-      <section className="mt-5 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8] p-4">
-        <h3 className="font-trail-serif text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: PRIMARY }}>
-          How it works
-        </h3>
-        <ol className="mt-3 space-y-2.5 text-sm text-[#5C5547]">
-          {[
-            "Send your friends a personal trail invite.",
-            "They join and grab their first stamp at any winery.",
-            "You both earn a bonus prize-draw entry.",
-          ].map((step, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span
-                className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-[#F6EFE2]"
-                style={{ backgroundColor: ACCENT }}
-              >
-                {i + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <div className="mt-6 text-center">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-[#A8A091]">
-          Demo only · no invites are sent
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--event-muted)" }}>
+          Share the trail and see who collects the most stamps.
         </p>
-        <Link
-          to="/demo/more"
-          className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#E6DCC7] bg-[#FBF5E8] px-4 py-2 text-sm font-medium text-[#2A2620] transition hover:bg-[#EFE6D2]"
+
+        <div
+          className="mt-5 rounded-2xl border p-4"
+          style={{ borderColor: "var(--event-card-border)", backgroundColor: "var(--event-card-bg)" }}
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to menu
-        </Link>
-      </div>
-    </TrailShell>
+          <div className="text-xs font-semibold uppercase tracking-[0.22em]" style={{ color: "var(--event-muted)" }}>
+            Trail link
+          </div>
+          <div className="mt-1 break-all text-sm font-semibold" style={{ color: "var(--event-card-heading)" }}>
+            {url}
+          </div>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard?.writeText(url).catch(() => undefined)}
+            className="mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold"
+            style={{ borderColor: "var(--event-primary)", color: "var(--event-primary)" }}
+          >
+            <Copy className="h-3.5 w-3.5" /> Copy link
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          <ShareTile
+            icon={<Share2 className="h-5 w-5" />}
+            label="Share"
+            onClick={() => {
+              if (typeof navigator !== "undefined" && "share" in navigator) {
+                navigator.share({ title: DEMO_EVENT.name, text: message, url }).catch(() => undefined);
+              }
+            }}
+          />
+          <ShareTile
+            icon={<MessageCircle className="h-5 w-5" />}
+            label="SMS"
+            href={`sms:?body=${encodeURIComponent(message)}`}
+          />
+          <ShareTile
+            icon={<Mail className="h-5 w-5" />}
+            label="Email"
+            href={`mailto:?subject=${encodeURIComponent(DEMO_EVENT.name)}&body=${encodeURIComponent(message)}`}
+          />
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link
+            to="/demo"
+            className="text-xs font-semibold uppercase tracking-[0.22em] underline"
+            style={{ color: "var(--event-primary)" }}
+          >
+            Back to home
+          </Link>
+        </div>
+      </main>
+    </DemoShell>
+  );
+}
+
+function ShareTile({
+  icon,
+  label,
+  href,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  href?: string;
+  onClick?: () => void;
+}) {
+  const inner = (
+    <>
+      <span
+        className="flex h-10 w-10 items-center justify-center rounded-full"
+        style={{
+          backgroundColor: "color-mix(in srgb, var(--event-primary) 12%, transparent)",
+          color: "var(--event-primary)",
+        }}
+      >
+        {icon}
+      </span>
+      <span className="text-xs font-semibold" style={{ color: "var(--event-card-heading)" }}>
+        {label}
+      </span>
+    </>
+  );
+  const cls =
+    "flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition hover:shadow-sm";
+  const style = {
+    borderColor: "var(--event-card-border)",
+    backgroundColor: "var(--event-card-bg)",
+  } as const;
+  if (href) {
+    return (
+      <a href={href} className={cls} style={style}>
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={cls} style={style}>
+      {inner}
+    </button>
   );
 }
