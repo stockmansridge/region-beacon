@@ -1,8 +1,35 @@
 import { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft, Info } from "lucide-react";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { DEMO_EVENT, useDemoPassport } from "@/lib/demo-cargo-road";
 import { DemoEventNav } from "./demo-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+
+/**
+ * Persistent bar shown at the very top of every /demo/* page.
+ * - Left: link back to the GetStampd promotional/marketing home.
+ * - Right: short "This is a demo" info note.
+ */
+export function DemoTopBar() {
+  return (
+    <div className="sticky top-0 z-50 w-full border-b border-black/10 bg-neutral-900 text-white">
+      <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-3 py-2">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider hover:bg-white/20"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to GetStampd
+        </Link>
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/80">
+          <Info className="h-3.5 w-3.5" />
+          You're viewing a demo
+        </span>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Shared shell for every /demo/* route. Sets up the palette, renders the
