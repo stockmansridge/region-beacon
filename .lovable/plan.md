@@ -1,34 +1,98 @@
-## Changes to public event home page (`src/routes/live.$subdomain.index.tsx`)
+# Demo rebuild — Cargo Road Wine Quest parity
 
-### 1. Show full welcome copy in the hero
-The hero paragraph currently uses `line-clamp-2` (line 417), so welcome copy longer than two lines is truncated with `…`. Remove `line-clamp-2` so the full copy is displayed. Keep the existing text shadow / color styling.
+## Goal
+Replace the current `/demo/*` routes with pages that look and behave like the
+new public event pages under `/live/$subdomain/*`, using a hardcoded snapshot
+of "Cargo Road Wine Quest" (`public_slug: evt-745pamk2vg`). No demo action
+writes to the real event.
 
-### 2. Make the "Start your passport – tap to begin" tile clickable
-In the summary card, the bottom-right tier tile shows:
-- Title: `Start your passport`
-- Subtitle: `tap to begin`
+## Approach
 
-when the visitor has no passport yet. Today it's plain text. Wrap that tile in a `<Link to="/join">` (using TanStack Router `Link`, same route the primary CTA already uses) only when `!homeData.hasPassport && canRegister`. In other states it stays as static text (no link).
+The live pages are tightly coupled to DB RPCs and hooks like
+`useCurrentEventPassport` / `usePassportHomeData`. Rather than duplicate ~2000
+lines of markup, I will:
 
-- Preserve existing layout, colours, and typography.
-- Add a subtle `hover:opacity-90` and a proper `aria-label="Start your passport"`.
-- When `canRegister` is false (terms not configured), leave the tile non-interactive to match the disabled primary CTA behaviour.
+1. **Refactor the live pages into pure presentational components** that accept
+   `event`, `venues`, `offers`, `awards`, `announcements`, `faq`,
+   `bonusChallenges`, `passport`, `homeData` as props.
+   - `LivePublicLoaded` → `PublicHomeView`
+   - `PublicVenueListPage` → `PublicVenueListView`
+   - `PublicVenueDetailPage` → `PublicVenueDetailView`
+   - `PublicMapPage`, `PublicOffersPage`, `PublicAwardsPage`,
+     `PublicFaqPage`, `PublicLeaderboardPage`, `PublicJoinPage` →
+     matching `*View` components.
+   - The existing `live.$subdomain.*` routes keep their loaders and pass real
+     data into these views. No visible change for real events.
 
-### 3. Add "View Venues & Offers" button under "View prizes"
-Immediately after the `View prizes` `<Link>` section (currently ending at line ~638), add a second `<Link to="/venues">` styled identically (same className, same inline style tokens `--event-button-primary-bg` / `--event-button-primary-fg`, same rounded-full h-12 shadow). Label: `View venues & offers` (use the event's plural venue label when available, e.g. `View wineries & offers`).
+2. **Create `src/lib/demo-cargo-road.ts`** — a snapshot module with:
+   - `DEMO_EVENT` — the event object (from `get_public_event` today), with a
+     synthetic palette/brand-kit block so `EventPaletteScope` renders.
+   - `DEMO_VENUES` — the 6 real venues (Rowlee, Cargo Road, Stockman's Ridge,
+     Canobolas, Strawhouse, Dindima) with addresses + coords already fetched.
+   - `DEMO_OFFERS`, `DEMO_AWARDS`, `DEMO_ANNOUNCEMENTS`, `DEMO_FAQ`,
+     `DEMO_BONUS_CHALLENGES`, `DEMO_LEADERBOARD` — plausible sample content
+     so every page has something to render.
+   - `DEMO_PASSPORT` type + an in-memory zustand-lite store
+     (`useDemoPassport()`) tracking visited venue IDs, points, first name.
+     Stamps and points update in the browser only; a "Reset demo" action
+     clears them.
 
-The `/venues` route already renders `PublicTrailTabs` with the `venues` tab active by default, so no changes to the tabs component or the venues route are required — linking to `/venues` satisfies "slider defaulted to the Venue tab".
+3. **Rewrite each `/demo/*` route** as a thin wrapper that renders the
+   matching `*View` with `DEMO_*` snapshot data and the fake passport, plus a
+   persistent "Demo mode · nothing is saved to the real event" banner:
+
+   ```text
+   /demo                     → PublicHomeView
+   /demo/join                → PublicJoinView (submit only updates local state)
+   /demo/passport            → existing passport home view, driven by fake passport
+   /demo/wineries            → PublicVenueListView
+   /demo/wineries/$venueId   → PublicVenueDetailView (offers, bonus, check-in CTA)
+   /demo/trail-map           → PublicMapView
+   /demo/offers              → PublicOffersView
+   /demo/rewards             → PublicAwardsView
+   /demo/checkin/$venueId    → simulated stamp screen → updates fake passport
+   /demo/invite              → simple share sheet (no real link)
+   /demo/more                → menu (FAQ, leaderboard, terms preview links)
+   ```
+
+4. **Bottom nav / header links** inside the `*View` components already build
+   URLs from a `basePath` (or subdomain). I'll thread a `linkBuilder` prop so
+   live routes keep producing `/live/$subdomain/...` and demo routes produce
+   `/demo/...`. No hardcoded `/live/` strings inside the view components.
+
+5. **Guardrails against real writes**:
+   - Demo routes never import server functions that mutate.
+   - `/demo/join` and `/demo/checkin/$venueId` only touch the fake passport
+     store; they never call `supabase.rpc` or server functions.
+   - Cross-check: `rg "supabase\.rpc|createServerFn|useServerFn" src/routes/demo`
+     must return zero mutating calls after the refactor.
+
+## Technical notes
+
+- Snapshot lives in a plain TS file — no Cloud calls at runtime, so the demo
+  works even if the real event is unpublished or renamed.
+- `EventPaletteScope` needs the palette CSS variables; snapshot will include
+  the same `primary_color`/`accent_color` (`#1F3D2B` / `#B5572A`) already
+  used by the real event, plus reasonable defaults for other tokens.
+- Cover / logo images: snapshot uses the public storage URLs already served
+  by `getEventAssetPublicUrl` (they're public assets, so referencing them from
+  demo is fine and doesn't count as a "real event write"). If we'd rather
+  fully self-contain, I can swap in placeholder images — call it out.
+- Old `demo.*.tsx` files that no longer map to a live equivalent
+  (`demo.invite`, `demo.more`) are kept with light updates so existing
+  links don't 404.
 
 ## Out of scope
-- No admin, database, RLS, or server-function changes.
-- No changes to `/offers`, `/awards`, or the tabs component.
-- No changes to branding, palette, or fonts.
 
-## Test steps
-1. On a public event home page with a long `welcome_copy`, confirm the hero shows the full text (no `…`).
-2. Without a passport, tap the "Start your passport / tap to begin" tile in the summary card → navigates to `/join`.
-3. With a passport already registered, that tile shows the next-prize / tier text as today and is not a link.
-4. Scroll to the "View prizes" button — a matching "View venues & offers" button sits directly below and navigates to `/venues` with the Venues tab active.
+- Real QR scanning in demo (`/demo/checkin/$venueId` is a canned success
+  screen).
+- Real leaderboard writes / opt-out.
+- Any change to `/live/$subdomain/*` visuals — refactor is behavior-preserving.
 
-## Rollback
-Revert the single file `src/routes/live.$subdomain.index.tsx`.
+## Deliverables
+
+- `src/lib/demo-cargo-road.ts` (snapshot + fake passport store)
+- New `src/components/public/*View.tsx` files extracted from live routes
+- Updated `src/routes/live.$subdomain.*.tsx` to render the extracted views
+- Rewritten `src/routes/demo.*.tsx` set
+- Typecheck clean
