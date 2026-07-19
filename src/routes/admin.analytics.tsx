@@ -663,6 +663,89 @@ function Analytics() {
           </section>
 
 
+          {/* Marketing opt-ins */}
+          <section className={cardClass}>
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Marketing opt-ins</h3>
+                <p className="text-sm leading-6 text-[#64748B]">
+                  Visitors who ticked “I’d like to receive more information” when creating their passport.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-[#64748B]">
+                <span>
+                  {fVisitors.filter((v) => v.marketing_opt_in).length} opted in ·{" "}
+                  {fVisitors.length} total
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    downloadCsv(
+                      `marketing-optins-${Date.now()}.csv`,
+                      fVisitors
+                        .filter((v) => v.marketing_opt_in)
+                        .map((v) => ({
+                          event: eventNameById.get(v.event_id) ?? v.event_id,
+                          first_name: v.first_name ?? "",
+                          last_name: v.last_name ?? "",
+                          full_name: v.full_name ?? "",
+                          email: v.email,
+                          postcode: v.postcode ?? "",
+                          registered_at: v.created_at,
+                        })),
+                    )
+                  }
+                  disabled={fVisitors.filter((v) => v.marketing_opt_in).length === 0}
+                  className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-medium text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-50"
+                >
+                  Export CSV
+                </button>
+              </div>
+            </div>
+            {fVisitors.filter((v) => v.marketing_opt_in).length === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#E5E7EB] bg-[#F9FAFB] px-4 py-6 text-center text-sm text-[#64748B]">
+                No opt-ins yet for the current filters.
+              </div>
+            ) : (
+              <div className={`max-h-96 overflow-auto ${tableWrap}`}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className={thClass}>Name</th>
+                      <th className={thClass}>Email</th>
+                      <th className={thClass}>Postcode</th>
+                      <th className={thClass}>Event</th>
+                      <th className={thClass}>Registered</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fVisitors
+                      .filter((v) => v.marketing_opt_in)
+                      .slice()
+                      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+                      .map((v) => (
+                        <tr key={v.id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                          <td className={`${tdClass} font-medium text-[#111827]`}>
+                            {v.full_name ||
+                              `${v.first_name ?? ""} ${v.last_name ?? ""}`.trim() ||
+                              "—"}
+                          </td>
+                          <td className={`${tdClass} text-[#334155]`}>{v.email}</td>
+                          <td className={`${tdClass} text-[#64748B]`}>{v.postcode ?? "—"}</td>
+                          <td className={`${tdClass} text-[#64748B]`}>
+                            {eventNameById.get(v.event_id) ?? "—"}
+                          </td>
+                          <td className={`${tdClass} text-[#64748B]`}>
+                            {new Date(v.created_at).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
 
           {/* Funnel */}
           <section className={cardClass}>
