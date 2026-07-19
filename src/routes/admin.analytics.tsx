@@ -365,6 +365,7 @@ function Analytics() {
         last_name: v.last_name ?? "",
         full_name: v.full_name ?? "",
         email: v.email,
+        postcode: v.postcode ?? "",
         marketing_opt_in: v.marketing_opt_in ? "yes" : "no",
         registered_at: v.created_at,
       })),
