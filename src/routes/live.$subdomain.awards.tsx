@@ -381,7 +381,6 @@ function CelebrationHero({
         ) : (
           <>
             <div className="relative mx-auto h-20 w-20 sm:h-24 sm:w-24">
-              <HalfCircleBurst />
               <div className="relative flex h-full w-full items-center justify-center text-6xl drop-shadow-sm sm:text-7xl">
                 🎁
               </div>
