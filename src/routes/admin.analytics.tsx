@@ -867,9 +867,252 @@ function Analytics() {
           </section>
         </div>
       )}
+
+      {drilldown && (
+        <DrilldownModal
+          mode={drilldown}
+          onClose={() => setDrilldown(null)}
+          visitors={fVisitors}
+          checkins={fCheckins}
+          eventNameById={eventNameById}
+          venueNameById={venueNameById}
+          visitorById={visitorById}
+          expandedVisitor={expandedVisitor}
+          setExpandedVisitor={setExpandedVisitor}
+          onExport={drilldown === "visitors" ? exportVisitors : exportCheckins}
+        />
+      )}
     </>
   );
 }
+
+function DrilldownModal({
+  mode,
+  onClose,
+  visitors,
+  checkins,
+  eventNameById,
+  venueNameById,
+  visitorById,
+  expandedVisitor,
+  setExpandedVisitor,
+  onExport,
+}: {
+  mode: "visitors" | "checkins";
+  onClose: () => void;
+  visitors: VisitorRow[];
+  checkins: CheckinRow[];
+  eventNameById: Map<string, string>;
+  venueNameById: Map<string, string>;
+  visitorById: Map<string, VisitorRow>;
+  expandedVisitor: string | null;
+  setExpandedVisitor: (v: string | null) => void;
+  onExport: () => void;
+}) {
+  const [query, setQuery] = useState("");
+
+  const checkinsByVisitor = useMemo(() => {
+    const m = new Map<string, CheckinRow[]>();
+    for (const c of checkins) {
+      const arr = m.get(c.visitor_id) ?? [];
+      arr.push(c);
+      m.set(c.visitor_id, arr);
+    }
+    for (const arr of m.values()) arr.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    return m;
+  }, [checkins]);
+
+  const q = query.trim().toLowerCase();
+  const filteredVisitors = useMemo(() => {
+    const sorted = visitors.slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
+    if (!q) return sorted;
+    return sorted.filter((v) => {
+      const name = (v.full_name || `${v.first_name ?? ""} ${v.last_name ?? ""}`).toLowerCase();
+      return (
+        name.includes(q) ||
+        v.email.toLowerCase().includes(q) ||
+        (v.postcode ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [visitors, q]);
+
+  const filteredCheckins = useMemo(() => {
+    const sorted = checkins.slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
+    if (!q) return sorted;
+    return sorted.filter((c) => {
+      const v = visitorById.get(c.visitor_id);
+      const name = (v?.full_name || `${v?.first_name ?? ""} ${v?.last_name ?? ""}`).toLowerCase();
+      const email = (v?.email ?? "").toLowerCase();
+      const venue = (venueNameById.get(c.venue_id) ?? "").toLowerCase();
+      return name.includes(q) || email.includes(q) || venue.includes(q);
+    });
+  }, [checkins, q, visitorById, venueNameById]);
+
+  const title = mode === "visitors" ? "Registered visitors" : "All check-ins";
+  const desc =
+    mode === "visitors"
+      ? "Click a visitor to see their check-in history."
+      : "Every scan with visitor, venue and timestamp.";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 sm:p-8 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-5xl rounded-[16px] bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 flex flex-col gap-3 rounded-t-[16px] border-b border-[#E6ECF4] bg-white px-6 py-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-[#111827]">{title}</h3>
+            <p className="text-sm text-[#64748B]">{desc}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name, email, venue…"
+              className="h-9 w-64 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20"
+            />
+            <button
+              type="button"
+              onClick={onExport}
+              className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-medium text-[#111827] hover:bg-[#F8FAFC]"
+            >
+              <Download className="h-4 w-4" /> CSV
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 items-center rounded-[10px] bg-[#2F6FE4] px-3 text-sm font-semibold text-white hover:bg-[#1F56C5]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="max-h-[75vh] overflow-auto px-6 py-4">
+          {mode === "visitors" ? (
+            filteredVisitors.length === 0 ? (
+              <p className="py-10 text-center text-sm text-[#64748B]">No visitors match.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr>
+                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Name</th>
+                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
+                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Postcode</th>
+                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Event</th>
+                    <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Check-ins</th>
+                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Registered</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredVisitors.map((v) => {
+                    const scans = checkinsByVisitor.get(v.id) ?? [];
+                    const isOpen = expandedVisitor === v.id;
+                    const displayName =
+                      v.full_name ||
+                      `${v.first_name ?? ""} ${v.last_name ?? ""}`.trim() ||
+                      "—";
+                    return (
+                      <>
+                        <tr
+                          key={v.id}
+                          className="cursor-pointer border-t border-[#E6ECF4] hover:bg-[#F8FAFC]"
+                          onClick={() => setExpandedVisitor(isOpen ? null : v.id)}
+                        >
+                          <td className="px-3 py-2 font-medium text-[#111827]">
+                            <span className="mr-1 inline-block w-3 text-[#64748B]">{isOpen ? "▾" : "▸"}</span>
+                            {displayName}
+                          </td>
+                          <td className="px-3 py-2 text-[#334155]">{v.email}</td>
+                          <td className="px-3 py-2 text-[#64748B]">{v.postcode ?? "—"}</td>
+                          <td className="px-3 py-2 text-[#64748B]">{eventNameById.get(v.event_id) ?? "—"}</td>
+                          <td className="px-3 py-2 text-right font-medium text-[#111827]">{scans.length}</td>
+                          <td className="px-3 py-2 text-[#64748B]">{new Date(v.created_at).toLocaleString()}</td>
+                        </tr>
+                        {isOpen && (
+                          <tr key={`${v.id}-detail`} className="border-t border-[#E6ECF4] bg-[#F8FAFC]">
+                            <td colSpan={6} className="px-3 py-3">
+                              {scans.length === 0 ? (
+                                <p className="text-xs text-[#64748B]">No check-ins yet.</p>
+                              ) : (
+                                <div className="overflow-hidden rounded-[10px] border border-[#E6ECF4] bg-white">
+                                  <table className="w-full text-xs">
+                                    <thead>
+                                      <tr className="bg-[#F1F5F9] text-left text-[#64748B]">
+                                        <th className="px-3 py-2">#</th>
+                                        <th className="px-3 py-2">Venue</th>
+                                        <th className="px-3 py-2">Date & time</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {scans.map((c, i) => (
+                                        <tr key={c.id} className="border-t border-[#E6ECF4]">
+                                          <td className="px-3 py-1.5 text-[#64748B]">{i + 1}</td>
+                                          <td className="px-3 py-1.5 font-medium text-[#111827]">
+                                            {venueNameById.get(c.venue_id) ?? "Unknown venue"}
+                                          </td>
+                                          <td className="px-3 py-1.5 text-[#334155]">
+                                            {new Date(c.created_at).toLocaleString()}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )
+          ) : filteredCheckins.length === 0 ? (
+            <p className="py-10 text-center text-sm text-[#64748B]">No check-ins match.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-white">
+                <tr>
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Visitor</th>
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Venue</th>
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Event</th>
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Date & time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCheckins.map((c) => {
+                  const v = visitorById.get(c.visitor_id);
+                  const displayName =
+                    v?.full_name ||
+                    `${v?.first_name ?? ""} ${v?.last_name ?? ""}`.trim() ||
+                    "—";
+                  return (
+                    <tr key={c.id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                      <td className="px-3 py-2 font-medium text-[#111827]">{displayName}</td>
+                      <td className="px-3 py-2 text-[#334155]">{v?.email ?? "—"}</td>
+                      <td className="px-3 py-2 text-[#334155]">{venueNameById.get(c.venue_id) ?? "—"}</td>
+                      <td className="px-3 py-2 text-[#64748B]">{eventNameById.get(c.event_id) ?? "—"}</td>
+                      <td className="px-3 py-2 text-[#64748B]">{new Date(c.created_at).toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 
 function Stat({
