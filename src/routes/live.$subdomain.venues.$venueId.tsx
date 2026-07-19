@@ -410,7 +410,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           })()}
 
           {bonusChallenges.length > 0 && (
-            <div className="mt-5 space-y-3">
+            <div className="mt-6 space-y-3">
               {bonusChallenges.map((challenge) => (
                 <article
                   key={challenge.bonus_code_id}
