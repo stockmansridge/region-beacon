@@ -342,7 +342,7 @@ function CelebrationHero({
           : "linear-gradient(140deg, var(--event-card-bg, #FBF5E8) 0%, color-mix(in oklab, var(--event-primary, #1F3D2B) 8%, var(--event-card-bg, #FBF5E8)) 100%)",
       }}
     >
-      <StreamerConfetti />
+      
       <div className="relative">
         {inDraw ? (
           <>
