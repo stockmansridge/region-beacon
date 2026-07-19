@@ -457,6 +457,17 @@ export function AdminEventParticipantsSection({
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {formatDate(r.created_at)}
                   </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteParticipant(r)}
+                      disabled={deletingId === r.passport_id}
+                      className="inline-flex h-8 items-center rounded-md border border-[#FCA5A5] bg-white px-2.5 text-xs font-semibold text-[#B91C1C] hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Permanently delete this participant and all their data for this event"
+                    >
+                      {deletingId === r.passport_id ? "Deleting…" : "Delete"}
+                    </button>
+                  </td>
                 </tr>
                 {isExpanded && (
                   <tr className="border-t border-[#E6ECF4] bg-[#F8FAFD]">
