@@ -725,7 +725,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           />
           <Field
             label="Postcode"
-            optional
+            required={Boolean(event.require_postcode)}
+            optional={!event.require_postcode}
             error={errors.postcode}
             input={
               <input
@@ -736,6 +737,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 onChange={(e) => update("postcode", e.target.value)}
                 className="trail-input"
                 maxLength={16}
+                required={Boolean(event.require_postcode)}
               />
             }
           />
