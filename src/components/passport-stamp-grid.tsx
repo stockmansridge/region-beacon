@@ -208,3 +208,44 @@ function placeholderTiles(n: number): PassportStampVenue[] {
     checked_in_at: null,
   }));
 }
+
+/**
+ * Fetches the set of venue_ids for the current event that have an
+ * active bonus available (event-wide OR per-venue). Falls back to an
+ * empty set on error so tiles simply render without the badge.
+ */
+function useVenuesWithBonus(eventId: string | null): Set<string> {
+  const [ids, setIds] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    if (!eventId || typeof window === "undefined") {
+      setIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    const host = window.location.hostname;
+    (async () => {
+      try {
+        const { data } = await (supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: Array<{ venue_id: string }> | null }>)(
+          "get_public_venues_with_bonus",
+          { _hostname: host },
+        );
+        if (cancelled) return;
+        const set = new Set<string>();
+        for (const row of data ?? []) {
+          if (row?.venue_id) set.add(String(row.venue_id));
+        }
+        setIds(set);
+      } catch {
+        if (!cancelled) setIds(new Set());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
+  return ids;
+}
+
