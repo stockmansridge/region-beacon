@@ -240,6 +240,33 @@ function Analytics() {
     return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [fVisitors]);
 
+  // Postcode breakdown — where are visitors coming from?
+  const postcodeStats = useMemo(() => {
+    let withPostcode = 0;
+    let withoutPostcode = 0;
+    const byCode = new Map<string, number>();
+    for (const v of fVisitors) {
+      const raw = (v.postcode ?? "").trim();
+      if (!raw) {
+        withoutPostcode += 1;
+        continue;
+      }
+      withPostcode += 1;
+      const key = raw.toUpperCase();
+      byCode.set(key, (byCode.get(key) ?? 0) + 1);
+    }
+    const total = withPostcode || 1;
+    const rows = Array.from(byCode.entries())
+      .map(([postcode, count]) => ({
+        postcode,
+        count,
+        pct: (count / total) * 100,
+      }))
+      .sort((a, b) => b.count - a.count);
+    return { rows, withPostcode, withoutPostcode };
+  }, [fVisitors]);
+
+
   // Check-ins by venue
   const venueStats = useMemo(() => {
     const byVenue = new Map<
