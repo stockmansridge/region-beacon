@@ -342,12 +342,15 @@ function CelebrationHero({
           : "linear-gradient(140deg, var(--event-card-bg, #FBF5E8) 0%, color-mix(in oklab, var(--event-primary, #1F3D2B) 8%, var(--event-card-bg, #FBF5E8)) 100%)",
       }}
     >
-      <StreamerConfetti />
+      
       <div className="relative">
         {inDraw ? (
           <>
-            <div className="mx-auto flex h-20 w-20 items-center justify-center text-6xl drop-shadow-sm sm:h-24 sm:w-24 sm:text-7xl">
-              🎁
+            <div className="relative mx-auto h-20 w-20 sm:h-24 sm:w-24">
+              <HalfCircleBurst />
+              <div className="relative flex h-full w-full items-center justify-center text-6xl drop-shadow-sm sm:text-7xl">
+                🎁
+              </div>
             </div>
             <h1
               className="mt-2 text-[2.6rem] leading-none sm:text-[3.4rem]"
@@ -377,8 +380,11 @@ function CelebrationHero({
           </>
         ) : (
           <>
-            <div className="mx-auto flex h-20 w-20 items-center justify-center text-6xl drop-shadow-sm sm:h-24 sm:w-24 sm:text-7xl">
-              🎁
+            <div className="relative mx-auto h-20 w-20 sm:h-24 sm:w-24">
+              <HalfCircleBurst />
+              <div className="relative flex h-full w-full items-center justify-center text-6xl drop-shadow-sm sm:text-7xl">
+                🎁
+              </div>
             </div>
             <h1
               className="mt-2 text-[2.4rem] leading-none sm:text-[3rem]"
@@ -402,61 +408,63 @@ function CelebrationHero({
   );
 }
 
-// Colourful streamer + confetti bits inspired by the mockup.
-function StreamerConfetti() {
-  const bits = [
-    { top: "6%", left: "8%", c: "#E76F51", r: "-18deg", kind: "streamer" },
-    { top: "10%", left: "78%", c: "#2A9D8F", r: "24deg", kind: "streamer" },
-    { top: "22%", left: "92%", c: "#E9C46A", r: "-8deg", kind: "dot" },
-    { top: "70%", left: "6%", c: "#F4A261", r: "12deg", kind: "streamer" },
-    { top: "82%", left: "84%", c: "#8ECAE6", r: "-22deg", kind: "streamer" },
-    { top: "44%", left: "3%", c: "#E76F51", r: "0deg", kind: "dot" },
-    { top: "52%", left: "96%", c: "#2A9D8F", r: "0deg", kind: "dot" },
-    { top: "88%", left: "44%", c: "#E9C46A", r: "10deg", kind: "dot" },
-    { top: "4%", left: "48%", c: "#8ECAE6", r: "-4deg", kind: "dot" },
-  ];
+// Half-circle burst radiating from the center of the prize icon (upper hemisphere).
+function HalfCircleBurst() {
+  const colors = ["#E76F51", "#F4A261", "#E9C46A", "#2A9D8F", "#8ECAE6", "#B5179E", "#4361EE"];
+  // Angles spread across the top half: 180deg (left) -> 360deg (right), i.e. -180..0
+  const count = 14;
+  const items = Array.from({ length: count }).map((_, i) => {
+    const t = i / (count - 1); // 0..1
+    const angle = -180 + t * 180; // -180deg .. 0deg (top half)
+    const isStreamer = i % 2 === 0;
+    return {
+      angle,
+      color: colors[i % colors.length],
+      isStreamer,
+      delay: (i % 5) * 0.12,
+      distance: isStreamer ? 78 : 66,
+    };
+  });
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0">
-      {bits.map((b, i) =>
-        b.kind === "streamer" ? (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute left-1/2 top-1/2 h-0 w-0"
+    >
+      {items.map((b, i) => (
+        <span
+          key={i}
+          className="absolute left-0 top-0 block"
+          style={{
+            transform: `rotate(${b.angle}deg) translateX(${b.distance}px)`,
+            transformOrigin: "0 0",
+          }}
+        >
           <span
-            key={i}
-            className="absolute block"
+            className="block"
             style={{
-              top: b.top,
-              left: b.left,
-              width: 22,
-              height: 6,
+              width: b.isStreamer ? 16 : 8,
+              height: b.isStreamer ? 5 : 8,
               borderRadius: 999,
-              background: b.c,
-              transform: `rotate(${b.r})`,
-              opacity: 0.9,
-              animation: `award-float 3.6s ease-in-out ${i * 0.18}s infinite`,
+              background: b.color,
+              boxShadow: `0 0 6px ${b.color}66`,
+              transform: `translate(-50%, -50%) rotate(${b.isStreamer ? 90 : 0}deg)`,
+              transformOrigin: "center",
+              animation: `award-burst 2.4s ease-in-out ${b.delay}s infinite`,
             }}
           />
-        ) : (
-          <span
-            key={i}
-            className="absolute block h-2.5 w-2.5 rounded-full"
-            style={{
-              top: b.top,
-              left: b.left,
-              background: b.c,
-              opacity: 0.85,
-              animation: `award-float 3.2s ease-in-out ${i * 0.14}s infinite`,
-            }}
-          />
-        ),
-      )}
+        </span>
+      ))}
       <style>{`
-        @keyframes award-float {
-          0%, 100% { transform: translateY(0) scale(1); opacity: 0.85; }
-          50% { transform: translateY(-6px) scale(1.15); opacity: 1; }
+        @keyframes award-burst {
+          0%, 100% { opacity: 0.35; }
+          50%      { opacity: 1; }
         }
       `}</style>
+
     </div>
   );
 }
+
 
 function AwardCard({
   award,
