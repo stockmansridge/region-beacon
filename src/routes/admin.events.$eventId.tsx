@@ -683,14 +683,39 @@ function EventDetail() {
       const userId = auth.session?.user.id ?? null;
       try {
         // 1. Fetch event with explicit agency_id filter — confirms ownership.
-        const { data: event, error: evErr } = await supabase
-          .from("events")
-          .select(
-            "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id, deleted_at, require_postcode",
-          )
-          .eq("id", eventId)
-          .eq("agency_id", agencyId)
-          .maybeSingle();
+        // `require_postcode` is a newer optional column; feature-detect and
+        // retry without it so admins never lose access to their events when
+        // that migration hasn't been applied yet.
+        const baseCols =
+          "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id, deleted_at";
+        let event: any = null;
+        let evErr: any = null;
+        {
+          const res = await supabase
+            .from("events")
+            .select(`${baseCols}, require_postcode`)
+            .eq("id", eventId)
+            .eq("agency_id", agencyId)
+            .maybeSingle();
+          event = res.data;
+          evErr = res.error;
+          if (
+            evErr &&
+            ((evErr as any).code === "42703" ||
+              /require_postcode/i.test((evErr as any).message ?? ""))
+          ) {
+            const retry = await supabase
+              .from("events")
+              .select(baseCols)
+              .eq("id", eventId)
+              .eq("agency_id", agencyId)
+              .maybeSingle();
+            event = retry.data
+              ? { ...retry.data, require_postcode: false }
+              : null;
+            evErr = retry.error;
+          }
+        }
 
         if (cancelled) return;
         if (evErr) {
@@ -708,6 +733,7 @@ function EventDetail() {
             hint: (evErr as any).hint ?? null,
           });
           setState("error");
+
           return;
         }
         if (!event) {
@@ -3239,9 +3265,19 @@ function EventDetail() {
                     .eq("agency_id", agencyId);
                   if (error) {
                     setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: prev } } : b));
-                    toast.error(`Could not update setting: ${error.message}`);
+                    if (
+                      (error as any).code === "42703" ||
+                      /require_postcode/i.test(error.message ?? "")
+                    ) {
+                      toast.error(
+                        "Postcode toggle isn't available yet — the database update for this feature hasn't been applied.",
+                      );
+                    } else {
+                      toast.error(`Could not update setting: ${error.message}`);
+                    }
                     return;
                   }
+
                   toast.success(v ? "Postcode is now required" : "Postcode is now optional");
                 }}
               />
