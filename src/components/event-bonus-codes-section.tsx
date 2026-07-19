@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { QrPreview } from "@/components/qr-preview";
 
+type BonusKind = "points" | "social";
+
 type BonusCode = {
   id: string;
   agency_id: string;
@@ -14,6 +16,9 @@ type BonusCode = {
   qr_code_token: string;
   is_active: boolean;
   scope?: "event" | "per_venue" | null;
+  kind?: BonusKind | null;
+  social_location?: string | null;
+  social_hashtags?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -35,6 +40,9 @@ type FormState = {
   is_active: boolean;
   scope: "event" | "per_venue";
   venue_ids: string[];
+  kind: BonusKind;
+  social_location: string;
+  social_hashtags: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -44,6 +52,9 @@ const EMPTY_FORM: FormState = {
   is_active: true,
   scope: "event",
   venue_ids: [],
+  kind: "points",
+  social_location: "",
+  social_hashtags: "",
 };
 
 function sanitizeFilename(name: string): string {
