@@ -152,6 +152,19 @@ function BonusClaimPage() {
       } else {
         setOutcome({ kind: "claimed", row, passportToken: passport.access_token });
       }
+      // Fire-and-forget scan confirmation email. Best-effort.
+      sendScanEmailFn({
+        data: {
+          token: passport.access_token,
+          kind: "bonus",
+          name: row.bonus_code_name ?? "",
+          points: row.points_awarded ?? 0,
+          alreadyCollected: !!row.already_collected,
+        },
+      }).catch((e) => {
+        // eslint-disable-next-line no-console
+        console.warn("scan email failed", e);
+      });
     })();
     return () => {
       cancelled = true;
