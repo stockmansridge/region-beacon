@@ -107,7 +107,7 @@ function Analytics() {
 
   const [eventFilter, setEventFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
-  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus">(null);
+  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins">(null);
   const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
 
   useEffect(() => {
