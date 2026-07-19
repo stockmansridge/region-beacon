@@ -68,6 +68,8 @@ type Branding = {
   cover_path: string | null;
   font_family: string | null;
   heading_font_family: string | null;
+  default_emotive_font_family: string | null;
+
   welcome_copy: string | null;
   terms_url: string | null;
   venue_label_singular: string | null;
@@ -139,6 +141,8 @@ type Bundle = {
 type Form = {
   font_family: string;
   heading_font_family: string;
+  default_emotive_font_family: string;
+
   welcome_copy: string;
   terms_url: string;
   venue_label_singular: string;
@@ -183,6 +187,8 @@ type Form = {
 const EMPTY_FORM: Form = {
   font_family: "",
   heading_font_family: "",
+  default_emotive_font_family: "",
+
   welcome_copy: "",
   terms_url: "",
   venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
@@ -227,7 +233,7 @@ const COLOUR_FORM_KEYS: ReadonlyArray<keyof Form> = [
 ];
 
 const SELECT_COLS = [
-  "logo_path", "cover_path", "font_family", "heading_font_family", "welcome_copy", "terms_url",
+  "logo_path", "cover_path", "font_family", "heading_font_family", "default_emotive_font_family", "welcome_copy", "terms_url",
   "venue_label_singular", "venue_label_plural",
   "primary_color", "accent_color", "link_color",
   "page_background_color", "text_color", "muted_text_color", "border_color",
@@ -248,6 +254,8 @@ function brandingToForm(b: Branding | null): Form {
   return {
     font_family: b.font_family ?? "",
     heading_font_family: b.heading_font_family ?? "",
+    default_emotive_font_family: b.default_emotive_font_family ?? "",
+
     welcome_copy: b.welcome_copy ?? "",
     terms_url: b.terms_url ?? "",
     venue_label_singular: b.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
