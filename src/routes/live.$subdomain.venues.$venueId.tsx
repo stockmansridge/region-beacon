@@ -608,9 +608,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 }
 
 function SocialShareButton({ challenge }: { challenge: BonusChallenge }) {
-  const inputRef = (typeof window !== "undefined"
-    ? { current: null as HTMLInputElement | null }
-    : { current: null as HTMLInputElement | null });
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const shareText = [
     challenge.social_location ? `Tagging ${challenge.social_location}` : null,
