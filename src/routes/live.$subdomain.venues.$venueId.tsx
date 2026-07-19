@@ -88,6 +88,9 @@ type BonusChallenge = {
   description: string | null;
   points_value: number;
   is_claimed: boolean;
+  kind?: "points" | "social" | null;
+  social_location?: string | null;
+  social_hashtags?: string | null;
 };
 
 export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: string; venueId: string }) {
