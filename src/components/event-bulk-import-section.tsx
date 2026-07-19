@@ -160,11 +160,34 @@ function downloadTemplate() {
     ["  points (Tasting QR Codes sheet):"],
     ["    Tasting points awarded when this tasting QR code is claimed. 0 or higher."],
     [""],
+    ["Optional Venue emotive fields (Venues sheet):"],
+    ["  emotive_text: short emotive tagline shown on the public venue page."],
+    ["    500 characters max. Leave blank for none."],
+    ["  emotive_font_family: font family name for the emotive text. Suggested"],
+    ["    values: Caveat, Dancing Script, Pacifico, Great Vibes, Sacramento,"],
+    ["    Kalam, Shadows Into Light. Leave blank to inherit the event font."],
+    [""],
+    ["Bonus Codes — kind, scope and per-venue codes:"],
+    ["  kind: 'points' (default) awards points on scan; 'social' triggers the"],
+    ["    'Share on socials' flow that opens the camera to capture and share."],
+    ["  scope: 'event' (default) = one bonus code shared across the whole event."],
+    ["    'per_venue' = one bonus record cloned to each listed venue, so scanning"],
+    ["    each venue's QR awards the points independently."],
+    ["  venue_keys: REQUIRED when scope is 'per_venue'. Comma-separated list of"],
+    ["    venue_key values from the Venues sheet, e.g. 'venue_001, venue_002'."],
+    ["    Ignored when scope is 'event'."],
+    ["  social_location: optional '@location' tag suggested to the participant"],
+    ["    when kind is 'social'."],
+    ["  social_hashtags: optional space- or comma-separated hashtags suggested"],
+    ["    to the participant when kind is 'social' (e.g. '#winetrail #marlborough')."],
+    [""],
     ["Example values:"],
     ["  venue_key: venue_001, ridge_winery, stall_12"],
     ["  status:    active, disabled"],
     ["  latitude:  -36.8485"],
     ["  longitude: 174.7633"],
+    ["  kind:      points, social"],
+    ["  scope:     event, per_venue"],
     [""],
     ["Note: QR images are NOT imported. The app generates QR codes after save."],
   ];
@@ -185,6 +208,8 @@ function downloadTemplate() {
     "order_index",
     "status",
     "check_in_value",
+    "emotive_text",
+    "emotive_font_family",
   ];
   const venuesExample = [
     "venue_001",
@@ -199,15 +224,64 @@ function downloadTemplate() {
     1,
     "active",
     1,
+    "Sip the sunset. Stay for the stars.",
+    "Caveat",
   ];
   const wsV = XLSX.utils.aoa_to_sheet([venuesHeader, venuesExample]);
   wsV["!cols"] = venuesHeader.map(() => ({ wch: 18 }));
   XLSX.utils.book_append_sheet(wb, wsV, "Venues");
 
-  const bonusHeader = ["code", "title", "description", "points", "status"];
-  const bonusExample = ["TRAIL2026", "Trail Challenge", "Bonus for completing the trail.", 50, "active"];
-  const wsB = XLSX.utils.aoa_to_sheet([bonusHeader, bonusExample]);
+  const bonusHeader = [
+    "code",
+    "title",
+    "description",
+    "points",
+    "status",
+    "kind",
+    "scope",
+    "venue_keys",
+    "social_location",
+    "social_hashtags",
+  ];
+  const bonusExample = [
+    "TRAIL2026",
+    "Trail Challenge",
+    "Bonus for completing the trail.",
+    50,
+    "active",
+    "points",
+    "event",
+    "",
+    "",
+    "",
+  ];
+  const bonusExample2 = [
+    "VENUE_BONUS_2026",
+    "Visit each cellar door",
+    "Scan the bonus code at every winery for extra points.",
+    10,
+    "active",
+    "points",
+    "per_venue",
+    "venue_001, venue_002",
+    "",
+    "",
+  ];
+  const bonusExample3 = [
+    "SOCIAL2026",
+    "Share your trail moment",
+    "Snap a photo and share it on socials for bonus points.",
+    25,
+    "active",
+    "social",
+    "event",
+    "",
+    "@marlboroughwine",
+    "#winetrail #marlborough",
+  ];
+  const wsB = XLSX.utils.aoa_to_sheet([bonusHeader, bonusExample, bonusExample2, bonusExample3]);
   wsB["!cols"] = bonusHeader.map(() => ({ wch: 22 }));
+
   XLSX.utils.book_append_sheet(wb, wsB, "Bonus Codes");
 
   const tastingHeader = ["venue_key", "qr_name", "description", "points", "status"];
