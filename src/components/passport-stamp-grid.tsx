@@ -67,7 +67,11 @@ export function PassportStampGrid({
       <ul className="grid grid-cols-4 gap-3 sm:grid-cols-5">
         {display.map((v, i) => (
           <li key={v.venue_id ?? `placeholder-${i}`}>
-            <StampTile venue={v} dimmed={!hasPassport} />
+            <StampTile
+              venue={v}
+              dimmed={!hasPassport}
+              hasBonus={!!v.venue_id && bonusVenueIds.has(String(v.venue_id))}
+            />
           </li>
         ))}
       </ul>
