@@ -190,8 +190,11 @@ type Bundle = {
   offerDisplayByVenue: Map<string, OfferDisplayRow>;
   offerSupported: boolean;
   offerDisplaySupported: boolean;
+  emotiveByVenue: Map<string, { emotive_text: string | null; emotive_font_family: string | null }>;
+  emotiveSupported: boolean;
   activation: Activation | null;
 };
+
 
 function fmt(d: string | null | undefined) {
   if (!d) return "—";
