@@ -1,62 +1,74 @@
-# Per-venue bonus codes
 
-Add an optional "Per-venue" mode to event bonus codes. Same bonus config (name, description, points), but the admin ticks which venues participate; each participating venue gets its own QR token. A customer can claim once per (venue, customer) and gets the full point value at every venue they scan.
+## Goal
 
-Event-wide bonuses continue to work exactly as today.
+Bring the public venue detail page closer to the mockup and give organisers a new "emotive" copy block per venue (with a font selector) — plus refresh the "What's New" list at the bottom of the venue page so it reflects what actually changed now that per-venue bonus points exist.
 
-## Data model
+---
 
-New table `public.event_bonus_code_venues`:
-- `id uuid pk`
-- `agency_id`, `event_id`, `bonus_code_id` (FK → event_bonus_codes, cascade)
-- `venue_id` (FK → venues, cascade, tenant-scoped composite FK)
-- `qr_code_token text not null unique` (server-generated, same shape as venue QR tokens)
-- `is_active boolean default true`
-- `created_at`, `updated_at`
-- Unique `(bonus_code_id, venue_id)`; composite tenant unique `(agency_id, event_id, id)`
-- RLS: platform admin / agency members write; SELECT to authenticated within tenant; SECURITY DEFINER RPC handles anon claims
+## 1. New per-venue field: Emotive text + font
 
-`public.event_bonus_codes` gets one new column: `scope text not null default 'event' check (scope in ('event','per_venue'))`. Existing rows default to `'event'` — no behaviour change.
+**Data (draft migration `supabase/migrations-draft-venue-emotive/apply.sql`)**
+- `alter table public.venues add column emotive_text text` (nullable, max ~280 chars via check).
+- `alter table public.venues add column emotive_font_key text` — enum-like key resolved in code (e.g. `caveat`, `dancing-script`, `pacifico`, `kalam`, `shadows-into-light`, plus `serif-italic` as an on-brand fallback). Default `null` → resolver falls back to the event-level default.
+- Extend `get_public_venue_by_id` / `get_public_venues_by_domain` RPCs to return `emotive_text` and `emotive_font_key`.
+- Grants unchanged (existing venue policies already cover reads/writes).
 
-`public.participant_point_awards` already keys bonus awards by `source_id`. For per-venue claims we set `source_id = event_bonus_code_venues.id` (still `award_type='bonus'`) so uniqueness naturally becomes once per (venue-bonus, passport). Analytics that group by bonus name join through the child row.
+**Branding page (`src/routes/admin.events.$eventId_.branding.tsx`)**
+- Add "Default emotive font" selector under the existing font pickers (uses `heading_font_family`/`font_family` pattern from `event_branding`). Persist as `event_branding.emotive_font_key`.
+- Ships a small preview swatch per option using the same font-loader as `src/lib/event-fonts.ts` (extend that registry with the script fonts; load via `<link>` in `__root.tsx` per Tailwind v4 rules).
 
-## RPCs (in `supabase/migrations-draft-per-venue-bonus/apply.sql`)
+**Venue editor (`src/routes/admin.events.$eventId.tsx`, venue detail block)**
+- New textarea "Emotive intro (optional)" **directly above** the venue Description field.
+- Small font dropdown next to it, defaulting to the event branding default; "Use event default" is the first option.
+- Helper text: e.g. "Short, punchy line displayed in a script font at the top of the venue page. Keep it warm and human."
 
-- `save_event_bonus_code(...)` — extend with `_scope` and `_venue_ids uuid[]`. When scope is `per_venue`: upsert bonus, then insert missing `event_bonus_code_venues` rows (server-generated tokens), and soft-deactivate rows for venues no longer selected (keep tokens so past claims still reference them).
-- `claim_bonus_code(_token, _passport_token)` — after not finding `_token` in `event_bonus_codes`, look it up in `event_bonus_code_venues`. On hit: award full `points_value` from the parent bonus, insert `participant_point_awards` with `source_id = event_bonus_code_venues.id`, return same shape (`already_collected` when a row already exists for this passport + venue-bonus).
-- `get_public_event_bonus_challenges(_hostname, _passport_token)` — for `per_venue` bonuses, treat "claimed" as "claimed at least once" so the public venue page's Bonus Challenge block reflects progress. (No change to shape.)
+**Public venue page (`src/routes/live.$subdomain.venues.$venueId.tsx`)**
+- Render `emotive_text` between the Visited pill and the description, styled italic in the selected script font, with the event's accent-tinted colour. Wrap in a `<blockquote>` for semantics.
+- If empty, render nothing (no placeholder).
+- Resolve font: venue.emotive_font_key ?? event_branding.emotive_font_key ?? `serif-italic` (the current default look).
 
-Existing prod hotfix chain (`extensions.digest`, `#variable_conflict use_column`, `NOT EXISTS` insert) is preserved.
+---
 
-## Admin UI
+## 2. Points highlight (mockup: "+10 POINTS")
 
-`src/components/event-bonus-codes-section.tsx`:
-- Add a "Scope" toggle to the bonus form: **Event-wide** (default) / **Per-venue**.
-- When Per-venue is selected, show a venue picker (checkbox list of the event's venues) with select-all / clear.
-- List row shows a scope pill. Expanding a per-venue bonus reveals one `QrPreview` per participating venue (caption = "<Bonus name> — <Venue name>"), each with its own download.
-- Event-wide QR still shown for event-scoped bonuses only.
+Small addition to the same public venue page: show the venue's `points_value` as a bold accent-coloured badge to the right of the Visited/Not-visited pill, mirroring the mockup. Uses existing `points_value` already on the venue RPC — no schema change.
 
-`src/components/venue-tasting-qr-section.tsx` context (venue detail area in `admin.events.$eventId.tsx`): add a new "Bonus QR codes" block per venue that lists all per-venue bonus QRs active for that venue, so a venue owner can print them alongside their check-in and tasting QRs. Read-only (edits happen in Bonus Codes section).
+---
 
-## Public / claim flow
+## 3. Offer + bonus polish (visual only, matches mockup)
 
-- `src/routes/collect.bonus.$token.tsx` — no changes; server RPC resolves both token types transparently.
-- `src/routes/live.$subdomain.venues.$venueId.tsx` Bonus Challenge card — unchanged shape; `is_claimed` still comes from the RPC.
+- Offer card: add a small "OFFER UNLOCKED" eyebrow above the offer title when the visitor has visited; otherwise "OFFER".
+- Bonus challenge card: group multiple challenges into a single card with dividers (matches mockup) instead of separate cards. Existing data unchanged.
+- No copy or logic changes to bonus claim flow.
 
-## Files touched
+---
 
-- New: `supabase/migrations-draft-per-venue-bonus/{apply.sql,README.md}`
-- Edit: `src/components/event-bonus-codes-section.tsx`
-- Edit: `src/routes/admin.events.$eventId.tsx` (pass venues to bonus section; add per-venue bonus block on each venue row)
-- No changes to `collect.bonus.$token.tsx` or public venue page beyond what the RPC returns.
+## 4. "What's New" list at the bottom of the venue page
 
-## Migration notes
+Replace the current 4 bullets in the mockup with an updated set that reflects the shipped changes, including per-venue bonus points:
 
-- Draft only — user applies `apply.sql` in Supabase SQL editor.
-- Backwards compatible: existing bonuses stay `scope='event'`; existing tokens and claims untouched.
-- Rollback: drop `event_bonus_code_venues`, drop `scope` column, restore prior `claim_bonus_code` / `save_event_bonus_code` bodies (kept in README).
+1. Warm, human copy at the top of each venue (new emotive intro).
+2. Points earned per visit are front-and-centre.
+3. Bonus challenges can now be per-venue — each is its own mini-quest with its own points.
+4. Offers unlock visually once you've checked in.
+5. Confetti + progress celebrate every stamp on your passport.
 
-## Out of scope
+Rendered as a small "What's new" card at the bottom of the venue detail page, styled with existing card tokens, dismissible via `localStorage` key `venue-whats-new-v2`.
 
-- CSV export split of per-venue bonus claims (existing bonus export still works; grouping by venue is a follow-up).
-- Bulk QR poster generation for per-venue bonuses (posters page keeps venue check-in + tasting only for now).
+---
+
+## Technical notes
+
+- No breaking changes; migration is additive.
+- New script fonts loaded via `<link>` tag in `src/routes/__root.tsx` head (Tailwind v4 rule — no remote `@import` in `styles.css`).
+- Font registry lives in `src/lib/event-fonts.ts`; extend with a `script` group so both branding + venue selectors share it.
+- Typecheck must pass; RPC signature bumps require regenerating Supabase types after applying the draft migration.
+- Migration stays in `supabase/migrations-draft-venue-emotive/` — user applies manually in SQL editor, same pattern as recent drafts.
+
+---
+
+## Out of scope (ask if wanted)
+
+- Changing the confetti behaviour itself.
+- Per-venue background image / colour override.
+- Rich-text (bold/links) inside the emotive block — plain text only for v1.
