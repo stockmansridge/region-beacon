@@ -3087,6 +3087,45 @@ function EventDetail() {
             />
           </Section>
 
+          <Section title="Registration form" tab="overview">
+            <div className="mb-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
+              Controls what visitors are required to provide when they sign up on the public join page.
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <ToggleRow
+                title="Require postcode"
+                description="When on, visitors must enter a postcode to complete registration. Powers the postcode breakdown in Analytics."
+                checked={Boolean(bundle.event.require_postcode)}
+                onChange={async (v) => {
+                  if (!canEdit || !agencyId) return;
+                  const prev = Boolean(bundle.event.require_postcode);
+                  setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: v } } : b));
+                  const { error } = await supabase
+                    .from("events")
+                    .update({ require_postcode: v })
+                    .eq("id", bundle.event.id)
+                    .eq("agency_id", agencyId);
+                  if (error) {
+                    setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: prev } } : b));
+                    if (
+                      (error as any).code === "42703" ||
+                      /require_postcode/i.test(error.message ?? "")
+                    ) {
+                      toast.error(
+                        "Postcode toggle isn't available yet — the database update for this feature hasn't been applied.",
+                      );
+                    } else {
+                      toast.error(`Could not update setting: ${error.message}`);
+                    }
+                    return;
+                  }
+
+                  toast.success(v ? "Postcode is now required" : "Postcode is now optional");
+                }}
+              />
+            </div>
+          </Section>
+
           <Section title="Announcements" id="section-announcements" description="Customer-facing notices shown at the top of public event pages." tab="overview">
             <AdminEventAnnouncements
               eventId={event.id}
@@ -3242,48 +3281,6 @@ function EventDetail() {
               />
             )}
           </Section>
-
-
-          <Section title="Registration form" tab="terms">
-            <div className="mb-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
-              Controls what visitors are required to provide when they sign up on the public join page.
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <ToggleRow
-                title="Require postcode"
-                description="When on, visitors must enter a postcode to complete registration. Powers the postcode breakdown in Analytics."
-                checked={Boolean(bundle.event.require_postcode)}
-                onChange={async (v) => {
-                  if (!canEdit || !agencyId) return;
-                  const prev = Boolean(bundle.event.require_postcode);
-                  // Optimistic update
-                  setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: v } } : b));
-                  const { error } = await supabase
-                    .from("events")
-                    .update({ require_postcode: v })
-                    .eq("id", bundle.event.id)
-                    .eq("agency_id", agencyId);
-                  if (error) {
-                    setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: prev } } : b));
-                    if (
-                      (error as any).code === "42703" ||
-                      /require_postcode/i.test(error.message ?? "")
-                    ) {
-                      toast.error(
-                        "Postcode toggle isn't available yet — the database update for this feature hasn't been applied.",
-                      );
-                    } else {
-                      toast.error(`Could not update setting: ${error.message}`);
-                    }
-                    return;
-                  }
-
-                  toast.success(v ? "Postcode is now required" : "Postcode is now optional");
-                }}
-              />
-            </div>
-          </Section>
-
 
           <Section title="Check-in settings" tab="checkin">
             {canEdit && isEditingCheckin && checkinForm ? (
