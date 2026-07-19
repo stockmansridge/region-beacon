@@ -742,6 +742,14 @@ function PassportView({
         {/* Rewards — sourced from configured event_awards. Hidden when none. */}
         <RewardsSection awards={awards} nextAward={nextAward} />
 
+        {/* What's happening — live event pulse */}
+        {subdomain ? (
+          <div className="mt-5">
+            <WhatsHappeningCard subdomain={subdomain} />
+          </div>
+        ) : null}
+
+
 
 
         {/* Visitor details */}
