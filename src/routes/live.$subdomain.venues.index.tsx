@@ -270,7 +270,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
             No {labels.plural.toLowerCase()} listed yet. Check back soon.
           </div>
         ) : (
-          <ul className="space-y-4">
+          <ul className="mt-4 space-y-4">
             {venues.map((v) => {
               const vid = v.venue_id ?? "";
               const visited = vid ? visitedIds.has(vid) : false;

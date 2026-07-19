@@ -70,6 +70,15 @@ type PrizeRule = {
   requires_completion: boolean | null;
   is_active: boolean | null;
 };
+type BonusScanRow = {
+  id: string;
+  event_id: string;
+  participant_id: string;
+  source_id: string | null;
+  points_awarded: number;
+  created_at: string;
+  metadata: { bonus_code_name?: string | null; venue_id?: string | null } | null;
+};
 
 type DateFilter = "all" | "7d" | "30d";
 
@@ -91,6 +100,7 @@ function Analytics() {
   const [checkins, setCheckins] = useState<CheckinRow[]>([]);
   const [passports, setPassports] = useState<PassportRow[]>([]);
   const [prizeRules, setPrizeRules] = useState<PrizeRule[]>([]);
+  const [bonusScans, setBonusScans] = useState<BonusScanRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -142,6 +152,12 @@ function Analytics() {
           .eq("agency_id", agencyId)
           .eq("is_active", true),
       ]);
+      // Bonus scans — tolerate a missing table on older schemas.
+      const bRes = await supabase
+        .from("participant_point_awards")
+        .select("id, event_id, participant_id, source_id, points_awarded, created_at, metadata")
+        .eq("agency_id", agencyId)
+        .eq("award_type", "bonus");
       if (cancelled) return;
       const anyErr =
         evRes.error || vRes.error || cRes.error || viRes.error || pRes.error;
@@ -156,6 +172,7 @@ function Analytics() {
       setVisitors((viRes.data ?? []) as VisitorRow[]);
       setPassports((pRes.data ?? []) as PassportRow[]);
       setPrizeRules((prRes.data ?? []) as PrizeRule[]);
+      setBonusScans((bRes.error ? [] : (bRes.data ?? [])) as BonusScanRow[]);
       setLoading(false);
     })();
     return () => {
@@ -193,6 +210,10 @@ function Analytics() {
     () => passports.filter((p) => inEvent(p.event_id) && inRange(p.created_at)),
     [passports, filteredEventIds, fromDate],
   );
+  const fBonusScans = useMemo(
+    () => bonusScans.filter((b) => inEvent(b.event_id) && inRange(b.created_at)),
+    [bonusScans, filteredEventIds, fromDate],
+  );
 
   // Summary metrics
   const totalEvents = filteredEvents.length;
@@ -200,6 +221,8 @@ function Analytics() {
   const totalVenues = fVenues.length;
   const totalPassports = fPassports.length;
   const totalCheckins = fCheckins.length;
+  const totalBonusScans = fBonusScans.length;
+  const totalBonusPoints = fBonusScans.reduce((s, b) => s + (b.points_awarded ?? 0), 0);
   const uniqueCheckedIn = new Set(fCheckins.map((c) => c.passport_id)).size;
   const avgVenuesPerPassport =
     totalPassports > 0 ? (uniqueCheckedIn ? totalCheckins / totalPassports : 0) : 0;
@@ -550,6 +573,8 @@ function Analytics() {
             <Stat label="Venues" value={totalVenues} icon={MapPin} />
             <Stat label="Registered visitors" value={totalPassports} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat label="Total check-ins" value={totalCheckins} icon={QrCode} onClick={() => setDrilldown("checkins")} />
+            <Stat label="Bonus scans" value={totalBonusScans} icon={QrCode} />
+            <Stat label="Bonus points earned" value={totalBonusPoints} icon={Trophy} />
             <Stat label="Unique visitors checked in" value={uniqueCheckedIn} icon={Users} />
             <Stat
               label="Avg venues / passport"

@@ -167,7 +167,12 @@ export function PublicEventNav({
             <button
               type="button"
               onClick={async () => {
-                const url = typeof window !== "undefined" ? window.location.href : "";
+                // Share only the public event root — never the current URL,
+                // which on /passport/$token would leak the private token.
+                const url =
+                  typeof window !== "undefined"
+                    ? `${window.location.protocol}//${window.location.host}/`
+                    : "";
                 const title = eventName ?? "Check this out";
                 const text = eventName
                   ? `Come join me at ${eventName} on GetStampd`

@@ -198,7 +198,7 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
         {/* Tabs */}
         <div className="mt-4 flex rounded-full border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-1 text-sm font-semibold uppercase tracking-[0.16em]">
           <TabButton active={tab === "rewards"} onClick={() => setTab("rewards")}>
-            Rewards
+            Prizes
           </TabButton>
           <TabButton active={tab === "entries"} onClick={() => setTab("entries")}>
             My Entries {hasPassport && myEntries.length > 0 && (
