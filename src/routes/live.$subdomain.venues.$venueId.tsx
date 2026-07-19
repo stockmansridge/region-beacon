@@ -649,9 +649,7 @@ function SocialShareButton({ challenge }: { challenge: BonusChallenge }) {
   return (
     <>
       <input
-        ref={(el) => {
-          inputRef.current = el;
-        }}
+        ref={inputRef}
         type="file"
         accept="image/*"
         capture="environment"
