@@ -314,7 +314,9 @@ function LivePublicLoaded({
       headingFontFamily={event.heading_font_family ?? null}
       className="min-h-screen"
     >
+      <LiveActivityBar subdomain={subdomain} />
       {isAdminPreview && !previewDismissed && (
+
         <div
           className="fixed left-1/2 top-3 z-50 max-w-[92vw] -translate-x-1/2 rounded-2xl border border-amber-300 bg-amber-100/95 px-4 py-2 pr-10 text-[11px] text-amber-900 shadow"
           role="status"
