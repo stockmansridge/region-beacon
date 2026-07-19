@@ -548,8 +548,8 @@ function Analytics() {
             <Stat label="Events" value={totalEvents} icon={Calendar} />
             <Stat label="Published events" value={publishedEvents} icon={CheckCircle2} />
             <Stat label="Venues" value={totalVenues} icon={MapPin} />
-            <Stat label="Registered visitors" value={totalPassports} icon={Users} />
-            <Stat label="Total check-ins" value={totalCheckins} icon={QrCode} />
+            <Stat label="Registered visitors" value={totalPassports} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
+            <Stat label="Total check-ins" value={totalCheckins} icon={QrCode} onClick={() => setDrilldown("checkins")} />
             <Stat label="Unique visitors checked in" value={uniqueCheckedIn} icon={Users} />
             <Stat
               label="Avg venues / passport"
