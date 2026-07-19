@@ -3265,9 +3265,19 @@ function EventDetail() {
                     .eq("agency_id", agencyId);
                   if (error) {
                     setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: prev } } : b));
-                    toast.error(`Could not update setting: ${error.message}`);
+                    if (
+                      (error as any).code === "42703" ||
+                      /require_postcode/i.test(error.message ?? "")
+                    ) {
+                      toast.error(
+                        "Postcode toggle isn't available yet — the database update for this feature hasn't been applied.",
+                      );
+                    } else {
+                      toast.error(`Could not update setting: ${error.message}`);
+                    }
                     return;
                   }
+
                   toast.success(v ? "Postcode is now required" : "Postcode is now optional");
                 }}
               />
