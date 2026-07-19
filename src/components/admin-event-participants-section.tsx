@@ -130,6 +130,36 @@ export function AdminEventParticipantsSection({
   const [reloadKey, setReloadKey] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [exportingClaims, setExportingClaims] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDeleteParticipant(row: ParticipantRow) {
+    const name = row.display_name || "this participant";
+    const ok = window.confirm(
+      `Delete ${name}?\n\n` +
+        "This permanently removes their passport, all check-ins, " +
+        "bonus code claims, point awards, consents, and visitor record " +
+        "for this event.\n\n" +
+        "This cannot be undone.",
+    );
+    if (!ok) return;
+    setDeletingId(row.passport_id);
+    setError(null);
+    try {
+      const { error: rpcError } = await supabase.rpc(
+        "admin_delete_event_participant",
+        { p_event_id: eventId, p_passport_id: row.passport_id },
+      );
+      if (rpcError) throw rpcError;
+      setRows((prev) => prev.filter((r) => r.passport_id !== row.passport_id));
+      if (expandedId === row.passport_id) setExpandedId(null);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not delete participant.";
+      setError(message);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleExportBonusClaimsCsv() {
     setExportingClaims(true);
@@ -369,6 +399,7 @@ export function AdminEventParticipantsSection({
                 <Th onClick={() => toggleSort("created_at")}>
                   Registered{sortArrow("created_at")}
                 </Th>
+                <Th className="text-right">Actions</Th>
               </tr>
             </thead>
             <tbody>
@@ -426,10 +457,21 @@ export function AdminEventParticipantsSection({
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {formatDate(r.created_at)}
                   </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteParticipant(r)}
+                      disabled={deletingId === r.passport_id}
+                      className="inline-flex h-8 items-center rounded-md border border-[#FCA5A5] bg-white px-2.5 text-xs font-semibold text-[#B91C1C] hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Permanently delete this participant and all their data for this event"
+                    >
+                      {deletingId === r.passport_id ? "Deleting…" : "Delete"}
+                    </button>
+                  </td>
                 </tr>
                 {isExpanded && (
                   <tr className="border-t border-[#E6ECF4] bg-[#F8FAFD]">
-                    <td colSpan={8} className="px-3 py-3">
+                    <td colSpan={9} className="px-3 py-3">
                       <ParticipantBonusClaims
                         eventId={eventId}
                         passportId={r.passport_id}
