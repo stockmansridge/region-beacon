@@ -94,6 +94,8 @@ async function resolveCurrentEventId(): Promise<string | null> {
 function BonusClaimPage() {
   const { token } = Route.useParams();
   const [outcome, setOutcome] = useState<Outcome>({ kind: "loading" });
+  const sendScanEmailFn = useServerFn(sendScanEmail);
+
 
   useEffect(() => {
     let cancelled = false;
