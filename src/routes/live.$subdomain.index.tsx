@@ -282,6 +282,22 @@ function LivePublicLoaded({
   const ringCirc = 2 * Math.PI * ringRadius;
   const ringDash = (pct / 100) * ringCirc;
 
+  // "Points / stops to next milestone" tile
+  const currentPoints = pointsEarned ?? 0;
+  const pointsToNext =
+    nextAward && nextAward.points_remaining > 0
+      ? nextAward.points_remaining
+      : nextAward
+        ? 0
+        : null;
+  const stopsToNext =
+    nextAward && total > 0
+      ? Math.max(0, Math.ceil((nextAward.points_required - currentPoints)))
+      : null;
+  const trailRemaining = Math.max(0, total - visited);
+
+
+
   return (
     <EventPaletteScope
       paletteKey={event.palette_key ?? null}
