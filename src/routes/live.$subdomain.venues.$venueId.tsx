@@ -459,7 +459,9 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                         className="mt-0.5 text-[13px]"
                         style={{ color: "var(--event-muted,#8A7E66)" }}
                       >
-                        Earn +{challenge.points_value} bonus points
+                        {challenge.kind === "social"
+                          ? "Share on socials"
+                          : `Earn +${challenge.points_value} bonus points`}
                       </p>
                     </div>
                   </div>
@@ -473,35 +475,65 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                     </p>
                   )}
 
+                  {challenge.kind === "social" &&
+                    (challenge.social_location || challenge.social_hashtags) && (
+                      <div
+                        className="mt-3 rounded-xl border px-3 py-2 text-[13px]"
+                        style={{
+                          borderColor: "var(--event-border,#E6DCC7)",
+                          backgroundColor: "var(--event-card-bg,#FBF5E8)",
+                          color: "var(--event-text,#3D372C)",
+                        }}
+                      >
+                        {challenge.social_location && (
+                          <div className="font-medium">
+                            Tag {challenge.social_location}
+                          </div>
+                        )}
+                        {challenge.social_hashtags && (
+                          <div
+                            className="mt-0.5 break-words"
+                            style={{ color: "var(--event-muted,#8A7E66)" }}
+                          >
+                            {challenge.social_hashtags}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                   <div className="mt-4 flex">
-                    <span
-                      className="inline-flex items-center justify-center gap-1.5 rounded-full border px-4 py-1.5 text-[12px] font-medium"
-                      style={
-                        challenge.is_claimed
-                          ? {
-                              borderColor: "var(--event-primary,#1F3D2B)",
-                              backgroundColor: "var(--event-primary,#1F3D2B)",
-                              color: "var(--event-primary-fg,#F6EFE2)",
-                            }
-                          : {
-                              borderColor: "var(--event-border,#E6DCC7)",
-                              backgroundColor: "var(--event-card-bg,#FBF5E8)",
-                              color: "var(--event-muted,#8A7E66)",
-                            }
-                      }
-                    >
-                      {challenge.is_claimed ? (
-                        <>
-                          <Check className="h-3.5 w-3.5" aria-hidden />
-                          Completed
-                        </>
-                      ) : (
-                        <>
-                          <Circle className="h-3 w-3" aria-hidden />
-                          Not completed
-                        </>
-                      )}
-                    </span>
+                    {challenge.kind === "social" ? (
+                      <SocialShareButton challenge={challenge} />
+                    ) : (
+                      <span
+                        className="inline-flex items-center justify-center gap-1.5 rounded-full border px-4 py-1.5 text-[12px] font-medium"
+                        style={
+                          challenge.is_claimed
+                            ? {
+                                borderColor: "var(--event-primary,#1F3D2B)",
+                                backgroundColor: "var(--event-primary,#1F3D2B)",
+                                color: "var(--event-primary-fg,#F6EFE2)",
+                              }
+                            : {
+                                borderColor: "var(--event-border,#E6DCC7)",
+                                backgroundColor: "var(--event-card-bg,#FBF5E8)",
+                                color: "var(--event-muted,#8A7E66)",
+                              }
+                        }
+                      >
+                        {challenge.is_claimed ? (
+                          <>
+                            <Check className="h-3.5 w-3.5" aria-hidden />
+                            Completed
+                          </>
+                        ) : (
+                          <>
+                            <Circle className="h-3 w-3" aria-hidden />
+                            Not completed
+                          </>
+                        )}
+                      </span>
+                    )}
                   </div>
                 </article>
               ))}
