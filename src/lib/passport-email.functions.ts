@@ -3,6 +3,15 @@ import { z } from "zod";
 
 const inputSchema = z.object({ token: z.string().min(8).max(200) });
 
+const scanKindSchema = z.enum(["venue_checkin", "bonus", "tasting", "social"]);
+const scanInputSchema = z.object({
+  token: z.string().min(8).max(200),
+  kind: scanKindSchema,
+  points: z.number().int().min(0).max(100000),
+  name: z.string().max(200).optional(),
+  alreadyCollected: z.boolean().optional(),
+});
+
 /**
  * Sends the passport link to the visitor's email after signup.
  * Best-effort: never throws — signup already succeeded before this runs.
