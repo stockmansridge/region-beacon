@@ -734,12 +734,21 @@ function PassportView({
         </section>
 
 
+        {/* Trail progress */}
+        <TrailProgress
+          stamped={stampedCount}
+          total={totalVenues}
+          labelPlural={labelPlural}
+        />
+
         {/* Stamp grid */}
         <StampGrid
           venues={stamps.allVenues}
           labelSingular={labelSingular}
           labelPlural={labelPlural}
+          eventId={passport.event_id}
         />
+
 
         {/* What's happening — live event pulse (directly under stamps) */}
         {subdomain ? (
