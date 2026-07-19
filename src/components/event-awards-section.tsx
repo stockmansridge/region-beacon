@@ -696,8 +696,10 @@ function AwardEditorDialog({
               Shown to participants on the Prizes page. Leave blank for TBA.
             </p>
           </div>
-
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
               <Label htmlFor="award-allloc">Requires visiting all locations</Label>
+
               <p className="text-xs text-muted-foreground">
                 Participant must check in to every active venue.
               </p>
