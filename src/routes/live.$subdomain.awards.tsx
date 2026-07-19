@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Gift, Sparkles, Trophy, Users, Calendar, PartyPopper } from "lucide-react";
+import { Sparkles, Trophy, Users, Calendar, PartyPopper } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { PoweredByGetStampd } from "@/components/brand";
