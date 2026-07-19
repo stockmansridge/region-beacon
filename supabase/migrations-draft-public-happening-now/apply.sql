@@ -75,7 +75,7 @@ begin
     into v_recent_bonus
   from (
     select
-      ppa.created_at as happened_at,
+      ppa.awarded_at as happened_at,
       coalesce(nullif(vs.first_name, ''), 'Someone') as first_name,
       coalesce(
         nullif(ppa.metadata->>'bonus_code_name', ''),
@@ -87,8 +87,8 @@ begin
     join public.visitors vs on vs.id = p.visitor_id
     where ppa.event_id = v_event_id
       and ppa.award_type = 'bonus'
-      and ppa.created_at > now() - interval '24 hours'
-    order by ppa.created_at desc
+      and ppa.awarded_at > now() - interval '24 hours'
+    order by ppa.awarded_at desc
     limit 3
   ) t;
 
