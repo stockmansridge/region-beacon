@@ -542,26 +542,39 @@ function LivePublicLoaded({
                 </div>
               </div>
               {(() => {
+                const startable = !homeData.hasPassport && canRegister;
+                const allUnlocked =
+                  homeData.hasPassport && awards.length > 0 && !nextAward;
+                const bigValue = startable
+                  ? "—"
+                  : allUnlocked
+                    ? "✓"
+                    : pointsToNext !== null
+                      ? String(pointsToNext)
+                      : tierGlyph;
+                const subLabel = startable
+                  ? "Start your passport"
+                  : allUnlocked
+                    ? "All milestones unlocked"
+                    : pointsToNext !== null
+                      ? "to next milestone"
+                      : tierSub;
                 const tileInner = (
                   <>
-                    <div className="flex items-center gap-1.5">
-                      <span aria-hidden className="text-base leading-none">{tierGlyph}</span>
-                      <span
-                        className="font-trail-serif text-sm font-semibold leading-tight"
-                        style={{ color: "var(--event-card-heading)" }}
-                      >
-                        {tierTitle}
-                      </span>
+                    <div
+                      className="font-trail-serif text-2xl font-semibold leading-none"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      {bigValue}
                     </div>
                     <div
-                      className="text-[10px] font-medium uppercase tracking-[0.18em]"
+                      className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
-                      {tierSub}
+                      {subLabel}
                     </div>
                   </>
                 );
-                const startable = !homeData.hasPassport && canRegister;
                 if (startable) {
                   return (
                     <Link
@@ -581,7 +594,48 @@ function LivePublicLoaded({
               })()}
             </div>
           </div>
+          {homeData.hasPassport && total > 0 && (
+            <div className="border-t px-4 py-4" style={{ borderColor: "var(--event-card-border)" }}>
+              <div className="flex items-baseline justify-between">
+                <div
+                  className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+                  style={{ color: "var(--event-card-heading)" }}
+                >
+                  Trail Progress
+                </div>
+                <div
+                  className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                  style={{ color: "var(--event-card-muted)" }}
+                >
+                  {pct}% complete
+                </div>
+              </div>
+              <div
+                className="mt-2 h-2.5 w-full overflow-hidden rounded-full"
+                style={{ backgroundColor: "var(--event-card-border)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-[width] duration-500"
+                  style={{
+                    width: `${pct}%`,
+                    backgroundColor: "var(--event-button-primary-bg)",
+                  }}
+                />
+              </div>
+              <div
+                className="mt-2 text-[11px]"
+                style={{ color: "var(--event-card-muted)" }}
+              >
+                {visited >= total
+                  ? "Trail complete — nice work! 🎉"
+                  : nextAward
+                    ? `Visit ${trailRemaining} more ${trailRemaining === 1 ? venueLabels.singular.toLowerCase() : venueLabels.plural.toLowerCase()} to reach ${nextAward.title}`
+                    : `Only ${trailRemaining} ${trailRemaining === 1 ? venueLabels.singular.toLowerCase() : venueLabels.plural.toLowerCase()} to conquer ${event.name}! 🎉`}
+              </div>
+            </div>
+          )}
         </section>
+
 
         {/* Primary CTA */}
         <div className="mt-5">
