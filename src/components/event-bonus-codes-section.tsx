@@ -247,17 +247,18 @@ export function BonusCodesSection({
       // any SELECT policy staleness.
       if (bonusId) {
         const venueIds = form.scope === "per_venue" ? form.venue_ids : [];
-        const rpcCall = supabase.rpc as unknown as (
-          fn: string,
-          args: Record<string, unknown>,
-        ) => Promise<{
-          data: VenueBonus[] | null;
-          error: { message: string } | null;
-        }>;
-        const { data: returned, error: rpcError } = await rpcCall(
-          "save_per_venue_bonus_venues",
-          { _bonus_code_id: bonusId, _venue_ids: venueIds },
-        );
+        const { data: returned, error: rpcError } = await (
+          supabase.rpc as unknown as (
+            fn: string,
+            args: Record<string, unknown>,
+          ) => Promise<{
+            data: VenueBonus[] | null;
+            error: { message: string } | null;
+          }>
+        ).call(supabase, "save_per_venue_bonus_venues", {
+          _bonus_code_id: bonusId,
+          _venue_ids: venueIds,
+        });
         if (rpcError) throw new Error(rpcError.message);
         const savedBonusId = bonusId;
         setVenueBonuses((prev) => {
