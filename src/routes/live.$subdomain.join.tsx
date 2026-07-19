@@ -357,7 +357,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     setTopError(null);
     setDebugInfo(null);
 
-    const parsed = formSchema.safeParse(form);
+    const parsed = buildFormSchema(Boolean(event.require_postcode)).safeParse(form);
     if (!parsed.success) {
       const next: Partial<Record<keyof FormState, string>> = {};
       for (const issue of parsed.error.issues) {
