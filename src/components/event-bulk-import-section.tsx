@@ -404,6 +404,20 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
 
 
   const venueKeySet = new Set(venues.map((v) => v.venue_key.toLowerCase()));
+
+  // Cross-check bonus venue_keys against Venues sheet.
+  for (const b of bonuses) {
+    if (b.scope !== "per_venue") continue;
+    for (const vk of b.venue_keys) {
+      if (!venueKeySet.has(vk.toLowerCase())) {
+        b.issues.push({
+          level: "error",
+          message: `venue_keys refers to '${vk}' which is not in the Venues sheet.`,
+        });
+      }
+    }
+  }
+
   const tastings: TastingDraft[] = tastingRows
     .map((r, i): TastingDraft | null => {
       const venue_key = s(r["venue_key"]);
