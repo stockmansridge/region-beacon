@@ -13,7 +13,9 @@ import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
-import { Star, Users, Check, Circle } from "lucide-react";
+import { Star, Users, Check, Circle, Sparkles } from "lucide-react";
+import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "@/lib/event-fonts";
+
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
@@ -92,6 +94,13 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
   const [state, setState] = useState<State>({ kind: "loading" });
   const [visited, setVisited] = useState<VisitedState>({ kind: "none" });
   const [bonusChallenges, setBonusChallenges] = useState<BonusChallenge[]>([]);
+  const [extras, setExtras] = useState<{
+    emotive_text: string | null;
+    emotive_font_family: string | null;
+    default_emotive_font_family: string | null;
+    points_value: number;
+  } | null>(null);
+
 
 
   useEffect(() => {
@@ -100,10 +109,23 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       setState({ kind: "loading" });
       const host = tenantHost(subdomain);
 
-      const [{ data, error }, { data: evtData }] = await Promise.all([
+      const [{ data, error }, { data: evtData }, extrasRes] = await Promise.all([
         supabase.rpc("get_public_venue_by_domain", { _hostname: host, _venue_id: venueId }),
         supabase.rpc("get_public_event_by_domain", { _hostname: host }),
+        (supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: Array<{
+          emotive_text: string | null;
+          emotive_font_family: string | null;
+          default_emotive_font_family: string | null;
+          points_value: number;
+        }> | null; error: unknown }>)(
+          "get_public_venue_extras",
+          { _hostname: host, _venue_id: venueId },
+        ).catch(() => ({ data: null, error: null })),
       ]);
+
       if (cancelled) return;
 
       if (error) {
@@ -124,6 +146,10 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         eventLogoPath: evt?.logo_path ?? null,
         brand: evt,
       });
+
+      const extraRow = Array.isArray(extrasRes?.data) ? extrasRes.data[0] ?? null : null;
+      setExtras(extraRow);
+
 
       if (!evt?.event_id) return;
       let passportToken: string | null = null;
@@ -164,6 +190,29 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       cancelled = true;
     };
   }, [subdomain, venueId]);
+
+  // Lazy-load the emotive script font (venue override → event default →
+  // platform default). Safe idempotent link injection.
+  const emotiveFontValue =
+    extras?.emotive_font_family ??
+    extras?.default_emotive_font_family ??
+    DEFAULT_EMOTIVE_FONT_VALUE;
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!extras?.emotive_text) return;
+    const href = buildGoogleFontsHref([emotiveFontValue]);
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [extras?.emotive_text, emotiveFontValue]);
+  const emotiveStack =
+    getEventFont(emotiveFontValue)?.stack ?? "'Caveat', 'Segoe Script', cursive";
+
+
 
 
   if (state.kind === "loading") {
@@ -264,9 +313,24 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             </div>
           </div>
 
-          <h1 className="mt-4 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
-            {venue.name}
-          </h1>
+          <div className="mt-4 flex items-start justify-between gap-3">
+            <h1 className="font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+              {venue.name}
+            </h1>
+            {extras && extras.points_value > 0 && (
+              <span
+                className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] shadow-sm"
+                style={{
+                  backgroundColor: "var(--event-accent,#B5572A)",
+                  color: "var(--event-primary-fg,#F6EFE2)",
+                }}
+                aria-label={`Earn ${extras.points_value} points at this venue`}
+              >
+                +{extras.points_value} pts
+              </span>
+            )}
+          </div>
+
 
           {visited.kind === "visited" && (
             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--event-primary,#1F3D2B)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-primary-fg,#F6EFE2)]">
@@ -292,11 +356,25 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             </div>
           )}
 
+          {extras?.emotive_text && (
+            <p
+              className="mt-4 whitespace-pre-line text-2xl leading-snug"
+              style={{
+                fontFamily: emotiveStack,
+                color: "var(--event-primary,#1F3D2B)",
+              }}
+            >
+              {extras.emotive_text}
+            </p>
+          )}
+
           {venue.description && (
             <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-text,#3D372C)]">
               {venue.description}
             </p>
           )}
+
+
 
           {venue.offer_summary && (() => {
             const OfferIcon = resolveOfferIcon(venue.offer_display_icon);

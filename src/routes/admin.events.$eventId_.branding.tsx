@@ -68,6 +68,8 @@ type Branding = {
   cover_path: string | null;
   font_family: string | null;
   heading_font_family: string | null;
+  default_emotive_font_family: string | null;
+
   welcome_copy: string | null;
   terms_url: string | null;
   venue_label_singular: string | null;
@@ -139,6 +141,8 @@ type Bundle = {
 type Form = {
   font_family: string;
   heading_font_family: string;
+  default_emotive_font_family: string;
+
   welcome_copy: string;
   terms_url: string;
   venue_label_singular: string;
@@ -183,6 +187,8 @@ type Form = {
 const EMPTY_FORM: Form = {
   font_family: "",
   heading_font_family: "",
+  default_emotive_font_family: "",
+
   welcome_copy: "",
   terms_url: "",
   venue_label_singular: DEFAULT_VENUE_LABEL_SINGULAR,
@@ -227,7 +233,7 @@ const COLOUR_FORM_KEYS: ReadonlyArray<keyof Form> = [
 ];
 
 const SELECT_COLS = [
-  "logo_path", "cover_path", "font_family", "heading_font_family", "welcome_copy", "terms_url",
+  "logo_path", "cover_path", "font_family", "heading_font_family", "default_emotive_font_family", "welcome_copy", "terms_url",
   "venue_label_singular", "venue_label_plural",
   "primary_color", "accent_color", "link_color",
   "page_background_color", "text_color", "muted_text_color", "border_color",
@@ -248,6 +254,8 @@ function brandingToForm(b: Branding | null): Form {
   return {
     font_family: b.font_family ?? "",
     heading_font_family: b.heading_font_family ?? "",
+    default_emotive_font_family: b.default_emotive_font_family ?? "",
+
     welcome_copy: b.welcome_copy ?? "",
     terms_url: b.terms_url ?? "",
     venue_label_singular: b.venue_label_singular ?? DEFAULT_VENUE_LABEL_SINGULAR,
@@ -421,7 +429,7 @@ function BrandingEditor() {
 
   // Lazy-load the chosen Google Font(s) — both body and heading.
   useEffect(() => {
-    const href = buildGoogleFontsHref([form.font_family, form.heading_font_family]);
+    const href = buildGoogleFontsHref([form.font_family, form.heading_font_family, form.default_emotive_font_family]);
     if (!href) return;
     if (document.querySelector(`link[data-event-font="${href}"]`)) return;
     const link = document.createElement("link");
@@ -429,7 +437,8 @@ function BrandingEditor() {
     link.href = href;
     link.dataset.eventFont = href;
     document.head.appendChild(link);
-  }, [form.font_family, form.heading_font_family]);
+  }, [form.font_family, form.heading_font_family, form.default_emotive_font_family]);
+
 
   // Preload every supported event font so the Branding font dropdowns
   // can render each option in its own typeface for preview.
@@ -492,6 +501,11 @@ function BrandingEditor() {
     if (heading_font_family && !isSupportedEventFont(heading_font_family)) {
       setValidationError("Pick a heading font from the list."); return;
     }
+    const default_emotive_font_family = trim(form.default_emotive_font_family);
+    if (default_emotive_font_family && !isSupportedEventFont(default_emotive_font_family)) {
+      setValidationError("Pick an emotive font from the list."); return;
+    }
+
     const welcome_copy = trim(form.welcome_copy);
     if (welcome_copy.length > 1000) {
       setValidationError("Welcome copy must be 1000 characters or fewer."); return;
@@ -529,6 +543,8 @@ function BrandingEditor() {
     const fullPayload: Record<string, unknown> = {
       font_family: font_family || null,
       heading_font_family: heading_font_family || null,
+      default_emotive_font_family: default_emotive_font_family || null,
+
       welcome_copy: welcome_copy || null,
       terms_url: terms_url || null,
       venue_label_singular,
@@ -1008,11 +1024,14 @@ function BrandingEditor() {
             <FontPickers
               headingValue={form.heading_font_family}
               bodyValue={form.font_family}
+              emotiveValue={form.default_emotive_font_family}
               onHeadingChange={(value) => setForm({ ...form, heading_font_family: value })}
               onBodyChange={(value) => setForm({ ...form, font_family: value })}
+              onEmotiveChange={(value) => setForm({ ...form, default_emotive_font_family: value })}
               disabled={!canEdit || saving}
               eventName={event.name}
             />
+
           </CollapsibleSection>
 
           {/* Page content (welcome copy + labels) */}
@@ -1533,7 +1552,7 @@ function FontSelect({
               {value.trim()} (unavailable — pick a font below)
             </SelectItem>
           )}
-          {(["Display", "Serif", "Sans"] as const).map((cat) => {
+          {(["Display", "Serif", "Sans", "Script"] as const).map((cat) => {
             const fonts = EVENT_FONTS.filter((f) => f.category === cat);
             if (fonts.length === 0) return null;
             return (
@@ -1554,12 +1573,14 @@ function FontSelect({
 }
 
 function FontPickers({
-  headingValue, bodyValue, onHeadingChange, onBodyChange, disabled, eventName,
+  headingValue, bodyValue, emotiveValue, onHeadingChange, onBodyChange, onEmotiveChange, disabled, eventName,
 }: {
   headingValue: string;
   bodyValue: string;
+  emotiveValue: string;
   onHeadingChange: (v: string) => void;
   onBodyChange: (v: string) => void;
+  onEmotiveChange: (v: string) => void;
   disabled?: boolean;
   eventName: string;
 }) {
@@ -1567,6 +1588,8 @@ function FontPickers({
     getEventFont(headingValue)?.stack ?? (headingValue.trim() || undefined);
   const bodyStack =
     getEventFont(bodyValue)?.stack ?? (bodyValue.trim() || undefined);
+  const emotiveStack =
+    getEventFont(emotiveValue)?.stack ?? (emotiveValue.trim() || "'Caveat', 'Segoe Script', cursive");
   // Heading font falls back to body font when unset.
   const heroPreviewStack = headingStack ?? bodyStack;
   return (
@@ -1597,12 +1620,31 @@ function FontPickers({
         disabled={disabled}
       />
 
+      <div className="pt-2">
+        <div className="text-sm font-semibold text-[#111827]">Venue emotive font (default)</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Script font used to render the optional emotive/storytelling block on each venue page.
+          Individual venues can override this. Defaults to <span className="font-medium">Caveat</span>.
+        </p>
+      </div>
+      <FontSelect
+        label="Default emotive font"
+        value={emotiveValue}
+        onChange={onEmotiveChange}
+        disabled={disabled}
+      />
+
       <div className="space-y-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
         <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">Font preview</div>
         <div style={heroPreviewStack ? { fontFamily: heroPreviewStack } : undefined}>
           <div className="text-3xl font-semibold leading-tight text-[#111827]">
             {eventName || "Explore Orange Wine Trail"}
           </div>
+        </div>
+        <div style={{ fontFamily: emotiveStack }}>
+          <p className="text-2xl leading-snug text-[#334155]">
+            A little story worth savouring.
+          </p>
         </div>
         <div style={bodyStack ? { fontFamily: bodyStack } : undefined}>
           <p className="text-sm leading-6 text-[#334155]">
@@ -1619,6 +1661,7 @@ function FontPickers({
     </div>
   );
 }
+
 
 // ============================================================================
 // SemanticPreview — sample UI drawn entirely from --event-* tokens.

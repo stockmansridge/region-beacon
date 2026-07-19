@@ -48,6 +48,8 @@ import {
   isValidHex,
   type OfferDisplayIcon,
 } from "@/lib/offer-display";
+import { EVENT_FONTS, getEventFont } from "@/lib/event-fonts";
+
 
 type LoadDiagnostic = {
   step: string;
@@ -154,6 +156,8 @@ type Venue = {
 };
 
 
+
+
 type VenueFilter = "active" | "disabled" | "all";
 
 type QrSummary = {
@@ -187,8 +191,11 @@ type Bundle = {
   offerDisplayByVenue: Map<string, OfferDisplayRow>;
   offerSupported: boolean;
   offerDisplaySupported: boolean;
+  emotiveByVenue: Map<string, { emotive_text: string | null; emotive_font_family: string | null }>;
+  emotiveSupported: boolean;
   activation: Activation | null;
 };
+
 
 function fmt(d: string | null | undefined) {
   if (!d) return "—";
@@ -250,7 +257,10 @@ type VenueEditForm = {
   logo_path: string | null;
   cover_path: string | null;
   points_value: string;
+  emotive_text: string;
+  emotive_font_family: string;
 };
+
 
 type OfferDisplayRow = {
   offer_display_icon: string | null;
@@ -950,6 +960,40 @@ function EventDetail() {
             // column not deployed in this env
           }
         }
+
+        // Optional venues.emotive_text / emotive_font_family columns —
+        // degrade silently if the migration is not applied yet.
+        const emotiveByVenue = new Map<
+          string,
+          { emotive_text: string | null; emotive_font_family: string | null }
+        >();
+        let emotiveSupported = false;
+        if (venues.length > 0) {
+          try {
+            const { data: emotiveRows, error: emotiveErr } = await supabase
+              .from("venues")
+              .select("id, emotive_text, emotive_font_family" as any)
+              .eq("agency_id", agencyId)
+              .eq("event_id", event.id)
+              .in("id", venues.map((v) => v.id));
+            if (!emotiveErr && Array.isArray(emotiveRows)) {
+              emotiveSupported = true;
+              for (const row of emotiveRows as unknown as Array<{
+                id: string;
+                emotive_text: string | null;
+                emotive_font_family: string | null;
+              }>) {
+                emotiveByVenue.set(row.id, {
+                  emotive_text: row.emotive_text ?? null,
+                  emotive_font_family: row.emotive_font_family ?? null,
+                });
+              }
+            }
+          } catch {
+            // column not deployed
+          }
+        }
+
         if (cancelled) return;
 
         setBundle({
@@ -965,8 +1009,11 @@ function EventDetail() {
           offerDisplayByVenue,
           offerSupported,
           offerDisplaySupported,
+          emotiveByVenue,
+          emotiveSupported,
           activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
         });
+
         setState("ready");
       } catch (unknownErr) {
         if (cancelled) return;
@@ -1299,6 +1346,9 @@ function EventDetail() {
       logo_path: null,
       cover_path: null,
       points_value: "0",
+      emotive_text: "",
+      emotive_font_family: "",
+
     });
 
     setVenueAssetError(null);
@@ -1331,8 +1381,12 @@ function EventDetail() {
       logo_path: v.logo_path ?? null,
       cover_path: v.cover_path ?? null,
       points_value: String(v.points_value ?? 0),
+      emotive_text: bundle?.emotiveByVenue.get(v.id)?.emotive_text ?? "",
+      emotive_font_family: bundle?.emotiveByVenue.get(v.id)?.emotive_font_family ?? "",
 
     });
+
+
     setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
@@ -1591,6 +1645,20 @@ function EventDetail() {
       patch.offer_display_colour = bg === "" ? null : bg;
       patch.offer_display_foreground_colour = fg === "" ? null : fg;
     }
+
+    // Emotive text + optional per-venue font override — feature-detected.
+    if (bundle.emotiveSupported) {
+      const emotive = venueForm.emotive_text.trim();
+      if (emotive.length > 500) {
+        setVenueValidationError("Emotive text must be 500 characters or fewer.");
+        setVenueSaving(false);
+        return;
+      }
+      const emotiveFont = venueForm.emotive_font_family.trim();
+      patch.emotive_text = emotive === "" ? null : emotive;
+      patch.emotive_font_family = emotiveFont === "" ? null : emotiveFont;
+    }
+
 
     const payloadKeys = Object.keys(patch);
     const failVenueSave = (debug: VenueSaveDebug) => {
@@ -3702,7 +3770,52 @@ function EventDetail() {
                 {venueEditorTab === "public" && (
                 <>
                 <FormSection title="Public page content">
+                  {bundle?.emotiveSupported && (
+                    <Field label="Emotive text (optional)">
+                      <textarea
+                        rows={3}
+                        maxLength={500}
+                        value={venueForm.emotive_text}
+                        onChange={(e) => setVenueForm({ ...venueForm, emotive_text: e.target.value })}
+                        placeholder="A short storytelling line — e.g. Where dogs greet you at the cellar door."
+                        className="w-full rounded-md border bg-background px-3 py-2 text-lg italic"
+                        style={{
+                          fontFamily:
+                            getEventFont(venueForm.emotive_font_family)?.stack ??
+                            "'Caveat', 'Segoe Script', cursive",
+                        }}
+                      />
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <label className="text-xs text-muted-foreground">Font override:</label>
+                        <select
+                          value={venueForm.emotive_font_family}
+                          onChange={(e) =>
+                            setVenueForm({ ...venueForm, emotive_font_family: e.target.value })
+                          }
+                          className="rounded-md border bg-background px-2 py-1 text-xs"
+                        >
+                          <option value="">Use event default</option>
+                          {EVENT_FONTS.filter((f) => f.category === "Script").map((f) => (
+                            <option key={f.value} value={f.value}>
+                              {f.label}
+                            </option>
+                          ))}
+                          <optgroup label="Other">
+                            {EVENT_FONTS.filter((f) => f.category !== "Script").map((f) => (
+                              <option key={f.value} value={f.value}>
+                                {f.label}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </select>
+                        <span className="text-xs text-muted-foreground">
+                          {venueForm.emotive_text.length}/500
+                        </span>
+                      </div>
+                    </Field>
+                  )}
                   <Field label="Description">
+
                     <textarea
                       rows={5}
                       maxLength={1250}
