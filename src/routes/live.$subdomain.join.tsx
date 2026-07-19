@@ -71,6 +71,7 @@ type PublicEvent = {
   hero_bg_color?: string | null;
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
+  require_postcode?: boolean | null;
 };
 
 type LoadState =
