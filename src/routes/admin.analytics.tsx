@@ -599,6 +599,71 @@ function Analytics() {
             )}
           </section>
 
+          {/* Postcode breakdown */}
+          <section className={cardClass}>
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Postcode breakdown</h3>
+                <p className="text-sm leading-6 text-[#64748B]">
+                  Where visitors are travelling from. Make postcode mandatory in Event → Registration form to improve coverage.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-[#64748B]">
+                <span>{postcodeStats.withPostcode} with postcode · {postcodeStats.withoutPostcode} without</span>
+                <button
+                  type="button"
+                  onClick={exportPostcodes}
+                  disabled={postcodeStats.rows.length === 0}
+                  className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-medium text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-50"
+                >
+                  Export CSV
+                </button>
+              </div>
+            </div>
+            {postcodeStats.rows.length === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#E5E7EB] bg-[#F9FAFB] px-4 py-6 text-center text-sm text-[#64748B]">
+                No postcode data yet for the current filters.
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-[12px] border border-[#E5E7EB]">
+                <table className="w-full text-sm">
+                  <thead className="bg-[#F9FAFB] text-left text-xs uppercase tracking-wide text-[#64748B]">
+                    <tr>
+                      <th className="px-4 py-2">Postcode</th>
+                      <th className="px-4 py-2">Visitors</th>
+                      <th className="px-4 py-2">Share</th>
+                      <th className="px-4 py-2 w-1/2">Distribution</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {postcodeStats.rows.slice(0, 25).map((r) => (
+                      <tr key={r.postcode} className="border-t border-[#F1F5F9]">
+                        <td className="px-4 py-2 font-medium text-[#111827]">{r.postcode}</td>
+                        <td className="px-4 py-2 text-[#111827]">{r.count}</td>
+                        <td className="px-4 py-2 text-[#64748B]">{r.pct.toFixed(1)}%</td>
+                        <td className="px-4 py-2">
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#F1F5F9]">
+                            <div
+                              className="h-full rounded-full bg-[#2563EB]"
+                              style={{ width: `${Math.min(100, r.pct)}%` }}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {postcodeStats.rows.length > 25 && (
+                  <div className="border-t border-[#F1F5F9] bg-[#F9FAFB] px-4 py-2 text-xs text-[#64748B]">
+                    Showing top 25 of {postcodeStats.rows.length} postcodes. Export CSV for the full list.
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+
+
           {/* Funnel */}
           <section className={cardClass}>
             <div className="mb-5">
