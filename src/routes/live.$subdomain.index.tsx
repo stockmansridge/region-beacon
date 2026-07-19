@@ -244,18 +244,8 @@ function LivePublicLoaded({
   const nextAward = awards.length > 0 ? pickNextReward(awards) : null;
   const unlockedAwards = awards.filter((a) => a.is_eligible);
 
-  const tierTitle =
-    !homeData.hasPassport
-      ? "Start your passport"
-      : awards.length === 0
-        ? "More prizes ahead"
-        : total > 0 && visited >= total
-          ? "Trail complete"
-          : nextAward
-            ? nextAward.title
-            : unlockedAwards.length > 0
-              ? "All unlocked"
-              : "Keep exploring";
+  void unlockedAwards; // keep for downstream references if any
+
   const tierSub =
     !homeData.hasPassport
       ? "tap to begin"
