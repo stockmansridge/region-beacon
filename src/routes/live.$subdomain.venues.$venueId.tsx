@@ -606,3 +606,72 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
     </EventPaletteScope>
   );
 }
+
+function SocialShareButton({ challenge }: { challenge: BonusChallenge }) {
+  const inputRef = (typeof window !== "undefined"
+    ? { current: null as HTMLInputElement | null }
+    : { current: null as HTMLInputElement | null });
+
+  const shareText = [
+    challenge.social_location ? `Tagging ${challenge.social_location}` : null,
+    challenge.social_hashtags || null,
+  ]
+    .filter(Boolean)
+    .join("  ");
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const nav = navigator as Navigator & {
+      canShare?: (data: ShareData) => boolean;
+      share?: (data: ShareData) => Promise<void>;
+    };
+    const shareData: ShareData = {
+      title: challenge.name,
+      text: shareText || challenge.name,
+      files: [file],
+    };
+    try {
+      if (nav.canShare && nav.canShare(shareData) && nav.share) {
+        await nav.share(shareData);
+        return;
+      }
+    } catch {
+      /* fall through to clipboard fallback */
+    }
+    try {
+      if (shareText && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareText);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return (
+    <>
+      <input
+        ref={(el) => {
+          inputRef.current = el;
+        }}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold shadow-sm"
+        style={{
+          backgroundColor: "var(--event-primary,#1F3D2B)",
+          color: "var(--event-primary-fg,#F6EFE2)",
+        }}
+      >
+        <Camera className="h-4 w-4" aria-hidden />
+        Share on socials
+      </button>
+    </>
+  );
+}
