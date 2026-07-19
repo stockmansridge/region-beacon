@@ -239,31 +239,10 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
         )}
 
         {/* Hero */}
-        <div className="relative mt-4 overflow-hidden rounded-3xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center shadow-sm sm:p-8">
-          <ConfettiDots />
-          <div className="relative">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--event-accent,#C7A96B)]/20 text-[var(--event-primary,#1F3D2B)]">
-              {hasPassport && myEntries.length > 0 ? (
-                <PartyPopper className="h-7 w-7" />
-              ) : (
-                <Gift className="h-7 w-7" />
-              )}
-            </div>
-            <h1
-              className="mt-3 text-2xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))] sm:text-3xl"
-              style={{ fontFamily: "var(--event-font, inherit)" }}
-            >
-              {hasPassport && myEntries.length > 0
-                ? "You're In the Draw!"
-                : "Prizes to be won"}
-            </h1>
-            <p className="mt-2 text-sm text-[var(--event-page-text,var(--event-text,#3D372C))]">
-              {hasPassport && myEntries.length > 0
-                ? `You've unlocked ${myEntries.length} ${myEntries.length === 1 ? "prize entry" : "prize entries"}. Keep exploring to enter more.`
-                : "Earn points by checking in at venues to unlock prizes and enter prize draws."}
-            </p>
-          </div>
-        </div>
+        <CelebrationHero
+          inDraw={hasPassport && myEntries.length > 0}
+          entryCount={myEntries.length}
+        />
 
         <div className="mt-6 space-y-4">
           {awards == null && (
