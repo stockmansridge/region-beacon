@@ -23,6 +23,9 @@ type Status = "active" | "disabled";
 
 type RowIssue = { level: "error" | "warning"; message: string };
 
+type BonusKind = "points" | "social";
+type BonusScope = "event" | "per_venue";
+
 type VenueDraft = {
   rowNum: number;
   venue_key: string;
@@ -39,6 +42,8 @@ type VenueDraft = {
   // Optional stamp/entry value saved to venue_qr_codes.entry_value for the
   // venue's active QR row. null = leave unchanged on import.
   check_in_value: number | null;
+  emotive_text: string | null;
+  emotive_font_family: string | null;
   issues: RowIssue[];
   // Resolved at confirm:
   matchedVenueId?: string | null;
@@ -54,11 +59,17 @@ type BonusDraft = {
   description: string | null;
   points: number;
   status: Status;
+  kind: BonusKind;
+  scope: BonusScope;
+  venue_keys: string[]; // used only when scope === "per_venue"
+  social_location: string | null;
+  social_hashtags: string | null;
   issues: RowIssue[];
   matchedId?: string | null;
   result?: "created" | "updated" | "skipped" | "error";
   resultMessage?: string;
 };
+
 
 type TastingDraft = {
   rowNum: number;
@@ -149,11 +160,34 @@ function downloadTemplate() {
     ["  points (Tasting QR Codes sheet):"],
     ["    Tasting points awarded when this tasting QR code is claimed. 0 or higher."],
     [""],
+    ["Optional Venue emotive fields (Venues sheet):"],
+    ["  emotive_text: short emotive tagline shown on the public venue page."],
+    ["    500 characters max. Leave blank for none."],
+    ["  emotive_font_family: font family name for the emotive text. Suggested"],
+    ["    values: Caveat, Dancing Script, Pacifico, Great Vibes, Sacramento,"],
+    ["    Kalam, Shadows Into Light. Leave blank to inherit the event font."],
+    [""],
+    ["Bonus Codes — kind, scope and per-venue codes:"],
+    ["  kind: 'points' (default) awards points on scan; 'social' triggers the"],
+    ["    'Share on socials' flow that opens the camera to capture and share."],
+    ["  scope: 'event' (default) = one bonus code shared across the whole event."],
+    ["    'per_venue' = one bonus record cloned to each listed venue, so scanning"],
+    ["    each venue's QR awards the points independently."],
+    ["  venue_keys: REQUIRED when scope is 'per_venue'. Comma-separated list of"],
+    ["    venue_key values from the Venues sheet, e.g. 'venue_001, venue_002'."],
+    ["    Ignored when scope is 'event'."],
+    ["  social_location: optional '@location' tag suggested to the participant"],
+    ["    when kind is 'social'."],
+    ["  social_hashtags: optional space- or comma-separated hashtags suggested"],
+    ["    to the participant when kind is 'social' (e.g. '#winetrail #marlborough')."],
+    [""],
     ["Example values:"],
     ["  venue_key: venue_001, ridge_winery, stall_12"],
     ["  status:    active, disabled"],
     ["  latitude:  -36.8485"],
     ["  longitude: 174.7633"],
+    ["  kind:      points, social"],
+    ["  scope:     event, per_venue"],
     [""],
     ["Note: QR images are NOT imported. The app generates QR codes after save."],
   ];
@@ -174,6 +208,8 @@ function downloadTemplate() {
     "order_index",
     "status",
     "check_in_value",
+    "emotive_text",
+    "emotive_font_family",
   ];
   const venuesExample = [
     "venue_001",
@@ -188,15 +224,64 @@ function downloadTemplate() {
     1,
     "active",
     1,
+    "Sip the sunset. Stay for the stars.",
+    "Caveat",
   ];
   const wsV = XLSX.utils.aoa_to_sheet([venuesHeader, venuesExample]);
   wsV["!cols"] = venuesHeader.map(() => ({ wch: 18 }));
   XLSX.utils.book_append_sheet(wb, wsV, "Venues");
 
-  const bonusHeader = ["code", "title", "description", "points", "status"];
-  const bonusExample = ["TRAIL2026", "Trail Challenge", "Bonus for completing the trail.", 50, "active"];
-  const wsB = XLSX.utils.aoa_to_sheet([bonusHeader, bonusExample]);
+  const bonusHeader = [
+    "code",
+    "title",
+    "description",
+    "points",
+    "status",
+    "kind",
+    "scope",
+    "venue_keys",
+    "social_location",
+    "social_hashtags",
+  ];
+  const bonusExample = [
+    "TRAIL2026",
+    "Trail Challenge",
+    "Bonus for completing the trail.",
+    50,
+    "active",
+    "points",
+    "event",
+    "",
+    "",
+    "",
+  ];
+  const bonusExample2 = [
+    "VENUE_BONUS_2026",
+    "Visit each cellar door",
+    "Scan the bonus code at every winery for extra points.",
+    10,
+    "active",
+    "points",
+    "per_venue",
+    "venue_001, venue_002",
+    "",
+    "",
+  ];
+  const bonusExample3 = [
+    "SOCIAL2026",
+    "Share your trail moment",
+    "Snap a photo and share it on socials for bonus points.",
+    25,
+    "active",
+    "social",
+    "event",
+    "",
+    "@marlboroughwine",
+    "#winetrail #marlborough",
+  ];
+  const wsB = XLSX.utils.aoa_to_sheet([bonusHeader, bonusExample, bonusExample2, bonusExample3]);
   wsB["!cols"] = bonusHeader.map(() => ({ wch: 22 }));
+
   XLSX.utils.book_append_sheet(wb, wsB, "Bonus Codes");
 
   const tastingHeader = ["venue_key", "qr_name", "description", "points", "status"];
@@ -269,6 +354,11 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
           civ = civInt;
         }
       }
+      const emotiveText = s(r["emotive_text"]) || null;
+      const emotiveFont = s(r["emotive_font_family"]) || null;
+      if (emotiveText && emotiveText.length > 500) {
+        issues.push({ level: "error", message: "emotive_text must be 500 characters or fewer." });
+      }
       return {
         rowNum: i + 2,
         venue_key,
@@ -283,6 +373,8 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         order_index: order,
         status: statusParsed === "disabled" ? "inactive" : "active",
         check_in_value: civ,
+        emotive_text: emotiveText,
+        emotive_font_family: emotiveFont,
         issues,
       };
     })
@@ -313,6 +405,60 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       if (statusParsed === null) {
         issues.push({ level: "error", message: "Status must be active or disabled." });
       }
+
+      // kind: points (default) | social
+      const kindRaw = s(r["kind"]).toLowerCase();
+      let kind: BonusKind = "points";
+      if (kindRaw === "" || kindRaw === "points" || kindRaw === "checkin" || kindRaw === "check_in") {
+        kind = "points";
+      } else if (kindRaw === "social") {
+        kind = "social";
+      } else {
+        issues.push({ level: "error", message: "kind must be 'points' or 'social'." });
+      }
+
+      // scope: event (default) | per_venue
+      const scopeRaw = s(r["scope"]).toLowerCase().replace(/[\s-]/g, "_");
+      let scope: BonusScope = "event";
+      if (scopeRaw === "" || scopeRaw === "event") {
+        scope = "event";
+      } else if (scopeRaw === "per_venue" || scopeRaw === "pervenue" || scopeRaw === "venue") {
+        scope = "per_venue";
+      } else {
+        issues.push({ level: "error", message: "scope must be 'event' or 'per_venue'." });
+      }
+
+      // venue_keys: comma / semicolon / pipe separated list, only used
+      // when scope === 'per_venue'.
+      const venueKeysRaw = s(r["venue_keys"]);
+      const venueKeys = venueKeysRaw === ""
+        ? []
+        : venueKeysRaw
+            .split(/[,;|]/)
+            .map((x) => x.trim())
+            .filter((x) => x.length > 0);
+      if (scope === "per_venue" && venueKeys.length === 0) {
+        issues.push({
+          level: "error",
+          message: "venue_keys is required when scope is 'per_venue' (comma-separated list of venue_key values from the Venues sheet).",
+        });
+      }
+      if (scope === "event" && venueKeys.length > 0) {
+        issues.push({
+          level: "warning",
+          message: "venue_keys is ignored when scope is 'event'.",
+        });
+      }
+
+      const socialLocation = s(r["social_location"]) || null;
+      const socialHashtags = s(r["social_hashtags"]) || null;
+      if (kind !== "social" && (socialLocation || socialHashtags)) {
+        issues.push({
+          level: "warning",
+          message: "social_location and social_hashtags are only used when kind is 'social' — ignored.",
+        });
+      }
+
       return {
         rowNum: i + 2,
         code,
@@ -320,12 +466,32 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         description: s(r["description"]) || null,
         points,
         status: (statusParsed ?? "active") as Status,
+        kind,
+        scope,
+        venue_keys: venueKeys,
+        social_location: kind === "social" ? socialLocation : null,
+        social_hashtags: kind === "social" ? socialHashtags : null,
         issues,
       };
     })
     .filter((r): r is BonusDraft => r !== null);
 
+
   const venueKeySet = new Set(venues.map((v) => v.venue_key.toLowerCase()));
+
+  // Cross-check bonus venue_keys against Venues sheet.
+  for (const b of bonuses) {
+    if (b.scope !== "per_venue") continue;
+    for (const vk of b.venue_keys) {
+      if (!venueKeySet.has(vk.toLowerCase())) {
+        b.issues.push({
+          level: "error",
+          message: `venue_keys refers to '${vk}' which is not in the Venues sheet.`,
+        });
+      }
+    }
+  }
+
   const tastings: TastingDraft[] = tastingRows
     .map((r, i): TastingDraft | null => {
       const venue_key = s(r["venue_key"]);
@@ -561,7 +727,10 @@ export function EventBulkImportSection({
         website_url: v.website_url,
         phone: v.phone,
         offer_summary: v.offer_summary,
+        emotive_text: v.emotive_text,
+        emotive_font_family: v.emotive_font_family,
       };
+
       try {
         if (existingId) {
           const { error } = await supabase
@@ -587,12 +756,19 @@ export function EventBulkImportSection({
           venuesNext.push({ ...v, resultVenueId: id, result: "created" });
         }
       } catch (e) {
-        // offer_summary column may not exist in older deployments — retry without it.
+        // Some columns (offer_summary, emotive_text, emotive_font_family) may
+        // not exist in older deployments — retry without the offending ones.
         const msg = e instanceof Error ? e.message : String(e);
-        if (msg.toLowerCase().includes("offer_summary")) {
+        const lower = msg.toLowerCase();
+        const strip: string[] = [];
+        if (lower.includes("offer_summary")) strip.push("offer_summary");
+        if (lower.includes("emotive_text")) strip.push("emotive_text");
+        if (lower.includes("emotive_font_family")) strip.push("emotive_font_family");
+        if (strip.length > 0) {
           try {
-            const { offer_summary: _omit, ...slim } = patch;
-            void _omit;
+            const slim: Record<string, unknown> = { ...patch };
+            for (const k of strip) delete slim[k];
+            const note = `${strip.join(", ")} not supported in this environment — skipped ${strip.length === 1 ? "that field" : "those fields"}.`;
             if (existingId) {
               const { error } = await supabase
                 .from("venues")
@@ -608,7 +784,7 @@ export function EventBulkImportSection({
                 matchedVenueId: existingId,
                 resultVenueId: existingId,
                 result: "updated",
-                resultMessage: "offer_summary not supported in this environment — skipped that field.",
+                resultMessage: note,
               });
               continue;
             } else {
@@ -625,7 +801,7 @@ export function EventBulkImportSection({
                 ...v,
                 resultVenueId: id,
                 result: "created",
-                resultMessage: "offer_summary not supported in this environment — skipped that field.",
+                resultMessage: note,
               });
               continue;
             }
@@ -641,6 +817,7 @@ export function EventBulkImportSection({
         venuesNext.push({ ...v, result: "error", resultMessage: msg });
       }
     }
+
 
     // ---- Venue check-in values (writes to venue_qr_codes.entry_value for
     // the venue's active QR row — mirrors the manual admin "Stamp value"
@@ -691,37 +868,110 @@ export function EventBulkImportSection({
         continue;
       }
       const existingId = existingBonusByName.get(b.title.trim().toLowerCase()) ?? null;
-      try {
+      const extras: Record<string, unknown> = {
+        scope: b.scope,
+        kind: b.kind,
+        social_location: b.kind === "social" ? b.social_location : null,
+        social_hashtags: b.kind === "social" ? b.social_hashtags : null,
+      };
+      const basePatch: Record<string, unknown> = {
+        name: b.title,
+        description: b.description,
+        points_value: b.points,
+        is_active: b.status === "active",
+      };
+      let bonusId: string | null = null;
+      let extrasNote: string | null = null;
+
+      const doSave = async (payload: Record<string, unknown>) => {
         if (existingId) {
           const { error } = await supabase
             .from("event_bonus_codes")
-            .update({
-              name: b.title,
-              description: b.description,
-              points_value: b.points,
-              is_active: b.status === "active",
-            })
+            .update(payload)
             .eq("id", existingId)
             .eq("agency_id", agencyId)
             .eq("event_id", eventId);
           if (error) throw error;
-          bonusesUpdated++;
-          bonusesNext.push({ ...b, matchedId: existingId, result: "updated" });
+          return existingId;
         } else {
-          const { error } = await supabase.from("event_bonus_codes").insert({
-            agency_id: agencyId,
-            event_id: eventId,
-            name: b.title,
-            description: b.description,
-            points_value: b.points,
-            is_active: b.status === "active",
-            qr_code_token: crypto.randomUUID(),
-          });
+          const { data, error } = await supabase
+            .from("event_bonus_codes")
+            .insert({
+              agency_id: agencyId,
+              event_id: eventId,
+              qr_code_token: crypto.randomUUID(),
+              ...payload,
+            })
+            .select("id")
+            .single();
           if (error) throw error;
-          // Track for downstream dedupe in this batch
+          return (data?.id as string) ?? null;
+        }
+      };
+
+      try {
+        try {
+          bonusId = await doSave({ ...basePatch, ...extras });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          const lower = msg.toLowerCase();
+          const missing = ["scope", "kind", "social_location", "social_hashtags"].filter(
+            (c) => lower.includes(c),
+          );
+          if (missing.length === 0) throw e;
+          // Retry without the unsupported extras.
+          const slim: Record<string, unknown> = { ...basePatch, ...extras };
+          for (const k of missing) delete slim[k];
+          bonusId = await doSave(slim);
+          extrasNote = `${missing.join(", ")} not supported in this environment — skipped ${missing.length === 1 ? "that field" : "those fields"}. Run the latest migration to enable per-venue and social bonus codes.`;
+        }
+
+        // Sync per-venue mapping when applicable.
+        let perVenueNote: string | null = null;
+        if (bonusId && b.scope === "per_venue") {
+          const venueIds = b.venue_keys
+            .map((k) => venueIdByKey.get(k.toLowerCase()) ?? null)
+            .filter((x): x is string => !!x);
+          if (venueIds.length !== b.venue_keys.length) {
+            perVenueNote = "Some venue_keys did not resolve to a venue in this event.";
+          }
+          try {
+            const { error: rpcError } = await (
+              supabase.rpc as unknown as (
+                fn: string,
+                args: Record<string, unknown>,
+              ) => Promise<{ data: unknown; error: { message: string } | null }>
+            ).call(supabase, "save_per_venue_bonus_venues", {
+              _bonus_code_id: bonusId,
+              _venue_ids: venueIds,
+            });
+            if (rpcError) throw new Error(rpcError.message);
+          } catch (rpcErr) {
+            const rm = rpcErr instanceof Error ? rpcErr.message : String(rpcErr);
+            perVenueNote = perVenueNote
+              ? `${perVenueNote} save_per_venue_bonus_venues failed: ${rm}`
+              : `save_per_venue_bonus_venues failed: ${rm}`;
+          }
+        }
+
+        const notes = [extrasNote, perVenueNote].filter((x): x is string => !!x).join(" ");
+        if (existingId) {
+          bonusesUpdated++;
+          bonusesNext.push({
+            ...b,
+            matchedId: existingId,
+            result: "updated",
+            resultMessage: notes || undefined,
+          });
+        } else {
           existingBonusByName.set(b.title.trim().toLowerCase(), "new");
           bonusesCreated++;
-          bonusesNext.push({ ...b, result: "created" });
+          bonusesNext.push({
+            ...b,
+            matchedId: bonusId,
+            result: "created",
+            resultMessage: notes || undefined,
+          });
         }
       } catch (e) {
         bonusesNext.push({
@@ -731,6 +981,7 @@ export function EventBulkImportSection({
         });
       }
     }
+
 
     // ---- Tasting QR Codes
     // Fetch existing tasting rows for each resolved venue once.
@@ -941,12 +1192,15 @@ export function EventBulkImportSection({
                     v.check_in_value != null
                       ? ` Check-in stamp value: ${v.check_in_value}.`
                       : " Check-in stamp value: leave unchanged.";
+                  const emotive = v.emotive_text
+                    ? ` Emotive: "${v.emotive_text}"${v.emotive_font_family ? ` (${v.emotive_font_family})` : ""}.`
+                    : "";
                   return {
                     rowNum: v.rowNum,
                     label: v.name || v.venue_key,
                     status: v.status,
                     issues: v.issues,
-                    extra: action + civ,
+                    extra: action + civ + emotive,
                     result: v.result,
                     resultMessage: v.resultMessage,
                   };
@@ -960,22 +1214,34 @@ export function EventBulkImportSection({
               <p className="text-xs text-muted-foreground">No bonus code rows.</p>
             ) : (
               <PreviewTable
-                rows={drafts.bonuses.map((b) => ({
-                  rowNum: b.rowNum,
-                  label: b.title || b.code,
-                  status: b.status,
-                  issues: b.issues,
-                  extra:
-                    (existingBonusByName.has(b.title.trim().toLowerCase())
-                      ? "Will UPDATE an existing bonus code with the same title."
-                      : "Will CREATE a new bonus code.") +
-                    ` Bonus points: ${b.points}.`,
-                  result: b.result,
-                  resultMessage: b.resultMessage,
-                }))}
+                rows={drafts.bonuses.map((b) => {
+                  const action = existingBonusByName.has(b.title.trim().toLowerCase())
+                    ? "Will UPDATE an existing bonus code with the same title."
+                    : "Will CREATE a new bonus code.";
+                  const kindLabel = b.kind === "social" ? "Social share" : "Points";
+                  const scopeLabel =
+                    b.scope === "per_venue"
+                      ? `per-venue (${b.venue_keys.length} venue${b.venue_keys.length === 1 ? "" : "s"})`
+                      : "event-wide";
+                  const social =
+                    b.kind === "social"
+                      ? ` Location: ${b.social_location ?? "—"}. Hashtags: ${b.social_hashtags ?? "—"}.`
+                      : "";
+                  return {
+                    rowNum: b.rowNum,
+                    label: b.title || b.code,
+                    status: b.status,
+                    issues: b.issues,
+                    extra:
+                      `${action} Kind: ${kindLabel}. Scope: ${scopeLabel}. Points: ${b.points}.${social}`,
+                    result: b.result,
+                    resultMessage: b.resultMessage,
+                  };
+                })}
               />
             )}
           </PreviewBlock>
+
 
           <PreviewBlock title="Tasting QR Codes">
             {drafts.tastings.length === 0 ? (
