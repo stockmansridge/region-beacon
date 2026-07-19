@@ -1081,6 +1081,21 @@ function SuccessScreen({
           >
             {copied ? "Copied!" : "Copy passport link"}
           </button>
+          <button
+            type="button"
+            onClick={resend}
+            disabled={resendState === "sending"}
+            className="mt-2 h-10 w-full rounded-full text-xs font-semibold tracking-wide underline-offset-2 hover:underline"
+            style={{ color: "var(--event-link)" }}
+          >
+            {resendState === "sending"
+              ? "Sending…"
+              : resendState === "sent"
+                ? "Email sent — check your inbox"
+                : resendState === "error"
+                  ? `Couldn't send${resendMsg ? ` (${resendMsg})` : ""} — tap to retry`
+                  : "Didn't get the email? Resend"}
+          </button>
 
           <div
             className="mt-4 rounded-xl border px-3 py-2 text-left text-xs"
