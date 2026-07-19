@@ -29,7 +29,11 @@ export type AdminEventAward = {
   latest_winner_name: string | null;
   latest_winner_email: string | null;
   latest_eligible_count: number | null;
+  /** ISO date (YYYY-MM-DD) or null. Undefined when the draw_date migration
+   *  hasn't been applied yet — treat undefined and null the same. */
+  draw_date?: string | null;
 };
+
 
 export type AwardDrawResult = {
   draw_id: string;
