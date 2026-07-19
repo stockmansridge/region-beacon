@@ -818,15 +818,21 @@ function PassportView({
               </div>
             </div>
           </div>
+          {totalVenues > 0 && (
+            <div
+              className="px-5 py-4"
+              style={{ borderTop: "1px solid var(--event-card-border)" }}
+            >
+              <TrailProgressInline
+                stamped={stampedCount}
+                total={totalVenues}
+                labelPlural={labelPlural}
+              />
+            </div>
+          )}
         </section>
 
 
-        {/* Trail progress */}
-        <TrailProgress
-          stamped={stampedCount}
-          total={totalVenues}
-          labelPlural={labelPlural}
-        />
 
         {/* Stamp grid */}
         <StampGrid
