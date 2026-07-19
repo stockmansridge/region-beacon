@@ -93,8 +93,7 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
 
   const showExplorers = explorers >= 2;
   const showBonus = Boolean(bonus);
-
-  if (!checkin && !showExplorers && !showBonus) return null;
+  const isEmpty = !checkin && !showExplorers && !showBonus;
 
   return (
     <section className="px-4">
