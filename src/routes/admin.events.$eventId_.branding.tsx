@@ -1533,7 +1533,7 @@ function FontSelect({
               {value.trim()} (unavailable — pick a font below)
             </SelectItem>
           )}
-          {(["Display", "Serif", "Sans"] as const).map((cat) => {
+          {(["Display", "Serif", "Sans", "Script"] as const).map((cat) => {
             const fonts = EVENT_FONTS.filter((f) => f.category === cat);
             if (fonts.length === 0) return null;
             return (
