@@ -340,6 +340,154 @@ function ConfettiDots() {
   );
 }
 
+// Loads Dancing Script from Google Fonts once for the celebratory heading.
+function useFunFont() {
+  useEffect(() => {
+    const id = "gs-fun-font-dancing-script";
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap";
+    document.head.appendChild(link);
+  }, []);
+}
+
+function CelebrationHero({
+  inDraw,
+  entryCount,
+}: {
+  inDraw: boolean;
+  entryCount: number;
+}) {
+  useFunFont();
+  const funFont = "'Dancing Script', 'Segoe Script', cursive";
+  return (
+    <div
+      className="relative mt-4 overflow-hidden rounded-3xl border p-6 text-center shadow-md sm:p-10"
+      style={{
+        borderColor: "var(--event-card-border, var(--event-border, #E6DCC7))",
+        background: inDraw
+          ? "linear-gradient(140deg, var(--event-card-bg, #FBF5E8) 0%, color-mix(in oklab, var(--event-accent, #C7A96B) 18%, var(--event-card-bg, #FBF5E8)) 100%)"
+          : "linear-gradient(140deg, var(--event-card-bg, #FBF5E8) 0%, color-mix(in oklab, var(--event-primary, #1F3D2B) 8%, var(--event-card-bg, #FBF5E8)) 100%)",
+      }}
+    >
+      <StreamerConfetti />
+      <div className="relative">
+        {inDraw ? (
+          <>
+            <div className="mx-auto flex h-20 w-20 items-center justify-center text-6xl drop-shadow-sm sm:h-24 sm:w-24 sm:text-7xl">
+              🎁
+            </div>
+            <h1
+              className="mt-2 text-[2.6rem] leading-none sm:text-[3.4rem]"
+              style={{
+                fontFamily: funFont,
+                fontWeight: 700,
+                color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
+                textShadow: "0 1px 0 rgba(255,255,255,0.4)",
+              }}
+            >
+              You&rsquo;re In the Draw!
+            </h1>
+            <p className="mx-auto mt-3 max-w-md text-sm sm:text-base text-[var(--event-page-text,var(--event-text,#3D372C))]">
+              Complete challenges to earn more points and increase your chances
+              to win.
+            </p>
+            <div
+              className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] shadow-sm"
+              style={{
+                background: "var(--event-primary, #1F3D2B)",
+                color: "var(--event-primary-fg, #FFF)",
+              }}
+            >
+              <PartyPopper className="h-3.5 w-3.5" />
+              {entryCount} {entryCount === 1 ? "entry" : "entries"} unlocked
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mx-auto flex h-20 w-20 items-center justify-center text-6xl drop-shadow-sm sm:h-24 sm:w-24 sm:text-7xl">
+              🎁
+            </div>
+            <h1
+              className="mt-2 text-[2.4rem] leading-none sm:text-[3rem]"
+              style={{
+                fontFamily: funFont,
+                fontWeight: 700,
+                color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
+                textShadow: "0 1px 0 rgba(255,255,255,0.4)",
+              }}
+            >
+              Prizes to be won
+            </h1>
+            <p className="mx-auto mt-3 max-w-md text-sm sm:text-base text-[var(--event-page-text,var(--event-text,#3D372C))]">
+              Earn points by checking in at venues to unlock prizes and enter
+              prize draws.
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Colourful streamer + confetti bits inspired by the mockup.
+function StreamerConfetti() {
+  const bits = [
+    { top: "6%", left: "8%", c: "#E76F51", r: "-18deg", kind: "streamer" },
+    { top: "10%", left: "78%", c: "#2A9D8F", r: "24deg", kind: "streamer" },
+    { top: "22%", left: "92%", c: "#E9C46A", r: "-8deg", kind: "dot" },
+    { top: "70%", left: "6%", c: "#F4A261", r: "12deg", kind: "streamer" },
+    { top: "82%", left: "84%", c: "#8ECAE6", r: "-22deg", kind: "streamer" },
+    { top: "44%", left: "3%", c: "#E76F51", r: "0deg", kind: "dot" },
+    { top: "52%", left: "96%", c: "#2A9D8F", r: "0deg", kind: "dot" },
+    { top: "88%", left: "44%", c: "#E9C46A", r: "10deg", kind: "dot" },
+    { top: "4%", left: "48%", c: "#8ECAE6", r: "-4deg", kind: "dot" },
+  ];
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      {bits.map((b, i) =>
+        b.kind === "streamer" ? (
+          <span
+            key={i}
+            className="absolute block"
+            style={{
+              top: b.top,
+              left: b.left,
+              width: 22,
+              height: 6,
+              borderRadius: 999,
+              background: b.c,
+              transform: `rotate(${b.r})`,
+              opacity: 0.9,
+              animation: `award-float 3.6s ease-in-out ${i * 0.18}s infinite`,
+            }}
+          />
+        ) : (
+          <span
+            key={i}
+            className="absolute block h-2.5 w-2.5 rounded-full"
+            style={{
+              top: b.top,
+              left: b.left,
+              background: b.c,
+              opacity: 0.85,
+              animation: `award-float 3.2s ease-in-out ${i * 0.14}s infinite`,
+            }}
+          />
+        ),
+      )}
+      <style>{`
+        @keyframes award-float {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.85; }
+          50% { transform: translateY(-6px) scale(1.15); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+
 function AwardCard({
   award,
   hasPassport,
