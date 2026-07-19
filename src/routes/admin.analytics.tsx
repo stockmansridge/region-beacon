@@ -210,6 +210,10 @@ function Analytics() {
     () => passports.filter((p) => inEvent(p.event_id) && inRange(p.created_at)),
     [passports, filteredEventIds, fromDate],
   );
+  const fBonusScans = useMemo(
+    () => bonusScans.filter((b) => inEvent(b.event_id) && inRange(b.created_at)),
+    [bonusScans, filteredEventIds, fromDate],
+  );
 
   // Summary metrics
   const totalEvents = filteredEvents.length;
@@ -217,6 +221,8 @@ function Analytics() {
   const totalVenues = fVenues.length;
   const totalPassports = fPassports.length;
   const totalCheckins = fCheckins.length;
+  const totalBonusScans = fBonusScans.length;
+  const totalBonusPoints = fBonusScans.reduce((s, b) => s + (b.points_awarded ?? 0), 0);
   const uniqueCheckedIn = new Set(fCheckins.map((c) => c.passport_id)).size;
   const avgVenuesPerPassport =
     totalPassports > 0 ? (uniqueCheckedIn ? totalCheckins / totalPassports : 0) : 0;
