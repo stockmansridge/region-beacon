@@ -279,6 +279,47 @@ function Events() {
       setActivatingId(null);
     }
   }
+  async function cloneEvent(source: EventRow) {
+    if (!agencyId) return;
+    const suggested = `${source.name} (copy)`;
+    const raw = typeof window !== "undefined" ? window.prompt(
+      "Name for the cloned event:",
+      suggested,
+    ) : suggested;
+    if (raw == null) return;
+    const newName = raw.trim();
+    if (!newName) {
+      toast.error("Please enter a name.");
+      return;
+    }
+    const clash = (rows ?? []).some(
+      (e) => e.name.trim().toLowerCase() === newName.toLowerCase(),
+    );
+    if (clash) {
+      toast.error("An event with that name already exists.");
+      return;
+    }
+    setCloningId(source.id);
+    try {
+      const { data, error } = await supabase.rpc("clone_event" as never, {
+        _source_event_id: source.id,
+        _new_name: newName,
+      } as never);
+      if (error) {
+        toast.error(`Could not clone event: ${error.message}`);
+        return;
+      }
+      const newId = (Array.isArray(data) ? data[0] : data) as string | null;
+      toast.success("Event cloned. It's a draft — publish when ready.");
+      if (newId) {
+        navigate({ to: "/admin/events/$eventId", params: { eventId: newId } });
+      } else {
+        setReloadKey((k) => k + 1);
+      }
+    } finally {
+      setCloningId(null);
+    }
+  }
 
 
 
