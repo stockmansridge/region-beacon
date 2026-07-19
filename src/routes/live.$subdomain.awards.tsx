@@ -306,39 +306,8 @@ function TabButton({
   );
 }
 
-function ConfettiDots() {
-  // Purely decorative sparkles positioned inside the hero.
-  const dots = [
-    { top: "8%", left: "6%", c: "var(--event-accent,#C7A96B)", d: "0s" },
-    { top: "14%", left: "88%", c: "#E76F51", d: "0.6s" },
-    { top: "68%", left: "10%", c: "#2A9D8F", d: "0.3s" },
-    { top: "78%", left: "82%", c: "var(--event-accent,#C7A96B)", d: "0.9s" },
-    { top: "40%", left: "94%", c: "#E9C46A", d: "0.4s" },
-    { top: "48%", left: "3%", c: "#E76F51", d: "1.1s" },
-  ];
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0">
-      {dots.map((d, i) => (
-        <span
-          key={i}
-          className="absolute h-2 w-2 rounded-full opacity-70"
-          style={{
-            top: d.top,
-            left: d.left,
-            background: d.c,
-            animation: `award-float 3.6s ease-in-out ${d.d} infinite`,
-          }}
-        />
-      ))}
-      <style>{`
-        @keyframes award-float {
-          0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
-          50% { transform: translateY(-8px) scale(1.15); opacity: 1; }
-        }
-      `}</style>
-    </div>
-  );
-}
+
+
 
 // Loads Dancing Script from Google Fonts once for the celebratory heading.
 function useFunFont() {
