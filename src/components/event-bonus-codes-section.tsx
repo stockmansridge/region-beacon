@@ -179,6 +179,9 @@ export function BonusCodesSection({
       is_active: row.is_active,
       scope: row.scope === "per_venue" ? "per_venue" : "event",
       venue_ids: activeVenueIds,
+      kind: row.kind === "social" ? "social" : "points",
+      social_location: row.social_location ?? "",
+      social_hashtags: row.social_hashtags ?? "",
     });
     setFormError(null);
   }
