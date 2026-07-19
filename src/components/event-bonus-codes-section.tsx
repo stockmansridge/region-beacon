@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { QrPreview } from "@/components/qr-preview";
 
+type BonusKind = "points" | "social";
+
 type BonusCode = {
   id: string;
   agency_id: string;
@@ -14,6 +16,9 @@ type BonusCode = {
   qr_code_token: string;
   is_active: boolean;
   scope?: "event" | "per_venue" | null;
+  kind?: BonusKind | null;
+  social_location?: string | null;
+  social_hashtags?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -35,6 +40,9 @@ type FormState = {
   is_active: boolean;
   scope: "event" | "per_venue";
   venue_ids: string[];
+  kind: BonusKind;
+  social_location: string;
+  social_hashtags: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -44,6 +52,9 @@ const EMPTY_FORM: FormState = {
   is_active: true,
   scope: "event",
   venue_ids: [],
+  kind: "points",
+  social_location: "",
+  social_hashtags: "",
 };
 
 function sanitizeFilename(name: string): string {
@@ -109,7 +120,7 @@ export function BonusCodesSection({
         supabase
           .from("event_bonus_codes")
           .select(
-            "id, agency_id, event_id, name, description, points_value, qr_code_token, is_active, scope, created_at, updated_at",
+            "id, agency_id, event_id, name, description, points_value, qr_code_token, is_active, scope, kind, social_location, social_hashtags, created_at, updated_at",
           )
           .eq("agency_id", agencyId)
           .eq("event_id", eventId)
@@ -168,6 +179,9 @@ export function BonusCodesSection({
       is_active: row.is_active,
       scope: row.scope === "per_venue" ? "per_venue" : "event",
       venue_ids: activeVenueIds,
+      kind: row.kind === "social" ? "social" : "points",
+      social_location: row.social_location ?? "",
+      social_hashtags: row.social_hashtags ?? "",
     });
     setFormError(null);
   }
@@ -203,6 +217,10 @@ export function BonusCodesSection({
     setFormError(null);
     try {
       let bonusId: string | null = null;
+      const socialLocation =
+        form.kind === "social" ? form.social_location.trim() || null : null;
+      const socialHashtags =
+        form.kind === "social" ? form.social_hashtags.trim() || null : null;
       if (editingId === "new") {
         const payload = {
           agency_id: agencyId,
@@ -212,6 +230,9 @@ export function BonusCodesSection({
           points_value: points,
           is_active: form.is_active,
           scope: form.scope,
+          kind: form.kind,
+          social_location: socialLocation,
+          social_hashtags: socialHashtags,
           qr_code_token: crypto.randomUUID(),
           created_by: userId,
         };
@@ -230,6 +251,9 @@ export function BonusCodesSection({
           points_value: points,
           is_active: form.is_active,
           scope: form.scope,
+          kind: form.kind,
+          social_location: socialLocation,
+          social_hashtags: socialHashtags,
         };
         const { error } = await supabase
           .from("event_bonus_codes")
@@ -377,6 +401,88 @@ export function BonusCodesSection({
               className="w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 py-2 text-sm"
             />
           </label>
+
+          <div className="space-y-2">
+            <span className="block text-xs font-medium text-[#334155]">Type</span>
+            <div className="flex flex-wrap gap-2">
+              <label
+                className={
+                  "inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 text-xs cursor-pointer " +
+                  (form.kind === "points"
+                    ? "border-[#2F6FE4] bg-[#EFF6FF] text-[#1D4ED8]"
+                    : "border-[#D9E2EF] bg-white text-[#334155]")
+                }
+              >
+                <input
+                  type="radio"
+                  name="bonus-kind"
+                  className="accent-[#2F6FE4]"
+                  checked={form.kind === "points"}
+                  onChange={() => setForm({ ...form, kind: "points" })}
+                />
+                <span>Points (scan QR)</span>
+              </label>
+              <label
+                className={
+                  "inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 text-xs cursor-pointer " +
+                  (form.kind === "social"
+                    ? "border-[#2F6FE4] bg-[#EFF6FF] text-[#1D4ED8]"
+                    : "border-[#D9E2EF] bg-white text-[#334155]")
+                }
+              >
+                <input
+                  type="radio"
+                  name="bonus-kind"
+                  className="accent-[#2F6FE4]"
+                  checked={form.kind === "social"}
+                  onChange={() => setForm({ ...form, kind: "social" })}
+                />
+                <span>Social share (opens camera)</span>
+              </label>
+            </div>
+            {form.kind === "social" && (
+              <p className="text-[11px] text-[#64748B]">
+                On the venue page, this bonus shows a "Share on socials" button
+                that opens the phone camera so customers can snap a photo and
+                post it with the tag &amp; hashtags below.
+              </p>
+            )}
+          </div>
+
+          {form.kind === "social" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block space-y-1">
+                <span className="block text-xs font-medium text-[#334155]">
+                  Tag / @location
+                </span>
+                <input
+                  type="text"
+                  maxLength={80}
+                  placeholder="@cargoroadwines"
+                  value={form.social_location}
+                  onChange={(e) =>
+                    setForm({ ...form, social_location: e.target.value })
+                  }
+                  className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm"
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="block text-xs font-medium text-[#334155]">
+                  Recommended hashtags
+                </span>
+                <input
+                  type="text"
+                  maxLength={200}
+                  placeholder="#cargoroadquest #orangenswwine"
+                  value={form.social_hashtags}
+                  onChange={(e) =>
+                    setForm({ ...form, social_hashtags: e.target.value })
+                  }
+                  className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm"
+                />
+              </label>
+            </div>
+          )}
 
           <label className="block space-y-1">
             <span className="block text-xs font-medium text-[#334155]">
