@@ -386,6 +386,7 @@ function PassportView({
   branding: EventBrandingKeys;
 }) {
   const [supportCopied, setSupportCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const pageHostname = typeof window !== "undefined" ? window.location.hostname : "";
   const passportUrl = `${origin}/passport/${token}`;
