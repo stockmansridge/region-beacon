@@ -217,6 +217,10 @@ export function BonusCodesSection({
     setFormError(null);
     try {
       let bonusId: string | null = null;
+      const socialLocation =
+        form.kind === "social" ? form.social_location.trim() || null : null;
+      const socialHashtags =
+        form.kind === "social" ? form.social_hashtags.trim() || null : null;
       if (editingId === "new") {
         const payload = {
           agency_id: agencyId,
@@ -226,6 +230,9 @@ export function BonusCodesSection({
           points_value: points,
           is_active: form.is_active,
           scope: form.scope,
+          kind: form.kind,
+          social_location: socialLocation,
+          social_hashtags: socialHashtags,
           qr_code_token: crypto.randomUUID(),
           created_by: userId,
         };
@@ -244,6 +251,9 @@ export function BonusCodesSection({
           points_value: points,
           is_active: form.is_active,
           scope: form.scope,
+          kind: form.kind,
+          social_location: socialLocation,
+          social_hashtags: socialHashtags,
         };
         const { error } = await supabase
           .from("event_bonus_codes")
