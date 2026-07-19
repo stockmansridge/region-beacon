@@ -380,8 +380,11 @@ function CelebrationHero({
           </>
         ) : (
           <>
-            <div className="mx-auto flex h-20 w-20 items-center justify-center text-6xl drop-shadow-sm sm:h-24 sm:w-24 sm:text-7xl">
-              🎁
+            <div className="relative mx-auto h-20 w-20 sm:h-24 sm:w-24">
+              <HalfCircleBurst />
+              <div className="relative flex h-full w-full items-center justify-center text-6xl drop-shadow-sm sm:text-7xl">
+                🎁
+              </div>
             </div>
             <h1
               className="mt-2 text-[2.4rem] leading-none sm:text-[3rem]"
