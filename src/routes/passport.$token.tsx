@@ -385,9 +385,9 @@ function PassportView({
   subdomain: string | null;
   branding: EventBrandingKeys;
 }) {
-  const [copied, setCopied] = useState(false);
   const [supportCopied, setSupportCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const pageHostname = typeof window !== "undefined" ? window.location.hostname : "";
   const passportUrl = `${origin}/passport/${token}`;
   
 
@@ -433,18 +433,28 @@ function PassportView({
   const nextAward = awards ? pickNextReward(awards) : null;
   const heroImageUrl = getEventAssetPublicUrl(branding.coverPath);
   const heroLogoUrl = getEventAssetPublicUrl(branding.logoPath);
+  const activityFallbackCheckins = useMemo(
+    () =>
+      stamps.allVenues
+        .filter((venue) => venue.is_stamped && venue.checked_in_at)
+        .sort(
+          (a, b) =>
+            new Date(b.checked_in_at ?? 0).getTime() -
+            new Date(a.checked_in_at ?? 0).getTime(),
+        )
+        .slice(0, 5)
+        .map((venue) => ({
+          first_name: passport.first_name?.trim() || "Someone",
+          last_initial: passport.last_name?.trim()
+            ? passport.last_name.trim().charAt(0).toUpperCase()
+            : null,
+          venue_name: venue.venue_name ?? "a venue",
+          happened_at: venue.checked_in_at ?? new Date().toISOString(),
+        })),
+    [passport.first_name, passport.last_name, stamps.allVenues],
+  );
 
 
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(passportUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }
 
   async function copySupportDetails() {
     const eventId = passport.event_id;
@@ -814,11 +824,13 @@ function PassportView({
 
 
         {/* What's happening — live event pulse (directly under stamps) */}
-        {subdomain ? (
-          <div className="mt-5">
-            <WhatsHappeningCard subdomain={subdomain} />
-          </div>
-        ) : null}
+        <div className="mt-5">
+          <WhatsHappeningCard
+            subdomain={subdomain}
+            hostname={pageHostname}
+            fallbackCheckins={activityFallbackCheckins}
+          />
+        </div>
 
         {/* Rewards — sourced from configured event_awards. Hidden when none. */}
         <RewardsSection awards={awards} nextAward={nextAward} />
@@ -857,73 +869,18 @@ function PassportView({
         </section>
 
 
-        {/* Copy link */}
-        <section
-          className="mt-5 rounded-3xl border p-5 shadow-sm"
+        <button
+          type="button"
+          onClick={copySupportDetails}
+          className="mt-5 h-9 w-full rounded-full border text-xs font-semibold tracking-wide"
           style={{
-            borderColor: "var(--event-card-border)",
-            backgroundColor: "var(--event-card-bg)",
+            borderColor: "var(--event-button-secondary-border)",
+            backgroundColor: "var(--event-button-secondary-bg)",
+            color: "var(--event-button-secondary-fg)",
           }}
         >
-          <div
-            className="text-[10px] font-medium uppercase tracking-[0.22em]"
-            style={{ color: "var(--event-card-muted)" }}
-          >
-            Your private passport link
-          </div>
-          <div
-            className="mt-2 break-all rounded-2xl border p-3 font-mono text-xs"
-            style={{
-              borderColor: "var(--event-card-border)",
-              backgroundColor: "var(--event-page-bg)",
-              color: "var(--event-link)",
-            }}
-          >
-            {passportUrl}
-          </div>
-          <button
-            type="button"
-            onClick={copy}
-            className="mt-3 h-11 w-full rounded-full text-sm font-semibold tracking-wide shadow"
-            style={{
-              backgroundColor: "var(--event-button-primary-bg)",
-              color: "var(--event-button-primary-fg)",
-            }}
-          >
-            {copied ? "Copied!" : "Copy passport link"}
-          </button>
-          <div
-            className="mt-3 rounded-xl border px-3 py-2 text-left text-xs"
-            style={{
-              borderColor:
-                "color-mix(in srgb, var(--event-accent) 35%, transparent)",
-              backgroundColor:
-                "color-mix(in srgb, var(--event-accent) 10%, transparent)",
-              color: "var(--event-card-text)",
-            }}
-          >
-            <strong>Save this link.</strong> It is the only way back into your
-            passport on a new device. Anyone with it can view your passport.
-          </div>
-          <button
-            type="button"
-            onClick={copySupportDetails}
-            className="mt-3 h-9 w-full rounded-full border text-xs font-semibold tracking-wide"
-            style={{
-              borderColor: "var(--event-button-secondary-border)",
-              backgroundColor: "var(--event-button-secondary-bg)",
-              color: "var(--event-button-secondary-fg)",
-            }}
-          >
-            {supportCopied ? "Copied support details" : "Copy support details"}
-          </button>
-          <p
-            className="mt-2 text-[10px] leading-snug"
-            style={{ color: "var(--event-card-muted)" }}
-          >
-            Support details exclude your full passport link and visitor details.
-          </p>
-        </section>
+          {supportCopied ? "Copied support details" : "Copy support details"}
+        </button>
 
         <div className="mt-6 flex justify-center">
           <PoweredByGetStampd variant="trail" />

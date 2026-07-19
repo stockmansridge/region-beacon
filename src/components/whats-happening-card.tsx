@@ -23,6 +23,12 @@ type HappeningPayload = {
   recent_bonus: BonusRow[];
 };
 
+type WhatsHappeningCardProps = {
+  subdomain?: string | null;
+  hostname?: string | null;
+  fallbackCheckins?: CheckinRow[];
+};
+
 const POLL_MS = 30_000;
 
 function relativeTime(iso: string): string {
@@ -44,29 +50,86 @@ function displayName(first: string, initial: string | null): string {
   return initial ? `${first} ${initial}.` : first;
 }
 
-export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
+function fallbackPayload(checkins: CheckinRow[] = []): HappeningPayload {
+  return {
+    recent_checkins: checkins.slice(0, 5),
+    explorers_today: 0,
+    recent_bonus: [],
+  };
+}
+
+function mergeFallback(
+  payload: HappeningPayload | null,
+  checkins: CheckinRow[],
+): HappeningPayload {
+  if (!payload) return fallbackPayload(checkins);
+  return {
+    ...payload,
+    recent_checkins:
+      payload.recent_checkins?.length > 0
+        ? payload.recent_checkins
+        : checkins.slice(0, 5),
+  };
+}
+
+export function WhatsHappeningCard({
+  subdomain,
+  hostname,
+  fallbackCheckins,
+}: WhatsHappeningCardProps) {
   const [data, setData] = useState<HappeningPayload | null>(null);
-  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const host = tenantHost(subdomain);
+    const fallbackRows = fallbackCheckins ?? [];
+    const host = subdomain
+      ? tenantHost(subdomain)
+      : (hostname ?? "").toLowerCase().split(":")[0].trim();
+
+    async function loadRecentCheckins(): Promise<CheckinRow[]> {
+      if (!host) return [];
+      const { data: recent, error } = await supabase.rpc(
+        "get_public_event_recent_activity",
+        { _hostname: host, _limit: 5 },
+      );
+      if (error) throw error;
+      return ((recent ?? []) as Array<{
+        first_name: string;
+        venue_name: string;
+        happened_at: string;
+      }>).map((row) => ({
+        first_name: row.first_name,
+        last_initial: null,
+        venue_name: row.venue_name,
+        happened_at: row.happened_at,
+      }));
+    }
 
     async function load() {
+      if (!host) {
+        if (!cancelled) setData(fallbackPayload(fallbackRows));
+        return;
+      }
       try {
         const { data: res, error } = await supabase.rpc(
           "get_public_event_happening_now",
           { _hostname: host },
         );
         if (error) {
-          if (!cancelled) setFailed(true);
-          return;
+          throw error;
         }
         if (!cancelled && res) {
-          setData(res as HappeningPayload);
+          setData(mergeFallback(res as HappeningPayload, fallbackRows));
         }
       } catch {
-        if (!cancelled) setFailed(true);
+        try {
+          const recentCheckins = await loadRecentCheckins();
+          if (!cancelled) {
+            setData(fallbackPayload(recentCheckins.length ? recentCheckins : fallbackRows));
+          }
+        } catch {
+          if (!cancelled) setData(fallbackPayload(fallbackRows));
+        }
       }
     }
 
@@ -83,9 +146,8 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [subdomain]);
+  }, [subdomain, hostname, fallbackCheckins]);
 
-  if (failed) return null;
   const isLoading = !data;
 
   const checkin = data?.recent_checkins?.[0] ?? null;
