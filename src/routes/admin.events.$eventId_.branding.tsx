@@ -1554,12 +1554,14 @@ function FontSelect({
 }
 
 function FontPickers({
-  headingValue, bodyValue, onHeadingChange, onBodyChange, disabled, eventName,
+  headingValue, bodyValue, emotiveValue, onHeadingChange, onBodyChange, onEmotiveChange, disabled, eventName,
 }: {
   headingValue: string;
   bodyValue: string;
+  emotiveValue: string;
   onHeadingChange: (v: string) => void;
   onBodyChange: (v: string) => void;
+  onEmotiveChange: (v: string) => void;
   disabled?: boolean;
   eventName: string;
 }) {
@@ -1567,6 +1569,8 @@ function FontPickers({
     getEventFont(headingValue)?.stack ?? (headingValue.trim() || undefined);
   const bodyStack =
     getEventFont(bodyValue)?.stack ?? (bodyValue.trim() || undefined);
+  const emotiveStack =
+    getEventFont(emotiveValue)?.stack ?? (emotiveValue.trim() || "'Caveat', 'Segoe Script', cursive");
   // Heading font falls back to body font when unset.
   const heroPreviewStack = headingStack ?? bodyStack;
   return (
@@ -1597,12 +1601,31 @@ function FontPickers({
         disabled={disabled}
       />
 
+      <div className="pt-2">
+        <div className="text-sm font-semibold text-[#111827]">Venue emotive font (default)</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Script font used to render the optional emotive/storytelling block on each venue page.
+          Individual venues can override this. Defaults to <span className="font-medium">Caveat</span>.
+        </p>
+      </div>
+      <FontSelect
+        label="Default emotive font"
+        value={emotiveValue}
+        onChange={onEmotiveChange}
+        disabled={disabled}
+      />
+
       <div className="space-y-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
         <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">Font preview</div>
         <div style={heroPreviewStack ? { fontFamily: heroPreviewStack } : undefined}>
           <div className="text-3xl font-semibold leading-tight text-[#111827]">
             {eventName || "Explore Orange Wine Trail"}
           </div>
+        </div>
+        <div style={{ fontFamily: emotiveStack }}>
+          <p className="text-2xl leading-snug text-[#334155]">
+            A little story worth savouring.
+          </p>
         </div>
         <div style={bodyStack ? { fontFamily: bodyStack } : undefined}>
           <p className="text-sm leading-6 text-[#334155]">
@@ -1619,6 +1642,7 @@ function FontPickers({
     </div>
   );
 }
+
 
 // ============================================================================
 // SemanticPreview — sample UI drawn entirely from --event-* tokens.
