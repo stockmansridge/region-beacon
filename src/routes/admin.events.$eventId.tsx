@@ -48,6 +48,8 @@ import {
   isValidHex,
   type OfferDisplayIcon,
 } from "@/lib/offer-display";
+import { EVENT_FONTS, getEventFont } from "@/lib/event-fonts";
+
 
 type LoadDiagnostic = {
   step: string;
@@ -3768,7 +3770,52 @@ function EventDetail() {
                 {venueEditorTab === "public" && (
                 <>
                 <FormSection title="Public page content">
+                  {bundle?.emotiveSupported && (
+                    <Field label="Emotive text (optional)">
+                      <textarea
+                        rows={3}
+                        maxLength={500}
+                        value={venueForm.emotive_text}
+                        onChange={(e) => setVenueForm({ ...venueForm, emotive_text: e.target.value })}
+                        placeholder="A short storytelling line — e.g. Where dogs greet you at the cellar door."
+                        className="w-full rounded-md border bg-background px-3 py-2 text-lg italic"
+                        style={{
+                          fontFamily:
+                            getEventFont(venueForm.emotive_font_family)?.stack ??
+                            "'Caveat', 'Segoe Script', cursive",
+                        }}
+                      />
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <label className="text-xs text-muted-foreground">Font override:</label>
+                        <select
+                          value={venueForm.emotive_font_family}
+                          onChange={(e) =>
+                            setVenueForm({ ...venueForm, emotive_font_family: e.target.value })
+                          }
+                          className="rounded-md border bg-background px-2 py-1 text-xs"
+                        >
+                          <option value="">Use event default</option>
+                          {EVENT_FONTS.filter((f) => f.category === "Script").map((f) => (
+                            <option key={f.value} value={f.value}>
+                              {f.label}
+                            </option>
+                          ))}
+                          <optgroup label="Other">
+                            {EVENT_FONTS.filter((f) => f.category !== "Script").map((f) => (
+                              <option key={f.value} value={f.value}>
+                                {f.label}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </select>
+                        <span className="text-xs text-muted-foreground">
+                          {venueForm.emotive_text.length}/500
+                        </span>
+                      </div>
+                    </Field>
+                  )}
                   <Field label="Description">
+
                     <textarea
                       rows={5}
                       maxLength={1250}
