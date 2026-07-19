@@ -313,9 +313,24 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             </div>
           </div>
 
-          <h1 className="mt-4 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
-            {venue.name}
-          </h1>
+          <div className="mt-4 flex items-start justify-between gap-3">
+            <h1 className="font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+              {venue.name}
+            </h1>
+            {extras && extras.points_value > 0 && (
+              <span
+                className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] shadow-sm"
+                style={{
+                  backgroundColor: "var(--event-accent,#B5572A)",
+                  color: "var(--event-primary-fg,#F6EFE2)",
+                }}
+                aria-label={`Earn ${extras.points_value} points at this venue`}
+              >
+                +{extras.points_value} pts
+              </span>
+            )}
+          </div>
+
 
           {visited.kind === "visited" && (
             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--event-primary,#1F3D2B)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-primary-fg,#F6EFE2)]">
@@ -341,11 +356,25 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             </div>
           )}
 
+          {extras?.emotive_text && (
+            <p
+              className="mt-4 whitespace-pre-line text-2xl leading-snug"
+              style={{
+                fontFamily: emotiveStack,
+                color: "var(--event-primary,#1F3D2B)",
+              }}
+            >
+              {extras.emotive_text}
+            </p>
+          )}
+
           {venue.description && (
             <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-text,#3D372C)]">
               {venue.description}
             </p>
           )}
+
+
 
           {venue.offer_summary && (() => {
             const OfferIcon = resolveOfferIcon(venue.offer_display_icon);
