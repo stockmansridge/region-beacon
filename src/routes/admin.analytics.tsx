@@ -442,6 +442,16 @@ function Analytics() {
       })),
     );
 
+  const exportPostcodes = () =>
+    downloadCsv(
+      `postcodes-${Date.now()}.csv`,
+      postcodeStats.rows.map((r) => ({
+        postcode: r.postcode,
+        visitors: r.count,
+        share_pct: r.pct.toFixed(1),
+      })),
+    );
+
   if (!agencyId) {
     return (
       <>
