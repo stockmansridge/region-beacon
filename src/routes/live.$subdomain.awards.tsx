@@ -487,6 +487,7 @@ function StreamerConfetti() {
       `}</style>
     </div>
   );
+}
 
 function AwardCard({
   award,
