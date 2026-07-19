@@ -526,6 +526,7 @@ function PassportView({
 
   return (
     <>
+      {subdomain && <LiveActivityBar subdomain={subdomain} />}
       {/* Full-bleed hero with overlaid header */}
       <div className="relative">
         {subdomain && (
