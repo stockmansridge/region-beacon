@@ -1305,6 +1305,9 @@ function EventDetail() {
       logo_path: null,
       cover_path: null,
       points_value: "0",
+      emotive_text: "",
+      emotive_font_family: "",
+
     });
 
     setVenueAssetError(null);
@@ -1337,8 +1340,11 @@ function EventDetail() {
       logo_path: v.logo_path ?? null,
       cover_path: v.cover_path ?? null,
       points_value: String(v.points_value ?? 0),
+      emotive_text: v.emotive_text ?? "",
+      emotive_font_family: v.emotive_font_family ?? "",
 
     });
+
     setVenueAssetError(null);
     setVenueValidationError(null);
     setVenueSaveError(null);
