@@ -440,11 +440,8 @@ function Firework({ position }: { position: "left" | "right" }) {
             key={i}
             className="absolute left-0 top-0 block"
             style={{
-              transform: `rotate(${b.angle}deg) translateX(0px)`,
+              transform: `rotate(${b.angle}deg)`,
               transformOrigin: "0 0",
-              animation: `firework-particle 2.2s cubic-bezier(0.15,0.7,0.3,1) ${delay}s infinite`,
-              // pass distance via CSS var
-              ["--dist" as any]: `${b.distance}px`,
             }}
           >
             <span
@@ -456,6 +453,8 @@ function Firework({ position }: { position: "left" | "right" }) {
                 background: b.color,
                 boxShadow: `0 0 10px ${b.color}, 0 0 18px ${b.color}88`,
                 transform: "translate(-50%, -50%)",
+                animation: `firework-particle 2.2s cubic-bezier(0.15,0.7,0.3,1) ${delay}s infinite`,
+                ["--dist" as any]: `${b.distance}px`,
               }}
             />
           </span>
@@ -463,16 +462,17 @@ function Firework({ position }: { position: "left" | "right" }) {
       </div>
       <style>{`
         @keyframes firework-particle {
-          0%   { transform: rotate(var(--a,0deg)) translateX(0); opacity: 0; }
+          0%   { transform: translate(-50%, -50%); opacity: 0; }
           10%  { opacity: 1; }
           70%  { opacity: 1; }
-          100% { transform: translateX(var(--dist,40px)); opacity: 0; }
+          100% { transform: translate(calc(-50% + var(--dist, 40px)), -50%); opacity: 0; }
         }
         @keyframes firework-pop {
           0%, 100% { opacity: 0; }
           8%, 60%  { opacity: 1; }
         }
       `}</style>
+
     </div>
   );
 }
