@@ -389,7 +389,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
               venue.offer_display_foreground_colour,
             );
             return (
-              <div className="mt-5 flex gap-3 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-4">
+              <div className="mt-6 flex gap-3 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-4">
                 <span
                   className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full"
                   style={badgeStyle}
@@ -410,7 +410,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           })()}
 
           {bonusChallenges.length > 0 && (
-            <div className="mt-5 space-y-3">
+            <div className="mt-6 space-y-3">
               {bonusChallenges.map((challenge) => (
                 <article
                   key={challenge.bonus_code_id}
