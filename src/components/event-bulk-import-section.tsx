@@ -280,6 +280,11 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
           civ = civInt;
         }
       }
+      const emotiveText = s(r["emotive_text"]) || null;
+      const emotiveFont = s(r["emotive_font_family"]) || null;
+      if (emotiveText && emotiveText.length > 500) {
+        issues.push({ level: "error", message: "emotive_text must be 500 characters or fewer." });
+      }
       return {
         rowNum: i + 2,
         venue_key,
@@ -294,6 +299,8 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         order_index: order,
         status: statusParsed === "disabled" ? "inactive" : "active",
         check_in_value: civ,
+        emotive_text: emotiveText,
+        emotive_font_family: emotiveFont,
         issues,
       };
     })
@@ -324,6 +331,60 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       if (statusParsed === null) {
         issues.push({ level: "error", message: "Status must be active or disabled." });
       }
+
+      // kind: points (default) | social
+      const kindRaw = s(r["kind"]).toLowerCase();
+      let kind: BonusKind = "points";
+      if (kindRaw === "" || kindRaw === "points" || kindRaw === "checkin" || kindRaw === "check_in") {
+        kind = "points";
+      } else if (kindRaw === "social") {
+        kind = "social";
+      } else {
+        issues.push({ level: "error", message: "kind must be 'points' or 'social'." });
+      }
+
+      // scope: event (default) | per_venue
+      const scopeRaw = s(r["scope"]).toLowerCase().replace(/[\s-]/g, "_");
+      let scope: BonusScope = "event";
+      if (scopeRaw === "" || scopeRaw === "event") {
+        scope = "event";
+      } else if (scopeRaw === "per_venue" || scopeRaw === "pervenue" || scopeRaw === "venue") {
+        scope = "per_venue";
+      } else {
+        issues.push({ level: "error", message: "scope must be 'event' or 'per_venue'." });
+      }
+
+      // venue_keys: comma / semicolon / pipe separated list, only used
+      // when scope === 'per_venue'.
+      const venueKeysRaw = s(r["venue_keys"]);
+      const venueKeys = venueKeysRaw === ""
+        ? []
+        : venueKeysRaw
+            .split(/[,;|]/)
+            .map((x) => x.trim())
+            .filter((x) => x.length > 0);
+      if (scope === "per_venue" && venueKeys.length === 0) {
+        issues.push({
+          level: "error",
+          message: "venue_keys is required when scope is 'per_venue' (comma-separated list of venue_key values from the Venues sheet).",
+        });
+      }
+      if (scope === "event" && venueKeys.length > 0) {
+        issues.push({
+          level: "warning",
+          message: "venue_keys is ignored when scope is 'event'.",
+        });
+      }
+
+      const socialLocation = s(r["social_location"]) || null;
+      const socialHashtags = s(r["social_hashtags"]) || null;
+      if (kind !== "social" && (socialLocation || socialHashtags)) {
+        issues.push({
+          level: "warning",
+          message: "social_location and social_hashtags are only used when kind is 'social' — ignored.",
+        });
+      }
+
       return {
         rowNum: i + 2,
         code,
@@ -331,10 +392,16 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         description: s(r["description"]) || null,
         points,
         status: (statusParsed ?? "active") as Status,
+        kind,
+        scope,
+        venue_keys: venueKeys,
+        social_location: kind === "social" ? socialLocation : null,
+        social_hashtags: kind === "social" ? socialHashtags : null,
         issues,
       };
     })
     .filter((r): r is BonusDraft => r !== null);
+
 
   const venueKeySet = new Set(venues.map((v) => v.venue_key.toLowerCase()));
   const tastings: TastingDraft[] = tastingRows
