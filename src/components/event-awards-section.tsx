@@ -524,6 +524,8 @@ function AwardEditorDialog({
   );
   const [status, setStatus] = useState<AwardStatus>(award?.status ?? "active");
   const [sortOrder, setSortOrder] = useState(String(award?.sort_order ?? 0));
+  const [drawDate, setDrawDate] = useState<string>(award?.draw_date ?? "");
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -569,7 +571,9 @@ function AwardEditorDialog({
         requiresAllLocations,
         status,
         sortOrder: Number.isFinite(so) ? so : 0,
+        drawDate: drawDate.trim() ? drawDate.trim() : null,
       });
+
       toast.success(isEdit ? "Prize updated" : "Prize created");
       onSaved();
     } catch (e) {
@@ -680,9 +684,22 @@ function AwardEditorDialog({
               />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="award-draw-date">Draw date (optional)</Label>
+            <Input
+              id="award-draw-date"
+              type="date"
+              value={drawDate}
+              onChange={(e) => setDrawDate(e.target.value)}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Shown to participants on the Prizes page. Leave blank for TBA.
+            </p>
+          </div>
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
               <Label htmlFor="award-allloc">Requires visiting all locations</Label>
+
               <p className="text-xs text-muted-foreground">
                 Participant must check in to every active venue.
               </p>

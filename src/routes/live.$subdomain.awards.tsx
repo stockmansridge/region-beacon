@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Trophy } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Gift, Sparkles, Trophy, Users, Calendar, PartyPopper } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { PoweredByGetStampd } from "@/components/brand";
@@ -41,23 +41,68 @@ function useEventInfo(subdomain: string): EventInfo {
   return info;
 }
 
+type RecentCheckin = {
+  first_name: string;
+  last_initial: string | null;
+  venue_name: string;
+  happened_at: string;
+};
+
+function useRecentActivity(subdomain: string) {
+  const [rows, setRows] = useState<RecentCheckin[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const host = tenantHost(subdomain);
+    async function load() {
+      try {
+        const { data } = await supabase.rpc(
+          "get_public_event_happening_now",
+          { _hostname: host },
+        );
+        if (cancelled) return;
+        const payload = (data as { recent_checkins?: RecentCheckin[] } | null) ?? null;
+        setRows(payload?.recent_checkins ?? []);
+      } catch {
+        // silent — banner is decorative
+      }
+    }
+    load();
+    const t = setInterval(load, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [subdomain]);
+  return rows;
+}
+
+function formatDrawDate(iso: string | null | undefined): string {
+  if (!iso) return "Draw date: TBA";
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d.getTime())) return "Draw date: TBA";
+  return `Draw: ${d.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })}`;
+}
+
 export function AwardsPage({ subdomain }: { subdomain: string }) {
   const branding = useEventBrandingKeys(subdomain);
   const eventInfo = useEventInfo(subdomain);
   const passport = useCurrentEventPassport(eventInfo.event_id);
   const [awards, setAwards] = useState<PublicEventAward[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"rewards" | "entries">("rewards");
+  const recentCheckins = useRecentActivity(subdomain);
 
   useEffect(() => {
     if (!eventInfo.event_id) return;
     let cancelled = false;
     (async () => {
       try {
-        // Note: useCurrentEventPassport does not expose passport_id directly;
-        // we re-derive it via the same RPC the hook uses if needed.
         let passportId: string | null = null;
         if (passport.passportHref) {
-          // token sits in the href: /passport/<token>
           const token = passport.passportHref.split("/").pop() ?? null;
           if (token) {
             const { data } = await supabase.rpc("get_passport_by_token", {
@@ -71,8 +116,6 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
         if (!cancelled) setAwards(rows);
       } catch (e) {
         if (!cancelled) {
-          // PostgrestError is a plain object — String(e) yields
-          // "[object Object]". Extract the real fields.
           const err = e as {
             message?: string;
             details?: string;
@@ -90,7 +133,7 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
               ? e.message
               : parts.length > 0
                 ? parts.join(" · ")
-                : "Could not load awards.";
+                : "Could not load prizes.";
           setError(msg);
           setAwards([]);
         }
@@ -100,6 +143,33 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
       cancelled = true;
     };
   }, [eventInfo.event_id, passport.passportHref]);
+
+  const hasPassport = !!passport.passportHref;
+  const myEntries = useMemo(
+    () => (awards ?? []).filter((a) => a.is_eligible),
+    [awards],
+  );
+  const visibleAwards = tab === "entries" ? myEntries : (awards ?? []);
+
+  // Highlight rules
+  const topPrizeId = useMemo(() => {
+    if (!awards || awards.length === 0) return null;
+    return [...awards].sort((a, b) => b.points_required - a.points_required)[0]?.id ?? null;
+  }, [awards]);
+  const popularPrizeId = useMemo(() => {
+    if (!awards || awards.length === 0) return null;
+    const sorted = [...awards].sort((a, b) => b.eligible_count - a.eligible_count);
+    return sorted[0] && sorted[0].eligible_count > 0 ? sorted[0].id : null;
+  }, [awards]);
+
+  const newInLastHour = useMemo(() => {
+    const cutoff = Date.now() - 60 * 60 * 1000;
+    return recentCheckins.filter(
+      (r) => new Date(r.happened_at).getTime() > cutoff,
+    ).length;
+  }, [recentCheckins]);
+
+  const avatars = recentCheckins.slice(0, 5);
 
   return (
     <EventPaletteScope
@@ -125,44 +195,103 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
           ← Back to event
         </Link>
 
-        <div className="mt-4 rounded-3xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm sm:p-10">
-          {eventInfo.event_name && (
-            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-page-muted,var(--event-muted,#8A7E66))]">
-              {eventInfo.event_name}
+        {/* Tabs */}
+        <div className="mt-4 flex rounded-full border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-1 text-sm font-semibold uppercase tracking-[0.16em]">
+          <TabButton active={tab === "rewards"} onClick={() => setTab("rewards")}>
+            Rewards
+          </TabButton>
+          <TabButton active={tab === "entries"} onClick={() => setTab("entries")}>
+            My Entries {hasPassport && myEntries.length > 0 && (
+              <span className="ml-1.5 rounded-full bg-[var(--event-primary,#1F3D2B)] px-1.5 py-0.5 text-[10px] text-[var(--event-primary-fg,#FFF)]">
+                {myEntries.length}
+              </span>
+            )}
+          </TabButton>
+        </div>
+
+        {/* Live activity banner */}
+        {newInLastHour > 0 && (
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-[var(--event-primary,#1F3D2B)]/20 bg-[var(--event-primary,#1F3D2B)] px-4 py-3 text-[var(--event-primary-fg,#FFF)] shadow-sm">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            </span>
+            <div className="flex-1 text-xs font-semibold uppercase tracking-[0.18em]">
+              Live draw activity
+              <div className="mt-0.5 text-sm font-medium normal-case tracking-normal opacity-95">
+                {newInLastHour} new {newInLastHour === 1 ? "entry" : "entries"} in the last hour
+              </div>
+            </div>
+            {avatars.length > 0 && (
+              <div className="flex -space-x-2">
+                {avatars.map((a, i) => (
+                  <div
+                    key={i}
+                    title={`${a.first_name} ${a.last_initial ?? ""}`.trim()}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--event-primary,#1F3D2B)] bg-[var(--event-accent,#C7A96B)] text-xs font-bold text-[var(--event-primary,#1F3D2B)]"
+                  >
+                    {(a.first_name?.[0] ?? "?").toUpperCase()}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Hero */}
+        <div className="relative mt-4 overflow-hidden rounded-3xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center shadow-sm sm:p-8">
+          <ConfettiDots />
+          <div className="relative">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--event-accent,#C7A96B)]/20 text-[var(--event-primary,#1F3D2B)]">
+              {hasPassport && myEntries.length > 0 ? (
+                <PartyPopper className="h-7 w-7" />
+              ) : (
+                <Gift className="h-7 w-7" />
+              )}
+            </div>
+            <h1
+              className="mt-3 text-2xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))] sm:text-3xl"
+              style={{ fontFamily: "var(--event-font, inherit)" }}
+            >
+              {hasPassport && myEntries.length > 0
+                ? "You're In the Draw!"
+                : "Prizes to be won"}
+            </h1>
+            <p className="mt-2 text-sm text-[var(--event-page-text,var(--event-text,#3D372C))]">
+              {hasPassport && myEntries.length > 0
+                ? `You've unlocked ${myEntries.length} ${myEntries.length === 1 ? "prize entry" : "prize entries"}. Keep exploring to enter more.`
+                : "Earn points by checking in at venues to unlock prizes and enter prize draws."}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-4">
+          {awards == null && (
+            <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+              Loading…
             </p>
           )}
-          <h1
-            className="mt-1 text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]"
-            style={{ fontFamily: "var(--event-font, inherit)" }}
-          >
-            Prizes
-          </h1>
-
-          <p className="mt-2 text-sm text-[var(--event-page-text,var(--event-text,#3D372C))]">
-            Earn points by checking in at venues to unlock prizes and enter
-            prize draws.
-          </p>
-
-          <div className="mt-6 space-y-4">
-            {awards == null && (
-              <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">Loading…</p>
-            )}
-            {error && (
-              <p className="text-sm text-destructive">Could not load prizes: {error}</p>
-            )}
-            {!error && awards != null && awards.length === 0 && (
-              <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
-                No prizes have been added for this event yet.
-              </p>
-            )}
-            {awards?.map((a) => (
-              <AwardCard
-                key={a.id}
-                award={a}
-                hasPassport={!!passport.passportHref}
-              />
-            ))}
-          </div>
+          {error && (
+            <p className="text-sm text-destructive">
+              Could not load prizes: {error}
+            </p>
+          )}
+          {!error && awards != null && visibleAwards.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+              {tab === "entries"
+                ? "You haven't unlocked any prize entries yet. Check in at venues to start collecting points."
+                : "No prizes have been added for this event yet."}
+            </div>
+          )}
+          {visibleAwards.map((a) => (
+            <AwardCard
+              key={a.id}
+              award={a}
+              hasPassport={hasPassport}
+              isTopPrize={a.id === topPrizeId && (awards?.length ?? 0) > 1}
+              isPopular={a.id === popularPrizeId && a.id !== topPrizeId}
+            />
+          ))}
         </div>
 
         <div className="mt-6 flex justify-center">
@@ -173,51 +302,186 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
   );
 }
 
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "flex-1 rounded-full px-4 py-2 text-xs transition-colors " +
+        (active
+          ? "bg-[var(--event-primary,#1F3D2B)] text-[var(--event-primary-fg,#FFF)] shadow-sm"
+          : "text-[var(--event-card-muted,var(--event-muted,#8A7E66))] hover:text-[var(--event-primary,#1F3D2B)]")
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function ConfettiDots() {
+  // Purely decorative sparkles positioned inside the hero.
+  const dots = [
+    { top: "8%", left: "6%", c: "var(--event-accent,#C7A96B)", d: "0s" },
+    { top: "14%", left: "88%", c: "#E76F51", d: "0.6s" },
+    { top: "68%", left: "10%", c: "#2A9D8F", d: "0.3s" },
+    { top: "78%", left: "82%", c: "var(--event-accent,#C7A96B)", d: "0.9s" },
+    { top: "40%", left: "94%", c: "#E9C46A", d: "0.4s" },
+    { top: "48%", left: "3%", c: "#E76F51", d: "1.1s" },
+  ];
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      {dots.map((d, i) => (
+        <span
+          key={i}
+          className="absolute h-2 w-2 rounded-full opacity-70"
+          style={{
+            top: d.top,
+            left: d.left,
+            background: d.c,
+            animation: `award-float 3.6s ease-in-out ${d.d} infinite`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes award-float {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
+          50% { transform: translateY(-8px) scale(1.15); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function AwardCard({
   award,
   hasPassport,
+  isTopPrize,
+  isPopular,
 }: {
   award: PublicEventAward;
   hasPassport: boolean;
+  isTopPrize: boolean;
+  isPopular: boolean;
 }) {
   const status = deriveStatus(award, hasPassport);
-
+  const progress = Math.max(
+    0,
+    Math.min(
+      100,
+      award.points_required === 0
+        ? 100
+        : Math.round((award.passport_points / award.points_required) * 100),
+    ),
+  );
   const entrantCopy =
     award.eligible_count === 0
-      ? "No one is eligible yet"
-      : `${award.eligible_count} ${award.eligible_count === 1 ? "person is" : "people are"} currently in this draw`;
+      ? "No entries yet — be first!"
+      : `${award.eligible_count} ${award.eligible_count === 1 ? "person" : "people"} in this draw`;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)]">
+    <div
+      className={
+        "relative overflow-hidden rounded-2xl border bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition-shadow hover:shadow-md " +
+        (status === "eligible"
+          ? "border-[var(--event-primary,#1F3D2B)]/40 ring-1 ring-[var(--event-primary,#1F3D2B)]/20"
+          : "border-[var(--event-card-border,var(--event-border,#E6DCC7))]")
+      }
+    >
+      {/* Highlight badges */}
+      <div className="pointer-events-none absolute left-3 top-3 z-10 flex gap-2">
+        {isTopPrize && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow">
+            <Trophy className="h-3 w-3" /> Top Prize
+          </span>
+        )}
+        {isPopular && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--event-primary-fg,#FFF)] shadow">
+            <Sparkles className="h-3 w-3" /> Popular
+          </span>
+        )}
+      </div>
+
       {award.image_url && (
         <img
           src={award.image_url}
           alt=""
-          className="h-40 w-full object-cover"
+          className="h-44 w-full object-cover"
+          loading="lazy"
         />
       )}
+
       <div className="p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h2 className="text-lg font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
             {award.title}
           </h2>
-          <StatusBadge status={status} />
+          {status === "eligible" ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow">
+              <PartyPopper className="h-3 w-3" /> You're in!
+            </span>
+          ) : (
+            <StatusBadge status={status} />
+          )}
         </div>
+
         {award.description && (
-          <p className="mt-1 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
+          <p className="mt-1.5 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
             {award.description}
           </p>
         )}
-        <p className="mt-2 text-xs uppercase tracking-wide text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
-          {award.points_required} {award.points_required === 1 ? "point" : "points"} required
-          {award.requires_all_locations ? " · All locations" : ""}
-        </p>
+
+        {/* Progress bar */}
+        {hasPassport && award.points_required > 0 && (
+          <div className="mt-4">
+            <div className="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+              <span>
+                {Math.min(award.passport_points, award.points_required)} /{" "}
+                {award.points_required} points
+              </span>
+              <span>{progress}%</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--event-card-border,var(--event-border,#E6DCC7))]/60">
+              <div
+                className={
+                  "h-full rounded-full transition-all " +
+                  (status === "eligible"
+                    ? "bg-gradient-to-r from-emerald-400 to-emerald-600"
+                    : "bg-gradient-to-r from-[var(--event-accent,#C7A96B)] to-[var(--event-primary,#1F3D2B)]")
+                }
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {award.requires_all_locations && (
+          <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+            + Visit all locations required
+          </p>
+        )}
+
         <p className="mt-3 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
           <StatusMessage award={award} status={status} hasPassport={hasPassport} />
         </p>
-        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
-          <Trophy className="h-3.5 w-3.5" /> {entrantCopy}
-        </p>
+
+        {/* Footer meta */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--event-card-border,var(--event-border,#E6DCC7))]/70 pt-3 text-xs text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <Users className="h-3.5 w-3.5" /> {entrantCopy}
+          </span>
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <Calendar className="h-3.5 w-3.5" /> {formatDrawDate(award.draw_date ?? null)}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -238,7 +502,7 @@ function deriveStatus(award: PublicEventAward, hasPassport: boolean): CardStatus
 function StatusBadge({ status }: { status: CardStatus }) {
   const map: Record<CardStatus, { label: string; cls: string }> = {
     eligible: {
-      label: "You're eligible",
+      label: "You're in!",
       cls: "bg-emerald-100 text-emerald-900 border-emerald-300",
     },
     need_points: {
@@ -283,7 +547,7 @@ function StatusMessage({
   if (!hasPassport) {
     return <>Start a passport and visit locations to enter this draw.</>;
   }
-  if (status === "eligible") return <>You're in this draw.</>;
+  if (status === "eligible") return <>You're in this draw. Good luck!</>;
   if (status === "need_points") {
     return (
       <>
