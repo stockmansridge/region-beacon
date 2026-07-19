@@ -152,6 +152,12 @@ function Analytics() {
           .eq("agency_id", agencyId)
           .eq("is_active", true),
       ]);
+      // Bonus scans — tolerate a missing table on older schemas.
+      const bRes = await supabase
+        .from("participant_point_awards")
+        .select("id, event_id, participant_id, source_id, points_awarded, created_at, metadata")
+        .eq("agency_id", agencyId)
+        .eq("award_type", "bonus");
       if (cancelled) return;
       const anyErr =
         evRes.error || vRes.error || cRes.error || viRes.error || pRes.error;
@@ -166,6 +172,7 @@ function Analytics() {
       setVisitors((viRes.data ?? []) as VisitorRow[]);
       setPassports((pRes.data ?? []) as PassportRow[]);
       setPrizeRules((prRes.data ?? []) as PrizeRule[]);
+      setBonusScans((bRes.error ? [] : (bRes.data ?? [])) as BonusScanRow[]);
       setLoading(false);
     })();
     return () => {
