@@ -13,7 +13,9 @@ import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
-import { Star, Users, Check, Circle } from "lucide-react";
+import { Star, Users, Check, Circle, Sparkles } from "lucide-react";
+import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "@/lib/event-fonts";
+
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
   head: () => ({ meta: [{ title: "Venue" }] }),
@@ -92,6 +94,13 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
   const [state, setState] = useState<State>({ kind: "loading" });
   const [visited, setVisited] = useState<VisitedState>({ kind: "none" });
   const [bonusChallenges, setBonusChallenges] = useState<BonusChallenge[]>([]);
+  const [extras, setExtras] = useState<{
+    emotive_text: string | null;
+    emotive_font_family: string | null;
+    default_emotive_font_family: string | null;
+    points_value: number;
+  } | null>(null);
+
 
 
   useEffect(() => {
