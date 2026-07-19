@@ -67,9 +67,11 @@ grant all on public.event_bonus_code_venues to service_role;
 
 alter table public.event_bonus_code_venues enable row level security;
 
+-- Restrict anon only. A RESTRICTIVE policy `to public` would AND with the
+-- permissive policies below and block even platform/agency admins.
 drop policy if exists deny_all on public.event_bonus_code_venues;
 create policy deny_all on public.event_bonus_code_venues
-  as restrictive for all to public using (false) with check (false);
+  as restrictive for all to anon using (false) with check (false);
 
 drop policy if exists event_bonus_code_venues_select on public.event_bonus_code_venues;
 create policy event_bonus_code_venues_select
