@@ -571,7 +571,9 @@ function AwardEditorDialog({
         requiresAllLocations,
         status,
         sortOrder: Number.isFinite(so) ? so : 0,
+        drawDate: drawDate.trim() ? drawDate.trim() : null,
       });
+
       toast.success(isEdit ? "Prize updated" : "Prize created");
       onSaved();
     } catch (e) {
