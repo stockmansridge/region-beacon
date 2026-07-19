@@ -76,6 +76,7 @@ create policy event_bonus_code_venues_select
   on public.event_bonus_code_venues for select to authenticated
   using (
     public.is_platform_admin(auth.uid())
+    or public.is_agency_admin(auth.uid(), agency_id)
     or public.is_agency_member(auth.uid(), agency_id)
   );
 
