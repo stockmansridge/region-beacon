@@ -242,17 +242,33 @@ export function BonusCodesSection({
         toast.success("Bonus code updated.");
       }
 
-      // Sync per-venue rows.
+      // Sync per-venue rows. The RPC returns the resulting active rows for
+      // this bonus code so we can update local state directly — bypassing
+      // any SELECT policy staleness.
       if (bonusId) {
         const venueIds = form.scope === "per_venue" ? form.venue_ids : [];
-        const { error: rpcError } = await (supabase.rpc as unknown as (
+        const rpcCall = supabase.rpc as unknown as (
           fn: string,
           args: Record<string, unknown>,
-        ) => Promise<{ error: { message: string } | null }>)(
+        ) => Promise<{
+          data: VenueBonus[] | null;
+          error: { message: string } | null;
+        }>;
+        const { data: returned, error: rpcError } = await rpcCall(
           "save_per_venue_bonus_venues",
           { _bonus_code_id: bonusId, _venue_ids: venueIds },
         );
         if (rpcError) throw new Error(rpcError.message);
+        const savedBonusId = bonusId;
+        setVenueBonuses((prev) => {
+          const others = prev.filter((v) => v.bonus_code_id !== savedBonusId);
+          return [...others, ...((returned ?? []) as VenueBonus[])];
+        });
+        if (form.scope === "per_venue" && venueIds.length > 0 && (returned?.length ?? 0) === 0) {
+          toast.error(
+            "Saved, but no per-venue QR rows came back. Run the latest migration in Supabase.",
+          );
+        }
       }
 
       cancelEdit();
