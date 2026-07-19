@@ -23,6 +23,9 @@ type Status = "active" | "disabled";
 
 type RowIssue = { level: "error" | "warning"; message: string };
 
+type BonusKind = "points" | "social";
+type BonusScope = "event" | "per_venue";
+
 type VenueDraft = {
   rowNum: number;
   venue_key: string;
@@ -39,6 +42,8 @@ type VenueDraft = {
   // Optional stamp/entry value saved to venue_qr_codes.entry_value for the
   // venue's active QR row. null = leave unchanged on import.
   check_in_value: number | null;
+  emotive_text: string | null;
+  emotive_font_family: string | null;
   issues: RowIssue[];
   // Resolved at confirm:
   matchedVenueId?: string | null;
@@ -54,11 +59,17 @@ type BonusDraft = {
   description: string | null;
   points: number;
   status: Status;
+  kind: BonusKind;
+  scope: BonusScope;
+  venue_keys: string[]; // used only when scope === "per_venue"
+  social_location: string | null;
+  social_hashtags: string | null;
   issues: RowIssue[];
   matchedId?: string | null;
   result?: "created" | "updated" | "skipped" | "error";
   resultMessage?: string;
 };
+
 
 type TastingDraft = {
   rowNum: number;
