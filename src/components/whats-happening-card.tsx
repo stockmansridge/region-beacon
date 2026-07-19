@@ -159,7 +159,7 @@ export function WhatsHappeningCard({
   const isEmpty = !isLoading && !checkin && !showExplorers && !showBonus;
 
   return (
-    <section className="px-4">
+    <section>
       <div
         className="rounded-3xl border p-5 shadow-sm"
         style={{
