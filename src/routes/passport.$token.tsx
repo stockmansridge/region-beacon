@@ -1215,7 +1215,7 @@ function RewardsSection({
             className="font-trail-serif text-lg font-semibold"
             style={{ color: "var(--event-page-heading)" }}
           >
-            Rewards
+            Prizes
           </h2>
           <p
             className="mt-0.5 text-[12px]"
