@@ -100,13 +100,14 @@ function Analytics() {
   const [checkins, setCheckins] = useState<CheckinRow[]>([]);
   const [passports, setPassports] = useState<PassportRow[]>([]);
   const [prizeRules, setPrizeRules] = useState<PrizeRule[]>([]);
+  const [bonusScans, setBonusScans] = useState<BonusScanRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   const [eventFilter, setEventFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
-  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins">(null);
+  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus">(null);
   const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
 
   useEffect(() => {
