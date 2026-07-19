@@ -28,14 +28,12 @@ as $$
   base as (
     select
       c.created_at            as happened_at,
-      coalesce(
-        nullif(split_part(coalesce(p.display_name, ''), ' ', 1), ''),
-        'Someone'
-      )                        as first_name,
+      coalesce(nullif(vs.first_name, ''), 'Someone') as first_name,
       v.name                   as venue_name
     from public.checkins c
     join resolved r on r.event_id = c.event_id
     join public.passports p on p.id = c.passport_id
+    join public.visitors  vs on vs.id = p.visitor_id
     join public.venues    v on v.id = c.venue_id
     where c.created_at > now() - interval '24 hours'
     order by c.created_at desc
