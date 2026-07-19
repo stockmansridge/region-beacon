@@ -399,6 +399,7 @@ export function AdminEventParticipantsSection({
                 <Th onClick={() => toggleSort("created_at")}>
                   Registered{sortArrow("created_at")}
                 </Th>
+                <Th className="text-right">Actions</Th>
               </tr>
             </thead>
             <tbody>
