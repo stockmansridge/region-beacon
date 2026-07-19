@@ -130,6 +130,36 @@ export function AdminEventParticipantsSection({
   const [reloadKey, setReloadKey] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [exportingClaims, setExportingClaims] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDeleteParticipant(row: ParticipantRow) {
+    const name = row.display_name || "this participant";
+    const ok = window.confirm(
+      `Delete ${name}?\n\n` +
+        "This permanently removes their passport, all check-ins, " +
+        "bonus code claims, point awards, consents, and visitor record " +
+        "for this event.\n\n" +
+        "This cannot be undone.",
+    );
+    if (!ok) return;
+    setDeletingId(row.passport_id);
+    setError(null);
+    try {
+      const { error: rpcError } = await supabase.rpc(
+        "admin_delete_event_participant",
+        { p_event_id: eventId, p_passport_id: row.passport_id },
+      );
+      if (rpcError) throw rpcError;
+      setRows((prev) => prev.filter((r) => r.passport_id !== row.passport_id));
+      if (expandedId === row.passport_id) setExpandedId(null);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not delete participant.";
+      setError(message);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleExportBonusClaimsCsv() {
     setExportingClaims(true);
