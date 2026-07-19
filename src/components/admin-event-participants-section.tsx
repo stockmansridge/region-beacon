@@ -471,7 +471,7 @@ export function AdminEventParticipantsSection({
                 </tr>
                 {isExpanded && (
                   <tr className="border-t border-[#E6ECF4] bg-[#F8FAFD]">
-                    <td colSpan={8} className="px-3 py-3">
+                    <td colSpan={9} className="px-3 py-3">
                       <ParticipantBonusClaims
                         eventId={eventId}
                         passportId={r.passport_id}
