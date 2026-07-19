@@ -429,7 +429,7 @@ function BrandingEditor() {
 
   // Lazy-load the chosen Google Font(s) — both body and heading.
   useEffect(() => {
-    const href = buildGoogleFontsHref([form.font_family, form.heading_font_family]);
+    const href = buildGoogleFontsHref([form.font_family, form.heading_font_family, form.default_emotive_font_family]);
     if (!href) return;
     if (document.querySelector(`link[data-event-font="${href}"]`)) return;
     const link = document.createElement("link");
@@ -437,7 +437,8 @@ function BrandingEditor() {
     link.href = href;
     link.dataset.eventFont = href;
     document.head.appendChild(link);
-  }, [form.font_family, form.heading_font_family]);
+  }, [form.font_family, form.heading_font_family, form.default_emotive_font_family]);
+
 
   // Preload every supported event font so the Branding font dropdowns
   // can render each option in its own typeface for preview.
@@ -500,6 +501,11 @@ function BrandingEditor() {
     if (heading_font_family && !isSupportedEventFont(heading_font_family)) {
       setValidationError("Pick a heading font from the list."); return;
     }
+    const default_emotive_font_family = trim(form.default_emotive_font_family);
+    if (default_emotive_font_family && !isSupportedEventFont(default_emotive_font_family)) {
+      setValidationError("Pick an emotive font from the list."); return;
+    }
+
     const welcome_copy = trim(form.welcome_copy);
     if (welcome_copy.length > 1000) {
       setValidationError("Welcome copy must be 1000 characters or fewer."); return;
@@ -537,6 +543,8 @@ function BrandingEditor() {
     const fullPayload: Record<string, unknown> = {
       font_family: font_family || null,
       heading_font_family: heading_font_family || null,
+      default_emotive_font_family: default_emotive_font_family || null,
+
       welcome_copy: welcome_copy || null,
       terms_url: terms_url || null,
       venue_label_singular,
