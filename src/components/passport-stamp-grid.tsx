@@ -86,9 +86,11 @@ export function PassportStampGrid({
 function StampTile({
   venue,
   dimmed,
+  hasBonus,
 }: {
   venue: PassportStampVenue;
   dimmed: boolean;
+  hasBonus: boolean;
 }) {
   const stamped = venue.is_stamped;
   const logoUrl = getVenueAssetPublicUrl(venue.venue_logo_path);
