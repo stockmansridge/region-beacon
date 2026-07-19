@@ -1,29 +1,70 @@
+// Center-burst confetti pop. Renders bright pieces that explode outward
+// from the center of the parent (the progress ring), then fade. Parent
+// must be `position: relative`.
+
+const COLORS = [
+  "#FF3D7F", // hot pink
+  "#FFD23F", // sunflower
+  "#3BCEAC", // mint
+  "#2EC4F1", // sky
+  "#FF7A00", // orange
+  "#B95CFF", // purple
+  "#FF4D4D", // red
+  "#00E676", // green
+];
+
+// Deterministic burst so SSR/CSR match. 22 pieces, spread over 360deg.
+const PIECES = Array.from({ length: 22 }, (_, i) => {
+  const angle = (i / 22) * Math.PI * 2 + (i % 2 === 0 ? 0 : 0.15);
+  const distance = 90 + ((i * 37) % 60); // 90–150px
+  const tx = Math.cos(angle) * distance;
+  const ty = Math.sin(angle) * distance;
+  const rot = ((i * 53) % 360) - 180;
+  const size = 6 + (i % 4) * 2; // 6–12px
+  const shape = i % 3; // 0 square, 1 rect, 2 dot
+  return {
+    color: COLORS[i % COLORS.length],
+    tx,
+    ty,
+    rot,
+    size,
+    shape,
+    delay: (i % 6) * 40, // ms
+  };
+});
+
 export function RingConfetti() {
-  const pieces: Array<{ top: string; left: string; rot: number; color: string; w: number; h: number; delay: string }> = [
-    { top: "4%", left: "10%", rot: -18, color: "var(--event-accent)", w: 10, h: 4, delay: "0s" },
-    { top: "14%", left: "88%", rot: 22, color: "var(--event-button-primary-bg)", w: 6, h: 6, delay: "0.3s" },
-    { top: "48%", left: "-2%", rot: 8, color: "#F5B841", w: 8, h: 3, delay: "0.6s" },
-    { top: "56%", left: "94%", rot: -30, color: "#E76F51", w: 4, h: 8, delay: "0.15s" },
-    { top: "86%", left: "18%", rot: 12, color: "var(--event-accent)", w: 6, h: 6, delay: "0.45s" },
-    { top: "90%", left: "78%", rot: -8, color: "#F5B841", w: 9, h: 4, delay: "0.75s" },
-  ];
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0">
-      {pieces.map((p, i) => (
-        <span
-          key={i}
-          className="confetti-piece absolute block rounded-[2px]"
-          style={{
-            top: p.top,
-            left: p.left,
-            width: p.w,
-            height: p.h,
-            backgroundColor: p.color,
-            ["--confetti-rot" as never]: `${p.rot}deg`,
-            animationDelay: p.delay,
-          }}
-        />
-      ))}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-visible"
+    >
+      <div className="absolute left-1/2 top-1/2 h-0 w-0">
+        {PIECES.map((p, i) => {
+          const w = p.shape === 1 ? p.size + 4 : p.size;
+          const h = p.shape === 2 ? p.size : p.size;
+          const radius = p.shape === 2 ? "9999px" : "2px";
+          return (
+            <span
+              key={i}
+              className="confetti-burst absolute block"
+              style={{
+                width: w,
+                height: h,
+                marginLeft: -w / 2,
+                marginTop: -h / 2,
+                backgroundColor: p.color,
+                borderRadius: radius,
+                boxShadow: `0 0 8px ${p.color}, 0 0 2px rgba(255,255,255,0.6)`,
+                ["--cf-tx" as never]: `${p.tx}px`,
+                ["--cf-ty" as never]: `${p.ty}px`,
+                ["--cf-rot" as never]: `${p.rot}deg`,
+                animationDelay: `${p.delay}ms`,
+              }}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }

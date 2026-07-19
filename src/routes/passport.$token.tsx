@@ -739,15 +739,15 @@ function PassportView({
           labelPlural={labelPlural}
         />
 
-        {/* Rewards — sourced from configured event_awards. Hidden when none. */}
-        <RewardsSection awards={awards} nextAward={nextAward} />
-
-        {/* What's happening — live event pulse */}
+        {/* What's happening — live event pulse (directly under stamps) */}
         {subdomain ? (
           <div className="mt-5">
             <WhatsHappeningCard subdomain={subdomain} />
           </div>
         ) : null}
+
+        {/* Rewards — sourced from configured event_awards. Hidden when none. */}
+        <RewardsSection awards={awards} nextAward={nextAward} />
 
 
 

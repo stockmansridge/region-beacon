@@ -93,8 +93,7 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
 
   const showExplorers = explorers >= 2;
   const showBonus = Boolean(bonus);
-
-  if (!checkin && !showExplorers && !showBonus) return null;
+  const isEmpty = !checkin && !showExplorers && !showBonus;
 
   return (
     <section className="px-4">
@@ -123,6 +122,15 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
             View all
           </Link>
         </div>
+
+        {isEmpty && (
+          <p
+            className="mt-4 text-[13px] leading-snug"
+            style={{ color: "var(--event-card-muted)" }}
+          >
+            No activity in the last little while — be the first to check in!
+          </p>
+        )}
 
         <ul className="mt-4 flex flex-col gap-4">
           {checkin && (
