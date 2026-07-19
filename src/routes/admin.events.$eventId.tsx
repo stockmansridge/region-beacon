@@ -151,7 +151,10 @@ type Venue = {
   cover_path: string | null;
   deleted_at: string | null;
   points_value: number;
+  emotive_text: string | null;
+  emotive_font_family: string | null;
 };
+
 
 
 type VenueFilter = "active" | "disabled" | "all";
@@ -250,7 +253,10 @@ type VenueEditForm = {
   logo_path: string | null;
   cover_path: string | null;
   points_value: string;
+  emotive_text: string;
+  emotive_font_family: string;
 };
+
 
 type OfferDisplayRow = {
   offer_display_icon: string | null;
