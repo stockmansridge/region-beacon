@@ -965,7 +965,7 @@ function PassportView({
 }
 
 
-function TrailProgress({
+function TrailProgressInline({
   stamped,
   total,
   labelPlural,
@@ -978,51 +978,44 @@ function TrailProgress({
   const pct = Math.min(100, Math.round((stamped / total) * 100));
   const remaining = Math.max(0, total - stamped);
   return (
-    <section className="mt-5">
-      <div
-        className="rounded-3xl border p-5 shadow-sm"
-        style={{
-          borderColor: "var(--event-card-border)",
-          backgroundColor: "var(--event-card-bg)",
-        }}
-      >
-        <div className="flex items-baseline justify-between gap-3">
-          <h2
-            className="font-trail-serif text-base font-semibold"
-            style={{ color: "var(--event-card-heading)" }}
-          >
-            Trail Progress
-          </h2>
-          <span
-            className="text-[11px] font-bold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-card-muted)" }}
-          >
-            {pct}% complete
-          </span>
-        </div>
-        <div
-          className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
-          style={{ backgroundColor: "var(--event-card-border)" }}
+    <>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2
+          className="font-trail-serif text-base font-semibold"
+          style={{ color: "var(--event-card-heading)" }}
         >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${pct}%`,
-              backgroundColor: "var(--event-button-primary-bg)",
-            }}
-          />
-        </div>
-        <p
-          className="mt-2 text-[12px]"
-          style={{ color: "var(--event-card-text)" }}
+          Trail Progress
+        </h2>
+        <span
+          className="text-[11px] font-bold uppercase tracking-[0.18em]"
+          style={{ color: "var(--event-card-muted)" }}
         >
-          {remaining === 0
-            ? "Trail complete — nicely done! 🎉"
-            : `Only ${remaining} ${remaining === 1 ? labelPlural.toLowerCase().replace(/s$/, "") : labelPlural.toLowerCase()} to go!`}
-        </p>
+          {pct}% complete
+        </span>
       </div>
-    </section>
+      <div
+        className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
+        style={{ backgroundColor: "var(--event-card-border)" }}
+      >
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${pct}%`,
+            backgroundColor: "var(--event-button-primary-bg)",
+          }}
+        />
+      </div>
+      <p
+        className="mt-2 text-[12px]"
+        style={{ color: "var(--event-card-text)" }}
+      >
+        {remaining === 0
+          ? "Trail complete — nicely done! 🎉"
+          : `Only ${remaining} ${remaining === 1 ? labelPlural.toLowerCase().replace(/s$/, "") : labelPlural.toLowerCase()} to go!`}
+      </p>
+    </>
   );
+}
 }
 
 function StampGrid({
