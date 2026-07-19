@@ -407,75 +407,173 @@ function CelebrationHero({
   );
 }
 
-// Firework burst that pops in the top-left or top-right of the hero card.
-function Firework({ position }: { position: "left" | "right" }) {
-  const colors = ["#FF3B6B", "#FFB800", "#FFE24B", "#3DDC97", "#3AB0FF", "#B15CFF", "#FF6BE1"];
-  const count = 18;
-  const items = Array.from({ length: count }).map((_, i) => {
-    const angle = (i / count) * 360;
-    return {
-      angle,
-      color: colors[i % colors.length],
-      distance: 34 + (i % 3) * 8,
-    };
-  });
-  const delay = position === "left" ? 0 : 0.9;
+// A short choreographed fireworks show layered over the hero card.
+// Mixes three styles: a symmetrical circular burst, a "peony" burst
+// whose sparks drift and fall with gravity, and a rocket that launches
+// from the bottom and explodes into falling sparks.
+function FireworksShow() {
+  const shows: Array<{
+    variant: "ring" | "peony" | "rocket";
+    top: string;
+    left: string;
+    delay: number;
+    hue: string;
+  }> = [
+    { variant: "ring",   top: "22%", left: "18%", delay: 0.0, hue: "#FF3B6B" },
+    { variant: "peony",  top: "16%", left: "78%", delay: 1.1, hue: "#FFD23F" },
+    { variant: "rocket", top: "30%", left: "50%", delay: 2.2, hue: "#3AB0FF" },
+    { variant: "peony",  top: "28%", left: "34%", delay: 3.3, hue: "#B15CFF" },
+    { variant: "ring",   top: "20%", left: "66%", delay: 4.2, hue: "#3DDC97" },
+  ];
+  const CYCLE = 5.2;
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute h-0 w-0"
-      style={{
-        top: "18%",
-        left: position === "left" ? "14%" : "auto",
-        right: position === "right" ? "14%" : "auto",
-      }}
+      className="pointer-events-none absolute inset-0 overflow-hidden"
     >
-      <div
-        style={{
-          animation: `firework-pop 2.2s ease-out ${delay}s infinite`,
-        }}
-      >
-        {items.map((b, i) => (
-          <span
-            key={i}
-            className="absolute left-0 top-0 block"
-            style={{
-              transform: `rotate(${b.angle}deg)`,
-              transformOrigin: "0 0",
-            }}
-          >
-            <span
-              className="block"
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 999,
-                background: b.color,
-                boxShadow: `0 0 10px ${b.color}, 0 0 18px ${b.color}88`,
-                transform: "translate(-50%, -50%)",
-                animation: `firework-particle 2.2s cubic-bezier(0.15,0.7,0.3,1) ${delay}s infinite`,
-                ["--dist" as any]: `${b.distance}px`,
-              }}
-            />
-          </span>
-        ))}
-      </div>
+      {shows.map((s, i) => (
+        <FireworkBurst key={i} {...s} cycle={CYCLE} />
+      ))}
       <style>{`
-        @keyframes firework-particle {
-          0%   { transform: translate(-50%, -50%); opacity: 0; }
-          10%  { opacity: 1; }
-          70%  { opacity: 1; }
-          100% { transform: translate(calc(-50% + var(--dist, 40px)), -50%); opacity: 0; }
+        @keyframes fw-rocket {
+          0%   { transform: translate(-50%, 120%); opacity: 0; }
+          6%   { opacity: 1; }
+          38%  { transform: translate(-50%, 0%); opacity: 1; }
+          42%  { transform: translate(-50%, 0%); opacity: 0; }
+          100% { opacity: 0; }
         }
-        @keyframes firework-pop {
+        @keyframes fw-particle-ring {
+          0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+          8%   { opacity: 1; }
+          70%  { opacity: 1; }
+          100% { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0.9); opacity: 0; }
+        }
+        @keyframes fw-particle-peony {
+          0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+          10%  { opacity: 1; }
+          60%  { opacity: 1; }
+          100% {
+            /* travel outward then fall — dy grows past its target via gravity term */
+            transform: translate(
+              calc(-50% + var(--dx, 0px)),
+              calc(-50% + var(--dy, 0px) + 46px)
+            ) scale(0.7);
+            opacity: 0;
+          }
+        }
+        @keyframes fw-flash {
           0%, 100% { opacity: 0; }
-          8%, 60%  { opacity: 1; }
+          6%, 12%  { opacity: 1; }
         }
       `}</style>
-
     </div>
   );
 }
+
+function FireworkBurst({
+  variant,
+  top,
+  left,
+  delay,
+  hue,
+  cycle,
+}: {
+  variant: "ring" | "peony" | "rocket";
+  top: string;
+  left: string;
+  delay: number;
+  hue: string;
+  cycle: number;
+}) {
+  const palette = ["#FF3B6B", "#FFB800", "#FFE24B", "#3DDC97", "#3AB0FF", "#B15CFF", "#FF6BE1", "#FFFFFF"];
+  const count = variant === "ring" ? 14 : 22;
+  const items = Array.from({ length: count }).map((_, i) => {
+    // Ring = evenly spaced, uniform radius. Peony = jittered angle + radius.
+    const evenAngle = (i / count) * 360;
+    const angle =
+      variant === "ring"
+        ? evenAngle
+        : evenAngle + (Math.sin(i * 12.9) * 10);
+    const radius =
+      variant === "ring"
+        ? 38
+        : 30 + ((i * 7) % 22);
+    const rad = (angle * Math.PI) / 180;
+    return {
+      dx: Math.cos(rad) * radius,
+      dy: Math.sin(rad) * radius,
+      color: i % 6 === 0 ? "#FFFFFF" : palette[i % palette.length],
+      size: variant === "ring" ? 5 : 4 + (i % 3),
+    };
+  });
+
+  // The rocket launches, then bursts. Burst starts partway through the cycle.
+  const burstDelay = variant === "rocket" ? delay + 1.4 : delay;
+  const burstAnim = variant === "peony" ? "fw-particle-peony" : "fw-particle-ring";
+
+  return (
+    <>
+      {variant === "rocket" && (
+        <div
+          className="absolute"
+          style={{
+            top,
+            left,
+            width: 3,
+            height: 22,
+            marginLeft: -1.5,
+            borderRadius: 999,
+            background: `linear-gradient(180deg, ${hue}, transparent)`,
+            boxShadow: `0 0 8px ${hue}`,
+            animation: `fw-rocket 1.6s ease-out ${delay}s infinite`,
+            animationDuration: `${cycle}s`,
+            animationDelay: `${delay}s`,
+          }}
+        />
+      )}
+      {/* Central flash */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          top,
+          left,
+          width: 22,
+          height: 22,
+          marginLeft: -11,
+          marginTop: -11,
+          background: `radial-gradient(circle, ${hue}CC 0%, ${hue}00 70%)`,
+          filter: "blur(2px)",
+          animation: `fw-flash ${cycle}s ease-out ${burstDelay}s infinite`,
+        }}
+      />
+      <div
+        className="absolute h-0 w-0"
+        style={{ top, left }}
+      >
+        {items.map((p, i) => (
+          <span
+            key={i}
+            className="absolute block rounded-full"
+            style={{
+              left: 0,
+              top: 0,
+              width: p.size,
+              height: p.size,
+              background: p.color,
+              boxShadow: `0 0 8px ${p.color}, 0 0 14px ${p.color}99`,
+              transform: "translate(-50%, -50%)",
+              animation: `${burstAnim} ${cycle}s cubic-bezier(0.12,0.7,0.3,1) ${burstDelay}s infinite`,
+              opacity: 0,
+              ["--dx" as any]: `${p.dx}px`,
+              ["--dy" as any]: `${p.dy}px`,
+            }}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
 
 
 
