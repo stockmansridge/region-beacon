@@ -214,7 +214,7 @@ function placeholderTiles(n: number): PassportStampVenue[] {
  * active bonus available (event-wide OR per-venue). Falls back to an
  * empty set on error so tiles simply render without the badge.
  */
-function useVenuesWithBonus(eventId: string | null): Set<string> {
+export function useVenuesWithBonus(eventId: string | null): Set<string> {
   const [ids, setIds] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     if (!eventId || typeof window === "undefined") {
