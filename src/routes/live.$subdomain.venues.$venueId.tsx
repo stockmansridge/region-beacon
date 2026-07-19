@@ -191,6 +191,29 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
     };
   }, [subdomain, venueId]);
 
+  // Lazy-load the emotive script font (venue override → event default →
+  // platform default). Safe idempotent link injection.
+  const emotiveFontValue =
+    extras?.emotive_font_family ??
+    extras?.default_emotive_font_family ??
+    DEFAULT_EMOTIVE_FONT_VALUE;
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!extras?.emotive_text) return;
+    const href = buildGoogleFontsHref([emotiveFontValue]);
+    if (!href) return;
+    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.eventFont = href;
+    document.head.appendChild(link);
+  }, [extras?.emotive_text, emotiveFontValue]);
+  const emotiveStack =
+    getEventFont(emotiveFontValue)?.stack ?? "'Caveat', 'Segoe Script', cursive";
+
+
+
 
   if (state.kind === "loading") {
     return (
