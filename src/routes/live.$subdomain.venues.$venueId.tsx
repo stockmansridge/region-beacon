@@ -13,7 +13,7 @@ import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
-import { Star, Users, Check, Circle, Sparkles } from "lucide-react";
+import { Star, Users, Check, Circle, Sparkles, Camera } from "lucide-react";
 import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "@/lib/event-fonts";
 
 
