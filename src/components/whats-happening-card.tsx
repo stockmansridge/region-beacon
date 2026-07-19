@@ -154,7 +154,7 @@ export function WhatsHappeningCard({
   const explorers = data?.explorers_today ?? 0;
   const bonus = data?.recent_bonus?.[0] ?? null;
 
-  const showExplorers = explorers >= 2;
+  const showExplorers = explorers >= 1;
   const showBonus = Boolean(bonus);
   const isEmpty = !isLoading && !checkin && !showExplorers && !showBonus;
 
@@ -250,7 +250,7 @@ export function WhatsHappeningCard({
                     className="font-semibold"
                     style={{ color: "var(--event-card-heading)" }}
                   >
-                    {explorers} people are exploring
+                    {explorers} {explorers === 1 ? "person is" : "people are"} exploring
                   </span>{" "}
                   the trail today
                 </p>
