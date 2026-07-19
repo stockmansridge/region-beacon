@@ -78,6 +78,7 @@ type EventRow = {
   updated_at: string;
   current_terms_version_id: string | null;
   deleted_at: string | null;
+  require_postcode?: boolean | null;
 };
 
 type Branding = {
@@ -675,7 +676,7 @@ function EventDetail() {
         const { data: event, error: evErr } = await supabase
           .from("events")
           .select(
-            "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id, deleted_at",
+            "id, agency_id, name, slug, public_slug, status, timezone, starts_at, ends_at, description, created_at, updated_at, current_terms_version_id, deleted_at, require_postcode",
           )
           .eq("id", eventId)
           .eq("agency_id", agencyId)
@@ -3149,8 +3150,40 @@ function EventDetail() {
           </Section>
 
 
+          <Section title="Registration form" tab="terms">
+            <div className="mb-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
+              Controls what visitors are required to provide when they sign up on the public join page.
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <ToggleRow
+                title="Require postcode"
+                description="When on, visitors must enter a postcode to complete registration. Powers the postcode breakdown in Analytics."
+                checked={Boolean(bundle.event.require_postcode)}
+                onChange={async (v) => {
+                  if (!canEdit || !agencyId) return;
+                  const prev = Boolean(bundle.event.require_postcode);
+                  // Optimistic update
+                  setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: v } } : b));
+                  const { error } = await supabase
+                    .from("events")
+                    .update({ require_postcode: v })
+                    .eq("id", bundle.event.id)
+                    .eq("agency_id", agencyId);
+                  if (error) {
+                    setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: prev } } : b));
+                    toast.error(`Could not update setting: ${error.message}`);
+                    return;
+                  }
+                  toast.success(v ? "Postcode is now required" : "Postcode is now optional");
+                }}
+              />
+            </div>
+          </Section>
+
+
           <Section title="Check-in settings" tab="checkin">
             {canEdit && isEditingCheckin && checkinForm ? (
+
               <div className="space-y-5">
                 {(checkinValidationError || checkinSaveError) && (
                   <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">

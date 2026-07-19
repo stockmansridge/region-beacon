@@ -71,6 +71,7 @@ type PublicEvent = {
   hero_bg_color?: string | null;
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
+  require_postcode?: boolean | null;
 };
 
 type LoadState =
@@ -88,16 +89,21 @@ type FormState = {
   accept_terms: boolean;
 };
 
-const formSchema = z.object({
-  full_name: z.string().trim().min(2, "Please enter your full name").max(120, "Name is too long"),
-  email: z.string().trim().email("Enter a valid email").max(254, "Email is too long"),
-  mobile: z.string().trim().max(32, "Mobile is too long").optional().or(z.literal("")),
-  postcode: z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
-  marketing_opt_in: z.boolean(),
-  accept_terms: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the terms & privacy policy" }),
-  }),
-});
+function buildFormSchema(requirePostcode: boolean) {
+  return z.object({
+    full_name: z.string().trim().min(2, "Please enter your full name").max(120, "Name is too long"),
+    email: z.string().trim().email("Enter a valid email").max(254, "Email is too long"),
+    mobile: z.string().trim().max(32, "Mobile is too long").optional().or(z.literal("")),
+    postcode: requirePostcode
+      ? z.string().trim().min(3, "Please enter your postcode").max(16, "Postcode is too long")
+      : z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
+    marketing_opt_in: z.boolean(),
+    accept_terms: z.literal(true, {
+      errorMap: () => ({ message: "You must accept the terms & privacy policy" }),
+    }),
+  });
+}
+const formSchema = buildFormSchema(false);
 
 function splitName(full: string): { first: string; last: string } {
   const parts = full.trim().split(/\s+/);
@@ -188,6 +194,21 @@ export function LiveJoinPage({ subdomain }: { subdomain: string }) {
         setState({ kind: "not_live" });
         return;
       }
+      // Pull registration-form settings (require_postcode). Small dedicated
+      // RPC so we don't need to extend get_public_event_by_domain.
+      try {
+        const { data: regData } = await supabase.rpc(
+          "get_event_registration_settings",
+          { _hostname: host },
+        );
+        const reg = (regData?.[0] ?? null) as { require_postcode?: boolean | null } | null;
+        if (reg && typeof reg.require_postcode === "boolean") {
+          evt.require_postcode = reg.require_postcode;
+        }
+      } catch {
+        // RPC not yet applied — fall back to default (optional postcode).
+      }
+      if (cancelled) return;
       if (!evt.current_terms_version_id) {
         setState({ kind: "terms_missing", event: evt });
         return;
@@ -336,7 +357,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     setTopError(null);
     setDebugInfo(null);
 
-    const parsed = formSchema.safeParse(form);
+    const parsed = buildFormSchema(Boolean(event.require_postcode)).safeParse(form);
     if (!parsed.success) {
       const next: Partial<Record<keyof FormState, string>> = {};
       for (const issue of parsed.error.issues) {
@@ -704,7 +725,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           />
           <Field
             label="Postcode"
-            optional
+            required={Boolean(event.require_postcode)}
+            optional={!event.require_postcode}
             error={errors.postcode}
             input={
               <input
@@ -715,6 +737,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 onChange={(e) => update("postcode", e.target.value)}
                 className="trail-input"
                 maxLength={16}
+                required={Boolean(event.require_postcode)}
               />
             }
           />

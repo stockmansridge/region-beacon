@@ -41,6 +41,7 @@ type VisitorRow = {
   first_name: string | null;
   last_name: string | null;
   full_name: string | null;
+  postcode: string | null;
   marketing_opt_in: boolean | null;
   created_at: string;
 };
@@ -123,7 +124,7 @@ function Analytics() {
         supabase
           .from("visitors")
           .select(
-            "id, event_id, email, first_name, last_name, full_name, marketing_opt_in, created_at",
+            "id, event_id, email, first_name, last_name, full_name, postcode, marketing_opt_in, created_at",
           )
           .eq("agency_id", agencyId)
           .is("deleted_at", null),
@@ -238,6 +239,33 @@ function Analytics() {
     }
     return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [fVisitors]);
+
+  // Postcode breakdown — where are visitors coming from?
+  const postcodeStats = useMemo(() => {
+    let withPostcode = 0;
+    let withoutPostcode = 0;
+    const byCode = new Map<string, number>();
+    for (const v of fVisitors) {
+      const raw = (v.postcode ?? "").trim();
+      if (!raw) {
+        withoutPostcode += 1;
+        continue;
+      }
+      withPostcode += 1;
+      const key = raw.toUpperCase();
+      byCode.set(key, (byCode.get(key) ?? 0) + 1);
+    }
+    const total = withPostcode || 1;
+    const rows = Array.from(byCode.entries())
+      .map(([postcode, count]) => ({
+        postcode,
+        count,
+        pct: (count / total) * 100,
+      }))
+      .sort((a, b) => b.count - a.count);
+    return { rows, withPostcode, withoutPostcode };
+  }, [fVisitors]);
+
 
   // Check-ins by venue
   const venueStats = useMemo(() => {
@@ -364,6 +392,7 @@ function Analytics() {
         last_name: v.last_name ?? "",
         full_name: v.full_name ?? "",
         email: v.email,
+        postcode: v.postcode ?? "",
         marketing_opt_in: v.marketing_opt_in ? "yes" : "no",
         registered_at: v.created_at,
       })),
@@ -410,6 +439,16 @@ function Analytics() {
           "",
         passport_id: e.passport_id,
         stamps: e.stamps,
+      })),
+    );
+
+  const exportPostcodes = () =>
+    downloadCsv(
+      `postcodes-${Date.now()}.csv`,
+      postcodeStats.rows.map((r) => ({
+        postcode: r.postcode,
+        visitors: r.count,
+        share_pct: r.pct.toFixed(1),
       })),
     );
 
@@ -559,6 +598,71 @@ function Analytics() {
               </>
             )}
           </section>
+
+          {/* Postcode breakdown */}
+          <section className={cardClass}>
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Postcode breakdown</h3>
+                <p className="text-sm leading-6 text-[#64748B]">
+                  Where visitors are travelling from. Make postcode mandatory in Event → Registration form to improve coverage.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-[#64748B]">
+                <span>{postcodeStats.withPostcode} with postcode · {postcodeStats.withoutPostcode} without</span>
+                <button
+                  type="button"
+                  onClick={exportPostcodes}
+                  disabled={postcodeStats.rows.length === 0}
+                  className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-medium text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-50"
+                >
+                  Export CSV
+                </button>
+              </div>
+            </div>
+            {postcodeStats.rows.length === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#E5E7EB] bg-[#F9FAFB] px-4 py-6 text-center text-sm text-[#64748B]">
+                No postcode data yet for the current filters.
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-[12px] border border-[#E5E7EB]">
+                <table className="w-full text-sm">
+                  <thead className="bg-[#F9FAFB] text-left text-xs uppercase tracking-wide text-[#64748B]">
+                    <tr>
+                      <th className="px-4 py-2">Postcode</th>
+                      <th className="px-4 py-2">Visitors</th>
+                      <th className="px-4 py-2">Share</th>
+                      <th className="px-4 py-2 w-1/2">Distribution</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {postcodeStats.rows.slice(0, 25).map((r) => (
+                      <tr key={r.postcode} className="border-t border-[#F1F5F9]">
+                        <td className="px-4 py-2 font-medium text-[#111827]">{r.postcode}</td>
+                        <td className="px-4 py-2 text-[#111827]">{r.count}</td>
+                        <td className="px-4 py-2 text-[#64748B]">{r.pct.toFixed(1)}%</td>
+                        <td className="px-4 py-2">
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#F1F5F9]">
+                            <div
+                              className="h-full rounded-full bg-[#2563EB]"
+                              style={{ width: `${Math.min(100, r.pct)}%` }}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {postcodeStats.rows.length > 25 && (
+                  <div className="border-t border-[#F1F5F9] bg-[#F9FAFB] px-4 py-2 text-xs text-[#64748B]">
+                    Showing top 25 of {postcodeStats.rows.length} postcodes. Export CSV for the full list.
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+
 
           {/* Funnel */}
           <section className={cardClass}>
