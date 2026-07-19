@@ -433,7 +433,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                       }}
                       aria-hidden
                     />
-                    Bonus challenge
+                    Bonus points
                   </div>
 
                   <div className="mt-3 flex gap-3">
