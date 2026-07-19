@@ -6,6 +6,8 @@
 -- Safe to re-run. Requires the columns from
 -- migrations-prod-bonus-codes-columns-fix to exist.
 
+drop function if exists public.get_public_event_bonus_challenges(text, text, uuid);
+
 create or replace function public.get_public_event_bonus_challenges(
   _hostname text,
   _passport_token text default null,
