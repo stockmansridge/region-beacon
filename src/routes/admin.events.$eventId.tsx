@@ -1644,6 +1644,20 @@ function EventDetail() {
       patch.offer_display_foreground_colour = fg === "" ? null : fg;
     }
 
+    // Emotive text + optional per-venue font override — feature-detected.
+    if (bundle.emotiveSupported) {
+      const emotive = venueForm.emotive_text.trim();
+      if (emotive.length > 500) {
+        setVenueValidationError("Emotive text must be 500 characters or fewer.");
+        setVenueSaving(false);
+        return;
+      }
+      const emotiveFont = venueForm.emotive_font_family.trim();
+      patch.emotive_text = emotive === "" ? null : emotive;
+      patch.emotive_font_family = emotiveFont === "" ? null : emotiveFont;
+    }
+
+
     const payloadKeys = Object.keys(patch);
     const failVenueSave = (debug: VenueSaveDebug) => {
       console.error("[venue-save] failed", debug);
