@@ -17,6 +17,9 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { LiveActivityBar } from "@/components/live-activity-bar";
+import { RingConfetti } from "@/components/ring-confetti";
+import { WhatsHappeningCard } from "@/components/whats-happening-card";
 
 
 export const Route = createFileRoute("/passport/$token")({
