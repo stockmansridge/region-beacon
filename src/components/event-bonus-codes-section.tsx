@@ -509,8 +509,8 @@ export function BonusCodesSection({
             />
             {form.scope === "per_venue" && (
               <span className="block text-[11px] text-[#64748B]">
-                Awarded in full at each participating venue (a customer scanning
-                4 venues would earn {clampPoints(form.points_value) * Math.max(1, form.venue_ids.length || 1)} pts total).
+                Awarded per venue QR scanned (a customer scanning 4 of these
+                venue QR codes would earn {clampPoints(form.points_value) * 4} pts total).
               </span>
             )}
           </label>
