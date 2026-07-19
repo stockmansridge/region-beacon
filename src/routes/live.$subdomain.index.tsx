@@ -466,50 +466,54 @@ function LivePublicLoaded({
               className="flex flex-col items-center justify-center gap-2 px-3 py-5"
               style={{ borderRight: "1px solid var(--event-card-border)" }}
             >
-              <div className="relative" style={{ width: ringSize, height: ringSize }}>
-                <svg
-                  width={ringSize}
-                  height={ringSize}
-                  viewBox={`0 0 ${ringSize} ${ringSize}`}
-                  aria-hidden
-                >
-                  <circle
-                    cx={ringSize / 2}
-                    cy={ringSize / 2}
-                    r={ringRadius}
-                    fill="none"
-                    stroke="var(--event-card-border)"
-                    strokeWidth={ringStroke}
-                  />
-                  <circle
-                    cx={ringSize / 2}
-                    cy={ringSize / 2}
-                    r={ringRadius}
-                    fill="none"
-                    stroke="var(--event-button-primary-bg)"
-                    strokeWidth={ringStroke}
-                    strokeLinecap="round"
-                    strokeDasharray={`${ringDash} ${ringCirc}`}
-                    transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span
-                    className="font-trail-serif text-2xl font-semibold leading-none"
-                    style={{ color: "var(--event-card-heading)" }}
+              <div className="relative" style={{ width: ringSize + 32, height: ringSize + 20 }}>
+                {homeData.hasPassport && visited > 0 ? <RingConfetti /> : null}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: ringSize, height: ringSize }}>
+                  <svg
+                    width={ringSize}
+                    height={ringSize}
+                    viewBox={`0 0 ${ringSize} ${ringSize}`}
+                    aria-hidden
                   >
-                    {visited}
-                    {total > 0 ? (
-                      <span
-                        className="text-base font-medium"
-                        style={{ color: "var(--event-card-muted)" }}
-                      >
-                        /{total}
-                      </span>
-                    ) : null}
-                  </span>
+                    <circle
+                      cx={ringSize / 2}
+                      cy={ringSize / 2}
+                      r={ringRadius}
+                      fill="none"
+                      stroke="var(--event-card-border)"
+                      strokeWidth={ringStroke}
+                    />
+                    <circle
+                      cx={ringSize / 2}
+                      cy={ringSize / 2}
+                      r={ringRadius}
+                      fill="none"
+                      stroke="var(--event-button-primary-bg)"
+                      strokeWidth={ringStroke}
+                      strokeLinecap="round"
+                      strokeDasharray={`${ringDash} ${ringCirc}`}
+                      transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span
+                      className="font-trail-serif text-2xl font-semibold leading-none"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      {visited}
+                      {total > 0 ? (
+                        <span
+                          className="text-base font-medium"
+                          style={{ color: "var(--event-card-muted)" }}
+                        >
+                          /{total}
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
                 </div>
               </div>
+
               <div
                 className="text-center text-[11px] font-medium uppercase tracking-[0.18em]"
                 style={{ color: "var(--event-card-muted)" }}
