@@ -487,37 +487,7 @@ function PassportView({
     passport.full_name?.trim() ||
     "Visitor";
 
-  // Reward/tier copy used in the right-bottom of the summary card.
-  const tierTitle: string =
-    awards == null
-      ? "Loading prizes…"
-      : awards.length === 0
-        ? "More prizes ahead"
-        : totalVenues > 0 && stampedCount >= totalVenues
-          ? "Trail complete"
-          : nextAward
-            ? nextAward.title
-            : unlockedAwards.length > 0
-              ? "All unlocked"
-              : "Keep exploring";
-  const tierSub: string =
-    awards == null
-      ? "loading…"
-      : awards.length === 0
-        ? "stay tuned"
-        : nextAward
-          ? nextAward.points_remaining > 0
-            ? `${nextAward.points_remaining} pt${nextAward.points_remaining === 1 ? "" : "s"} to go`
-            : "ready to enter"
-          : unlockedAwards.length > 0
-            ? `${unlockedAwards.length} unlocked`
-            : "keep collecting";
-  const tierGlyph: string =
-    awards && awards.length > 0 && nextAward
-      ? "🎁"
-      : awards && unlockedAwards.length > 0
-        ? "★"
-        : "✨";
+  // Reward/tier copy is rendered inline in the summary tile below.
 
   // Circular progress ring geometry (left side of summary card).
   const ringSize = 116;
