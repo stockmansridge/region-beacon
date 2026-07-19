@@ -868,37 +868,110 @@ export function EventBulkImportSection({
         continue;
       }
       const existingId = existingBonusByName.get(b.title.trim().toLowerCase()) ?? null;
-      try {
+      const extras: Record<string, unknown> = {
+        scope: b.scope,
+        kind: b.kind,
+        social_location: b.kind === "social" ? b.social_location : null,
+        social_hashtags: b.kind === "social" ? b.social_hashtags : null,
+      };
+      const basePatch: Record<string, unknown> = {
+        name: b.title,
+        description: b.description,
+        points_value: b.points,
+        is_active: b.status === "active",
+      };
+      let bonusId: string | null = null;
+      let extrasNote: string | null = null;
+
+      const doSave = async (payload: Record<string, unknown>) => {
         if (existingId) {
           const { error } = await supabase
             .from("event_bonus_codes")
-            .update({
-              name: b.title,
-              description: b.description,
-              points_value: b.points,
-              is_active: b.status === "active",
-            })
+            .update(payload)
             .eq("id", existingId)
             .eq("agency_id", agencyId)
             .eq("event_id", eventId);
           if (error) throw error;
-          bonusesUpdated++;
-          bonusesNext.push({ ...b, matchedId: existingId, result: "updated" });
+          return existingId;
         } else {
-          const { error } = await supabase.from("event_bonus_codes").insert({
-            agency_id: agencyId,
-            event_id: eventId,
-            name: b.title,
-            description: b.description,
-            points_value: b.points,
-            is_active: b.status === "active",
-            qr_code_token: crypto.randomUUID(),
-          });
+          const { data, error } = await supabase
+            .from("event_bonus_codes")
+            .insert({
+              agency_id: agencyId,
+              event_id: eventId,
+              qr_code_token: crypto.randomUUID(),
+              ...payload,
+            })
+            .select("id")
+            .single();
           if (error) throw error;
-          // Track for downstream dedupe in this batch
+          return (data?.id as string) ?? null;
+        }
+      };
+
+      try {
+        try {
+          bonusId = await doSave({ ...basePatch, ...extras });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          const lower = msg.toLowerCase();
+          const missing = ["scope", "kind", "social_location", "social_hashtags"].filter(
+            (c) => lower.includes(c),
+          );
+          if (missing.length === 0) throw e;
+          // Retry without the unsupported extras.
+          const slim: Record<string, unknown> = { ...basePatch, ...extras };
+          for (const k of missing) delete slim[k];
+          bonusId = await doSave(slim);
+          extrasNote = `${missing.join(", ")} not supported in this environment — skipped ${missing.length === 1 ? "that field" : "those fields"}. Run the latest migration to enable per-venue and social bonus codes.`;
+        }
+
+        // Sync per-venue mapping when applicable.
+        let perVenueNote: string | null = null;
+        if (bonusId && b.scope === "per_venue") {
+          const venueIds = b.venue_keys
+            .map((k) => venueIdByKey.get(k.toLowerCase()) ?? null)
+            .filter((x): x is string => !!x);
+          if (venueIds.length !== b.venue_keys.length) {
+            perVenueNote = "Some venue_keys did not resolve to a venue in this event.";
+          }
+          try {
+            const { error: rpcError } = await (
+              supabase.rpc as unknown as (
+                fn: string,
+                args: Record<string, unknown>,
+              ) => Promise<{ data: unknown; error: { message: string } | null }>
+            ).call(supabase, "save_per_venue_bonus_venues", {
+              _bonus_code_id: bonusId,
+              _venue_ids: venueIds,
+            });
+            if (rpcError) throw new Error(rpcError.message);
+          } catch (rpcErr) {
+            const rm = rpcErr instanceof Error ? rpcErr.message : String(rpcErr);
+            perVenueNote = perVenueNote
+              ? `${perVenueNote} save_per_venue_bonus_venues failed: ${rm}`
+              : `save_per_venue_bonus_venues failed: ${rm}`;
+          }
+        }
+
+        const notes = [extrasNote, perVenueNote].filter((x): x is string => !!x).join(" ");
+        if (existingId) {
+          bonusesUpdated++;
+          bonusesNext.push({
+            ...b,
+            matchedId: existingId,
+            result: "updated",
+            resultMessage: notes || undefined,
+          });
+        } else {
           existingBonusByName.set(b.title.trim().toLowerCase(), "new");
           bonusesCreated++;
-          bonusesNext.push({ ...b, result: "created" });
+          bonusesNext.push({
+            ...b,
+            matchedId: bonusId,
+            result: "created",
+            resultMessage: notes || undefined,
+          });
         }
       } catch (e) {
         bonusesNext.push({
@@ -908,6 +981,7 @@ export function EventBulkImportSection({
         });
       }
     }
+
 
     // ---- Tasting QR Codes
     // Fetch existing tasting rows for each resolved venue once.
