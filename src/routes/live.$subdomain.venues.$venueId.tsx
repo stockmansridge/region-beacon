@@ -501,9 +501,18 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                       </div>
                     )}
 
-                  <div className="mt-4 flex">
+                  <div className="mt-4 flex flex-col gap-2">
                     {challenge.kind === "social" ? (
-                      <SocialShareButton challenge={challenge} />
+                      <>
+                        <SocialShareButton challenge={challenge} />
+                        <p
+                          className="text-[11px] leading-snug"
+                          style={{ color: "var(--event-muted,#8A7E66)" }}
+                        >
+                          Once posted, show your post to venue staff and
+                          they'll scan the bonus QR to award your points.
+                        </p>
+                      </>
                     ) : (
                       <span
                         className="inline-flex items-center justify-center gap-1.5 rounded-full border px-4 py-1.5 text-[12px] font-medium"
