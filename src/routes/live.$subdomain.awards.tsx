@@ -342,12 +342,12 @@ function CelebrationHero({
           : "linear-gradient(140deg, var(--event-card-bg, #FBF5E8) 0%, color-mix(in oklab, var(--event-primary, #1F3D2B) 8%, var(--event-card-bg, #FBF5E8)) 100%)",
       }}
     >
-      
+      <Firework position="left" />
+      <Firework position="right" />
       <div className="relative">
         {inDraw ? (
           <>
             <div className="relative mx-auto h-20 w-20 sm:h-24 sm:w-24">
-              <HalfCircleBurst />
               <div className="relative flex h-full w-full items-center justify-center text-6xl drop-shadow-sm sm:text-7xl">
                 🎁
               </div>
@@ -381,7 +381,6 @@ function CelebrationHero({
         ) : (
           <>
             <div className="relative mx-auto h-20 w-20 sm:h-24 sm:w-24">
-              <HalfCircleBurst />
               <div className="relative flex h-full w-full items-center justify-center text-6xl drop-shadow-sm sm:text-7xl">
                 🎁
               </div>
@@ -408,62 +407,76 @@ function CelebrationHero({
   );
 }
 
-// Half-circle burst radiating from the center of the prize icon (upper hemisphere).
-function HalfCircleBurst() {
-  const colors = ["#E76F51", "#F4A261", "#E9C46A", "#2A9D8F", "#8ECAE6", "#B5179E", "#4361EE"];
-  // Angles spread across the top half: 180deg (left) -> 360deg (right), i.e. -180..0
-  const count = 14;
+// Firework burst that pops in the top-left or top-right of the hero card.
+function Firework({ position }: { position: "left" | "right" }) {
+  const colors = ["#FF3B6B", "#FFB800", "#FFE24B", "#3DDC97", "#3AB0FF", "#B15CFF", "#FF6BE1"];
+  const count = 18;
   const items = Array.from({ length: count }).map((_, i) => {
-    const t = i / (count - 1); // 0..1
-    const angle = -180 + t * 180; // -180deg .. 0deg (top half)
-    const isStreamer = i % 2 === 0;
+    const angle = (i / count) * 360;
     return {
       angle,
       color: colors[i % colors.length],
-      isStreamer,
-      delay: (i % 5) * 0.12,
-      distance: isStreamer ? 78 : 66,
+      distance: 34 + (i % 3) * 8,
     };
   });
+  const delay = position === "left" ? 0 : 0.9;
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute left-1/2 top-1/2 h-0 w-0"
+      className="pointer-events-none absolute h-0 w-0"
+      style={{
+        top: "18%",
+        left: position === "left" ? "14%" : "auto",
+        right: position === "right" ? "14%" : "auto",
+      }}
     >
-      {items.map((b, i) => (
-        <span
-          key={i}
-          className="absolute left-0 top-0 block"
-          style={{
-            transform: `rotate(${b.angle}deg) translateX(${b.distance}px)`,
-            transformOrigin: "0 0",
-          }}
-        >
+      <div
+        style={{
+          animation: `firework-pop 2.2s ease-out ${delay}s infinite`,
+        }}
+      >
+        {items.map((b, i) => (
           <span
-            className="block"
+            key={i}
+            className="absolute left-0 top-0 block"
             style={{
-              width: b.isStreamer ? 16 : 8,
-              height: b.isStreamer ? 5 : 8,
-              borderRadius: 999,
-              background: b.color,
-              boxShadow: `0 0 6px ${b.color}66`,
-              transform: `translate(-50%, -50%) rotate(${b.isStreamer ? 90 : 0}deg)`,
-              transformOrigin: "center",
-              animation: `award-burst 2.4s ease-in-out ${b.delay}s infinite`,
+              transform: `rotate(${b.angle}deg)`,
+              transformOrigin: "0 0",
             }}
-          />
-        </span>
-      ))}
+          >
+            <span
+              className="block"
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 999,
+                background: b.color,
+                boxShadow: `0 0 10px ${b.color}, 0 0 18px ${b.color}88`,
+                transform: "translate(-50%, -50%)",
+                animation: `firework-particle 2.2s cubic-bezier(0.15,0.7,0.3,1) ${delay}s infinite`,
+                ["--dist" as any]: `${b.distance}px`,
+              }}
+            />
+          </span>
+        ))}
+      </div>
       <style>{`
-        @keyframes award-burst {
-          0%, 100% { opacity: 0.35; }
-          50%      { opacity: 1; }
+        @keyframes firework-particle {
+          0%   { transform: translate(-50%, -50%); opacity: 0; }
+          10%  { opacity: 1; }
+          70%  { opacity: 1; }
+          100% { transform: translate(calc(-50% + var(--dist, 40px)), -50%); opacity: 0; }
+        }
+        @keyframes firework-pop {
+          0%, 100% { opacity: 0; }
+          8%, 60%  { opacity: 1; }
         }
       `}</style>
 
     </div>
   );
 }
+
 
 
 function AwardCard({
