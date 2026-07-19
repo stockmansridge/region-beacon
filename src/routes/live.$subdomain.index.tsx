@@ -290,11 +290,8 @@ function LivePublicLoaded({
       : nextAward
         ? 0
         : null;
-  const stopsToNext =
-    nextAward && total > 0
-      ? Math.max(0, Math.ceil((nextAward.points_required - currentPoints)))
-      : null;
   const trailRemaining = Math.max(0, total - visited);
+
 
 
 
