@@ -524,6 +524,8 @@ function AwardEditorDialog({
   );
   const [status, setStatus] = useState<AwardStatus>(award?.status ?? "active");
   const [sortOrder, setSortOrder] = useState(String(award?.sort_order ?? 0));
+  const [drawDate, setDrawDate] = useState<string>(award?.draw_date ?? "");
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
