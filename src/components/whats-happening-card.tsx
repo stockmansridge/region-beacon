@@ -88,13 +88,13 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
   if (failed) return null;
   const isLoading = !data;
 
-  const checkin = data.recent_checkins?.[0] ?? null;
-  const explorers = data.explorers_today ?? 0;
-  const bonus = data.recent_bonus?.[0] ?? null;
+  const checkin = data?.recent_checkins?.[0] ?? null;
+  const explorers = data?.explorers_today ?? 0;
+  const bonus = data?.recent_bonus?.[0] ?? null;
 
   const showExplorers = explorers >= 2;
   const showBonus = Boolean(bonus);
-  const isEmpty = !checkin && !showExplorers && !showBonus;
+  const isEmpty = !isLoading && !checkin && !showExplorers && !showBonus;
 
   return (
     <section className="px-4">
