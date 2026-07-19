@@ -123,6 +123,15 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
           </Link>
         </div>
 
+        {isEmpty && (
+          <p
+            className="mt-4 text-[13px] leading-snug"
+            style={{ color: "var(--event-card-muted)" }}
+          >
+            No activity in the last little while — be the first to check in!
+          </p>
+        )}
+
         <ul className="mt-4 flex flex-col gap-4">
           {checkin && (
             <li className="flex gap-3">
