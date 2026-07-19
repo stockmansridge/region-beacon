@@ -1016,7 +1016,6 @@ function TrailProgressInline({
     </>
   );
 }
-}
 
 function StampGrid({
   venues,
