@@ -17,6 +17,9 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { LiveActivityBar } from "@/components/live-activity-bar";
+import { RingConfetti } from "@/components/ring-confetti";
+import { WhatsHappeningCard } from "@/components/whats-happening-card";
 
 
 export const Route = createFileRoute("/passport/$token")({
@@ -523,6 +526,7 @@ function PassportView({
 
   return (
     <>
+      {subdomain && <LiveActivityBar subdomain={subdomain} />}
       {/* Full-bleed hero with overlaid header */}
       <div className="relative">
         {subdomain && (
@@ -631,6 +635,7 @@ function PassportView({
                 className="relative"
                 style={{ width: ringSize, height: ringSize }}
               >
+                {stampedCount > 0 ? <RingConfetti /> : null}
                 <svg
                   width={ringSize}
                   height={ringSize}
@@ -736,6 +741,14 @@ function PassportView({
 
         {/* Rewards — sourced from configured event_awards. Hidden when none. */}
         <RewardsSection awards={awards} nextAward={nextAward} />
+
+        {/* What's happening — live event pulse */}
+        {subdomain ? (
+          <div className="mt-5">
+            <WhatsHappeningCard subdomain={subdomain} />
+          </div>
+        ) : null}
+
 
 
 
