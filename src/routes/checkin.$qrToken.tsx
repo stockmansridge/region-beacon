@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { PoweredByGetStampd } from "@/components/brand";
 import { classifyHost } from "@/components/host-router";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { sendScanEmail } from "@/lib/passport-email.functions";
 
 export const Route = createFileRoute("/checkin/$qrToken")({
   head: () => ({ meta: [{ title: "Check in — GetStampd" }] }),
