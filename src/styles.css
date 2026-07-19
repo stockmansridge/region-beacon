@@ -205,3 +205,23 @@
   --gs-shadow-card: 0 8px 24px rgba(15, 23, 42, 0.045);
   --gs-shadow-button: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
+
+@keyframes confetti-bob {
+  0% { transform: translateY(0) rotate(var(--confetti-rot, 0deg)); }
+  100% { transform: translateY(-6px) rotate(calc(var(--confetti-rot, 0deg) + 12deg)); }
+}
+.confetti-piece {
+  animation: confetti-bob 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes live-activity-in {
+  0% { transform: translateY(-120%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes live-activity-out {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-120%); opacity: 0; }
+}
+.live-activity-enter { animation: live-activity-in 320ms ease-out both; }
+.live-activity-exit { animation: live-activity-out 320ms ease-in both; }
+

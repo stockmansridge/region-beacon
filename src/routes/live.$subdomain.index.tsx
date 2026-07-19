@@ -244,18 +244,8 @@ function LivePublicLoaded({
   const nextAward = awards.length > 0 ? pickNextReward(awards) : null;
   const unlockedAwards = awards.filter((a) => a.is_eligible);
 
-  const tierTitle =
-    !homeData.hasPassport
-      ? "Start your passport"
-      : awards.length === 0
-        ? "More prizes ahead"
-        : total > 0 && visited >= total
-          ? "Trail complete"
-          : nextAward
-            ? nextAward.title
-            : unlockedAwards.length > 0
-              ? "All unlocked"
-              : "Keep exploring";
+  void unlockedAwards; // keep for downstream references if any
+
   const tierSub =
     !homeData.hasPassport
       ? "tap to begin"
@@ -281,6 +271,19 @@ function LivePublicLoaded({
   const ringRadius = (ringSize - ringStroke) / 2;
   const ringCirc = 2 * Math.PI * ringRadius;
   const ringDash = (pct / 100) * ringCirc;
+
+  // "Points / stops to next milestone" tile
+  const currentPoints = pointsEarned ?? 0;
+  const pointsToNext =
+    nextAward && nextAward.points_remaining > 0
+      ? nextAward.points_remaining
+      : nextAward
+        ? 0
+        : null;
+  const trailRemaining = Math.max(0, total - visited);
+
+
+
 
   return (
     <EventPaletteScope
@@ -314,7 +317,9 @@ function LivePublicLoaded({
       headingFontFamily={event.heading_font_family ?? null}
       className="min-h-screen"
     >
+      <LiveActivityBar subdomain={subdomain} />
       {isAdminPreview && !previewDismissed && (
+
         <div
           className="fixed left-1/2 top-3 z-50 max-w-[92vw] -translate-x-1/2 rounded-2xl border border-amber-300 bg-amber-100/95 px-4 py-2 pr-10 text-[11px] text-amber-900 shadow"
           role="status"
@@ -451,50 +456,54 @@ function LivePublicLoaded({
               className="flex flex-col items-center justify-center gap-2 px-3 py-5"
               style={{ borderRight: "1px solid var(--event-card-border)" }}
             >
-              <div className="relative" style={{ width: ringSize, height: ringSize }}>
-                <svg
-                  width={ringSize}
-                  height={ringSize}
-                  viewBox={`0 0 ${ringSize} ${ringSize}`}
-                  aria-hidden
-                >
-                  <circle
-                    cx={ringSize / 2}
-                    cy={ringSize / 2}
-                    r={ringRadius}
-                    fill="none"
-                    stroke="var(--event-card-border)"
-                    strokeWidth={ringStroke}
-                  />
-                  <circle
-                    cx={ringSize / 2}
-                    cy={ringSize / 2}
-                    r={ringRadius}
-                    fill="none"
-                    stroke="var(--event-button-primary-bg)"
-                    strokeWidth={ringStroke}
-                    strokeLinecap="round"
-                    strokeDasharray={`${ringDash} ${ringCirc}`}
-                    transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span
-                    className="font-trail-serif text-2xl font-semibold leading-none"
-                    style={{ color: "var(--event-card-heading)" }}
+              <div className="relative" style={{ width: ringSize + 32, height: ringSize + 20 }}>
+                {homeData.hasPassport && visited > 0 ? <RingConfetti /> : null}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: ringSize, height: ringSize }}>
+                  <svg
+                    width={ringSize}
+                    height={ringSize}
+                    viewBox={`0 0 ${ringSize} ${ringSize}`}
+                    aria-hidden
                   >
-                    {visited}
-                    {total > 0 ? (
-                      <span
-                        className="text-base font-medium"
-                        style={{ color: "var(--event-card-muted)" }}
-                      >
-                        /{total}
-                      </span>
-                    ) : null}
-                  </span>
+                    <circle
+                      cx={ringSize / 2}
+                      cy={ringSize / 2}
+                      r={ringRadius}
+                      fill="none"
+                      stroke="var(--event-card-border)"
+                      strokeWidth={ringStroke}
+                    />
+                    <circle
+                      cx={ringSize / 2}
+                      cy={ringSize / 2}
+                      r={ringRadius}
+                      fill="none"
+                      stroke="var(--event-button-primary-bg)"
+                      strokeWidth={ringStroke}
+                      strokeLinecap="round"
+                      strokeDasharray={`${ringDash} ${ringCirc}`}
+                      transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span
+                      className="font-trail-serif text-2xl font-semibold leading-none"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      {visited}
+                      {total > 0 ? (
+                        <span
+                          className="text-base font-medium"
+                          style={{ color: "var(--event-card-muted)" }}
+                        >
+                          /{total}
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
                 </div>
               </div>
+
               <div
                 className="text-center text-[11px] font-medium uppercase tracking-[0.18em]"
                 style={{ color: "var(--event-card-muted)" }}
@@ -523,26 +532,39 @@ function LivePublicLoaded({
                 </div>
               </div>
               {(() => {
+                const startable = !homeData.hasPassport && canRegister;
+                const allUnlocked =
+                  homeData.hasPassport && awards.length > 0 && !nextAward;
+                const bigValue = startable
+                  ? "—"
+                  : allUnlocked
+                    ? "✓"
+                    : pointsToNext !== null
+                      ? String(pointsToNext)
+                      : tierGlyph;
+                const subLabel = startable
+                  ? "Start your passport"
+                  : allUnlocked
+                    ? "All milestones unlocked"
+                    : pointsToNext !== null
+                      ? "to next milestone"
+                      : tierSub;
                 const tileInner = (
                   <>
-                    <div className="flex items-center gap-1.5">
-                      <span aria-hidden className="text-base leading-none">{tierGlyph}</span>
-                      <span
-                        className="font-trail-serif text-sm font-semibold leading-tight"
-                        style={{ color: "var(--event-card-heading)" }}
-                      >
-                        {tierTitle}
-                      </span>
+                    <div
+                      className="font-trail-serif text-2xl font-semibold leading-none"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      {bigValue}
                     </div>
                     <div
-                      className="text-[10px] font-medium uppercase tracking-[0.18em]"
+                      className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
-                      {tierSub}
+                      {subLabel}
                     </div>
                   </>
                 );
-                const startable = !homeData.hasPassport && canRegister;
                 if (startable) {
                   return (
                     <Link
@@ -562,7 +584,48 @@ function LivePublicLoaded({
               })()}
             </div>
           </div>
+          {homeData.hasPassport && total > 0 && (
+            <div className="border-t px-4 py-4" style={{ borderColor: "var(--event-card-border)" }}>
+              <div className="flex items-baseline justify-between">
+                <div
+                  className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+                  style={{ color: "var(--event-card-heading)" }}
+                >
+                  Trail Progress
+                </div>
+                <div
+                  className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                  style={{ color: "var(--event-card-muted)" }}
+                >
+                  {pct}% complete
+                </div>
+              </div>
+              <div
+                className="mt-2 h-2.5 w-full overflow-hidden rounded-full"
+                style={{ backgroundColor: "var(--event-card-border)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-[width] duration-500"
+                  style={{
+                    width: `${pct}%`,
+                    backgroundColor: "var(--event-button-primary-bg)",
+                  }}
+                />
+              </div>
+              <div
+                className="mt-2 text-[11px]"
+                style={{ color: "var(--event-card-muted)" }}
+              >
+                {visited >= total
+                  ? "Trail complete — nice work! 🎉"
+                  : nextAward
+                    ? `Visit ${trailRemaining} more ${trailRemaining === 1 ? venueLabels.singular.toLowerCase() : venueLabels.plural.toLowerCase()} to reach ${nextAward.title}`
+                    : `Only ${trailRemaining} ${trailRemaining === 1 ? venueLabels.singular.toLowerCase() : venueLabels.plural.toLowerCase()} to conquer ${event.name}! 🎉`}
+              </div>
+            </div>
+          )}
         </section>
+
 
         {/* Primary CTA */}
         <div className="mt-5">
@@ -742,3 +805,122 @@ function NotLiveYet() {
     </div>
   );
 }
+
+// ---- Ring confetti (decorative) ----
+function RingConfetti() {
+  const pieces: Array<{ top: string; left: string; rot: number; color: string; w: number; h: number; delay: string }> = [
+    { top: "4%",  left: "10%", rot: -18, color: "var(--event-accent)", w: 10, h: 4, delay: "0s" },
+    { top: "14%", left: "88%", rot: 22,  color: "var(--event-button-primary-bg)", w: 6,  h: 6, delay: "0.3s" },
+    { top: "48%", left: "-2%", rot: 8,   color: "#F5B841", w: 8,  h: 3, delay: "0.6s" },
+    { top: "56%", left: "94%", rot: -30, color: "#E76F51", w: 4,  h: 8, delay: "0.15s" },
+    { top: "86%", left: "18%", rot: 12,  color: "var(--event-accent)", w: 6,  h: 6, delay: "0.45s" },
+    { top: "90%", left: "78%", rot: -8,  color: "#F5B841", w: 9,  h: 4, delay: "0.75s" },
+  ];
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className="confetti-piece absolute block rounded-[2px]"
+          style={{
+            top: p.top,
+            left: p.left,
+            width: p.w,
+            height: p.h,
+            backgroundColor: p.color,
+            ["--confetti-rot" as any]: `${p.rot}deg`,
+            animationDelay: p.delay,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ---- Live Activity slide-down bar ----
+type ActivityItem = {
+  first_name: string;
+  venue_name: string;
+  award_title: string | null;
+  happened_at: string;
+};
+
+function LiveActivityBar({ subdomain }: { subdomain: string }) {
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [index, setIndex] = useState(0);
+  const [phase, setPhase] = useState<"in" | "out">("in");
+  const [dismissed, setDismissed] = useState(false);
+
+  // Fetch + poll
+  useEffect(() => {
+    if (dismissed) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const host = tenantHost(subdomain);
+        const { data, error } = await supabase.rpc(
+          "get_public_event_recent_activity",
+          { _hostname: host, _limit: 3 },
+        );
+        if (cancelled) return;
+        if (error) return;
+        const rows = (data ?? []) as ActivityItem[];
+        setItems(rows);
+      } catch {
+        /* RPC not deployed yet — silently hide */
+      }
+    };
+    load();
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [subdomain, dismissed]);
+
+  // Rotate items: 2s in, then slide out, next slides in
+  useEffect(() => {
+    if (items.length === 0) return;
+    setPhase("in");
+    const holdMs = 2400;
+    const outMs = 320;
+    const holdTimer = setTimeout(() => setPhase("out"), holdMs);
+    const advanceTimer = setTimeout(() => {
+      setIndex((i) => (i + 1) % items.length);
+    }, holdMs + outMs);
+    return () => {
+      clearTimeout(holdTimer);
+      clearTimeout(advanceTimer);
+    };
+  }, [items, index]);
+
+  if (dismissed || items.length === 0) return null;
+  const current = items[index % items.length];
+  if (!current) return null;
+  const first = current.first_name || "Someone";
+  const message = current.award_title
+    ? `${first} just unlocked ${current.award_title} at ${current.venue_name}!`
+    : `${first} just checked in at ${current.venue_name}!`;
+
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-2">
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss live activity"
+        className={`${phase === "in" ? "live-activity-enter" : "live-activity-exit"} pointer-events-auto flex max-w-[92vw] items-center gap-2 rounded-full px-4 py-2 text-[12px] font-semibold shadow-lg backdrop-blur`}
+        style={{
+          backgroundColor: "var(--event-nav-bg, rgba(15,23,42,0.92))",
+          color: "var(--event-nav-fg, #FFF)",
+        }}
+      >
+        <span aria-hidden className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+        <span className="text-[9px] font-bold uppercase tracking-[0.24em] opacity-80">Live</span>
+        <span className="truncate">{message}</span>
+      </button>
+    </div>
+  );
+}
+
