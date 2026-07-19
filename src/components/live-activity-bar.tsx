@@ -46,8 +46,8 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
   useEffect(() => {
     if (items.length === 0) return;
     setPhase("in");
-    const holdMs = 2400;
-    const outMs = 320;
+    const holdMs = 6000;
+    const outMs = 400;
     const holdTimer = setTimeout(() => setPhase("out"), holdMs);
     const advanceTimer = setTimeout(() => {
       setIndex((i) => (i + 1) % items.length);
@@ -67,21 +67,34 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
     : `${first} just checked in at ${current.venue_name}!`;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-2">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-3">
       <button
         type="button"
         onClick={() => setDismissed(true)}
         aria-label="Dismiss live activity"
-        className={`${phase === "in" ? "live-activity-enter" : "live-activity-exit"} pointer-events-auto flex max-w-[92vw] items-center gap-2 rounded-full px-4 py-2 text-[12px] font-semibold shadow-lg backdrop-blur`}
+        className={`${phase === "in" ? "live-activity-enter" : "live-activity-exit"} pointer-events-auto flex w-full max-w-[94vw] items-center gap-3 rounded-2xl px-4 py-3 text-left text-[13px] font-semibold shadow-xl backdrop-blur sm:max-w-md`}
         style={{
-          backgroundColor: "var(--event-nav-bg, rgba(15,23,42,0.92))",
+          backgroundColor: "var(--event-nav-bg, rgba(15,23,42,0.96))",
           color: "var(--event-nav-fg, #FFF)",
         }}
       >
-        <span aria-hidden className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
-        <span className="text-[9px] font-bold uppercase tracking-[0.24em] opacity-80">Live</span>
-        <span className="truncate">{message}</span>
+        <span
+          aria-hidden
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-lg leading-none"
+          style={{ backgroundColor: "rgba(255,255,255,0.14)" }}
+        >
+          🔥
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[9px] font-bold uppercase tracking-[0.24em] opacity-80">
+            Live Activity
+          </div>
+          <div className="mt-0.5 truncate text-[13px] font-semibold leading-snug">
+            {message}
+          </div>
+        </div>
       </button>
     </div>
   );
 }
+
