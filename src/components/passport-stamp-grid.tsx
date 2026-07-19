@@ -22,6 +22,7 @@ export function PassportStampGrid({
   canRegister?: boolean;
 }) {
   const data = usePassportHomeData(eventId);
+  const bonusVenueIds = useVenuesWithBonus(eventId);
   if (data.loading) return null;
   const { hasPassport, venues } = data;
   if (!hasPassport && venues.length === 0) return null;
