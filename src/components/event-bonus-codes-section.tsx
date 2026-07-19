@@ -443,8 +443,10 @@ export function BonusCodesSection({
             {form.kind === "social" && (
               <p className="text-[11px] text-[#64748B]">
                 On the venue page, this bonus shows a "Share on socials" button
-                that opens the phone camera so customers can snap a photo and
-                post it with the tag &amp; hashtags below.
+                that opens the phone camera so customers can snap and post with
+                the tag &amp; hashtags below. To claim the points they show the
+                posted photo to venue staff, who then scan this bonus QR to
+                award the points.
               </p>
             )}
           </div>
