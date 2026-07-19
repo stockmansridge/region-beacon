@@ -165,6 +165,19 @@ function StampTile({
         >
           {stamped ? <Check className="h-3.5 w-3.5" /> : <StampIcon className="h-3 w-3" />}
         </span>
+        {hasBonus && (
+          <span
+            aria-label="Bonus available"
+            title="Bonus challenge available"
+            className="absolute -left-0.5 -top-0.5 grid h-6 w-6 place-items-center rounded-full shadow ring-2 ring-white"
+            style={{
+              backgroundColor: "var(--event-accent, #f59e0b)",
+              color: "var(--event-button-primary-fg, #ffffff)",
+            }}
+          >
+            <Sparkles className="h-3 w-3" />
+          </span>
+        )}
       </div>
       <span
         title={name}
