@@ -402,6 +402,88 @@ export function BonusCodesSection({
             />
           </label>
 
+          <div className="space-y-2">
+            <span className="block text-xs font-medium text-[#334155]">Type</span>
+            <div className="flex flex-wrap gap-2">
+              <label
+                className={
+                  "inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 text-xs cursor-pointer " +
+                  (form.kind === "points"
+                    ? "border-[#2F6FE4] bg-[#EFF6FF] text-[#1D4ED8]"
+                    : "border-[#D9E2EF] bg-white text-[#334155]")
+                }
+              >
+                <input
+                  type="radio"
+                  name="bonus-kind"
+                  className="accent-[#2F6FE4]"
+                  checked={form.kind === "points"}
+                  onChange={() => setForm({ ...form, kind: "points" })}
+                />
+                <span>Points (scan QR)</span>
+              </label>
+              <label
+                className={
+                  "inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 text-xs cursor-pointer " +
+                  (form.kind === "social"
+                    ? "border-[#2F6FE4] bg-[#EFF6FF] text-[#1D4ED8]"
+                    : "border-[#D9E2EF] bg-white text-[#334155]")
+                }
+              >
+                <input
+                  type="radio"
+                  name="bonus-kind"
+                  className="accent-[#2F6FE4]"
+                  checked={form.kind === "social"}
+                  onChange={() => setForm({ ...form, kind: "social" })}
+                />
+                <span>Social share (opens camera)</span>
+              </label>
+            </div>
+            {form.kind === "social" && (
+              <p className="text-[11px] text-[#64748B]">
+                On the venue page, this bonus shows a "Share on socials" button
+                that opens the phone camera so customers can snap a photo and
+                post it with the tag &amp; hashtags below.
+              </p>
+            )}
+          </div>
+
+          {form.kind === "social" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block space-y-1">
+                <span className="block text-xs font-medium text-[#334155]">
+                  Tag / @location
+                </span>
+                <input
+                  type="text"
+                  maxLength={80}
+                  placeholder="@cargoroadwines"
+                  value={form.social_location}
+                  onChange={(e) =>
+                    setForm({ ...form, social_location: e.target.value })
+                  }
+                  className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm"
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="block text-xs font-medium text-[#334155]">
+                  Recommended hashtags
+                </span>
+                <input
+                  type="text"
+                  maxLength={200}
+                  placeholder="#cargoroadquest #orangenswwine"
+                  value={form.social_hashtags}
+                  onChange={(e) =>
+                    setForm({ ...form, social_hashtags: e.target.value })
+                  }
+                  className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm"
+                />
+              </label>
+            </div>
+          )}
+
           <label className="block space-y-1">
             <span className="block text-xs font-medium text-[#334155]">
               Points value <span className="text-[#E11D48]">*</span>
