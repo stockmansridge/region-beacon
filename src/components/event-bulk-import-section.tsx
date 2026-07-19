@@ -1192,12 +1192,15 @@ export function EventBulkImportSection({
                     v.check_in_value != null
                       ? ` Check-in stamp value: ${v.check_in_value}.`
                       : " Check-in stamp value: leave unchanged.";
+                  const emotive = v.emotive_text
+                    ? ` Emotive: "${v.emotive_text}"${v.emotive_font_family ? ` (${v.emotive_font_family})` : ""}.`
+                    : "";
                   return {
                     rowNum: v.rowNum,
                     label: v.name || v.venue_key,
                     status: v.status,
                     issues: v.issues,
-                    extra: action + civ,
+                    extra: action + civ + emotive,
                     result: v.result,
                     resultMessage: v.resultMessage,
                   };
@@ -1211,22 +1214,34 @@ export function EventBulkImportSection({
               <p className="text-xs text-muted-foreground">No bonus code rows.</p>
             ) : (
               <PreviewTable
-                rows={drafts.bonuses.map((b) => ({
-                  rowNum: b.rowNum,
-                  label: b.title || b.code,
-                  status: b.status,
-                  issues: b.issues,
-                  extra:
-                    (existingBonusByName.has(b.title.trim().toLowerCase())
-                      ? "Will UPDATE an existing bonus code with the same title."
-                      : "Will CREATE a new bonus code.") +
-                    ` Bonus points: ${b.points}.`,
-                  result: b.result,
-                  resultMessage: b.resultMessage,
-                }))}
+                rows={drafts.bonuses.map((b) => {
+                  const action = existingBonusByName.has(b.title.trim().toLowerCase())
+                    ? "Will UPDATE an existing bonus code with the same title."
+                    : "Will CREATE a new bonus code.";
+                  const kindLabel = b.kind === "social" ? "Social share" : "Points";
+                  const scopeLabel =
+                    b.scope === "per_venue"
+                      ? `per-venue (${b.venue_keys.length} venue${b.venue_keys.length === 1 ? "" : "s"})`
+                      : "event-wide";
+                  const social =
+                    b.kind === "social"
+                      ? ` Location: ${b.social_location ?? "—"}. Hashtags: ${b.social_hashtags ?? "—"}.`
+                      : "";
+                  return {
+                    rowNum: b.rowNum,
+                    label: b.title || b.code,
+                    status: b.status,
+                    issues: b.issues,
+                    extra:
+                      `${action} Kind: ${kindLabel}. Scope: ${scopeLabel}. Points: ${b.points}.${social}`,
+                    result: b.result,
+                    resultMessage: b.resultMessage,
+                  };
+                })}
               />
             )}
           </PreviewBlock>
+
 
           <PreviewBlock title="Tasting QR Codes">
             {drafts.tastings.length === 0 ? (
