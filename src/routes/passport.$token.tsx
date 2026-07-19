@@ -1022,7 +1022,7 @@ function StampGrid({
 
 
 
-function StampCell({ venue }: { venue: PassportStampVenue }) {
+function StampCell({ venue, hasBonus = false }: { venue: PassportStampVenue; hasBonus?: boolean }) {
   const stamped = !!venue.is_stamped;
   const when = venue.checked_in_at
     ? new Date(venue.checked_in_at).toLocaleDateString(undefined, {
@@ -1063,6 +1063,20 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
               }
         }
       >
+        {hasBonus && (
+          <span
+            aria-label="Bonus available"
+            title="Bonus challenge available"
+            className="absolute -right-1 -top-1 z-10 grid h-6 w-6 place-items-center rounded-full shadow ring-2 ring-white"
+            style={{
+              backgroundColor: "var(--event-accent, #f59e0b)",
+              color: "#ffffff",
+            }}
+          >
+            <Sparkles className="h-3 w-3" />
+          </span>
+        )}
+
         {stamped ? (
           <div className="flex flex-col items-center justify-center leading-none">
             <span
