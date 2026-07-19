@@ -320,6 +320,19 @@ function CheckinPage() {
           pointsAlreadyAwarded: !!row.already_checked_in,
           totalPoints: 0,
         });
+        // Fire-and-forget scan confirmation email. Best-effort; never blocks UI.
+        sendScanEmailFn({
+          data: {
+            token,
+            kind: "venue_checkin",
+            name: venueName ?? "",
+            points: row.points_awarded ?? 0,
+            alreadyCollected: !!row.already_checked_in,
+          },
+        }).catch((e) => {
+          // eslint-disable-next-line no-console
+          console.warn("scan email failed", e);
+        });
       }
     })();
     return () => {
