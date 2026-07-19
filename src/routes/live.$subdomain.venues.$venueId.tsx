@@ -109,10 +109,23 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       setState({ kind: "loading" });
       const host = tenantHost(subdomain);
 
-      const [{ data, error }, { data: evtData }] = await Promise.all([
+      const [{ data, error }, { data: evtData }, extrasRes] = await Promise.all([
         supabase.rpc("get_public_venue_by_domain", { _hostname: host, _venue_id: venueId }),
         supabase.rpc("get_public_event_by_domain", { _hostname: host }),
+        (supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: Array<{
+          emotive_text: string | null;
+          emotive_font_family: string | null;
+          default_emotive_font_family: string | null;
+          points_value: number;
+        }> | null; error: unknown }>)(
+          "get_public_venue_extras",
+          { _hostname: host, _venue_id: venueId },
+        ).catch(() => ({ data: null, error: null })),
       ]);
+
       if (cancelled) return;
 
       if (error) {
@@ -133,6 +146,10 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         eventLogoPath: evt?.logo_path ?? null,
         brand: evt,
       });
+
+      const extraRow = Array.isArray(extrasRes?.data) ? extrasRes.data[0] ?? null : null;
+      setExtras(extraRow);
+
 
       if (!evt?.event_id) return;
       let passportToken: string | null = null;
