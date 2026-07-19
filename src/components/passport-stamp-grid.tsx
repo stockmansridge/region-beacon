@@ -1,8 +1,10 @@
-import { Check, Stamp as StampIcon } from "lucide-react";
+import { Check, Sparkles, Stamp as StampIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import type { PassportStampVenue } from "@/lib/passport-stamps";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { usePassportHomeData } from "@/lib/use-passport-home-data";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Mobile-app style passport stamp grid. Renders one tile per participating
