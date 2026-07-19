@@ -85,7 +85,8 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
     };
   }, [subdomain]);
 
-  if (failed || !data) return null;
+  if (failed) return null;
+  const isLoading = !data;
 
   const checkin = data.recent_checkins?.[0] ?? null;
   const explorers = data.explorers_today ?? 0;
