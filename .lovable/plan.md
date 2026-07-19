@@ -1,57 +1,63 @@
-
 ## Goal
 
-Make the public event home page (`/live/$subdomain/`) feel more vibrant and real-time by celebrating progress and showing what other visitors are doing right now.
+Add a "What's Happening Now" card to the public event home page (`/live/$subdomain/`) that surfaces recent trail activity — recent check-ins, how many people are exploring today, and recent bonus-code unlocks — powered by an expanded read-only RPC. Style matches the mockup: warm card, emoji leader icons, bold subject + light context per row, "VIEW ALL" affordance in the header.
 
-Four additions, all on `src/routes/live.$subdomain.index.tsx`. No changes to saved data or admin flows.
+## 1. Expand the recent-activity RPC
 
-## 1. Live Activity slide-down bar
+Draft a new SQL file at `supabase/migrations-draft-public-happening-now/apply.sql` that creates `public.get_public_event_happening_now(_hostname text)` returning a single JSON payload:
 
-A slim pill at the top of the page that slides down from above the hero, shows one recent scan for ~2 seconds, then slides up and swaps to the next. Rotates through the 3 most recent event-wide check-ins on a loop.
+```
+{
+  "recent_checkins": [
+    { "first_name": "Lisa", "last_initial": "D", "venue_name": "Canobolas Wines", "happened_at": "..." }
+  ],
+  "explorers_today": 18,
+  "recent_bonus": [
+    { "first_name": "Someone" | "Ben", "venue_name": "Stockman's Ridge", "points_awarded": 25, "happened_at": "..." }
+  ]
+}
+```
 
-- Format: `🔥 Ben just checked in at Rowlee Wines!` (first name only, from `display_name` — split on space, take token 1; fall back to "Someone").
-- If a scan also unlocked a reward, format becomes `Ben just unlocked Free Lunch at Rowlee Wines!`.
-- Animation: slides in from `-translate-y-full` → `translate-y-0` (~300ms), holds 2s, slides out, next item slides in. CSS transitions on transform + opacity; single item mounted at a time via keyed React state.
-- Placement: absolutely positioned at the top of the page, above the hero, `z-50`, pointer-events auto so it can be tapped to dismiss for the session.
-- Data: new `supabase.rpc("get_public_event_recent_activity", { _hostname, _limit: 3 })` returning `{ first_name, venue_name, award_title | null, happened_at }`. Poll every 30s while the tab is visible; silently no-op if the RPC isn't deployed yet (so the UI ships before the migration lands).
-- Styling: reuses `--event-nav-bg` / `--event-nav-fg` so it matches the event palette; small flame or spark icon on the left.
-- If there are no recent scans in the last 24h, the bar simply doesn't render.
+Details:
+- `recent_checkins`: last 5 event-wide check-ins in the past 24h. First name from `visitors.first_name` (fall back to "Someone"), plus first letter of last name when available.
+- `explorers_today`: distinct passports with at least one check-in since local midnight (uses event `timezone` when set, otherwise UTC).
+- `recent_bonus`: last 3 bonus-code claims in the past 24h from the `bonus_code_claims` table (or equivalent — script will introspect and pick the existing one; if none exists, this array is empty and the UI hides that row group).
+- `security definer`, `stable`, granted to `anon, authenticated`. No PII beyond first name + last initial.
+- Existing `get_public_event_recent_activity` stays in place; new RPC is additive so we can ship UI + SQL independently.
 
-Drafts a new SQL file at `supabase/migrations-draft-public-recent-activity/apply.sql` creating the read-only RPC (joins checkins → passports for first name, → venues for name, → awards for the most recent award-unlock in the same window). Read-only, no PII beyond first name. Runs after the user applies it in the SQL editor; the UI degrades gracefully until then.
+README explains apply steps and notes graceful UI degradation until applied.
 
-## 2. Confetti / streamers around the progress ring
+## 2. New `WhatsHappeningCard` component
 
-Purely decorative SVG confetti sprinkled around the ring inside the summary card's left cell. Fixed positions, subtle bob animation via `@keyframes` in `src/styles.css` (`confetti-bob` — 2s ease-in-out infinite alternate, small translate + rotate). Colours pull from `--event-accent`, `--event-primary`, plus 2 neutral warm tones for contrast. Rendered only when `hasPassport` is true and `visited > 0` so it feels earned.
+Add `src/components/whats-happening-card.tsx`:
 
-## 3. Trail-progress bar under the summary card
+- Fetches `get_public_event_happening_now` on mount, polls every 30s while tab is visible, silently no-ops if the RPC isn't deployed yet.
+- Layout matches mockup:
+  - Header row: bold "What's Happening Now" on the left, small "VIEW ALL" link on the right (links to `/live/$subdomain/leaderboard` since that's the closest existing activity surface — no new route created).
+  - Up to 3 rows total, chosen in priority order:
+    1. Most recent check-in — 🔥 icon, `**{First L.}** just visited **{Venue}**` + relative time ("2 mins ago").
+    2. Explorers today — 🍷 icon (event uses wine palette; use a generic sparkle for non-wine themes via a small event-agnostic mapping, defaulting to ✨) — `**{n} people are exploring** the trail today` + "Join them!" subline. Hidden when count < 2.
+    3. Most recent bonus claim — ⭐ icon, `Someone found a **hidden bonus** at **{Venue}**!` + `{points} bonus points awarded`. Hidden when no bonus data.
+- Styling uses existing event tokens (`--event-card-bg`, `--event-card-border`, `--event-card-heading`, `--event-card-muted`) so it themes per event. Rounded-3xl, subtle border, matches other summary cards on the page.
+- Renders nothing when all three rows would be empty (fresh event, no activity in last 24h) so it doesn't sit on the page looking dead.
 
-A new full-width progress row inside the summary card, below the ring/points grid:
+## 3. Slot into the home page
 
-- Label row: `Trail Progress`   · right-aligned `{pct}% COMPLETE`.
-- Bar: rounded track using `--event-card-border` background, filled with `--event-button-primary-bg` to `pct = visited/total`.
-- Subline: `Only {total-visited} {venueLabel} to conquer {eventName}! 🎉` when in progress, `Trail complete — nice work!` when done, hidden when no passport yet.
+Edit `src/routes/live.$subdomain.index.tsx`:
 
-Uses the existing `visited` / `total` already computed from `usePassportHomeData`.
+- Import `WhatsHappeningCard`.
+- Render `<WhatsHappeningCard subdomain={subdomain} eventId={event.event_id} venueLabelPlural={...} />` in the main content column, directly under the summary/progress card and above `<NextRewardCard />` (around line 709). This is the "celebrate progress → see what others are doing → see what's next" flow requested previously.
+- No change to the existing top slide-down `LiveActivityBar` — the two surfaces complement each other (slide-down = ephemeral, card = persistent glanceable summary). If the user later wants to consolidate, that's a follow-up.
 
-## 4. Replace "Start your passport / Tap to begin" tile with "points to next milestone"
+## 4. Out of scope
 
-The bottom-right tile in the summary card currently shows the tier glyph + "Tap to begin" when the visitor has no passport, or the tier label otherwise. Replace with:
-
-- Big number: `{pointsToNext}` (derived from `pickNextReward(awards).points_required - points`).
-- Sub-label: `TO NEXT MILESTONE`.
-- Helper line below the grid (spanning full width, small muted text): `Visit {n} more {venueLabel} to enter the {rewardTitle} draw!` — hidden if there is no next reward.
-- If the visitor has no passport yet, the tile instead shows `—` + `START YOUR PASSPORT` and remains a link to `/join` (keeps the current CTA working; the standalone "Start passport" button below is unchanged).
-- If all rewards unlocked, tile shows `✓` + `ALL MILESTONES UNLOCKED`.
+- No new route for "VIEW ALL" — link points at the existing leaderboard page.
+- No websocket/realtime subscription — 30s polling is enough and avoids per-visitor channels.
+- No changes to admin, database writes, or the passport detail route.
+- No changes to the existing `LiveActivityBar` or `get_public_event_recent_activity` RPC.
 
 ## Files touched
 
-- `src/routes/live.$subdomain.index.tsx` — Live Activity bar component + hook, confetti overlay, progress bar section, replaced bottom-right tile.
-- `src/styles.css` — `@keyframes confetti-bob` + `@keyframes live-activity-slide` utilities.
-- `src/lib/use-passport-home-data.ts` — expose `pointsToNext` / `nextReward` conveniences (thin helper, no new fetch).
-- `supabase/migrations-draft-public-recent-activity/apply.sql` + `README.md` — new read-only RPC for the activity bar. Draft only; user runs it in the Supabase SQL editor. UI hides itself if RPC returns an error.
-
-## Out of scope
-
-- No changes to database writes, admin pages, or the passport detail route.
-- No websocket / realtime subscription — 30s polling is enough for the "last 3 scans" feel and avoids a Supabase Realtime channel per visitor.
-- Confetti is decorative SVG, not a canvas library, to keep the bundle small.
+- `supabase/migrations-draft-public-happening-now/apply.sql` + `README.md` — new read-only RPC (draft; user applies in SQL editor).
+- `src/components/whats-happening-card.tsx` — new component.
+- `src/routes/live.$subdomain.index.tsx` — mount the card in the home layout.
