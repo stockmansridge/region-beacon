@@ -89,16 +89,21 @@ type FormState = {
   accept_terms: boolean;
 };
 
-const formSchema = z.object({
-  full_name: z.string().trim().min(2, "Please enter your full name").max(120, "Name is too long"),
-  email: z.string().trim().email("Enter a valid email").max(254, "Email is too long"),
-  mobile: z.string().trim().max(32, "Mobile is too long").optional().or(z.literal("")),
-  postcode: z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
-  marketing_opt_in: z.boolean(),
-  accept_terms: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the terms & privacy policy" }),
-  }),
-});
+function buildFormSchema(requirePostcode: boolean) {
+  return z.object({
+    full_name: z.string().trim().min(2, "Please enter your full name").max(120, "Name is too long"),
+    email: z.string().trim().email("Enter a valid email").max(254, "Email is too long"),
+    mobile: z.string().trim().max(32, "Mobile is too long").optional().or(z.literal("")),
+    postcode: requirePostcode
+      ? z.string().trim().min(3, "Please enter your postcode").max(16, "Postcode is too long")
+      : z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
+    marketing_opt_in: z.boolean(),
+    accept_terms: z.literal(true, {
+      errorMap: () => ({ message: "You must accept the terms & privacy policy" }),
+    }),
+  });
+}
+const formSchema = buildFormSchema(false);
 
 function splitName(full: string): { first: string; last: string } {
   const parts = full.trim().split(/\s+/);
