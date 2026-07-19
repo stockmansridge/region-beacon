@@ -4581,6 +4581,7 @@ function EventDetail() {
                 eventId={event.id}
                 publicSubdomain={activeSubdomain}
                 canEdit={canEdit}
+                venues={(bundle?.venues ?? []).map((v) => ({ id: v.id, name: v.name }))}
               />
             ) : (
               <p className="text-sm text-muted-foreground">
