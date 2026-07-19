@@ -1046,6 +1046,24 @@ function StampGrid({
           ))}
         </div>
       </div>
+      {bonusVenueIds.size > 0 && (
+        <div
+          className="mt-3 flex items-center justify-center gap-2 text-[11px]"
+          style={{ color: "var(--event-page-muted)" }}
+        >
+          <span
+            aria-hidden
+            className="grid h-5 w-5 place-items-center rounded-full shadow ring-2 ring-white"
+            style={{
+              backgroundColor: "var(--event-accent, #f59e0b)",
+              color: "var(--event-button-primary-fg, #ffffff)",
+            }}
+          >
+            <Sparkles className="h-2.5 w-2.5" />
+          </span>
+          <span>= Bonus Challenge available here</span>
+        </div>
+      )}
     </section>
   );
 }
