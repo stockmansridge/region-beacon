@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { classifyHost } from "@/components/host-router";
 import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { sendScanEmail } from "@/lib/passport-email.functions";
 
 export const Route = createFileRoute("/collect/bonus/$token")({
   head: () => ({ meta: [{ title: "Bonus points — GetStampd" }] }),
@@ -92,6 +94,8 @@ async function resolveCurrentEventId(): Promise<string | null> {
 function BonusClaimPage() {
   const { token } = Route.useParams();
   const [outcome, setOutcome] = useState<Outcome>({ kind: "loading" });
+  const sendScanEmailFn = useServerFn(sendScanEmail);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -148,6 +152,19 @@ function BonusClaimPage() {
       } else {
         setOutcome({ kind: "claimed", row, passportToken: passport.access_token });
       }
+      // Fire-and-forget scan confirmation email. Best-effort.
+      sendScanEmailFn({
+        data: {
+          token: passport.access_token,
+          kind: "bonus",
+          name: row.bonus_code_name ?? "",
+          points: row.points_awarded ?? 0,
+          alreadyCollected: !!row.already_collected,
+        },
+      }).catch((e) => {
+        // eslint-disable-next-line no-console
+        console.warn("scan email failed", e);
+      });
     })();
     return () => {
       cancelled = true;

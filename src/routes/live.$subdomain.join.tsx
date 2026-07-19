@@ -918,6 +918,26 @@ function SuccessScreen({
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
   const [copied, setCopied] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  const resendPassportEmail = useServerFn(sendPassportEmail);
+
+  async function resend() {
+    setResendState("sending");
+    setResendMsg(null);
+    try {
+      const res = await resendPassportEmail({ data: { token } });
+      if (res && (res as { sent?: boolean }).sent) {
+        setResendState("sent");
+      } else {
+        setResendState("error");
+        setResendMsg((res as { reason?: string })?.reason ?? "send_failed");
+      }
+    } catch (e) {
+      setResendState("error");
+      setResendMsg((e as Error)?.message ?? "unknown");
+    }
+  }
 
   async function copy() {
     try {
@@ -1060,6 +1080,21 @@ function SuccessScreen({
             }}
           >
             {copied ? "Copied!" : "Copy passport link"}
+          </button>
+          <button
+            type="button"
+            onClick={resend}
+            disabled={resendState === "sending"}
+            className="mt-2 h-10 w-full rounded-full text-xs font-semibold tracking-wide underline-offset-2 hover:underline"
+            style={{ color: "var(--event-link)" }}
+          >
+            {resendState === "sending"
+              ? "Sending…"
+              : resendState === "sent"
+                ? "Email sent — check your inbox"
+                : resendState === "error"
+                  ? `Couldn't send${resendMsg ? ` (${resendMsg})` : ""} — tap to retry`
+                  : "Didn't get the email? Resend"}
           </button>
 
           <div

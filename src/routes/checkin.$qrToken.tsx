@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { PoweredByGetStampd } from "@/components/brand";
 import { classifyHost } from "@/components/host-router";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { sendScanEmail } from "@/lib/passport-email.functions";
 
 export const Route = createFileRoute("/checkin/$qrToken")({
   head: () => ({ meta: [{ title: "Check in — GetStampd" }] }),
@@ -157,6 +159,7 @@ async function resolveCurrentEventId(): Promise<string | null> {
 function CheckinPage() {
   const { qrToken } = Route.useParams();
   const [outcome, setOutcome] = useState<Outcome>({ kind: "loading" });
+  const sendScanEmailFn = useServerFn(sendScanEmail);
 
   useEffect(() => {
     let cancelled = false;
@@ -316,6 +319,19 @@ function CheckinPage() {
           pointsAwarded: row.points_awarded ?? 0,
           pointsAlreadyAwarded: !!row.already_checked_in,
           totalPoints: 0,
+        });
+        // Fire-and-forget scan confirmation email. Best-effort; never blocks UI.
+        sendScanEmailFn({
+          data: {
+            token,
+            kind: "venue_checkin",
+            name: venueName ?? "",
+            points: row.points_awarded ?? 0,
+            alreadyCollected: !!row.already_checked_in,
+          },
+        }).catch((e) => {
+          // eslint-disable-next-line no-console
+          console.warn("scan email failed", e);
         });
       }
     })();
