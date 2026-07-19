@@ -151,9 +151,8 @@ type Venue = {
   cover_path: string | null;
   deleted_at: string | null;
   points_value: number;
-  emotive_text: string | null;
-  emotive_font_family: string | null;
 };
+
 
 
 
@@ -1380,10 +1379,11 @@ function EventDetail() {
       logo_path: v.logo_path ?? null,
       cover_path: v.cover_path ?? null,
       points_value: String(v.points_value ?? 0),
-      emotive_text: v.emotive_text ?? "",
-      emotive_font_family: v.emotive_font_family ?? "",
+      emotive_text: bundle?.emotiveByVenue.get(v.id)?.emotive_text ?? "",
+      emotive_font_family: bundle?.emotiveByVenue.get(v.id)?.emotive_font_family ?? "",
 
     });
+
 
     setVenueAssetError(null);
     setVenueValidationError(null);
