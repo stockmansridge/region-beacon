@@ -487,37 +487,7 @@ function PassportView({
     passport.full_name?.trim() ||
     "Visitor";
 
-  // Reward/tier copy used in the right-bottom of the summary card.
-  const tierTitle: string =
-    awards == null
-      ? "Loading prizes…"
-      : awards.length === 0
-        ? "More prizes ahead"
-        : totalVenues > 0 && stampedCount >= totalVenues
-          ? "Trail complete"
-          : nextAward
-            ? nextAward.title
-            : unlockedAwards.length > 0
-              ? "All unlocked"
-              : "Keep exploring";
-  const tierSub: string =
-    awards == null
-      ? "loading…"
-      : awards.length === 0
-        ? "stay tuned"
-        : nextAward
-          ? nextAward.points_remaining > 0
-            ? `${nextAward.points_remaining} pt${nextAward.points_remaining === 1 ? "" : "s"} to go`
-            : "ready to enter"
-          : unlockedAwards.length > 0
-            ? `${unlockedAwards.length} unlocked`
-            : "keep collecting";
-  const tierGlyph: string =
-    awards && awards.length > 0 && nextAward
-      ? "🎁"
-      : awards && unlockedAwards.length > 0
-        ? "★"
-        : "✨";
+  // Reward/tier copy is rendered inline in the summary tile below.
 
   // Circular progress ring geometry (left side of summary card).
   const ringSize = 116;
@@ -711,35 +681,128 @@ function PassportView({
                 </div>
               </div>
               <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
-                <div className="flex items-center gap-1.5">
-                  <span aria-hidden className="text-base leading-none">
-                    {tierGlyph}
-                  </span>
-                  <span
-                    className="font-trail-serif text-sm font-semibold leading-tight"
-                    style={{ color: "var(--event-card-heading)" }}
-                  >
-                    {tierTitle}
-                  </span>
-                </div>
-                <div
-                  className="text-[10px] font-medium uppercase tracking-[0.18em]"
-                  style={{ color: "var(--event-card-muted)" }}
-                >
-                  {tierSub}
-                </div>
+                {awards == null ? (
+                  <>
+                    <div
+                      className="font-trail-serif text-2xl font-semibold leading-none"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      —
+                    </div>
+                    <div
+                      className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      To next milestone
+                    </div>
+                    <div
+                      className="text-[10px]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      loading…
+                    </div>
+                  </>
+                ) : awards.length === 0 ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span aria-hidden className="text-base leading-none">✨</span>
+                      <span
+                        className="font-trail-serif text-sm font-semibold leading-tight"
+                        style={{ color: "var(--event-card-heading)" }}
+                      >
+                        More prizes ahead
+                      </span>
+                    </div>
+                    <div
+                      className="text-[10px] font-medium uppercase tracking-[0.18em]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      stay tuned
+                    </div>
+                  </>
+                ) : nextAward && nextAward.points_remaining > 0 ? (
+                  <>
+                    <div
+                      className="font-trail-serif text-2xl font-semibold leading-none"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      {nextAward.points_remaining}
+                    </div>
+                    <div
+                      className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      To next milestone
+                    </div>
+                    <div
+                      className="text-[11px] leading-snug"
+                      style={{ color: "var(--event-card-text)" }}
+                    >
+                      Earn {nextAward.points_remaining} more point
+                      {nextAward.points_remaining === 1 ? "" : "s"} to enter{" "}
+                      <span style={{ color: "var(--event-card-heading)" }}>
+                        {nextAward.title}
+                      </span>
+                    </div>
+                  </>
+                ) : nextAward ? (
+                  <>
+                    <div
+                      className="font-trail-serif text-2xl font-semibold leading-none"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      0
+                    </div>
+                    <div
+                      className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      Ready to enter
+                    </div>
+                    <div
+                      className="text-[11px] leading-snug"
+                      style={{ color: "var(--event-card-text)" }}
+                    >
+                      {nextAward.title}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span aria-hidden className="text-base leading-none">🎉</span>
+                      <span
+                        className="font-trail-serif text-sm font-semibold leading-tight"
+                        style={{ color: "var(--event-card-heading)" }}
+                      >
+                        All prizes unlocked
+                      </span>
+                    </div>
+                    <div
+                      className="text-[10px] font-medium uppercase tracking-[0.18em]"
+                      style={{ color: "var(--event-card-muted)" }}
+                    >
+                      you're in every draw
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
+          {totalVenues > 0 && (
+            <div
+              className="px-5 py-4"
+              style={{ borderTop: "1px solid var(--event-card-border)" }}
+            >
+              <TrailProgressInline
+                stamped={stampedCount}
+                total={totalVenues}
+                labelPlural={labelPlural}
+              />
+            </div>
+          )}
         </section>
 
 
-        {/* Trail progress */}
-        <TrailProgress
-          stamped={stampedCount}
-          total={totalVenues}
-          labelPlural={labelPlural}
-        />
 
         {/* Stamp grid */}
         <StampGrid
@@ -872,7 +935,7 @@ function PassportView({
 }
 
 
-function TrailProgress({
+function TrailProgressInline({
   stamped,
   total,
   labelPlural,
@@ -885,50 +948,42 @@ function TrailProgress({
   const pct = Math.min(100, Math.round((stamped / total) * 100));
   const remaining = Math.max(0, total - stamped);
   return (
-    <section className="mt-5">
-      <div
-        className="rounded-3xl border p-5 shadow-sm"
-        style={{
-          borderColor: "var(--event-card-border)",
-          backgroundColor: "var(--event-card-bg)",
-        }}
-      >
-        <div className="flex items-baseline justify-between gap-3">
-          <h2
-            className="font-trail-serif text-base font-semibold"
-            style={{ color: "var(--event-card-heading)" }}
-          >
-            Trail Progress
-          </h2>
-          <span
-            className="text-[11px] font-bold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-card-muted)" }}
-          >
-            {pct}% complete
-          </span>
-        </div>
-        <div
-          className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
-          style={{ backgroundColor: "var(--event-card-border)" }}
+    <>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2
+          className="font-trail-serif text-base font-semibold"
+          style={{ color: "var(--event-card-heading)" }}
         >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${pct}%`,
-              backgroundColor: "var(--event-button-primary-bg)",
-            }}
-          />
-        </div>
-        <p
-          className="mt-2 text-[12px]"
-          style={{ color: "var(--event-card-text)" }}
+          Trail Progress
+        </h2>
+        <span
+          className="text-[11px] font-bold uppercase tracking-[0.18em]"
+          style={{ color: "var(--event-card-muted)" }}
         >
-          {remaining === 0
-            ? "Trail complete — nicely done! 🎉"
-            : `Only ${remaining} ${remaining === 1 ? labelPlural.toLowerCase().replace(/s$/, "") : labelPlural.toLowerCase()} to go!`}
-        </p>
+          {pct}% complete
+        </span>
       </div>
-    </section>
+      <div
+        className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
+        style={{ backgroundColor: "var(--event-card-border)" }}
+      >
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${pct}%`,
+            backgroundColor: "var(--event-button-primary-bg)",
+          }}
+        />
+      </div>
+      <p
+        className="mt-2 text-[12px]"
+        style={{ color: "var(--event-card-text)" }}
+      >
+        {remaining === 0
+          ? "Trail complete — nicely done! 🎉"
+          : `Only ${remaining} ${remaining === 1 ? labelPlural.toLowerCase().replace(/s$/, "") : labelPlural.toLowerCase()} to go!`}
+      </p>
+    </>
   );
 }
 
