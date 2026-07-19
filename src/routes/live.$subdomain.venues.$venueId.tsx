@@ -152,7 +152,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           args: Record<string, unknown>,
         ) => Promise<{ data: BonusChallenge[] | null }>)(
           "get_public_event_bonus_challenges",
-          { _hostname: host, _passport_token: passportToken },
+          { _hostname: host, _passport_token: passportToken, _venue_id: venueId },
         );
         if (cancelled) return;
         setBonusChallenges(Array.isArray(bonusData) ? bonusData : []);
