@@ -1018,9 +1018,8 @@ function DrilldownModal({
                       `${v.first_name ?? ""} ${v.last_name ?? ""}`.trim() ||
                       "—";
                     return (
-                      <>
+                      <React.Fragment key={v.id}>
                         <tr
-                          key={v.id}
                           className="cursor-pointer border-t border-[#E6ECF4] hover:bg-[#F8FAFC]"
                           onClick={() => setExpandedVisitor(isOpen ? null : v.id)}
                         >
@@ -1035,7 +1034,7 @@ function DrilldownModal({
                           <td className="px-3 py-2 text-[#64748B]">{new Date(v.created_at).toLocaleString()}</td>
                         </tr>
                         {isOpen && (
-                          <tr key={`${v.id}-detail`} className="border-t border-[#E6ECF4] bg-[#F8FAFC]">
+                          <tr className="border-t border-[#E6ECF4] bg-[#F8FAFC]">
                             <td colSpan={6} className="px-3 py-3">
                               {scans.length === 0 ? (
                                 <p className="text-xs text-[#64748B]">No check-ins yet.</p>
@@ -1068,7 +1067,7 @@ function DrilldownModal({
                             </td>
                           </tr>
                         )}
-                      </>
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
