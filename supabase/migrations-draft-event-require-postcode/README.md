@@ -1,7 +1,12 @@
-# Event: require postcode on join form
+# Event `require_postcode` toggle + registration settings RPC
 
-Adds `events.require_postcode` (boolean, default false) and a small public
-RPC `get_event_registration_settings(_hostname)` so the public join form can
-read the flag without exposing the events table.
+Adds an admin-controlled per-event flag that makes the postcode field
+mandatory on the public join form, and exposes it to the public site
+through a small dedicated RPC (`get_event_registration_settings`).
 
-Apply `apply.sql` in the Supabase SQL editor.
+Apply `apply.sql` in the Supabase SQL editor. Safe / idempotent.
+
+After applying:
+- Admin → Event → **Registration form** shows a "Require postcode" toggle.
+- Public join form marks postcode required and validates client-side.
+- Admin → **Analytics** shows a new "Postcode breakdown" section with CSV export.
