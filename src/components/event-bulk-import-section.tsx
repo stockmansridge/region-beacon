@@ -756,12 +756,19 @@ export function EventBulkImportSection({
           venuesNext.push({ ...v, resultVenueId: id, result: "created" });
         }
       } catch (e) {
-        // offer_summary column may not exist in older deployments — retry without it.
+        // Some columns (offer_summary, emotive_text, emotive_font_family) may
+        // not exist in older deployments — retry without the offending ones.
         const msg = e instanceof Error ? e.message : String(e);
-        if (msg.toLowerCase().includes("offer_summary")) {
+        const lower = msg.toLowerCase();
+        const strip: string[] = [];
+        if (lower.includes("offer_summary")) strip.push("offer_summary");
+        if (lower.includes("emotive_text")) strip.push("emotive_text");
+        if (lower.includes("emotive_font_family")) strip.push("emotive_font_family");
+        if (strip.length > 0) {
           try {
-            const { offer_summary: _omit, ...slim } = patch;
-            void _omit;
+            const slim: Record<string, unknown> = { ...patch };
+            for (const k of strip) delete slim[k];
+            const note = `${strip.join(", ")} not supported in this environment — skipped ${strip.length === 1 ? "that field" : "those fields"}.`;
             if (existingId) {
               const { error } = await supabase
                 .from("venues")
@@ -777,7 +784,7 @@ export function EventBulkImportSection({
                 matchedVenueId: existingId,
                 resultVenueId: existingId,
                 result: "updated",
-                resultMessage: "offer_summary not supported in this environment — skipped that field.",
+                resultMessage: note,
               });
               continue;
             } else {
@@ -794,7 +801,7 @@ export function EventBulkImportSection({
                 ...v,
                 resultVenueId: id,
                 result: "created",
-                resultMessage: "offer_summary not supported in this environment — skipped that field.",
+                resultMessage: note,
               });
               continue;
             }
@@ -810,6 +817,7 @@ export function EventBulkImportSection({
         venuesNext.push({ ...v, result: "error", resultMessage: msg });
       }
     }
+
 
     // ---- Venue check-in values (writes to venue_qr_codes.entry_value for
     // the venue's active QR row — mirrors the manual admin "Stamp value"
