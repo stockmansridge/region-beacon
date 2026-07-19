@@ -120,7 +120,7 @@ export function BonusCodesSection({
         supabase
           .from("event_bonus_codes")
           .select(
-            "id, agency_id, event_id, name, description, points_value, qr_code_token, is_active, scope, created_at, updated_at",
+            "id, agency_id, event_id, name, description, points_value, qr_code_token, is_active, scope, kind, social_location, social_hashtags, created_at, updated_at",
           )
           .eq("agency_id", agencyId)
           .eq("event_id", eventId)
