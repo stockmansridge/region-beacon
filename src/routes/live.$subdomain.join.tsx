@@ -918,6 +918,26 @@ function SuccessScreen({
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const passportUrl = `${origin}/passport/${token}`;
   const [copied, setCopied] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  const resendPassportEmail = useServerFn(sendPassportEmail);
+
+  async function resend() {
+    setResendState("sending");
+    setResendMsg(null);
+    try {
+      const res = await resendPassportEmail({ data: { token } });
+      if (res && (res as { sent?: boolean }).sent) {
+        setResendState("sent");
+      } else {
+        setResendState("error");
+        setResendMsg((res as { reason?: string })?.reason ?? "send_failed");
+      }
+    } catch (e) {
+      setResendState("error");
+      setResendMsg((e as Error)?.message ?? "unknown");
+    }
+  }
 
   async function copy() {
     try {
