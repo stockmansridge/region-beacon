@@ -876,13 +876,21 @@ function Stat({
   label,
   value,
   icon: Icon,
+  onClick,
 }: {
   label: string;
   value: number | string;
   icon: React.ComponentType<{ className?: string }>;
+  onClick?: () => void;
 }) {
-  return (
-    <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+  const clickable = typeof onClick === "function";
+  const cls =
+    "text-left w-full rounded-[16px] border border-[#D9E2EF] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.045)]" +
+    (clickable
+      ? " cursor-pointer transition hover:border-[#2F6FE4]/40 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6FE4]/30"
+      : "");
+  const inner = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">
           {label}
@@ -892,8 +900,17 @@ function Stat({
         </span>
       </div>
       <div className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[#111827]">{value}</div>
-    </div>
+      {clickable && (
+        <div className="mt-1 text-xs font-medium text-[#2F6FE4]">View details →</div>
+      )}
+    </>
   );
+  if (clickable) {
+    return (
+      <button type="button" onClick={onClick} className={cls}>{inner}</button>
+    );
+  }
+  return <div className={cls}>{inner}</div>;
 }
 
 function Sparkline({ data }: { data: number[] }) {
