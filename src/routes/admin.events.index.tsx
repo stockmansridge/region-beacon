@@ -509,6 +509,17 @@ function Events() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
+                        {!isArchived && canCreate && (
+                          <button
+                            type="button"
+                            onClick={() => cloneEvent(e)}
+                            disabled={cloningId === e.id}
+                            title="Clone this event (venues, bonus codes, prizes — no participants)"
+                            className="inline-flex h-8 items-center rounded-[8px] border border-[#D9E2EF] bg-white px-3 text-xs font-semibold text-[#334155] hover:bg-[#F8FAFC] disabled:opacity-50"
+                          >
+                            {cloningId === e.id ? "Cloning…" : "Clone"}
+                          </button>
+                        )}
                         {isArchived ? (
                           <>
                             <Link
