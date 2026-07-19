@@ -435,10 +435,8 @@ function HalfCircleBurst() {
           key={i}
           className="absolute left-0 top-0 block"
           style={{
-            // rotate first, then translate outward along that ray
             transform: `rotate(${b.angle}deg) translateX(${b.distance}px)`,
             transformOrigin: "0 0",
-            animation: `award-burst 2.6s ease-out ${b.delay}s infinite`,
           }}
         >
           <span
@@ -450,17 +448,19 @@ function HalfCircleBurst() {
               background: b.color,
               boxShadow: `0 0 6px ${b.color}66`,
               transform: `translate(-50%, -50%) rotate(${b.isStreamer ? 90 : 0}deg)`,
+              transformOrigin: "center",
+              animation: `award-burst 2.4s ease-in-out ${b.delay}s infinite`,
             }}
           />
         </span>
       ))}
       <style>{`
         @keyframes award-burst {
-          0%   { opacity: 0; transform: rotate(var(--a, 0deg)) translateX(0); }
-          20%  { opacity: 1; }
-          100% { opacity: 0; transform: rotate(var(--a, 0deg)) translateX(0); }
+          0%, 100% { opacity: 0.35; }
+          50%      { opacity: 1; }
         }
       `}</style>
+
     </div>
   );
 }
