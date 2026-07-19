@@ -153,13 +153,18 @@ export function AdminEventParticipantsSection({
       setRows((prev) => prev.filter((r) => r.passport_id !== row.passport_id));
       if (expandedId === row.passport_id) setExpandedId(null);
     } catch (err) {
+      const anyErr = err as { message?: string; details?: string; hint?: string; code?: string };
       const message =
-        err instanceof Error ? err.message : "Could not delete participant.";
+        [anyErr?.message, anyErr?.details, anyErr?.hint, anyErr?.code ? `(${anyErr.code})` : null]
+          .filter(Boolean)
+          .join(" — ") || "Could not delete participant.";
       setError(message);
+      console.error("admin_delete_event_participant failed", err);
     } finally {
       setDeletingId(null);
     }
   }
+
 
   async function handleExportBonusClaimsCsv() {
     setExportingClaims(true);
