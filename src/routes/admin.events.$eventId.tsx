@@ -959,6 +959,40 @@ function EventDetail() {
             // column not deployed in this env
           }
         }
+
+        // Optional venues.emotive_text / emotive_font_family columns —
+        // degrade silently if the migration is not applied yet.
+        const emotiveByVenue = new Map<
+          string,
+          { emotive_text: string | null; emotive_font_family: string | null }
+        >();
+        let emotiveSupported = false;
+        if (venues.length > 0) {
+          try {
+            const { data: emotiveRows, error: emotiveErr } = await supabase
+              .from("venues")
+              .select("id, emotive_text, emotive_font_family" as any)
+              .eq("agency_id", agencyId)
+              .eq("event_id", event.id)
+              .in("id", venues.map((v) => v.id));
+            if (!emotiveErr && Array.isArray(emotiveRows)) {
+              emotiveSupported = true;
+              for (const row of emotiveRows as unknown as Array<{
+                id: string;
+                emotive_text: string | null;
+                emotive_font_family: string | null;
+              }>) {
+                emotiveByVenue.set(row.id, {
+                  emotive_text: row.emotive_text ?? null,
+                  emotive_font_family: row.emotive_font_family ?? null,
+                });
+              }
+            }
+          } catch {
+            // column not deployed
+          }
+        }
+
         if (cancelled) return;
 
         setBundle({
@@ -974,8 +1008,11 @@ function EventDetail() {
           offerDisplayByVenue,
           offerSupported,
           offerDisplaySupported,
+          emotiveByVenue,
+          emotiveSupported,
           activation: activationRes.error ? null : ((activationRes.data ?? null) as Activation | null),
         });
+
         setState("ready");
       } catch (unknownErr) {
         if (cancelled) return;
