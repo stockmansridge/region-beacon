@@ -342,12 +342,12 @@ function CelebrationHero({
           : "linear-gradient(140deg, var(--event-card-bg, #FBF5E8) 0%, color-mix(in oklab, var(--event-primary, #1F3D2B) 8%, var(--event-card-bg, #FBF5E8)) 100%)",
       }}
     >
-      
+      <Firework position="left" />
+      <Firework position="right" />
       <div className="relative">
         {inDraw ? (
           <>
             <div className="relative mx-auto h-20 w-20 sm:h-24 sm:w-24">
-              <HalfCircleBurst />
               <div className="relative flex h-full w-full items-center justify-center text-6xl drop-shadow-sm sm:text-7xl">
                 🎁
               </div>
