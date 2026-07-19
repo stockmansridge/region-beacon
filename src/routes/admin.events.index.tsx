@@ -111,6 +111,7 @@ function Events() {
   const [filter, setFilter] = useState<EventFilter>("active");
   const [unarchivingId, setUnarchivingId] = useState<string | null>(null);
   const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [cloningId, setCloningId] = useState<string | null>(null);
 
   const [open, setOpen] = useState(false);
 
