@@ -385,9 +385,9 @@ function PassportView({
   subdomain: string | null;
   branding: EventBrandingKeys;
 }) {
-  const [copied, setCopied] = useState(false);
   const [supportCopied, setSupportCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const pageHostname = typeof window !== "undefined" ? window.location.hostname : "";
   const passportUrl = `${origin}/passport/${token}`;
   
 
@@ -433,18 +433,28 @@ function PassportView({
   const nextAward = awards ? pickNextReward(awards) : null;
   const heroImageUrl = getEventAssetPublicUrl(branding.coverPath);
   const heroLogoUrl = getEventAssetPublicUrl(branding.logoPath);
+  const activityFallbackCheckins = useMemo(
+    () =>
+      stamps.allVenues
+        .filter((venue) => venue.is_stamped && venue.checked_in_at)
+        .sort(
+          (a, b) =>
+            new Date(b.checked_in_at ?? 0).getTime() -
+            new Date(a.checked_in_at ?? 0).getTime(),
+        )
+        .slice(0, 5)
+        .map((venue) => ({
+          first_name: passport.first_name?.trim() || "Someone",
+          last_initial: passport.last_name?.trim()
+            ? passport.last_name.trim().charAt(0).toUpperCase()
+            : null,
+          venue_name: venue.venue_name ?? "a venue",
+          happened_at: venue.checked_in_at ?? new Date().toISOString(),
+        })),
+    [passport.first_name, passport.last_name, stamps.allVenues],
+  );
 
 
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(passportUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }
 
   async function copySupportDetails() {
     const eventId = passport.event_id;
