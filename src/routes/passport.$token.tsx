@@ -20,6 +20,8 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { RingConfetti } from "@/components/ring-confetti";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
+import { useVenuesWithBonus } from "@/components/passport-stamp-grid";
+import { Sparkles } from "lucide-react";
 
 
 export const Route = createFileRoute("/passport/$token")({
@@ -732,12 +734,21 @@ function PassportView({
         </section>
 
 
+        {/* Trail progress */}
+        <TrailProgress
+          stamped={stampedCount}
+          total={totalVenues}
+          labelPlural={labelPlural}
+        />
+
         {/* Stamp grid */}
         <StampGrid
           venues={stamps.allVenues}
           labelSingular={labelSingular}
           labelPlural={labelPlural}
+          eventId={passport.event_id}
         />
+
 
         {/* What's happening — live event pulse (directly under stamps) */}
         {subdomain ? (
@@ -861,15 +872,78 @@ function PassportView({
 }
 
 
+function TrailProgress({
+  stamped,
+  total,
+  labelPlural,
+}: {
+  stamped: number;
+  total: number;
+  labelPlural: string;
+}) {
+  if (total <= 0) return null;
+  const pct = Math.min(100, Math.round((stamped / total) * 100));
+  const remaining = Math.max(0, total - stamped);
+  return (
+    <section className="mt-5">
+      <div
+        className="rounded-3xl border p-5 shadow-sm"
+        style={{
+          borderColor: "var(--event-card-border)",
+          backgroundColor: "var(--event-card-bg)",
+        }}
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <h2
+            className="font-trail-serif text-base font-semibold"
+            style={{ color: "var(--event-card-heading)" }}
+          >
+            Trail Progress
+          </h2>
+          <span
+            className="text-[11px] font-bold uppercase tracking-[0.18em]"
+            style={{ color: "var(--event-card-muted)" }}
+          >
+            {pct}% complete
+          </span>
+        </div>
+        <div
+          className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
+          style={{ backgroundColor: "var(--event-card-border)" }}
+        >
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${pct}%`,
+              backgroundColor: "var(--event-button-primary-bg)",
+            }}
+          />
+        </div>
+        <p
+          className="mt-2 text-[12px]"
+          style={{ color: "var(--event-card-text)" }}
+        >
+          {remaining === 0
+            ? "Trail complete — nicely done! 🎉"
+            : `Only ${remaining} ${remaining === 1 ? labelPlural.toLowerCase().replace(/s$/, "") : labelPlural.toLowerCase()} to go!`}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function StampGrid({
   venues,
-  labelSingular,
+  labelSingular: _labelSingular,
   labelPlural,
+  eventId,
 }: {
   venues: PassportStampVenue[];
   labelSingular: string;
   labelPlural: string;
+  eventId: string | null;
 }) {
+  const bonusVenueIds = useVenuesWithBonus(eventId);
   if (venues.length === 0) {
     return (
       <section className="mt-5">
@@ -931,7 +1005,11 @@ function StampGrid({
       >
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4">
           {venues.map((v) => (
-            <StampCell key={v.venue_id} venue={v} />
+            <StampCell
+              key={v.venue_id}
+              venue={v}
+              hasBonus={!!v.venue_id && bonusVenueIds.has(String(v.venue_id))}
+            />
           ))}
         </div>
       </div>
@@ -943,7 +1021,8 @@ function StampGrid({
 
 
 
-function StampCell({ venue }: { venue: PassportStampVenue }) {
+
+function StampCell({ venue, hasBonus = false }: { venue: PassportStampVenue; hasBonus?: boolean }) {
   const stamped = !!venue.is_stamped;
   const when = venue.checked_in_at
     ? new Date(venue.checked_in_at).toLocaleDateString(undefined, {
@@ -984,6 +1063,20 @@ function StampCell({ venue }: { venue: PassportStampVenue }) {
               }
         }
       >
+        {hasBonus && (
+          <span
+            aria-label="Bonus available"
+            title="Bonus challenge available"
+            className="absolute -right-1 -top-1 z-10 grid h-6 w-6 place-items-center rounded-full shadow ring-2 ring-white"
+            style={{
+              backgroundColor: "var(--event-accent, #f59e0b)",
+              color: "#ffffff",
+            }}
+          >
+            <Sparkles className="h-3 w-3" />
+          </span>
+        )}
+
         {stamped ? (
           <div className="flex flex-col items-center justify-center leading-none">
             <span

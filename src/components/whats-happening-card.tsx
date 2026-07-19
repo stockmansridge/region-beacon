@@ -85,15 +85,16 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
     };
   }, [subdomain]);
 
-  if (failed || !data) return null;
+  if (failed) return null;
+  const isLoading = !data;
 
-  const checkin = data.recent_checkins?.[0] ?? null;
-  const explorers = data.explorers_today ?? 0;
-  const bonus = data.recent_bonus?.[0] ?? null;
+  const checkin = data?.recent_checkins?.[0] ?? null;
+  const explorers = data?.explorers_today ?? 0;
+  const bonus = data?.recent_bonus?.[0] ?? null;
 
   const showExplorers = explorers >= 2;
   const showBonus = Boolean(bonus);
-  const isEmpty = !checkin && !showExplorers && !showBonus;
+  const isEmpty = !isLoading && !checkin && !showExplorers && !showBonus;
 
   return (
     <section className="px-4">
@@ -123,6 +124,15 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
           </Link>
         </div>
 
+        {isLoading && (
+          <p
+            className="mt-4 text-[13px] leading-snug"
+            style={{ color: "var(--event-card-muted)" }}
+          >
+            Loading live activity…
+          </p>
+        )}
+
         {isEmpty && (
           <p
             className="mt-4 text-[13px] leading-snug"
@@ -131,6 +141,7 @@ export function WhatsHappeningCard({ subdomain }: { subdomain: string }) {
             No activity in the last little while — be the first to check in!
           </p>
         )}
+
 
         <ul className="mt-4 flex flex-col gap-4">
           {checkin && (
