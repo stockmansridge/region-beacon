@@ -1,8 +1,10 @@
-import { Check, Stamp as StampIcon } from "lucide-react";
+import { Check, Sparkles, Stamp as StampIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import type { PassportStampVenue } from "@/lib/passport-stamps";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { usePassportHomeData } from "@/lib/use-passport-home-data";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Mobile-app style passport stamp grid. Renders one tile per participating
@@ -20,6 +22,7 @@ export function PassportStampGrid({
   canRegister?: boolean;
 }) {
   const data = usePassportHomeData(eventId);
+  const bonusVenueIds = useVenuesWithBonus(eventId);
   if (data.loading) return null;
   const { hasPassport, venues } = data;
   if (!hasPassport && venues.length === 0) return null;
@@ -64,7 +67,11 @@ export function PassportStampGrid({
       <ul className="grid grid-cols-4 gap-3 sm:grid-cols-5">
         {display.map((v, i) => (
           <li key={v.venue_id ?? `placeholder-${i}`}>
-            <StampTile venue={v} dimmed={!hasPassport} />
+            <StampTile
+              venue={v}
+              dimmed={!hasPassport}
+              hasBonus={!!v.venue_id && bonusVenueIds.has(String(v.venue_id))}
+            />
           </li>
         ))}
       </ul>
@@ -79,9 +86,11 @@ export function PassportStampGrid({
 function StampTile({
   venue,
   dimmed,
+  hasBonus,
 }: {
   venue: PassportStampVenue;
   dimmed: boolean;
+  hasBonus: boolean;
 }) {
   const stamped = venue.is_stamped;
   const logoUrl = getVenueAssetPublicUrl(venue.venue_logo_path);
@@ -156,6 +165,19 @@ function StampTile({
         >
           {stamped ? <Check className="h-3.5 w-3.5" /> : <StampIcon className="h-3 w-3" />}
         </span>
+        {hasBonus && (
+          <span
+            aria-label="Bonus available"
+            title="Bonus challenge available"
+            className="absolute -left-0.5 -top-0.5 grid h-6 w-6 place-items-center rounded-full shadow ring-2 ring-white"
+            style={{
+              backgroundColor: "var(--event-accent, #f59e0b)",
+              color: "var(--event-button-primary-fg, #ffffff)",
+            }}
+          >
+            <Sparkles className="h-3 w-3" />
+          </span>
+        )}
       </div>
       <span
         title={name}
@@ -186,3 +208,44 @@ function placeholderTiles(n: number): PassportStampVenue[] {
     checked_in_at: null,
   }));
 }
+
+/**
+ * Fetches the set of venue_ids for the current event that have an
+ * active bonus available (event-wide OR per-venue). Falls back to an
+ * empty set on error so tiles simply render without the badge.
+ */
+function useVenuesWithBonus(eventId: string | null): Set<string> {
+  const [ids, setIds] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    if (!eventId || typeof window === "undefined") {
+      setIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    const host = window.location.hostname;
+    (async () => {
+      try {
+        const { data } = await (supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: Array<{ venue_id: string }> | null }>)(
+          "get_public_venues_with_bonus",
+          { _hostname: host },
+        );
+        if (cancelled) return;
+        const set = new Set<string>();
+        for (const row of data ?? []) {
+          if (row?.venue_id) set.add(String(row.venue_id));
+        }
+        setIds(set);
+      } catch {
+        if (!cancelled) setIds(new Set());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
+  return ids;
+}
+
