@@ -867,6 +867,26 @@ function PassportView({
               {passport.email}
             </div>
           )}
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(passportUrl);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              } catch {
+                /* noop */
+              }
+            }}
+            className="mt-4 h-9 w-full rounded-full border text-xs font-semibold tracking-wide"
+            style={{
+              borderColor: "var(--event-button-secondary-border)",
+              backgroundColor: "var(--event-button-secondary-bg)",
+              color: "var(--event-button-secondary-fg)",
+            }}
+          >
+            {linkCopied ? "Link copied" : "Copy passport link"}
+          </button>
         </section>
 
 
