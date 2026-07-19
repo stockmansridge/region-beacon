@@ -15,7 +15,7 @@ export type EventFontOption = {
   label: string; // friendly UI label
   stack: string; // full CSS font-family stack (with fallbacks)
   googleFamily: string | null; // Google Fonts CSS2 family spec
-  category: "Sans" | "Serif" | "Display";
+  category: "Sans" | "Serif" | "Display" | "Script";
 };
 
 export const EVENT_FONTS: EventFontOption[] = [
@@ -155,7 +155,54 @@ export const EVENT_FONTS: EventFontOption[] = [
     googleFamily: "Marcellus:wght@400",
     category: "Display",
   },
+  // ---------- Script / handwritten (emotive) ----------
+  {
+    value: "Caveat",
+    label: "Caveat (handwritten)",
+    stack: "'Caveat', 'Segoe Script', cursive",
+    googleFamily: "Caveat:wght@400;500;600;700",
+    category: "Script",
+  },
+  {
+    value: "Dancing Script",
+    label: "Dancing Script (flowing)",
+    stack: "'Dancing Script', 'Segoe Script', cursive",
+    googleFamily: "Dancing+Script:wght@400;500;600;700",
+    category: "Script",
+  },
+  {
+    value: "Sacramento",
+    label: "Sacramento (elegant)",
+    stack: "'Sacramento', 'Segoe Script', cursive",
+    googleFamily: "Sacramento:wght@400",
+    category: "Script",
+  },
+  {
+    value: "Great Vibes",
+    label: "Great Vibes (romantic)",
+    stack: "'Great Vibes', 'Segoe Script', cursive",
+    googleFamily: "Great+Vibes:wght@400",
+    category: "Script",
+  },
+  {
+    value: "Kalam",
+    label: "Kalam (casual)",
+    stack: "'Kalam', 'Segoe Script', cursive",
+    googleFamily: "Kalam:wght@400;700",
+    category: "Script",
+  },
+  {
+    value: "Homemade Apple",
+    label: "Homemade Apple (personal)",
+    stack: "'Homemade Apple', 'Segoe Script', cursive",
+    googleFamily: "Homemade+Apple:wght@400",
+    category: "Script",
+  },
 ];
+
+/** Platform default script font used when no event/venue override is set. */
+export const DEFAULT_EMOTIVE_FONT_VALUE = "Caveat";
+
 
 export const DEFAULT_EVENT_FONT_VALUE = ""; // "" = use GetStampd default
 
