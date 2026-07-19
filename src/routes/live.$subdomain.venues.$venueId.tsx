@@ -502,7 +502,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                     )}
 
                   <div className="mt-4 flex flex-col gap-2">
-                    {challenge.kind === "social" ? (
+                    {challenge.kind === "social" && !challenge.is_claimed ? (
                       <>
                         <SocialShareButton challenge={challenge} />
                         <p
@@ -544,6 +544,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
                       </span>
                     )}
                   </div>
+
                 </article>
               ))}
             </div>
@@ -675,7 +676,8 @@ function SocialShareButton({ challenge }: { challenge: BonusChallenge }) {
         }}
       >
         <Camera className="h-4 w-4" aria-hidden />
-        Share on socials
+        Take photo & share
+
       </button>
     </>
   );
