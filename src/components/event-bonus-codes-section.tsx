@@ -13,15 +13,28 @@ type BonusCode = {
   points_value: number;
   qr_code_token: string;
   is_active: boolean;
+  scope?: "event" | "per_venue" | null;
   created_at: string;
   updated_at: string;
 };
+
+type VenueBonus = {
+  id: string;
+  bonus_code_id: string;
+  venue_id: string;
+  qr_code_token: string;
+  is_active: boolean;
+};
+
+type VenueLite = { id: string; name: string };
 
 type FormState = {
   name: string;
   description: string;
   points_value: string;
   is_active: boolean;
+  scope: "event" | "per_venue";
+  venue_ids: string[];
 };
 
 const EMPTY_FORM: FormState = {
@@ -29,6 +42,8 @@ const EMPTY_FORM: FormState = {
   description: "",
   points_value: "0",
   is_active: true,
+  scope: "event",
+  venue_ids: [],
 };
 
 function sanitizeFilename(name: string): string {
@@ -54,16 +69,19 @@ export function BonusCodesSection({
   eventId,
   publicSubdomain,
   canEdit,
+  venues,
 }: {
   agencyId: string;
   eventId: string;
   publicSubdomain: string | null;
   canEdit: boolean;
+  venues: VenueLite[];
 }) {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
 
   const [rows, setRows] = useState<BonusCode[] | null>(null);
+  const [venueBonuses, setVenueBonuses] = useState<VenueBonus[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -76,25 +94,44 @@ export function BonusCodesSection({
   const [expandedQrId, setExpandedQrId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const venueMap = useMemo(() => {
+    const m = new Map<string, VenueLite>();
+    for (const v of venues) m.set(v.id, v);
+    return m;
+  }, [venues]);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
     (async () => {
-      const { data, error } = await supabase
-        .from("event_bonus_codes")
-        .select(
-          "id, agency_id, event_id, name, description, points_value, qr_code_token, is_active, created_at, updated_at",
-        )
-        .eq("agency_id", agencyId)
-        .eq("event_id", eventId)
-        .order("created_at", { ascending: false });
+      const [bonusRes, venueRes] = await Promise.all([
+        supabase
+          .from("event_bonus_codes")
+          .select(
+            "id, agency_id, event_id, name, description, points_value, qr_code_token, is_active, scope, created_at, updated_at",
+          )
+          .eq("agency_id", agencyId)
+          .eq("event_id", eventId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("event_bonus_code_venues")
+          .select("id, bonus_code_id, venue_id, qr_code_token, is_active")
+          .eq("agency_id", agencyId)
+          .eq("event_id", eventId),
+      ]);
       if (cancelled) return;
-      if (error) {
+      if (bonusRes.error) {
         setLoadError("Could not load bonus codes.");
         setRows([]);
       } else {
-        setRows((data ?? []) as BonusCode[]);
+        setRows((bonusRes.data ?? []) as BonusCode[]);
+      }
+      // event_bonus_code_venues table may not exist yet (migration not applied)
+      if (!venueRes.error && Array.isArray(venueRes.data)) {
+        setVenueBonuses(venueRes.data as VenueBonus[]);
+      } else {
+        setVenueBonuses([]);
       }
       setLoading(false);
     })();
@@ -120,12 +157,17 @@ export function BonusCodesSection({
   }
 
   function startEdit(row: BonusCode) {
+    const activeVenueIds = venueBonuses
+      .filter((vb) => vb.bonus_code_id === row.id && vb.is_active)
+      .map((vb) => vb.venue_id);
     setEditingId(row.id);
     setForm({
       name: row.name,
       description: row.description ?? "",
       points_value: String(row.points_value ?? 0),
       is_active: row.is_active,
+      scope: row.scope === "per_venue" ? "per_venue" : "event",
+      venue_ids: activeVenueIds,
     });
     setFormError(null);
   }
@@ -152,10 +194,15 @@ export function BonusCodesSection({
       setFormError("Description must be 1000 characters or fewer.");
       return;
     }
+    if (form.scope === "per_venue" && form.venue_ids.length === 0) {
+      setFormError("Select at least one venue, or switch to Event-wide.");
+      return;
+    }
     const points = clampPoints(form.points_value);
     setSaving(true);
     setFormError(null);
     try {
+      let bonusId: string | null = null;
       if (editingId === "new") {
         const payload = {
           agency_id: agencyId,
@@ -164,19 +211,25 @@ export function BonusCodesSection({
           description: description === "" ? null : description,
           points_value: points,
           is_active: form.is_active,
+          scope: form.scope,
           qr_code_token: crypto.randomUUID(),
           created_by: userId,
         };
-        const { error } = await supabase.from("event_bonus_codes").insert(payload);
+        const { data, error } = await supabase
+          .from("event_bonus_codes")
+          .insert(payload)
+          .select("id")
+          .single();
         if (error) throw error;
+        bonusId = (data as { id: string } | null)?.id ?? null;
         toast.success("Bonus code created.");
       } else {
-        // Editing: do NOT update qr_code_token. Token is stable after first insert.
         const patch = {
           name,
           description: description === "" ? null : description,
           points_value: points,
           is_active: form.is_active,
+          scope: form.scope,
         };
         const { error } = await supabase
           .from("event_bonus_codes")
@@ -185,8 +238,23 @@ export function BonusCodesSection({
           .eq("agency_id", agencyId)
           .eq("event_id", eventId);
         if (error) throw error;
+        bonusId = editingId;
         toast.success("Bonus code updated.");
       }
+
+      // Sync per-venue rows.
+      if (bonusId) {
+        const venueIds = form.scope === "per_venue" ? form.venue_ids : [];
+        const { error: rpcError } = await (supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ error: { message: string } | null }>)(
+          "save_per_venue_bonus_venues",
+          { _bonus_code_id: bonusId, _venue_ids: venueIds },
+        );
+        if (rpcError) throw new Error(rpcError.message);
+      }
+
       cancelEdit();
       setReloadKey((k) => k + 1);
     } catch (e) {
@@ -218,8 +286,7 @@ export function BonusCodesSection({
     }
   }
 
-  async function copyLink(row: BonusCode) {
-    const url = buildBonusUrl(row.qr_code_token);
+  async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
       toast.success("Bonus code link copied.");
@@ -234,8 +301,9 @@ export function BonusCodesSection({
     <div className="space-y-4">
       <p className="text-sm text-[#475569]">
         Bonus Codes award points only. They do not count as venue passport
-        stamps. Use them for hidden codes, sponsor activations, trail
-        challenges, event-day promotions, or prize draw boosts.
+        stamps. Choose <strong>Event-wide</strong> for a single QR anywhere at
+        the event, or <strong>Per-venue</strong> to generate one QR per
+        participating venue (customers can claim once at each of those venues).
       </p>
 
       {!publicSubdomain && (
@@ -314,7 +382,114 @@ export function BonusCodesSection({
               }}
               className="h-10 w-40 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm"
             />
+            {form.scope === "per_venue" && (
+              <span className="block text-[11px] text-[#64748B]">
+                Awarded in full at each participating venue (a customer scanning
+                4 venues would earn {clampPoints(form.points_value) * Math.max(1, form.venue_ids.length || 1)} pts total).
+              </span>
+            )}
           </label>
+
+          <div className="space-y-2">
+            <span className="block text-xs font-medium text-[#334155]">
+              Scope
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <label
+                className={
+                  "inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 text-xs cursor-pointer " +
+                  (form.scope === "event"
+                    ? "border-[#2F6FE4] bg-[#EFF6FF] text-[#1D4ED8]"
+                    : "border-[#D9E2EF] bg-white text-[#334155]")
+                }
+              >
+                <input
+                  type="radio"
+                  name="bonus-scope"
+                  className="accent-[#2F6FE4]"
+                  checked={form.scope === "event"}
+                  onChange={() => setForm({ ...form, scope: "event" })}
+                />
+                <span>Event-wide (one QR)</span>
+              </label>
+              <label
+                className={
+                  "inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 text-xs cursor-pointer " +
+                  (form.scope === "per_venue"
+                    ? "border-[#2F6FE4] bg-[#EFF6FF] text-[#1D4ED8]"
+                    : "border-[#D9E2EF] bg-white text-[#334155]")
+                }
+              >
+                <input
+                  type="radio"
+                  name="bonus-scope"
+                  className="accent-[#2F6FE4]"
+                  checked={form.scope === "per_venue"}
+                  onChange={() => setForm({ ...form, scope: "per_venue" })}
+                />
+                <span>Per-venue (one QR per venue)</span>
+              </label>
+            </div>
+          </div>
+
+          {form.scope === "per_venue" && (
+            <div className="space-y-2 rounded-[10px] border border-[#D9E2EF] bg-white p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-[#334155]">
+                  Participating venues ({form.venue_ids.length}/{venues.length})
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm({ ...form, venue_ids: venues.map((v) => v.id) })
+                    }
+                    className="text-[11px] font-medium text-[#2F6FE4] hover:underline"
+                  >
+                    Select all
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, venue_ids: [] })}
+                    className="text-[11px] font-medium text-[#64748B] hover:underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              {venues.length === 0 ? (
+                <p className="text-xs text-[#9A3412]">
+                  No venues in this event yet. Add venues first.
+                </p>
+              ) : (
+                <div className="grid gap-1 sm:grid-cols-2 max-h-64 overflow-auto">
+                  {venues.map((v) => {
+                    const checked = form.venue_ids.includes(v.id);
+                    return (
+                      <label
+                        key={v.id}
+                        className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-[#F8FAFC]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setForm((f) => ({
+                              ...f,
+                              venue_ids: e.target.checked
+                                ? [...f.venue_ids, v.id]
+                                : f.venue_ids.filter((id) => id !== v.id),
+                            }));
+                          }}
+                        />
+                        <span className="truncate">{v.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           <label className="inline-flex items-center gap-2 text-sm">
             <input
@@ -364,7 +539,10 @@ export function BonusCodesSection({
       ) : (
         <ul className="space-y-3">
           {sortedRows.map((row) => {
-            const url = buildBonusUrl(row.qr_code_token);
+            const isPerVenue = row.scope === "per_venue";
+            const eventUrl = buildBonusUrl(row.qr_code_token);
+            const perVenueRows = venueBonuses
+              .filter((vb) => vb.bonus_code_id === row.id && vb.is_active);
             const isExpanded = expandedQrId === row.id;
             return (
               <li
@@ -390,11 +568,25 @@ export function BonusCodesSection({
                       <span className="inline-flex items-center rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2 py-0.5 text-[10px] font-medium text-[#1D4ED8]">
                         {row.points_value} pts
                       </span>
+                      <span
+                        className={
+                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide " +
+                          (isPerVenue
+                            ? "border-[#FDBA74] bg-[#FFF7ED] text-[#9A3412]"
+                            : "border-[#C7D2FE] bg-[#EEF2FF] text-[#3730A3]")
+                        }
+                      >
+                        {isPerVenue
+                          ? `Per-venue · ${perVenueRows.length}`
+                          : "Event-wide"}
+                      </span>
                     </div>
                     {row.description && (
                       <p className="text-xs text-[#64748B]">{row.description}</p>
                     )}
-                    <p className="break-all text-[11px] text-[#94A3B8]">{url}</p>
+                    {!isPerVenue && (
+                      <p className="break-all text-[11px] text-[#94A3B8]">{eventUrl}</p>
+                    )}
                     {!row.is_active && (
                       <p className="text-[11px] text-[#9A3412]">
                         Disabled bonus codes cannot be claimed, but historical
@@ -412,15 +604,17 @@ export function BonusCodesSection({
                         }
                         className="inline-flex h-8 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
                       >
-                        {isExpanded ? "Hide QR" : "View QR"}
+                        {isExpanded ? "Hide QR" : isPerVenue ? "View QRs" : "View QR"}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => copyLink(row)}
-                        className="inline-flex h-8 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
-                      >
-                        Copy link
-                      </button>
+                      {!isPerVenue && (
+                        <button
+                          type="button"
+                          onClick={() => copyLink(eventUrl)}
+                          className="inline-flex h-8 items-center rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted"
+                        >
+                          Copy link
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => startEdit(row)}
@@ -445,14 +639,58 @@ export function BonusCodesSection({
                   )}
                 </div>
 
-                {isExpanded && (
+                {isExpanded && !isPerVenue && (
                   <div className="mt-3 border-t pt-3">
                     <QrPreview
-                      value={url}
+                      value={eventUrl}
                       downloadName={`getstampd-bonus-code-${sanitizeFilename(row.name)}`}
                       size={180}
                       caption={row.name}
                     />
+                  </div>
+                )}
+
+                {isExpanded && isPerVenue && (
+                  <div className="mt-3 space-y-3 border-t pt-3">
+                    {perVenueRows.length === 0 ? (
+                      <p className="text-xs text-[#9A3412]">
+                        No participating venues yet — edit this bonus and pick
+                        venues to generate QR codes.
+                      </p>
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {perVenueRows.map((vb) => {
+                          const venue = venueMap.get(vb.venue_id);
+                          const venueName = venue?.name ?? "Unknown venue";
+                          const url = buildBonusUrl(vb.qr_code_token);
+                          return (
+                            <div
+                              key={vb.id}
+                              className="rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] p-3"
+                            >
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <span className="truncate text-xs font-semibold text-[#111827]">
+                                  {venueName}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyLink(url)}
+                                  className="text-[11px] font-medium text-[#2F6FE4] hover:underline"
+                                >
+                                  Copy link
+                                </button>
+                              </div>
+                              <QrPreview
+                                value={url}
+                                downloadName={`getstampd-bonus-${sanitizeFilename(row.name)}-${sanitizeFilename(venueName)}`}
+                                size={160}
+                                caption={`${row.name} — ${venueName}`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </li>
