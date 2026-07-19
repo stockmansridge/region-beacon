@@ -100,6 +100,9 @@ export type PublicEventAward = {
   points_remaining: number;
   needs_all_locations: boolean;
   sort_order: number;
+  /** ISO date (YYYY-MM-DD) or null. Undefined when the draw_date migration
+   *  hasn't been applied yet — treat undefined and null the same. */
+  draw_date?: string | null;
 };
 
 export type SaveAwardInput = {
@@ -112,6 +115,8 @@ export type SaveAwardInput = {
   requiresAllLocations: boolean;
   status: AwardStatus;
   sortOrder: number;
+  /** Optional YYYY-MM-DD; null clears. */
+  drawDate: string | null;
 };
 
 const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp"] as const;
@@ -125,8 +130,23 @@ export async function listAdminAwards(eventId: string): Promise<AdminEventAward[
   return (data ?? []) as AdminEventAward[];
 }
 
+/** Returns true when the error looks like "function signature not found",
+ *  which happens when the draw_date migration hasn't been applied. */
+function isMissingSignatureError(err: unknown): boolean {
+  const e = err as { code?: string; message?: string } | null;
+  const code = e?.code;
+  const msg = (e?.message || "").toLowerCase();
+  return (
+    code === "PGRST202" ||
+    code === "42883" ||
+    msg.includes("could not find") ||
+    msg.includes("no function matches") ||
+    msg.includes("does not exist")
+  );
+}
+
 export async function saveAward(input: SaveAwardInput): Promise<AdminEventAward> {
-  const { data, error } = await supabase.rpc("save_event_award" as never, {
+  const basePayload = {
     p_award_id: input.awardId,
     p_event_id: input.eventId,
     p_title: input.title,
@@ -136,10 +156,21 @@ export async function saveAward(input: SaveAwardInput): Promise<AdminEventAward>
     p_requires_all_locations: input.requiresAllLocations,
     p_status: input.status,
     p_sort_order: input.sortOrder,
+  };
+  // Try the new signature first (includes p_draw_date).
+  const { data, error } = await supabase.rpc("save_event_award" as never, {
+    ...basePayload,
+    p_draw_date: input.drawDate,
   } as never);
-  if (error) throw error;
-  return data as AdminEventAward;
+  if (!error) return data as AdminEventAward;
+  if (!isMissingSignatureError(error)) throw error;
+  // Fallback: old signature without p_draw_date. draw_date will be ignored
+  // until the migration is applied.
+  const fallback = await supabase.rpc("save_event_award" as never, basePayload as never);
+  if (fallback.error) throw fallback.error;
+  return fallback.data as AdminEventAward;
 }
+
 
 export async function deleteAward(awardId: string): Promise<void> {
   const { error } = await supabase.rpc("delete_event_award" as never, {
