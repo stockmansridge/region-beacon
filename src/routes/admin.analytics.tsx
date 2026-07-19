@@ -41,6 +41,7 @@ type VisitorRow = {
   first_name: string | null;
   last_name: string | null;
   full_name: string | null;
+  postcode: string | null;
   marketing_opt_in: boolean | null;
   created_at: string;
 };
@@ -123,7 +124,7 @@ function Analytics() {
         supabase
           .from("visitors")
           .select(
-            "id, event_id, email, first_name, last_name, full_name, marketing_opt_in, created_at",
+            "id, event_id, email, first_name, last_name, full_name, postcode, marketing_opt_in, created_at",
           )
           .eq("agency_id", agencyId)
           .is("deleted_at", null),
