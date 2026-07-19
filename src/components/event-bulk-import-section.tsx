@@ -727,7 +727,10 @@ export function EventBulkImportSection({
         website_url: v.website_url,
         phone: v.phone,
         offer_summary: v.offer_summary,
+        emotive_text: v.emotive_text,
+        emotive_font_family: v.emotive_font_family,
       };
+
       try {
         if (existingId) {
           const { error } = await supabase
