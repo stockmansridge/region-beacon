@@ -1,98 +1,57 @@
-# Demo rebuild — Cargo Road Wine Quest parity
 
 ## Goal
-Replace the current `/demo/*` routes with pages that look and behave like the
-new public event pages under `/live/$subdomain/*`, using a hardcoded snapshot
-of "Cargo Road Wine Quest" (`public_slug: evt-745pamk2vg`). No demo action
-writes to the real event.
 
-## Approach
+Make the public event home page (`/live/$subdomain/`) feel more vibrant and real-time by celebrating progress and showing what other visitors are doing right now.
 
-The live pages are tightly coupled to DB RPCs and hooks like
-`useCurrentEventPassport` / `usePassportHomeData`. Rather than duplicate ~2000
-lines of markup, I will:
+Four additions, all on `src/routes/live.$subdomain.index.tsx`. No changes to saved data or admin flows.
 
-1. **Refactor the live pages into pure presentational components** that accept
-   `event`, `venues`, `offers`, `awards`, `announcements`, `faq`,
-   `bonusChallenges`, `passport`, `homeData` as props.
-   - `LivePublicLoaded` → `PublicHomeView`
-   - `PublicVenueListPage` → `PublicVenueListView`
-   - `PublicVenueDetailPage` → `PublicVenueDetailView`
-   - `PublicMapPage`, `PublicOffersPage`, `PublicAwardsPage`,
-     `PublicFaqPage`, `PublicLeaderboardPage`, `PublicJoinPage` →
-     matching `*View` components.
-   - The existing `live.$subdomain.*` routes keep their loaders and pass real
-     data into these views. No visible change for real events.
+## 1. Live Activity slide-down bar
 
-2. **Create `src/lib/demo-cargo-road.ts`** — a snapshot module with:
-   - `DEMO_EVENT` — the event object (from `get_public_event` today), with a
-     synthetic palette/brand-kit block so `EventPaletteScope` renders.
-   - `DEMO_VENUES` — the 6 real venues (Rowlee, Cargo Road, Stockman's Ridge,
-     Canobolas, Strawhouse, Dindima) with addresses + coords already fetched.
-   - `DEMO_OFFERS`, `DEMO_AWARDS`, `DEMO_ANNOUNCEMENTS`, `DEMO_FAQ`,
-     `DEMO_BONUS_CHALLENGES`, `DEMO_LEADERBOARD` — plausible sample content
-     so every page has something to render.
-   - `DEMO_PASSPORT` type + an in-memory zustand-lite store
-     (`useDemoPassport()`) tracking visited venue IDs, points, first name.
-     Stamps and points update in the browser only; a "Reset demo" action
-     clears them.
+A slim pill at the top of the page that slides down from above the hero, shows one recent scan for ~2 seconds, then slides up and swaps to the next. Rotates through the 3 most recent event-wide check-ins on a loop.
 
-3. **Rewrite each `/demo/*` route** as a thin wrapper that renders the
-   matching `*View` with `DEMO_*` snapshot data and the fake passport, plus a
-   persistent "Demo mode · nothing is saved to the real event" banner:
+- Format: `🔥 Ben just checked in at Rowlee Wines!` (first name only, from `display_name` — split on space, take token 1; fall back to "Someone").
+- If a scan also unlocked a reward, format becomes `Ben just unlocked Free Lunch at Rowlee Wines!`.
+- Animation: slides in from `-translate-y-full` → `translate-y-0` (~300ms), holds 2s, slides out, next item slides in. CSS transitions on transform + opacity; single item mounted at a time via keyed React state.
+- Placement: absolutely positioned at the top of the page, above the hero, `z-50`, pointer-events auto so it can be tapped to dismiss for the session.
+- Data: new `supabase.rpc("get_public_event_recent_activity", { _hostname, _limit: 3 })` returning `{ first_name, venue_name, award_title | null, happened_at }`. Poll every 30s while the tab is visible; silently no-op if the RPC isn't deployed yet (so the UI ships before the migration lands).
+- Styling: reuses `--event-nav-bg` / `--event-nav-fg` so it matches the event palette; small flame or spark icon on the left.
+- If there are no recent scans in the last 24h, the bar simply doesn't render.
 
-   ```text
-   /demo                     → PublicHomeView
-   /demo/join                → PublicJoinView (submit only updates local state)
-   /demo/passport            → existing passport home view, driven by fake passport
-   /demo/wineries            → PublicVenueListView
-   /demo/wineries/$venueId   → PublicVenueDetailView (offers, bonus, check-in CTA)
-   /demo/trail-map           → PublicMapView
-   /demo/offers              → PublicOffersView
-   /demo/rewards             → PublicAwardsView
-   /demo/checkin/$venueId    → simulated stamp screen → updates fake passport
-   /demo/invite              → simple share sheet (no real link)
-   /demo/more                → menu (FAQ, leaderboard, terms preview links)
-   ```
+Drafts a new SQL file at `supabase/migrations-draft-public-recent-activity/apply.sql` creating the read-only RPC (joins checkins → passports for first name, → venues for name, → awards for the most recent award-unlock in the same window). Read-only, no PII beyond first name. Runs after the user applies it in the SQL editor; the UI degrades gracefully until then.
 
-4. **Bottom nav / header links** inside the `*View` components already build
-   URLs from a `basePath` (or subdomain). I'll thread a `linkBuilder` prop so
-   live routes keep producing `/live/$subdomain/...` and demo routes produce
-   `/demo/...`. No hardcoded `/live/` strings inside the view components.
+## 2. Confetti / streamers around the progress ring
 
-5. **Guardrails against real writes**:
-   - Demo routes never import server functions that mutate.
-   - `/demo/join` and `/demo/checkin/$venueId` only touch the fake passport
-     store; they never call `supabase.rpc` or server functions.
-   - Cross-check: `rg "supabase\.rpc|createServerFn|useServerFn" src/routes/demo`
-     must return zero mutating calls after the refactor.
+Purely decorative SVG confetti sprinkled around the ring inside the summary card's left cell. Fixed positions, subtle bob animation via `@keyframes` in `src/styles.css` (`confetti-bob` — 2s ease-in-out infinite alternate, small translate + rotate). Colours pull from `--event-accent`, `--event-primary`, plus 2 neutral warm tones for contrast. Rendered only when `hasPassport` is true and `visited > 0` so it feels earned.
 
-## Technical notes
+## 3. Trail-progress bar under the summary card
 
-- Snapshot lives in a plain TS file — no Cloud calls at runtime, so the demo
-  works even if the real event is unpublished or renamed.
-- `EventPaletteScope` needs the palette CSS variables; snapshot will include
-  the same `primary_color`/`accent_color` (`#1F3D2B` / `#B5572A`) already
-  used by the real event, plus reasonable defaults for other tokens.
-- Cover / logo images: snapshot uses the public storage URLs already served
-  by `getEventAssetPublicUrl` (they're public assets, so referencing them from
-  demo is fine and doesn't count as a "real event write"). If we'd rather
-  fully self-contain, I can swap in placeholder images — call it out.
-- Old `demo.*.tsx` files that no longer map to a live equivalent
-  (`demo.invite`, `demo.more`) are kept with light updates so existing
-  links don't 404.
+A new full-width progress row inside the summary card, below the ring/points grid:
+
+- Label row: `Trail Progress`   · right-aligned `{pct}% COMPLETE`.
+- Bar: rounded track using `--event-card-border` background, filled with `--event-button-primary-bg` to `pct = visited/total`.
+- Subline: `Only {total-visited} {venueLabel} to conquer {eventName}! 🎉` when in progress, `Trail complete — nice work!` when done, hidden when no passport yet.
+
+Uses the existing `visited` / `total` already computed from `usePassportHomeData`.
+
+## 4. Replace "Start your passport / Tap to begin" tile with "points to next milestone"
+
+The bottom-right tile in the summary card currently shows the tier glyph + "Tap to begin" when the visitor has no passport, or the tier label otherwise. Replace with:
+
+- Big number: `{pointsToNext}` (derived from `pickNextReward(awards).points_required - points`).
+- Sub-label: `TO NEXT MILESTONE`.
+- Helper line below the grid (spanning full width, small muted text): `Visit {n} more {venueLabel} to enter the {rewardTitle} draw!` — hidden if there is no next reward.
+- If the visitor has no passport yet, the tile instead shows `—` + `START YOUR PASSPORT` and remains a link to `/join` (keeps the current CTA working; the standalone "Start passport" button below is unchanged).
+- If all rewards unlocked, tile shows `✓` + `ALL MILESTONES UNLOCKED`.
+
+## Files touched
+
+- `src/routes/live.$subdomain.index.tsx` — Live Activity bar component + hook, confetti overlay, progress bar section, replaced bottom-right tile.
+- `src/styles.css` — `@keyframes confetti-bob` + `@keyframes live-activity-slide` utilities.
+- `src/lib/use-passport-home-data.ts` — expose `pointsToNext` / `nextReward` conveniences (thin helper, no new fetch).
+- `supabase/migrations-draft-public-recent-activity/apply.sql` + `README.md` — new read-only RPC for the activity bar. Draft only; user runs it in the Supabase SQL editor. UI hides itself if RPC returns an error.
 
 ## Out of scope
 
-- Real QR scanning in demo (`/demo/checkin/$venueId` is a canned success
-  screen).
-- Real leaderboard writes / opt-out.
-- Any change to `/live/$subdomain/*` visuals — refactor is behavior-preserving.
-
-## Deliverables
-
-- `src/lib/demo-cargo-road.ts` (snapshot + fake passport store)
-- New `src/components/public/*View.tsx` files extracted from live routes
-- Updated `src/routes/live.$subdomain.*.tsx` to render the extracted views
-- Rewritten `src/routes/demo.*.tsx` set
-- Typecheck clean
+- No changes to database writes, admin pages, or the passport detail route.
+- No websocket / realtime subscription — 30s polling is enough for the "last 3 scans" feel and avoids a Supabase Realtime channel per visitor.
+- Confetti is decorative SVG, not a canvas library, to keep the bundle small.
