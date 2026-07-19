@@ -17,10 +17,9 @@ security definer
 set search_path = public
 as $$
   select e.id as event_id, coalesce(e.require_postcode, false) as require_postcode
-  from public.events e
-  join public.event_domains d on d.event_id = e.id
-  where lower(d.hostname) = lower(_hostname)
-    and e.deleted_at is null
+  from public.resolve_event_by_host(_hostname) r
+  join public.events e on e.id = r.event_id
+  where e.deleted_at is null
   limit 1;
 $$;
 
