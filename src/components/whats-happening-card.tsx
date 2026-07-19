@@ -250,7 +250,7 @@ export function WhatsHappeningCard({
                     className="font-semibold"
                     style={{ color: "var(--event-card-heading)" }}
                   >
-                    {explorers} people are exploring
+                    {explorers} {explorers === 1 ? "person is" : "people are"} exploring
                   </span>{" "}
                   the trail today
                 </p>
