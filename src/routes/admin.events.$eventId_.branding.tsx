@@ -1008,11 +1008,14 @@ function BrandingEditor() {
             <FontPickers
               headingValue={form.heading_font_family}
               bodyValue={form.font_family}
+              emotiveValue={form.default_emotive_font_family}
               onHeadingChange={(value) => setForm({ ...form, heading_font_family: value })}
               onBodyChange={(value) => setForm({ ...form, font_family: value })}
+              onEmotiveChange={(value) => setForm({ ...form, default_emotive_font_family: value })}
               disabled={!canEdit || saving}
               eventName={event.name}
             />
+
           </CollapsibleSection>
 
           {/* Page content (welcome copy + labels) */}
