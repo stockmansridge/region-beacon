@@ -70,6 +70,15 @@ type PrizeRule = {
   requires_completion: boolean | null;
   is_active: boolean | null;
 };
+type BonusScanRow = {
+  id: string;
+  event_id: string;
+  participant_id: string;
+  source_id: string | null;
+  points_awarded: number;
+  created_at: string;
+  metadata: { bonus_code_name?: string | null; venue_id?: string | null } | null;
+};
 
 type DateFilter = "all" | "7d" | "30d";
 
