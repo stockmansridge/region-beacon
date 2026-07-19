@@ -676,7 +676,8 @@ function SocialShareButton({ challenge }: { challenge: BonusChallenge }) {
         }}
       >
         <Camera className="h-4 w-4" aria-hidden />
-        Share on socials
+        Take photo & share
+
       </button>
     </>
   );
