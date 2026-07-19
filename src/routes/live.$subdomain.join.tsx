@@ -189,6 +189,21 @@ export function LiveJoinPage({ subdomain }: { subdomain: string }) {
         setState({ kind: "not_live" });
         return;
       }
+      // Pull registration-form settings (require_postcode). Small dedicated
+      // RPC so we don't need to extend get_public_event_by_domain.
+      try {
+        const { data: regData } = await supabase.rpc(
+          "get_event_registration_settings",
+          { _hostname: host },
+        );
+        const reg = (regData?.[0] ?? null) as { require_postcode?: boolean | null } | null;
+        if (reg && typeof reg.require_postcode === "boolean") {
+          evt.require_postcode = reg.require_postcode;
+        }
+      } catch {
+        // RPC not yet applied — fall back to default (optional postcode).
+      }
+      if (cancelled) return;
       if (!evt.current_terms_version_id) {
         setState({ kind: "terms_missing", event: evt });
         return;
