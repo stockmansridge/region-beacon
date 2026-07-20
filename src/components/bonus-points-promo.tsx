@@ -3,17 +3,20 @@ import { Sparkles, ArrowRight } from "lucide-react";
 
 /** Promo card that links to the Prizes page with the Bonus Points tab open. */
 export function BonusPointsPromo({ subdomain }: { subdomain?: string | null }) {
-  const linkProps = (subdomain
+  // Cast Link to a permissive component to avoid TanStack's strict typed-route
+  // inference here (we conditionally target /prizes or /live/$subdomain/prizes).
+  const AnyLink = Link as unknown as React.ComponentType<Record<string, unknown>>;
+  const linkProps: Record<string, unknown> = subdomain
     ? {
         to: "/live/$subdomain/prizes",
         params: { subdomain },
         search: { tab: "bonus" },
       }
-    : { to: "/prizes", search: { tab: "bonus" } }) as Record<string, unknown>;
+    : { to: "/prizes", search: { tab: "bonus" } };
 
   return (
-    <Link
-      {...(linkProps as never)}
+    <AnyLink
+      {...linkProps}
       className="group block overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-gradient-to-br from-[var(--event-primary,#1F3D2B)] to-[var(--event-primary,#1F3D2B)]/85 p-5 text-[var(--event-primary-fg,#FFF)] shadow-md transition-transform hover:-translate-y-0.5"
     >
       <div className="flex items-center gap-4">
