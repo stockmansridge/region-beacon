@@ -15,6 +15,7 @@ import { PassportStampGrid } from "@/components/passport-stamp-grid";
 import { NextRewardCard } from "@/components/next-reward-card";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
+import { BonusPointsPromo } from "@/components/bonus-points-promo";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
