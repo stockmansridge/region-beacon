@@ -482,7 +482,9 @@ export function AwardsPage({
             )}
             {bonuses != null && bonuses.length === 0 && (
               <div className="rounded-2xl border border-dashed border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
-                No bonus points have been added for this event yet.
+                {bonusesError
+                  ? `Couldn't load bonus points: ${bonusesError}`
+                  : "No bonus points have been added for this event yet."}
               </div>
             )}
             {sortedBonuses.map((b) => (
