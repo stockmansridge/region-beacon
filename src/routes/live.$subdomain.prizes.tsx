@@ -95,14 +95,142 @@ function formatDrawDate(iso: string | null | undefined): string {
   })}`;
 }
 
-export function AwardsPage({ subdomain }: { subdomain: string }) {
+type BonusRow = {
+  bonus_code_id: string;
+  name: string;
+  description: string | null;
+  points_value: number;
+  is_claimed?: boolean;
+  kind?: "points" | "social" | null;
+  social_location?: string | null;
+  social_hashtags?: string | null;
+};
+
+type Venue = {
+  id: string;
+  name: string;
+  lat: number | null;
+  lng: number | null;
+};
+
+type BonusEntry = BonusRow & {
+  scope: "event" | "per_venue";
+  venues: Venue[];
+};
+
+function usePublicBonuses(subdomain: string, eventId: string | null) {
+  const [rows, setRows] = useState<BonusEntry[] | null>(null);
+  useEffect(() => {
+    if (!eventId) {
+      setRows(null);
+      return;
+    }
+    let cancelled = false;
+    const host = tenantHost(subdomain);
+    (async () => {
+      try {
+        const rpc = supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: unknown; error: unknown }>;
+
+        // 1) Event-wide bonuses
+        const eventWideRes = await rpc("get_public_event_bonus_challenges", {
+          _hostname: host,
+          _passport_token: null,
+        });
+        const eventWide = (Array.isArray(eventWideRes.data)
+          ? (eventWideRes.data as BonusRow[])
+          : []
+        ).map<BonusEntry>((b) => ({ ...b, scope: "event", venues: [] }));
+
+        // 2) Per-venue bonuses — iterate venues
+        const venuesRes = await rpc("get_public_venues_by_domain", {
+          _hostname: host,
+        });
+        const venues = (Array.isArray(venuesRes.data)
+          ? (venuesRes.data as Array<{ id: string; name: string; lat: unknown; lng: unknown }>)
+          : []
+        ).map<Venue>((v) => ({
+          id: String(v.id),
+          name: v.name,
+          lat: v.lat == null ? null : Number(v.lat as string | number),
+          lng: v.lng == null ? null : Number(v.lng as string | number),
+        }));
+
+        const perVenueMap = new Map<string, BonusEntry>();
+        const evtIds = new Set(eventWide.map((b) => b.bonus_code_id));
+        await Promise.all(
+          venues.map(async (v) => {
+            try {
+              const r = await rpc("get_public_event_bonus_challenges", {
+                _hostname: host,
+                _passport_token: null,
+                _venue_id: v.id,
+              });
+              const list = Array.isArray(r.data) ? (r.data as BonusRow[]) : [];
+              for (const b of list) {
+                if (evtIds.has(b.bonus_code_id)) continue;
+                const existing = perVenueMap.get(b.bonus_code_id);
+                if (existing) {
+                  existing.venues.push(v);
+                } else {
+                  perVenueMap.set(b.bonus_code_id, {
+                    ...b,
+                    scope: "per_venue",
+                    venues: [v],
+                  });
+                }
+              }
+            } catch { /* ignore */ }
+          }),
+        );
+
+        if (cancelled) return;
+        setRows([...eventWide, ...Array.from(perVenueMap.values())]);
+      } catch {
+        if (!cancelled) setRows([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [subdomain, eventId]);
+  return rows;
+}
+
+type SortMode = "az" | "points" | "proximity";
+
+function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) *
+      Math.cos((b.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+export function AwardsPage({
+  subdomain,
+  initialTab = "prizes",
+}: {
+  subdomain: string;
+  initialTab?: "prizes" | "bonus";
+}) {
   const branding = useEventBrandingKeys(subdomain);
   const eventInfo = useEventInfo(subdomain);
   const passport = useCurrentEventPassport(eventInfo.event_id);
   const [awards, setAwards] = useState<PublicEventAward[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"rewards" | "entries">("rewards");
+  const [tab, setTab] = useState<"prizes" | "bonus">(initialTab);
   const recentCheckins = useRecentActivity(subdomain);
+  const bonuses = usePublicBonuses(subdomain, eventInfo.event_id);
+  const [sortMode, setSortMode] = useState<SortMode>("az");
+  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoError, setGeoError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!eventInfo.event_id) return;
@@ -124,12 +252,7 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
         if (!cancelled) setAwards(rows);
       } catch (e) {
         if (!cancelled) {
-          const err = e as {
-            message?: string;
-            details?: string;
-            hint?: string;
-            code?: string;
-          } | null;
+          const err = e as { message?: string; details?: string; hint?: string; code?: string } | null;
           const parts = [
             err?.message,
             err?.details,
@@ -157,7 +280,45 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
     () => (awards ?? []).filter((a) => a.is_eligible),
     [awards],
   );
-  const visibleAwards = tab === "entries" ? myEntries : (awards ?? []);
+
+  const sortedBonuses = useMemo(() => {
+    const list = [...(bonuses ?? [])];
+    if (sortMode === "az") {
+      list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+    } else if (sortMode === "points") {
+      list.sort((a, b) => b.points_value - a.points_value);
+    } else if (sortMode === "proximity" && userLoc) {
+      const dist = (e: BonusEntry) => {
+        const pts = e.venues
+          .filter((v) => v.lat != null && v.lng != null && !(v.lat === 0 && v.lng === 0))
+          .map((v) => distanceKm(userLoc, { lat: v.lat as number, lng: v.lng as number }));
+        if (pts.length === 0) return Number.POSITIVE_INFINITY;
+        return Math.min(...pts);
+      };
+      list.sort((a, b) => dist(a) - dist(b));
+    }
+    return list;
+  }, [bonuses, sortMode, userLoc]);
+
+  function requestProximity() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeoError("Location not available on this device.");
+      return;
+    }
+    setSortMode("proximity");
+    if (userLoc) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGeoError(null);
+      },
+      () => {
+        setGeoError("Couldn't get your location — showing A–Z.");
+        setSortMode("az");
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+    );
+  }
 
   // Highlight rules
   const topPrizeId = useMemo(() => {
@@ -172,9 +333,7 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
 
   const newInLastHour = useMemo(() => {
     const cutoff = Date.now() - 60 * 60 * 1000;
-    return recentCheckins.filter(
-      (r) => new Date(r.happened_at).getTime() > cutoff,
-    ).length;
+    return recentCheckins.filter((r) => new Date(r.happened_at).getTime() > cutoff).length;
   }, [recentCheckins]);
 
   const avatars = recentCheckins.slice(0, 5);
@@ -205,87 +364,220 @@ export function AwardsPage({ subdomain }: { subdomain: string }) {
 
         {/* Tabs */}
         <div className="mt-4 flex rounded-full border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-1 text-sm font-semibold uppercase tracking-[0.16em]">
-          <TabButton active={tab === "rewards"} onClick={() => setTab("rewards")}>
+          <TabButton active={tab === "prizes"} onClick={() => setTab("prizes")}>
             Prizes
           </TabButton>
-          <TabButton active={tab === "entries"} onClick={() => setTab("entries")}>
-            My Entries {hasPassport && myEntries.length > 0 && (
+          <TabButton active={tab === "bonus"} onClick={() => setTab("bonus")}>
+            Bonus Points {bonuses && bonuses.length > 0 && (
               <span className="ml-1.5 rounded-full bg-[var(--event-primary,#1F3D2B)] px-1.5 py-0.5 text-[10px] text-[var(--event-primary-fg,#FFF)]">
-                {myEntries.length}
+                {bonuses.length}
               </span>
             )}
           </TabButton>
         </div>
 
-        {/* Live activity banner */}
-        {newInLastHour > 0 && (
-          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-[var(--event-primary,#1F3D2B)]/20 bg-[var(--event-primary,#1F3D2B)] px-4 py-3 text-[var(--event-primary-fg,#FFF)] shadow-sm">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-            </span>
-            <div className="flex-1 text-xs font-semibold uppercase tracking-[0.18em]">
-              Live draw activity
-              <div className="mt-0.5 text-sm font-medium normal-case tracking-normal opacity-95">
-                {newInLastHour} new {newInLastHour === 1 ? "entry" : "entries"} in the last hour
-              </div>
-            </div>
-            {avatars.length > 0 && (
-              <div className="flex -space-x-2">
-                {avatars.map((a, i) => (
-                  <div
-                    key={i}
-                    title={`${a.first_name} ${a.last_initial ?? ""}`.trim()}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--event-primary,#1F3D2B)] bg-[var(--event-accent,#C7A96B)] text-xs font-bold text-[var(--event-primary,#1F3D2B)]"
-                  >
-                    {(a.first_name?.[0] ?? "?").toUpperCase()}
+        {tab === "prizes" && (
+          <>
+            {/* Live activity banner */}
+            {newInLastHour > 0 && (
+              <div className="mt-4 flex items-center gap-3 rounded-2xl border border-[var(--event-primary,#1F3D2B)]/20 bg-[var(--event-primary,#1F3D2B)] px-4 py-3 text-[var(--event-primary-fg,#FFF)] shadow-sm">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                </span>
+                <div className="flex-1 text-xs font-semibold uppercase tracking-[0.18em]">
+                  Live draw activity
+                  <div className="mt-0.5 text-sm font-medium normal-case tracking-normal opacity-95">
+                    {newInLastHour} new {newInLastHour === 1 ? "entry" : "entries"} in the last hour
                   </div>
-                ))}
+                </div>
+                {avatars.length > 0 && (
+                  <div className="flex -space-x-2">
+                    {avatars.map((a, i) => (
+                      <div
+                        key={i}
+                        title={`${a.first_name} ${a.last_initial ?? ""}`.trim()}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--event-primary,#1F3D2B)] bg-[var(--event-accent,#C7A96B)] text-xs font-bold text-[var(--event-primary,#1F3D2B)]"
+                      >
+                        {(a.first_name?.[0] ?? "?").toUpperCase()}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>
+
+            {/* Hero */}
+            <CelebrationHero
+              inDraw={hasPassport && myEntries.length > 0}
+              entryCount={myEntries.length}
+            />
+
+            <div className="mt-6 space-y-4">
+              {awards == null && (
+                <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+                  Loading…
+                </p>
+              )}
+              {error && (
+                <p className="text-sm text-destructive">
+                  Could not load prizes: {error}
+                </p>
+              )}
+              {!error && awards != null && (awards?.length ?? 0) === 0 && (
+                <div className="rounded-2xl border border-dashed border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+                  No prizes have been added for this event yet.
+                </div>
+              )}
+              {(awards ?? []).map((a) => (
+                <AwardCard
+                  key={a.id}
+                  award={a}
+                  hasPassport={hasPassport}
+                  isTopPrize={a.id === topPrizeId && (awards?.length ?? 0) > 1}
+                  isPopular={a.id === popularPrizeId && a.id !== topPrizeId}
+                />
+              ))}
+            </div>
+          </>
         )}
 
-        {/* Hero */}
-        <CelebrationHero
-          inDraw={hasPassport && myEntries.length > 0}
-          entryCount={myEntries.length}
-        />
-
-        <div className="mt-6 space-y-4">
-          {awards == null && (
-            <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
-              Loading…
-            </p>
-          )}
-          {error && (
-            <p className="text-sm text-destructive">
-              Could not load prizes: {error}
-            </p>
-          )}
-          {!error && awards != null && visibleAwards.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
-              {tab === "entries"
-                ? "You haven't unlocked any prize entries yet. Check in at venues to start collecting points."
-                : "No prizes have been added for this event yet."}
+        {tab === "bonus" && (
+          <div className="mt-4 space-y-4">
+            {/* Sort filter */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+                <ArrowUpDown className="h-3.5 w-3.5" /> Sort
+              </span>
+              <SortPill active={sortMode === "az"} onClick={() => setSortMode("az")}>A–Z</SortPill>
+              <SortPill active={sortMode === "points"} onClick={() => setSortMode("points")}>Points</SortPill>
+              <SortPill active={sortMode === "proximity"} onClick={requestProximity}>
+                <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> Proximity</span>
+              </SortPill>
+              {geoError && (
+                <span className="text-[11px] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">{geoError}</span>
+              )}
             </div>
-          )}
-          {visibleAwards.map((a) => (
-            <AwardCard
-              key={a.id}
-              award={a}
-              hasPassport={hasPassport}
-              isTopPrize={a.id === topPrizeId && (awards?.length ?? 0) > 1}
-              isPopular={a.id === popularPrizeId && a.id !== topPrizeId}
-            />
-          ))}
-        </div>
+
+            {bonuses == null && (
+              <p className="text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">Loading…</p>
+            )}
+            {bonuses != null && bonuses.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+                No bonus points have been added for this event yet.
+              </div>
+            )}
+            {sortedBonuses.map((b) => (
+              <BonusCard key={b.bonus_code_id} bonus={b} userLoc={userLoc} />
+            ))}
+          </div>
+        )}
 
         <div className="mt-6 flex justify-center">
           <PoweredByGetStampd variant="trail" />
         </div>
       </div>
     </EventPaletteScope>
+  );
+}
+
+function SortPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors " +
+        (active
+          ? "border-[var(--event-primary,#1F3D2B)] bg-[var(--event-primary,#1F3D2B)] text-[var(--event-primary-fg,#FFF)]"
+          : "border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] text-[var(--event-card-muted,var(--event-muted,#8A7E66))] hover:text-[var(--event-primary,#1F3D2B)]")
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function BonusCard({ bonus, userLoc }: { bonus: BonusEntry; userLoc: { lat: number; lng: number } | null }) {
+  const isSocial = bonus.kind === "social";
+  const nearestKm = useMemo(() => {
+    if (!userLoc || bonus.venues.length === 0) return null;
+    const dists = bonus.venues
+      .filter((v) => v.lat != null && v.lng != null && !(v.lat === 0 && v.lng === 0))
+      .map((v) => distanceKm(userLoc, { lat: v.lat as number, lng: v.lng as number }));
+    if (dists.length === 0) return null;
+    return Math.min(...dists);
+  }, [bonus.venues, userLoc]);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm sm:p-5">
+      <div className="flex items-start gap-3">
+        <div
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
+          style={{
+            backgroundColor: "var(--event-hero-accent, var(--event-accent))",
+            color: "var(--event-button-primary-fg, var(--event-primary-fg))",
+          }}
+        >
+          <Zap className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <h3 className="text-base font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
+              {bonus.name}
+            </h3>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[var(--event-primary-fg,#FFF)]">
+              +{bonus.points_value} pts
+            </span>
+          </div>
+          {bonus.description && (
+            <p className="mt-1 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
+              {bonus.description}
+            </p>
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+            <span className="inline-flex items-center gap-1">
+              {isSocial ? "Social" : "Points"}
+            </span>
+            <span>·</span>
+            <span>
+              {bonus.scope === "event"
+                ? "Event-wide"
+                : bonus.venues.length === 1
+                  ? bonus.venues[0]!.name
+                  : `${bonus.venues.length} venues`}
+            </span>
+            {nearestKm != null && (
+              <>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3 w-3" /> {nearestKm < 1 ? `${Math.round(nearestKm * 1000)} m` : `${nearestKm.toFixed(1)} km`}
+                </span>
+              </>
+            )}
+          </div>
+          {bonus.scope === "per_venue" && bonus.venues.length > 1 && (
+            <p className="mt-2 text-[12px] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+              At: {bonus.venues.map((v) => v.name).join(" · ")}
+            </p>
+          )}
+          {isSocial && (bonus.social_location || bonus.social_hashtags) && (
+            <div className="mt-2 flex flex-wrap gap-2 text-[12px] text-[var(--event-card-text,var(--event-body,#3D372C))]">
+              {bonus.social_location && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5">
+                  <AtSign className="h-3 w-3" /> {bonus.social_location}
+                </span>
+              )}
+              {bonus.social_hashtags && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5">
+                  <Hash className="h-3 w-3" /> {bonus.social_hashtags}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
