@@ -130,12 +130,9 @@ function usePublicBonuses(subdomain: string, eventId: string | null) {
     const host = tenantHost(subdomain);
     (async () => {
       try {
-        const rpc = ((fn: string, args: Record<string, unknown>) =>
-          (supabase.rpc as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>)
-            .call(supabase, fn, args)) as (
-          fn: string,
-          args: Record<string, unknown>,
-        ) => Promise<{ data: unknown; error: { message?: string } | null }>;
+        const rpc = (fn: string, args: Record<string, unknown>) =>
+          (supabase.rpc as unknown as (this: typeof supabase, fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>)
+            .call(supabase, fn, args);
 
         const seen = new Map<string, BonusEntry>();
 
