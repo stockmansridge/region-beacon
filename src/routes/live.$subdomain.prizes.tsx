@@ -130,7 +130,9 @@ function usePublicBonuses(subdomain: string, eventId: string | null) {
     const host = tenantHost(subdomain);
     (async () => {
       try {
-        const rpc = supabase.rpc as unknown as (
+        const rpc = ((fn: string, args: Record<string, unknown>) =>
+          (supabase.rpc as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>)
+            .call(supabase, fn, args)) as (
           fn: string,
           args: Record<string, unknown>,
         ) => Promise<{ data: unknown; error: { message?: string } | null }>;
