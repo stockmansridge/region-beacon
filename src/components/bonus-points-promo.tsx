@@ -25,7 +25,7 @@ export function BonusPointsPromo({ subdomain }: { subdomain?: string | null }) {
         </p>
       </div>
       <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
-        How <ArrowRight className="h-3 w-3" />
+        More <ArrowRight className="h-3 w-3" />
       </span>
     </AnyLink>
   );
