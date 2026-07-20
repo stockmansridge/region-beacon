@@ -120,6 +120,7 @@ type BonusEntry = BonusRow & {
 
 function usePublicBonuses(subdomain: string, eventId: string | null) {
   const [rows, setRows] = useState<BonusEntry[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!eventId) {
       setRows(null);
@@ -128,75 +129,92 @@ function usePublicBonuses(subdomain: string, eventId: string | null) {
     let cancelled = false;
     const host = tenantHost(subdomain);
     (async () => {
-      try {
-        const rpc = supabase.rpc as unknown as (
-          fn: string,
-          args: Record<string, unknown>,
-        ) => Promise<{ data: unknown; error: unknown }>;
+      const rpc = supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message?: string } | null }>;
 
-        // 1) Event-wide bonuses
-        const eventWideRes = await rpc("get_public_event_bonus_challenges", {
-          _hostname: host,
-          _passport_token: null,
-        });
-        const eventWide = (Array.isArray(eventWideRes.data)
-          ? (eventWideRes.data as BonusRow[])
-          : []
-        ).map<BonusEntry>((b) => ({ ...b, scope: "event", venues: [] }));
+      const seen = new Map<string, BonusEntry>();
 
-        // 2) Per-venue bonuses — iterate venues
-        const venuesRes = await rpc("get_public_venues_by_domain", {
-          _hostname: host,
-        });
-        const venues = (Array.isArray(venuesRes.data)
-          ? (venuesRes.data as Array<{ id: string; name: string; lat: unknown; lng: unknown }>)
-          : []
-        ).map<Venue>((v) => ({
-          id: String(v.id),
-          name: v.name,
-          lat: v.lat == null ? null : Number(v.lat as string | number),
-          lng: v.lng == null ? null : Number(v.lng as string | number),
-        }));
+      // 1) Event-wide bonuses (also captures older deployments that don't
+      //    filter by scope and return per-venue rows here too).
+      const eventWideRes = await rpc("get_public_event_bonus_challenges", {
+        _hostname: host,
+        _passport_token: null,
+      });
+      if (eventWideRes.error) {
+        console.error("[prizes] event-wide bonuses failed", eventWideRes.error);
+      }
+      const eventWide = Array.isArray(eventWideRes.data)
+        ? (eventWideRes.data as BonusRow[])
+        : [];
+      for (const b of eventWide) {
+        seen.set(b.bonus_code_id, { ...b, scope: "event", venues: [] });
+      }
 
-        const perVenueMap = new Map<string, BonusEntry>();
-        const evtIds = new Set(eventWide.map((b) => b.bonus_code_id));
-        await Promise.all(
-          venues.map(async (v) => {
-            try {
-              const r = await rpc("get_public_event_bonus_challenges", {
-                _hostname: host,
-                _passport_token: null,
-                _venue_id: v.id,
-              });
-              const list = Array.isArray(r.data) ? (r.data as BonusRow[]) : [];
-              for (const b of list) {
-                if (evtIds.has(b.bonus_code_id)) continue;
-                const existing = perVenueMap.get(b.bonus_code_id);
-                if (existing) {
-                  existing.venues.push(v);
-                } else {
-                  perVenueMap.set(b.bonus_code_id, {
-                    ...b,
-                    scope: "per_venue",
-                    venues: [v],
-                  });
-                }
-              }
-            } catch { /* ignore */ }
-          }),
+      // 2) Per-venue bonuses — iterate venues to collect participating names.
+      const venuesRes = await rpc("get_public_venues_by_domain", {
+        _hostname: host,
+      });
+      if (venuesRes.error) {
+        console.error("[prizes] venues fetch failed", venuesRes.error);
+      }
+      const venues = (Array.isArray(venuesRes.data)
+        ? (venuesRes.data as Array<{ id: string; name: string; lat: unknown; lng: unknown }>)
+        : []
+      ).map<Venue>((v) => ({
+        id: String(v.id),
+        name: v.name,
+        lat: v.lat == null ? null : Number(v.lat as string | number),
+        lng: v.lng == null ? null : Number(v.lng as string | number),
+      }));
+
+      const perVenueErrors: string[] = [];
+      await Promise.all(
+        venues.map(async (v) => {
+          const r = await rpc("get_public_event_bonus_challenges", {
+            _hostname: host,
+            _passport_token: null,
+            _venue_id: v.id,
+          });
+          if (r.error) {
+            perVenueErrors.push(r.error.message ?? "rpc error");
+            return;
+          }
+          const list = Array.isArray(r.data) ? (r.data as BonusRow[]) : [];
+          for (const b of list) {
+            const existing = seen.get(b.bonus_code_id);
+            if (existing) {
+              if (existing.scope === "event") continue;
+              if (!existing.venues.some((x) => x.id === v.id)) existing.venues.push(v);
+            } else {
+              seen.set(b.bonus_code_id, { ...b, scope: "per_venue", venues: [v] });
+            }
+          }
+        }),
+      );
+      if (perVenueErrors.length > 0) {
+        console.error("[prizes] per-venue bonus errors", perVenueErrors);
+      }
+
+      if (cancelled) return;
+      const merged = Array.from(seen.values());
+      setRows(merged);
+      if (merged.length === 0 && (eventWideRes.error || perVenueErrors.length > 0)) {
+        setError(
+          (eventWideRes.error?.message as string | undefined) ??
+            perVenueErrors[0] ??
+            "Failed to load bonus points.",
         );
-
-        if (cancelled) return;
-        setRows([...eventWide, ...Array.from(perVenueMap.values())]);
-      } catch {
-        if (!cancelled) setRows([]);
+      } else {
+        setError(null);
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [subdomain, eventId]);
-  return rows;
+  return { rows, error };
 }
 
 type SortMode = "az" | "points" | "proximity";
