@@ -3,13 +3,13 @@ import { Sparkles, ArrowRight } from "lucide-react";
 
 /** Promo card that links to the Prizes page with the Bonus Points tab open. */
 export function BonusPointsPromo({ subdomain }: { subdomain?: string | null }) {
-  const linkProps = subdomain
+  const linkProps = (subdomain
     ? {
-        to: "/live/$subdomain/prizes" as const,
+        to: "/live/$subdomain/prizes",
         params: { subdomain },
-        search: { tab: "bonus" as const },
+        search: { tab: "bonus" },
       }
-    : { to: "/prizes" as const, search: { tab: "bonus" as const } };
+    : { to: "/prizes", search: { tab: "bonus" } }) as Record<string, unknown>;
 
   return (
     <Link
