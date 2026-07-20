@@ -20,6 +20,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { RingConfetti } from "@/components/ring-confetti";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
+import { BonusPointsPromo } from "@/components/bonus-points-promo";
 import { useVenuesWithBonus } from "@/components/passport-stamp-grid";
 import { Sparkles } from "lucide-react";
 
