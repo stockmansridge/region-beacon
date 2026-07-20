@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles, Trophy, Users, Calendar, PartyPopper } from "lucide-react";
+import { Sparkles, Trophy, Users, Calendar, PartyPopper, Zap, ArrowUpDown, MapPin, AtSign, Hash } from "lucide-react";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { PoweredByGetStampd } from "@/components/brand";
@@ -11,11 +13,17 @@ import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
+const searchSchema = z.object({
+  tab: fallback(z.string(), "prizes").default("prizes"),
+});
+
 export const Route = createFileRoute("/live/$subdomain/prizes")({
+  validateSearch: zodValidator(searchSchema),
   head: () => ({ meta: [{ title: "Prizes" }] }),
   component: function AwardsRoute() {
     const { subdomain } = Route.useParams();
-    return <AwardsPage subdomain={subdomain} />;
+    const { tab } = Route.useSearch();
+    return <AwardsPage subdomain={subdomain} initialTab={tab === "bonus" ? "bonus" : "prizes"} />;
   },
 });
 
