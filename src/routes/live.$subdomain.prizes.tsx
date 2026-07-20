@@ -160,14 +160,14 @@ function usePublicBonuses(subdomain: string, eventId: string | null) {
         console.error("[prizes] venues fetch failed", venuesRes.error);
       }
       const venues = (Array.isArray(venuesRes.data)
-        ? (venuesRes.data as Array<{ id: string; name: string; lat: unknown; lng: unknown }>)
+        ? (venuesRes.data as Array<{ id?: string; venue_id?: string; name: string; lat: unknown; lng: unknown }>)
         : []
       ).map<Venue>((v) => ({
-        id: String(v.id),
+        id: String(v.venue_id ?? v.id ?? ""),
         name: v.name,
         lat: v.lat == null ? null : Number(v.lat as string | number),
         lng: v.lng == null ? null : Number(v.lng as string | number),
-      }));
+      })).filter((v) => v.id.length > 0);
 
       const perVenueErrors: string[] = [];
       await Promise.all(
