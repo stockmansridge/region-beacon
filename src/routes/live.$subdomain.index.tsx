@@ -703,12 +703,12 @@ function LivePublicLoaded({
 
         {/* App-style stacked sections */}
         <div className="mt-5 flex flex-col gap-5">
-          <BonusPointsPromo subdomain={subdomain} />
-          <WhatsHappeningCard subdomain={subdomain} />
+          <PassportStampGrid
             eventId={event.event_id}
             venueLabelPlural={venueLabels.plural}
             canRegister={canRegister}
           />
+          <BonusPointsPromo subdomain={subdomain} />
           <WhatsHappeningCard subdomain={subdomain} />
           <NextRewardCard eventId={event.event_id} />
 
