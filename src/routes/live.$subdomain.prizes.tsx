@@ -11,7 +11,7 @@ import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
-export const Route = createFileRoute("/live/$subdomain/awards")({
+export const Route = createFileRoute("/live/$subdomain/prizes")({
   head: () => ({ meta: [{ title: "Prizes" }] }),
   component: function AwardsRoute() {
     const { subdomain } = Route.useParams();

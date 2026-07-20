@@ -1,9 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AwardsPage } from "./live.$subdomain.awards";
+import { AwardsPage } from "./live.$subdomain.prizes";
 import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 
-export const Route = createFileRoute("/awards")({
+const searchSchema = z.object({
+  tab: fallback(z.string(), "prizes").default("prizes"),
+});
+
+export const Route = createFileRoute("/prizes")({
+  validateSearch: zodValidator(searchSchema),
   head: () => ({
     meta: [
       { title: "Prizes — GetStampd" },
@@ -11,11 +18,12 @@ export const Route = createFileRoute("/awards")({
       { name: "keywords", content: "GetStampd, GetStamped, stamp trail prizes, prize draws, tourism recognition" },
     ],
   }),
-  component: AwardsCleanRoute,
+  component: PrizesCleanRoute,
 });
 
-function AwardsCleanRoute() {
+function PrizesCleanRoute() {
   const subdomain = useTenantSubdomain();
+  const { tab } = Route.useSearch();
   if (!subdomain) return <NonTenantNotice />;
-  return <AwardsPage subdomain={subdomain} />;
+  return <AwardsPage subdomain={subdomain} initialTab={tab === "bonus" ? "bonus" : "prizes"} />;
 }
