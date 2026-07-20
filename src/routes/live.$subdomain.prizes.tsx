@@ -245,7 +245,7 @@ export function AwardsPage({
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"prizes" | "bonus">(initialTab);
   const recentCheckins = useRecentActivity(subdomain);
-  const bonuses = usePublicBonuses(subdomain, eventInfo.event_id);
+  const { rows: bonuses, error: bonusesError } = usePublicBonuses(subdomain, eventInfo.event_id);
   const [sortMode, setSortMode] = useState<SortMode>("az");
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
