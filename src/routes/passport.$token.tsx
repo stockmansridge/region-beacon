@@ -825,6 +825,11 @@ function PassportView({
         />
 
 
+        {/* Bonus points promo */}
+        <div className="mt-5">
+          <BonusPointsPromo subdomain={subdomain} />
+        </div>
+
         {/* What's happening — live event pulse (directly under stamps) */}
         <div className="mt-5">
           <WhatsHappeningCard
