@@ -129,85 +129,92 @@ function usePublicBonuses(subdomain: string, eventId: string | null) {
     let cancelled = false;
     const host = tenantHost(subdomain);
     (async () => {
-      const rpc = supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: unknown; error: { message?: string } | null }>;
+      try {
+        const rpc = supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: unknown; error: { message?: string } | null }>;
 
-      const seen = new Map<string, BonusEntry>();
+        const seen = new Map<string, BonusEntry>();
 
-      // 1) Event-wide bonuses (also captures older deployments that don't
-      //    filter by scope and return per-venue rows here too).
-      const eventWideRes = await rpc("get_public_event_bonus_challenges", {
-        _hostname: host,
-        _passport_token: null,
-      });
-      if (eventWideRes.error) {
-        console.error("[prizes] event-wide bonuses failed", eventWideRes.error);
-      }
-      const eventWide = Array.isArray(eventWideRes.data)
-        ? (eventWideRes.data as BonusRow[])
-        : [];
-      for (const b of eventWide) {
-        seen.set(b.bonus_code_id, { ...b, scope: "event", venues: [] });
-      }
+        // 1) Event-wide bonuses.
+        const eventWideRes = await rpc("get_public_event_bonus_challenges", {
+          _hostname: host,
+          _passport_token: null,
+        });
+        if (eventWideRes.error) {
+          console.error("[prizes] event-wide bonuses failed", eventWideRes.error);
+        }
+        const eventWide = Array.isArray(eventWideRes.data)
+          ? (eventWideRes.data as BonusRow[])
+          : [];
+        for (const b of eventWide) {
+          seen.set(b.bonus_code_id, { ...b, scope: "event", venues: [] });
+        }
 
-      // 2) Per-venue bonuses — iterate venues to collect participating names.
-      const venuesRes = await rpc("get_public_venues_by_domain", {
-        _hostname: host,
-      });
-      if (venuesRes.error) {
-        console.error("[prizes] venues fetch failed", venuesRes.error);
-      }
-      const venues = (Array.isArray(venuesRes.data)
-        ? (venuesRes.data as Array<{ id?: string; venue_id?: string; name: string; lat: unknown; lng: unknown }>)
-        : []
-      ).map<Venue>((v) => ({
-        id: String(v.venue_id ?? v.id ?? ""),
-        name: v.name,
-        lat: v.lat == null ? null : Number(v.lat as string | number),
-        lng: v.lng == null ? null : Number(v.lng as string | number),
-      })).filter((v) => v.id.length > 0);
+        // 2) Per-venue bonuses — iterate venues to collect participating names.
+        const venuesRes = await rpc("get_public_venues_by_domain", {
+          _hostname: host,
+        });
+        if (venuesRes.error) {
+          console.error("[prizes] venues fetch failed", venuesRes.error);
+        }
+        const venues = (Array.isArray(venuesRes.data)
+          ? (venuesRes.data as Array<{ id?: string; venue_id?: string; name: string; lat: unknown; lng: unknown }>)
+          : []
+        ).map<Venue>((v) => ({
+          id: String(v.venue_id ?? v.id ?? ""),
+          name: v.name,
+          lat: v.lat == null ? null : Number(v.lat as string | number),
+          lng: v.lng == null ? null : Number(v.lng as string | number),
+        })).filter((v) => v.id.length > 0);
 
-      const perVenueErrors: string[] = [];
-      await Promise.all(
-        venues.map(async (v) => {
-          const r = await rpc("get_public_event_bonus_challenges", {
-            _hostname: host,
-            _passport_token: null,
-            _venue_id: v.id,
-          });
-          if (r.error) {
-            perVenueErrors.push(r.error.message ?? "rpc error");
-            return;
-          }
-          const list = Array.isArray(r.data) ? (r.data as BonusRow[]) : [];
-          for (const b of list) {
-            const existing = seen.get(b.bonus_code_id);
-            if (existing) {
-              if (existing.scope === "event") continue;
-              if (!existing.venues.some((x) => x.id === v.id)) existing.venues.push(v);
-            } else {
-              seen.set(b.bonus_code_id, { ...b, scope: "per_venue", venues: [v] });
+        const perVenueErrors: string[] = [];
+        await Promise.all(
+          venues.map(async (v) => {
+            const r = await rpc("get_public_event_bonus_challenges", {
+              _hostname: host,
+              _passport_token: null,
+              _venue_id: v.id,
+            });
+            if (r.error) {
+              perVenueErrors.push(r.error.message ?? "rpc error");
+              return;
             }
-          }
-        }),
-      );
-      if (perVenueErrors.length > 0) {
-        console.error("[prizes] per-venue bonus errors", perVenueErrors);
-      }
-
-      if (cancelled) return;
-      const merged = Array.from(seen.values());
-      setRows(merged);
-      if (merged.length === 0 && (eventWideRes.error || perVenueErrors.length > 0)) {
-        setError(
-          (eventWideRes.error?.message as string | undefined) ??
-            perVenueErrors[0] ??
-            "Failed to load bonus points.",
+            const list = Array.isArray(r.data) ? (r.data as BonusRow[]) : [];
+            for (const b of list) {
+              const existing = seen.get(b.bonus_code_id);
+              if (existing) {
+                if (existing.scope === "event") continue;
+                if (!existing.venues.some((x) => x.id === v.id)) existing.venues.push(v);
+              } else {
+                seen.set(b.bonus_code_id, { ...b, scope: "per_venue", venues: [v] });
+              }
+            }
+          }),
         );
-      } else {
-        setError(null);
+        if (perVenueErrors.length > 0) {
+          console.error("[prizes] per-venue bonus errors", perVenueErrors);
+        }
+
+        if (cancelled) return;
+        const merged = Array.from(seen.values());
+        setRows(merged);
+        if (merged.length === 0 && (eventWideRes.error || perVenueErrors.length > 0)) {
+          setError(
+            (eventWideRes.error?.message as string | undefined) ??
+              perVenueErrors[0] ??
+              "Failed to load bonus points.",
+          );
+        } else {
+          setError(null);
+        }
+      } catch (e) {
+        console.error("[prizes] bonuses load threw", e);
+        if (!cancelled) {
+          setRows([]);
+          setError(e instanceof Error ? e.message : "Failed to load bonus points.");
+        }
       }
     })();
     return () => {
