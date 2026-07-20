@@ -16,6 +16,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ScanRouteImport } from './routes/scan'
+import { Route as PrizesRouteImport } from './routes/prizes'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OffersRouteImport } from './routes/offers'
@@ -25,7 +26,6 @@ import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
-import { Route as AwardsRouteImport } from './routes/awards'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VenuesIndexRouteImport } from './routes/venues.index'
@@ -55,13 +55,13 @@ import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
 import { Route as LiveSubdomainTermsPrivacyRouteImport } from './routes/live.$subdomain.terms-privacy'
 import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
+import { Route as LiveSubdomainPrizesRouteImport } from './routes/live.$subdomain.prizes'
 import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
 import { Route as LiveSubdomainOffersRouteImport } from './routes/live.$subdomain.offers'
 import { Route as LiveSubdomainMapRouteImport } from './routes/live.$subdomain.map'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
 import { Route as LiveSubdomainFaqRouteImport } from './routes/live.$subdomain.faq'
-import { Route as LiveSubdomainAwardsRouteImport } from './routes/live.$subdomain.awards'
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as CollectBonusTokenRouteImport } from './routes/collect.bonus.$token'
@@ -109,6 +109,11 @@ const ScanRoute = ScanRouteImport.update({
   path: '/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrizesRoute = PrizesRouteImport.update({
+  id: '/prizes',
+  path: '/prizes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -152,11 +157,6 @@ const FaqRoute = FaqRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AwardsRoute = AwardsRouteImport.update({
-  id: '/awards',
-  path: '/awards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -305,6 +305,11 @@ const LiveSubdomainTermsRoute = LiveSubdomainTermsRouteImport.update({
   path: '/live/$subdomain/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiveSubdomainPrizesRoute = LiveSubdomainPrizesRouteImport.update({
+  id: '/live/$subdomain/prizes',
+  path: '/live/$subdomain/prizes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveSubdomainPrivacyRoute = LiveSubdomainPrivacyRouteImport.update({
   id: '/live/$subdomain/privacy',
   path: '/live/$subdomain/privacy',
@@ -334,11 +339,6 @@ const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
 const LiveSubdomainFaqRoute = LiveSubdomainFaqRouteImport.update({
   id: '/live/$subdomain/faq',
   path: '/live/$subdomain/faq',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveSubdomainAwardsRoute = LiveSubdomainAwardsRouteImport.update({
-  id: '/live/$subdomain/awards',
-  path: '/live/$subdomain/awards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoWineriesVenueIdRoute = DemoWineriesVenueIdRouteImport.update({
@@ -406,7 +406,6 @@ const AdminEventsEventIdBrandingRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/awards': typeof AwardsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -416,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/prizes': typeof PrizesRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -450,13 +450,13 @@ export interface FileRoutesByFullPath {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
-  '/live/$subdomain/awards': typeof LiveSubdomainAwardsRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
+  '/live/$subdomain/prizes': typeof LiveSubdomainPrizesRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events/': typeof AdminEventsIndexRoute
@@ -471,7 +471,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/awards': typeof AwardsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -481,6 +480,7 @@ export interface FileRoutesByTo {
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/prizes': typeof PrizesRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -515,13 +515,13 @@ export interface FileRoutesByTo {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
-  '/live/$subdomain/awards': typeof LiveSubdomainAwardsRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
+  '/live/$subdomain/prizes': typeof LiveSubdomainPrizesRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events': typeof AdminEventsIndexRoute
@@ -538,7 +538,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/awards': typeof AwardsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -548,6 +547,7 @@ export interface FileRoutesById {
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/prizes': typeof PrizesRoute
   '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -582,13 +582,13 @@ export interface FileRoutesById {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
-  '/live/$subdomain/awards': typeof LiveSubdomainAwardsRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
   '/live/$subdomain/map': typeof LiveSubdomainMapRoute
   '/live/$subdomain/offers': typeof LiveSubdomainOffersRoute
   '/live/$subdomain/privacy': typeof LiveSubdomainPrivacyRoute
+  '/live/$subdomain/prizes': typeof LiveSubdomainPrizesRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
   '/admin/events/': typeof AdminEventsIndexRoute
@@ -606,7 +606,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/awards'
     | '/contact'
     | '/faq'
     | '/join'
@@ -616,6 +615,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/pricing'
     | '/privacy'
+    | '/prizes'
     | '/scan'
     | '/signup'
     | '/sitemap.xml'
@@ -650,13 +650,13 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
-    | '/live/$subdomain/awards'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
+    | '/live/$subdomain/prizes'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/terms-privacy'
     | '/admin/events/'
@@ -671,7 +671,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/awards'
     | '/contact'
     | '/faq'
     | '/join'
@@ -681,6 +680,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/pricing'
     | '/privacy'
+    | '/prizes'
     | '/scan'
     | '/signup'
     | '/sitemap.xml'
@@ -715,13 +715,13 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
-    | '/live/$subdomain/awards'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
+    | '/live/$subdomain/prizes'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/terms-privacy'
     | '/admin/events'
@@ -737,7 +737,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/awards'
     | '/contact'
     | '/faq'
     | '/join'
@@ -747,6 +746,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/pricing'
     | '/privacy'
+    | '/prizes'
     | '/scan'
     | '/signup'
     | '/sitemap.xml'
@@ -781,13 +781,13 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
-    | '/live/$subdomain/awards'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
     | '/live/$subdomain/map'
     | '/live/$subdomain/offers'
     | '/live/$subdomain/privacy'
+    | '/live/$subdomain/prizes'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/terms-privacy'
     | '/admin/events/'
@@ -804,7 +804,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AwardsRoute: typeof AwardsRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   JoinRoute: typeof JoinRoute
@@ -814,6 +813,7 @@ export interface RootRouteChildren {
   OffersRoute: typeof OffersRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  PrizesRoute: typeof PrizesRoute
   ScanRoute: typeof ScanRoute
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -839,13 +839,13 @@ export interface RootRouteChildren {
   VenuesIndexRoute: typeof VenuesIndexRoute
   CollectBonusTokenRoute: typeof CollectBonusTokenRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
-  LiveSubdomainAwardsRoute: typeof LiveSubdomainAwardsRoute
   LiveSubdomainFaqRoute: typeof LiveSubdomainFaqRoute
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
   LiveSubdomainMapRoute: typeof LiveSubdomainMapRoute
   LiveSubdomainOffersRoute: typeof LiveSubdomainOffersRoute
   LiveSubdomainPrivacyRoute: typeof LiveSubdomainPrivacyRoute
+  LiveSubdomainPrizesRoute: typeof LiveSubdomainPrizesRoute
   LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
   LiveSubdomainTermsPrivacyRoute: typeof LiveSubdomainTermsPrivacyRoute
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
@@ -903,6 +903,13 @@ declare module '@tanstack/react-router' {
       path: '/scan'
       fullPath: '/scan'
       preLoaderRoute: typeof ScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prizes': {
+      id: '/prizes'
+      path: '/prizes'
+      fullPath: '/prizes'
+      preLoaderRoute: typeof PrizesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -966,13 +973,6 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/awards': {
-      id: '/awards'
-      path: '/awards'
-      fullPath: '/awards'
-      preLoaderRoute: typeof AwardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -1178,6 +1178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/live/$subdomain/prizes': {
+      id: '/live/$subdomain/prizes'
+      path: '/live/$subdomain/prizes'
+      fullPath: '/live/$subdomain/prizes'
+      preLoaderRoute: typeof LiveSubdomainPrizesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/privacy': {
       id: '/live/$subdomain/privacy'
       path: '/live/$subdomain/privacy'
@@ -1218,13 +1225,6 @@ declare module '@tanstack/react-router' {
       path: '/live/$subdomain/faq'
       fullPath: '/live/$subdomain/faq'
       preLoaderRoute: typeof LiveSubdomainFaqRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain/awards': {
-      id: '/live/$subdomain/awards'
-      path: '/live/$subdomain/awards'
-      fullPath: '/live/$subdomain/awards'
-      preLoaderRoute: typeof LiveSubdomainAwardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/wineries/$venueId': {
@@ -1366,7 +1366,6 @@ const TAgencySlugRouteWithChildren = TAgencySlugRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  AwardsRoute: AwardsRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   JoinRoute: JoinRoute,
@@ -1376,6 +1375,7 @@ const rootRouteChildren: RootRouteChildren = {
   OffersRoute: OffersRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  PrizesRoute: PrizesRoute,
   ScanRoute: ScanRoute,
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -1401,13 +1401,13 @@ const rootRouteChildren: RootRouteChildren = {
   VenuesIndexRoute: VenuesIndexRoute,
   CollectBonusTokenRoute: CollectBonusTokenRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
-  LiveSubdomainAwardsRoute: LiveSubdomainAwardsRoute,
   LiveSubdomainFaqRoute: LiveSubdomainFaqRoute,
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,
   LiveSubdomainMapRoute: LiveSubdomainMapRoute,
   LiveSubdomainOffersRoute: LiveSubdomainOffersRoute,
   LiveSubdomainPrivacyRoute: LiveSubdomainPrivacyRoute,
+  LiveSubdomainPrizesRoute: LiveSubdomainPrizesRoute,
   LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
   LiveSubdomainTermsPrivacyRoute: LiveSubdomainTermsPrivacyRoute,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
@@ -1418,13 +1418,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

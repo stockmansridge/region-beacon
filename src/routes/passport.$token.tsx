@@ -20,6 +20,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { RingConfetti } from "@/components/ring-confetti";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
+import { BonusPointsPromo } from "@/components/bonus-points-promo";
 import { useVenuesWithBonus } from "@/components/passport-stamp-grid";
 import { Sparkles } from "lucide-react";
 
@@ -823,6 +824,11 @@ function PassportView({
           eventId={passport.event_id}
         />
 
+
+        {/* Bonus points promo */}
+        <div className="mt-5">
+          <BonusPointsPromo subdomain={subdomain} />
+        </div>
 
         {/* What's happening — live event pulse (directly under stamps) */}
         <div className="mt-5">
