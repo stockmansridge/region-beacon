@@ -1376,25 +1376,69 @@ function ColorRoleRow({
   disabled?: boolean;
   warnings?: string[];
 }) {
-  const pickerValue = HEX_RE.test(value) ? value : resolved;
+  const inherited = !value;
+  const displayValue = value || resolved || "";
+  const pickerValue = HEX_RE.test(value) ? value : (HEX_RE.test(resolved) ? resolved : "#000000");
+  const [text, setText] = useState(displayValue);
+  const [flash, setFlash] = useState(false);
+
+  // Keep the local text in sync when the committed value/resolved fallback
+  // changes from outside (Brand Kit apply, Reset, initial load).
+  useEffect(() => {
+    setText(displayValue);
+  }, [displayValue]);
+
+  const commit = (raw: string) => {
+    const t = raw.trim().toUpperCase();
+    if (t === "") { onChange(""); return; }
+    if (HEX_RE.test(t)) { onChange(t); return; }
+    // Invalid — revert and flash red border briefly.
+    setText(displayValue);
+    setFlash(true);
+    setTimeout(() => setFlash(false), 900);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-sm font-medium text-[#334155]">{label}</span>
-        {value && !disabled && (
-          <button type="button" onClick={() => onChange("")}
-            className="text-[11px] text-muted-foreground underline hover:text-foreground">
-            Reset
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {inherited && (
+            <span className="rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#64748B]">
+              Inherited
+            </span>
+          )}
+          {value && !disabled && (
+            <button type="button" onClick={() => onChange("")}
+              className="text-[11px] text-muted-foreground underline hover:text-foreground">
+              Reset
+            </button>
+          )}
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">{helper}</p>
       <div className="flex items-center gap-2">
-        <input type="color" value={pickerValue} onChange={(e) => onChange(e.target.value)} disabled={disabled}
-          className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50" />
-        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={resolved}
-          disabled={disabled} maxLength={7}
-          className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50" />
+        <input
+          type="color"
+          value={pickerValue}
+          onInput={(e) => onChange((e.target as HTMLInputElement).value.toUpperCase())}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          disabled={disabled}
+          className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={(e) => commit(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.currentTarget.blur(); } }}
+          placeholder={resolved}
+          disabled={disabled}
+          maxLength={7}
+          className={`h-10 flex-1 rounded-[10px] border bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+            flash ? "border-[#DC2626] ring-2 ring-[#DC2626]/20" : "border-[#D9E2EF] focus:border-[#2F6FE4]"
+          } ${inherited ? "text-[#64748B]" : ""}`}
+        />
       </div>
       {warnings && warnings.length > 0 && (
         <div role="alert" className="space-y-1 rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[11px] leading-5 text-[#92400E]">
@@ -1403,6 +1447,7 @@ function ColorRoleRow({
       )}
     </div>
   );
+
 }
 
 function surfaceWarning(fg: string, bg: string, surfaceLabel: string, threshold = 4.5): string | null {
