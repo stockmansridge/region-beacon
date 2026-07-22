@@ -1185,40 +1185,29 @@ function BrandingEditor() {
                 <span>Mobile</span>
               </div>
               <div className="grid gap-4 xl:grid-cols-[minmax(320px,420px)_minmax(260px,1fr)] xl:items-start">
-                <TrailLanding
-                  eventName={event.name}
-                  welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
-                  primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
-                  accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
-                  fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
-                  headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
-                  venueCount={venueCount}
-                  venueLabelPlural={venueLabels.plural}
-                  logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-                  heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
-                  badge="Preview"
-                  termsUrl={null}
-                  heroOverlayColor={form.hero_overlay_color || null}
-                  heroOverlayOpacity={form.hero_overlay_opacity.trim() ? Number(form.hero_overlay_opacity) : null}
-                />
+                <BrandHoverProbe>
+                  <TrailLanding
+                    eventName={event.name}
+                    welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
+                    primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
+                    accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
+                    fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
+                    headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
+                    venueCount={venueCount}
+                    venueLabelPlural={venueLabels.plural}
+                    logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+                    heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
+                    badge="Preview"
+                    termsUrl={null}
+                    heroOverlayColor={form.hero_overlay_color || null}
+                    heroOverlayOpacity={form.hero_overlay_opacity.trim() ? Number(form.hero_overlay_opacity) : null}
+                  />
+                </BrandHoverProbe>
                 <SemanticPreview venueLabelPlural={venueLabels.plural} className="xl:mt-0" />
               </div>
             </EventPaletteScope>
           </div>
 
-
-          {canEdit && (
-            <div className="flex flex-wrap gap-2 rounded-[16px] border border-[#D9E2EF] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-              <button type="button" onClick={() => onSave()} disabled={saving}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50">
-                {saving ? "Saving…" : "Save"}
-              </button>
-              <button type="button" onClick={() => onSave({ returnAfter: true })} disabled={saving}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50">
-                {saving ? "Saving…" : "Save & return"}
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
