@@ -557,18 +557,24 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
         <div
           className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl"
           style={{
-            backgroundColor: showLogo ? "#FFFFFF" : "var(--event-hero-accent, var(--event-accent, var(--event-primary, #1F3D2B)))",
+            backgroundColor: "var(--event-hero-accent, var(--event-accent, var(--event-primary, #1F3D2B)))",
             color: "var(--event-button-primary-fg, var(--event-primary-fg, #FFFFFF))",
           }}
         >
           {showLogo ? (
-            <img src={logoUrl!} alt={logoAlt} className="h-full w-full object-cover" onError={() => setLogoBroken(true)} />
+            <img
+              src={logoUrl!}
+              alt={logoAlt}
+              className="h-full w-full object-contain p-1"
+              onError={() => setLogoBroken(true)}
+            />
           ) : isSocial ? (
             <Hash className="h-5 w-5" aria-hidden />
           ) : (
             <Sparkles className="h-5 w-5" aria-hidden />
           )}
         </div>
+
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
