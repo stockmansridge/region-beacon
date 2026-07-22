@@ -548,22 +548,28 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
       ? bonus.venues[0]!.name
       : "Event";
 
+  const [logoBroken, setLogoBroken] = useState(false);
+  const showLogo = !!logoUrl && !logoBroken;
+
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm sm:p-5">
       <div className="flex items-start gap-3">
         <div
           className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl"
           style={{
-            backgroundColor: logoUrl ? "#FFFFFF" : "var(--event-hero-accent, var(--event-accent))",
-            color: "var(--event-button-primary-fg, var(--event-primary-fg))",
+            backgroundColor: showLogo ? "#FFFFFF" : "var(--event-hero-accent, var(--event-accent, var(--event-primary, #1F3D2B)))",
+            color: "var(--event-button-primary-fg, var(--event-primary-fg, #FFFFFF))",
           }}
         >
-          {logoUrl ? (
-            <img src={logoUrl} alt={logoAlt} className="h-full w-full object-cover" />
+          {showLogo ? (
+            <img src={logoUrl!} alt={logoAlt} className="h-full w-full object-cover" onError={() => setLogoBroken(true)} />
+          ) : isSocial ? (
+            <Hash className="h-5 w-5" aria-hidden />
           ) : (
-            <Zap className="h-5 w-5" />
+            <Sparkles className="h-5 w-5" aria-hidden />
           )}
         </div>
+
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <h3 className="text-base font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
