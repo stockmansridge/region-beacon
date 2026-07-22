@@ -7,6 +7,7 @@ import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { focalObjectPosition } from "@/lib/cover-focal";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
@@ -82,6 +83,8 @@ type EventRow = {
   venue_label_plural?: string | null;
   logo_path?: string | null;
   cover_path?: string | null;
+  cover_focal_x?: number | null;
+  cover_focal_y?: number | null;
 };
 
 
@@ -220,6 +223,9 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
               src={heroImageUrl}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
+              style={{
+                objectPosition: focalObjectPosition(event?.cover_focal_x, event?.cover_focal_y),
+              }}
               loading="eager"
             />
           ) : null}

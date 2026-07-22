@@ -29,6 +29,8 @@ type PublicEvent = {
   timezone: string | null;
   logo_path: string | null;
   cover_path: string | null;
+  cover_focal_x?: number | null;
+  cover_focal_y?: number | null;
   primary_color: string | null;
   accent_color: string | null;
   font_family: string | null;
@@ -170,6 +172,8 @@ function TenantEventPage() {
         headingFontFamily={event.heading_font_family ?? undefined}
         logoUrl={getEventAssetPublicUrl(event.logo_path)}
         heroImageUrl={getEventAssetPublicUrl(event.cover_path)}
+        heroFocalX={event.cover_focal_x ?? null}
+        heroFocalY={event.cover_focal_y ?? null}
         venueCount={venues.length}
         venueNames={venues.map((v) => v.name)}
         termsUrl={event.terms_url}

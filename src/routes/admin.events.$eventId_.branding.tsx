@@ -66,6 +66,8 @@ type EventRow = {
 type Branding = {
   logo_path: string | null;
   cover_path: string | null;
+  cover_focal_x: number | null;
+  cover_focal_y: number | null;
   font_family: string | null;
   heading_font_family: string | null;
   default_emotive_font_family: string | null;
@@ -182,6 +184,9 @@ type Form = {
   hero_accent_color: string;
   hero_overlay_color: string;
   hero_overlay_opacity: string; // empty = default gradient
+  // Cover focal point (0–100, "" → default 50 centered).
+  cover_focal_x: string;
+  cover_focal_y: string;
 };
 
 const EMPTY_FORM: Form = {
@@ -220,6 +225,8 @@ const EMPTY_FORM: Form = {
   hero_accent_color: "",
   hero_overlay_color: "",
   hero_overlay_opacity: "",
+  cover_focal_x: "",
+  cover_focal_y: "",
 };
 
 /** Form keys that, when edited, should flip brand_kit_key to "custom". */
@@ -245,6 +252,7 @@ const SELECT_COLS = [
   "nav_background_color", "nav_fg_color", "nav_muted_color", "nav_active_fg_color",
   "hero_bg_color", "hero_fg_color", "hero_accent_color",
   "hero_overlay_color", "hero_overlay_opacity",
+  "cover_focal_x", "cover_focal_y",
   "brand_kit_key", "brand_kit_version",
   "palette_key", "page_background_key",
 ].join(", ");
@@ -288,6 +296,8 @@ function brandingToForm(b: Branding | null): Form {
     hero_overlay_color: b.hero_overlay_color ?? "",
     hero_overlay_opacity:
       b.hero_overlay_opacity != null ? String(b.hero_overlay_opacity) : "",
+    cover_focal_x: b.cover_focal_x != null ? String(b.cover_focal_x) : "",
+    cover_focal_y: b.cover_focal_y != null ? String(b.cover_focal_y) : "",
   };
 }
 
@@ -593,6 +603,9 @@ function BrandingEditor() {
       hero_accent_color: orNull(form.hero_accent_color),
       hero_overlay_color: orNull(form.hero_overlay_color),
       hero_overlay_opacity: hero_overlay_opacity_num,
+      // Cover focal point (percentages 0–100). Blank → NULL (defaults to 50).
+      cover_focal_x: form.cover_focal_x.trim() ? Math.max(0, Math.min(100, Math.round(Number(form.cover_focal_x)))) : null,
+      cover_focal_y: form.cover_focal_y.trim() ? Math.max(0, Math.min(100, Math.round(Number(form.cover_focal_y)))) : null,
       // Brand Kit metadata
       brand_kit_key: brandKitKey,
       brand_kit_version: brandKitKey && brandKitKey !== "custom" ? BRAND_KIT_VERSION : null,
@@ -878,6 +891,23 @@ function BrandingEditor() {
               }}
               onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
             />
+            {branding?.cover_path ? (
+              <div className="mt-4">
+                <CoverPositioner
+                  imageUrl={getEventAssetPublicUrl(branding.cover_path)}
+                  focalX={form.cover_focal_x.trim() ? Number(form.cover_focal_x) : 50}
+                  focalY={form.cover_focal_y.trim() ? Number(form.cover_focal_y) : 50}
+                  disabled={!canEdit}
+                  onChange={(x, y) =>
+                    setForm({
+                      ...form,
+                      cover_focal_x: String(x),
+                      cover_focal_y: String(y),
+                    })
+                  }
+                />
+              </div>
+            ) : null}
           </CollapsibleSection>
 
 
@@ -1204,6 +1234,8 @@ function BrandingEditor() {
                     termsUrl={null}
                     heroOverlayColor={form.hero_overlay_color || null}
                     heroOverlayOpacity={form.hero_overlay_opacity.trim() ? Number(form.hero_overlay_opacity) : null}
+                    heroFocalX={form.cover_focal_x.trim() ? Number(form.cover_focal_x) : null}
+                    heroFocalY={form.cover_focal_y.trim() ? Number(form.cover_focal_y) : null}
                   />
                 </BrandHoverProbe>
                 <SemanticPreview venueLabelPlural={venueLabels.plural} className="xl:mt-0" />
@@ -1972,4 +2004,106 @@ function BrandHoverProbe({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+// ==========================================================================
+// CoverPositioner
+// ==========================================================================
+/**
+ * Drag on the cover image to choose which part is visible inside the public
+ * hero window. The image is shown at its natural aspect ratio; the overlay
+ * marks the ~5:3 window used by the public hero. Coordinates are stored as
+ * 0–100 percentages and applied as CSS `object-position`.
+ */
+function CoverPositioner({
+  imageUrl,
+  focalX,
+  focalY,
+  disabled,
+  onChange,
+}: {
+  imageUrl: string | null;
+  focalX: number;
+  focalY: number;
+  disabled?: boolean;
+  onChange: (x: number, y: number) => void;
+}) {
+  const [dragging, setDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+
+  const setFromEvent = (clientX: number, clientY: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+    onChange(clamp(x), clamp(y));
+  };
+
+  if (!imageUrl) return null;
+
+  const fx = clamp(focalX);
+  const fy = clamp(focalY);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-medium text-[color:var(--event-text,inherit)]">
+          Focal point — drag to choose the visible area
+        </span>
+        <button
+          type="button"
+          disabled={disabled}
+          className="rounded border px-2 py-1 text-[11px] hover:bg-black/5 disabled:opacity-50"
+          onClick={() => onChange(50, 50)}
+        >
+          Reset to center
+        </button>
+      </div>
+      <div
+        ref={containerRef}
+        className={`relative w-full overflow-hidden rounded-md border bg-black/5 ${
+          disabled ? "cursor-not-allowed" : "cursor-crosshair"
+        } select-none`}
+        onPointerDown={(e) => {
+          if (disabled) return;
+          (e.target as Element).setPointerCapture?.(e.pointerId);
+          setDragging(true);
+          setFromEvent(e.clientX, e.clientY);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging || disabled) return;
+          setFromEvent(e.clientX, e.clientY);
+        }}
+        onPointerUp={() => setDragging(false)}
+        onPointerCancel={() => setDragging(false)}
+      >
+        <img
+          src={imageUrl}
+          alt="Cover"
+          draggable={false}
+          className="block h-auto w-full"
+        />
+        {/* Visible-window overlay (5:3 like the public hero). */}
+        <div
+          className="pointer-events-none absolute left-0 right-0 border-2 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]"
+          style={{
+            aspectRatio: "5 / 3",
+            top: `calc(${fy}% - (min(60%, 100%) * ${fy / 100}))`,
+            // Simpler: center the 60%-height window on the focal point.
+          }}
+        />
+        {/* Focal-point crosshair marker. */}
+        <div
+          className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-black/60 shadow"
+          style={{ left: `${fx}%`, top: `${fy}%` }}
+        />
+      </div>
+      <div className="text-[11px] text-[color:var(--event-muted,inherit)]">
+        Focal point: {fx}% × {fy}% (0% = top/left, 100% = bottom/right)
+      </div>
+    </div>
+  );
+}
+
 
