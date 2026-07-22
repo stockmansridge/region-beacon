@@ -1231,7 +1231,7 @@ function RewardsSection({
           </p>
         </div>
         <Link
-          to="/awards"
+          to="/prizes"
           className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] underline-offset-2 hover:underline"
           style={{ color: "var(--event-link)" }}
         >
