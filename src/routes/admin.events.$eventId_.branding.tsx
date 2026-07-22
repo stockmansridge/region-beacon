@@ -801,16 +801,19 @@ function BrandingEditor() {
 
   return (
     <div className="space-y-5 p-6">
-      <Header
-        event={event}
-        primaryDomain={primaryDomain}
-        canEdit={canEdit}
-        saving={saving}
-        onSave={() => onSave()}
-        onSaveAndReturn={() => onSave({ returnAfter: true })}
-        onCancel={() => navigate({ to: "/admin/events/$eventId", params: { eventId } })}
-        eventId={eventId}
-      />
+      <div className="sticky top-0 z-30 -mx-6 -mt-6 border-b border-[#E6ECF4] bg-white/95 px-6 py-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)] backdrop-blur">
+        <Header
+          event={event}
+          primaryDomain={primaryDomain}
+          canEdit={canEdit}
+          saving={saving}
+          onSave={() => onSave()}
+          onSaveAndReturn={() => onSave({ returnAfter: true })}
+          onCancel={() => navigate({ to: "/admin/events/$eventId", params: { eventId } })}
+          eventId={eventId}
+        />
+      </div>
+
 
       {!canEdit && (
         <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-[#334155]">
@@ -1185,40 +1188,29 @@ function BrandingEditor() {
                 <span>Mobile</span>
               </div>
               <div className="grid gap-4 xl:grid-cols-[minmax(320px,420px)_minmax(260px,1fr)] xl:items-start">
-                <TrailLanding
-                  eventName={event.name}
-                  welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
-                  primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
-                  accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
-                  fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
-                  headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
-                  venueCount={venueCount}
-                  venueLabelPlural={venueLabels.plural}
-                  logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-                  heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
-                  badge="Preview"
-                  termsUrl={null}
-                  heroOverlayColor={form.hero_overlay_color || null}
-                  heroOverlayOpacity={form.hero_overlay_opacity.trim() ? Number(form.hero_overlay_opacity) : null}
-                />
+                <BrandHoverProbe>
+                  <TrailLanding
+                    eventName={event.name}
+                    welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
+                    primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
+                    accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
+                    fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
+                    headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
+                    venueCount={venueCount}
+                    venueLabelPlural={venueLabels.plural}
+                    logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+                    heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
+                    badge="Preview"
+                    termsUrl={null}
+                    heroOverlayColor={form.hero_overlay_color || null}
+                    heroOverlayOpacity={form.hero_overlay_opacity.trim() ? Number(form.hero_overlay_opacity) : null}
+                  />
+                </BrandHoverProbe>
                 <SemanticPreview venueLabelPlural={venueLabels.plural} className="xl:mt-0" />
               </div>
             </EventPaletteScope>
           </div>
 
-
-          {canEdit && (
-            <div className="flex flex-wrap gap-2 rounded-[16px] border border-[#D9E2EF] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
-              <button type="button" onClick={() => onSave()} disabled={saving}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50">
-                {saving ? "Saving…" : "Save"}
-              </button>
-              <button type="button" onClick={() => onSave({ returnAfter: true })} disabled={saving}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] bg-[#2F6FE4] px-4 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(47,111,228,0.22)] hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50">
-                {saving ? "Saving…" : "Save & return"}
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1913,3 +1905,71 @@ function AssetUploader({
     </div>
   );
 }
+
+// ============================================================================
+// BrandHoverProbe — overlays labelled hotspots on the Live Preview so hovering
+// each element reveals which brand-colour field(s) drive its appearance.
+// The overlay is pointer-events:none by default; each hotspot re-enables
+// pointer events so `title` tooltips fire, and shows a dashed outline on hover.
+// ============================================================================
+function BrandHoverProbe({ children }: { children: React.ReactNode }) {
+  type Hotspot = {
+    key: string;
+    label: string;
+    fields: string[];
+    /** Positioned relative to the TrailLanding wrapper (max-w-md ~ 448px). */
+    style: React.CSSProperties;
+  };
+  // Coordinates are approximate but map to the TrailLanding layout in
+  // src/components/trail-landing.tsx. Adjust if that layout changes.
+  const hotspots: Hotspot[] = [
+    { key: "hero-img",   label: "Hero image + overlay", fields: ["Cover Image", "Hero overlay color", "Hero overlay opacity"],
+      style: { top: 0, left: 0, right: 0, height: 240 } },
+    { key: "badge",      label: "Hero badge",           fields: ["Accent color", "Hero foreground"],
+      style: { top: 16, left: 16, width: 90, height: 26 } },
+    { key: "logo",       label: "Event logo",           fields: ["Event Logo (upload)"],
+      style: { top: 220, left: "50%", width: 72, height: 72, transform: "translateX(-50%)" } },
+    { key: "eyebrow",    label: "‘Digital Passport’ eyebrow", fields: ["Hero accent color"],
+      style: { top: 296, left: "20%", width: "60%", height: 16 } },
+    { key: "hero-title", label: "Event title (hero)",   fields: ["Hero foreground", "Heading font family"],
+      style: { top: 314, left: "10%", width: "80%", height: 44 } },
+    { key: "cta-card",   label: "CTA card surface",     fields: ["Card background", "Card border"],
+      style: { top: 380, left: 0, right: 0, height: 220 } },
+    { key: "welcome",    label: "Welcome copy",         fields: ["Card text (body)"],
+      style: { top: 396, left: 20, right: 20, height: 60 } },
+    { key: "btn-primary",label: "Primary button (Join)", fields: ["Button primary bg", "Button primary fg"],
+      style: { top: 468, left: 20, right: 20, height: 48 } },
+    { key: "btn-secondary", label: "Secondary button", fields: ["Button secondary bg", "Button secondary fg", "Border color"],
+      style: { top: 522, left: 20, right: 20, height: 44 } },
+    { key: "no-app",     label: "‘No app download required’", fields: ["Muted text color"],
+      style: { top: 574, left: 20, right: 20, height: 18 } },
+    { key: "stats-card", label: "Stats card surface",   fields: ["Card background", "Card border"],
+      style: { top: 620, left: 0, right: 0, height: 92 } },
+    { key: "stats-label",label: "‘On the trail’ label", fields: ["Muted text color"],
+      style: { top: 636, left: 20, width: 160, height: 14 } },
+    { key: "stats-count",label: "Venue count",          fields: ["Primary color"],
+      style: { top: 652, left: 20, width: 160, height: 36 } },
+    { key: "stats-pill", label: "‘Collect stamps’ pill", fields: ["Accent color", "Primary foreground"],
+      style: { top: 656, right: 20, width: 128, height: 28 } },
+    { key: "terms",      label: "Terms & privacy link", fields: ["Accent color", "Muted text color"],
+      style: { top: 728, left: 20, right: 20, height: 32 } },
+  ];
+
+  return (
+    <div className="relative">
+      {children}
+      <div className="pointer-events-none absolute inset-0 mx-auto w-full max-w-md">
+        {hotspots.map((h) => (
+          <div
+            key={h.key}
+            title={`${h.label}\nDriven by: ${h.fields.join(" · ")}`}
+            aria-label={`${h.label}. Driven by ${h.fields.join(", ")}`}
+            className="pointer-events-auto absolute rounded-[6px] transition hover:bg-[#2F6FE4]/8 hover:outline hover:outline-2 hover:outline-dashed hover:outline-[#2F6FE4]/70"
+            style={h.style}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
