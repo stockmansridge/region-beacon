@@ -620,14 +620,19 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
             <div className="mt-2 flex flex-wrap gap-2 text-[12px] text-[var(--event-card-text,var(--event-body,#3D372C))]">
               {bonus.social_location && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5">
-                  <AtSign className="h-3 w-3" /> {bonus.social_location}
+                  <AtSign className="h-3 w-3" /> {bonus.social_location.replace(/^@+/, "")}
                 </span>
               )}
-              {bonus.social_hashtags && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5">
-                  <Hash className="h-3 w-3" /> {bonus.social_hashtags}
-                </span>
-              )}
+              {bonus.social_hashtags &&
+                bonus.social_hashtags
+                  .split(/[\s,]+/)
+                  .map((t) => t.replace(/^#+/, "").trim())
+                  .filter(Boolean)
+                  .map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5">
+                      <Hash className="h-3 w-3" /> {tag}
+                    </span>
+                  ))}
             </div>
           )}
         </div>
