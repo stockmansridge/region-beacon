@@ -821,6 +821,7 @@ export function BonusCodesSection({
                         className="inline-flex h-8 items-center rounded-md border border-[#FCA5A5] bg-white px-2 text-xs font-medium text-[#B91C1C] hover:bg-[#FEF2F2] disabled:opacity-50"
                       >
                         {deletingId === row.id ? "…" : "Delete"}
+                      </button>
                     </div>
                   )}
                 </div>
