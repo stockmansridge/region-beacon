@@ -3,13 +3,66 @@ import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 
 type ActivityItem = {
-  first_name: string;
-  venue_name: string;
-  award_title: string | null;
-  happened_at: string;
+  kind: "checkin" | "unlock" | "bonus" | "explorers";
+  emoji: string;
+  label: string;
+  message: string;
+  key: string;
+};
+
+type CheckinRow = { first_name: string; venue_name: string; happened_at: string };
+type BonusRow = { first_name: string; bonus_name: string; happened_at: string };
+type PrizeUnlockRow = { first_name: string; prize_name: string; happened_at: string };
+type HappeningPayload = {
+  recent_checkins?: CheckinRow[];
+  explorers_today?: number;
+  recent_bonus?: BonusRow[];
+  recent_prize_unlocks?: PrizeUnlockRow[];
 };
 
 const MAX_CYCLES = 3;
+
+function buildItems(p: HappeningPayload): ActivityItem[] {
+  const out: ActivityItem[] = [];
+  for (const u of p.recent_prize_unlocks ?? []) {
+    out.push({
+      kind: "unlock",
+      emoji: "🎉",
+      label: "Prize Unlocked",
+      message: `${u.first_name || "Someone"} just unlocked ${u.prize_name}!`,
+      key: `unlock-${u.happened_at}-${u.first_name}`,
+    });
+  }
+  for (const b of p.recent_bonus ?? []) {
+    out.push({
+      kind: "bonus",
+      emoji: "⭐",
+      label: "Hidden Bonus",
+      message: `Someone found a hidden bonus — ${b.bonus_name}!`,
+      key: `bonus-${b.happened_at}`,
+    });
+  }
+  for (const c of (p.recent_checkins ?? []).slice(0, 3)) {
+    out.push({
+      kind: "checkin",
+      emoji: "🔥",
+      label: "Live Activity",
+      message: `${c.first_name || "Someone"} just checked in at ${c.venue_name}!`,
+      key: `checkin-${c.happened_at}-${c.first_name}`,
+    });
+  }
+  const explorers = p.explorers_today ?? 0;
+  if (explorers >= 1) {
+    out.push({
+      kind: "explorers",
+      emoji: "🍷",
+      label: "On The Trail",
+      message: `${explorers} ${explorers === 1 ? "person is" : "people are"} exploring the trail today`,
+      key: `explorers-${explorers}`,
+    });
+  }
+  return out;
+}
 
 export function LiveActivityBar({ subdomain }: { subdomain: string }) {
   const [items, setItems] = useState<ActivityItem[]>([]);
@@ -25,15 +78,13 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
       try {
         const host = tenantHost(subdomain);
         const { data, error } = await supabase.rpc(
-          "get_public_event_recent_activity",
-          { _hostname: host, _limit: 3 },
+          "get_public_event_happening_now",
+          { _hostname: host },
         );
-        if (cancelled) return;
-        if (error) return;
-        const rows = (data ?? []) as ActivityItem[];
-        setItems(rows);
+        if (cancelled || error || !data) return;
+        setItems(buildItems(data as HappeningPayload));
       } catch {
-        /* RPC not deployed yet — silently hide */
+        /* silently hide */
       }
     };
     load();
@@ -76,12 +127,6 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
   if (dismissed || items.length === 0 || phase === "rest") return null;
   const current = items[index % items.length];
   if (!current) return null;
-  const first = current.first_name || "Someone";
-  const isUnlock = !!current.award_title;
-  const message = isUnlock
-    ? `${first} just unlocked ${current.award_title}!`
-    : `${first} just checked in at ${current.venue_name}!`;
-  const emoji = isUnlock ? "🎉" : "🔥";
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-3">
@@ -100,14 +145,14 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
           className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-lg leading-none"
           style={{ backgroundColor: "rgba(255,255,255,0.14)" }}
         >
-          {emoji}
+          {current.emoji}
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[9px] font-bold uppercase tracking-[0.24em] opacity-80">
-            {isUnlock ? "Prize Unlocked" : "Live Activity"}
+            {current.label}
           </div>
           <div className="mt-0.5 truncate text-[13px] font-semibold leading-snug">
-            {message}
+            {current.message}
           </div>
         </div>
       </button>
