@@ -658,7 +658,8 @@ function BrandingEditor() {
       const { data, error } = await supabase
         .from("event_branding")
         .insert({ agency_id: agencyId!, event_id: bundle.event.id, ...payload })
-        .select(SELECT_COLS)
+        .select(SELECT_COLS_FALLBACK)
+
         .maybeSingle();
       return { row: data as Branding | null, error };
     }
