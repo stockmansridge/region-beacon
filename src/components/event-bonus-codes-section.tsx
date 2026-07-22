@@ -398,14 +398,32 @@ export function BonusCodesSection({
         </div>
       )}
 
-      {canEdit && editingId === null && (
-        <button
-          type="button"
-          onClick={startCreate}
-          className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          Add bonus code
-        </button>
+      {editingId === null && (
+        <div className="flex flex-wrap items-center gap-3">
+          {canEdit && (
+            <button
+              type="button"
+              onClick={startCreate}
+              className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+            >
+              Add bonus code
+            </button>
+          )}
+          <label className="ml-auto inline-flex items-center gap-2 text-xs text-[#475569]">
+            <span className="font-medium">Show</span>
+            <select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as "active" | "disabled" | "all")
+              }
+              className="h-9 rounded-lg border border-[#D9E2EF] bg-white px-2 text-sm"
+            >
+              <option value="active">Active only</option>
+              <option value="disabled">Disabled only</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+        </div>
       )}
 
       {editingId !== null && (
