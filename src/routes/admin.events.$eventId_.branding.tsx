@@ -821,6 +821,35 @@ function BrandingEditor() {
             </div>
           )}
 
+          {/* Logo + cover uploads — moved from the right column so the pinned
+              preview stays visible while editing. */}
+          <AssetUploader
+            kind="logo"
+            currentPath={branding?.logo_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an organisation before uploading.";
+              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "logo", file });
+              if (!res.ok) return res.error;
+              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
+            }}
+            onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
+          />
+          <AssetUploader
+            kind="cover"
+            currentPath={branding?.cover_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an organisation before uploading.";
+              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "cover", file });
+              if (!res.ok) return res.error;
+              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
+            }}
+            onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
+          />
+
+
+
           {/* Brand Kit */}
           <CollapsibleSection
             id="kit"
@@ -996,7 +1025,7 @@ function BrandingEditor() {
                 resolved={themeForPreview.heroFg} value={form.hero_fg_color}
                 onChange={(v) => editColour("hero_fg_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.heroFg, themeForPreview.heroBg, "hero background")} />
-              <ColorRoleRow label="Hero accent colour" helper="Accent flourish on the hero (badge, dot, underline)."
+              <ColorRoleRow label={`Cover eyebrow label colour ("Digital Passport")`} helper={`Colour of the small uppercase label above the event title on the cover (e.g. "Digital Passport"), plus other hero accent flourishes.`}
                 resolved={themeForPreview.heroAccent} value={form.hero_accent_color}
                 onChange={(v) => editColour("hero_accent_color", v)} disabled={!canEdit || saving} />
               <HeroOverlayCard
@@ -1145,30 +1174,6 @@ function BrandingEditor() {
             </EventPaletteScope>
           </div>
 
-          <AssetUploader
-            kind="logo"
-            currentPath={branding?.logo_path ?? null}
-            canEdit={canEdit}
-            onUpload={async (file) => {
-              if (!agencyId) return "Select an organisation before uploading.";
-              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "logo", file });
-              if (!res.ok) return res.error;
-              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
-            }}
-            onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
-          />
-          <AssetUploader
-            kind="cover"
-            currentPath={branding?.cover_path ?? null}
-            canEdit={canEdit}
-            onUpload={async (file) => {
-              if (!agencyId) return "Select an organisation before uploading.";
-              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "cover", file });
-              if (!res.ok) return res.error;
-              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
-            }}
-            onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
-          />
 
           {canEdit && (
             <div className="flex flex-wrap gap-2 rounded-[16px] border border-[#D9E2EF] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
@@ -1380,13 +1385,15 @@ function ColorRoleRow({
   const displayValue = value || resolved || "";
   const pickerValue = HEX_RE.test(value) ? value : (HEX_RE.test(resolved) ? resolved : "#000000");
   const [text, setText] = useState(displayValue);
+  const [focused, setFocused] = useState(false);
   const [flash, setFlash] = useState(false);
 
-  // Keep the local text in sync when the committed value/resolved fallback
-  // changes from outside (Brand Kit apply, Reset, initial load).
+  // Sync local text with the committed value/resolved fallback ONLY when
+  // the field is not focused. This prevents an in-flight edit in Chrome
+  // from being clobbered by a re-render triggered by an unrelated field.
   useEffect(() => {
-    setText(displayValue);
-  }, [displayValue]);
+    if (!focused) setText(displayValue);
+  }, [displayValue, focused]);
 
   const commit = (raw: string) => {
     const t = raw.trim().toUpperCase();
@@ -1421,7 +1428,8 @@ function ColorRoleRow({
         <input
           type="color"
           value={pickerValue}
-          onInput={(e) => onChange((e.target as HTMLInputElement).value.toUpperCase())}
+          // Only commit on `change` (fires when the picker closes). `onInput`
+          // fires on every drag frame in Chrome and races with text-input edits.
           onChange={(e) => onChange(e.target.value.toUpperCase())}
           disabled={disabled}
           className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
@@ -1429,10 +1437,11 @@ function ColorRoleRow({
         <input
           type="text"
           value={text}
+          onFocus={() => setFocused(true)}
           onChange={(e) => setText(e.target.value)}
-          onBlur={(e) => commit(e.target.value)}
+          onBlur={(e) => { setFocused(false); commit(e.target.value); }}
           onKeyDown={(e) => { if (e.key === "Enter") { e.currentTarget.blur(); } }}
-          placeholder={resolved}
+          placeholder="#RRGGBB"
           disabled={disabled}
           maxLength={7}
           className={`h-10 flex-1 rounded-[10px] border bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
@@ -1440,6 +1449,16 @@ function ColorRoleRow({
           } ${inherited ? "text-[#64748B]" : ""}`}
         />
       </div>
+      {inherited && resolved && (
+        <div className="flex items-center gap-2 text-[11px] text-[#64748B]">
+          <span
+            aria-hidden
+            className="inline-block h-3 w-3 rounded-sm border border-[#D9E2EF]"
+            style={{ backgroundColor: resolved }}
+          />
+          <span>Resolved: <span className="font-mono">{resolved}</span> (from brand kit / palette)</span>
+        </div>
+      )}
       {warnings && warnings.length > 0 && (
         <div role="alert" className="space-y-1 rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[11px] leading-5 text-[#92400E]">
           {warnings.map((w, i) => <div key={i}>{w}</div>)}

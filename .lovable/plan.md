@@ -1,51 +1,55 @@
-# Branding editor — pinned preview + reliable color fields
+## Branding editor fixes
 
-Scope: `src/routes/admin.events.$eventId_.branding.tsx` (single route file, plus the small `ColorRoleRow` / `HeroOverlayCard` helpers inside it). No DB, RLS, or business-logic changes.
+### 1. Diagnose why saved colours don't render on the public page (Chrome)
 
-## 1. Pin the live preview so it's always visible while editing
+Investigate before fixing — no code changes until root cause is confirmed on event `evt-bg1beh2o0w`.
 
-Today the right column uses `lg:sticky lg:top-6`, which works only above the `lg` breakpoint AND only while the surrounding grid row is tall enough. On common laptop widths and on tablets the preview scrolls off screen as soon as you expand a section like Brand or Cards.
+Working hypotheses to test, in order:
+- **`ColorRoleRow` sync race.** The local `text` state is kept in sync via `useEffect([displayValue])`, where `displayValue = value || resolved`. When the user types a hex, `value` changes → `displayValue` changes → effect overwrites `text`. In Chrome this can clobber an in-flight edit if the user tabs quickly to Save. Also `onInput` on the colour picker fires on every drag frame and calls `onChange` with the picker's current value, which can overwrite a manually-typed hex that hasn't blurred yet.
+- **Save payload dropping fields.** Check what the top-level Save actually PUTs — the header lists ~30 semantic fields; if any are read from stale state (e.g. `branding` snapshot instead of the in-form draft), Chrome's autofill/blur order could cause a partial save.
+- **Chrome placeholder confusion.** `<input placeholder={resolved}>` renders the resolved hex in `text-[#94A3B8]` (grey). Users read that as "the saved value" and assume it stuck; in Firefox the same text may render darker. Confirm by loading the event, reading the row from Supabase, and comparing to what the field displays.
+- **Brand Kit precedence.** `resolveEventTheme` picks `pickHex(column) ?? kit?.value ?? palette`. If the event has `brand_kit_key` set and the organiser cleared a column back to blank expecting their custom colour, the kit's colour wins on the public page even though the editor shows "Inherited". Confirm by inspecting the row.
 
-Change the two-column layout so the preview panel is a true always-visible pane on any screen ≥ `md`:
+Deliverables from the investigation:
+- Read the `events` row for `evt-bg1beh2o0w` and compare each colour column to what the public page renders.
+- Then apply the minimal fix(es) the evidence supports. Likely candidates:
+  - Drop `onInput` on the colour picker (keep `onChange` only) so the picker doesn't fight the text input.
+  - Debounce or gate the `useEffect` sync so it only runs when the field isn't focused.
+  - Show the resolved hex as a distinct "Resolved: #XXXXXX" chip under the input instead of as the placeholder, so users can tell empty-vs-set at a glance in every browser.
+  - If Brand Kit is the culprit, add an explicit "Clear brand kit" affordance or make column values with `""` still win over kit when the organiser has explicitly reset.
 
-- Wrap the page in a flex row (`md:flex md:gap-6`) instead of a CSS grid whose row-height defeats `sticky`.
-- Left column (form): `md:flex-1 md:min-w-0 md:overflow-y-auto md:max-h-[calc(100vh-var(--admin-header-h,80px))] md:pr-2`. This is the ONLY scroller — the form scrolls, the preview does not.
-- Right column (preview + uploads): `md:w-[420px] md:shrink-0 md:sticky md:top-6 md:self-start md:max-h-[calc(100vh-var(--admin-header-h,80px))] md:overflow-y-auto`. Preview stays fixed to the viewport regardless of which section is open.
-- On mobile (< `md`) keep today's stacked order but add a floating "Show preview" pill button, bottom-right, that scrolls to `#live-preview` (no new state machine, no drawer). Give the preview card `id="live-preview" scroll-mt-4`.
-- Remove `lg:order-2 order-1` swap — with a fixed side pane it's no longer needed.
+### 2. Fix logo circle clipped top/bottom in Chrome
 
-Acceptance:
-- On a 1280×800 laptop viewport, open Brand → Page → Cards → Buttons in turn. The preview card stays fully visible on the right the entire time.
-- On a 375px viewport, a small "Preview" pill sits above the bottom nav and jumps to the preview.
-- Nothing about the form fields, save flow, or preview contents changes.
+Check the round logo container in the branding preview and in the public header/hero. Likely cause: the wrapper is in a flex row without `shrink-0` / `aspect-square`, so Chrome's flex sizing squashes it vertically while the `img` inside uses `object-contain`. Fix by pinning both width and height (or `aspect-square shrink-0`) on every round logo container:
+- `src/components/trail-landing.tsx` (hero logo)
+- `src/components/public-event-nav.tsx` (header avatar)
+- `src/routes/admin.events.$eventId_.branding.tsx` (preview + upload thumbnail)
 
-## 2. Make color fields readable in Chrome and make edits obviously stick
+### 3. Add a colour control for the "Digital Passport" cover label
 
-Root cause of the "grey values in Chrome / real values in Firefox" report: `ColorRoleRow` renders `<input type="text" value={form.<field>} placeholder={resolved}>`. When the user hasn't overridden the color, `form.<field>` is `""`, so Chrome shows only the light-grey **placeholder**. Firefox tends to render placeholders slightly darker, which is why it looks like a real value there. Users read the greyed placeholder as "no value" and assume nothing saved.
+Today the eyebrow above the event title on the cover is:
+- Public page: styled with `--event-hero-accent` (already themable).
+- Branding preview (`TrailLanding`): hardcoded to the `goldColor` prop.
 
-Additionally, the native color picker (`<input type="color">`) in Chrome only fires `change` on close of the picker, not on every drag — an edit made and then abandoned by clicking elsewhere can appear to "not stick" if the user closes the window before `change` fires.
+Changes:
+- In `TrailLanding`, paint the subtitle with `var(--event-hero-accent, ...)` so the preview matches the live page.
+- Rename the existing "Hero accent colour" `ColorRoleRow` in `admin.events.$eventId_.branding.tsx` to something explicit like **"Cover eyebrow label colour ("Digital Passport")"** with helper text that names the element. No new DB column needed — `hero_accent_color` already exists and is what the public page reads.
 
-Fixes inside `ColorRoleRow` (and mirror in `HeroOverlayCard`):
+### 4. Move Event Logo + Cover Image uploads to the left column
 
-- Show the resolved hex in the text input as a real value when the field is blank, styled to indicate "inherited, not overridden":
-  - Compute `displayValue = value || resolved`.
-  - Render `<input value={displayValue}>` with a subtle "inherited" pill/tag to the right (`Inherited` in muted text) whenever `value === ""`. As soon as the user types or picks, the pill disappears and `Reset` reappears.
-  - Keep the current `Reset` button behaviour (writes `""`).
-- Fire updates while dragging the picker too: add `onInput` in addition to `onChange` on `<input type="color">` so intermediate values propagate to `form` state and the preview updates continuously (also helps the "didn't stick" perception — the value is committed as soon as it changes).
-- Normalise the text input on blur: trim, uppercase, and only commit if it matches `HEX_RE`; otherwise revert to previous value and flash the input border red for 1s. Prevents partial hex strings (`#12`) being silently kept in form state and then rejected on save.
-- Keep `maxLength={7}` and the `#` prefix requirement.
+In `src/routes/admin.events.$eventId_.branding.tsx`, the right column is currently:
 
-Acceptance:
-- In Chrome, every colour field shows a real hex value (either the user override or the inherited resolved value) — no more grey-only placeholder rows.
-- Dragging the native colour picker updates the preview live; closing the picker leaves the chosen colour committed.
-- Typing `#aabbcc` and tabbing away commits it; typing `#12` and tabbing away reverts and flashes the field.
+```text
+[ Live preview ]
+[ Event logo upload ]
+[ Cover image upload ]
+```
 
-## 3. Verification
+Move both `AssetUploadCard`s (logo + cover) out of the right column and into the left editor column, placed at the top above the Brand section. The right column keeps only the pinned `TrailLanding` live preview. Preserve all existing props (`persistAssetPath`, `removeAsset`, etc.) — this is a JSX relocation only.
 
-- `tsgo` typecheck passes.
-- Manual: open `/admin/events/:id/branding`, expand each section, change one value per section, confirm the preview updates without scrolling and the value persists after Save + reload in both Chrome and Firefox.
-
-## Out of scope
-
-- No changes to `resolveEventTheme`, palette storage, RLS, or the Save server function.
-- No redesign of the left-hand section list itself (still collapsible sections in the same order).
+### Acceptance
+- Colours chosen in the branding editor match what renders on the public event page in Chrome and Firefox for event `evt-bg1beh2o0w`.
+- Round logo renders as a full circle in Chrome on the public page, header, and branding preview.
+- A clearly-labelled colour row controls the "Digital Passport" cover label, and changing it updates both the preview and the live page.
+- Event Logo and Cover Image upload cards appear in the left column; the right column shows only the live preview.
+- Typecheck passes.

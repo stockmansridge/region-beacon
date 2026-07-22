@@ -121,13 +121,13 @@ export function TrailLanding({
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-7 text-center text-[var(--event-primary-fg,#F6EFE2)]">
             {logoUrl ? (
               <div
-                className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full"
+                className="mb-4 flex aspect-square h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full"
                 style={{ background: "transparent" }}
               >
                 <img
                   src={logoUrl}
                   alt=""
-                  className="h-full w-full object-contain"
+                  className="block h-full w-full object-cover"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).style.display = "none";
                   }}
@@ -135,7 +135,7 @@ export function TrailLanding({
               </div>
             ) : (
               <div
-                className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border text-sm font-semibold tracking-[0.2em]"
+                className="mb-4 flex aspect-square h-16 w-16 shrink-0 items-center justify-center rounded-full border text-sm font-semibold tracking-[0.2em]"
                 style={{
                   borderColor: `${goldColor}80`,
                   backgroundColor: `${primaryColor}AA`,
@@ -145,7 +145,10 @@ export function TrailLanding({
                 {initials}
               </div>
             )}
-            <div className="text-[10px] font-medium uppercase tracking-[0.32em]" style={{ color: goldColor }}>
+            <div
+              className="text-[10px] font-medium uppercase tracking-[0.32em]"
+              style={{ color: "var(--event-hero-accent, " + goldColor + ")" }}
+            >
               {subtitle}
             </div>
             <h1 className="font-event-heading mt-2 text-[34px] font-semibold leading-[1.05]">
