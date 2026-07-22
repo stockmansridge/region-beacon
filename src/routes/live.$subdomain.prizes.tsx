@@ -497,7 +497,7 @@ export function AwardsPage({
               </div>
             )}
             {sortedBonuses.map((b) => (
-              <BonusCard key={b.bonus_code_id} bonus={b} userLoc={userLoc} />
+              <BonusCard key={b.bonus_code_id} bonus={b} userLoc={userLoc} eventLogoUrl={getEventAssetPublicUrl(branding.logoPath)} />
             ))}
           </div>
         )}
