@@ -231,7 +231,7 @@ export function EventTrailPoster({ data, capture = false, previewScale, id }: Pr
             style={{ fontSize: 14, color: branding.mutedTextColor, lineHeight: 1.45 }}
           >
             Open your phone camera. Visit participating venues, collect stamps, and
-            unlock rewards.
+            win prizes.
           </div>
           {data.publicUrl && (
             <div
