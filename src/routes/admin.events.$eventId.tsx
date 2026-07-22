@@ -443,8 +443,7 @@ type VenueEditorTabKey =
   | "location"
   | "public"
   | "images"
-  | "qr"
-  | "tasting";
+  | "qr";
 
 const VENUE_EDITOR_TABS: Array<{ key: VenueEditorTabKey; label: string; existingOnly?: boolean }> = [
   { key: "basics", label: "Basics" },
@@ -452,7 +451,6 @@ const VENUE_EDITOR_TABS: Array<{ key: VenueEditorTabKey; label: string; existing
   { key: "public", label: "Public Page" },
   { key: "images", label: "Images", existingOnly: true },
   { key: "qr", label: "Venue QR", existingOnly: true },
-  { key: "tasting", label: "Tasting QR", existingOnly: true },
 ];
 
 
