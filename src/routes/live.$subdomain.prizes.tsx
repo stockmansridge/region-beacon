@@ -12,6 +12,7 @@ import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palett
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 
 const searchSchema = z.object({
   tab: fallback(z.string(), "prizes").default("prizes"),
