@@ -239,7 +239,7 @@ export function VenuePoster({ data, capture = false, previewScale, id }: Props) 
                 {truncate(data.venueOffer, 90)}
               </div>
               <div style={{ fontSize: 12, opacity: 0.9 }}>
-                Show this poster or your passport at the counter to redeem.
+                Show your passport at the counter to redeem.
               </div>
             </div>
           </div>
