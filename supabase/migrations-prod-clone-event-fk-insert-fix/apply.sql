@@ -92,7 +92,7 @@ begin
       string_agg(quote_ident(column_name), ', ' order by ordinal_position),
       string_agg(
         case
-          when column_name = any(v_fk_cols) then 'null::' || udt_name
+          when column_name = any(v_fk_cols) then 'null'
           else quote_ident(column_name)
         end,
         ', ' order by ordinal_position
