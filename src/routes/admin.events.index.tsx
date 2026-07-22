@@ -306,16 +306,21 @@ function Events() {
         _new_name: newName,
       } as never);
       if (error) {
-        toast.error(`Could not clone event: ${error.message}`);
+        console.error("clone_event failed", error);
+        toast.error(`Could not clone event: ${error.message ?? "unknown error"}`);
         return;
       }
       const newId = (Array.isArray(data) ? data[0] : data) as string | null;
-      toast.success("Event cloned. It's a draft — publish when ready.");
-      if (newId) {
-        navigate({ to: "/admin/events/$eventId", params: { eventId: newId } });
-      } else {
+      if (!newId) {
+        console.error("clone_event returned no id", data);
+        toast.error(
+          "Clone did not return a new event id. The clone_event database function may not be installed — please contact support.",
+        );
         setReloadKey((k) => k + 1);
+        return;
       }
+      toast.success("Event cloned. It's a draft — publish when ready.");
+      navigate({ to: "/admin/events/$eventId", params: { eventId: newId } });
     } finally {
       setCloningId(null);
     }
