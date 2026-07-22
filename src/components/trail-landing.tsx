@@ -249,15 +249,25 @@ export function TrailLanding({
 
       {/* Stats / venues */}
       {(typeof venueCount === "number" || (venueNames && venueNames.length > 0)) && (
-        <div className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5">
+        <div
+          className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5"
+          data-brand-hint="Card background · Card border"
+          title="Stats card — Card background · Card border"
+        >
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+              <div
+                className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]"
+                data-brand-hint="Muted text color"
+                title="‘On the trail’ label — Muted text color"
+              >
                 On the trail
               </div>
               <div
                 className="font-trail-serif mt-1 text-3xl font-semibold"
                 style={{ color: "var(--event-primary)" }}
+                data-brand-hint="Primary color"
+                title="Venue count — Primary color"
               >
                 {venueCount ?? venueNames?.length ?? 0}
                 <span className="ml-1 text-sm font-medium text-[var(--event-muted,#8A7E66)]">{venueLabelPlural.toLowerCase()}</span>
@@ -269,6 +279,8 @@ export function TrailLanding({
                 backgroundColor: "var(--event-accent)",
                 color: "var(--event-primary-fg)",
               }}
+              data-brand-hint="Accent color · Primary foreground"
+              title="‘Collect stamps’ pill — Accent color · Primary foreground"
             >
               Collect stamps
             </div>
@@ -301,7 +313,11 @@ export function TrailLanding({
       )}
 
       {termsUrl !== undefined && (
-        <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-[var(--event-muted,#8A7E66)]">
+        <p
+          className="mt-4 px-2 text-center text-[11px] leading-relaxed text-[var(--event-muted,#8A7E66)]"
+          data-brand-hint="Accent color · Muted text color"
+          title="Terms & privacy link — Accent color · Muted text color"
+        >
           By joining you accept the{" "}
           <span className="underline" style={{ color: accentColor }}>
             terms & privacy
