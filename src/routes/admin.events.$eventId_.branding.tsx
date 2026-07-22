@@ -801,16 +801,19 @@ function BrandingEditor() {
 
   return (
     <div className="space-y-5 p-6">
-      <Header
-        event={event}
-        primaryDomain={primaryDomain}
-        canEdit={canEdit}
-        saving={saving}
-        onSave={() => onSave()}
-        onSaveAndReturn={() => onSave({ returnAfter: true })}
-        onCancel={() => navigate({ to: "/admin/events/$eventId", params: { eventId } })}
-        eventId={eventId}
-      />
+      <div className="sticky top-0 z-30 -mx-6 -mt-6 border-b border-[#E6ECF4] bg-white/95 px-6 py-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)] backdrop-blur">
+        <Header
+          event={event}
+          primaryDomain={primaryDomain}
+          canEdit={canEdit}
+          saving={saving}
+          onSave={() => onSave()}
+          onSaveAndReturn={() => onSave({ returnAfter: true })}
+          onCancel={() => navigate({ to: "/admin/events/$eventId", params: { eventId } })}
+          eventId={eventId}
+        />
+      </div>
+
 
       {!canEdit && (
         <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-[#334155]">
