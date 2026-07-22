@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -311,7 +311,9 @@ function BrandingEditor() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
-    kit: true,
+    logo: false,
+    cover: false,
+    kit: false,
     brand: true,
     page: false,
     cards: false,
@@ -365,6 +367,11 @@ function BrandingEditor() {
       hero_fg_color: kit.colors.hero_fg_color,
       hero_accent_color: kit.colors.hero_accent_color,
     }));
+  }
+
+  /** Select Custom without changing the current colours. */
+  function selectCustomBrandKit() {
+    setForm((f) => ({ ...f, brand_kit_key: "custom" }));
   }
 
   useEffect(() => {
@@ -589,6 +596,11 @@ function BrandingEditor() {
       // Brand Kit metadata
       brand_kit_key: brandKitKey,
       brand_kit_version: brandKitKey && brandKitKey !== "custom" ? BRAND_KIT_VERSION : null,
+      // The modern branding editor owns colours through explicit semantic
+      // columns. Keep legacy palette overlays from replacing saved colours
+      // on the public page, especially when the organiser selects Custom.
+      palette_key: brandKitKey === "custom" ? "custom" : brandKitKey ? null : (branding?.palette_key ?? null),
+      page_background_key: brandKitKey ? null : (branding?.page_background_key ?? null),
     };
 
     const { data: existing } = await supabase
@@ -821,32 +833,49 @@ function BrandingEditor() {
             </div>
           )}
 
-          {/* Logo + cover uploads — moved from the right column so the pinned
-              preview stays visible while editing. */}
-          <AssetUploader
-            kind="logo"
-            currentPath={branding?.logo_path ?? null}
-            canEdit={canEdit}
-            onUpload={async (file) => {
-              if (!agencyId) return "Select an organisation before uploading.";
-              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "logo", file });
-              if (!res.ok) return res.error;
-              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
-            }}
-            onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
-          />
-          <AssetUploader
-            kind="cover"
-            currentPath={branding?.cover_path ?? null}
-            canEdit={canEdit}
-            onUpload={async (file) => {
-              if (!agencyId) return "Select an organisation before uploading.";
-              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "cover", file });
-              if (!res.ok) return res.error;
-              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
-            }}
-            onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
-          />
+          {/* Logo + cover uploads — minimised by default so colour editing stays close to the preview. */}
+          <CollapsibleSection
+            id="logo"
+            title="Event logo"
+            subtitle={branding?.logo_path ? "Logo uploaded" : "No logo uploaded"}
+            expanded={expanded.logo}
+            onToggle={() => toggle("logo")}
+          >
+            <AssetUploader
+              kind="logo"
+              currentPath={branding?.logo_path ?? null}
+              canEdit={canEdit}
+              embedded
+              onUpload={async (file) => {
+                if (!agencyId) return "Select an organisation before uploading.";
+                const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "logo", file });
+                if (!res.ok) return res.error;
+                return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
+              }}
+              onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
+            />
+          </CollapsibleSection>
+          <CollapsibleSection
+            id="cover"
+            title="Cover image"
+            subtitle={branding?.cover_path ? "Cover image uploaded" : "No cover image uploaded"}
+            expanded={expanded.cover}
+            onToggle={() => toggle("cover")}
+          >
+            <AssetUploader
+              kind="cover"
+              currentPath={branding?.cover_path ?? null}
+              canEdit={canEdit}
+              embedded
+              onUpload={async (file) => {
+                if (!agencyId) return "Select an organisation before uploading.";
+                const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "cover", file });
+                if (!res.ok) return res.error;
+                return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
+              }}
+              onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
+            />
+          </CollapsibleSection>
 
 
 
@@ -861,6 +890,7 @@ function BrandingEditor() {
             <BrandKitSelector
               value={form.brand_kit_key}
               onApplyKit={applyBrandKit}
+              onSelectCustom={selectCustomBrandKit}
               onClear={() => setForm({ ...EMPTY_FORM,
                 font_family: form.font_family,
                 heading_font_family: form.heading_font_family,
@@ -883,13 +913,13 @@ function BrandingEditor() {
             onToggle={() => toggle("brand")}
           >
             <div className="space-y-4">
-              <ColorRoleRow label="Primary colour" helper="Brand colour used across CTAs, highlights, and bottom-nav default."
+              <ColorRoleRow label="Primary colour" fieldName="primary_color" helper="Brand colour used across CTAs, highlights, and bottom-nav default."
                 resolved={themeForPreview.primary} value={form.primary_color}
                 onChange={(v) => editColour("primary_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Accent colour" helper="Highlight colour used for active states, badges and accents."
+              <ColorRoleRow label="Accent colour" fieldName="accent_color" helper="Highlight colour used for active states, badges and accents."
                 resolved={themeForPreview.accent} value={form.accent_color}
                 onChange={(v) => editColour("accent_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Link colour" helper="Inline links on the public pages."
+              <ColorRoleRow label="Link colour" fieldName="link_color" helper="Inline links on the public pages."
                 resolved={themeForPreview.link} value={form.link_color}
                 onChange={(v) => editColour("link_color", v)} disabled={!canEdit || saving} />
             </div>
@@ -905,21 +935,21 @@ function BrandingEditor() {
             onToggle={() => toggle("page")}
           >
             <div className="space-y-4">
-              <ColorRoleRow label="Page background" helper="Painted behind everything on the public passport pages."
+              <ColorRoleRow label="Page background" fieldName="page_background_color" helper="Painted behind everything on the public passport pages."
                 resolved={themeForPreview.pageBg} value={form.page_background_color}
                 onChange={(v) => editColour("page_background_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Page heading colour" helper="Section headings and headlines on the page background."
+              <ColorRoleRow label="Page heading colour" fieldName="page_heading_color" helper="Section headings and headlines on the page background."
                 resolved={themeForPreview.pageText} value={form.page_heading_color}
                 onChange={(v) => editColour("page_heading_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.pageText, themeForPreview.pageBg, "page background")} />
-              <ColorRoleRow label="Page body text colour" helper="Body copy on the page background. Falls back to the heading colour when blank."
+              <ColorRoleRow label="Page body text colour" fieldName="page_body_color" helper="Body copy on the page background. Falls back to the heading colour when blank."
                 resolved={themeForPreview.pageText} value={form.page_body_color}
                 onChange={(v) => editColour("page_body_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Page muted text colour" helper="Helper / metadata text on the page background."
+              <ColorRoleRow label="Page muted text colour" fieldName="page_muted_color" helper="Helper / metadata text on the page background."
                 resolved={themeForPreview.pageMuted} value={form.page_muted_color}
                 onChange={(v) => editColour("page_muted_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.pageMuted, themeForPreview.pageBg, "page background", 3)} />
-              <ColorRoleRow label="Page border colour" helper="Dividers and outlines on the page surface."
+              <ColorRoleRow label="Page border colour" fieldName="border_color" helper="Dividers and outlines on the page surface."
                 resolved={themeForPreview.border} value={form.border_color}
                 onChange={(v) => editColour("border_color", v)} disabled={!canEdit || saving} />
             </div>
@@ -935,21 +965,21 @@ function BrandingEditor() {
             onToggle={() => toggle("cards")}
           >
             <div className="space-y-4">
-              <ColorRoleRow label="Card background" helper="Background colour for venue cards, awards cards, etc."
+              <ColorRoleRow label="Card background" fieldName="card_background_color" helper="Background colour for venue cards, awards cards, etc."
                 resolved={themeForPreview.cardBg} value={form.card_background_color}
                 onChange={(v) => editColour("card_background_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Card heading colour" helper="Headings inside cards (venue name, award title)."
+              <ColorRoleRow label="Card heading colour" fieldName="card_heading_color" helper="Headings inside cards (venue name, award title)."
                 resolved={themeForPreview.cardText} value={form.card_heading_color}
                 onChange={(v) => editColour("card_heading_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.cardText, themeForPreview.cardBg, "card background")} />
-              <ColorRoleRow label="Card body text colour" helper="Body copy inside cards. Falls back to the card heading colour."
+              <ColorRoleRow label="Card body text colour" fieldName="card_body_color" helper="Body copy inside cards. Falls back to the card heading colour."
                 resolved={themeForPreview.cardText} value={form.card_body_color}
                 onChange={(v) => editColour("card_body_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Card muted text colour" helper="Addresses, descriptions, metadata inside cards."
+              <ColorRoleRow label="Card muted text colour" fieldName="card_muted_color" helper="Addresses, descriptions, metadata inside cards."
                 resolved={themeForPreview.cardMuted} value={form.card_muted_color}
                 onChange={(v) => editColour("card_muted_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.cardMuted, themeForPreview.cardBg, "card background", 3)} />
-              <ColorRoleRow label="Card border colour" helper="Borders / dividers on cards. Falls back to the page border."
+              <ColorRoleRow label="Card border colour" fieldName="card_border_color" helper="Borders / dividers on cards. Falls back to the page border."
                 resolved={themeForPreview.cardBorder} value={form.card_border_color}
                 onChange={(v) => editColour("card_border_color", v)} disabled={!canEdit || saving} />
             </div>
@@ -965,17 +995,17 @@ function BrandingEditor() {
             onToggle={() => toggle("buttons")}
           >
             <div className="space-y-4">
-              <ColorRoleRow label="Primary button background" helper="Background colour for the primary CTA buttons."
+              <ColorRoleRow label="Primary button background" fieldName="button_primary_bg" helper="Background colour for the primary CTA buttons."
                 resolved={themeForPreview.buttonPrimaryBg} value={form.button_primary_bg}
                 onChange={(v) => editColour("button_primary_bg", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Primary button text" helper="Text / icons drawn on the primary button."
+              <ColorRoleRow label="Primary button text" fieldName="button_primary_fg" helper="Text / icons drawn on the primary button."
                 resolved={themeForPreview.buttonPrimaryFg} value={form.button_primary_fg}
                 onChange={(v) => editColour("button_primary_fg", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.buttonPrimaryFg, themeForPreview.buttonPrimaryBg, "primary button")} />
-              <ColorRoleRow label="Secondary button background" helper="Background colour for secondary CTAs."
+              <ColorRoleRow label="Secondary button background" fieldName="button_secondary_bg" helper="Background colour for secondary CTAs."
                 resolved={themeForPreview.buttonSecondaryBg} value={form.button_secondary_bg}
                 onChange={(v) => editColour("button_secondary_bg", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Secondary button text" helper="Text / icons on the secondary button."
+              <ColorRoleRow label="Secondary button text" fieldName="button_secondary_fg" helper="Text / icons on the secondary button."
                 resolved={themeForPreview.buttonSecondaryFg} value={form.button_secondary_fg}
                 onChange={(v) => editColour("button_secondary_fg", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.buttonSecondaryFg, themeForPreview.buttonSecondaryBg, "secondary button")} />
@@ -992,17 +1022,17 @@ function BrandingEditor() {
             onToggle={() => toggle("nav")}
           >
             <div className="space-y-4">
-              <ColorRoleRow label="Navigation background" helper="Sticky header, mobile bottom-nav and side drawer."
+              <ColorRoleRow label="Navigation background" fieldName="nav_background_color" helper="Sticky header, mobile bottom-nav and side drawer."
                 resolved={themeForPreview.navBg} value={form.nav_background_color}
                 onChange={(v) => editColour("nav_background_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Navigation inactive text / icon" helper="Default nav-item colour."
+              <ColorRoleRow label="Navigation inactive text / icon" fieldName="nav_fg_color" helper="Default nav-item colour."
                 resolved={themeForPreview.navText} value={form.nav_fg_color}
                 onChange={(v) => editColour("nav_fg_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.navText, themeForPreview.navBg, "nav background")} />
-              <ColorRoleRow label="Navigation muted text / icon" helper="Subtle nav labels (e.g. badge counts)."
+              <ColorRoleRow label="Navigation muted text / icon" fieldName="nav_muted_color" helper="Subtle nav labels (e.g. badge counts)."
                 resolved={themeForPreview.navMuted} value={form.nav_muted_color}
                 onChange={(v) => editColour("nav_muted_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Navigation active text / icon" helper="Colour for the currently selected nav item."
+              <ColorRoleRow label="Navigation active text / icon" fieldName="nav_active_fg_color" helper="Colour for the currently selected nav item."
                 resolved={themeForPreview.navActiveText} value={form.nav_active_fg_color}
                 onChange={(v) => editColour("nav_active_fg_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.navActiveText, themeForPreview.navBg, "nav background", 3)} />
@@ -1018,14 +1048,14 @@ function BrandingEditor() {
             onToggle={() => toggle("hero")}
           >
             <div className="space-y-4">
-              <ColorRoleRow label="Hero background / overlay" helper="Background tint behind the event title when there is no cover image."
+              <ColorRoleRow label="Hero background / overlay" fieldName="hero_bg_color" helper="Background tint behind the event title when there is no cover image."
                 resolved={themeForPreview.heroBg} value={form.hero_bg_color}
                 onChange={(v) => editColour("hero_bg_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Hero text colour" helper="Event title and subtitle on top of the hero."
+              <ColorRoleRow label="Hero text colour" fieldName="hero_fg_color" helper="Event title and subtitle on top of the hero."
                 resolved={themeForPreview.heroFg} value={form.hero_fg_color}
                 onChange={(v) => editColour("hero_fg_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.heroFg, themeForPreview.heroBg, "hero background")} />
-              <ColorRoleRow label={`Cover eyebrow label colour ("Digital Passport")`} helper={`Colour of the small uppercase label above the event title on the cover (e.g. "Digital Passport"), plus other hero accent flourishes.`}
+              <ColorRoleRow label={`Cover eyebrow label colour ("Digital Passport")`} fieldName="hero_accent_color" helper={`Colour of the small uppercase label above the event title on the cover (e.g. "Digital Passport"), plus other hero accent flourishes.`}
                 resolved={themeForPreview.heroAccent} value={form.hero_accent_color}
                 onChange={(v) => editColour("hero_accent_color", v)} disabled={!canEdit || saving} />
               <HeroOverlayCard
@@ -1106,7 +1136,7 @@ function BrandingEditor() {
         {/* ============== RIGHT: live preview + uploads (pinned on md+) ============== */}
         <div
           id="live-preview"
-          className="order-1 space-y-5 scroll-mt-4 md:order-2 md:w-[420px] md:shrink-0 md:sticky md:top-6 md:self-start md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1"
+          className="order-1 space-y-5 scroll-mt-4 md:order-2 md:w-[440px] md:shrink-0 md:sticky md:top-6 md:self-start md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1 lg:w-[620px] xl:w-[760px]"
         >
 
           <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
@@ -1154,23 +1184,25 @@ function BrandingEditor() {
                 <span>Customer landing — live preview</span>
                 <span>Mobile</span>
               </div>
-              <TrailLanding
-                eventName={event.name}
-                welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
-                primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
-                accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
-                fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
-                headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
-                venueCount={venueCount}
-                venueLabelPlural={venueLabels.plural}
-                logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-                heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
-                badge="Preview"
-                termsUrl={null}
-                heroOverlayColor={form.hero_overlay_color || null}
-                heroOverlayOpacity={form.hero_overlay_opacity.trim() ? Number(form.hero_overlay_opacity) : null}
-              />
-              <SemanticPreview venueLabelPlural={venueLabels.plural} />
+              <div className="grid gap-4 xl:grid-cols-[minmax(320px,420px)_minmax(260px,1fr)] xl:items-start">
+                <TrailLanding
+                  eventName={event.name}
+                  welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
+                  primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
+                  accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
+                  fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
+                  headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
+                  venueCount={venueCount}
+                  venueLabelPlural={venueLabels.plural}
+                  logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
+                  heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
+                  badge="Preview"
+                  termsUrl={null}
+                  heroOverlayColor={form.hero_overlay_color || null}
+                  heroOverlayOpacity={form.hero_overlay_opacity.trim() ? Number(form.hero_overlay_opacity) : null}
+                />
+                <SemanticPreview venueLabelPlural={venueLabels.plural} className="xl:mt-0" />
+              </div>
             </EventPaletteScope>
           </div>
 
