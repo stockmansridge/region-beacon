@@ -1184,9 +1184,18 @@ function BrandingEditor() {
           )}
         </div>
       </div>
+
+      {/* Floating "Preview" jump-to pill — mobile only */}
+      <a
+        href="#live-preview"
+        className="fixed bottom-4 right-4 z-40 inline-flex h-11 items-center gap-1.5 rounded-full bg-[#111827] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-lg md:hidden"
+      >
+        <span aria-hidden>👁</span> Preview
+      </a>
     </div>
   );
 }
+
 
 // ============================================================================
 // Header — top action bar
