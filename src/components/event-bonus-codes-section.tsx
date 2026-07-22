@@ -104,6 +104,8 @@ export function BonusCodesSection({
 
   const [expandedQrId, setExpandedQrId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"active" | "disabled" | "all">("active");
 
   const venueMap = useMemo(() => {
     const m = new Map<string, VenueLite>();
@@ -327,6 +329,35 @@ export function BonusCodesSection({
     }
   }
 
+  async function deleteBonus(row: BonusCode) {
+    if (!canEdit) return;
+    const ok =
+      typeof window !== "undefined"
+        ? window.confirm(
+            `Delete bonus code "${row.name}"?\n\nThis permanently removes the code and any per-venue QR entries. Points already awarded to participants will remain.`,
+          )
+        : true;
+    if (!ok) return;
+    setDeletingId(row.id);
+    try {
+      const { error } = await supabase
+        .from("event_bonus_codes")
+        .delete()
+        .eq("id", row.id)
+        .eq("agency_id", agencyId)
+        .eq("event_id", eventId);
+      if (error) throw error;
+      toast.success("Bonus code deleted.");
+      setRows((prev) => (prev ? prev.filter((r) => r.id !== row.id) : prev));
+      setVenueBonuses((prev) => prev.filter((vb) => vb.bonus_code_id !== row.id));
+      if (expandedQrId === row.id) setExpandedQrId(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not delete bonus code.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -336,7 +367,12 @@ export function BonusCodesSection({
     }
   }
 
-  const sortedRows = useMemo(() => rows ?? [], [rows]);
+  const sortedRows = useMemo(() => {
+    const all = rows ?? [];
+    if (statusFilter === "active") return all.filter((r) => r.is_active);
+    if (statusFilter === "disabled") return all.filter((r) => !r.is_active);
+    return all;
+  }, [rows, statusFilter]);
 
   return (
     <div className="space-y-4">
@@ -362,14 +398,32 @@ export function BonusCodesSection({
         </div>
       )}
 
-      {canEdit && editingId === null && (
-        <button
-          type="button"
-          onClick={startCreate}
-          className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          Add bonus code
-        </button>
+      {editingId === null && (
+        <div className="flex flex-wrap items-center gap-3">
+          {canEdit && (
+            <button
+              type="button"
+              onClick={startCreate}
+              className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+            >
+              Add bonus code
+            </button>
+          )}
+          <label className="ml-auto inline-flex items-center gap-2 text-xs text-[#475569]">
+            <span className="font-medium">Show</span>
+            <select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as "active" | "disabled" | "all")
+              }
+              className="h-9 rounded-lg border border-[#D9E2EF] bg-white px-2 text-sm"
+            >
+              <option value="active">Active only</option>
+              <option value="disabled">Disabled only</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+        </div>
       )}
 
       {editingId !== null && (
@@ -759,6 +813,14 @@ export function BonusCodesSection({
                           : row.is_active
                             ? "Disable"
                             : "Enable"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteBonus(row)}
+                        disabled={deletingId === row.id}
+                        className="inline-flex h-8 items-center rounded-md border border-[#FCA5A5] bg-white px-2 text-xs font-medium text-[#B91C1C] hover:bg-[#FEF2F2] disabled:opacity-50"
+                      >
+                        {deletingId === row.id ? "…" : "Delete"}
                       </button>
                     </div>
                   )}

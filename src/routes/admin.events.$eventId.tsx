@@ -10,7 +10,7 @@ import { BonusCodesSection } from "@/components/event-bonus-codes-section";
 import { AdminEventParticipantsSection } from "@/components/admin-event-participants-section";
 import { EventFaqSection } from "@/components/event-faq-section";
 import { EventMapSection } from "@/components/event-map-section";
-import { VenueTastingQrSection } from "@/components/venue-tasting-qr-section";
+
 import { EventBulkImportSection } from "@/components/event-bulk-import-section";
 import { EventAwardsSection } from "@/components/event-awards-section";
 
@@ -443,8 +443,7 @@ type VenueEditorTabKey =
   | "location"
   | "public"
   | "images"
-  | "qr"
-  | "tasting";
+  | "qr";
 
 const VENUE_EDITOR_TABS: Array<{ key: VenueEditorTabKey; label: string; existingOnly?: boolean }> = [
   { key: "basics", label: "Basics" },
@@ -452,7 +451,6 @@ const VENUE_EDITOR_TABS: Array<{ key: VenueEditorTabKey; label: string; existing
   { key: "public", label: "Public Page" },
   { key: "images", label: "Images", existingOnly: true },
   { key: "qr", label: "Venue QR", existingOnly: true },
-  { key: "tasting", label: "Tasting QR", existingOnly: true },
 ];
 
 
@@ -4260,16 +4258,6 @@ function EventDetail() {
                 })()}
 
 
-                {venueEditorTab === "tasting" && agencyId && venueEditingId && venueEditingId !== "new" && (
-                  <VenueTastingQrSection
-                    agencyId={agencyId}
-                    eventId={event.id}
-                    venueId={venueEditingId}
-                    venueName={venueForm.name}
-                    publicSubdomain={activeSubdomain}
-                    canEdit={canEdit}
-                  />
-                )}
                 </>
 
                 )}
@@ -4727,7 +4715,9 @@ function EventDetail() {
                 eventId={event.id}
                 publicSubdomain={activeSubdomain}
                 canEdit={canEdit}
-                venues={(bundle?.venues ?? []).map((v) => ({ id: v.id, name: v.name }))}
+                venues={(bundle?.venues ?? [])
+                  .filter((v) => v.deleted_at == null && v.status === "active")
+                  .map((v) => ({ id: v.id, name: v.name }))}
               />
             ) : (
               <p className="text-sm text-muted-foreground">
