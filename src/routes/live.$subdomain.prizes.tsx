@@ -12,6 +12,7 @@ import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palett
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 
 const searchSchema = z.object({
   tab: fallback(z.string(), "prizes").default("prizes"),
@@ -111,6 +112,7 @@ type Venue = {
   name: string;
   lat: number | null;
   lng: number | null;
+  logo_path: string | null;
 };
 
 type BonusEntry = BonusRow & {
@@ -159,13 +161,14 @@ function usePublicBonuses(subdomain: string, eventId: string | null) {
           console.error("[prizes] venues fetch failed", venuesRes.error);
         }
         const venues = (Array.isArray(venuesRes.data)
-          ? (venuesRes.data as Array<{ id?: string; venue_id?: string; name: string; lat: unknown; lng: unknown }>)
+          ? (venuesRes.data as Array<{ id?: string; venue_id?: string; name: string; lat: unknown; lng: unknown; logo_path?: string | null }>)
           : []
         ).map<Venue>((v) => ({
           id: String(v.venue_id ?? v.id ?? ""),
           name: v.name,
           lat: v.lat == null ? null : Number(v.lat as string | number),
           lng: v.lng == null ? null : Number(v.lng as string | number),
+          logo_path: v.logo_path ?? null,
         })).filter((v) => v.id.length > 0);
 
         const perVenueErrors: string[] = [];
@@ -494,7 +497,7 @@ export function AwardsPage({
               </div>
             )}
             {sortedBonuses.map((b) => (
-              <BonusCard key={b.bonus_code_id} bonus={b} userLoc={userLoc} />
+              <BonusCard key={b.bonus_code_id} bonus={b} userLoc={userLoc} eventLogoUrl={getEventAssetPublicUrl(branding.logoPath)} />
             ))}
           </div>
         )}
@@ -524,7 +527,7 @@ function SortPill({ active, onClick, children }: { active: boolean; onClick: () 
   );
 }
 
-function BonusCard({ bonus, userLoc }: { bonus: BonusEntry; userLoc: { lat: number; lng: number } | null }) {
+function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLoc: { lat: number; lng: number } | null; eventLogoUrl: string | null }) {
   const isSocial = bonus.kind === "social";
   const nearestKm = useMemo(() => {
     if (!userLoc || bonus.venues.length === 0) return null;
@@ -535,17 +538,31 @@ function BonusCard({ bonus, userLoc }: { bonus: BonusEntry; userLoc: { lat: numb
     return Math.min(...dists);
   }, [bonus.venues, userLoc]);
 
+  const singleVenueLogo =
+    bonus.scope === "per_venue" && bonus.venues.length === 1
+      ? getVenueAssetPublicUrl(bonus.venues[0]!.logo_path)
+      : null;
+  const logoUrl = singleVenueLogo ?? eventLogoUrl;
+  const logoAlt =
+    bonus.scope === "per_venue" && bonus.venues.length === 1
+      ? bonus.venues[0]!.name
+      : "Event";
+
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm sm:p-5">
       <div className="flex items-start gap-3">
         <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
+          className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl"
           style={{
-            backgroundColor: "var(--event-hero-accent, var(--event-accent))",
+            backgroundColor: logoUrl ? "#FFFFFF" : "var(--event-hero-accent, var(--event-accent))",
             color: "var(--event-button-primary-fg, var(--event-primary-fg))",
           }}
         >
-          <Zap className="h-5 w-5" />
+          {logoUrl ? (
+            <img src={logoUrl} alt={logoAlt} className="h-full w-full object-cover" />
+          ) : (
+            <Zap className="h-5 w-5" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
