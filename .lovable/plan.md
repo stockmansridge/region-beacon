@@ -1,62 +1,44 @@
-## 1. Rename the public Prizes route from `/awards` to `/prizes`
+## Fixes
 
-- Rename `src/routes/live.$subdomain.awards.tsx` → `src/routes/live.$subdomain.prizes.tsx` and update its `createFileRoute("/live/$subdomain/awards")` string to `"/live/$subdomain/prizes"`.
-- Update every internal link/reference that points at the old path:
-  - `src/components/public-event-nav.tsx` (the "Prizes" nav item)
-  - `src/routes/live.$subdomain.index.tsx` ("View Prizes" button, any nav)
-  - `src/routes/passport.$token.tsx` (any link to `/awards`)
-  - `src/components/next-reward-card.tsx` and any other file matching `/awards`
-- Leave the legacy `/awards` slug alone unless a redirect is required; the tabbed pages inside the passport all use in-app `<Link>`s that we'll repoint. (No redirect needed since the page is only reached from our own nav.)
+### 1. Remove "Tasting QR" tab from the venue editor
+`src/routes/admin.events.$eventId.tsx`
+- Drop `"tasting"` from `VenueEditorTabKey` and from `VENUE_EDITOR_TABS`.
+- Remove the `venueEditorTab === "tasting"` branch that renders `<VenueTastingQrSection>`.
+- Remove the now-unused `VenueTastingQrSection` import.
+- Leave the component file and its RPCs in place (harmless; other flows/bulk import still reference the concept).
 
-## 2. New "Bonus points available!" promo block
+### 2. Filter out disabled/deleted venues in the Bonus Points venue picker
+`src/routes/admin.events.$eventId.tsx` around the `<BonusCodesSection venues={...}>` prop (line 4730):
+- Pass only venues where `status === "active"` and `deleted_at == null`, keeping current shape `{ id, name }`.
+- This also fixes the "Rowlee appears twice" symptom when a disabled duplicate exists alongside the active one.
 
-Matches the mock in the uploaded image: soft cream card, star medallion on the left, headline "Bonus points available!", two‑line body, and a "HOW IT WORKS" pill button on the right.
+### 3. Manage bonus codes: filter + delete
+`src/components/event-bonus-codes-section.tsx`
+- Add a small filter control above the list: "Active" (default) / "Disabled" / "All".
+- Add a "Delete" button on each bonus row (destructive style, next to the existing Enable/Disable + Edit actions), behind a `window.confirm` warning that this permanently removes the code and its per-venue QR entries. Uses the existing supabase delete on `event_bonus_codes` (cascade removes `event_bonus_code_venues`); on success remove locally and toast.
 
-- New component: `src/components/bonus-points-promo.tsx`
-  - Props: `subdomain` (for the `/prizes` link) and optional `variant` for token colours.
-  - Renders as a `<Link to="/live/$subdomain/prizes" search={{ tab: "bonus" }}>` (or router-equivalent) so tapping the whole card opens the Prizes page on the new Bonus Points tab.
-  - Uses existing `--event-*` design tokens (no hard‑coded colours) so it themes per event.
-- Insert on **both** passport home surfaces, positioned immediately under the passport progress block and above `WhatsHappeningCard`:
-  - `src/routes/passport.$token.tsx` (private token view) — near line 829 where `WhatsHappeningCard` mounts.
-  - `src/routes/live.$subdomain.index.tsx` (public event home) — near line 710 where `WhatsHappeningCard` mounts.
-- Only render the block when the event actually has bonus challenges. Reuse the existing public RPC `get_public_event_bonus_challenges` (already used on the venue page) via a small `useHasBonusChallenges(eventId)` hook, so events with no bonuses don't see an empty promo.
+### 4. Live Activity bar — add a gap between cycles so the header is reachable
+`src/components/live-activity-bar.tsx`
+- After the exit animation, unmount the bar for a "rest" window (~5s) before showing the next item. Implement as a third phase `"rest"` where the component returns `null`, then re-enters as `"in"`. Header icons become clickable during the rest window.
+- Also make the button `pointer-events-auto` only during `in`/`out` phases so it never blocks taps when animating out.
 
-## 3. Prizes page — replace "My Entries" tab with "Bonus Points"
+### 5. Clone Event button does nothing
+Root cause: the client calls `supabase.rpc("clone_event", …)` but the `public.clone_event` function only exists in `supabase/migrations-prod-clone-event/apply.sql` and was never applied to the live database. The RPC returns a PostgREST "function not found" error which is currently only surfaced via `toast.error`, and it appears the toast is being missed / suppressed in this flow.
 
-In the renamed `src/routes/live.$subdomain.prizes.tsx`:
+Fix:
+- Re-run the existing `supabase/migrations-prod-clone-event/apply.sql` in the Supabase SQL editor (the file is already in the repo and unchanged).
+- In `src/routes/admin.events.index.tsx` `cloneEvent`, keep the toast but also `console.error` the raw error so future missing-RPC failures are diagnosable, and guard against the "empty data + no error" case by falling back to a reload + explicit toast.
 
-- Change the tab state from `"rewards" | "entries"` → `"prizes" | "bonus"`.
-- Rename tab labels: keep "Prizes"; replace "My Entries" with "Bonus Points".
-- Support deep-link selection via a `?tab=bonus` search param (validated with `zodValidator` + `fallback`) so the promo block on the passport lands directly on that tab.
-- Bonus Points tab content:
-  - Fetch all active bonus challenges for the event via `get_public_event_bonus_challenges` (reusing the same call as the venue detail page).
-  - Render each as a card showing: title, points value, kind badge (Points / Social), and — for `per_venue` scope — the participating venue names (or "Event-wide" for event-wide bonuses). Include short helper copy so visitors know what to do.
-  - Empty state: "No bonus points have been added for this event yet."
-- Keep the existing "Prizes" tab (current rewards list) exactly as-is.
+No client-side clone logic change is required beyond that; the RPC is what's missing at runtime.
 
-### Small filter bar on the Bonus Points tab
+### 6. Prizes menu 404
+`src/components/public-event-nav.tsx` (menu drawer, line 483): change `<Link to="/awards">` to `<Link to="/prizes">`. Grep confirms this is the only stale `/awards` link in nav; the route file is `src/routes/prizes.tsx`.
 
-A compact pill row above the list with three sort options:
-
-- **A–Z** — sort by title, case-insensitive.
-- **Points** — sort by `points_value` descending.
-- **Proximity** — sort by distance from the visitor's current geolocation.
-  - Uses `navigator.geolocation.getCurrentPosition` (best-effort, requested on demand when the user picks Proximity).
-  - Compare against each bonus's associated venue coordinates (event-wide bonuses fall to the bottom). If geolocation is denied/unavailable, disable the Proximity pill with a subtle tooltip and fall back to A–Z.
-- Default sort: A–Z. Filter state is local `useState` (no URL sync required).
-
-## 4. Verification
-
-- Typecheck via the harness build.
-- Manually confirm on the preview:
-  - Passport home shows the new "Bonus points available!" block under the progress card and above "What's happening now".
-  - Tapping it opens `/live/$subdomain/prizes` with the "Bonus Points" tab pre-selected.
-  - Tab labels are "Prizes" and "Bonus Points"; the Prizes tab still renders the existing reward cards unchanged.
-  - Sort pills reorder the bonus list; A–Z is the default; Proximity requests location and reorders, or is disabled if denied.
-  - Existing links that pointed to `/awards` now go to `/prizes`.
-
-## Technical notes
-
-- Search-param validation follows the standard `zodValidator(z.object({ tab: fallback(z.string(), "prizes").default("prizes") }))` pattern used elsewhere in the app.
-- No DB migrations required — we're reusing `get_public_event_bonus_challenges` and existing venue coordinate data already returned from the public event RPCs.
-- All colours come from `--event-*` tokens via `EventPaletteScope`; no hard-coded palette values in the new component.
+## Acceptance
+- Venue editor no longer shows the "Tasting QR" tab.
+- Adding/editing a bonus code shows only active, non-deleted venues (no duplicate Rowlee).
+- Bonus Codes section has Active/Disabled/All filter and a working Delete button with confirmation.
+- Live Activity bar hides between cycles; the top-left menu and top-right passport icons are tappable.
+- After applying the clone SQL, clicking Clone → entering a name → OK creates a draft copy and navigates to it; errors surface via toast and console.
+- Tapping "Prizes" in the drawer opens `/prizes` (no 404).
+- Typecheck passes.
