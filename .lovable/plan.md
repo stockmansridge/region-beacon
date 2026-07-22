@@ -1,59 +1,51 @@
-## Scope
+# Branding editor — pinned preview + reliable color fields
 
-Six polish items on public passport / prizes / activity surfaces.
+Scope: `src/routes/admin.events.$eventId_.branding.tsx` (single route file, plus the small `ColorRoleRow` / `HeroOverlayCard` helpers inside it). No DB, RLS, or business-logic changes.
 
-### 1. Hashtags: strip leading `#`
-File: `src/routes/live.$subdomain.prizes.tsx` (bonus card, ~line 626-629).
-The `<Hash />` icon already renders a `#`. Split `bonus.social_hashtags` on whitespace/commas, strip any leading `#` from each token, and render as space-separated tags (e.g. user enters `#cargoRoad #wine` → chip shows `# cargoRoad wine`). Keep the AtSign row unchanged, but similarly strip a leading `@` from `social_location` for symmetry.
+## 1. Pin the live preview so it's always visible while editing
 
-### 2. "View all" → correct Prizes URL
-The route was renamed `/awards` → `/prizes` but three links still point to `/awards`:
-- `src/routes/passport.$token.tsx` line 1234 (Prizes section "View all")
-- `src/routes/live.$subdomain.index.tsx` line 717 ("View prizes" button)
-- `src/components/next-reward-card.tsx` line 25
+Today the right column uses `lg:sticky lg:top-6`, which works only above the `lg` breakpoint AND only while the surrounding grid row is tall enough. On common laptop widths and on tablets the preview scrolls off screen as soon as you expand a section like Brand or Cards.
 
-Update each `to="/awards"` → `to="/prizes"`.
+Change the two-column layout so the preview panel is a true always-visible pane on any screen ≥ `md`:
 
-### 3. Live activity bar: cap to 3 cycles
-File: `src/components/live-activity-bar.tsx`.
-Add a `cyclesShown` counter that increments each time `index` advances. Once it reaches 3, set `dismissed=true` so the banner stops appearing for the rest of the session. Loading fresh data does not reset the counter.
+- Wrap the page in a flex row (`md:flex md:gap-6`) instead of a CSS grid whose row-height defeats `sticky`.
+- Left column (form): `md:flex-1 md:min-w-0 md:overflow-y-auto md:max-h-[calc(100vh-var(--admin-header-h,80px))] md:pr-2`. This is the ONLY scroller — the form scrolls, the preview does not.
+- Right column (preview + uploads): `md:w-[420px] md:shrink-0 md:sticky md:top-6 md:self-start md:max-h-[calc(100vh-var(--admin-header-h,80px))] md:overflow-y-auto`. Preview stays fixed to the viewport regardless of which section is open.
+- On mobile (< `md`) keep today's stacked order but add a floating "Show preview" pill button, bottom-right, that scrolls to `#live-preview` (no new state machine, no drawer). Give the preview card `id="live-preview" scroll-mt-4`.
+- Remove `lg:order-2 order-1` swap — with a fixed side pane it's no longer needed.
 
-### 4. Remove "View all" from What's Happening Now
-File: `src/components/whats-happening-card.tsx` lines 180-186 — delete the `<Link to="/leaderboard">View all</Link>`. Header becomes just the "What's Happening Now" title.
+Acceptance:
+- On a 1280×800 laptop viewport, open Brand → Page → Cards → Buttons in turn. The preview card stays fully visible on the right the entire time.
+- On a 375px viewport, a small "Preview" pill sits above the bottom nav and jumps to the preview.
+- Nothing about the form fields, save flow, or preview contents changes.
 
-### 5. Group activity by venue + show up to 3 recent venues
-The card currently shows only the single most-recent check-in. Change display to:
-- Group `recent_checkins` by `venue_name` in order of most recent visit.
-- Take the top 3 venues.
-- For each venue, list up to the last 3 first names, joined naturally (`Jonathan, Steve & Lisa visited Stockman's Ridge Wines`). Single visitor keeps existing "just visited" phrasing with relative time; multiple visitors show "recently visited" + relative time of the latest.
-- Explorers-today and bonus-code items remain below (unchanged behaviour).
+## 2. Make color fields readable in Chrome and make edits obviously stick
 
-Bump the RPC `LIMIT` from 5 to 15 so grouping has enough rows, and update the client fallback (`loadRecentCheckins`) to request 15 too.
+Root cause of the "grey values in Chrome / real values in Firefox" report: `ColorRoleRow` renders `<input type="text" value={form.<field>} placeholder={resolved}>`. When the user hasn't overridden the color, `form.<field>` is `""`, so Chrome shows only the light-grey **placeholder**. Firefox tends to render placeholders slightly darker, which is why it looks like a real value there. Users read the greyed placeholder as "no value" and assume nothing saved.
 
-### 6. Prize-unlock event (🎉)
-When a visitor crosses a prize threshold, show a pop-down banner ("🎉 You unlocked <Prize Name>!") and surface it in the What's Happening Now feed for everyone.
+Additionally, the native color picker (`<input type="color">`) in Chrome only fires `change` on close of the picker, not on every drag — an edit made and then abandoned by clicking elsewhere can appear to "not stick" if the user closes the window before `change` fires.
 
-Approach:
-- **Data source**: `participant_point_awards` logs an entry each time a passport becomes eligible for an award (award_type = `prize`, with `metadata.award_id` / `metadata.award_name`). If existing rows don't include `award_name`, join to `event_awards` on `metadata->>'award_id'`.
-- **New draft migration** `supabase/migrations-draft-public-happening-prize-unlocks/apply.sql`:
-  - Extend `get_public_event_happening_now` to add `recent_prize_unlocks` (last 3, past 24h): `{ first_name, prize_name, points_awarded, happened_at }`.
-  - Extend `get_public_event_recent_activity` (used by the live bar) to also include prize-unlock rows in its unified feed, ordered by `happened_at`.
-- **Client `LiveActivityBar`**: render prize unlocks with a 🎉 emoji instead of 🔥, and a message like `Jonathan just unlocked Grand Prize Draw!`. Reuses the 3-cycle cap.
-- **`WhatsHappeningCard`**: render a new list item for the most recent prize unlock (🎉) alongside the venue-group items and bonus-code item. Visual order: prize unlock → venue groups → explorers → bonus.
-- **Own-passport banner**: on the passport home, after a successful check-in, compare pre/post `awards` list (via `usePassportHomeData`) and if any award flipped from `is_eligible=false → true`, show a one-time celebratory 🎉 drop-down (reuse `RingConfetti` + a small dismissible toast).
+Fixes inside `ColorRoleRow` (and mirror in `HeroOverlayCard`):
 
-Migration requires manual application (`supabase/migrations-draft-public-happening-prize-unlocks/apply.sql`) in the Supabase SQL editor before item 6 is fully live.
+- Show the resolved hex in the text input as a real value when the field is blank, styled to indicate "inherited, not overridden":
+  - Compute `displayValue = value || resolved`.
+  - Render `<input value={displayValue}>` with a subtle "inherited" pill/tag to the right (`Inherited` in muted text) whenever `value === ""`. As soon as the user types or picks, the pill disappears and `Reset` reappears.
+  - Keep the current `Reset` button behaviour (writes `""`).
+- Fire updates while dragging the picker too: add `onInput` in addition to `onChange` on `<input type="color">` so intermediate values propagate to `form` state and the preview updates continuously (also helps the "didn't stick" perception — the value is committed as soon as it changes).
+- Normalise the text input on blur: trim, uppercase, and only commit if it matches `HEX_RE`; otherwise revert to previous value and flash the input border red for 1s. Prevents partial hex strings (`#12`) being silently kept in form state and then rejected on save.
+- Keep `maxLength={7}` and the `#` prefix requirement.
 
-## Files touched
+Acceptance:
+- In Chrome, every colour field shows a real hex value (either the user override or the inherited resolved value) — no more grey-only placeholder rows.
+- Dragging the native colour picker updates the preview live; closing the picker leaves the chosen colour committed.
+- Typing `#aabbcc` and tabbing away commits it; typing `#12` and tabbing away reverts and flashes the field.
 
-- `src/routes/live.$subdomain.prizes.tsx` — hashtag/location cleanup
-- `src/routes/passport.$token.tsx` — `/awards` → `/prizes`
-- `src/routes/live.$subdomain.index.tsx` — `/awards` → `/prizes` + own-passport unlock detection
-- `src/components/next-reward-card.tsx` — `/awards` → `/prizes`
-- `src/components/live-activity-bar.tsx` — 3-cycle cap, prize-unlock rendering (🎉)
-- `src/components/whats-happening-card.tsx` — remove View all, group by venue, add prize-unlock item (🎉)
-- `supabase/migrations-draft-public-happening-prize-unlocks/apply.sql` (+ README) — extend both RPCs
+## 3. Verification
 
-## Open question
+- `tsgo` typecheck passes.
+- Manual: open `/admin/events/:id/branding`, expand each section, change one value per section, confirm the preview updates without scrolling and the value persists after Save + reload in both Chrome and Firefox.
 
-For item 6, should the 🎉 drop-down on the visitor's own passport trigger only on the exact check-in that crossed the threshold, or also on any subsequent page load until dismissed?
+## Out of scope
+
+- No changes to `resolveEventTheme`, palette storage, RLS, or the Save server function.
+- No redesign of the left-hand section list itself (still collapsible sections in the same order).

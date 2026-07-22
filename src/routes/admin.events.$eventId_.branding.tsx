@@ -806,9 +806,10 @@ function BrandingEditor() {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-        {/* ============== LEFT: editor ============== */}
-        <div className="space-y-5 lg:order-1 order-2">
+      <div className="flex flex-col gap-5 md:flex-row md:items-start">
+        {/* ============== LEFT: editor (scrolls independently on md+) ============== */}
+        <div className="order-2 space-y-5 md:order-1 md:min-w-0 md:flex-1 md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-2">
+
           {(validationError || saveError) && (
             <div className="rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
               {validationError ?? saveError}
@@ -1073,8 +1074,12 @@ function BrandingEditor() {
           </CollapsibleSection>
         </div>
 
-        {/* ============== RIGHT: live preview + uploads ============== */}
-        <div className="lg:order-2 order-1 space-y-5 lg:sticky lg:top-6 lg:self-start">
+        {/* ============== RIGHT: live preview + uploads (pinned on md+) ============== */}
+        <div
+          id="live-preview"
+          className="order-1 space-y-5 scroll-mt-4 md:order-2 md:w-[420px] md:shrink-0 md:sticky md:top-6 md:self-start md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1"
+        >
+
           <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
             <div className="mb-3 flex items-start justify-between gap-4">
               <div className="space-y-1">
@@ -1179,9 +1184,18 @@ function BrandingEditor() {
           )}
         </div>
       </div>
+
+      {/* Floating "Preview" jump-to pill — mobile only */}
+      <a
+        href="#live-preview"
+        className="fixed bottom-4 right-4 z-40 inline-flex h-11 items-center gap-1.5 rounded-full bg-[#111827] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-lg md:hidden"
+      >
+        <span aria-hidden>👁</span> Preview
+      </a>
     </div>
   );
 }
+
 
 // ============================================================================
 // Header — top action bar
@@ -1362,25 +1376,69 @@ function ColorRoleRow({
   disabled?: boolean;
   warnings?: string[];
 }) {
-  const pickerValue = HEX_RE.test(value) ? value : resolved;
+  const inherited = !value;
+  const displayValue = value || resolved || "";
+  const pickerValue = HEX_RE.test(value) ? value : (HEX_RE.test(resolved) ? resolved : "#000000");
+  const [text, setText] = useState(displayValue);
+  const [flash, setFlash] = useState(false);
+
+  // Keep the local text in sync when the committed value/resolved fallback
+  // changes from outside (Brand Kit apply, Reset, initial load).
+  useEffect(() => {
+    setText(displayValue);
+  }, [displayValue]);
+
+  const commit = (raw: string) => {
+    const t = raw.trim().toUpperCase();
+    if (t === "") { onChange(""); return; }
+    if (HEX_RE.test(t)) { onChange(t); return; }
+    // Invalid — revert and flash red border briefly.
+    setText(displayValue);
+    setFlash(true);
+    setTimeout(() => setFlash(false), 900);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-sm font-medium text-[#334155]">{label}</span>
-        {value && !disabled && (
-          <button type="button" onClick={() => onChange("")}
-            className="text-[11px] text-muted-foreground underline hover:text-foreground">
-            Reset
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {inherited && (
+            <span className="rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#64748B]">
+              Inherited
+            </span>
+          )}
+          {value && !disabled && (
+            <button type="button" onClick={() => onChange("")}
+              className="text-[11px] text-muted-foreground underline hover:text-foreground">
+              Reset
+            </button>
+          )}
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">{helper}</p>
       <div className="flex items-center gap-2">
-        <input type="color" value={pickerValue} onChange={(e) => onChange(e.target.value)} disabled={disabled}
-          className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50" />
-        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={resolved}
-          disabled={disabled} maxLength={7}
-          className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50" />
+        <input
+          type="color"
+          value={pickerValue}
+          onInput={(e) => onChange((e.target as HTMLInputElement).value.toUpperCase())}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          disabled={disabled}
+          className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={(e) => commit(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.currentTarget.blur(); } }}
+          placeholder={resolved}
+          disabled={disabled}
+          maxLength={7}
+          className={`h-10 flex-1 rounded-[10px] border bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+            flash ? "border-[#DC2626] ring-2 ring-[#DC2626]/20" : "border-[#D9E2EF] focus:border-[#2F6FE4]"
+          } ${inherited ? "text-[#64748B]" : ""}`}
+        />
       </div>
       {warnings && warnings.length > 0 && (
         <div role="alert" className="space-y-1 rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[11px] leading-5 text-[#92400E]">
@@ -1389,6 +1447,7 @@ function ColorRoleRow({
       )}
     </div>
   );
+
 }
 
 function surfaceWarning(fg: string, bg: string, surfaceLabel: string, threshold = 4.5): string | null {
@@ -1489,8 +1548,11 @@ function HeroOverlayCard({
       </div>
       <Field label="Overlay colour">
         <div className="flex items-center gap-2">
-          <input type="color" value={pickerValue} onChange={(e) => onColorChange(e.target.value)} disabled={disabled}
+          <input type="color" value={pickerValue}
+            onInput={(e) => onColorChange((e.target as HTMLInputElement).value.toUpperCase())}
+            onChange={(e) => onColorChange(e.target.value.toUpperCase())} disabled={disabled}
             className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50" />
+
           <input type="text" value={colorValue} onChange={(e) => onColorChange(e.target.value)}
             placeholder="(uses primary colour)" disabled={disabled} maxLength={7}
             className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50" />
