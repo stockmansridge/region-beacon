@@ -806,9 +806,10 @@ function BrandingEditor() {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-        {/* ============== LEFT: editor ============== */}
-        <div className="space-y-5 lg:order-1 order-2">
+      <div className="flex flex-col gap-5 md:flex-row md:items-start">
+        {/* ============== LEFT: editor (scrolls independently on md+) ============== */}
+        <div className="order-2 space-y-5 md:order-1 md:min-w-0 md:flex-1 md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-2">
+
           {(validationError || saveError) && (
             <div className="rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
               {validationError ?? saveError}
