@@ -22,7 +22,7 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
   return (
     <section className="px-4">
       <Link
-        to="/awards"
+        to="/prizes"
         className="block rounded-3xl border p-4 shadow-sm transition hover:shadow-md"
         style={{
           borderColor: "var(--event-card-border)",

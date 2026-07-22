@@ -18,6 +18,7 @@ import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { LiveActivityBar } from "@/components/live-activity-bar";
+import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 import { RingConfetti } from "@/components/ring-confetti";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
 import { BonusPointsPromo } from "@/components/bonus-points-promo";
@@ -511,6 +512,7 @@ function PassportView({
   return (
     <>
       {subdomain && <LiveActivityBar subdomain={subdomain} />}
+      <PrizeUnlockAnnouncer eventId={passport.event_id ?? null} />
       {/* Full-bleed hero with overlaid header */}
       <div className="relative">
         {subdomain && (
@@ -1231,7 +1233,7 @@ function RewardsSection({
           </p>
         </div>
         <Link
-          to="/awards"
+          to="/prizes"
           className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] underline-offset-2 hover:underline"
           style={{ color: "var(--event-link)" }}
         >
