@@ -112,6 +112,7 @@ type Venue = {
   name: string;
   lat: number | null;
   lng: number | null;
+  logo_path: string | null;
 };
 
 type BonusEntry = BonusRow & {
