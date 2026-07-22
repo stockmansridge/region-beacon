@@ -1548,8 +1548,11 @@ function HeroOverlayCard({
       </div>
       <Field label="Overlay colour">
         <div className="flex items-center gap-2">
-          <input type="color" value={pickerValue} onChange={(e) => onColorChange(e.target.value)} disabled={disabled}
+          <input type="color" value={pickerValue}
+            onInput={(e) => onColorChange((e.target as HTMLInputElement).value.toUpperCase())}
+            onChange={(e) => onColorChange(e.target.value.toUpperCase())} disabled={disabled}
             className="h-10 w-12 rounded-[10px] border border-[#D9E2EF] bg-white disabled:cursor-not-allowed disabled:opacity-50" />
+
           <input type="text" value={colorValue} onChange={(e) => onColorChange(e.target.value)}
             placeholder="(uses primary colour)" disabled={disabled} maxLength={7}
             className="h-10 flex-1 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm font-mono text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50" />
