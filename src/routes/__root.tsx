@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { HostRouter } from "@/components/host-router";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
