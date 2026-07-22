@@ -407,13 +407,26 @@ function BrandingEditor() {
       if (evErr) { setState("error"); return; }
       if (!event) { setState("not-found"); return; }
 
-      const [brandingRes, domainsRes, venuesRes] = await Promise.all([
-        supabase
+      const brandingSelect = async () => {
+        const full = await supabase
           .from("event_branding")
           .select(SELECT_COLS)
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
-          .maybeSingle(),
+          .maybeSingle();
+        if (!full.error) return full;
+        // Retry without optional cover_focal columns for environments where
+        // the migration hasn't been applied yet.
+        return await supabase
+          .from("event_branding")
+          .select(SELECT_COLS_FALLBACK)
+          .eq("event_id", event.id)
+          .eq("agency_id", agencyId)
+          .maybeSingle();
+      };
+      const [brandingRes, domainsRes, venuesRes] = await Promise.all([
+        brandingSelect(),
+
         supabase
           .from("event_domains")
           .select("public_subdomain, custom_domain, domain_type, status, is_primary")
