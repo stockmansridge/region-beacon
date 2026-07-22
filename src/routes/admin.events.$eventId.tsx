@@ -10,7 +10,7 @@ import { BonusCodesSection } from "@/components/event-bonus-codes-section";
 import { AdminEventParticipantsSection } from "@/components/admin-event-participants-section";
 import { EventFaqSection } from "@/components/event-faq-section";
 import { EventMapSection } from "@/components/event-map-section";
-import { VenueTastingQrSection } from "@/components/venue-tasting-qr-section";
+
 import { EventBulkImportSection } from "@/components/event-bulk-import-section";
 import { EventAwardsSection } from "@/components/event-awards-section";
 
@@ -4258,16 +4258,6 @@ function EventDetail() {
                 })()}
 
 
-                {venueEditorTab === "tasting" && agencyId && venueEditingId && venueEditingId !== "new" && (
-                  <VenueTastingQrSection
-                    agencyId={agencyId}
-                    eventId={event.id}
-                    venueId={venueEditingId}
-                    venueName={venueForm.name}
-                    publicSubdomain={activeSubdomain}
-                    canEdit={canEdit}
-                  />
-                )}
                 </>
 
                 )}
