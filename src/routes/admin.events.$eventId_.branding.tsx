@@ -2084,18 +2084,9 @@ function CoverPositioner({
           draggable={false}
           className="block h-auto w-full"
         />
-        {/* Visible-window overlay (5:3 like the public hero). */}
-        <div
-          className="pointer-events-none absolute left-0 right-0 border-2 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]"
-          style={{
-            aspectRatio: "5 / 3",
-            top: `calc(${fy}% - (min(60%, 100%) * ${fy / 100}))`,
-            // Simpler: center the 60%-height window on the focal point.
-          }}
-        />
         {/* Focal-point crosshair marker. */}
         <div
-          className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-black/60 shadow"
+          className="pointer-events-none absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-black/60 shadow"
           style={{ left: `${fx}%`, top: `${fy}%` }}
         />
       </div>
