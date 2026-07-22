@@ -565,7 +565,7 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
             <img
               src={logoUrl!}
               alt={logoAlt}
-              className="h-full w-full object-contain p-1"
+              className="h-full w-full object-cover"
               onError={() => setLogoBroken(true)}
             />
           ) : isSocial ? (
