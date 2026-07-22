@@ -821,6 +821,32 @@ function BrandingEditor() {
             </div>
           )}
 
+          {/* Logo + cover uploads — moved from the right column so the pinned
+              preview stays visible while editing. */}
+          <AssetUploader
+            kind="logo"
+            currentPath={branding?.logo_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an organisation before uploading.";
+              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "logo", file });
+              if (!res.ok) return res.error;
+              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
+            }}
+            onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
+          />
+          <AssetUploader
+            kind="cover"
+            currentPath={branding?.cover_path ?? null}
+            canEdit={canEdit}
+            onUpload={async (file) => {
+              if (!agencyId) return "Select an organisation before uploading.";
+              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "cover", file });
+              if (!res.ok) return res.error;
+              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
+            }}
+            onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
+
           {/* Brand Kit */}
           <CollapsibleSection
             id="kit"
@@ -996,7 +1022,7 @@ function BrandingEditor() {
                 resolved={themeForPreview.heroFg} value={form.hero_fg_color}
                 onChange={(v) => editColour("hero_fg_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.heroFg, themeForPreview.heroBg, "hero background")} />
-              <ColorRoleRow label="Hero accent colour" helper="Accent flourish on the hero (badge, dot, underline)."
+              <ColorRoleRow label={`Cover eyebrow label colour ("Digital Passport")`} helper={`Colour of the small uppercase label above the event title on the cover (e.g. "Digital Passport"), plus other hero accent flourishes.`}
                 resolved={themeForPreview.heroAccent} value={form.hero_accent_color}
                 onChange={(v) => editColour("hero_accent_color", v)} disabled={!canEdit || saving} />
               <HeroOverlayCard
@@ -1145,30 +1171,6 @@ function BrandingEditor() {
             </EventPaletteScope>
           </div>
 
-          <AssetUploader
-            kind="logo"
-            currentPath={branding?.logo_path ?? null}
-            canEdit={canEdit}
-            onUpload={async (file) => {
-              if (!agencyId) return "Select an organisation before uploading.";
-              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "logo", file });
-              if (!res.ok) return res.error;
-              return persistAssetPath("logo", res.path, branding?.logo_path ?? null);
-            }}
-            onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
-          />
-          <AssetUploader
-            kind="cover"
-            currentPath={branding?.cover_path ?? null}
-            canEdit={canEdit}
-            onUpload={async (file) => {
-              if (!agencyId) return "Select an organisation before uploading.";
-              const res = await uploadEventAsset({ agencyId, eventId: event.id, kind: "cover", file });
-              if (!res.ok) return res.error;
-              return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
-            }}
-            onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
-          />
 
           {canEdit && (
             <div className="flex flex-wrap gap-2 rounded-[16px] border border-[#D9E2EF] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
