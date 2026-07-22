@@ -4715,7 +4715,9 @@ function EventDetail() {
                 eventId={event.id}
                 publicSubdomain={activeSubdomain}
                 canEdit={canEdit}
-                venues={(bundle?.venues ?? []).map((v) => ({ id: v.id, name: v.name }))}
+                venues={(bundle?.venues ?? [])
+                  .filter((v) => v.deleted_at == null && v.status === "active")
+                  .map((v) => ({ id: v.id, name: v.name }))}
               />
             ) : (
               <p className="text-sm text-muted-foreground">
