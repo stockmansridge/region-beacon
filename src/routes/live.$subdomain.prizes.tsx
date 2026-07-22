@@ -527,7 +527,7 @@ function SortPill({ active, onClick, children }: { active: boolean; onClick: () 
   );
 }
 
-function BonusCard({ bonus, userLoc }: { bonus: BonusEntry; userLoc: { lat: number; lng: number } | null }) {
+function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLoc: { lat: number; lng: number } | null; eventLogoUrl: string | null }) {
   const isSocial = bonus.kind === "social";
   const nearestKm = useMemo(() => {
     if (!userLoc || bonus.venues.length === 0) return null;
@@ -538,17 +538,31 @@ function BonusCard({ bonus, userLoc }: { bonus: BonusEntry; userLoc: { lat: numb
     return Math.min(...dists);
   }, [bonus.venues, userLoc]);
 
+  const singleVenueLogo =
+    bonus.scope === "per_venue" && bonus.venues.length === 1
+      ? getVenueAssetPublicUrl(bonus.venues[0]!.logo_path)
+      : null;
+  const logoUrl = singleVenueLogo ?? eventLogoUrl;
+  const logoAlt =
+    bonus.scope === "per_venue" && bonus.venues.length === 1
+      ? bonus.venues[0]!.name
+      : "Event";
+
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm sm:p-5">
       <div className="flex items-start gap-3">
         <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
+          className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl"
           style={{
-            backgroundColor: "var(--event-hero-accent, var(--event-accent))",
+            backgroundColor: logoUrl ? "#FFFFFF" : "var(--event-hero-accent, var(--event-accent))",
             color: "var(--event-button-primary-fg, var(--event-primary-fg))",
           }}
         >
-          <Zap className="h-5 w-5" />
+          {logoUrl ? (
+            <img src={logoUrl} alt={logoAlt} className="h-full w-full object-cover" />
+          ) : (
+            <Zap className="h-5 w-5" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
