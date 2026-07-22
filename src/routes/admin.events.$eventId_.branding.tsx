@@ -650,7 +650,8 @@ function BrandingEditor() {
           .update(payload)
           .eq("event_id", bundle.event.id)
           .eq("agency_id", agencyId!)
-          .select(SELECT_COLS)
+          .select(SELECT_COLS_FALLBACK)
+
           .maybeSingle();
         return { row: data as Branding | null, error };
       }
