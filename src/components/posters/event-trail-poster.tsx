@@ -231,7 +231,7 @@ export function EventTrailPoster({ data, capture = false, previewScale, id }: Pr
             style={{ fontSize: 14, color: branding.mutedTextColor, lineHeight: 1.45 }}
           >
             Open your phone camera. Visit participating venues, collect stamps, and
-            unlock rewards.
+            win prizes.
           </div>
           {data.publicUrl && (
             <div
@@ -291,7 +291,7 @@ export function EventTrailPoster({ data, capture = false, previewScale, id }: Pr
                   marginBottom: 4,
                 }}
               >
-                Rewards to unlock
+                Prizes to Win
               </div>
               <div
                 style={{
@@ -350,8 +350,8 @@ export function EventTrailPoster({ data, capture = false, previewScale, id }: Pr
               iconBg={branding.accentColor}
               iconFg={accentFg}
               icon={<TrophyIcon />}
-              label="Rewards"
-              value="Collect stamps & unlock rewards"
+              label="Prizes"
+              value="Collect stamps & win prizes"
               textColor={branding.textColor}
               mutedColor={branding.mutedTextColor}
               headingFont={branding.headingFontFamily}

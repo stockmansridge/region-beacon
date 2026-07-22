@@ -37,7 +37,8 @@ export function VenuePoster({ data, capture = false, previewScale, id }: Props) 
     data.pointsValue && data.pointsValue > 0
       ? `${data.pointsValue} point${data.pointsValue === 1 ? "" : "s"}`
       : null;
-  const stampsCopy = `${data.stampValue} stamp${data.stampValue === 1 ? "" : "s"} per scan`;
+  const pointsPerScan = data.pointsValue && data.pointsValue > 0 ? data.pointsValue : data.stampValue;
+  const stampsCopy = `${pointsPerScan} point${pointsPerScan === 1 ? "" : "s"} per scan`;
 
   const HERO_HEIGHT = Math.round(POSTER_HEIGHT_PX * 0.42); // ~42% of A4
   const primaryFg = readableOn(branding.primaryColor);
@@ -238,7 +239,7 @@ export function VenuePoster({ data, capture = false, previewScale, id }: Props) 
                 {truncate(data.venueOffer, 90)}
               </div>
               <div style={{ fontSize: 12, opacity: 0.9 }}>
-                Show this poster or your passport at the counter to redeem.
+                Show your passport at the counter to redeem.
               </div>
             </div>
           </div>

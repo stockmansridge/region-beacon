@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { HostRouter } from "@/components/host-router";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -143,6 +144,7 @@ function RootComponent() {
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </main>
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }

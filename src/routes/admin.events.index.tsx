@@ -280,7 +280,11 @@ function Events() {
     }
   }
   async function cloneEvent(source: EventRow) {
-    if (!agencyId) return;
+    if (!agencyId) {
+      toast.error("Workspace still loading — please retry in a second.");
+      window.alert("Workspace still loading — please retry in a second.");
+      return;
+    }
     const suggested = `${source.name} (copy)`;
     const raw = typeof window !== "undefined" ? window.prompt(
       "Name for the cloned event:",
@@ -297,6 +301,7 @@ function Events() {
     );
     if (clash) {
       toast.error("An event with that name already exists.");
+      window.alert("An event with that name already exists.");
       return;
     }
     setCloningId(source.id);
@@ -308,19 +313,26 @@ function Events() {
       if (error) {
         console.error("clone_event failed", error);
         toast.error(`Could not clone event: ${error.message ?? "unknown error"}`);
+        window.alert(`Could not clone event: ${error.message ?? "unknown error"}`);
         return;
       }
       const newId = (Array.isArray(data) ? data[0] : data) as string | null;
       if (!newId) {
         console.error("clone_event returned no id", data);
-        toast.error(
-          "Clone did not return a new event id. The clone_event database function may not be installed — please contact support.",
-        );
+        const msg =
+          "Clone did not return a new event id. The clone_event database function may not be installed — please contact support.";
+        toast.error(msg);
+        window.alert(msg);
         setReloadKey((k) => k + 1);
         return;
       }
       toast.success("Event cloned. It's a draft — publish when ready.");
       navigate({ to: "/admin/events/$eventId", params: { eventId: newId } });
+    } catch (err) {
+      console.error("clone_event threw", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Clone failed: ${msg}`);
+      window.alert(`Clone failed: ${msg}`);
     } finally {
       setCloningId(null);
     }

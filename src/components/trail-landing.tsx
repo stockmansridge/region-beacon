@@ -106,7 +106,11 @@ export function TrailLanding({
   return (
     <div className="mx-auto w-full max-w-md" style={rootStyle}>
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
+      <div
+        className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]"
+        data-brand-hint="Cover Image · Hero overlay color · Hero overlay opacity"
+        title="Hero image — Cover Image · Hero overlay color · Hero overlay opacity"
+      >
         <div className="relative h-[360px] w-full">
           {hero ? (
             <img
@@ -127,6 +131,8 @@ export function TrailLanding({
             <div
               className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-primary-fg,#F6EFE2)]"
               style={{ backgroundColor: `${accentColor}E6` }}
+              data-brand-hint="Accent color · Hero foreground"
+              title="Hero badge — Accent color · Hero foreground"
             >
               <span className="h-1 w-1 rounded-full bg-[var(--event-primary-fg,#F6EFE2)]" />
               {badge}
@@ -138,6 +144,8 @@ export function TrailLanding({
               <div
                 className="mb-4 flex aspect-square h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full"
                 style={{ background: "transparent" }}
+                data-brand-hint="Event Logo (upload)"
+                title="Event logo — Event Logo (upload)"
               >
                 <img
                   src={logoUrl}
@@ -156,6 +164,8 @@ export function TrailLanding({
                   backgroundColor: `${primaryColor}AA`,
                   color: goldColor,
                 }}
+                data-brand-hint="Event Logo (upload) · Gold color"
+                title="Logo monogram — upload a logo or set the Gold color"
               >
                 {initials}
               </div>
@@ -163,10 +173,16 @@ export function TrailLanding({
             <div
               className="text-[10px] font-medium uppercase tracking-[0.32em]"
               style={{ color: "var(--event-hero-accent, " + goldColor + ")" }}
+              data-brand-hint="Hero accent color"
+              title="‘Digital Passport’ eyebrow — Hero accent color"
             >
               {subtitle}
             </div>
-            <h1 className="font-event-heading mt-2 text-[34px] font-semibold leading-[1.05]">
+            <h1
+              className="font-event-heading mt-2 text-[34px] font-semibold leading-[1.05]"
+              data-brand-hint="Hero foreground · Heading font family"
+              title="Event title — Hero foreground · Heading font family"
+            >
               {eventName}
             </h1>
             {pitch && (
@@ -177,9 +193,17 @@ export function TrailLanding({
       </div>
 
       {/* CTA card */}
-      <div className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm">
+      <div
+        className="mt-5 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 shadow-sm"
+        data-brand-hint="Card background · Card border"
+        title="CTA card surface — Card background · Card border"
+      >
         {welcomeCopy && (
-          <p className="text-sm leading-relaxed text-[var(--event-text,#3D372C)]">{welcomeCopy}</p>
+          <p
+            className="text-sm leading-relaxed text-[var(--event-text,#3D372C)]"
+            data-brand-hint="Card text (body)"
+            title="Welcome copy — Card text (body)"
+          >{welcomeCopy}</p>
         )}
 
         <div className="mt-4 space-y-2.5">
@@ -191,6 +215,8 @@ export function TrailLanding({
                 backgroundColor: "var(--event-primary)",
                 color: "var(--event-primary-fg)",
               }}
+              data-brand-hint="Button primary bg · Button primary fg"
+              title="Primary button — Button primary bg · Button primary fg"
             >
               Join the trail
             </button>
@@ -204,28 +230,44 @@ export function TrailLanding({
                 backgroundColor: "transparent",
                 color: "var(--event-text)",
               }}
+              data-brand-hint="Button secondary bg · Button secondary fg · Border color"
+              title="Secondary button — Button secondary bg · Button secondary fg · Border color"
             >
               I already have a passport
             </button>
           )}
         </div>
 
-        <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+        <p
+          className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]"
+          data-brand-hint="Muted text color"
+          title="‘No app download required’ — Muted text color"
+        >
           {noAppNote}
         </p>
       </div>
 
       {/* Stats / venues */}
       {(typeof venueCount === "number" || (venueNames && venueNames.length > 0)) && (
-        <div className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5">
+        <div
+          className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5"
+          data-brand-hint="Card background · Card border"
+          title="Stats card — Card background · Card border"
+        >
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+              <div
+                className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]"
+                data-brand-hint="Muted text color"
+                title="‘On the trail’ label — Muted text color"
+              >
                 On the trail
               </div>
               <div
                 className="font-trail-serif mt-1 text-3xl font-semibold"
                 style={{ color: "var(--event-primary)" }}
+                data-brand-hint="Primary color"
+                title="Venue count — Primary color"
               >
                 {venueCount ?? venueNames?.length ?? 0}
                 <span className="ml-1 text-sm font-medium text-[var(--event-muted,#8A7E66)]">{venueLabelPlural.toLowerCase()}</span>
@@ -237,6 +279,8 @@ export function TrailLanding({
                 backgroundColor: "var(--event-accent)",
                 color: "var(--event-primary-fg)",
               }}
+              data-brand-hint="Accent color · Primary foreground"
+              title="‘Collect stamps’ pill — Accent color · Primary foreground"
             >
               Collect stamps
             </div>
@@ -269,7 +313,11 @@ export function TrailLanding({
       )}
 
       {termsUrl !== undefined && (
-        <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-[var(--event-muted,#8A7E66)]">
+        <p
+          className="mt-4 px-2 text-center text-[11px] leading-relaxed text-[var(--event-muted,#8A7E66)]"
+          data-brand-hint="Accent color · Muted text color"
+          title="Terms & privacy link — Accent color · Muted text color"
+        >
           By joining you accept the{" "}
           <span className="underline" style={{ color: accentColor }}>
             terms & privacy
