@@ -511,6 +511,7 @@ function PassportView({
   return (
     <>
       {subdomain && <LiveActivityBar subdomain={subdomain} />}
+      <PrizeUnlockAnnouncer eventId={passport.event_id ?? null} />
       {/* Full-bleed hero with overlaid header */}
       <div className="relative">
         {subdomain && (
