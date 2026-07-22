@@ -846,6 +846,9 @@ function BrandingEditor() {
               return persistAssetPath("cover", res.path, branding?.cover_path ?? null);
             }}
             onRemove={() => removeAsset("cover", branding?.cover_path ?? null)}
+          />
+
+
 
           {/* Brand Kit */}
           <CollapsibleSection
