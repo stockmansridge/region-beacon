@@ -1074,8 +1074,12 @@ function BrandingEditor() {
           </CollapsibleSection>
         </div>
 
-        {/* ============== RIGHT: live preview + uploads ============== */}
-        <div className="lg:order-2 order-1 space-y-5 lg:sticky lg:top-6 lg:self-start">
+        {/* ============== RIGHT: live preview + uploads (pinned on md+) ============== */}
+        <div
+          id="live-preview"
+          className="order-1 space-y-5 scroll-mt-4 md:order-2 md:w-[420px] md:shrink-0 md:sticky md:top-6 md:self-start md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1"
+        >
+
           <div className="rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
             <div className="mb-3 flex items-start justify-between gap-4">
               <div className="space-y-1">
