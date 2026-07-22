@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 
@@ -9,11 +9,14 @@ type ActivityItem = {
   happened_at: string;
 };
 
+const MAX_CYCLES = 3;
+
 export function LiveActivityBar({ subdomain }: { subdomain: string }) {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<"in" | "out" | "rest">("in");
   const [dismissed, setDismissed] = useState(false);
+  const cyclesShown = useRef(0);
 
   useEffect(() => {
     if (dismissed) return;
@@ -45,6 +48,10 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
 
   useEffect(() => {
     if (items.length === 0) return;
+    if (cyclesShown.current >= MAX_CYCLES) {
+      setDismissed(true);
+      return;
+    }
     setPhase("in");
     const holdMs = 6000;
     const outMs = 400;
@@ -52,6 +59,11 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
     const holdTimer = setTimeout(() => setPhase("out"), holdMs);
     const restTimer = setTimeout(() => setPhase("rest"), holdMs + outMs);
     const advanceTimer = setTimeout(() => {
+      cyclesShown.current += 1;
+      if (cyclesShown.current >= MAX_CYCLES) {
+        setDismissed(true);
+        return;
+      }
       setIndex((i) => (i + 1) % items.length);
     }, holdMs + outMs + restMs);
     return () => {
@@ -65,9 +77,11 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
   const current = items[index % items.length];
   if (!current) return null;
   const first = current.first_name || "Someone";
-  const message = current.award_title
-    ? `${first} just unlocked ${current.award_title} at ${current.venue_name}!`
+  const isUnlock = !!current.award_title;
+  const message = isUnlock
+    ? `${first} just unlocked ${current.award_title}!`
     : `${first} just checked in at ${current.venue_name}!`;
+  const emoji = isUnlock ? "🎉" : "🔥";
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-3">
@@ -86,11 +100,11 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
           className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-lg leading-none"
           style={{ backgroundColor: "rgba(255,255,255,0.14)" }}
         >
-          🔥
+          {emoji}
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[9px] font-bold uppercase tracking-[0.24em] opacity-80">
-            Live Activity
+            {isUnlock ? "Prize Unlocked" : "Live Activity"}
           </div>
           <div className="mt-0.5 truncate text-[13px] font-semibold leading-snug">
             {message}
@@ -100,4 +114,3 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
     </div>
   );
 }
-

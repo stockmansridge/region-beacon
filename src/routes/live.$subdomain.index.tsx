@@ -714,7 +714,7 @@ function LivePublicLoaded({
 
           <section className="flex flex-col gap-3">
             <Link
-              to="/awards"
+              to="/prizes"
               className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
               style={{
                 backgroundColor: "var(--event-button-primary-bg)",

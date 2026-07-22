@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 
@@ -17,10 +16,18 @@ type BonusRow = {
   happened_at: string;
 };
 
+type PrizeUnlockRow = {
+  first_name: string;
+  prize_name: string;
+  points_awarded: number;
+  happened_at: string;
+};
+
 type HappeningPayload = {
   recent_checkins: CheckinRow[];
   explorers_today: number;
   recent_bonus: BonusRow[];
+  recent_prize_unlocks?: PrizeUnlockRow[];
 };
 
 type WhatsHappeningCardProps = {
@@ -50,11 +57,48 @@ function displayName(first: string, initial: string | null): string {
   return initial ? `${first} ${initial}.` : first;
 }
 
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
+
+type VenueGroup = {
+  venue: string;
+  names: string[];
+  latest: string;
+  count: number;
+};
+
+function groupByVenue(rows: CheckinRow[]): VenueGroup[] {
+  const map = new Map<string, VenueGroup>();
+  for (const r of rows) {
+    const key = r.venue_name;
+    const nm = displayName(r.first_name, r.last_initial);
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, { venue: key, names: [nm], latest: r.happened_at, count: 1 });
+    } else {
+      existing.count += 1;
+      if (existing.names.length < 3 && !existing.names.includes(nm)) {
+        existing.names.push(nm);
+      }
+      if (new Date(r.happened_at).getTime() > new Date(existing.latest).getTime()) {
+        existing.latest = r.happened_at;
+      }
+    }
+  }
+  return Array.from(map.values())
+    .sort((a, b) => new Date(b.latest).getTime() - new Date(a.latest).getTime())
+    .slice(0, 3);
+}
+
 function fallbackPayload(checkins: CheckinRow[] = []): HappeningPayload {
   return {
-    recent_checkins: checkins.slice(0, 5),
+    recent_checkins: checkins.slice(0, 15),
     explorers_today: 0,
     recent_bonus: [],
+    recent_prize_unlocks: [],
   };
 }
 
@@ -68,7 +112,7 @@ function mergeFallback(
     recent_checkins:
       payload.recent_checkins?.length > 0
         ? payload.recent_checkins
-        : checkins.slice(0, 5),
+        : checkins.slice(0, 15),
   };
 }
 
@@ -90,7 +134,7 @@ export function WhatsHappeningCard({
       if (!host) return [];
       const { data: recent, error } = await supabase.rpc(
         "get_public_event_recent_activity",
-        { _hostname: host, _limit: 5 },
+        { _hostname: host, _limit: 15 },
       );
       if (error) throw error;
       return ((recent ?? []) as Array<{
@@ -150,13 +194,16 @@ export function WhatsHappeningCard({
 
   const isLoading = !data;
 
-  const checkin = data?.recent_checkins?.[0] ?? null;
+  const venueGroups = groupByVenue(data?.recent_checkins ?? []);
   const explorers = data?.explorers_today ?? 0;
   const bonus = data?.recent_bonus?.[0] ?? null;
+  const prizeUnlock = data?.recent_prize_unlocks?.[0] ?? null;
 
   const showExplorers = explorers >= 1;
   const showBonus = Boolean(bonus);
-  const isEmpty = !isLoading && !checkin && !showExplorers && !showBonus;
+  const showPrize = Boolean(prizeUnlock);
+  const isEmpty =
+    !isLoading && venueGroups.length === 0 && !showExplorers && !showBonus && !showPrize;
 
   return (
     <section>
@@ -177,13 +224,6 @@ export function WhatsHappeningCard({
           >
             What's Happening Now
           </h3>
-          <Link
-            to="/leaderboard"
-            className="text-[11px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-link, var(--event-card-muted))" }}
-          >
-            View all
-          </Link>
         </div>
 
         {isLoading && (
@@ -206,9 +246,9 @@ export function WhatsHappeningCard({
 
 
         <ul className="mt-4 flex flex-col gap-4">
-          {checkin && (
+          {showPrize && prizeUnlock && (
             <li className="flex gap-3">
-              <span aria-hidden className="text-xl leading-none">🔥</span>
+              <span aria-hidden className="text-xl leading-none">🎉</span>
               <div className="min-w-0 flex-1">
                 <p
                   className="text-[14px] leading-snug"
@@ -218,25 +258,61 @@ export function WhatsHappeningCard({
                     className="font-semibold"
                     style={{ color: "var(--event-card-heading)" }}
                   >
-                    {displayName(checkin.first_name, checkin.last_initial)}
+                    {prizeUnlock.first_name || "Someone"}
                   </span>{" "}
-                  just visited{" "}
+                  just unlocked{" "}
                   <span
                     className="font-semibold"
                     style={{ color: "var(--event-card-heading)" }}
                   >
-                    {checkin.venue_name}
+                    {prizeUnlock.prize_name}
                   </span>
+                  !
                 </p>
                 <p
                   className="mt-0.5 text-[12px]"
                   style={{ color: "var(--event-card-muted)" }}
                 >
-                  {relativeTime(checkin.happened_at)}
+                  {relativeTime(prizeUnlock.happened_at)}
                 </p>
               </div>
             </li>
           )}
+
+          {venueGroups.map((g) => {
+            const multi = g.names.length > 1;
+            return (
+              <li key={g.venue} className="flex gap-3">
+                <span aria-hidden className="text-xl leading-none">🔥</span>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="text-[14px] leading-snug"
+                    style={{ color: "var(--event-card-text)" }}
+                  >
+                    <span
+                      className="font-semibold"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      {joinNames(g.names)}
+                    </span>{" "}
+                    {multi ? "visited" : "just visited"}{" "}
+                    <span
+                      className="font-semibold"
+                      style={{ color: "var(--event-card-heading)" }}
+                    >
+                      {g.venue}
+                    </span>
+                  </p>
+                  <p
+                    className="mt-0.5 text-[12px]"
+                    style={{ color: "var(--event-card-muted)" }}
+                  >
+                    {relativeTime(g.latest)}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
 
           {showExplorers && (
             <li className="flex gap-3">
