@@ -48,6 +48,9 @@ export type EventBrandingKeys = {
   logoPath: string | null;
   /** Storage path of the event cover image, if uploaded. */
   coverPath: string | null;
+  /** 0–100 CSS object-position percentages for the hero image. Nullish → 50. */
+  coverFocalX: number | null;
+  coverFocalY: number | null;
   /** CSS font-family stack chosen for the event. */
   fontFamily: string | null;
   /** Separate heading font for hero event titles. Falls back to fontFamily. */
@@ -90,6 +93,8 @@ const EMPTY: EventBrandingKeys = {
   cardMutedColor: null,
   logoPath: null,
   coverPath: null,
+  coverFocalX: null,
+  coverFocalY: null,
   fontFamily: null,
   headingFontFamily: null,
   ready: false,
@@ -187,6 +192,8 @@ export function useEventBrandingKeys(
           card_muted_color?: string | null;
           logo_path?: string | null;
           cover_path?: string | null;
+          cover_focal_x?: number | null;
+          cover_focal_y?: number | null;
           font_family?: string | null;
           heading_font_family?: string | null;
         } | null;
@@ -225,6 +232,8 @@ export function useEventBrandingKeys(
           cardMutedColor: row?.card_muted_color ?? null,
           logoPath: row?.logo_path ?? null,
           coverPath: row?.cover_path ?? null,
+          coverFocalX: typeof row?.cover_focal_x === "number" ? row!.cover_focal_x! : null,
+          coverFocalY: typeof row?.cover_focal_y === "number" ? row!.cover_focal_y! : null,
           fontFamily: row?.font_family ?? null,
           headingFontFamily: row?.heading_font_family ?? null,
           ready: true,

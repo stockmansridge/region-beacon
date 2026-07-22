@@ -17,6 +17,7 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { focalObjectPosition } from "@/lib/cover-focal";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 import { RingConfetti } from "@/components/ring-confetti";
@@ -543,6 +544,9 @@ function PassportView({
               src={heroImageUrl}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
+              style={{
+                objectPosition: focalObjectPosition(branding.coverFocalX, branding.coverFocalY),
+              }}
               loading="eager"
             />
           ) : null}

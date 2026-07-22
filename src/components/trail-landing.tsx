@@ -4,6 +4,11 @@ import { DEFAULT_VENUE_LABEL_PLURAL } from "@/lib/venue-labels";
 const DEFAULT_HERO =
   "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=1200&q=70";
 
+function clampFocal(n: number | null | undefined): number {
+  if (typeof n !== "number" || !Number.isFinite(n)) return 50;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
 export type TrailLandingProps = {
   eventName: string;
   monogram?: string;
@@ -32,6 +37,11 @@ export type TrailLandingProps = {
   /** 0–100. When provided, replaces the default 3-stop gradient with a flat
    *  overlay of `heroOverlayColor` at this opacity. */
   heroOverlayOpacity?: number | null;
+  /** 0–100 focal-point percentages applied as CSS object-position on the
+   *  hero image so oversized covers can be cropped to the best window
+   *  instead of being centre-cropped. Nullish → 50 (centered). */
+  heroFocalX?: number | null;
+  heroFocalY?: number | null;
 };
 
 export function TrailLanding({
@@ -58,6 +68,8 @@ export function TrailLanding({
   footer,
   heroOverlayColor,
   heroOverlayOpacity,
+  heroFocalX,
+  heroFocalY,
 }: TrailLandingProps) {
   const initials = (monogram ?? eventName)
     .split(/\s+/)
@@ -101,6 +113,9 @@ export function TrailLanding({
               src={hero}
               alt=""
               className="h-full w-full object-cover"
+              style={{
+                objectPosition: `${clampFocal(heroFocalX)}% ${clampFocal(heroFocalY)}%`,
+              }}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = "none";
               }}

@@ -7,6 +7,7 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { focalObjectPosition } from "@/lib/cover-focal";
 import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
@@ -45,6 +46,8 @@ type PublicEvent = {
   timezone: string | null;
   logo_path: string | null;
   cover_path: string | null;
+  cover_focal_x?: number | null;
+  cover_focal_y?: number | null;
   primary_color: string | null;
   accent_color: string | null;
   palette_key?: string | null;
@@ -380,6 +383,9 @@ function LivePublicLoaded({
               src={heroImageUrl}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
+              style={{
+                objectPosition: focalObjectPosition(event.cover_focal_x, event.cover_focal_y),
+              }}
               loading="eager"
             />
           ) : null}
