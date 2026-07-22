@@ -291,7 +291,7 @@ export function EventTrailPoster({ data, capture = false, previewScale, id }: Pr
                   marginBottom: 4,
                 }}
               >
-                Rewards to unlock
+                Prizes to Win
               </div>
               <div
                 style={{
