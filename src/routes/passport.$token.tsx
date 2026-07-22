@@ -18,6 +18,7 @@ import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { LiveActivityBar } from "@/components/live-activity-bar";
+import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 import { RingConfetti } from "@/components/ring-confetti";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
 import { BonusPointsPromo } from "@/components/bonus-points-promo";
