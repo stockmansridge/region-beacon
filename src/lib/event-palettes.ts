@@ -396,10 +396,15 @@ export function getPaletteOrDefault(key: string | null | undefined): EventPalett
 export function applyPaletteToEvent<
   T extends {
     palette_key?: string | null;
+    brand_kit_key?: string | null;
     primary_color: string | null;
     accent_color: string | null;
   },
 >(event: T): T {
+  // Modern Brand Kit / Custom branding resolves via explicit semantic
+  // columns. Do not let a stale legacy palette_key replace the saved
+  // primary/accent colours on public pages.
+  if (event.brand_kit_key) return event;
   // For 'custom' palette_key, keep event.primary_color/accent_color as-is.
   if (event.palette_key === "custom") return event;
   const palette = getPalette(event.palette_key ?? null);

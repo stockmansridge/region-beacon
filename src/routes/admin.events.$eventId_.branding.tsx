@@ -1298,10 +1298,11 @@ function Header({
 // BrandKitSelector — 6 curated Brand Kits + Custom marker.
 // ============================================================================
 function BrandKitSelector({
-  value, onApplyKit, onClear, disabled,
+  value, onApplyKit, onSelectCustom, onClear, disabled,
 }: {
   value: string;
   onApplyKit: (kit: BrandKit) => void;
+  onSelectCustom: () => void;
   onClear: () => void;
   disabled?: boolean;
 }) {
@@ -1330,17 +1331,18 @@ function BrandKitSelector({
           <BrandKitCard key={kit.key} kit={kit} active={kit.key === value}
             disabled={disabled} onApply={() => onApplyKit(kit)} />
         ))}
-        <div className={`flex flex-col gap-2 rounded-[12px] border p-2 text-left ${
+        <button type="button" onClick={onSelectCustom} disabled={disabled} aria-pressed={value === "custom"}
+          className={`flex flex-col gap-2 rounded-[12px] border p-2 text-left transition disabled:opacity-50 ${
           value === "custom" ? "border-[#2F6FE4] ring-2 ring-[#2F6FE4]/30" : "border-[#D9E2EF]"
         }`}>
           <div className="flex h-[78px] items-center justify-center rounded-[8px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] text-2xl" aria-hidden>🎨</div>
           <div>
             <div className="text-sm font-semibold text-[#111827]">Custom</div>
             <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-              Set automatically once you hand-edit any colour. Pick a kit above to restart from a curated base.
+              Use only the colours below. No curated Brand Kit or legacy palette will be applied.
             </div>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   );
@@ -1403,9 +1405,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function ColorRoleRow({
-  label, helper, resolved, value, onChange, disabled, warnings,
+  label, fieldName, helper, resolved, value, onChange, disabled, warnings,
 }: {
   label: string;
+  fieldName: string;
   helper: string;
   resolved: string;
   value: string;
@@ -1440,7 +1443,15 @@ function ColorRoleRow({
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm font-medium text-[#334155]">{label}</span>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="text-sm font-medium text-[#334155]">{label}</span>
+          <span className="group relative inline-flex shrink-0">
+            <Info size={14} className="text-[#94A3B8]" aria-hidden />
+            <span className="pointer-events-none absolute left-1/2 top-5 z-20 hidden w-max max-w-[220px] -translate-x-1/2 rounded-[8px] border border-[#D9E2EF] bg-white px-2.5 py-1.5 text-[11px] font-normal text-[#334155] shadow-lg group-hover:block group-focus-within:block">
+              Brand field: <span className="font-mono">{fieldName}</span>
+            </span>
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           {inherited && (
             <span className="rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#64748B]">
@@ -1779,9 +1790,9 @@ function FontPickers({
 // ============================================================================
 // SemanticPreview — sample UI drawn entirely from --event-* tokens.
 // ============================================================================
-function SemanticPreview({ venueLabelPlural }: { venueLabelPlural: string }) {
+function SemanticPreview({ venueLabelPlural, className = "" }: { venueLabelPlural: string; className?: string }) {
   return (
-    <div className="mt-4 space-y-3 rounded-[12px] p-3"
+    <div className={`mt-4 space-y-3 rounded-[12px] p-3 ${className}`}
       style={{ backgroundColor: "var(--event-page-bg)", border: "1px solid var(--event-border)" }}>
       <div className="text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-page-muted)" }}>
         Semantic tokens preview
@@ -1822,11 +1833,12 @@ function SemanticPreview({ venueLabelPlural }: { venueLabelPlural: string }) {
 // AssetUploader
 // ============================================================================
 function AssetUploader({
-  kind, currentPath, canEdit, onUpload, onRemove,
+  kind, currentPath, canEdit, embedded = false, onUpload, onRemove,
 }: {
   kind: EventAssetKind;
   currentPath: string | null;
   canEdit: boolean;
+  embedded?: boolean;
   onUpload: (file: File) => Promise<string | null>;
   onRemove: () => Promise<string | null>;
 }) {
@@ -1863,7 +1875,7 @@ function AssetUploader({
   const previewClass = kind === "logo" ? "h-28 w-28 rounded-[12px]" : "aspect-[16/9] w-full rounded-[12px]";
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]">
+    <div className={embedded ? "space-y-3" : "space-y-3 rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]"}>
       <div className="flex items-baseline justify-between gap-3">
         <div className="text-base font-semibold text-[#111827]">{label}</div>
         <div className="text-[11px] text-[#64748B]">PNG, JPG, WebP · max {limitMB} MB</div>

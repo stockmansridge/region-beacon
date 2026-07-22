@@ -118,9 +118,11 @@ function pickHex(value: string | null | undefined): string | null {
  */
 export function resolveEventTheme(input: BrandingInput): EventTheme {
   let palette: EventPalette;
-  if (input.palette_key && input.palette_key !== "custom") {
+  const hasModernBranding = !!input.brand_kit_key;
+  if (!hasModernBranding && input.palette_key && input.palette_key !== "custom") {
     palette = getPaletteOrDefault(input.palette_key);
   } else if (
+    hasModernBranding ||
     input.palette_key === "custom" ||
     input.primary_color ||
     input.accent_color
