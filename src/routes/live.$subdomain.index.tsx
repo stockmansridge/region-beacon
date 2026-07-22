@@ -322,6 +322,7 @@ function LivePublicLoaded({
       className="min-h-screen"
     >
       <LiveActivityBar subdomain={subdomain} />
+      <PrizeUnlockAnnouncer eventId={event.event_id} />
       {isAdminPreview && !previewDismissed && (
 
         <div
