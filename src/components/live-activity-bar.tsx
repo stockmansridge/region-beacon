@@ -12,7 +12,7 @@ type ActivityItem = {
 export function LiveActivityBar({ subdomain }: { subdomain: string }) {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<"in" | "out">("in");
+  const [phase, setPhase] = useState<"in" | "out" | "rest">("in");
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -48,17 +48,20 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
     setPhase("in");
     const holdMs = 6000;
     const outMs = 400;
+    const restMs = 5000;
     const holdTimer = setTimeout(() => setPhase("out"), holdMs);
+    const restTimer = setTimeout(() => setPhase("rest"), holdMs + outMs);
     const advanceTimer = setTimeout(() => {
       setIndex((i) => (i + 1) % items.length);
-    }, holdMs + outMs);
+    }, holdMs + outMs + restMs);
     return () => {
       clearTimeout(holdTimer);
+      clearTimeout(restTimer);
       clearTimeout(advanceTimer);
     };
   }, [items, index]);
 
-  if (dismissed || items.length === 0) return null;
+  if (dismissed || items.length === 0 || phase === "rest") return null;
   const current = items[index % items.length];
   if (!current) return null;
   const first = current.first_name || "Someone";
