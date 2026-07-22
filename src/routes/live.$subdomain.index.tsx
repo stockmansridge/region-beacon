@@ -16,6 +16,8 @@ import { NextRewardCard } from "@/components/next-reward-card";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
 import { BonusPointsPromo } from "@/components/bonus-points-promo";
+import { LiveActivityBar } from "@/components/live-activity-bar";
+import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 
 
 export const Route = createFileRoute("/live/$subdomain/")({
@@ -840,13 +842,5 @@ function RingConfetti() {
     </div>
   );
 }
-
-// ---- Live Activity slide-down bar ----
-type ActivityItem = {
-  first_name: string;
-  venue_name: string;
-  award_title: string | null;
-  happened_at: string;
-};
 
 
