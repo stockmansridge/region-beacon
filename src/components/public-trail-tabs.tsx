@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { PublicLink } from "@/components/public-nav-context";
 
 type TabKey = "venues" | "offers";
 
@@ -21,7 +21,7 @@ export function PublicTrailTabs({
       {tabs.map((t) => {
         const isActive = t.key === active;
         return (
-          <Link
+          <PublicLink
             key={t.key}
             to={t.to}
             className={
@@ -32,7 +32,7 @@ export function PublicTrailTabs({
             }
           >
             {t.label}
-          </Link>
+          </PublicLink>
         );
       })}
     </nav>
