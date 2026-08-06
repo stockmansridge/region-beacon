@@ -79,6 +79,28 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
         typeof heroBodyRes.data === "string" ? heroBodyRes.data : null;
       if (heroBody) (evt as PublicEventData).hero_body_color = heroBody;
 
+      // Logo shape / backdrop use the same additive-RPC approach so the wide
+      // get_public_event_by_domain signature stays untouched. Missing function
+      // (older DB) leaves the defaults: square + transparent.
+      const logoStyleRes = await supabase.rpc(
+        "get_public_event_logo_style" as never,
+        { _hostname: host } as never,
+      );
+      if (cancelled) return;
+      const logoStyleRow = (Array.isArray(logoStyleRes.data)
+        ? logoStyleRes.data[0]
+        : null) as {
+        logo_shape?: string | null;
+        logo_backdrop?: string | null;
+        logo_backdrop_color?: string | null;
+      } | null;
+      if (logoStyleRow) {
+        const e = evt as PublicEventData;
+        e.logo_shape = logoStyleRow.logo_shape ?? null;
+        e.logo_backdrop = logoStyleRow.logo_backdrop ?? null;
+        e.logo_backdrop_color = logoStyleRow.logo_backdrop_color ?? null;
+      }
+
       const { data: venueData } = await supabase.rpc("get_public_event_venues", {
         _event_id: evt.event_id,
       });
