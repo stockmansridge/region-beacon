@@ -6,7 +6,8 @@ import {
   getPalette,
   getPaletteOrDefault,
 } from "@/lib/event-palettes";
-import { buildGoogleFontsHref } from "@/lib/event-fonts";
+import { buildGoogleFontsHref, isSupportedEventFont } from "@/lib/event-fonts";
+import { ensureCustomFontFaces } from "@/lib/event-custom-fonts";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -125,14 +126,21 @@ export function EventPaletteScope({
   useEffect(() => {
     if (typeof document === "undefined") return;
     const href = buildGoogleFontsHref([fontFamily, headingFontFamily]);
-    if (!href) return;
-    if (document.querySelector(`link[data-event-font="${href}"]`)) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = href;
-    link.dataset.eventFont = href;
-    document.head.appendChild(link);
+    if (href && !document.querySelector(`link[data-event-font="${href}"]`)) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.dataset.eventFont = href;
+      document.head.appendChild(link);
+    }
+    // Uploaded (custom) families are not in the curated list — resolve their
+    // @font-face from the public event_custom_fonts index.
+    const custom = [fontFamily, headingFontFamily].filter(
+      (v) => v && !isSupportedEventFont(v),
+    );
+    if (custom.length > 0) void ensureCustomFontFaces(custom);
   }, [fontFamily, headingFontFamily]);
+
 
   if (
     !explicitCurated &&

@@ -42,6 +42,16 @@ import {
   isSupportedEventFont,
 } from "@/lib/event-fonts";
 import {
+  CUSTOM_FONT_MAX_BYTES,
+  customFontStack,
+  deleteEventCustomFont,
+  listEventCustomFonts,
+  registerCustomFonts,
+  suggestFamilyName,
+  uploadEventCustomFont,
+  type EventCustomFont,
+} from "@/lib/event-custom-fonts";
+import {
   BRAND_KITS,
   BRAND_KIT_VERSION,
   type BrandKit,
@@ -325,6 +335,21 @@ function BrandingEditor() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Uploaded (custom) fonts for this event.
+  const [customFonts, setCustomFonts] = useState<EventCustomFont[]>([]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const rows = await listEventCustomFonts(eventId);
+      if (!alive) return;
+      setCustomFonts(rows);
+      registerCustomFonts(rows);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [eventId]);
+
   // Surface save results as toasts so you never have to scroll up to see them.
   useEffect(() => {
     if (saveSuccess) toast.success(saveSuccess);
@@ -550,18 +575,23 @@ function BrandingEditor() {
       if (err) { setValidationError(err); return; }
     }
 
+    const isCustomFamily = (v: string) =>
+      customFonts.some((f) => f.family_name.toLowerCase() === v.toLowerCase());
+    const fontOk = (v: string) => isSupportedEventFont(v) || isCustomFamily(v);
+
     const font_family = trim(form.font_family);
-    if (font_family && !isSupportedEventFont(font_family)) {
+    if (font_family && !fontOk(font_family)) {
       setValidationError("Pick a body font from the list."); return;
     }
     const heading_font_family = trim(form.heading_font_family);
-    if (heading_font_family && !isSupportedEventFont(heading_font_family)) {
+    if (heading_font_family && !fontOk(heading_font_family)) {
       setValidationError("Pick a heading font from the list."); return;
     }
     const default_emotive_font_family = trim(form.default_emotive_font_family);
-    if (default_emotive_font_family && !isSupportedEventFont(default_emotive_font_family)) {
+    if (default_emotive_font_family && !fontOk(default_emotive_font_family)) {
       setValidationError("Pick an emotive font from the list."); return;
     }
+
 
     const welcome_copy = trim(form.welcome_copy);
     if (welcome_copy.length > 1000) {
@@ -1193,7 +1223,45 @@ function BrandingEditor() {
               onEmotiveChange={(value) => setForm({ ...form, default_emotive_font_family: value })}
               disabled={!canEdit || saving}
               eventName={event.name}
+              customFonts={customFonts}
+              canUpload={canEdit && !!agencyId}
+              onUpload={async (file, familyName) => {
+                if (!agencyId) return { ok: false as const, error: "No agency selected." };
+                const res = await uploadEventCustomFont({
+                  agencyId,
+                  eventId: event.id,
+                  familyName,
+                  file,
+                });
+                if (res.ok) {
+                  setCustomFonts((prev) =>
+                    [...prev, res.font].sort((a, b) => a.family_name.localeCompare(b.family_name)),
+                  );
+                  toast.success(`“${res.font.family_name}” uploaded. Pick it above, then Save.`);
+                }
+                return res;
+              }}
+              onDelete={async (font) => {
+                const res = await deleteEventCustomFont(font);
+                if (!res.ok) {
+                  toast.error(res.error, { duration: 10000, closeButton: true });
+                  return;
+                }
+                setCustomFonts((prev) => prev.filter((f) => f.id !== font.id));
+                setForm((prev) => ({
+                  ...prev,
+                  font_family: prev.font_family === font.family_name ? "" : prev.font_family,
+                  heading_font_family:
+                    prev.heading_font_family === font.family_name ? "" : prev.heading_font_family,
+                  default_emotive_font_family:
+                    prev.default_emotive_font_family === font.family_name
+                      ? ""
+                      : prev.default_emotive_font_family,
+                }));
+                toast.success(`“${font.family_name}” removed. Save to apply.`);
+              }}
             />
+
 
           </CollapsibleSection>
 
@@ -1736,17 +1804,26 @@ function HeroOverlayCard({
 // FontPickers — separate heading + body font dropdowns.
 // ============================================================================
 function FontSelect({
-  value, onChange, disabled, label,
+  value, onChange, disabled, label, customFonts = [],
 }: {
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
   label: string;
+  customFonts?: EventCustomFont[];
 }) {
   const selected = getEventFont(value);
-  const isUnknown = !selected && value.trim().length > 0;
-  const selectValue = selected ? selected.value : isUnknown ? "__unknown__" : "__default__";
-  const triggerStack = selected?.stack;
+  const custom = !selected
+    ? customFonts.find((f) => f.family_name.toLowerCase() === value.trim().toLowerCase()) ?? null
+    : null;
+  const isUnknown = !selected && !custom && value.trim().length > 0;
+  const selectValue = selected
+    ? selected.value
+    : custom
+      ? custom.family_name
+      : isUnknown ? "__unknown__" : "__default__";
+  const triggerStack = selected?.stack ?? (custom ? customFontStack(custom.family_name) : undefined);
+
   return (
     <Field label={label}>
       <Select
@@ -1770,6 +1847,21 @@ function FontSelect({
               {value.trim()} (unavailable — pick a font below)
             </SelectItem>
           )}
+          {customFonts.length > 0 && (
+            <SelectGroup>
+              <SelectLabel>Your uploaded fonts</SelectLabel>
+              {customFonts.map((f) => (
+                <SelectItem
+                  key={f.id}
+                  value={f.family_name}
+                  style={{ fontFamily: customFontStack(f.family_name) }}
+                >
+                  {f.family_name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          )}
+
           {(["Display", "Serif", "Sans", "Script"] as const).map((cat) => {
             const fonts = EVENT_FONTS.filter((f) => f.category === cat);
             if (fonts.length === 0) return null;
@@ -1792,6 +1884,7 @@ function FontSelect({
 
 function FontPickers({
   headingValue, bodyValue, emotiveValue, onHeadingChange, onBodyChange, onEmotiveChange, disabled, eventName,
+  customFonts, canUpload, onUpload, onDelete,
 }: {
   headingValue: string;
   bodyValue: string;
@@ -1801,13 +1894,22 @@ function FontPickers({
   onEmotiveChange: (v: string) => void;
   disabled?: boolean;
   eventName: string;
+  customFonts: EventCustomFont[];
+  canUpload: boolean;
+  onUpload: (file: File, familyName: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onDelete: (font: EventCustomFont) => Promise<void>;
 }) {
-  const headingStack =
-    getEventFont(headingValue)?.stack ?? (headingValue.trim() || undefined);
-  const bodyStack =
-    getEventFont(bodyValue)?.stack ?? (bodyValue.trim() || undefined);
-  const emotiveStack =
-    getEventFont(emotiveValue)?.stack ?? (emotiveValue.trim() || "'Caveat', 'Segoe Script', cursive");
+  const stackFor = (value: string, fallback?: string) => {
+    const curated = getEventFont(value)?.stack;
+    if (curated) return curated;
+    const trimmed = value.trim();
+    if (!trimmed) return fallback;
+    const custom = customFonts.find((f) => f.family_name.toLowerCase() === trimmed.toLowerCase());
+    return custom ? customFontStack(custom.family_name) : trimmed;
+  };
+  const headingStack = stackFor(headingValue);
+  const bodyStack = stackFor(bodyValue);
+  const emotiveStack = stackFor(emotiveValue, "'Caveat', 'Segoe Script', cursive");
   // Heading font falls back to body font when unset.
   const heroPreviewStack = headingStack ?? bodyStack;
   return (
@@ -1823,7 +1925,9 @@ function FontPickers({
         value={headingValue}
         onChange={onHeadingChange}
         disabled={disabled}
+        customFonts={customFonts}
       />
+
 
       <div className="pt-2">
         <div className="text-sm font-semibold text-[#111827]">Body font</div>
@@ -1836,6 +1940,7 @@ function FontPickers({
         value={bodyValue}
         onChange={onBodyChange}
         disabled={disabled}
+        customFonts={customFonts}
       />
 
       <div className="pt-2">
@@ -1850,7 +1955,16 @@ function FontPickers({
         value={emotiveValue}
         onChange={onEmotiveChange}
         disabled={disabled}
+        customFonts={customFonts}
       />
+
+      <CustomFontUploader
+        fonts={customFonts}
+        canUpload={canUpload && !disabled}
+        onUpload={onUpload}
+        onDelete={onDelete}
+      />
+
 
       <div className="space-y-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
         <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">Font preview</div>
@@ -1879,6 +1993,176 @@ function FontPickers({
     </div>
   );
 }
+
+// ============================================================================
+// CustomFontUploader — upload your own font file (with licensing warning).
+// ============================================================================
+function CustomFontUploader({
+  fonts, canUpload, onUpload, onDelete,
+}: {
+  fonts: EventCustomFont[];
+  canUpload: boolean;
+  onUpload: (file: File, familyName: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onDelete: (font: EventCustomFont) => Promise<void>;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [familyName, setFamilyName] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const reset = () => {
+    setFile(null);
+    setFamilyName("");
+    setConfirmed(false);
+    setError(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <div className="space-y-3 rounded-[12px] border border-[#D9E2EF] bg-white p-4">
+      <div>
+        <div className="text-sm font-semibold text-[#111827]">Upload your own font</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Add a brand font in <span className="font-medium">.woff2</span>, <span className="font-medium">.woff</span>,{" "}
+          <span className="font-medium">.ttf</span> or <span className="font-medium">.otf</span> (max{" "}
+          {Math.round(CUSTOM_FONT_MAX_BYTES / (1024 * 1024))} MB). Once uploaded it appears in the
+          heading, body and emotive font lists above.
+        </p>
+      </div>
+
+      {/* Licensing warning */}
+      <div className="flex gap-2 rounded-[10px] border border-[#F5C6A5] bg-[#FFF7ED] p-3">
+        <Info className="mt-[2px] h-4 w-4 shrink-0 text-[#B45309]" />
+        <p className="text-xs leading-5 text-[#92400E]">
+          <span className="font-semibold">You must have permission to use this font.</span>{" "}
+          Only upload fonts you own or have a licence for that allows web/embedded use
+          (webfont licence). Uploading a font without the rights may breach the font
+          licence or copyright, and you are responsible for it — not GetStampd.
+        </p>
+      </div>
+
+      {fonts.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">
+            Uploaded fonts
+          </div>
+          {fonts.map((f) => (
+            <div
+              key={f.id}
+              className="flex items-center justify-between gap-3 rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm text-[#111827]" style={{ fontFamily: customFontStack(f.family_name) }}>
+                  {f.family_name}
+                </div>
+                <div className="text-[11px] text-[#64748B]">.{f.file_format}</div>
+              </div>
+              <button
+                type="button"
+                disabled={!canUpload || busy}
+                onClick={async () => {
+                  if (!window.confirm(`Remove “${f.family_name}”? Any page using it falls back to the default font.`)) return;
+                  setBusy(true);
+                  await onDelete(f);
+                  setBusy(false);
+                }}
+                className="shrink-0 rounded-[8px] border border-[#E4B7B7] px-2.5 py-1 text-xs font-semibold text-[#B42318] hover:bg-[#FEF3F2] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf"
+          disabled={!canUpload || busy}
+          onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            setError(null);
+            setFile(f);
+            if (f) setFamilyName((prev) => prev || suggestFamilyName(f.name));
+          }}
+          className="block w-full text-xs text-[#334155] file:mr-3 file:rounded-[8px] file:border-0 file:bg-[#EAF2FF] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#2F6FE4]"
+        />
+
+        {file && (
+          <>
+            <Field label="Font name (shown in the font lists)">
+              <input
+                type="text"
+                value={familyName}
+                maxLength={60}
+                disabled={busy}
+                onChange={(e) => setFamilyName(e.target.value)}
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827]"
+                placeholder="e.g. Acme Display"
+              />
+            </Field>
+            <label className="flex items-start gap-2 text-xs text-[#334155]">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                disabled={busy}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                className="mt-[2px] h-4 w-4 rounded border-[#D9E2EF]"
+              />
+              <span>
+                I confirm I own this font or hold a licence that permits using it on this
+                website, and I accept responsibility for its use.
+              </span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={!canUpload || busy || !confirmed || familyName.trim().length < 2}
+                onClick={async () => {
+                  if (!file) return;
+                  setBusy(true);
+                  setError(null);
+                  const res = await onUpload(file, familyName);
+                  setBusy(false);
+                  if (res.ok) reset();
+                  else setError(res.error);
+                }}
+                className="inline-flex h-9 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-xs font-semibold text-white hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy ? "Uploading…" : "Upload font"}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={reset}
+                className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-xs font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+
+        {error && (
+          <p className="rounded-[8px] border border-[#E4B7B7] bg-[#FEF3F2] px-3 py-2 text-xs text-[#B42318]">
+            {error}
+          </p>
+        )}
+        {!canUpload && (
+          <p className="text-xs text-muted-foreground">
+            You need owner or admin access to upload fonts.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 
 
 // ============================================================================
