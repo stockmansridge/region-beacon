@@ -5,7 +5,7 @@ import { DEMO_EVENT, DEMO_VENUES, useDemoPassport } from "@/lib/demo-cargo-road"
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/demo/trail-map")({
-  head: () => ({ meta: [{ title: `Trail Map — ${DEMO_EVENT.name} demo` }] }),
+  head: () => ({ meta: [{ title: `Map — ${DEMO_EVENT.name} demo` }] }),
   component: DemoTrailMap,
 });
 
@@ -17,7 +17,7 @@ function DemoTrailMap() {
     <DemoShell activeNav="map">
       <main className="pb-20">
         <h1 className="text-xl font-semibold" style={{ color: "var(--event-heading)" }}>
-          Trail Map
+          Map
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--event-muted)" }}>
           Six wineries across the Cargo Road ridge. Tap a pin for details.

@@ -239,7 +239,7 @@ function DemoHome() {
         <section className="mt-6 grid grid-cols-2 gap-3">
           <QuickTile to="/demo/wineries" icon={<MapPin className="h-5 w-5" />} label="Wineries" />
           <QuickTile to="/demo/offers" icon={<Tag className="h-5 w-5" />} label="Offers" />
-          <QuickTile to="/demo/trail-map" icon={<Stamp className="h-5 w-5" />} label="Trail Map" />
+          <QuickTile to="/demo/trail-map" icon={<Stamp className="h-5 w-5" />} label="Map" />
           <QuickTile to="/demo/rewards" icon={<Trophy className="h-5 w-5" />} label="Prizes" />
         </section>
 

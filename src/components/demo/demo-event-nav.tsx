@@ -361,7 +361,7 @@ function DemoMenuDrawer({
             </li>
             <li>
               <Link to="/demo/trail-map" onClick={onClose} className={rowClass}>
-                <MapIcon className="h-5 w-5 opacity-80" /> Trail Map
+                <MapIcon className="h-5 w-5 opacity-80" /> Map
               </Link>
             </li>
             <li>
