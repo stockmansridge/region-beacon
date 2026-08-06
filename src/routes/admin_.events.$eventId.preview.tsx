@@ -1,22 +1,34 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAgencyContext } from "@/hooks/use-agency-context";
-import { TrailLanding } from "@/components/trail-landing";
-import { resolveVenueLabels } from "@/lib/venue-labels";
-import { getEventAssetPublicUrl } from "@/lib/event-assets";
-import { EventPaletteScope } from "@/components/event-palette-scope";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import {
   EVENT_BRANDING_SELECT,
   EVENT_BRANDING_SELECT_FALLBACK,
   isMissingBrandingColumnError,
-  brandingToScopeProps,
-  brandingToHeroProps,
   type EventBrandingRow,
 } from "@/lib/event-branding-theme";
+import {
+  EventPublicLanding,
+  type PublicEventData,
+  type PublicVenueData,
+} from "@/components/event-public-landing";
 
+/**
+ * Admin draft full preview.
+ *
+ * This route does NOT contain any landing-page markup. It authenticates the
+ * admin, resolves the event securely by event_id + agency_id (so a draft with
+ * no public domain can be previewed), maps the result into the same
+ * `PublicEventData` contract the public-domain loader produces, and renders
+ * the one shared <EventPublicLanding /> implementation. Any structural change
+ * to the customer page therefore lands here automatically.
+ *
+ * Privacy: robots noindex, admin auth required, agency-scoped query, no data
+ * reachable without a session.
+ */
 export const Route = createFileRoute("/admin_/events/$eventId/preview")({
   head: () => ({
     meta: [
@@ -24,9 +36,9 @@ export const Route = createFileRoute("/admin_/events/$eventId/preview")({
       {
         name: "description",
         content:
-          "Preview the customer landing page for a draft or published event using the saved Brand Kit.",
+          "Preview the real customer landing page for a draft or published event using the saved Brand Kit.",
       },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: EventPreview,
@@ -39,20 +51,19 @@ type EventRow = {
   description: string | null;
   status: string;
   public_slug: string | null;
+  timezone: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  current_terms_version_id: string | null;
 };
-
-type Venue = { id: string; name: string };
 
 type Bundle = {
   event: EventRow;
   branding: EventBrandingRow | null;
-  venues: Venue[];
+  venues: PublicVenueData[];
   termsUrl: string | null;
-  privacyUrl: string | null;
   activeSubdomain: string | null;
 };
-
-const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
 function EventPreview() {
   const { eventId } = Route.useParams();
@@ -101,7 +112,9 @@ function EventPreview() {
     (async () => {
       const { data: event, error: evErr } = await supabase
         .from("events")
-        .select("id, agency_id, name, description, status, public_slug, current_terms_version_id")
+        .select(
+          "id, agency_id, name, description, status, public_slug, timezone, starts_at, ends_at, current_terms_version_id",
+        )
         .eq("id", eventId)
         .eq("agency_id", agencyId)
         .is("deleted_at", null)
@@ -138,7 +151,7 @@ function EventPreview() {
       const [venuesRes, termsRes, domainsRes] = await Promise.all([
         supabase
           .from("venues")
-          .select("id, name")
+          .select("id, name, address, order_index")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .is("deleted_at", null)
@@ -181,9 +194,21 @@ function EventPreview() {
       setBundle({
         event: event as EventRow,
         branding,
-        venues: (venuesRes.data ?? []) as Venue[],
-        termsUrl: (termsRes.data as { terms_url?: string } | null)?.terms_url ?? branding?.terms_url ?? null,
-        privacyUrl: (termsRes.data as { privacy_url?: string } | null)?.privacy_url ?? null,
+        venues: ((venuesRes.data ?? []) as Array<{
+          id: string;
+          name: string;
+          address: string | null;
+          order_index: number | null;
+        }>).map((v) => ({
+          venue_id: v.id,
+          name: v.name,
+          address: v.address,
+          order_index: v.order_index,
+        })),
+        termsUrl:
+          (termsRes.data as { terms_url?: string } | null)?.terms_url ??
+          branding?.terms_url ??
+          null,
         activeSubdomain,
       });
       setState("ready");
@@ -193,6 +218,74 @@ function EventPreview() {
       cancelled = true;
     };
   }, [agency.status, auth.status, agencyId, eventId]);
+
+  /**
+   * Build the SAME data contract the public-domain RPC
+   * (`get_public_event_by_domain`) returns, from admin-authorised reads.
+   * Every field name matches the RPC output so the shared renderer cannot
+   * tell the two loaders apart.
+   */
+  const publicEvent: PublicEventData | null = useMemo(() => {
+    if (!bundle) return null;
+    const { event, branding, termsUrl } = bundle;
+    const merged = {
+      event_id: event.id,
+      name: event.name,
+      public_slug: event.public_slug ?? "",
+      description: event.description,
+      starts_at: event.starts_at,
+      ends_at: event.ends_at,
+      timezone: event.timezone,
+      current_terms_version_id: event.current_terms_version_id,
+      terms_url: termsUrl,
+      logo_path: branding?.logo_path ?? null,
+      cover_path: branding?.cover_path ?? null,
+      cover_focal_x: branding?.cover_focal_x ?? null,
+      cover_focal_y: branding?.cover_focal_y ?? null,
+      font_family: branding?.font_family ?? null,
+      heading_font_family: branding?.heading_font_family ?? null,
+      welcome_copy: branding?.welcome_copy ?? null,
+      venue_label_singular: branding?.venue_label_singular ?? null,
+      venue_label_plural: branding?.venue_label_plural ?? null,
+      primary_color: branding?.primary_color ?? null,
+      accent_color: branding?.accent_color ?? null,
+      link_color: branding?.link_color ?? null,
+      palette_key: branding?.palette_key ?? null,
+      page_background_key: branding?.page_background_key ?? null,
+      page_background_color: branding?.page_background_color ?? null,
+      text_color: branding?.text_color ?? null,
+      muted_text_color: branding?.muted_text_color ?? null,
+      border_color: branding?.border_color ?? null,
+      page_heading_color: branding?.page_heading_color ?? null,
+      page_body_color: branding?.page_body_color ?? null,
+      page_muted_color: branding?.page_muted_color ?? null,
+      card_background_color: branding?.card_background_color ?? null,
+      card_text_color: branding?.card_text_color ?? null,
+      card_muted_text_color: branding?.card_muted_text_color ?? null,
+      card_border_color: branding?.card_border_color ?? null,
+      card_heading_color: branding?.card_heading_color ?? null,
+      card_body_color: branding?.card_body_color ?? null,
+      card_muted_color: branding?.card_muted_color ?? null,
+      primary_text_color: branding?.primary_text_color ?? null,
+      button_primary_bg: branding?.button_primary_bg ?? null,
+      button_primary_fg: branding?.button_primary_fg ?? null,
+      button_secondary_bg: branding?.button_secondary_bg ?? null,
+      button_secondary_fg: branding?.button_secondary_fg ?? null,
+      nav_background_color: branding?.nav_background_color ?? null,
+      nav_fg_color: branding?.nav_fg_color ?? null,
+      nav_muted_color: branding?.nav_muted_color ?? null,
+      nav_active_fg_color: branding?.nav_active_fg_color ?? null,
+      hero_bg_color: branding?.hero_bg_color ?? null,
+      hero_fg_color: branding?.hero_fg_color ?? null,
+      hero_accent_color: branding?.hero_accent_color ?? null,
+      hero_overlay_color: branding?.hero_overlay_color ?? null,
+      hero_overlay_opacity: branding?.hero_overlay_opacity ?? null,
+      brand_kit_key: branding?.brand_kit_key ?? null,
+    } satisfies PublicEventData;
+
+    // Same palette derivation the public loader applies to the RPC row.
+    return applyPaletteToEvent(merged) as PublicEventData;
+  }, [bundle]);
 
   if (auth.status === "loading" || agency.status === "loading" || state === "loading") {
     return (
@@ -221,7 +314,7 @@ function EventPreview() {
     );
   }
 
-  if (state === "error" || !bundle) {
+  if (state === "error" || !bundle || !publicEvent) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6 text-sm text-destructive">
         Could not load preview. Please try again.
@@ -229,278 +322,72 @@ function EventPreview() {
     );
   }
 
-  const { event, branding, venues, termsUrl, privacyUrl, activeSubdomain } = bundle;
+  const { event, venues, activeSubdomain } = bundle;
   const isPublished = event.status === "published";
-  const canOpenLive = Boolean(isPublished && activeSubdomain);
-  const tenantBase = activeSubdomain ? `https://${activeSubdomain}.getstampd.com.au` : null;
-  const liveHref = (path: string = "/") => {
-    if (!tenantBase) return null;
-    const suffix = path.startsWith("/") ? path : `/${path}`;
-    const sep = suffix.includes("?") ? "&" : "?";
-    return `${tenantBase}${suffix}${sep}preview=1`;
-  };
 
-  // Resolve palette: if a curated palette_key is set, derive primary/accent
-  // from it; otherwise use stored hex colours (custom palette path).
-  const resolved = applyPaletteToEvent({
-    palette_key: branding?.palette_key ?? null,
-    primary_color: branding?.primary_color ?? null,
-    accent_color: branding?.accent_color ?? null,
-  });
-  const primaryColor =
-    resolved.primary_color && HEX_RE.test(resolved.primary_color) ? resolved.primary_color : "#1F3D2B";
-  const accentColor =
-    resolved.accent_color && HEX_RE.test(resolved.accent_color) ? resolved.accent_color : "#B5572A";
-
-  const scopeProps = brandingToScopeProps(branding);
-  const heroProps = brandingToHeroProps(branding);
-  const venueLabels = resolveVenueLabels(branding ?? null);
-  const welcomeCopy =
-    branding?.welcome_copy?.trim() ||
-    "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail.";
-
-  const PrimaryStartButton = canOpenLive ? (
-    <a
-      href={liveHref("/join")!}
-      target="_blank"
-      rel="noreferrer"
-      className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide shadow"
-      style={{
-        backgroundColor: "var(--event-primary-button-bg, var(--event-primary))",
-        color: "var(--event-primary-button-fg, var(--event-primary-fg))",
-      }}
-    >
-      Start passport (opens live site)
-    </a>
-  ) : (
-    <button
-      type="button"
-      disabled
-      title="Publish the event with a public address to enable the interactive passport flow"
-      className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-semibold tracking-wide opacity-70 shadow"
-      style={{
-        backgroundColor: "var(--event-primary-button-bg, var(--event-primary))",
-        color: "var(--event-primary-button-fg, var(--event-primary-fg))",
-      }}
-    >
-      Start passport · publish event to enable
-    </button>
-  );
-
-  const secondaryStyle = {
-    backgroundColor: "var(--event-secondary-button-bg, transparent)",
-    color: "var(--event-secondary-button-fg, var(--event-primary))",
-    borderColor: "var(--event-border, rgba(0,0,0,0.15))",
-  } as const;
-
-  const SecondaryButton = canOpenLive ? (
-    <a
-      href={liveHref("/join")!}
-      target="_blank"
-      rel="noreferrer"
-      className="flex h-11 w-full items-center justify-center rounded-full border text-sm font-semibold tracking-wide"
-      style={secondaryStyle}
-    >
-      I already have a passport
-    </a>
-  ) : (
-    <button
-      type="button"
-      disabled
-      className="flex h-11 w-full cursor-not-allowed items-center justify-center rounded-full border text-sm font-semibold tracking-wide opacity-70"
-      style={secondaryStyle}
-    >
-      I already have a passport
-    </button>
+  // Admin chrome only — deliberately neutral, sits above the customer page.
+  const previewNotice = (
+    <>
+      <div className="fixed left-4 top-4 z-[60]">
+        <Link
+          to="/admin/events/$eventId"
+          params={{ eventId }}
+          className="inline-flex h-9 items-center rounded-full border border-neutral-300 bg-neutral-50/95 px-3 text-xs font-medium text-neutral-700 shadow hover:bg-neutral-100"
+        >
+          ← Back to admin
+        </Link>
+      </div>
+      <div className="fixed right-4 top-4 z-[60]">
+        <div
+          className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300 bg-amber-100/95 px-3 text-xs font-semibold text-amber-900 shadow"
+          title={`Status: ${event.status}`}
+        >
+          <span className="h-2 w-2 rounded-full bg-amber-500" />
+          {isPublished ? "Preview — published" : "Preview — not live"}
+        </div>
+      </div>
+      {!noticeDismissed && (
+        <div
+          className="fixed left-1/2 top-16 z-[60] w-[92vw] max-w-md -translate-x-1/2 rounded-2xl border border-amber-200 bg-amber-50/95 p-4 pr-10 text-xs leading-relaxed text-amber-900 shadow"
+          role="status"
+        >
+          <button
+            type="button"
+            onClick={dismissNotice}
+            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-amber-700 hover:bg-amber-200/60 hover:text-amber-900"
+            aria-label="Dismiss admin preview notice"
+            title="Dismiss"
+          >
+            ×
+          </button>
+          <p className="font-semibold uppercase tracking-[0.18em]">Admin preview</p>
+          <p className="mt-1">
+            This is the real customer landing page, rendered from the{" "}
+            <strong>last saved</strong> event and Brand Kit. Unsaved edits in the
+            Branding editor appear only in its embedded preview — save first, then
+            reload this page.
+          </p>
+          <p className="mt-2">
+            {activeSubdomain
+              ? "Links open the live customer pages in a new tab, where customer actions create real passports, check-ins, and points."
+              : "This event has no public address yet, so links to the other customer pages are disabled. The design and layout below are exactly what customers will see."}
+          </p>
+          <p className="mt-2">
+            Progress, activity and prize sections fill in from real participant data
+            for this event.
+          </p>
+        </div>
+      )}
+    </>
   );
 
   return (
-    <EventPaletteScope {...scopeProps} className="min-h-screen">
-      <div>
-        {/* Floating admin controls (admin chrome — intentionally neutral) */}
-        <div className="fixed left-4 top-4 z-50">
-          <Link
-            to="/admin/events/$eventId"
-            params={{ eventId }}
-            className="inline-flex h-9 items-center rounded-full border border-neutral-300 bg-neutral-50/95 px-3 text-xs font-medium text-neutral-700 shadow hover:bg-neutral-100"
-          >
-            ← Back to admin
-          </Link>
-        </div>
-        <div className="fixed right-4 top-4 z-50">
-          <div
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300 bg-amber-100/95 px-3 text-xs font-semibold text-amber-900 shadow"
-            title={`Status: ${event.status}`}
-          >
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
-            {isPublished ? "Preview — published" : "Preview — not live"}
-          </div>
-        </div>
-
-        <div className="mx-auto max-w-md px-4 py-16">
-          {!noticeDismissed && (
-            <div className="relative mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 pr-10 text-xs leading-relaxed text-amber-900 shadow-sm">
-              <button
-                type="button"
-                onClick={dismissNotice}
-                className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-amber-700 hover:bg-amber-200/60 hover:text-amber-900"
-                aria-label="Dismiss admin preview notice"
-                title="Dismiss"
-              >
-                ×
-              </button>
-              <p className="font-semibold uppercase tracking-[0.18em]">Admin preview</p>
-              <p className="mt-1">
-                This is the real customer landing page rendered with the{" "}
-                <strong>last saved</strong> Brand Kit. Unsaved edits in the Branding
-                editor appear only in its embedded preview — save first, then reload
-                this page.
-              </p>
-              {canOpenLive ? (
-                <p className="mt-2">
-                  Customer actions taken here may create real passports, check-ins, and
-                  points for this event. Use the buttons below to open the live customer
-                  site in a new tab.
-                </p>
-              ) : (
-                <p className="mt-2">
-                  This event does not need to be published to preview its design. Publish
-                  it with a public address when you want to test the full customer
-                  journey.
-                </p>
-              )}
-            </div>
-          )}
-
-          <TrailLanding
-            eventName={event.name}
-            pitch={event.description ?? undefined}
-            welcomeCopy={welcomeCopy}
-            primaryColor={primaryColor}
-            accentColor={accentColor}
-            badge="Preview"
-            venueNames={venues.map((v) => v.name)}
-            venueCount={venues.length}
-            venueLabelPlural={venueLabels.plural}
-            logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-            heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
-            termsUrl={termsUrl ?? null}
-            primaryCta={PrimaryStartButton}
-            secondaryCta={SecondaryButton}
-            {...heroProps}
-          />
-
-          {/* Quick navigation — mirrors the public event menu */}
-          <nav
-            aria-label="Preview navigation"
-            className="mx-auto mt-6 grid w-full max-w-md grid-cols-2 gap-2 rounded-2xl border p-3 text-xs font-medium uppercase tracking-[0.16em]"
-            style={{
-              backgroundColor: "var(--event-nav-bg, var(--event-card-bg))",
-              borderColor: "var(--event-card-border, var(--event-border))",
-              color: "var(--event-nav-fg, var(--event-card-text))",
-            }}
-          >
-            {[
-              { label: "Venues", path: "/venues" },
-              { label: "Trail map", path: "/map" },
-              { label: "Leaderboard", path: "/leaderboard" },
-              { label: "Offers", path: "/offers" },
-              ...(termsUrl ? [{ label: "Terms", path: "/terms" }] : []),
-              ...(privacyUrl ? [{ label: "Privacy", path: "/privacy" }] : []),
-            ].map((item) => {
-              const href = liveHref(item.path);
-              return href ? (
-                <a
-                  key={item.label}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-xl border px-3 py-2 text-center"
-                  style={{
-                    borderColor: "var(--event-card-border, var(--event-border))",
-                    color: "var(--event-nav-active-fg, var(--event-nav-fg, var(--event-card-text)))",
-                  }}
-                >
-                  {item.label}
-                </a>
-              ) : (
-                <span
-                  key={item.label}
-                  className="rounded-xl border border-dashed px-3 py-2 text-center opacity-60"
-                  style={{
-                    borderColor: "var(--event-card-border, var(--event-border))",
-                    color: "var(--event-nav-muted, var(--event-card-muted, var(--event-muted)))",
-                  }}
-                  title="Available once the event is published with a public address"
-                >
-                  {item.label}
-                </span>
-              );
-
-            })}
-          </nav>
-
-          {/* Venue list with click-through to live venue pages when available */}
-          {venues.length > 0 && (
-            <section
-              className="mx-auto mt-6 w-full max-w-md rounded-2xl border p-4"
-              style={{
-                backgroundColor: "var(--event-card-bg)",
-                borderColor: "var(--event-card-border, var(--event-border))",
-              }}
-            >
-              <h3
-                className="text-[11px] font-semibold uppercase tracking-[0.22em]"
-                style={{ color: "var(--event-accent)" }}
-              >
-                {venueLabels.plural}
-              </h3>
-              <ul className="mt-2 divide-y" style={{ borderColor: "var(--event-card-border, var(--event-border))" }}>
-                {venues.map((v) => {
-                  const href = liveHref(`/venues/${v.id}`);
-                  return (
-                    <li
-                      key={v.id}
-                      className="border-t py-2 text-sm first:border-t-0"
-                      style={{
-                        color: "var(--event-card-text)",
-                        borderColor: "var(--event-card-border, var(--event-border))",
-                      }}
-                    >
-                      {href ? (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:underline"
-                          style={{ color: "var(--event-link, var(--event-card-text))" }}
-                        >
-                          {v.name}
-                        </a>
-                      ) : (
-                        <span>{v.name}</span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              {!canOpenLive && (
-                <p className="mt-3 text-[11px]" style={{ color: "var(--event-card-muted, var(--event-muted))" }}>
-                  To test real QR collection, publish the event and scan the venue QR
-                  code from the admin Venues tab.
-                </p>
-              )}
-            </section>
-          )}
-
-          <p
-            className="mt-6 text-center text-[10px] uppercase tracking-[0.22em]"
-            style={{ color: "var(--event-page-muted, var(--event-muted))" }}
-          >
-            Admin preview · customer actions on the live site create real data
-          </p>
-        </div>
-      </div>
-    </EventPaletteScope>
+    <EventPublicLanding
+      subdomain={activeSubdomain}
+      event={publicEvent}
+      venues={venues}
+      mode="preview"
+      previewNotice={previewNotice}
+    />
   );
 }
