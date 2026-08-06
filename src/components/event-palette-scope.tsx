@@ -6,7 +6,8 @@ import {
   getPalette,
   getPaletteOrDefault,
 } from "@/lib/event-palettes";
-import { buildGoogleFontsHref } from "@/lib/event-fonts";
+import { buildGoogleFontsHref, isSupportedEventFont } from "@/lib/event-fonts";
+import { ensureCustomFontFaces } from "@/lib/event-custom-fonts";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
