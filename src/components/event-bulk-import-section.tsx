@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 
 /**
  * Bulk Import (Excel) for an event.
@@ -429,6 +430,20 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       if (emotiveText && emotiveText.length > 500) {
         issues.push({ level: "error", message: "emotive_text must be 500 characters or fewer." });
       }
+      const websiteRaw = s(r["website_url"]);
+      const website = normalizeWebsiteUrl(websiteRaw);
+      if (websiteRaw && website !== websiteRaw) {
+        issues.push({ level: "warning", message: `Website URL will be saved as ${website}.` });
+      }
+      const phone = s(r["phone"]);
+      if (phone.length > 40) {
+        issues.push({ level: "error", message: "Phone must be 40 characters or fewer." });
+      } else if (phone && !/^\+?[0-9 \-]{6,40}$/.test(phone)) {
+        issues.push({
+          level: "error",
+          message: "Phone may contain only numbers, spaces, a leading +, and hyphens (for example: +61 2 1234 5678). Remove brackets and other punctuation.",
+        });
+      }
       return {
         rowNum: i + 2,
         venue_key,
@@ -437,8 +452,8 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         address: s(r["address"]) || null,
         lat,
         lng,
-        website_url: s(r["website_url"]) || null,
-        phone: s(r["phone"]) || null,
+        website_url: website,
+        phone: phone || null,
         offer_summary: s(r["offer_summary"]) || null,
         order_index: order,
         status: statusParsed === "disabled" ? "inactive" : "active",
