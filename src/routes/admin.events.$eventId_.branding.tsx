@@ -1994,6 +1994,176 @@ function FontPickers({
   );
 }
 
+// ============================================================================
+// CustomFontUploader — upload your own font file (with licensing warning).
+// ============================================================================
+function CustomFontUploader({
+  fonts, canUpload, onUpload, onDelete,
+}: {
+  fonts: EventCustomFont[];
+  canUpload: boolean;
+  onUpload: (file: File, familyName: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onDelete: (font: EventCustomFont) => Promise<void>;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [familyName, setFamilyName] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const reset = () => {
+    setFile(null);
+    setFamilyName("");
+    setConfirmed(false);
+    setError(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <div className="space-y-3 rounded-[12px] border border-[#D9E2EF] bg-white p-4">
+      <div>
+        <div className="text-sm font-semibold text-[#111827]">Upload your own font</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Add a brand font in <span className="font-medium">.woff2</span>, <span className="font-medium">.woff</span>,{" "}
+          <span className="font-medium">.ttf</span> or <span className="font-medium">.otf</span> (max{" "}
+          {Math.round(CUSTOM_FONT_MAX_BYTES / (1024 * 1024))} MB). Once uploaded it appears in the
+          heading, body and emotive font lists above.
+        </p>
+      </div>
+
+      {/* Licensing warning */}
+      <div className="flex gap-2 rounded-[10px] border border-[#F5C6A5] bg-[#FFF7ED] p-3">
+        <Info className="mt-[2px] h-4 w-4 shrink-0 text-[#B45309]" />
+        <p className="text-xs leading-5 text-[#92400E]">
+          <span className="font-semibold">You must have permission to use this font.</span>{" "}
+          Only upload fonts you own or have a licence for that allows web/embedded use
+          (webfont licence). Uploading a font without the rights may breach the font
+          licence or copyright, and you are responsible for it — not GetStampd.
+        </p>
+      </div>
+
+      {fonts.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">
+            Uploaded fonts
+          </div>
+          {fonts.map((f) => (
+            <div
+              key={f.id}
+              className="flex items-center justify-between gap-3 rounded-[10px] border border-[#E6ECF4] bg-[#F8FAFC] px-3 py-2"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm text-[#111827]" style={{ fontFamily: customFontStack(f.family_name) }}>
+                  {f.family_name}
+                </div>
+                <div className="text-[11px] text-[#64748B]">.{f.file_format}</div>
+              </div>
+              <button
+                type="button"
+                disabled={!canUpload || busy}
+                onClick={async () => {
+                  if (!window.confirm(`Remove “${f.family_name}”? Any page using it falls back to the default font.`)) return;
+                  setBusy(true);
+                  await onDelete(f);
+                  setBusy(false);
+                }}
+                className="shrink-0 rounded-[8px] border border-[#E4B7B7] px-2.5 py-1 text-xs font-semibold text-[#B42318] hover:bg-[#FEF3F2] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf"
+          disabled={!canUpload || busy}
+          onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            setError(null);
+            setFile(f);
+            if (f) setFamilyName((prev) => prev || suggestFamilyName(f.name));
+          }}
+          className="block w-full text-xs text-[#334155] file:mr-3 file:rounded-[8px] file:border-0 file:bg-[#EAF2FF] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#2F6FE4]"
+        />
+
+        {file && (
+          <>
+            <Field label="Font name (shown in the font lists)">
+              <input
+                type="text"
+                value={familyName}
+                maxLength={60}
+                disabled={busy}
+                onChange={(e) => setFamilyName(e.target.value)}
+                className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827]"
+                placeholder="e.g. Acme Display"
+              />
+            </Field>
+            <label className="flex items-start gap-2 text-xs text-[#334155]">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                disabled={busy}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                className="mt-[2px] h-4 w-4 rounded border-[#D9E2EF]"
+              />
+              <span>
+                I confirm I own this font or hold a licence that permits using it on this
+                website, and I accept responsibility for its use.
+              </span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={!canUpload || busy || !confirmed || familyName.trim().length < 2}
+                onClick={async () => {
+                  if (!file) return;
+                  setBusy(true);
+                  setError(null);
+                  const res = await onUpload(file, familyName);
+                  setBusy(false);
+                  if (res.ok) reset();
+                  else setError(res.error);
+                }}
+                className="inline-flex h-9 items-center rounded-[10px] bg-[#2F6FE4] px-4 text-xs font-semibold text-white hover:bg-[#1F56C5] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy ? "Uploading…" : "Upload font"}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={reset}
+                className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-xs font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+
+        {error && (
+          <p className="rounded-[8px] border border-[#E4B7B7] bg-[#FEF3F2] px-3 py-2 text-xs text-[#B42318]">
+            {error}
+          </p>
+        )}
+        {!canUpload && (
+          <p className="text-xs text-muted-foreground">
+            You need owner or admin access to upload fonts.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+
 
 // ============================================================================
 // SemanticPreview — sample UI drawn entirely from --event-* tokens.
