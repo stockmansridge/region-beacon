@@ -8,12 +8,6 @@ import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
-import { focalObjectPosition } from "@/lib/cover-focal";
-import {
-  resolveEventLogoStyle,
-  eventLogoBoxStyle,
-  eventLogoImageStyle,
-} from "@/lib/event-logo-style";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
