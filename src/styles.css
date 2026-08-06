@@ -223,9 +223,19 @@
   }
 }
 .confetti-burst {
-  animation: confetti-burst 1600ms cubic-bezier(0.16, 0.9, 0.3, 1) infinite;
+  animation: confetti-burst 1600ms cubic-bezier(0.16, 0.9, 0.3, 1) 2;
+  animation-fill-mode: forwards;
   will-change: transform, opacity;
 }
+
+/* Celebration + activity motion is decorative: honour reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  .confetti-burst {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 
 @keyframes live-activity-in {
   0% { transform: translateY(-120%); opacity: 0; }
