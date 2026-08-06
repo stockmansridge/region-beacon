@@ -3079,7 +3079,7 @@ function EventDetail() {
                   ["Timezone", event.timezone],
                   ["Starts at", fmt(event.starts_at)],
                   ["Ends at", fmt(event.ends_at)],
-                  ["Description", event.description ?? "—"],
+                  
                   ["Created", fmt(event.created_at)],
                   ["Updated", fmt(event.updated_at)],
                 ]}
