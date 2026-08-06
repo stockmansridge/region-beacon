@@ -251,25 +251,11 @@ const COLOUR_FORM_KEYS: ReadonlyArray<keyof Form> = [
   "hero_bg_color", "hero_fg_color", "hero_accent_color",
 ];
 
-const SELECT_COLS_BASE = [
-  "logo_path", "cover_path", "font_family", "heading_font_family", "default_emotive_font_family", "welcome_copy", "terms_url",
-  "venue_label_singular", "venue_label_plural",
-  "primary_color", "accent_color", "link_color",
-  "page_background_color", "text_color", "muted_text_color", "border_color",
-  "page_heading_color", "page_body_color", "page_muted_color",
-  "card_background_color", "card_text_color", "card_muted_text_color", "card_border_color",
-  "card_heading_color", "card_body_color", "card_muted_color",
-  "primary_text_color",
-  "button_primary_bg", "button_primary_fg", "button_secondary_bg", "button_secondary_fg",
-  "nav_background_color", "nav_fg_color", "nav_muted_color", "nav_active_fg_color",
-  "hero_bg_color", "hero_fg_color", "hero_accent_color",
-  "hero_overlay_color", "hero_overlay_opacity",
-  "brand_kit_key", "brand_kit_version",
-  "palette_key", "page_background_key",
-];
-const SELECT_COLS_OPTIONAL = ["cover_focal_x", "cover_focal_y"];
-const SELECT_COLS = [...SELECT_COLS_BASE, ...SELECT_COLS_OPTIONAL].join(", ");
-const SELECT_COLS_FALLBACK = SELECT_COLS_BASE.join(", ");
+// Canonical branding column list — shared with the admin full-preview route so
+// the two surfaces can never drift.
+const SELECT_COLS = EVENT_BRANDING_SELECT;
+const SELECT_COLS_FALLBACK = EVENT_BRANDING_SELECT_FALLBACK;
+
 
 
 function brandingToForm(b: Branding | null): Form {
