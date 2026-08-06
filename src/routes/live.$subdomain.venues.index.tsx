@@ -9,6 +9,11 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { focalObjectPosition } from "@/lib/cover-focal";
+import {
+  resolveEventLogoStyle,
+  eventLogoBoxStyle,
+  eventLogoImageStyle,
+} from "@/lib/event-logo-style";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
@@ -109,6 +114,9 @@ type EventRow = {
   cover_path?: string | null;
   cover_focal_x?: number | null;
   cover_focal_y?: number | null;
+  logo_shape?: string | null;
+  logo_backdrop?: string | null;
+  logo_backdrop_color?: string | null;
 };
 
 
