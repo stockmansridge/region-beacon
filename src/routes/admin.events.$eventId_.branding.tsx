@@ -639,9 +639,16 @@ function BrandingEditor() {
       .eq("agency_id", agencyId)
       .maybeSingle();
 
+    type WriteError = {
+      message: string;
+      code?: string | null;
+      details?: string | null;
+      hint?: string | null;
+    };
+
     async function writeRow(payload: Record<string, unknown>): Promise<{
       row: Branding | null;
-      error: { message: string; code?: string | null } | null;
+      error: WriteError | null;
     }> {
       if (!bundle) return { row: null, error: { message: "Internal error." } };
       if (existing) {
@@ -664,18 +671,30 @@ function BrandingEditor() {
       return { row: data as Branding | null, error };
     }
 
+    // Extract the offending column name from either Postgres ("column "x" of
+    // relation") or PostgREST schema-cache (PGRST204: "Could not find the 'x'
+    // column of 'event_branding' in the schema cache") error messages.
+    function unknownColumn(msg: string): string | null {
+      const pg = msg.match(/column "([^"]+)" of relation/i);
+      if (pg?.[1]) return pg[1];
+      const prst = msg.match(/could not find the '([^']+)' column/i);
+      return prst?.[1] ?? null;
+    }
+
     let payload: Record<string, unknown> = fullPayload;
     let { row: savedRow, error: writeErr } = await writeRow(payload);
 
     // Tolerant fallback: drop any keys the DB rejects as unknown columns
     // (migration not yet applied in some environments) and retry until
-    // the write succeeds or the error is unrelated.
+    // the write succeeds or the error is unrelated. Each retry must drop a
+    // distinct column, so the same invalid request is never repeated.
+    const dropped = new Set<string>();
     let guard = 0;
-    while (writeErr && /column "([^"]+)" of relation/i.test(writeErr.message ?? "") && guard < 12) {
-      const m = writeErr.message.match(/column "([^"]+)" of relation/i);
-      const col = m?.[1];
-      if (!col || !(col in payload)) break;
+    while (writeErr && guard < 12) {
+      const col = unknownColumn(writeErr.message ?? "");
+      if (!col || !(col in payload) || dropped.has(col)) break;
       console.warn("[branding-save] dropping unknown column and retrying", { col });
+      dropped.add(col);
       const { [col]: _drop, ...rest } = payload;
       payload = rest;
       const retry = await writeRow(payload);
@@ -688,11 +707,20 @@ function BrandingEditor() {
       console.warn("[branding-save] write failed", {
         code: writeErr.code ?? null,
         message: writeErr.message,
+        details: writeErr.details ?? null,
+        hint: writeErr.hint ?? null,
       });
       setSaving(false);
-      setSaveError("Branding could not be saved. Please try again or contact support.");
+      const parts = [
+        writeErr.message,
+        writeErr.details ? `Details: ${writeErr.details}` : null,
+        writeErr.hint ? `Hint: ${writeErr.hint}` : null,
+        writeErr.code ? `Code: ${writeErr.code}` : null,
+      ].filter(Boolean);
+      setSaveError(`Branding could not be saved. ${parts.join(" · ")}`);
       return;
     }
+
     if (!savedRow) {
       setSaving(false);
       setSaveError("Branding could not be saved (no row affected). Please reload the page.");
