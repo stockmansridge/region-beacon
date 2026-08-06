@@ -13,6 +13,12 @@ export type PosterBranding = {
   headingFontFamily: string | null;
   bodyFontFamily: string | null;
   logoUrl: string | null;
+  /** Logo frame: 'square' | 'circle' (see src/lib/event-logo-style.ts). */
+  logoShape: string | null;
+  /** Logo backdrop: 'transparent' | 'color'. */
+  logoBackdrop: string | null;
+  /** Solid plate colour when logoBackdrop = 'color'. */
+  logoBackdropColor: string | null;
   heroImageUrl: string | null;
 };
 
