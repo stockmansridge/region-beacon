@@ -67,6 +67,18 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
         return;
       }
 
+      // hero_body_color is exposed by a small additive RPC so the large
+      // get_public_event_by_domain return shape stays untouched. Missing
+      // function (older DB) simply leaves the token unset -> hero_fg fallback.
+      const heroBodyRes = await supabase.rpc(
+        "get_public_event_hero_body_color" as never,
+        { _hostname: host } as never,
+      );
+      if (cancelled) return;
+      const heroBody =
+        typeof heroBodyRes.data === "string" ? heroBodyRes.data : null;
+      if (heroBody) (evt as PublicEventData).hero_body_color = heroBody;
+
       const { data: venueData } = await supabase.rpc("get_public_event_venues", {
         _event_id: evt.event_id,
       });

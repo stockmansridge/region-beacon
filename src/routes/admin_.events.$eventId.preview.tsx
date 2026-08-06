@@ -278,6 +278,7 @@ function EventPreview() {
       hero_bg_color: branding?.hero_bg_color ?? null,
       hero_fg_color: branding?.hero_fg_color ?? null,
       hero_accent_color: branding?.hero_accent_color ?? null,
+      hero_body_color: branding?.hero_body_color ?? null,
       hero_overlay_color: branding?.hero_overlay_color ?? null,
       hero_overlay_opacity: branding?.hero_overlay_opacity ?? null,
       brand_kit_key: branding?.brand_kit_key ?? null,

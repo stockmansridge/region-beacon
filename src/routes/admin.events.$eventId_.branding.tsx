@@ -131,6 +131,7 @@ type Branding = {
   hero_bg_color: string | null;
   hero_fg_color: string | null;
   hero_accent_color: string | null;
+  hero_body_color: string | null;
   hero_overlay_color: string | null;
   hero_overlay_opacity: number | null;
 
@@ -202,6 +203,7 @@ type Form = {
   hero_bg_color: string;
   hero_fg_color: string;
   hero_accent_color: string;
+  hero_body_color: string;
   hero_overlay_color: string;
   hero_overlay_opacity: string; // empty = default gradient
   // Cover focal point (0–100, "" → default 50 centered).
@@ -243,6 +245,7 @@ const EMPTY_FORM: Form = {
   hero_bg_color: "",
   hero_fg_color: "",
   hero_accent_color: "",
+  hero_body_color: "",
   hero_overlay_color: "",
   hero_overlay_opacity: "",
   cover_focal_x: "",
@@ -256,7 +259,7 @@ const COLOUR_FORM_KEYS: ReadonlyArray<keyof Form> = [
   "card_background_color", "card_heading_color", "card_body_color", "card_muted_color", "card_border_color",
   "button_primary_bg", "button_primary_fg", "button_secondary_bg", "button_secondary_fg",
   "nav_background_color", "nav_fg_color", "nav_muted_color", "nav_active_fg_color",
-  "hero_bg_color", "hero_fg_color", "hero_accent_color",
+  "hero_bg_color", "hero_fg_color", "hero_accent_color", "hero_body_color",
 ];
 
 // Canonical branding column list — shared with the admin full-preview route so
@@ -302,6 +305,7 @@ function brandingToForm(b: Branding | null): Form {
     hero_bg_color: b.hero_bg_color ?? "",
     hero_fg_color: b.hero_fg_color ?? "",
     hero_accent_color: b.hero_accent_color ?? "",
+    hero_body_color: b.hero_body_color ?? "",
     hero_overlay_color: b.hero_overlay_color ?? "",
     hero_overlay_opacity:
       b.hero_overlay_opacity != null ? String(b.hero_overlay_opacity) : "",
@@ -416,6 +420,8 @@ function BrandingEditor() {
       hero_bg_color: kit.colors.hero_bg_color,
       hero_fg_color: kit.colors.hero_fg_color,
       hero_accent_color: kit.colors.hero_accent_color,
+      // Kits have no dedicated hero body colour yet: inherit the hero foreground.
+      hero_body_color: kit.colors.hero_fg_color,
     }));
   }
 
@@ -574,6 +580,7 @@ function BrandingEditor() {
       ["Hero background", form.hero_bg_color],
       ["Event heading colour", form.hero_fg_color],
       ["Hero accent", form.hero_accent_color],
+      ["Welcome copy colour", form.hero_body_color],
       ["Hero overlay colour", form.hero_overlay_color],
     ];
     for (const [label, v] of checks) {
@@ -677,6 +684,7 @@ function BrandingEditor() {
       hero_bg_color: orNull(form.hero_bg_color),
       hero_fg_color: orNull(form.hero_fg_color),
       hero_accent_color: orNull(form.hero_accent_color),
+      hero_body_color: orNull(form.hero_body_color),
       hero_overlay_color: orNull(form.hero_overlay_color),
       hero_overlay_opacity: hero_overlay_opacity_num,
       // Cover focal point (percentages 0–100). Blank → NULL (defaults to 50).
@@ -913,6 +921,7 @@ function BrandingEditor() {
     hero_bg_color: form.hero_bg_color || null,
     hero_fg_color: form.hero_fg_color || null,
     hero_accent_color: form.hero_accent_color || null,
+    hero_body_color: form.hero_body_color || null,
   });
 
   /**
@@ -971,6 +980,7 @@ function BrandingEditor() {
     hero_bg_color: orNullHex(form.hero_bg_color),
     hero_fg_color: orNullHex(form.hero_fg_color),
     hero_accent_color: orNullHex(form.hero_accent_color),
+    hero_body_color: orNullHex(form.hero_body_color),
     page_heading_color: orNullHex(form.page_heading_color),
     page_body_color: orNullHex(form.page_body_color),
     page_muted_color: orNullHex(form.page_muted_color),
@@ -1181,7 +1191,7 @@ function BrandingEditor() {
                 resolved={themeForPreview.cardText} value={form.card_heading_color}
                 onChange={(v) => editColour("card_heading_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.cardText, themeForPreview.cardBg, "card background")} />
-              <ColorRoleRow label="Card body text colour" fieldName="card_body_color" helper="Used for Welcome copy and other standard text inside cards. Falls back to the card heading colour."
+              <ColorRoleRow label="Card body text colour" fieldName="card_body_color" helper="Used for standard text inside cards. Falls back to the card heading colour. Welcome copy now sits over the cover image and uses its own hero colour."
                 resolved={themeForPreview.cardText} value={form.card_body_color}
                 onChange={(v) => editColour("card_body_color", v)} disabled={!canEdit || saving} />
               <ColorRoleRow label="Card muted text colour" fieldName="card_muted_color" helper="Addresses, descriptions, metadata inside cards."
@@ -1260,13 +1270,17 @@ function BrandingEditor() {
               <ColorRoleRow label="Hero background / overlay" fieldName="hero_bg_color" helper="Background tint behind the event title when there is no cover image."
                 resolved={themeForPreview.heroBg} value={form.hero_bg_color}
                 onChange={(v) => editColour("hero_bg_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Event heading colour" fieldName="hero_fg_color" helper="Colour of the event title displayed over the cover image. Does not affect welcome copy."
+              <ColorRoleRow label="Event heading colour" fieldName="hero_fg_color" helper="Colour of the event title displayed over the cover image. Does not affect welcome copy, which has its own colour below."
                 resolved={themeForPreview.heroFg} value={form.hero_fg_color}
                 onChange={(v) => editColour("hero_fg_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.heroFg, themeForPreview.heroBg, "hero background")} />
               <ColorRoleRow label={`Cover eyebrow label colour ("Digital Passport")`} fieldName="hero_accent_color" helper={`Colour of the small uppercase label above the event title on the cover (e.g. "Digital Passport"), plus other hero accent flourishes.`}
                 resolved={themeForPreview.heroAccent} value={form.hero_accent_color}
                 onChange={(v) => editColour("hero_accent_color", v)} disabled={!canEdit || saving} />
+              <ColorRoleRow label="Welcome copy colour (over cover image)" fieldName="hero_body_color" helper="Colour of the welcome copy shown over the cover image, directly under the event title. Independent of the event heading colour."
+                resolved={themeForPreview.heroBody} value={form.hero_body_color}
+                onChange={(v) => editColour("hero_body_color", v)} disabled={!canEdit || saving}
+                warnings={warn(themeForPreview.heroBody, themeForPreview.heroBg, "hero background")} />
               <HeroOverlayCard
                 colorValue={form.hero_overlay_color}
                 opacityValue={form.hero_overlay_opacity}
@@ -1453,6 +1467,7 @@ function BrandingEditor() {
                       heroBgColor={form.hero_bg_color}
                       heroFgColor={form.hero_fg_color}
                       heroAccentColor={form.hero_accent_color}
+                      heroBodyColor={form.hero_body_color}
                       pageHeadingColor={form.page_heading_color}
                       pageBodyColor={form.page_body_color}
                       pageMutedColor={form.page_muted_color}
