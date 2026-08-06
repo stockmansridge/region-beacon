@@ -265,6 +265,12 @@ export function EventPublicLanding({
         heroBgColor={event.hero_bg_color ?? null}
         heroFgColor={event.hero_fg_color ?? null}
         heroAccentColor={event.hero_accent_color ?? null}
+        pageHeadingColor={event.page_heading_color ?? null}
+        pageBodyColor={event.page_body_color ?? null}
+        pageMutedColor={event.page_muted_color ?? null}
+        cardHeadingColor={event.card_heading_color ?? null}
+        cardBodyColor={event.card_body_color ?? null}
+        cardMutedColor={event.card_muted_color ?? null}
         fontFamily={event.font_family ?? null}
         headingFontFamily={event.heading_font_family ?? null}
         className="min-h-screen"
@@ -343,12 +349,16 @@ export function EventPublicLanding({
             />
             <div className="relative mx-auto flex min-h-[340px] max-w-md flex-col justify-end px-5 pb-16 pt-24 sm:min-h-[380px]">
               <p
+                data-brand-hint="hero_accent_color"
+                title="Hero eyebrow — Hero accent colour (--event-hero-accent)"
                 className="text-[10px] font-semibold uppercase tracking-[0.32em]"
                 style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
               >
                 Welcome
               </p>
               <h1
+                data-brand-hint="hero_fg_color"
+                title="Event heading — Event heading colour (--event-hero-fg)"
                 className="font-event-heading mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
                 style={{
                   color: "var(--event-hero-fg, var(--event-primary-fg))",
@@ -363,6 +373,8 @@ export function EventPublicLanding({
               </h1>
               {firstName ? (
                 <p
+                  data-brand-hint="hero_fg_color"
+                  title="Hero supporting text — Event heading colour (--event-hero-fg)"
                   className="mt-1 text-sm sm:text-base"
                   style={{
                     color: "var(--event-hero-fg, var(--event-primary-fg))",
@@ -372,20 +384,7 @@ export function EventPublicLanding({
                 >
                   Let’s explore {event.name}.
                 </p>
-              ) : (
-                landingCopy && (
-                  <p
-                    className="mt-1 whitespace-pre-line text-sm sm:text-base"
-                    style={{
-                      color: "var(--event-hero-fg, var(--event-primary-fg))",
-                      opacity: 0.95,
-                      textShadow: "0 1px 8px rgba(0,0,0,0.45)",
-                    }}
-                  >
-                    {landingCopy}
-                  </p>
-                )
-              )}
+              ) : null}
             </div>
           </section>
         </div>
@@ -588,6 +587,31 @@ export function EventPublicLanding({
               </div>
             )}
           </section>
+
+          {/* Welcome copy — lives on the CARD surface, so it uses the card
+              body text role (card_body_color -> --event-card-text). It must
+              never inherit the hero text colour: it is not over the image. */}
+          {landingCopy ? (
+            <section
+              className="mt-5 rounded-3xl border p-5 shadow-sm"
+              style={{
+                borderColor: "var(--event-card-border)",
+                backgroundColor: "var(--event-card-bg)",
+              }}
+            >
+              <p
+                data-brand-hint="card_body_color"
+                title="Welcome copy — Card body text colour (--event-card-text)"
+                className="whitespace-pre-line text-sm leading-relaxed"
+                style={{
+                  color:
+                    "var(--event-card-text, var(--event-card-body, var(--event-page-text, #41372E)))",
+                }}
+              >
+                {landingCopy}
+              </p>
+            </section>
+          ) : null}
 
           {/* Primary CTA */}
           <div className="mt-5">
