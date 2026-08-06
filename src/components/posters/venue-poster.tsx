@@ -85,7 +85,7 @@ export function VenuePoster({ data, capture = false, previewScale, id }: Props) 
           <div
             style={{
               position: "absolute",
-              top: 65,
+              top: 56,
               right: 56,
               ...eventLogoBoxStyle(
                 resolveEventLogoStyle({
