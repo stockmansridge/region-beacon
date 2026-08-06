@@ -113,7 +113,7 @@ export function EventTrailPoster({ data, capture = false, previewScale, id }: Pr
           <div
             style={{
               position: "absolute",
-              top: 65,
+              top: 56,
               right: 56,
               ...eventLogoBoxStyle(
                 resolveEventLogoStyle({
