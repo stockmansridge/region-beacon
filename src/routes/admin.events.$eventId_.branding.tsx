@@ -325,6 +325,21 @@ function BrandingEditor() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Uploaded (custom) fonts for this event.
+  const [customFonts, setCustomFonts] = useState<EventCustomFont[]>([]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const rows = await listEventCustomFonts(eventId);
+      if (!alive) return;
+      setCustomFonts(rows);
+      registerCustomFonts(rows);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [eventId]);
+
   // Surface save results as toasts so you never have to scroll up to see them.
   useEffect(() => {
     if (saveSuccess) toast.success(saveSuccess);
