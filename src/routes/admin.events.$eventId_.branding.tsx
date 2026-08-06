@@ -751,6 +751,18 @@ function BrandingEditor() {
       hint?: string | null;
     };
 
+    // Columns this database is missing (migration not yet applied). They are
+    // dropped from BOTH the write payload and the returning select, because a
+    // 42703 can come from either half of the request.
+    const missingCols = new Set<string>();
+
+    function selectList(): string {
+      return EVENT_BRANDING_SELECT_FALLBACK
+        .split(", ")
+        .filter((c) => !missingCols.has(c))
+        .join(", ");
+    }
+
     async function writeRow(payload: Record<string, unknown>): Promise<{
       row: Branding | null;
       error: WriteError | null;
@@ -762,7 +774,7 @@ function BrandingEditor() {
           .update(payload)
           .eq("event_id", bundle.event.id)
           .eq("agency_id", agencyId!)
-          .select(SELECT_COLS_FALLBACK)
+          .select(selectList())
 
           .maybeSingle();
         return { row: data as Branding | null, error };
@@ -770,18 +782,21 @@ function BrandingEditor() {
       const { data, error } = await supabase
         .from("event_branding")
         .insert({ agency_id: agencyId!, event_id: bundle.event.id, ...payload })
-        .select(SELECT_COLS_FALLBACK)
+        .select(selectList())
 
         .maybeSingle();
       return { row: data as Branding | null, error };
     }
 
-    // Extract the offending column name from either Postgres ("column "x" of
-    // relation") or PostgREST schema-cache (PGRST204: "Could not find the 'x'
-    // column of 'event_branding' in the schema cache") error messages.
+    // Extract the offending column name from Postgres ("column "x" of
+    // relation", "column event_branding.x does not exist") or PostgREST
+    // schema-cache (PGRST204: "Could not find the 'x' column of ...")
+    // error messages.
     function unknownColumn(msg: string): string | null {
       const pg = msg.match(/column "([^"]+)" of relation/i);
       if (pg?.[1]) return pg[1];
+      const missing = msg.match(/column (?:[\w.]*?\.)?"?([a-z0-9_]+)"? does not exist/i);
+      if (missing?.[1]) return missing[1];
       const prst = msg.match(/could not find the '([^']+)' column/i);
       return prst?.[1] ?? null;
     }
@@ -797,9 +812,10 @@ function BrandingEditor() {
     let guard = 0;
     while (writeErr && guard < 12) {
       const col = unknownColumn(writeErr.message ?? "");
-      if (!col || !(col in payload) || dropped.has(col)) break;
+      if (!col || dropped.has(col)) break;
       console.warn("[branding-save] dropping unknown column and retrying", { col });
       dropped.add(col);
+      missingCols.add(col);
       const { [col]: _drop, ...rest } = payload;
       payload = rest;
       const retry = await writeRow(payload);
@@ -807,6 +823,7 @@ function BrandingEditor() {
       writeErr = retry.error;
       guard++;
     }
+
 
     if (writeErr) {
       console.warn("[branding-save] write failed", {
