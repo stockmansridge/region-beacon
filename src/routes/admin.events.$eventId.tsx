@@ -7334,7 +7334,7 @@ function LaunchReadinessChecklist({
   // ----- 7. Trail map ------------------------------------------------
   const mapChecks: CheckItem[] = [];
   mapChecks.push({
-    label: "Trail map URL",
+    label: "Map URL",
     status: mapUrl ? "ready" : "blocking",
     detail: mapUrl ?? "Available once subdomain is claimed.",
     action: mapUrl ? (
@@ -7420,7 +7420,7 @@ function LaunchReadinessChecklist({
     { id: "venues", title: "Venues", items: venuesChecks },
     { id: "qr", title: "QR & check-in", items: qrChecks },
     { id: "passport", title: "Passport flow", items: passport },
-    { id: "map", title: "Trail map", items: mapChecks },
+    { id: "map", title: "Map", items: mapChecks },
     { id: "leaderboard", title: "Leaderboard", items: lbChecks },
     { id: "publish-gate", title: "Publish gate", items: publishGate },
   ];

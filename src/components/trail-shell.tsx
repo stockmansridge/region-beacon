@@ -106,7 +106,7 @@ function BottomNav({
 }) {
   const items: { key: NavKey; label: string; icon: typeof Stamp; to: string }[] = [
     { key: "passport", label: "Passport", icon: Stamp, to: "/demo/passport" },
-    { key: "map", label: "Trail Map", icon: MapIcon, to: "/demo/trail-map" },
+    { key: "map", label: "Map", icon: MapIcon, to: "/demo/trail-map" },
     { key: "wineries", label: venueLabelPlural, icon: Wine, to: "/demo/wineries" },
     { key: "rewards", label: "Rewards", icon: Gift, to: "/demo/rewards" },
     { key: "more", label: "More", icon: MoreHorizontal, to: "/demo/more" },

@@ -9,6 +9,11 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { focalObjectPosition } from "@/lib/cover-focal";
+import {
+  resolveEventLogoStyle,
+  eventLogoBoxStyle,
+  eventLogoImageStyle,
+} from "@/lib/event-logo-style";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
@@ -109,6 +114,9 @@ type EventRow = {
   cover_path?: string | null;
   cover_focal_x?: number | null;
   cover_focal_y?: number | null;
+  logo_shape?: string | null;
+  logo_backdrop?: string | null;
+  logo_backdrop_color?: string | null;
 };
 
 
@@ -325,6 +333,28 @@ export function PublicVenuesListPage({
             }}
           />
           <div className="relative mx-auto flex min-h-[260px] max-w-md flex-col justify-end px-5 pb-10 pt-24 sm:min-h-[300px]">
+            {/* Event logo — same dominant hero treatment as the landing page. */}
+            {logoUrl ? (
+              <div className="mb-4 flex justify-center">
+                <div
+                  style={eventLogoBoxStyle(
+                    resolveEventLogoStyle({
+                      shape: event?.logo_shape ?? null,
+                      backdrop: event?.logo_backdrop ?? null,
+                      backdropColor: event?.logo_backdrop_color ?? null,
+                    }),
+                    112,
+                  )}
+                >
+                  <img
+                    src={logoUrl}
+                    alt={event?.name ?? ""}
+                    style={eventLogoImageStyle()}
+                    loading="eager"
+                  />
+                </div>
+              </div>
+            ) : null}
             <p
               className="text-[10px] font-semibold uppercase tracking-[0.32em]"
               style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}

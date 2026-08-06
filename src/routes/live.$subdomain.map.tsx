@@ -31,7 +31,7 @@ import {
 } from "@/lib/passport-stamps";
 
 export const Route = createFileRoute("/live/$subdomain/map")({
-  head: () => ({ meta: [{ title: "Trail Map" }] }),
+  head: () => ({ meta: [{ title: "Map" }] }),
   component: function TrailMapRoute() {
     const { subdomain } = Route.useParams();
     return <PublicTrailMapPage subdomain={subdomain} />;
@@ -480,7 +480,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
               fontFamily: "var(--event-font, inherit)",
             }}
           >
-            Trail Map
+            Map
           </h1>
           {hasPassport && totalCount > 0 && (
             <p

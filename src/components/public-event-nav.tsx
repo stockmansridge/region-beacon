@@ -504,7 +504,7 @@ function MenuDrawer({
               <li>
                 <PublicLink to="/map" onClick={onClose} className={rowClass}>
                   <MapIcon className="h-5 w-5 opacity-80" />
-                  Trail Map
+                  Map
                 </PublicLink>
               </li>
             )}
