@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { PublicLink } from "@/components/public-nav-context";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
@@ -211,12 +212,12 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         {offers.length === 0 ? (
           <div className="rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
             <p>No offers have been listed yet.</p>
-            <Link
+            <PublicLink
               to="/venues"
               className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.22em] text-[var(--event-link,var(--event-primary,#1F3D2B))] underline-offset-4 hover:underline"
             >
               Browse {labels.plural.toLowerCase()} →
-            </Link>
+            </PublicLink>
           </div>
         ) : (
           <ul className="space-y-4">
@@ -235,7 +236,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
               );
               return (
                 <li key={vid}>
-                  <Link
+                  <PublicLink
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
                     className="group relative flex items-stretch gap-4 overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 pr-16 shadow-sm transition hover:border-[var(--event-link,var(--event-primary,#1F3D2B))]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-link,var(--event-primary,#1F3D2B))]"
@@ -292,7 +293,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                     >
                       <ChevronRight className="h-5 w-5" />
                     </span>
-                  </Link>
+                  </PublicLink>
                 </li>
               );
             })}

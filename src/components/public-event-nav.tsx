@@ -1,5 +1,10 @@
 import { useLocation } from "@tanstack/react-router";
-import { PublicLink } from "@/components/public-nav-context";
+import {
+  PublicLink,
+  buildEventHref,
+  eventNavBaseFromPathname,
+} from "@/components/public-nav-context";
+
 import { useState } from "react";
 import {
   Stamp,
@@ -83,7 +88,13 @@ export function PublicEventNav({
   const navActiveFg = `var(--event-nav-active-fg, ${accentColor ?? "var(--event-accent,#B5572A)"})`;
   
   const location = useLocation();
-  const pathname = location.pathname;
+  // Active-state matching is done against the page path with any
+  // /live/<subdomain> base stripped, so it works identically on a tenant host
+  // and inside the admin preview context.
+  const navBase = eventNavBaseFromPathname(location.pathname);
+  const pathname = navBase
+    ? location.pathname.slice(navBase.length) || "/"
+    : location.pathname;
   const { passportHref: derivedPassportHref } = useCurrentEventPassport(eventId);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -109,7 +120,11 @@ export function PublicEventNav({
   };
 
   const passportLabel = passportHref ? "View passport" : "Start passport";
-  const passportTarget = passportHref ?? "/join";
+  // A real passport href is token-based and host-agnostic; the "start" target
+  // is a public page and must stay inside the current event context.
+  const joinHref = buildEventHref({ to: "/join", base: navBase });
+  const passportTarget = passportHref ?? joinHref;
+
 
   return (
     <>
@@ -204,17 +219,29 @@ export function PublicEventNav({
               <Share2 className="h-5 w-5" />
             </button>
             {canRegister || passportHref ? (
-              <a
-                href={passportTarget}
-                aria-label={passportLabel}
-                title={passportLabel}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
-              >
-                <Stamp className="h-5 w-5" />
-              </a>
+              passportHref ? (
+                <a
+                  href={passportTarget}
+                  aria-label={passportLabel}
+                  title={passportLabel}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
+                >
+                  <Stamp className="h-5 w-5" />
+                </a>
+              ) : (
+                <PublicLink
+                  to="/join"
+                  aria-label={passportLabel}
+                  title={passportLabel}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
+                >
+                  <Stamp className="h-5 w-5" />
+                </PublicLink>
+              )
             ) : (
               <span aria-hidden className="h-10 w-10" />
             )}
+
           </div>
         </div>
       </header>
@@ -254,16 +281,29 @@ export function PublicEventNav({
           style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}
         >
           <li className="h-full min-w-0">
-            <a
-              href={passportTarget}
-              aria-label={passportLabel}
-              aria-current={isActive("passport") ? "page" : undefined}
-              className={bottomItemClass}
-              style={{ color: isActive("passport") ? navActiveFg : navMuted }}
-            >
-              <BottomItemContent icon={<Stamp className="h-5 w-5" />} label="Passport" />
-            </a>
+            {passportHref ? (
+              <a
+                href={passportTarget}
+                aria-label={passportLabel}
+                aria-current={isActive("passport") ? "page" : undefined}
+                className={bottomItemClass}
+                style={{ color: isActive("passport") ? navActiveFg : navMuted }}
+              >
+                <BottomItemContent icon={<Stamp className="h-5 w-5" />} label="Passport" />
+              </a>
+            ) : (
+              <PublicLink
+                to="/join"
+                aria-label={passportLabel}
+                aria-current={isActive("passport") ? "page" : undefined}
+                className={bottomItemClass}
+                style={{ color: isActive("passport") ? navActiveFg : navMuted }}
+              >
+                <BottomItemContent icon={<Stamp className="h-5 w-5" />} label="Passport" />
+              </PublicLink>
+            )}
           </li>
+
 
           <li className="h-full min-w-0">
             {hasMap ? (

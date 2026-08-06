@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { PublicLink } from "@/components/public-nav-context";
+
 import { Gift } from "lucide-react";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 
@@ -21,7 +22,7 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
 
   return (
     <section className="px-4">
-      <Link
+      <PublicLink
         to="/prizes"
         className="block rounded-3xl border p-4 shadow-sm transition hover:shadow-md"
         style={{
@@ -105,7 +106,7 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
             </p>
           )}
         </div>
-      </Link>
+      </PublicLink>
     </section>
   );
 }

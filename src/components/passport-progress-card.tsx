@@ -1,5 +1,6 @@
+import { PublicLink } from "@/components/public-nav-context";
 import { MapPin, Sparkles } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 
 /**
@@ -50,7 +51,7 @@ export function PassportProgressCard({
               Start collecting stamps at participating {venueLabelPlural.toLowerCase()}.
             </p>
           </div>
-          <Link
+          <PublicLink
             to="/join"
             className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.14em]"
             style={{
@@ -59,7 +60,7 @@ export function PassportProgressCard({
             }}
           >
             Start
-          </Link>
+          </PublicLink>
         </div>
       </section>
     );

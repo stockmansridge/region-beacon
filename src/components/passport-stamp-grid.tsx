@@ -1,5 +1,6 @@
+import { PublicLink } from "@/components/public-nav-context";
 import { Check, Sparkles, Stamp as StampIcon } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+
 import { useEffect, useState } from "react";
 import type { PassportStampVenue } from "@/lib/passport-stamps";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
@@ -51,7 +52,7 @@ export function PassportStampGrid({
           </h2>
         </div>
         {!hasPassport && canRegister && (
-          <Link
+          <PublicLink
             to="/join"
             className="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
             style={{
@@ -60,7 +61,7 @@ export function PassportStampGrid({
             }}
           >
             Start
-          </Link>
+          </PublicLink>
         )}
       </div>
 

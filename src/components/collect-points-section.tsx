@@ -1,5 +1,6 @@
+import { PublicLink } from "@/components/public-nav-context";
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+
 import { supabase } from "@/integrations/supabase/client";
 import { readStoredPassportForEvent } from "@/lib/use-current-event-passport";
 
@@ -94,13 +95,13 @@ export function CollectPointsSection({
             Start collecting by scanning a venue or bonus QR code.
           </p>
           {canRegister && (
-            <Link
+            <PublicLink
               to="/join"
               className="grid h-11 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
               style={{ backgroundColor: primary }}
             >
               Create your passport
-            </Link>
+            </PublicLink>
           )}
         </div>
       )}
