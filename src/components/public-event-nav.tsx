@@ -158,25 +158,20 @@ export function PublicEventNav({
             <Menu className="h-5 w-5" />
           </button>
 
+          {/* The logo is NOT shown here. It lives centred over the hero image on
+              the landing page, where it can be dominant; the top bar keeps the
+              event name so the header stays legible over any hero photo. */}
           <PublicLink
             to="/"
             aria-label={eventName ?? "Home"}
             className="mx-auto flex h-10 max-w-[70%] items-center justify-center"
           >
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt={eventName ?? ""}
-                className="max-h-9 w-auto max-w-full object-contain"
-              />
-            ) : (
-              <span
-                className="truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"
-                style={{ color: navFg }}
-              >
-                {eventName ?? "Event"}
-              </span>
-            )}
+            <span
+              className="truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"
+              style={{ color: navFg }}
+            >
+              {eventName ?? "Event"}
+            </span>
           </PublicLink>
 
           <div className="ml-auto flex items-center gap-1">
