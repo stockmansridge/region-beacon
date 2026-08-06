@@ -82,11 +82,13 @@ export function distanceMetres(a: Coords, b: Coords): number {
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-/** "850 m" below 1 km, "12.4 km" at or above 1 km. */
+/**
+ * Always km, never metres: "0.9km", "1.3km", "12km".
+ * Venue cards read "1.3km away".
+ */
 export function formatDistance(metres: number): string {
-  if (metres < 1000) return `${Math.round(metres)} m`;
   const km = metres / 1000;
-  return `${km < 10 ? km.toFixed(1) : Math.round(km)} km`;
+  return `${km < 10 ? km.toFixed(1) : String(Math.round(km))}km`;
 }
 
 /**
