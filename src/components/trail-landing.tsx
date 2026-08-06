@@ -180,14 +180,29 @@ export function TrailLanding({
             </div>
             <h1
               className="font-event-heading mt-2 text-[34px] font-semibold leading-[1.05]"
-              data-brand-hint="Hero foreground · Heading font family"
-              title="Event title — Hero foreground · Heading font family"
+              style={{
+                color:
+                  "var(--event-hero-fg, var(--event-hero-text, var(--event-primary-fg, #ffffff)))",
+              }}
+              data-brand-hint="Hero text colour · Heading font family"
+              title="Event title — Hero text colour · Heading font family"
             >
               {eventName}
             </h1>
             {pitch && (
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--event-primary-fg,#F6EFE2)]/85">{pitch}</p>
+              <p
+                className="mt-3 max-w-xs text-sm leading-relaxed opacity-85"
+                style={{
+                  color:
+                    "var(--event-hero-fg, var(--event-hero-text, var(--event-primary-fg, #ffffff)))",
+                }}
+                data-brand-hint="Hero text colour"
+                title="Hero pitch — Hero text colour"
+              >
+                {pitch}
+              </p>
             )}
+
           </div>
         </div>
       </div>
