@@ -1103,9 +1103,13 @@ export function EventBulkImportSection({
     setDrafts({ venues: venuesNext, bonuses: bonusesNext, tastings: tastingsNext });
     setImporting(false);
     setImportDone(true);
-    toast.success(
-      `Import complete: ${venuesCreated + venuesUpdated} venues, ${bonusesCreated + bonusesUpdated} bonus codes, ${tastingsCreated + tastingsUpdated} tasting QR codes.`,
-    );
+    const errorRows = [...venuesNext, ...bonusesNext, ...tastingsNext].filter((r) => r.result === "error").length;
+    const summaryText = `${venuesCreated + venuesUpdated} venues, ${bonusesCreated + bonusesUpdated} bonus codes, ${tastingsCreated + tastingsUpdated} tasting QR codes.`;
+    if (errorRows > 0) {
+      toast.error(`Import finished with ${errorRows} failed row${errorRows === 1 ? "" : "s"}: ${summaryText} See the row messages below.`);
+    } else {
+      toast.success(`Import complete: ${summaryText}`);
+    }
     onImported();
 
     // Stash counts for the summary view
