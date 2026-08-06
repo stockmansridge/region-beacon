@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PublicVenuesListPage } from "./live.$subdomain.venues.index";
 import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
+import { parseVenueSort } from "@/lib/venue-sort";
 
 export const Route = createFileRoute("/venues/")({
   head: () => ({
@@ -15,11 +16,23 @@ export const Route = createFileRoute("/venues/")({
     ],
     links: [{ rel: "canonical", href: "https://getstampd.com.au/venues" }],
   }),
+  // Display-only sort state (see src/lib/venue-sort.ts).
+  validateSearch: (search: Record<string, unknown>) => ({
+    sort: typeof search.sort === "string" ? search.sort : undefined,
+  }),
   component: VenuesCleanRoute,
 });
 
 function VenuesCleanRoute() {
   const subdomain = useTenantSubdomain();
+  const { sort } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   if (!subdomain) return <NonTenantNotice />;
-  return <PublicVenuesListPage subdomain={subdomain} />;
+  return (
+    <PublicVenuesListPage
+      subdomain={subdomain}
+      sort={parseVenueSort(sort)}
+      onSortChange={(next) => navigate({ search: { sort: next } })}
+    />
+  );
 }
