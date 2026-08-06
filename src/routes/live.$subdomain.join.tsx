@@ -1,3 +1,4 @@
+import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -777,7 +778,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
             />
             <span>
               I accept the{" "}
-              <Link
+              <PublicLink
                 to="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -785,9 +786,9 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 style={{ color: "var(--event-link)" }}
               >
                 terms
-              </Link>{" "}
+              </PublicLink>{" "}
               and{" "}
-              <Link
+              <PublicLink
                 to="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -795,7 +796,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 style={{ color: "var(--event-link)" }}
               >
                 privacy policy
-              </Link>
+              </PublicLink>
               .
             </span>
           </label>

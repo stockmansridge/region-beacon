@@ -1,3 +1,4 @@
+import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -502,7 +503,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
             }}
           >
             <span>Create a passport to track visited {labels.plural.toLowerCase()}.</span>
-            <Link
+            <PublicLink
               to="/join"
               className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
               style={{
@@ -511,7 +512,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
               }}
             >
               Start passport
-            </Link>
+            </PublicLink>
           </div>
         )}
 
@@ -619,14 +620,14 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
             <ul className="space-y-1">
               {unmappedVenues.map((v) => (
                 <li key={v.venue_id ?? Math.random()}>
-                  <Link
+                  <PublicLink
                     to="/venues/$venueId"
                     params={{ venueId: v.venue_id ?? "" }}
                     className="underline-offset-2 hover:underline"
                     style={{ color: "var(--event-link)" }}
                   >
                     {v.name ?? "Venue"}
-                  </Link>
+                  </PublicLink>
                 </li>
               ))}
             </ul>
@@ -716,7 +717,7 @@ function SelectedVenueCard({
       >
         ×
       </button>
-      <Link
+      <PublicLink
         to="/venues/$venueId"
         params={{ venueId: venue.venue_id ?? "" }}
         className="flex items-stretch gap-3 p-2.5 pr-10 transition focus:outline-none focus-visible:ring-2"
@@ -805,7 +806,7 @@ function SelectedVenueCard({
         >
           ›
         </span>
-      </Link>
+      </PublicLink>
     </div>
   );
 }
@@ -862,7 +863,7 @@ function MapFallbackList({
       <ul className="space-y-2">
         {venues.map((v) => (
           <li key={v.venue_id ?? Math.random()}>
-            <Link
+            <PublicLink
               to="/venues/$venueId"
               params={{ venueId: v.venue_id ?? "" }}
               className="block rounded-lg bg-white px-3 py-2 hover:bg-amber-100"
@@ -874,7 +875,7 @@ function MapFallbackList({
                   {v.address}
                 </span>
               )}
-            </Link>
+            </PublicLink>
           </li>
         ))}
       </ul>

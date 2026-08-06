@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { PublicLink } from "@/components/public-nav-context";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Stamp, MapPin, Navigation } from "lucide-react";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
@@ -396,7 +397,7 @@ export function PublicVenuesListPage({
               return (
                 <li key={vid || Math.random()}>
                   <div className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md">
-                    <Link
+                    <PublicLink
                       to="/venues/$venueId"
                       params={{ venueId: vid }}
                       aria-label={`View ${v.name ?? "venue"} details`}
@@ -449,7 +450,7 @@ export function PublicVenuesListPage({
                           );
                         })()}
                       </div>
-                    </Link>
+                    </PublicLink>
                     {(directionsUrl || showPoints) && (
                       <div className="flex items-center justify-between gap-2 border-t border-[var(--event-border,#E6DCC7)] px-3 py-2.5">
                         {directionsUrl ? (
