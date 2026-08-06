@@ -398,6 +398,54 @@ function readTabFromHash(): EventTabKey {
   return EVENT_TABS.some((t) => t.key === key) ? (key as EventTabKey) : "overview";
 }
 
+/**
+ * Every in-page section lives inside exactly ONE event tab, and the tab is
+ * driven by the URL hash (`#tab=<key>`). A checklist button that only set
+ * `#section-x` therefore silently did nothing: the hash no longer matched a
+ * tab, the page fell back to Overview, and the target section stayed
+ * `hidden`. Keep this map as the single source of truth so checklist
+ * actions and the tab bar can never drift apart.
+ */
+const SECTION_TAB: Record<string, EventTabKey> = {
+  "section-go-live": "overview",
+  "section-public-address": "overview",
+  "section-announcements": "overview",
+  "section-marketing": "overview",
+  "section-branding": "branding",
+  "section-terms": "terms",
+  "section-venues": "venues",
+  "section-participants": "participants",
+  "section-bonus-codes": "bonuscodes",
+  "section-bulk-import": "bulkimport",
+  "section-awards": "awards",
+  "section-faq": "faq",
+  "section-event-map": "faq",
+  "section-leaderboard": "leaderboard",
+  "section-rewards": "leaderboard",
+  "section-analytics": "analytics",
+};
+
+/** `#tab=<tab>` href for a section anchor — a real link, so back/forward work. */
+function sectionHref(sectionId: string): string {
+  const id = sectionId.replace(/^#/, "");
+  const tab = SECTION_TAB[id];
+  return tab ? `#tab=${tab}` : `#${id}`;
+}
+
+/** Switch to the section's tab (via the hash) and scroll it into view. */
+function jumpToSection(sectionId: string) {
+  if (typeof window === "undefined") return;
+  const id = sectionId.replace(/^#/, "");
+  const tab = SECTION_TAB[id];
+  if (tab) window.location.hash = `tab=${tab}`;
+  // The tab switch unhides the section on the next render.
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
 const EventTabContext = createContext<EventTabKey>("overview");
 
 function EventTabBar({
@@ -7039,10 +7087,19 @@ function OpenLinkButton({ href, label = "Open" }: { href: string; label?: string
   );
 }
 
+/**
+ * Checklist / notice action that jumps to an in-page section. `href` is a
+ * section id (e.g. "#section-terms"); the button resolves the owning tab so
+ * the section is actually visible when we scroll to it.
+ */
 function AnchorButton({ href, label }: { href: string; label: string }) {
   return (
     <a
-      href={href}
+      href={sectionHref(href)}
+      onClick={(e) => {
+        e.preventDefault();
+        jumpToSection(href);
+      }}
       className="inline-flex h-9 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-3.5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]"
     >
       {label}
