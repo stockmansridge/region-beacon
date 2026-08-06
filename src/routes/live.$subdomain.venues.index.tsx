@@ -8,12 +8,6 @@ import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
-import { focalObjectPosition } from "@/lib/cover-focal";
-import {
-  resolveEventLogoStyle,
-  eventLogoBoxStyle,
-  eventLogoImageStyle,
-} from "@/lib/event-logo-style";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
@@ -258,7 +252,7 @@ export function PublicVenuesListPage({
     (v) => typeof v.points_value === "number" && (v.points_value ?? 0) > 0,
   );
 
-  const heroImageUrl = getEventAssetPublicUrl(event?.cover_path ?? null);
+
 
   return (
     <EventPaletteScope
@@ -292,93 +286,38 @@ export function PublicVenuesListPage({
       headingFontFamily={event?.heading_font_family ?? null}
       className="min-h-screen pb-10"
     >
-      {/* Full-bleed hero with overlaid header */}
-      <div className="relative">
-        <div className="absolute inset-x-0 top-0 z-40 px-4">
-          <PublicEventNav
-            subdomain={subdomain}
-            eventName={event?.name}
-            primaryColor={event?.primary_color}
-            accentColor={event?.accent_color}
-            logoUrl={logoUrl}
-            eventId={event?.event_id ?? null}
-            transparentHeader
-          />
-        </div>
-
-        <section
-          className="relative w-full overflow-hidden"
-          style={{
-            backgroundColor: "var(--event-hero-bg, var(--event-primary))",
-            color: "var(--event-hero-fg, var(--event-primary-fg))",
-            minHeight: 260,
-          }}
-        >
-          {heroImageUrl ? (
-            <img
-              src={heroImageUrl}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{
-                objectPosition: focalObjectPosition(event?.cover_focal_x, event?.cover_focal_y),
-              }}
-              loading="eager"
-            />
-          ) : null}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(180deg, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 0%, var(--event-hero-overlay, rgba(0,0,0,0.2)) 45%, var(--event-hero-overlay-strong, rgba(0,0,0,0.6)) 100%)",
-            }}
-          />
-          <div className="relative mx-auto flex min-h-[260px] max-w-md flex-col justify-end px-5 pb-10 pt-24 sm:min-h-[300px]">
-            {/* Event logo — same dominant hero treatment as the landing page. */}
-            {logoUrl ? (
-              <div className="mb-4 flex justify-center">
-                <div
-                  style={eventLogoBoxStyle(
-                    resolveEventLogoStyle({
-                      shape: event?.logo_shape ?? null,
-                      backdrop: event?.logo_backdrop ?? null,
-                      backdropColor: event?.logo_backdrop_color ?? null,
-                    }),
-                    112,
-                  )}
-                >
-                  <img
-                    src={logoUrl}
-                    alt={event?.name ?? ""}
-                    style={eventLogoImageStyle()}
-                    loading="eager"
-                  />
-                </div>
-              </div>
-            ) : null}
-            <p
-              className="text-[10px] font-semibold uppercase tracking-[0.32em]"
-              style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
-            >
-              {labels.plural}
-            </p>
-            <h1
-              className="font-event-heading mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
-              style={{
-                color: "var(--event-hero-fg, var(--event-primary-fg))",
-                textShadow: "0 2px 12px rgba(0,0,0,0.45)",
-              }}
-            >
-              {event?.name ?? "Explore"}
-            </h1>
-          </div>
-        </section>
-      </div>
-
       <PublicAnnouncementBar subdomain={subdomain} />
+      <PublicEventNav
+        subdomain={subdomain}
+        eventName={event?.name}
+        primaryColor={event?.primary_color}
+        accentColor={event?.accent_color}
+        logoUrl={logoUrl}
+        eventId={event?.event_id ?? null}
+      />
       <div className="mx-auto max-w-md px-4">
         <div className="mt-4">
           <PublicTrailTabs active="venues" venueLabelPlural={labels.plural} />
         </div>
+
+        <div className="mb-5 mt-6 px-1">
+          <h1
+            className="text-[28px] font-semibold leading-tight"
+            style={{
+              color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
+              fontFamily: "var(--event-font, inherit)",
+            }}
+          >
+            {labels.plural}
+          </h1>
+          <p
+            className="mt-2 text-[13.5px] leading-relaxed"
+            style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
+          >
+            Explore every stop on the trail and collect your stamps.
+          </p>
+        </div>
+
         <div className="mt-4">
           <PassportProgressCard
             eventId={event?.event_id ?? null}
