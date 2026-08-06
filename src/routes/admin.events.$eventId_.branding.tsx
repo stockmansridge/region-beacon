@@ -1847,6 +1847,21 @@ function FontSelect({
               {value.trim()} (unavailable — pick a font below)
             </SelectItem>
           )}
+          {customFonts.length > 0 && (
+            <SelectGroup>
+              <SelectLabel>Your uploaded fonts</SelectLabel>
+              {customFonts.map((f) => (
+                <SelectItem
+                  key={f.id}
+                  value={f.family_name}
+                  style={{ fontFamily: customFontStack(f.family_name) }}
+                >
+                  {f.family_name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          )}
+
           {(["Display", "Serif", "Sans", "Script"] as const).map((cat) => {
             const fonts = EVENT_FONTS.filter((f) => f.category === cat);
             if (fonts.length === 0) return null;
