@@ -87,6 +87,12 @@ export type PublicEventData = {
   hero_accent_color?: string | null;
   /** event_branding.hero_body_color — welcome copy over the hero image. */
   hero_body_color?: string | null;
+  /** event_branding.logo_shape — 'square' | 'circle' (NULL = square). */
+  logo_shape?: string | null;
+  /** event_branding.logo_backdrop — 'transparent' | 'color' (NULL = transparent). */
+  logo_backdrop?: string | null;
+  /** event_branding.logo_backdrop_color — plate colour when backdrop = 'color'. */
+  logo_backdrop_color?: string | null;
   page_heading_color?: string | null;
   page_body_color?: string | null;
   page_muted_color?: string | null;
