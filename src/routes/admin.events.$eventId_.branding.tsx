@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/select";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWebsiteUrl } from "@/lib/normalize-url";
@@ -323,6 +325,22 @@ function BrandingEditor() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Surface save results as toasts so you never have to scroll up to see them.
+  useEffect(() => {
+    if (saveSuccess) toast.success(saveSuccess);
+  }, [saveSuccess]);
+  useEffect(() => {
+    if (saveError) {
+      toast.error(saveError, { duration: 12000, closeButton: true });
+    }
+  }, [saveError]);
+  useEffect(() => {
+    if (validationError) {
+      toast.error(validationError, { duration: 8000, closeButton: true });
+    }
+  }, [validationError]);
+
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     logo: false,
     cover: false,
@@ -488,6 +506,12 @@ function BrandingEditor() {
 
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
+    // Clear previous messages so repeated identical results still re-toast.
+    setValidationError(null);
+    setSaveError(null);
+    setSaveSuccess(null);
+
+
 
     // Field-level validation.
     const trim = (s: string) => s.trim();
