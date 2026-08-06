@@ -387,6 +387,9 @@ function PostersPage() {
       headingFontFamily: headingFont,
       bodyFontFamily: bodyFont,
       logoUrl: getEventAssetPublicUrl(branding?.logo_path ?? null),
+      logoShape: branding?.logo_shape ?? null,
+      logoBackdrop: branding?.logo_backdrop ?? null,
+      logoBackdropColor: branding?.logo_backdrop_color ?? null,
       heroImageUrl: getEventAssetPublicUrl(branding?.cover_path ?? null),
     };
   }, [branding]);
