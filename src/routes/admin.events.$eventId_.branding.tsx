@@ -33,6 +33,7 @@ import {
   type EventAssetKind,
 } from "@/lib/event-assets";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { EVENT_BRANDING_SELECT, EVENT_BRANDING_SELECT_FALLBACK } from "@/lib/event-branding-theme";
 import { resolveEventTheme } from "@/lib/event-theme";
 import { contrastRatio } from "@/lib/contrast";
 import {
@@ -251,25 +252,11 @@ const COLOUR_FORM_KEYS: ReadonlyArray<keyof Form> = [
   "hero_bg_color", "hero_fg_color", "hero_accent_color",
 ];
 
-const SELECT_COLS_BASE = [
-  "logo_path", "cover_path", "font_family", "heading_font_family", "default_emotive_font_family", "welcome_copy", "terms_url",
-  "venue_label_singular", "venue_label_plural",
-  "primary_color", "accent_color", "link_color",
-  "page_background_color", "text_color", "muted_text_color", "border_color",
-  "page_heading_color", "page_body_color", "page_muted_color",
-  "card_background_color", "card_text_color", "card_muted_text_color", "card_border_color",
-  "card_heading_color", "card_body_color", "card_muted_color",
-  "primary_text_color",
-  "button_primary_bg", "button_primary_fg", "button_secondary_bg", "button_secondary_fg",
-  "nav_background_color", "nav_fg_color", "nav_muted_color", "nav_active_fg_color",
-  "hero_bg_color", "hero_fg_color", "hero_accent_color",
-  "hero_overlay_color", "hero_overlay_opacity",
-  "brand_kit_key", "brand_kit_version",
-  "palette_key", "page_background_key",
-];
-const SELECT_COLS_OPTIONAL = ["cover_focal_x", "cover_focal_y"];
-const SELECT_COLS = [...SELECT_COLS_BASE, ...SELECT_COLS_OPTIONAL].join(", ");
-const SELECT_COLS_FALLBACK = SELECT_COLS_BASE.join(", ");
+// Canonical branding column list — shared with the admin full-preview route so
+// the two surfaces can never drift.
+const SELECT_COLS = EVENT_BRANDING_SELECT;
+const SELECT_COLS_FALLBACK = EVENT_BRANDING_SELECT_FALLBACK;
+
 
 
 function brandingToForm(b: Branding | null): Form {
@@ -872,6 +859,10 @@ function BrandingEditor() {
   }
 
   const { event, branding, venueCount } = bundle;
+  // Full preview always renders the last SAVED branding, so surface unsaved edits.
+  const hasUnsavedChanges =
+    JSON.stringify(form) !== JSON.stringify(brandingToForm(branding));
+
   const venueLabels = resolveVenueLabels({
     venue_label_singular: form.venue_label_singular,
     venue_label_plural: form.venue_label_plural,
@@ -924,6 +915,8 @@ function BrandingEditor() {
           onSaveAndReturn={() => onSave({ returnAfter: true })}
           onCancel={() => navigate({ to: "/admin/events/$eventId", params: { eventId } })}
           eventId={eventId}
+          hasUnsavedChanges={hasUnsavedChanges}
+
         />
       </div>
 
@@ -1400,7 +1393,7 @@ function BrandingEditor() {
 // Header — top action bar
 // ============================================================================
 function Header({
-  event, primaryDomain, canEdit, saving, onSave, onSaveAndReturn, onCancel, eventId,
+  event, primaryDomain, canEdit, saving, onSave, onSaveAndReturn, onCancel, eventId, hasUnsavedChanges,
 }: {
   event: EventRow;
   primaryDomain: Domain | null;
@@ -1410,6 +1403,7 @@ function Header({
   onSaveAndReturn: () => void;
   onCancel: () => void;
   eventId: string;
+  hasUnsavedChanges?: boolean;
 }) {
   return (
     <div className="flex items-start justify-between gap-4">
@@ -1426,15 +1420,25 @@ function Header({
           </span>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-start gap-2">
         <Link to="/admin/events/$eventId" params={{ eventId }}
           className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]">
           ← Back to event
         </Link>
-        <Link to="/admin/events/$eventId/preview" params={{ eventId }} target="_blank"
-          className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]">
-          Open full preview
-        </Link>
+        <div className="flex flex-col items-start">
+          <Link to="/admin/events/$eventId/preview" params={{ eventId }} target="_blank"
+            title={hasUnsavedChanges
+              ? "Full preview shows the last saved branding — save to see your latest edits"
+              : "Full preview matches the embedded preview"}
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]">
+            Open full preview
+          </Link>
+          {hasUnsavedChanges && (
+            <span className="mt-1 max-w-[200px] text-[11px] leading-4 text-[#B45309]">
+              Unsaved changes — full preview shows the last saved branding. Save first.
+            </span>
+          )}
+        </div>
         <button type="button" onClick={onCancel} disabled={saving}
           className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50">
           Discard changes
@@ -1442,6 +1446,7 @@ function Header({
         {canEdit && (
           <>
             <button type="button" onClick={onSave} disabled={saving}
+
               className="inline-flex h-10 items-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50">
               {saving ? "Saving…" : "Save"}
             </button>

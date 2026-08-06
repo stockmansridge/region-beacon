@@ -8,9 +8,27 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
+import {
+  EVENT_BRANDING_SELECT,
+  EVENT_BRANDING_SELECT_FALLBACK,
+  isMissingBrandingColumnError,
+  brandingToScopeProps,
+  brandingToHeroProps,
+  type EventBrandingRow,
+} from "@/lib/event-branding-theme";
 
 export const Route = createFileRoute("/admin_/events/$eventId/preview")({
-  head: () => ({ meta: [{ title: "Event preview" }] }),
+  head: () => ({
+    meta: [
+      { title: "Customer landing preview — GetStampd admin" },
+      {
+        name: "description",
+        content:
+          "Preview the customer landing page for a draft or published event using the saved Brand Kit.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: EventPreview,
 });
 
@@ -23,27 +41,11 @@ type EventRow = {
   public_slug: string | null;
 };
 
-type Branding = {
-  primary_color: string | null;
-  accent_color: string | null;
-  font_family: string | null;
-  welcome_copy: string | null;
-  terms_url: string | null;
-  venue_label_singular: string | null;
-  venue_label_plural: string | null;
-  logo_path: string | null;
-  cover_path: string | null;
-  palette_key: string | null;
-  page_background_key: string | null;
-  page_background_color: string | null;
-  card_background_color: string | null;
-};
-
 type Venue = { id: string; name: string };
 
 type Bundle = {
   event: EventRow;
-  branding: Branding | null;
+  branding: EventBrandingRow | null;
   venues: Venue[];
   termsUrl: string | null;
   privacyUrl: string | null;
@@ -115,26 +117,19 @@ function EventPreview() {
         return;
       }
 
-      const BRANDING_FULL =
-        "primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, logo_path, cover_path, palette_key, page_background_key, page_background_color, card_background_color";
-      const BRANDING_FALLBACK =
-        "primary_color, accent_color, font_family, welcome_copy, terms_url, venue_label_singular, venue_label_plural, logo_path, cover_path, palette_key, page_background_key";
-
+      // Canonical branding read — same column list as the branding editor and
+      // the public landing page, with a tolerant fallback for older
+      // production databases missing the newest columns.
       let brandingRes = await supabase
         .from("event_branding")
-        .select(BRANDING_FULL)
+        .select(EVENT_BRANDING_SELECT)
         .eq("event_id", event.id)
         .eq("agency_id", agencyId)
         .maybeSingle();
-      if (
-        brandingRes.error &&
-        /(page_background_color|card_background_color|palette_key|page_background_key)/i.test(
-          brandingRes.error.message ?? "",
-        )
-      ) {
+      if (brandingRes.error && isMissingBrandingColumnError(brandingRes.error.message)) {
         brandingRes = await supabase
           .from("event_branding")
-          .select(BRANDING_FALLBACK)
+          .select(EVENT_BRANDING_SELECT_FALLBACK)
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .maybeSingle();
@@ -182,7 +177,7 @@ function EventPreview() {
         domains[0]?.public_subdomain ??
         null;
 
-      const branding = (brandingRes.data ?? null) as Branding | null;
+      const branding = (brandingRes.data ?? null) as EventBrandingRow | null;
       setBundle({
         event: event as EventRow,
         branding,
@@ -244,6 +239,7 @@ function EventPreview() {
     const sep = suffix.includes("?") ? "&" : "?";
     return `${tenantBase}${suffix}${sep}preview=1`;
   };
+
   // Resolve palette: if a curated palette_key is set, derive primary/accent
   // from it; otherwise use stored hex colours (custom palette path).
   const resolved = applyPaletteToEvent({
@@ -255,7 +251,10 @@ function EventPreview() {
     resolved.primary_color && HEX_RE.test(resolved.primary_color) ? resolved.primary_color : "#1F3D2B";
   const accentColor =
     resolved.accent_color && HEX_RE.test(resolved.accent_color) ? resolved.accent_color : "#B5572A";
-  const fontFamily = branding?.font_family?.trim() || undefined;
+
+  const scopeProps = brandingToScopeProps(branding);
+  const heroProps = brandingToHeroProps(branding);
+  const venueLabels = resolveVenueLabels(branding ?? null);
   const welcomeCopy =
     branding?.welcome_copy?.trim() ||
     "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail.";
@@ -265,8 +264,11 @@ function EventPreview() {
       href={liveHref("/join")!}
       target="_blank"
       rel="noreferrer"
-      className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] shadow"
-      style={{ backgroundColor: primaryColor }}
+      className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide shadow"
+      style={{
+        backgroundColor: "var(--event-primary-button-bg, var(--event-primary))",
+        color: "var(--event-primary-button-fg, var(--event-primary-fg))",
+      }}
     >
       Start passport (opens live site)
     </a>
@@ -275,52 +277,52 @@ function EventPreview() {
       type="button"
       disabled
       title="Publish the event with a public address to enable the interactive passport flow"
-      className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[#F6EFE2] opacity-70 shadow"
-      style={{ backgroundColor: primaryColor }}
+      className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-semibold tracking-wide opacity-70 shadow"
+      style={{
+        backgroundColor: "var(--event-primary-button-bg, var(--event-primary))",
+        color: "var(--event-primary-button-fg, var(--event-primary-fg))",
+      }}
     >
       Start passport · publish event to enable
     </button>
   );
 
+  const secondaryStyle = {
+    backgroundColor: "var(--event-secondary-button-bg, transparent)",
+    color: "var(--event-secondary-button-fg, var(--event-primary))",
+    borderColor: "var(--event-border, rgba(0,0,0,0.15))",
+  } as const;
+
   const SecondaryButton = canOpenLive ? (
     <a
-      href={liveHref("/")!}
+      href={liveHref("/join")!}
       target="_blank"
       rel="noreferrer"
-      className="flex h-11 w-full items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide"
-      style={{ borderColor: `${primaryColor}40`, color: primaryColor }}
+      className="flex h-11 w-full items-center justify-center rounded-full border text-sm font-semibold tracking-wide"
+      style={secondaryStyle}
     >
-      Open live customer site
+      I already have a passport
     </a>
   ) : (
     <button
       type="button"
       disabled
-      title="Returning-passport lookup is part of the live customer site"
-      className="flex h-11 w-full cursor-not-allowed items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide opacity-70"
-      style={{ borderColor: `${primaryColor}40`, color: primaryColor }}
+      className="flex h-11 w-full cursor-not-allowed items-center justify-center rounded-full border text-sm font-semibold tracking-wide opacity-70"
+      style={secondaryStyle}
     >
       I already have a passport
     </button>
   );
 
   return (
-    <EventPaletteScope
-      paletteKey={branding?.palette_key ?? null}
-      backgroundKey={branding?.page_background_key ?? null}
-      primaryColor={branding?.primary_color ?? null}
-      accentColor={branding?.accent_color ?? null}
-      pageBackgroundColor={branding?.page_background_color ?? null}
-      cardBackgroundColor={branding?.card_background_color ?? null}
-      className="min-h-screen"
-    >
-      <div style={fontFamily ? { fontFamily } : undefined}>
-        {/* Floating admin controls */}
+    <EventPaletteScope {...scopeProps} className="min-h-screen">
+      <div>
+        {/* Floating admin controls (admin chrome — intentionally neutral) */}
         <div className="fixed left-4 top-4 z-50">
           <Link
             to="/admin/events/$eventId"
             params={{ eventId }}
-            className="inline-flex h-9 items-center rounded-full border bg-white/95 px-3 text-xs font-medium text-neutral-700 shadow hover:bg-white"
+            className="inline-flex h-9 items-center rounded-full border border-neutral-300 bg-neutral-50/95 px-3 text-xs font-medium text-neutral-700 shadow hover:bg-neutral-100"
           >
             ← Back to admin
           </Link>
@@ -331,7 +333,7 @@ function EventPreview() {
             title={`Status: ${event.status}`}
           >
             <span className="h-2 w-2 rounded-full bg-amber-500" />
-            Preview — not live
+            {isPublished ? "Preview — published" : "Preview — not live"}
           </div>
         </div>
 
@@ -349,8 +351,10 @@ function EventPreview() {
               </button>
               <p className="font-semibold uppercase tracking-[0.18em]">Admin preview</p>
               <p className="mt-1">
-                You are viewing the real customer page in preview mode. Navigation and
-                customer actions use the live event flow.
+                This is the real customer landing page rendered with the{" "}
+                <strong>last saved</strong> Brand Kit. Unsaved edits in the Branding
+                editor appear only in its embedded preview — save first, then reload
+                this page.
               </p>
               {canOpenLive ? (
                 <p className="mt-2">
@@ -360,9 +364,9 @@ function EventPreview() {
                 </p>
               ) : (
                 <p className="mt-2">
-                  This event must be published before the full customer journey can be
-                  tested. Claim a public address and turn the event live, then return
-                  here to open the real customer site.
+                  This event does not need to be published to preview its design. Publish
+                  it with a public address when you want to test the full customer
+                  journey.
                 </p>
               )}
             </div>
@@ -374,23 +378,27 @@ function EventPreview() {
             welcomeCopy={welcomeCopy}
             primaryColor={primaryColor}
             accentColor={accentColor}
-            fontFamily={fontFamily}
             badge="Preview"
             venueNames={venues.map((v) => v.name)}
             venueCount={venues.length}
-            venueLabelPlural={resolveVenueLabels(branding).plural}
+            venueLabelPlural={venueLabels.plural}
             logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
             heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
             termsUrl={termsUrl ?? null}
             primaryCta={PrimaryStartButton}
             secondaryCta={SecondaryButton}
+            {...heroProps}
           />
 
           {/* Quick navigation — mirrors the public event menu */}
           <nav
             aria-label="Preview navigation"
-            className="mx-auto mt-6 grid w-full max-w-md grid-cols-2 gap-2 rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]/80 p-3 text-xs font-medium uppercase tracking-[0.16em]"
-            style={{ color: primaryColor }}
+            className="mx-auto mt-6 grid w-full max-w-md grid-cols-2 gap-2 rounded-2xl border p-3 text-xs font-medium uppercase tracking-[0.16em]"
+            style={{
+              backgroundColor: "var(--event-nav-bg, var(--event-card-bg))",
+              borderColor: "var(--event-card-border, var(--event-border))",
+              color: "var(--event-nav-fg, var(--event-card-text))",
+            }}
           >
             {[
               { label: "Venues", path: "/venues" },
@@ -407,42 +415,65 @@ function EventPreview() {
                   href={href}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-xl border border-transparent bg-white/60 px-3 py-2 text-center hover:border-[#E6DCC7] hover:bg-white"
+                  className="rounded-xl border px-3 py-2 text-center"
+                  style={{
+                    borderColor: "var(--event-card-border, var(--event-border))",
+                    color: "var(--event-nav-active-fg, var(--event-nav-fg, var(--event-card-text)))",
+                  }}
                 >
                   {item.label}
                 </a>
               ) : (
                 <span
                   key={item.label}
-                  className="rounded-xl border border-dashed border-[#E6DCC7] bg-white/40 px-3 py-2 text-center opacity-60"
+                  className="rounded-xl border border-dashed px-3 py-2 text-center opacity-60"
+                  style={{
+                    borderColor: "var(--event-card-border, var(--event-border))",
+                    color: "var(--event-nav-muted, var(--event-card-muted, var(--event-muted)))",
+                  }}
                   title="Available once the event is published with a public address"
                 >
                   {item.label}
                 </span>
               );
+
             })}
           </nav>
 
           {/* Venue list with click-through to live venue pages when available */}
           {venues.length > 0 && (
-            <section className="mx-auto mt-6 w-full max-w-md rounded-2xl border border-[#E6DCC7] bg-[#FBF5E8]/80 p-4">
+            <section
+              className="mx-auto mt-6 w-full max-w-md rounded-2xl border p-4"
+              style={{
+                backgroundColor: "var(--event-card-bg)",
+                borderColor: "var(--event-card-border, var(--event-border))",
+              }}
+            >
               <h3
                 className="text-[11px] font-semibold uppercase tracking-[0.22em]"
-                style={{ color: accentColor }}
+                style={{ color: "var(--event-accent)" }}
               >
-                {resolveVenueLabels(branding).plural}
+                {venueLabels.plural}
               </h3>
-              <ul className="mt-2 divide-y divide-[#E6DCC7]">
+              <ul className="mt-2 divide-y" style={{ borderColor: "var(--event-card-border, var(--event-border))" }}>
                 {venues.map((v) => {
                   const href = liveHref(`/venues/${v.id}`);
                   return (
-                    <li key={v.id} className="py-2 text-sm" style={{ color: primaryColor }}>
+                    <li
+                      key={v.id}
+                      className="border-t py-2 text-sm first:border-t-0"
+                      style={{
+                        color: "var(--event-card-text)",
+                        borderColor: "var(--event-card-border, var(--event-border))",
+                      }}
+                    >
                       {href ? (
                         <a
                           href={href}
                           target="_blank"
                           rel="noreferrer"
                           className="hover:underline"
+                          style={{ color: "var(--event-link, var(--event-card-text))" }}
                         >
                           {v.name}
                         </a>
@@ -454,7 +485,7 @@ function EventPreview() {
                 })}
               </ul>
               {!canOpenLive && (
-                <p className="mt-3 text-[11px] text-[#8A7E66]">
+                <p className="mt-3 text-[11px]" style={{ color: "var(--event-card-muted, var(--event-muted))" }}>
                   To test real QR collection, publish the event and scan the venue QR
                   code from the admin Venues tab.
                 </p>
@@ -462,7 +493,10 @@ function EventPreview() {
             </section>
           )}
 
-          <p className="mt-6 text-center text-[10px] uppercase tracking-[0.22em] text-[#8A7E66]">
+          <p
+            className="mt-6 text-center text-[10px] uppercase tracking-[0.22em]"
+            style={{ color: "var(--event-page-muted, var(--event-muted))" }}
+          >
             Admin preview · customer actions on the live site create real data
           </p>
         </div>
