@@ -17,6 +17,7 @@ import { NextRewardCard } from "@/components/next-reward-card";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
 import { BonusPointsPromo } from "@/components/bonus-points-promo";
+import { RingConfetti } from "@/components/ring-confetti";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 
@@ -468,7 +469,9 @@ function LivePublicLoaded({
               style={{ borderRight: "1px solid var(--event-card-border)" }}
             >
               <div className="relative" style={{ width: ringSize + 32, height: ringSize + 20 }}>
-                {homeData.hasPassport && visited > 0 ? <RingConfetti /> : null}
+                {homeData.hasPassport && visited > 0 ? (
+                  <RingConfetti celebrationKey={`${subdomain}:stamps-${visited}`} />
+                ) : null}
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: ringSize, height: ringSize }}>
                   <svg
                     width={ringSize}
