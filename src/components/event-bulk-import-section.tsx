@@ -746,6 +746,7 @@ export function EventBulkImportSection({
   async function confirmImport() {
     if (!drafts) return;
     setImporting(true);
+    setFatalError(null);
 
     const venueIdByKey = new Map<string, string>();
     let venuesCreated = 0;
