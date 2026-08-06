@@ -248,3 +248,10 @@
 .live-activity-enter { animation: live-activity-in 320ms ease-out both; }
 .live-activity-exit { animation: live-activity-out 320ms ease-in both; }
 
+
+@media (prefers-reduced-motion: reduce) {
+  .live-activity-enter,
+  .live-activity-exit {
+    animation: none;
+  }
+}
