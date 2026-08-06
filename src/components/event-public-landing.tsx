@@ -95,6 +95,16 @@ export type PublicEventData = {
   card_muted_color?: string | null;
 };
 
+/**
+ * Hero supporting-copy colour (welcome copy, hero sub-line).
+ *
+ * Own semantic role so the event heading and the welcome copy stay
+ * independently configurable. Fallback chain keeps events that predate
+ * event_branding.hero_body_color legible over the cover image.
+ */
+const HERO_BODY_COLOR =
+  "var(--event-hero-body, var(--event-hero-fg, var(--event-primary-fg, #ffffff)))";
+
 export type PublicVenueData = {
   venue_id: string;
   name: string;
