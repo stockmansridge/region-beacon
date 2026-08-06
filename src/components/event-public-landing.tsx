@@ -19,6 +19,11 @@ import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 import { PublicLink, PublicNavProvider, type PublicNavMode } from "@/components/public-nav-context";
 import { resolvePublicLandingCopy } from "@/lib/public-landing-copy";
+import {
+  resolveEventLogoStyle,
+  eventLogoBoxStyle,
+  eventLogoImageStyle,
+} from "@/lib/event-logo-style";
 
 /**
  * THE customer landing page.
