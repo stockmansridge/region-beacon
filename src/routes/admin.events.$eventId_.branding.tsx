@@ -506,6 +506,12 @@ function BrandingEditor() {
 
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
+    // Clear previous messages so repeated identical results still re-toast.
+    setValidationError(null);
+    setSaveError(null);
+    setSaveSuccess(null);
+
+
 
     // Field-level validation.
     const trim = (s: string) => s.trim();
