@@ -9,154 +9,74 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-found'
-import { Route as TermsPrivacyRouteImport } from './routes/terms-privacy'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ScanRouteImport } from './routes/scan'
-import { Route as PrizesRouteImport } from './routes/prizes'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as OffersRouteImport } from './routes/offers'
-import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
-import { Route as MapRouteImport } from './routes/map'
-import { Route as LeaderboardRouteImport } from './routes/leaderboard'
-import { Route as JoinRouteImport } from './routes/join'
-import { Route as FaqRouteImport } from './routes/faq'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as VenuesIndexRouteImport } from './routes/venues.index'
-import { Route as PassportIndexRouteImport } from './routes/passport.index'
-import { Route as DemoIndexRouteImport } from './routes/demo.index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as JoinRouteImport } from './routes/join'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as MapRouteImport } from './routes/map'
+import { Route as MarketingPreviewRouteImport } from './routes/marketing-preview'
+import { Route as OffersRouteImport } from './routes/offers'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PrizesRouteImport } from './routes/prizes'
+import { Route as ScanRouteImport } from './routes/scan'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TermsPrivacyRouteImport } from './routes/terms-privacy'
+import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-found'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as VenuesVenueIdRouteImport } from './routes/venues.$venueId'
-import { Route as TastingQrTokenRouteImport } from './routes/tasting.$qrToken'
-import { Route as TAgencySlugRouteImport } from './routes/t.$agencySlug'
-import { Route as PassportTokenRouteImport } from './routes/passport.$token'
-import { Route as DemoWineriesRouteImport } from './routes/demo.wineries'
-import { Route as DemoTrailMapRouteImport } from './routes/demo.trail-map'
-import { Route as DemoRewardsRouteImport } from './routes/demo.rewards'
-import { Route as DemoPassportRouteImport } from './routes/demo.passport'
-import { Route as DemoOffersRouteImport } from './routes/demo.offers'
-import { Route as DemoMoreRouteImport } from './routes/demo.more'
-import { Route as DemoJoinRouteImport } from './routes/demo.join'
-import { Route as DemoInviteRouteImport } from './routes/demo.invite'
-import { Route as CheckinQrTokenRouteImport } from './routes/checkin.$qrToken'
-import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
-import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
-import { Route as AdminSystemRouteImport } from './routes/admin.system'
-import { Route as AdminLoginRouteImport } from './routes/admin.login'
-import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
-import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain.index'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminSystemRouteImport } from './routes/admin.system'
+import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
+import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
+import { Route as CheckinQrTokenRouteImport } from './routes/checkin.$qrToken'
+import { Route as DemoIndexRouteImport } from './routes/demo.index'
+import { Route as DemoInviteRouteImport } from './routes/demo.invite'
+import { Route as DemoJoinRouteImport } from './routes/demo.join'
+import { Route as DemoMoreRouteImport } from './routes/demo.more'
+import { Route as DemoOffersRouteImport } from './routes/demo.offers'
+import { Route as DemoPassportRouteImport } from './routes/demo.passport'
+import { Route as DemoRewardsRouteImport } from './routes/demo.rewards'
+import { Route as DemoTrailMapRouteImport } from './routes/demo.trail-map'
+import { Route as DemoWineriesRouteImport } from './routes/demo.wineries'
+import { Route as PassportIndexRouteImport } from './routes/passport.index'
+import { Route as PassportTokenRouteImport } from './routes/passport.$token'
+import { Route as TAgencySlugRouteImport } from './routes/t.$agencySlug'
+import { Route as TastingQrTokenRouteImport } from './routes/tasting.$qrToken'
+import { Route as VenuesIndexRouteImport } from './routes/venues.index'
+import { Route as VenuesVenueIdRouteImport } from './routes/venues.$venueId'
 import { Route as AdminEventsIndexRouteImport } from './routes/admin.events.index'
-import { Route as LiveSubdomainTermsPrivacyRouteImport } from './routes/live.$subdomain.terms-privacy'
-import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
-import { Route as LiveSubdomainPrizesRouteImport } from './routes/live.$subdomain.prizes'
-import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
-import { Route as LiveSubdomainOffersRouteImport } from './routes/live.$subdomain.offers'
-import { Route as LiveSubdomainMapRouteImport } from './routes/live.$subdomain.map'
-import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
-import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
-import { Route as LiveSubdomainFaqRouteImport } from './routes/live.$subdomain.faq'
-import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
-import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
-import { Route as CollectBonusTokenRouteImport } from './routes/collect.bonus.$token'
 import { Route as AdminEventsEventIdRouteImport } from './routes/admin.events.$eventId'
-import { Route as LiveSubdomainVenuesIndexRouteImport } from './routes/live.$subdomain.venues.index'
-import { Route as TAgencySlugEEventSlugRouteImport } from './routes/t.$agencySlug.e.$eventSlug'
-import { Route as LiveSubdomainVenuesVenueIdRouteImport } from './routes/live.$subdomain.venues.$venueId'
-import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
-import { Route as AdminEventsEventIdPostersRouteImport } from './routes/admin.events.$eventId_.posters'
-import { Route as AdminEventsEventIdLeaderboardRouteImport } from './routes/admin.events.$eventId_.leaderboard'
+import { Route as CollectBonusTokenRouteImport } from './routes/collect.bonus.$token'
+import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
+import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
+import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain.index'
+import { Route as LiveSubdomainFaqRouteImport } from './routes/live.$subdomain.faq'
+import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
+import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
+import { Route as LiveSubdomainMapRouteImport } from './routes/live.$subdomain.map'
+import { Route as LiveSubdomainOffersRouteImport } from './routes/live.$subdomain.offers'
+import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdomain.privacy'
+import { Route as LiveSubdomainPrizesRouteImport } from './routes/live.$subdomain.prizes'
+import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
+import { Route as LiveSubdomainTermsPrivacyRouteImport } from './routes/live.$subdomain.terms-privacy'
 import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId_.branding'
+import { Route as AdminEventsEventIdLeaderboardRouteImport } from './routes/admin.events.$eventId_.leaderboard'
+import { Route as AdminEventsEventIdPostersRouteImport } from './routes/admin.events.$eventId_.posters'
+import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
+import { Route as LiveSubdomainVenuesIndexRouteImport } from './routes/live.$subdomain.venues.index'
+import { Route as LiveSubdomainVenuesVenueIdRouteImport } from './routes/live.$subdomain.venues.$venueId'
+import { Route as TAgencySlugEEventSlugRouteImport } from './routes/t.$agencySlug.e.$eventSlug'
 
-const WorkspaceNotFoundRoute = WorkspaceNotFoundRouteImport.update({
-  id: '/workspace-not-found',
-  path: '/workspace-not-found',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsPrivacyRoute = TermsPrivacyRouteImport.update({
-  id: '/terms-privacy',
-  path: '/terms-privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScanRoute = ScanRouteImport.update({
-  id: '/scan',
-  path: '/scan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrizesRoute = PrizesRouteImport.update({
-  id: '/prizes',
-  path: '/prizes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OffersRoute = OffersRouteImport.update({
-  id: '/offers',
-  path: '/offers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MarketingPreviewRoute = MarketingPreviewRouteImport.update({
-  id: '/marketing-preview',
-  path: '/marketing-preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MapRoute = MapRouteImport.update({
-  id: '/map',
-  path: '/map',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LeaderboardRoute = LeaderboardRouteImport.update({
-  id: '/leaderboard',
-  path: '/leaderboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const JoinRoute = JoinRouteImport.update({
-  id: '/join',
-  path: '/join',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FaqRoute = FaqRouteImport.update({
-  id: '/faq',
-  path: '/faq',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -164,24 +84,89 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VenuesIndexRoute = VenuesIndexRouteImport.update({
-  id: '/venues/',
-  path: '/venues/',
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PassportIndexRoute = PassportIndexRouteImport.update({
-  id: '/passport/',
-  path: '/passport/',
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoIndexRoute = DemoIndexRouteImport.update({
-  id: '/demo/',
-  path: '/demo/',
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingPreviewRoute = MarketingPreviewRouteImport.update({
+  id: '/marketing-preview',
+  path: '/marketing-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersRoute = OffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrizesRoute = PrizesRouteImport.update({
+  id: '/prizes',
+  path: '/prizes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScanRoute = ScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsPrivacyRoute = TermsPrivacyRouteImport.update({
+  id: '/terms-privacy',
+  path: '/terms-privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceNotFoundRoute = WorkspaceNotFoundRouteImport.update({
+  id: '/workspace-not-found',
+  path: '/workspace-not-found',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -189,89 +174,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const VenuesVenueIdRoute = VenuesVenueIdRouteImport.update({
-  id: '/venues/$venueId',
-  path: '/venues/$venueId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TastingQrTokenRoute = TastingQrTokenRouteImport.update({
-  id: '/tasting/$qrToken',
-  path: '/tasting/$qrToken',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TAgencySlugRoute = TAgencySlugRouteImport.update({
-  id: '/t/$agencySlug',
-  path: '/t/$agencySlug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PassportTokenRoute = PassportTokenRouteImport.update({
-  id: '/passport/$token',
-  path: '/passport/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoWineriesRoute = DemoWineriesRouteImport.update({
-  id: '/demo/wineries',
-  path: '/demo/wineries',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoTrailMapRoute = DemoTrailMapRouteImport.update({
-  id: '/demo/trail-map',
-  path: '/demo/trail-map',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoRewardsRoute = DemoRewardsRouteImport.update({
-  id: '/demo/rewards',
-  path: '/demo/rewards',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoPassportRoute = DemoPassportRouteImport.update({
-  id: '/demo/passport',
-  path: '/demo/passport',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoOffersRoute = DemoOffersRouteImport.update({
-  id: '/demo/offers',
-  path: '/demo/offers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoMoreRoute = DemoMoreRouteImport.update({
-  id: '/demo/more',
-  path: '/demo/more',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoJoinRoute = DemoJoinRouteImport.update({
-  id: '/demo/join',
-  path: '/demo/join',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoInviteRoute = DemoInviteRouteImport.update({
-  id: '/demo/invite',
-  path: '/demo/invite',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckinQrTokenRoute = CheckinQrTokenRouteImport.update({
-  id: '/checkin/$qrToken',
-  path: '/checkin/$qrToken',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminVenuesRoute = AdminVenuesRouteImport.update({
-  id: '/venues',
-  path: '/venues',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminUpdatePasswordRoute = AdminUpdatePasswordRouteImport.update({
-  id: '/update-password',
-  path: '/update-password',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSystemRoute = AdminSystemRouteImport.update({
-  id: '/system',
-  path: '/system',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminLoginRoute = AdminLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const AdminAccountRoute = AdminAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -279,14 +184,104 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAccountRoute = AdminAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => AdminRoute,
 } as any)
-const LiveSubdomainIndexRoute = LiveSubdomainIndexRouteImport.update({
-  id: '/live/$subdomain/',
-  path: '/live/$subdomain/',
+const AdminSystemRoute = AdminSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUpdatePasswordRoute = AdminUpdatePasswordRouteImport.update({
+  id: '/update-password',
+  path: '/update-password',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVenuesRoute = AdminVenuesRouteImport.update({
+  id: '/venues',
+  path: '/venues',
+  getParentRoute: () => AdminRoute,
+} as any)
+const CheckinQrTokenRoute = CheckinQrTokenRouteImport.update({
+  id: '/checkin/$qrToken',
+  path: '/checkin/$qrToken',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoIndexRoute = DemoIndexRouteImport.update({
+  id: '/demo/',
+  path: '/demo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoInviteRoute = DemoInviteRouteImport.update({
+  id: '/demo/invite',
+  path: '/demo/invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoJoinRoute = DemoJoinRouteImport.update({
+  id: '/demo/join',
+  path: '/demo/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoMoreRoute = DemoMoreRouteImport.update({
+  id: '/demo/more',
+  path: '/demo/more',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoOffersRoute = DemoOffersRouteImport.update({
+  id: '/demo/offers',
+  path: '/demo/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoPassportRoute = DemoPassportRouteImport.update({
+  id: '/demo/passport',
+  path: '/demo/passport',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRewardsRoute = DemoRewardsRouteImport.update({
+  id: '/demo/rewards',
+  path: '/demo/rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoTrailMapRoute = DemoTrailMapRouteImport.update({
+  id: '/demo/trail-map',
+  path: '/demo/trail-map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoWineriesRoute = DemoWineriesRouteImport.update({
+  id: '/demo/wineries',
+  path: '/demo/wineries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassportIndexRoute = PassportIndexRouteImport.update({
+  id: '/passport/',
+  path: '/passport/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassportTokenRoute = PassportTokenRouteImport.update({
+  id: '/passport/$token',
+  path: '/passport/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TAgencySlugRoute = TAgencySlugRouteImport.update({
+  id: '/t/$agencySlug',
+  path: '/t/$agencySlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TastingQrTokenRoute = TastingQrTokenRouteImport.update({
+  id: '/tasting/$qrToken',
+  path: '/tasting/$qrToken',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VenuesIndexRoute = VenuesIndexRouteImport.update({
+  id: '/venues/',
+  path: '/venues/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VenuesVenueIdRoute = VenuesVenueIdRouteImport.update({
+  id: '/venues/$venueId',
+  path: '/venues/$venueId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
@@ -294,35 +289,39 @@ const AdminEventsIndexRoute = AdminEventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => AdminRoute,
 } as any)
-const LiveSubdomainTermsPrivacyRoute =
-  LiveSubdomainTermsPrivacyRouteImport.update({
-    id: '/live/$subdomain/terms-privacy',
-    path: '/live/$subdomain/terms-privacy',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LiveSubdomainTermsRoute = LiveSubdomainTermsRouteImport.update({
-  id: '/live/$subdomain/terms',
-  path: '/live/$subdomain/terms',
+const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
+  id: '/events/$eventId',
+  path: '/events/$eventId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const CollectBonusTokenRoute = CollectBonusTokenRouteImport.update({
+  id: '/collect/bonus/$token',
+  path: '/collect/bonus/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LiveSubdomainPrizesRoute = LiveSubdomainPrizesRouteImport.update({
-  id: '/live/$subdomain/prizes',
-  path: '/live/$subdomain/prizes',
+const DemoCheckinVenueIdRoute = DemoCheckinVenueIdRouteImport.update({
+  id: '/demo/checkin/$venueId',
+  path: '/demo/checkin/$venueId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LiveSubdomainPrivacyRoute = LiveSubdomainPrivacyRouteImport.update({
-  id: '/live/$subdomain/privacy',
-  path: '/live/$subdomain/privacy',
+const DemoWineriesVenueIdRoute = DemoWineriesVenueIdRouteImport.update({
+  id: '/$venueId',
+  path: '/$venueId',
+  getParentRoute: () => DemoWineriesRoute,
+} as any)
+const LiveSubdomainIndexRoute = LiveSubdomainIndexRouteImport.update({
+  id: '/live/$subdomain/',
+  path: '/live/$subdomain/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LiveSubdomainOffersRoute = LiveSubdomainOffersRouteImport.update({
-  id: '/live/$subdomain/offers',
-  path: '/live/$subdomain/offers',
+const LiveSubdomainFaqRoute = LiveSubdomainFaqRouteImport.update({
+  id: '/live/$subdomain/faq',
+  path: '/live/$subdomain/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LiveSubdomainMapRoute = LiveSubdomainMapRouteImport.update({
-  id: '/live/$subdomain/map',
-  path: '/live/$subdomain/map',
+const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
+  id: '/live/$subdomain/join',
+  path: '/live/$subdomain/join',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LiveSubdomainLeaderboardRoute =
@@ -331,63 +330,41 @@ const LiveSubdomainLeaderboardRoute =
     path: '/live/$subdomain/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LiveSubdomainJoinRoute = LiveSubdomainJoinRouteImport.update({
-  id: '/live/$subdomain/join',
-  path: '/live/$subdomain/join',
+const LiveSubdomainMapRoute = LiveSubdomainMapRouteImport.update({
+  id: '/live/$subdomain/map',
+  path: '/live/$subdomain/map',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LiveSubdomainFaqRoute = LiveSubdomainFaqRouteImport.update({
-  id: '/live/$subdomain/faq',
-  path: '/live/$subdomain/faq',
+const LiveSubdomainOffersRoute = LiveSubdomainOffersRouteImport.update({
+  id: '/live/$subdomain/offers',
+  path: '/live/$subdomain/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoWineriesVenueIdRoute = DemoWineriesVenueIdRouteImport.update({
-  id: '/$venueId',
-  path: '/$venueId',
-  getParentRoute: () => DemoWineriesRoute,
-} as any)
-const DemoCheckinVenueIdRoute = DemoCheckinVenueIdRouteImport.update({
-  id: '/demo/checkin/$venueId',
-  path: '/demo/checkin/$venueId',
+const LiveSubdomainPrivacyRoute = LiveSubdomainPrivacyRouteImport.update({
+  id: '/live/$subdomain/privacy',
+  path: '/live/$subdomain/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CollectBonusTokenRoute = CollectBonusTokenRouteImport.update({
-  id: '/collect/bonus/$token',
-  path: '/collect/bonus/$token',
+const LiveSubdomainPrizesRoute = LiveSubdomainPrizesRouteImport.update({
+  id: '/live/$subdomain/prizes',
+  path: '/live/$subdomain/prizes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminEventsEventIdRoute = AdminEventsEventIdRouteImport.update({
-  id: '/events/$eventId',
-  path: '/events/$eventId',
-  getParentRoute: () => AdminRoute,
+const LiveSubdomainTermsRoute = LiveSubdomainTermsRouteImport.update({
+  id: '/live/$subdomain/terms',
+  path: '/live/$subdomain/terms',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const LiveSubdomainVenuesIndexRoute =
-  LiveSubdomainVenuesIndexRouteImport.update({
-    id: '/live/$subdomain/venues/',
-    path: '/live/$subdomain/venues/',
+const LiveSubdomainTermsPrivacyRoute =
+  LiveSubdomainTermsPrivacyRouteImport.update({
+    id: '/live/$subdomain/terms-privacy',
+    path: '/live/$subdomain/terms-privacy',
     getParentRoute: () => rootRouteImport,
   } as any)
-const TAgencySlugEEventSlugRoute = TAgencySlugEEventSlugRouteImport.update({
-  id: '/e/$eventSlug',
-  path: '/e/$eventSlug',
-  getParentRoute: () => TAgencySlugRoute,
-} as any)
-const LiveSubdomainVenuesVenueIdRoute =
-  LiveSubdomainVenuesVenueIdRouteImport.update({
-    id: '/live/$subdomain/venues/$venueId',
-    path: '/live/$subdomain/venues/$venueId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AdminEventsEventIdPreviewRoute =
-  AdminEventsEventIdPreviewRouteImport.update({
-    id: '/admin_/events/$eventId/preview',
-    path: '/admin/events/$eventId/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AdminEventsEventIdPostersRoute =
-  AdminEventsEventIdPostersRouteImport.update({
-    id: '/events/$eventId_/posters',
-    path: '/events/$eventId/posters',
+const AdminEventsEventIdBrandingRoute =
+  AdminEventsEventIdBrandingRouteImport.update({
+    id: '/events/$eventId_/branding',
+    path: '/events/$eventId/branding',
     getParentRoute: () => AdminRoute,
   } as any)
 const AdminEventsEventIdLeaderboardRoute =
@@ -396,12 +373,35 @@ const AdminEventsEventIdLeaderboardRoute =
     path: '/events/$eventId/leaderboard',
     getParentRoute: () => AdminRoute,
   } as any)
-const AdminEventsEventIdBrandingRoute =
-  AdminEventsEventIdBrandingRouteImport.update({
-    id: '/events/$eventId_/branding',
-    path: '/events/$eventId/branding',
+const AdminEventsEventIdPostersRoute =
+  AdminEventsEventIdPostersRouteImport.update({
+    id: '/events/$eventId_/posters',
+    path: '/events/$eventId/posters',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminEventsEventIdPreviewRoute =
+  AdminEventsEventIdPreviewRouteImport.update({
+    id: '/admin_/events/$eventId/preview',
+    path: '/admin/events/$eventId/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LiveSubdomainVenuesIndexRoute =
+  LiveSubdomainVenuesIndexRouteImport.update({
+    id: '/live/$subdomain/venues/',
+    path: '/live/$subdomain/venues/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LiveSubdomainVenuesVenueIdRoute =
+  LiveSubdomainVenuesVenueIdRouteImport.update({
+    id: '/live/$subdomain/venues/$venueId',
+    path: '/live/$subdomain/venues/$venueId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const TAgencySlugEEventSlugRoute = TAgencySlugEEventSlugRouteImport.update({
+  id: '/e/$eventSlug',
+  path: '/e/$eventSlug',
+  getParentRoute: () => TAgencySlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -856,123 +856,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/workspace-not-found': {
-      id: '/workspace-not-found'
-      path: '/workspace-not-found'
-      fullPath: '/workspace-not-found'
-      preLoaderRoute: typeof WorkspaceNotFoundRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms-privacy': {
-      id: '/terms-privacy'
-      path: '/terms-privacy'
-      fullPath: '/terms-privacy'
-      preLoaderRoute: typeof TermsPrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scan': {
-      id: '/scan'
-      path: '/scan'
-      fullPath: '/scan'
-      preLoaderRoute: typeof ScanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/prizes': {
-      id: '/prizes'
-      path: '/prizes'
-      fullPath: '/prizes'
-      preLoaderRoute: typeof PrizesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/offers': {
-      id: '/offers'
-      path: '/offers'
-      fullPath: '/offers'
-      preLoaderRoute: typeof OffersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/marketing-preview': {
-      id: '/marketing-preview'
-      path: '/marketing-preview'
-      fullPath: '/marketing-preview'
-      preLoaderRoute: typeof MarketingPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/map': {
-      id: '/map'
-      path: '/map'
-      fullPath: '/map'
-      preLoaderRoute: typeof MapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/leaderboard': {
-      id: '/leaderboard'
-      path: '/leaderboard'
-      fullPath: '/leaderboard'
-      preLoaderRoute: typeof LeaderboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/join': {
-      id: '/join'
-      path: '/join'
-      fullPath: '/join'
-      preLoaderRoute: typeof JoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faq': {
-      id: '/faq'
-      path: '/faq'
-      fullPath: '/faq'
-      preLoaderRoute: typeof FaqRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -982,32 +870,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/venues/': {
-      id: '/venues/'
-      path: '/venues'
-      fullPath: '/venues/'
-      preLoaderRoute: typeof VenuesIndexRouteImport
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/passport/': {
-      id: '/passport/'
-      path: '/passport'
-      fullPath: '/passport/'
-      preLoaderRoute: typeof PassportIndexRouteImport
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/': {
-      id: '/demo/'
-      path: '/demo'
-      fullPath: '/demo/'
-      preLoaderRoute: typeof DemoIndexRouteImport
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketing-preview': {
+      id: '/marketing-preview'
+      path: '/marketing-preview'
+      fullPath: '/marketing-preview'
+      preLoaderRoute: typeof MarketingPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers': {
+      id: '/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prizes': {
+      id: '/prizes'
+      path: '/prizes'
+      fullPath: '/prizes'
+      preLoaderRoute: typeof PrizesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scan': {
+      id: '/scan'
+      path: '/scan'
+      fullPath: '/scan'
+      preLoaderRoute: typeof ScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-privacy': {
+      id: '/terms-privacy'
+      path: '/terms-privacy'
+      fullPath: '/terms-privacy'
+      preLoaderRoute: typeof TermsPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace-not-found': {
+      id: '/workspace-not-found'
+      path: '/workspace-not-found'
+      fullPath: '/workspace-not-found'
+      preLoaderRoute: typeof WorkspaceNotFoundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1017,123 +996,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/venues/$venueId': {
-      id: '/venues/$venueId'
-      path: '/venues/$venueId'
-      fullPath: '/venues/$venueId'
-      preLoaderRoute: typeof VenuesVenueIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tasting/$qrToken': {
-      id: '/tasting/$qrToken'
-      path: '/tasting/$qrToken'
-      fullPath: '/tasting/$qrToken'
-      preLoaderRoute: typeof TastingQrTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/t/$agencySlug': {
-      id: '/t/$agencySlug'
-      path: '/t/$agencySlug'
-      fullPath: '/t/$agencySlug'
-      preLoaderRoute: typeof TAgencySlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/passport/$token': {
-      id: '/passport/$token'
-      path: '/passport/$token'
-      fullPath: '/passport/$token'
-      preLoaderRoute: typeof PassportTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/wineries': {
-      id: '/demo/wineries'
-      path: '/demo/wineries'
-      fullPath: '/demo/wineries'
-      preLoaderRoute: typeof DemoWineriesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/trail-map': {
-      id: '/demo/trail-map'
-      path: '/demo/trail-map'
-      fullPath: '/demo/trail-map'
-      preLoaderRoute: typeof DemoTrailMapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/rewards': {
-      id: '/demo/rewards'
-      path: '/demo/rewards'
-      fullPath: '/demo/rewards'
-      preLoaderRoute: typeof DemoRewardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/passport': {
-      id: '/demo/passport'
-      path: '/demo/passport'
-      fullPath: '/demo/passport'
-      preLoaderRoute: typeof DemoPassportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/offers': {
-      id: '/demo/offers'
-      path: '/demo/offers'
-      fullPath: '/demo/offers'
-      preLoaderRoute: typeof DemoOffersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/more': {
-      id: '/demo/more'
-      path: '/demo/more'
-      fullPath: '/demo/more'
-      preLoaderRoute: typeof DemoMoreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/join': {
-      id: '/demo/join'
-      path: '/demo/join'
-      fullPath: '/demo/join'
-      preLoaderRoute: typeof DemoJoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/invite': {
-      id: '/demo/invite'
-      path: '/demo/invite'
-      fullPath: '/demo/invite'
-      preLoaderRoute: typeof DemoInviteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkin/$qrToken': {
-      id: '/checkin/$qrToken'
-      path: '/checkin/$qrToken'
-      fullPath: '/checkin/$qrToken'
-      preLoaderRoute: typeof CheckinQrTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/venues': {
-      id: '/admin/venues'
-      path: '/venues'
-      fullPath: '/admin/venues'
-      preLoaderRoute: typeof AdminVenuesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/update-password': {
-      id: '/admin/update-password'
-      path: '/update-password'
-      fullPath: '/admin/update-password'
-      preLoaderRoute: typeof AdminUpdatePasswordRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/system': {
-      id: '/admin/system'
-      path: '/system'
-      fullPath: '/admin/system'
-      preLoaderRoute: typeof AdminSystemRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/login': {
-      id: '/admin/login'
-      path: '/login'
-      fullPath: '/admin/login'
-      preLoaderRoute: typeof AdminLoginRouteImport
+    '/admin/account': {
+      id: '/admin/account'
+      path: '/account'
+      fullPath: '/admin/account'
+      preLoaderRoute: typeof AdminAccountRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/analytics': {
@@ -1143,18 +1010,144 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/account': {
-      id: '/admin/account'
-      path: '/account'
-      fullPath: '/admin/account'
-      preLoaderRoute: typeof AdminAccountRouteImport
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/live/$subdomain/': {
-      id: '/live/$subdomain/'
-      path: '/live/$subdomain'
-      fullPath: '/live/$subdomain/'
-      preLoaderRoute: typeof LiveSubdomainIndexRouteImport
+    '/admin/system': {
+      id: '/admin/system'
+      path: '/system'
+      fullPath: '/admin/system'
+      preLoaderRoute: typeof AdminSystemRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/update-password': {
+      id: '/admin/update-password'
+      path: '/update-password'
+      fullPath: '/admin/update-password'
+      preLoaderRoute: typeof AdminUpdatePasswordRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/venues': {
+      id: '/admin/venues'
+      path: '/venues'
+      fullPath: '/admin/venues'
+      preLoaderRoute: typeof AdminVenuesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/checkin/$qrToken': {
+      id: '/checkin/$qrToken'
+      path: '/checkin/$qrToken'
+      fullPath: '/checkin/$qrToken'
+      preLoaderRoute: typeof CheckinQrTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/': {
+      id: '/demo/'
+      path: '/demo'
+      fullPath: '/demo/'
+      preLoaderRoute: typeof DemoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/invite': {
+      id: '/demo/invite'
+      path: '/demo/invite'
+      fullPath: '/demo/invite'
+      preLoaderRoute: typeof DemoInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/join': {
+      id: '/demo/join'
+      path: '/demo/join'
+      fullPath: '/demo/join'
+      preLoaderRoute: typeof DemoJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/more': {
+      id: '/demo/more'
+      path: '/demo/more'
+      fullPath: '/demo/more'
+      preLoaderRoute: typeof DemoMoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/offers': {
+      id: '/demo/offers'
+      path: '/demo/offers'
+      fullPath: '/demo/offers'
+      preLoaderRoute: typeof DemoOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/passport': {
+      id: '/demo/passport'
+      path: '/demo/passport'
+      fullPath: '/demo/passport'
+      preLoaderRoute: typeof DemoPassportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/rewards': {
+      id: '/demo/rewards'
+      path: '/demo/rewards'
+      fullPath: '/demo/rewards'
+      preLoaderRoute: typeof DemoRewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/trail-map': {
+      id: '/demo/trail-map'
+      path: '/demo/trail-map'
+      fullPath: '/demo/trail-map'
+      preLoaderRoute: typeof DemoTrailMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/wineries': {
+      id: '/demo/wineries'
+      path: '/demo/wineries'
+      fullPath: '/demo/wineries'
+      preLoaderRoute: typeof DemoWineriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passport/': {
+      id: '/passport/'
+      path: '/passport'
+      fullPath: '/passport/'
+      preLoaderRoute: typeof PassportIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passport/$token': {
+      id: '/passport/$token'
+      path: '/passport/$token'
+      fullPath: '/passport/$token'
+      preLoaderRoute: typeof PassportTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$agencySlug': {
+      id: '/t/$agencySlug'
+      path: '/t/$agencySlug'
+      fullPath: '/t/$agencySlug'
+      preLoaderRoute: typeof TAgencySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tasting/$qrToken': {
+      id: '/tasting/$qrToken'
+      path: '/tasting/$qrToken'
+      fullPath: '/tasting/$qrToken'
+      preLoaderRoute: typeof TastingQrTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/venues/': {
+      id: '/venues/'
+      path: '/venues'
+      fullPath: '/venues/'
+      preLoaderRoute: typeof VenuesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/venues/$venueId': {
+      id: '/venues/$venueId'
+      path: '/venues/$venueId'
+      fullPath: '/venues/$venueId'
+      preLoaderRoute: typeof VenuesVenueIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/events/': {
@@ -1164,67 +1157,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/live/$subdomain/terms-privacy': {
-      id: '/live/$subdomain/terms-privacy'
-      path: '/live/$subdomain/terms-privacy'
-      fullPath: '/live/$subdomain/terms-privacy'
-      preLoaderRoute: typeof LiveSubdomainTermsPrivacyRouteImport
+    '/admin/events/$eventId': {
+      id: '/admin/events/$eventId'
+      path: '/events/$eventId'
+      fullPath: '/admin/events/$eventId'
+      preLoaderRoute: typeof AdminEventsEventIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/collect/bonus/$token': {
+      id: '/collect/bonus/$token'
+      path: '/collect/bonus/$token'
+      fullPath: '/collect/bonus/$token'
+      preLoaderRoute: typeof CollectBonusTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/live/$subdomain/terms': {
-      id: '/live/$subdomain/terms'
-      path: '/live/$subdomain/terms'
-      fullPath: '/live/$subdomain/terms'
-      preLoaderRoute: typeof LiveSubdomainTermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain/prizes': {
-      id: '/live/$subdomain/prizes'
-      path: '/live/$subdomain/prizes'
-      fullPath: '/live/$subdomain/prizes'
-      preLoaderRoute: typeof LiveSubdomainPrizesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain/privacy': {
-      id: '/live/$subdomain/privacy'
-      path: '/live/$subdomain/privacy'
-      fullPath: '/live/$subdomain/privacy'
-      preLoaderRoute: typeof LiveSubdomainPrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain/offers': {
-      id: '/live/$subdomain/offers'
-      path: '/live/$subdomain/offers'
-      fullPath: '/live/$subdomain/offers'
-      preLoaderRoute: typeof LiveSubdomainOffersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain/map': {
-      id: '/live/$subdomain/map'
-      path: '/live/$subdomain/map'
-      fullPath: '/live/$subdomain/map'
-      preLoaderRoute: typeof LiveSubdomainMapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain/leaderboard': {
-      id: '/live/$subdomain/leaderboard'
-      path: '/live/$subdomain/leaderboard'
-      fullPath: '/live/$subdomain/leaderboard'
-      preLoaderRoute: typeof LiveSubdomainLeaderboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain/join': {
-      id: '/live/$subdomain/join'
-      path: '/live/$subdomain/join'
-      fullPath: '/live/$subdomain/join'
-      preLoaderRoute: typeof LiveSubdomainJoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live/$subdomain/faq': {
-      id: '/live/$subdomain/faq'
-      path: '/live/$subdomain/faq'
-      fullPath: '/live/$subdomain/faq'
-      preLoaderRoute: typeof LiveSubdomainFaqRouteImport
+    '/demo/checkin/$venueId': {
+      id: '/demo/checkin/$venueId'
+      path: '/demo/checkin/$venueId'
+      fullPath: '/demo/checkin/$venueId'
+      preLoaderRoute: typeof DemoCheckinVenueIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/wineries/$venueId': {
@@ -1234,60 +1185,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoWineriesVenueIdRouteImport
       parentRoute: typeof DemoWineriesRoute
     }
-    '/demo/checkin/$venueId': {
-      id: '/demo/checkin/$venueId'
-      path: '/demo/checkin/$venueId'
-      fullPath: '/demo/checkin/$venueId'
-      preLoaderRoute: typeof DemoCheckinVenueIdRouteImport
+    '/live/$subdomain/': {
+      id: '/live/$subdomain/'
+      path: '/live/$subdomain'
+      fullPath: '/live/$subdomain/'
+      preLoaderRoute: typeof LiveSubdomainIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/collect/bonus/$token': {
-      id: '/collect/bonus/$token'
-      path: '/collect/bonus/$token'
-      fullPath: '/collect/bonus/$token'
-      preLoaderRoute: typeof CollectBonusTokenRouteImport
+    '/live/$subdomain/faq': {
+      id: '/live/$subdomain/faq'
+      path: '/live/$subdomain/faq'
+      fullPath: '/live/$subdomain/faq'
+      preLoaderRoute: typeof LiveSubdomainFaqRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/events/$eventId': {
-      id: '/admin/events/$eventId'
-      path: '/events/$eventId'
-      fullPath: '/admin/events/$eventId'
-      preLoaderRoute: typeof AdminEventsEventIdRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/live/$subdomain/venues/': {
-      id: '/live/$subdomain/venues/'
-      path: '/live/$subdomain/venues'
-      fullPath: '/live/$subdomain/venues/'
-      preLoaderRoute: typeof LiveSubdomainVenuesIndexRouteImport
+    '/live/$subdomain/join': {
+      id: '/live/$subdomain/join'
+      path: '/live/$subdomain/join'
+      fullPath: '/live/$subdomain/join'
+      preLoaderRoute: typeof LiveSubdomainJoinRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/t/$agencySlug/e/$eventSlug': {
-      id: '/t/$agencySlug/e/$eventSlug'
-      path: '/e/$eventSlug'
-      fullPath: '/t/$agencySlug/e/$eventSlug'
-      preLoaderRoute: typeof TAgencySlugEEventSlugRouteImport
-      parentRoute: typeof TAgencySlugRoute
-    }
-    '/live/$subdomain/venues/$venueId': {
-      id: '/live/$subdomain/venues/$venueId'
-      path: '/live/$subdomain/venues/$venueId'
-      fullPath: '/live/$subdomain/venues/$venueId'
-      preLoaderRoute: typeof LiveSubdomainVenuesVenueIdRouteImport
+    '/live/$subdomain/leaderboard': {
+      id: '/live/$subdomain/leaderboard'
+      path: '/live/$subdomain/leaderboard'
+      fullPath: '/live/$subdomain/leaderboard'
+      preLoaderRoute: typeof LiveSubdomainLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin_/events/$eventId/preview': {
-      id: '/admin_/events/$eventId/preview'
-      path: '/admin/events/$eventId/preview'
-      fullPath: '/admin/events/$eventId/preview'
-      preLoaderRoute: typeof AdminEventsEventIdPreviewRouteImport
+    '/live/$subdomain/map': {
+      id: '/live/$subdomain/map'
+      path: '/live/$subdomain/map'
+      fullPath: '/live/$subdomain/map'
+      preLoaderRoute: typeof LiveSubdomainMapRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/events/$eventId_/posters': {
-      id: '/admin/events/$eventId_/posters'
-      path: '/events/$eventId/posters'
-      fullPath: '/admin/events/$eventId/posters'
-      preLoaderRoute: typeof AdminEventsEventIdPostersRouteImport
+    '/live/$subdomain/offers': {
+      id: '/live/$subdomain/offers'
+      path: '/live/$subdomain/offers'
+      fullPath: '/live/$subdomain/offers'
+      preLoaderRoute: typeof LiveSubdomainOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live/$subdomain/privacy': {
+      id: '/live/$subdomain/privacy'
+      path: '/live/$subdomain/privacy'
+      fullPath: '/live/$subdomain/privacy'
+      preLoaderRoute: typeof LiveSubdomainPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live/$subdomain/prizes': {
+      id: '/live/$subdomain/prizes'
+      path: '/live/$subdomain/prizes'
+      fullPath: '/live/$subdomain/prizes'
+      preLoaderRoute: typeof LiveSubdomainPrizesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live/$subdomain/terms': {
+      id: '/live/$subdomain/terms'
+      path: '/live/$subdomain/terms'
+      fullPath: '/live/$subdomain/terms'
+      preLoaderRoute: typeof LiveSubdomainTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live/$subdomain/terms-privacy': {
+      id: '/live/$subdomain/terms-privacy'
+      path: '/live/$subdomain/terms-privacy'
+      fullPath: '/live/$subdomain/terms-privacy'
+      preLoaderRoute: typeof LiveSubdomainTermsPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/events/$eventId_/branding': {
+      id: '/admin/events/$eventId_/branding'
+      path: '/events/$eventId/branding'
+      fullPath: '/admin/events/$eventId/branding'
+      preLoaderRoute: typeof AdminEventsEventIdBrandingRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/events/$eventId_/leaderboard': {
@@ -1297,12 +1269,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsEventIdLeaderboardRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/events/$eventId_/branding': {
-      id: '/admin/events/$eventId_/branding'
-      path: '/events/$eventId/branding'
-      fullPath: '/admin/events/$eventId/branding'
-      preLoaderRoute: typeof AdminEventsEventIdBrandingRouteImport
+    '/admin/events/$eventId_/posters': {
+      id: '/admin/events/$eventId_/posters'
+      path: '/events/$eventId/posters'
+      fullPath: '/admin/events/$eventId/posters'
+      preLoaderRoute: typeof AdminEventsEventIdPostersRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/admin_/events/$eventId/preview': {
+      id: '/admin_/events/$eventId/preview'
+      path: '/admin/events/$eventId/preview'
+      fullPath: '/admin/events/$eventId/preview'
+      preLoaderRoute: typeof AdminEventsEventIdPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live/$subdomain/venues/': {
+      id: '/live/$subdomain/venues/'
+      path: '/live/$subdomain/venues'
+      fullPath: '/live/$subdomain/venues/'
+      preLoaderRoute: typeof LiveSubdomainVenuesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live/$subdomain/venues/$venueId': {
+      id: '/live/$subdomain/venues/$venueId'
+      path: '/live/$subdomain/venues/$venueId'
+      fullPath: '/live/$subdomain/venues/$venueId'
+      preLoaderRoute: typeof LiveSubdomainVenuesVenueIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$agencySlug/e/$eventSlug': {
+      id: '/t/$agencySlug/e/$eventSlug'
+      path: '/e/$eventSlug'
+      fullPath: '/t/$agencySlug/e/$eventSlug'
+      preLoaderRoute: typeof TAgencySlugEEventSlugRouteImport
+      parentRoute: typeof TAgencySlugRoute
     }
   }
 }
@@ -1418,3 +1418,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
