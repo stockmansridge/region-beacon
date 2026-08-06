@@ -54,6 +54,13 @@ export function EventPaletteScope({
   heroBgColor,
   heroFgColor,
   heroAccentColor,
+  // Phase D Pass 2 — heading/body/muted split (all optional, all fall back).
+  pageHeadingColor,
+  pageBodyColor,
+  pageMutedColor,
+  cardHeadingColor,
+  cardBodyColor,
+  cardMutedColor,
   fontFamily,
   headingFontFamily,
   children,
@@ -86,6 +93,12 @@ export function EventPaletteScope({
   heroBgColor?: string | null;
   heroFgColor?: string | null;
   heroAccentColor?: string | null;
+  pageHeadingColor?: string | null;
+  pageBodyColor?: string | null;
+  pageMutedColor?: string | null;
+  cardHeadingColor?: string | null;
+  cardBodyColor?: string | null;
+  cardMutedColor?: string | null;
   fontFamily?: string | null;
   headingFontFamily?: string | null;
   children: ReactNode;
@@ -117,7 +130,13 @@ export function EventPaletteScope({
     (navActiveFgColor && HEX_RE.test(navActiveFgColor)) ||
     (heroBgColor && HEX_RE.test(heroBgColor)) ||
     (heroFgColor && HEX_RE.test(heroFgColor)) ||
-    (heroAccentColor && HEX_RE.test(heroAccentColor));
+    (heroAccentColor && HEX_RE.test(heroAccentColor)) ||
+    (pageHeadingColor && HEX_RE.test(pageHeadingColor)) ||
+    (pageBodyColor && HEX_RE.test(pageBodyColor)) ||
+    (pageMutedColor && HEX_RE.test(pageMutedColor)) ||
+    (cardHeadingColor && HEX_RE.test(cardHeadingColor)) ||
+    (cardBodyColor && HEX_RE.test(cardBodyColor)) ||
+    (cardMutedColor && HEX_RE.test(cardMutedColor));
 
   // Lazy-load Google Fonts for the body + heading families when the
   // chosen value matches a known EVENT_FONTS entry. Idempotent. Called
@@ -180,6 +199,12 @@ export function EventPaletteScope({
     hero_bg_color: heroBgColor ?? null,
     hero_fg_color: heroFgColor ?? null,
     hero_accent_color: heroAccentColor ?? null,
+    page_heading_color: pageHeadingColor ?? null,
+    page_body_color: pageBodyColor ?? null,
+    page_muted_color: pageMutedColor ?? null,
+    card_heading_color: cardHeadingColor ?? null,
+    card_body_color: cardBodyColor ?? null,
+    card_muted_color: cardMutedColor ?? null,
   });
 
   // Page background painting still respects the curated background

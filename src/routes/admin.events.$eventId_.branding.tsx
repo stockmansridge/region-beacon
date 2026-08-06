@@ -16,7 +16,11 @@ import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 import { useAgencyContext } from "@/hooks/use-agency-context";
-import { TrailLanding } from "@/components/trail-landing";
+import {
+  EventPublicLanding,
+  type PublicEventData,
+  type PublicVenueData,
+} from "@/components/event-public-landing";
 import {
   DEFAULT_VENUE_LABEL_PLURAL,
   DEFAULT_VENUE_LABEL_SINGULAR,
@@ -152,6 +156,7 @@ type Bundle = {
   branding: Branding | null;
   domains: Domain[];
   venueCount: number;
+  venues: PublicVenueData[];
   hasBranding: boolean;
 };
 
@@ -467,11 +472,12 @@ function BrandingEditor() {
           .order("is_primary", { ascending: false }),
         supabase
           .from("venues")
-          .select("id", { count: "exact", head: true })
+          .select("id, name, address, order_index")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .is("deleted_at", null)
-          .eq("status", "active"),
+          .eq("status", "active")
+          .order("order_index", { ascending: true }),
       ]);
       if (cancelled) return;
       if (brandingRes.error || domainsRes.error || venuesRes.error) {
@@ -483,7 +489,18 @@ function BrandingEditor() {
         event: event as EventRow,
         branding,
         domains: (domainsRes.data ?? []) as Domain[],
-        venueCount: venuesRes.count ?? 0,
+        venueCount: venuesRes.data?.length ?? 0,
+        venues: ((venuesRes.data ?? []) as Array<{
+          id: string;
+          name: string;
+          address: string | null;
+          order_index: number | null;
+        }>).map((v) => ({
+          venue_id: v.id,
+          name: v.name,
+          address: v.address,
+          order_index: v.order_index,
+        })),
         hasBranding: Boolean(brandingRes.data),
       });
       setForm(brandingToForm(branding));
@@ -555,7 +572,7 @@ function BrandingEditor() {
       ["Navigation muted", form.nav_muted_color],
       ["Navigation active", form.nav_active_fg_color],
       ["Hero background", form.hero_bg_color],
-      ["Hero text", form.hero_fg_color],
+      ["Event heading colour", form.hero_fg_color],
       ["Hero accent", form.hero_accent_color],
       ["Hero overlay colour", form.hero_overlay_color],
     ];
@@ -860,7 +877,7 @@ function BrandingEditor() {
     );
   }
 
-  const { event, branding, venueCount } = bundle;
+  const { event, branding, venues } = bundle;
   // Full preview always renders the last SAVED branding, so surface unsaved edits.
   const hasUnsavedChanges =
     JSON.stringify(form) !== JSON.stringify(brandingToForm(branding));
@@ -897,6 +914,70 @@ function BrandingEditor() {
     hero_fg_color: form.hero_fg_color || null,
     hero_accent_color: form.hero_accent_color || null,
   });
+
+  /**
+   * The embedded preview renders the REAL public landing component, so it
+   * needs the same PublicEventData contract as the live route — saved event
+   * content and venues, plus the UNSAVED branding form state.
+   */
+  const orNullHex = (v: string) => (v.trim() ? v.trim() : null);
+  const previewEvent: PublicEventData = {
+    event_id: event.id,
+    name: event.name,
+    public_slug: event.public_slug ?? "",
+    description: event.description,
+    starts_at: null,
+    ends_at: null,
+    timezone: null,
+    logo_path: branding?.logo_path ?? null,
+    cover_path: branding?.cover_path ?? null,
+    cover_focal_x: form.cover_focal_x.trim() ? Number(form.cover_focal_x) : null,
+    cover_focal_y: form.cover_focal_y.trim() ? Number(form.cover_focal_y) : null,
+    primary_color: orNullHex(form.primary_color),
+    accent_color: orNullHex(form.accent_color),
+    palette_key: null,
+    page_background_key: null,
+    page_background_color: orNullHex(form.page_background_color),
+    card_background_color: orNullHex(form.card_background_color),
+    text_color: orNullHex(form.page_heading_color),
+    muted_text_color: orNullHex(form.page_muted_color),
+    card_text_color: orNullHex(form.card_heading_color),
+    card_muted_text_color: orNullHex(form.card_muted_color),
+    border_color: orNullHex(form.border_color),
+    primary_text_color: orNullHex(form.button_primary_fg),
+    nav_background_color: orNullHex(form.nav_background_color),
+    font_family: getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null),
+    heading_font_family:
+      getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || null),
+    welcome_copy: form.welcome_copy.trim() || null,
+    terms_url: orNullHex(form.terms_url),
+    current_terms_version_id: null,
+    venue_label_singular: form.venue_label_singular || null,
+    venue_label_plural: form.venue_label_plural || null,
+    hero_overlay_color: orNullHex(form.hero_overlay_color),
+    hero_overlay_opacity: form.hero_overlay_opacity.trim()
+      ? Number(form.hero_overlay_opacity)
+      : null,
+    brand_kit_key: form.brand_kit_key || null,
+    link_color: orNullHex(form.link_color),
+    card_border_color: orNullHex(form.card_border_color),
+    button_primary_bg: orNullHex(form.button_primary_bg),
+    button_primary_fg: orNullHex(form.button_primary_fg),
+    button_secondary_bg: orNullHex(form.button_secondary_bg),
+    button_secondary_fg: orNullHex(form.button_secondary_fg),
+    nav_fg_color: orNullHex(form.nav_fg_color),
+    nav_muted_color: orNullHex(form.nav_muted_color),
+    nav_active_fg_color: orNullHex(form.nav_active_fg_color),
+    hero_bg_color: orNullHex(form.hero_bg_color),
+    hero_fg_color: orNullHex(form.hero_fg_color),
+    hero_accent_color: orNullHex(form.hero_accent_color),
+    page_heading_color: orNullHex(form.page_heading_color),
+    page_body_color: orNullHex(form.page_body_color),
+    page_muted_color: orNullHex(form.page_muted_color),
+    card_heading_color: orNullHex(form.card_heading_color),
+    card_body_color: orNullHex(form.card_body_color),
+    card_muted_color: orNullHex(form.card_muted_color),
+  };
 
   const selectedKit = getBrandKit(form.brand_kit_key);
   const kitSubtitle = form.brand_kit_key === "custom"
@@ -1100,7 +1181,7 @@ function BrandingEditor() {
                 resolved={themeForPreview.cardText} value={form.card_heading_color}
                 onChange={(v) => editColour("card_heading_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.cardText, themeForPreview.cardBg, "card background")} />
-              <ColorRoleRow label="Card body text colour" fieldName="card_body_color" helper="Body copy inside cards. Falls back to the card heading colour."
+              <ColorRoleRow label="Card body text colour" fieldName="card_body_color" helper="Used for Welcome copy and other standard text inside cards. Falls back to the card heading colour."
                 resolved={themeForPreview.cardText} value={form.card_body_color}
                 onChange={(v) => editColour("card_body_color", v)} disabled={!canEdit || saving} />
               <ColorRoleRow label="Card muted text colour" fieldName="card_muted_color" helper="Addresses, descriptions, metadata inside cards."
@@ -1179,7 +1260,7 @@ function BrandingEditor() {
               <ColorRoleRow label="Hero background / overlay" fieldName="hero_bg_color" helper="Background tint behind the event title when there is no cover image."
                 resolved={themeForPreview.heroBg} value={form.hero_bg_color}
                 onChange={(v) => editColour("hero_bg_color", v)} disabled={!canEdit || saving} />
-              <ColorRoleRow label="Hero text colour" fieldName="hero_fg_color" helper="Event title and subtitle on top of the hero."
+              <ColorRoleRow label="Event heading colour" fieldName="hero_fg_color" helper="Colour of the event title displayed over the cover image. Does not affect welcome copy."
                 resolved={themeForPreview.heroFg} value={form.hero_fg_color}
                 onChange={(v) => editColour("hero_fg_color", v)} disabled={!canEdit || saving}
                 warnings={warn(themeForPreview.heroFg, themeForPreview.heroBg, "hero background")} />
@@ -1314,71 +1395,78 @@ function BrandingEditor() {
                 </p>
               </div>
             </div>
-            <EventPaletteScope
-              paletteKey={null}
-              backgroundKey={null}
-              primaryColor={form.primary_color}
-              accentColor={form.accent_color}
-              pageBackgroundColor={form.page_background_color}
-              cardBackgroundColor={form.card_background_color}
-              textColor={form.page_heading_color}
-              mutedTextColor={form.page_muted_color}
-              cardTextColor={form.card_heading_color}
-              cardMutedTextColor={form.card_muted_color}
-              borderColor={form.border_color}
-              primaryTextColor={form.button_primary_fg}
-              navBackgroundColor={form.nav_background_color}
-              brandKitKey={form.brand_kit_key || null}
-              linkColor={form.link_color}
-              cardBorderColor={form.card_border_color}
-              buttonPrimaryBg={form.button_primary_bg}
-              buttonPrimaryFg={form.button_primary_fg}
-              buttonSecondaryBg={form.button_secondary_bg}
-              buttonSecondaryFg={form.button_secondary_fg}
-              navFgColor={form.nav_fg_color}
-              navMutedColor={form.nav_muted_color}
-              navActiveFgColor={form.nav_active_fg_color}
-              heroBgColor={form.hero_bg_color}
-              heroFgColor={form.hero_fg_color}
-              heroAccentColor={form.hero_accent_color}
-              fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null)}
-              headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || null)}
-              className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4"
-            >
-              <div className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em]"
-                style={{ color: "var(--event-page-muted, #8A7E66)" }}>
-                <span>Customer landing — live preview</span>
-                <span>Mobile</span>
+            <BrandHoverProbe>
+              <div className="rounded-[16px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
+                <div
+                  className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A7E66]"
+                >
+                  <span>Customer landing — live preview</span>
+                  <span>Mobile · unsaved changes shown</span>
+                </div>
+                {/* The real public landing renderer, at mobile width, with
+                    navigation inert (mode="preview", no subdomain) and the
+                    unsaved branding form state injected. Never rebuild the
+                    landing page here — edit EventPublicLanding instead. */}
+                <div
+                  className="mx-auto w-[390px] max-w-full overflow-hidden rounded-[20px] border border-[#D9E2EF] bg-white shadow-inner"
+                  aria-label="Customer landing page preview"
+                >
+                  <div className="max-h-[70vh] overflow-y-auto">
+                    <EventPublicLanding
+                      key={previewEvent.event_id}
+                      subdomain={null}
+                      event={previewEvent}
+                      venues={venues}
+                      mode="preview"
+                    />
+                  </div>
+                </div>
+                <details className="mt-4 rounded-[12px] border border-[#E6ECF4] bg-white p-3">
+                  <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.18em] text-[#64748B]">
+                    Semantic tokens (developer aid)
+                  </summary>
+                  <div className="mt-3">
+                    <EventPaletteScope
+                      paletteKey={null}
+                      backgroundKey={null}
+                      primaryColor={form.primary_color}
+                      accentColor={form.accent_color}
+                      pageBackgroundColor={form.page_background_color}
+                      cardBackgroundColor={form.card_background_color}
+                      textColor={form.page_heading_color}
+                      mutedTextColor={form.page_muted_color}
+                      cardTextColor={form.card_heading_color}
+                      cardMutedTextColor={form.card_muted_color}
+                      borderColor={form.border_color}
+                      primaryTextColor={form.button_primary_fg}
+                      navBackgroundColor={form.nav_background_color}
+                      brandKitKey={form.brand_kit_key || null}
+                      linkColor={form.link_color}
+                      cardBorderColor={form.card_border_color}
+                      buttonPrimaryBg={form.button_primary_bg}
+                      buttonPrimaryFg={form.button_primary_fg}
+                      buttonSecondaryBg={form.button_secondary_bg}
+                      buttonSecondaryFg={form.button_secondary_fg}
+                      navFgColor={form.nav_fg_color}
+                      navMutedColor={form.nav_muted_color}
+                      navActiveFgColor={form.nav_active_fg_color}
+                      heroBgColor={form.hero_bg_color}
+                      heroFgColor={form.hero_fg_color}
+                      heroAccentColor={form.hero_accent_color}
+                      pageHeadingColor={form.page_heading_color}
+                      pageBodyColor={form.page_body_color}
+                      pageMutedColor={form.page_muted_color}
+                      cardHeadingColor={form.card_heading_color}
+                      cardBodyColor={form.card_body_color}
+                      cardMutedColor={form.card_muted_color}
+                      applyBackground={false}
+                    >
+                      <SemanticPreview venueLabelPlural={venueLabels.plural} />
+                    </EventPaletteScope>
+                  </div>
+                </details>
               </div>
-              <div className="grid gap-4 xl:grid-cols-[minmax(320px,420px)_minmax(260px,1fr)] xl:items-start">
-                <BrandHoverProbe>
-                  <TrailLanding
-                    eventName={event.name}
-                    welcomeCopy={
-                      resolvePublicLandingCopy({
-                        welcomeCopy: form.welcome_copy,
-                        description: event.description,
-                      }) ?? undefined
-                    }
-                    primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
-                    accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
-                    fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
-                    headingFontFamily={getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || undefined)}
-                    venueCount={venueCount}
-                    venueLabelPlural={venueLabels.plural}
-                    logoUrl={getEventAssetPublicUrl(branding?.logo_path)}
-                    heroImageUrl={getEventAssetPublicUrl(branding?.cover_path)}
-                    badge="Preview"
-                    termsUrl={null}
-                    heroOverlayColor={form.hero_overlay_color || null}
-                    heroOverlayOpacity={form.hero_overlay_opacity.trim() ? Number(form.hero_overlay_opacity) : null}
-                    heroFocalX={form.cover_focal_x.trim() ? Number(form.cover_focal_x) : null}
-                    heroFocalY={form.cover_focal_y.trim() ? Number(form.cover_focal_y) : null}
-                  />
-                </BrandHoverProbe>
-                <SemanticPreview venueLabelPlural={venueLabels.plural} className="xl:mt-0" />
-              </div>
-            </EventPaletteScope>
+            </BrandHoverProbe>
           </div>
 
         </div>
