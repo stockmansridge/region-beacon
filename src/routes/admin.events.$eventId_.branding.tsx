@@ -323,6 +323,22 @@ function BrandingEditor() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Surface save results as toasts so you never have to scroll up to see them.
+  useEffect(() => {
+    if (saveSuccess) toast.success(saveSuccess);
+  }, [saveSuccess]);
+  useEffect(() => {
+    if (saveError) {
+      toast.error(saveError, { duration: 12000, closeButton: true });
+    }
+  }, [saveError]);
+  useEffect(() => {
+    if (validationError) {
+      toast.error(validationError, { duration: 8000, closeButton: true });
+    }
+  }, [validationError]);
+
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     logo: false,
     cover: false,
