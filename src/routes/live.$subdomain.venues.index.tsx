@@ -230,19 +230,20 @@ export function PublicVenuesListPage({
   const labels = resolveVenueLabels(event ?? {});
   // A "Nearest" URL from a previous visit is honoured only once we have
   // coordinates; until then the list stays in the default order.
-  const effectiveSort: VenueSortKey =
-    sort === "nearest" && !coords
-      ? "az"
-      : (sort === "unvisited" || sort === "visited") && !hasPassport
-        ? "az"
-        : sort;
-  const distances = buildDistanceMap(venues, sort === "nearest" ? coords : null);
-  const sortedVenues = sortVenues(venues, {
-    sort: effectiveSort,
-    distances,
-    visitedIds,
-  });
+  // Short lists keep the organiser's saved order and show no controls, so a
+  // stray ?sort= in the URL must not silently reorder them.
   const showSortControls = venues.length > VENUE_SORT_MIN_COUNT;
+  const requestedSort: VenueSortKey = showSortControls ? sort : "az";
+  const effectiveSort: VenueSortKey =
+    requestedSort === "nearest" && !coords
+      ? "az"
+      : (requestedSort === "unvisited" || requestedSort === "visited") && !hasPassport
+        ? "az"
+        : requestedSort;
+  const distances = buildDistanceMap(venues, requestedSort === "nearest" ? coords : null);
+  const sortedVenues = showSortControls
+    ? sortVenues(venues, { sort: effectiveSort, distances, visitedIds })
+    : venues;
   const logoUrl = getEventAssetPublicUrl(event?.logo_path ?? null);
   const pointsEnabled = venues.some(
     (v) => typeof v.points_value === "number" && (v.points_value ?? 0) > 0,
