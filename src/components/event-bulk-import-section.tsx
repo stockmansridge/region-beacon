@@ -122,6 +122,54 @@ function statusOrDefault(v: unknown, dflt: Status = "active"): Status | null {
   return null;
 }
 
+/** Optional venue columns that may be missing in older deployments. */
+const OPTIONAL_VENUE_COLUMNS = [
+  "offer_summary",
+  "emotive_text",
+  "emotive_font_family",
+  "points_value",
+  "description",
+  "website_url",
+  "phone",
+];
+
+type SbErrorish = { message?: string; code?: string; details?: string; hint?: string };
+
+function asSbError(e: unknown): SbErrorish {
+  if (e && typeof e === "object") return e as SbErrorish;
+  return { message: String(e) };
+}
+
+/** Full Supabase/PostgREST error text so failures are diagnosable. */
+function describeSbError(e: unknown): string {
+  const err = asSbError(e);
+  const parts = [err.message || "Unknown error"];
+  if (err.code) parts.push(`code ${err.code}`);
+  if (err.details) parts.push(err.details);
+  if (err.hint) parts.push(`hint: ${err.hint}`);
+  return parts.join(" — ");
+}
+
+/** Column name when the error is "column X does not exist" / PGRST204. */
+function unknownColumn(e: unknown): string | null {
+  const err = asSbError(e);
+  const text = `${err.message ?? ""} ${err.details ?? ""}`;
+  const m =
+    text.match(/column\s+"?(?:[\w.]+\.)?([a-z0-9_]+)"?\s+does not exist/i) ??
+    text.match(/Could not find the '([a-z0-9_]+)' column/i);
+  return m ? m[1] : null;
+}
+
+/** Errors that will repeat for every row — stop instead of retrying 100 times. */
+function isFatalSbError(e: unknown): boolean {
+  const err = asSbError(e);
+  const code = err.code ?? "";
+  if (code.startsWith("PGRST3")) return true; // auth / JWT
+  if (["42501", "42P01", "23502", "23514", "23503", "22P02"].includes(code)) return true;
+  const lower = (err.message ?? "").toLowerCase();
+  return lower.includes("permission denied") || lower.includes("row-level security") || lower.includes("failed to fetch");
+}
+
 function downloadTemplate() {
   const wb = XLSX.utils.book_new();
 
@@ -609,6 +657,7 @@ export function EventBulkImportSection({
   const [missingSheets, setMissingSheets] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [importDone, setImportDone] = useState(false);
+  const [fatalError, setFatalError] = useState<string | null>(null);
   const [existingBonusCodes, setExistingBonusCodes] = useState<ExistingBonus[]>([]);
 
   // Fetch existing bonus codes once so we can match by title for updates.
@@ -697,6 +746,7 @@ export function EventBulkImportSection({
   async function confirmImport() {
     if (!drafts) return;
     setImporting(true);
+    setFatalError(null);
 
     const venueIdByKey = new Map<string, string>();
     let venuesCreated = 0;
@@ -709,7 +759,13 @@ export function EventBulkImportSection({
 
     // ---- Venues
     const venuesNext: VenueDraft[] = [];
+    let venueFatal: string | null = null;
     for (const v of drafts.venues) {
+      if (venueFatal) {
+        venuesNext.push({ ...v, result: "skipped", resultMessage: "Not attempted — import stopped after a fatal error." });
+        skipped++;
+        continue;
+      }
       if (v.issues.some((i) => i.level === "error")) {
         skipped++;
         venuesNext.push({ ...v, result: "skipped", resultMessage: "Validation errors" });
@@ -730,93 +786,87 @@ export function EventBulkImportSection({
         emotive_text: v.emotive_text,
         emotive_font_family: v.emotive_font_family,
       };
+      // New venues need every NOT NULL column the manual editor also sends.
+      // points_value has no client default in the import sheet — mirror the
+      // editor's "0" so inserts cannot trip a not-null constraint.
+      const insertExtras: Record<string, unknown> = { points_value: 0 };
 
-      try {
+      const attempt = async (
+        body: Record<string, unknown>,
+      ): Promise<{ id: string | null } | { err: unknown }> => {
         if (existingId) {
           const { error } = await supabase
             .from("venues")
-            .update(patch)
+            .update(body)
             .eq("id", existingId)
             .eq("event_id", eventId)
             .eq("agency_id", agencyId);
-          if (error) throw error;
-          venueIdByKey.set(v.venue_key.toLowerCase(), existingId);
-          venuesUpdated++;
-          venuesNext.push({ ...v, matchedVenueId: existingId, resultVenueId: existingId, result: "updated" });
-        } else {
-          const { data, error } = await supabase
-            .from("venues")
-            .insert({ agency_id: agencyId, event_id: eventId, ...patch })
-            .select("id")
-            .single();
-          if (error) throw error;
-          const id = (data?.id as string) ?? null;
-          if (id) venueIdByKey.set(v.venue_key.toLowerCase(), id);
-          venuesCreated++;
-          venuesNext.push({ ...v, resultVenueId: id, result: "created" });
+          if (error) return { err: error };
+          return { id: existingId };
         }
-      } catch (e) {
-        // Some columns (offer_summary, emotive_text, emotive_font_family) may
-        // not exist in older deployments — retry without the offending ones.
-        const msg = e instanceof Error ? e.message : String(e);
-        const lower = msg.toLowerCase();
-        const strip: string[] = [];
-        if (lower.includes("offer_summary")) strip.push("offer_summary");
-        if (lower.includes("emotive_text")) strip.push("emotive_text");
-        if (lower.includes("emotive_font_family")) strip.push("emotive_font_family");
-        if (strip.length > 0) {
-          try {
-            const slim: Record<string, unknown> = { ...patch };
-            for (const k of strip) delete slim[k];
-            const note = `${strip.join(", ")} not supported in this environment — skipped ${strip.length === 1 ? "that field" : "those fields"}.`;
-            if (existingId) {
-              const { error } = await supabase
-                .from("venues")
-                .update(slim)
-                .eq("id", existingId)
-                .eq("event_id", eventId)
-                .eq("agency_id", agencyId);
-              if (error) throw error;
-              venueIdByKey.set(v.venue_key.toLowerCase(), existingId);
-              venuesUpdated++;
-              venuesNext.push({
-                ...v,
-                matchedVenueId: existingId,
-                resultVenueId: existingId,
-                result: "updated",
-                resultMessage: note,
-              });
-              continue;
-            } else {
-              const { data, error } = await supabase
-                .from("venues")
-                .insert({ agency_id: agencyId, event_id: eventId, ...slim })
-                .select("id")
-                .single();
-              if (error) throw error;
-              const id = (data?.id as string) ?? null;
-              if (id) venueIdByKey.set(v.venue_key.toLowerCase(), id);
-              venuesCreated++;
-              venuesNext.push({
-                ...v,
-                resultVenueId: id,
-                result: "created",
-                resultMessage: note,
-              });
-              continue;
-            }
-          } catch (e2) {
-            venuesNext.push({
-              ...v,
-              result: "error",
-              resultMessage: e2 instanceof Error ? e2.message : String(e2),
-            });
-            continue;
-          }
+        const { data, error } = await supabase
+          .from("venues")
+          .insert({ agency_id: agencyId, event_id: eventId, ...insertExtras, ...body })
+          .select("id")
+          .single();
+        if (error) return { err: error };
+        return { id: (data?.id as string) ?? null };
+      };
+
+      let body: Record<string, unknown> = { ...patch };
+      const dropped: string[] = [];
+      let lastErr: unknown = null;
+      let saved: { id: string | null } | null = null;
+
+      // Retry loop: unknown-column errors (older deployments) strip the
+      // offending optional column and try again. Anything else is reported.
+      for (let tries = 0; tries < 6; tries++) {
+        const res = await attempt(body);
+        if ("id" in res) {
+          saved = res;
+          break;
         }
-        venuesNext.push({ ...v, result: "error", resultMessage: msg });
+        lastErr = res.err;
+        const col = unknownColumn(res.err);
+        if (col && col in body && OPTIONAL_VENUE_COLUMNS.includes(col)) {
+          delete body[col];
+          dropped.push(col);
+          continue;
+        }
+        if (col && col in insertExtras) {
+          delete insertExtras[col];
+          dropped.push(col);
+          continue;
+        }
+        break;
+      }
+
+      if (saved) {
+        const note =
+          dropped.length > 0
+            ? `${dropped.join(", ")} not supported in this environment — skipped ${dropped.length === 1 ? "that field" : "those fields"}.`
+            : undefined;
+        if (saved.id) venueIdByKey.set(v.venue_key.toLowerCase(), saved.id);
+        if (existingId) venuesUpdated++;
+        else venuesCreated++;
+        venuesNext.push({
+          ...v,
+          matchedVenueId: existingId,
+          resultVenueId: saved.id,
+          result: existingId ? "updated" : "created",
+          resultMessage: note,
+        });
+        continue;
+      }
+
+      const detail = describeSbError(lastErr);
+      venuesNext.push({ ...v, result: "error", resultMessage: detail });
+      if (isFatalSbError(lastErr)) {
+        venueFatal = `Venue import stopped: ${detail}`;
+        setFatalError(venueFatal);
       }
     }
+
 
 
     // ---- Venue check-in values (writes to venue_qr_codes.entry_value for
@@ -1053,9 +1103,13 @@ export function EventBulkImportSection({
     setDrafts({ venues: venuesNext, bonuses: bonusesNext, tastings: tastingsNext });
     setImporting(false);
     setImportDone(true);
-    toast.success(
-      `Import complete: ${venuesCreated + venuesUpdated} venues, ${bonusesCreated + bonusesUpdated} bonus codes, ${tastingsCreated + tastingsUpdated} tasting QR codes.`,
-    );
+    const errorRows = [...venuesNext, ...bonusesNext, ...tastingsNext].filter((r) => r.result === "error").length;
+    const summaryText = `${venuesCreated + venuesUpdated} venues, ${bonusesCreated + bonusesUpdated} bonus codes, ${tastingsCreated + tastingsUpdated} tasting QR codes.`;
+    if (errorRows > 0) {
+      toast.error(`Import finished with ${errorRows} failed row${errorRows === 1 ? "" : "s"}: ${summaryText} See the row messages below.`);
+    } else {
+      toast.success(`Import complete: ${summaryText}`);
+    }
     onImported();
 
     // Stash counts for the summary view
@@ -1174,6 +1228,12 @@ export function EventBulkImportSection({
       {parseError && (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {parseError}
+        </div>
+      )}
+
+      {fatalError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <span className="font-semibold">Import stopped.</span> {fatalError}
         </div>
       )}
 
