@@ -519,14 +519,13 @@ function MenuDrawer({
                 Leaderboard
               </PublicLink>
             </li>
-            {hasAwards && (
-              <li>
-                <PublicLink to="/prizes" onClick={onClose} className={rowClass}>
-                  <Award className="h-5 w-5 opacity-80" />
-                  Prizes
-                </PublicLink>
-              </li>
-            )}
+            <li>
+              <PublicLink to="/prizes" onClick={onClose} className={rowClass}>
+                <Award className="h-5 w-5 opacity-80" />
+                Prizes
+              </PublicLink>
+            </li>
+
             {hasFaq && (
               <li>
                 <PublicLink to="/faq" onClick={onClose} className={rowClass}>
