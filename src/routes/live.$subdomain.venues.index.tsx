@@ -252,7 +252,7 @@ export function PublicVenuesListPage({
     (v) => typeof v.points_value === "number" && (v.points_value ?? 0) > 0,
   );
 
-  const heroImageUrl = getEventAssetPublicUrl(event?.cover_path ?? null);
+
 
   return (
     <EventPaletteScope
