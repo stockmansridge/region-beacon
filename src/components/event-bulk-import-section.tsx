@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 
 /**
  * Bulk Import (Excel) for an event.
@@ -150,6 +151,38 @@ function describeSbError(e: unknown): string {
   return parts.join(" — ");
 }
 
+function venueSaveDiagnostic({
+  error,
+  row,
+  name,
+  operation,
+  body,
+}: {
+  error: unknown;
+  row: number;
+  name: string;
+  operation: "create" | "update";
+  body: Record<string, unknown>;
+}): string {
+  const err = asSbError(error);
+  const code = err.code ? ` [${err.code}]` : "";
+  const response = describeSbError(error);
+  const fields = Object.keys(body).sort().join(", ");
+  const guidance =
+    err.code === "23502"
+      ? "A required database field is missing."
+      : err.code === "23505"
+        ? "This row conflicts with an existing venue."
+        : err.code === "23503"
+          ? "This row references an event, agency, or record that does not exist."
+          : err.code === "23514" || err.code === "22P02"
+            ? "One of the submitted values is not accepted by the database."
+            : err.code === "42501" || (err.message ?? "").toLowerCase().includes("row-level security")
+              ? "Your account is not permitted to save this venue."
+              : "The database rejected the venue row.";
+  return `Venues row ${row} (${name || "unnamed venue"}) could not be ${operation === "create" ? "created" : "updated"}${code}. ${guidance} Response: ${response}. Submitted fields: ${fields}. No further venue rows were attempted.`;
+}
+
 /** Column name when the error is "column X does not exist" / PGRST204. */
 function unknownColumn(e: unknown): string | null {
   const err = asSbError(e);
@@ -158,16 +191,6 @@ function unknownColumn(e: unknown): string | null {
     text.match(/column\s+"?(?:[\w.]+\.)?([a-z0-9_]+)"?\s+does not exist/i) ??
     text.match(/Could not find the '([a-z0-9_]+)' column/i);
   return m ? m[1] : null;
-}
-
-/** Errors that will repeat for every row — stop instead of retrying 100 times. */
-function isFatalSbError(e: unknown): boolean {
-  const err = asSbError(e);
-  const code = err.code ?? "";
-  if (code.startsWith("PGRST3")) return true; // auth / JWT
-  if (["42501", "42P01", "23502", "23514", "23503", "22P02"].includes(code)) return true;
-  const lower = (err.message ?? "").toLowerCase();
-  return lower.includes("permission denied") || lower.includes("row-level security") || lower.includes("failed to fetch");
 }
 
 function downloadTemplate() {
@@ -407,6 +430,20 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
       if (emotiveText && emotiveText.length > 500) {
         issues.push({ level: "error", message: "emotive_text must be 500 characters or fewer." });
       }
+      const websiteRaw = s(r["website_url"]);
+      const website = normalizeWebsiteUrl(websiteRaw);
+      if (websiteRaw && website !== websiteRaw) {
+        issues.push({ level: "warning", message: `Website URL will be saved as ${website}.` });
+      }
+      const phone = s(r["phone"]);
+      if (phone.length > 40) {
+        issues.push({ level: "error", message: "Phone must be 40 characters or fewer." });
+      } else if (phone && !/^\+?[0-9 \-]{6,40}$/.test(phone)) {
+        issues.push({
+          level: "error",
+          message: "Phone may contain only numbers, spaces, a leading +, and hyphens (for example: +61 2 1234 5678). Remove brackets and other punctuation.",
+        });
+      }
       return {
         rowNum: i + 2,
         venue_key,
@@ -415,8 +452,8 @@ function parseAndValidate(wb: XLSX.WorkBook): { drafts: Drafts; missingSheets: s
         address: s(r["address"]) || null,
         lat,
         lng,
-        website_url: s(r["website_url"]) || null,
-        phone: s(r["phone"]) || null,
+        website_url: website,
+        phone: phone || null,
         offer_summary: s(r["offer_summary"]) || null,
         order_index: order,
         status: statusParsed === "disabled" ? "inactive" : "active",
@@ -818,9 +855,10 @@ export function EventBulkImportSection({
       let lastErr: unknown = null;
       let saved: { id: string | null } | null = null;
 
-      // Retry loop: unknown-column errors (older deployments) strip the
-      // offending optional column and try again. Anything else is reported.
-      for (let tries = 0; tries < 6; tries++) {
+      // Retry once for older deployments: if one optional field is unknown,
+      // remove all optional fields together rather than issuing one failing
+      // request per field. Any remaining failure stops the venue import.
+      for (let tries = 0; tries < 2; tries++) {
         const res = await attempt(body);
         if ("id" in res) {
           saved = res;
@@ -829,13 +867,21 @@ export function EventBulkImportSection({
         lastErr = res.err;
         const col = unknownColumn(res.err);
         if (col && col in body && OPTIONAL_VENUE_COLUMNS.includes(col)) {
-          delete body[col];
-          dropped.push(col);
+          for (const optionalColumn of OPTIONAL_VENUE_COLUMNS) {
+            if (optionalColumn in body) {
+              delete body[optionalColumn];
+              dropped.push(optionalColumn);
+            }
+          }
           continue;
         }
         if (col && col in insertExtras) {
-          delete insertExtras[col];
-          dropped.push(col);
+          for (const optionalColumn of OPTIONAL_VENUE_COLUMNS) {
+            if (optionalColumn in insertExtras) {
+              delete insertExtras[optionalColumn];
+              dropped.push(optionalColumn);
+            }
+          }
           continue;
         }
         break;
@@ -859,12 +905,18 @@ export function EventBulkImportSection({
         continue;
       }
 
-      const detail = describeSbError(lastErr);
+      const detail = venueSaveDiagnostic({
+        error: lastErr,
+        row: v.rowNum,
+        name: v.name,
+        operation: existingId ? "update" : "create",
+        body: { ...insertExtras, ...body },
+      });
       venuesNext.push({ ...v, result: "error", resultMessage: detail });
-      if (isFatalSbError(lastErr)) {
-        venueFatal = `Venue import stopped: ${detail}`;
-        setFatalError(venueFatal);
-      }
+      // Every venue uses the same table and payload shape. Continuing after
+      // the first database rejection only repeats the same 400 for every row.
+      venueFatal = detail;
+      setFatalError(detail);
     }
 
 
@@ -1232,8 +1284,18 @@ export function EventBulkImportSection({
       )}
 
       {fatalError && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          <span className="font-semibold">Import stopped.</span> {fatalError}
+        <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-3 text-sm text-destructive" role="alert">
+          <div><span className="font-semibold">Venue import stopped after the first failed request.</span> {fatalError}</div>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(fatalError).then(
+              () => toast.success("Error details copied to clipboard."),
+              () => toast.error("Could not copy error details."),
+            )}
+            className="inline-flex h-8 items-center rounded-md border border-destructive/30 bg-background px-2 text-xs font-semibold text-destructive hover:bg-destructive/10"
+          >
+            Copy full error details
+          </button>
         </div>
       )}
 
@@ -1340,9 +1402,11 @@ export function EventBulkImportSection({
       )}
 
       {importDone && summary && (
-        <div className="space-y-4 rounded-[12px] border border-[#86EFAC] bg-[#ECFDF5] p-4">
-          <h4 className="text-sm font-semibold text-[#047857]">Import complete</h4>
-          <ul className="grid gap-1 text-sm text-[#065F46] sm:grid-cols-2">
+        <div className={`space-y-4 rounded-[12px] border p-4 ${errorRows.length > 0 ? "border-destructive/40 bg-destructive/5" : "border-[#86EFAC] bg-[#ECFDF5]"}`}>
+          <h4 className={`text-sm font-semibold ${errorRows.length > 0 ? "text-destructive" : "text-[#047857]"}`}>
+            {errorRows.length > 0 ? "Import finished with errors" : "Import complete"}
+          </h4>
+          <ul className={`grid gap-1 text-sm sm:grid-cols-2 ${errorRows.length > 0 ? "text-foreground" : "text-[#065F46]"}`}>
             <li>Venues created: <strong>{summary.venuesCreated}</strong></li>
             <li>Venues updated: <strong>{summary.venuesUpdated}</strong></li>
             <li>Bonus Codes created: <strong>{summary.bonusesCreated}</strong></li>
