@@ -872,6 +872,10 @@ function BrandingEditor() {
   }
 
   const { event, branding, venueCount } = bundle;
+  // Full preview always renders the last SAVED branding, so surface unsaved edits.
+  const hasUnsavedChanges =
+    JSON.stringify(form) !== JSON.stringify(brandingToForm(branding));
+
   const venueLabels = resolveVenueLabels({
     venue_label_singular: form.venue_label_singular,
     venue_label_plural: form.venue_label_plural,
