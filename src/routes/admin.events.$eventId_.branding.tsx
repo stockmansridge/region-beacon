@@ -340,6 +340,9 @@ function BrandingEditor() {
 
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
+  // Surfaced in the error view so a load failure is diagnosable instead of
+  // showing only "Could not load this event".
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -452,6 +455,7 @@ function BrandingEditor() {
     }
     let cancelled = false;
     setState("loading");
+    setLoadError(null);
     (async () => {
       const { data: event, error: evErr } = await supabase
         .from("events")
@@ -464,22 +468,29 @@ function BrandingEditor() {
       if (evErr) { setState("error"); return; }
       if (!event) { setState("not-found"); return; }
 
+      // Branding columns are added incrementally by production migrations, so
+      // the read degrades: full list → base list → minimal list. A missing
+      // column must never turn into "Could not load this event".
       const brandingSelect = async () => {
-        const full = await supabase
-          .from("event_branding")
-          .select(SELECT_COLS)
-          .eq("event_id", event.id)
-          .eq("agency_id", agencyId)
-          .maybeSingle();
+        const attempt = (cols: string) =>
+          supabase
+            .from("event_branding")
+            .select(cols)
+            .eq("event_id", event.id)
+            .eq("agency_id", agencyId)
+            .maybeSingle();
+
+        const full = await attempt(SELECT_COLS);
         if (!full.error) return full;
-        // Retry without optional cover_focal columns for environments where
-        // the migration hasn't been applied yet.
-        return await supabase
-          .from("event_branding")
-          .select(SELECT_COLS_FALLBACK)
-          .eq("event_id", event.id)
-          .eq("agency_id", agencyId)
-          .maybeSingle();
+        console.warn("[branding] full select failed:", full.error.message);
+
+        const base = await attempt(SELECT_COLS_FALLBACK);
+        if (!base.error) return base;
+        console.warn("[branding] base select failed:", base.error.message);
+
+        // Last resort: enough to render the editor with defaults rather than
+        // blocking the whole page.
+        return await attempt("logo_path, cover_path, font_family, primary_color, accent_color");
       };
       const [brandingRes, domainsRes, venuesRes] = await Promise.all([
         brandingSelect(),
@@ -501,6 +512,13 @@ function BrandingEditor() {
       ]);
       if (cancelled) return;
       if (brandingRes.error || domainsRes.error || venuesRes.error) {
+        const detail =
+          brandingRes.error?.message ??
+          domainsRes.error?.message ??
+          venuesRes.error?.message ??
+          null;
+        console.error("[branding] load failed:", detail);
+        setLoadError(detail);
         setState("error");
         return;
       }
@@ -900,6 +918,9 @@ function BrandingEditor() {
     return (
       <div className="p-6 text-sm text-destructive">
         Could not load this event. Please try again.
+        {loadError && (
+          <div className="mt-2 font-mono text-[12px] opacity-80">{loadError}</div>
+        )}
       </div>
     );
   }
