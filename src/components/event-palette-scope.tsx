@@ -54,6 +54,7 @@ export function EventPaletteScope({
   heroBgColor,
   heroFgColor,
   heroAccentColor,
+  heroBodyColor,
   // Phase D Pass 2 — heading/body/muted split (all optional, all fall back).
   pageHeadingColor,
   pageBodyColor,
@@ -93,6 +94,7 @@ export function EventPaletteScope({
   heroBgColor?: string | null;
   heroFgColor?: string | null;
   heroAccentColor?: string | null;
+  heroBodyColor?: string | null;
   pageHeadingColor?: string | null;
   pageBodyColor?: string | null;
   pageMutedColor?: string | null;
@@ -131,6 +133,7 @@ export function EventPaletteScope({
     (heroBgColor && HEX_RE.test(heroBgColor)) ||
     (heroFgColor && HEX_RE.test(heroFgColor)) ||
     (heroAccentColor && HEX_RE.test(heroAccentColor)) ||
+    (heroBodyColor && HEX_RE.test(heroBodyColor)) ||
     (pageHeadingColor && HEX_RE.test(pageHeadingColor)) ||
     (pageBodyColor && HEX_RE.test(pageBodyColor)) ||
     (pageMutedColor && HEX_RE.test(pageMutedColor)) ||
@@ -199,6 +202,7 @@ export function EventPaletteScope({
     hero_bg_color: heroBgColor ?? null,
     hero_fg_color: heroFgColor ?? null,
     hero_accent_color: heroAccentColor ?? null,
+    hero_body_color: heroBodyColor ?? null,
     page_heading_color: pageHeadingColor ?? null,
     page_body_color: pageBodyColor ?? null,
     page_muted_color: pageMutedColor ?? null,

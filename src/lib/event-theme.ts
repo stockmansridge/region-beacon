@@ -56,6 +56,7 @@ export type EventTheme = {
   heroBg: string;        // --event-hero-bg
   heroFg: string;        // --event-hero-fg
   heroAccent: string;    // --event-hero-accent
+  heroBody: string;      // --event-hero-body (hero supporting copy / welcome copy)
 };
 
 export type BrandingInput = {
@@ -88,6 +89,8 @@ export type BrandingInput = {
   hero_bg_color?: string | null;
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
+  /** Supporting copy over the hero image (welcome copy). Own role — never hero_fg. */
+  hero_body_color?: string | null;
 
   // ---- Phase D Pass 2 — heading/body/muted split (all optional) ----
   page_heading_color?: string | null;
@@ -189,6 +192,12 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
   const heroBg = pickHex(input.hero_bg_color) ?? kc?.hero_bg_color ?? primary;
   const heroFg = pickHex(input.hero_fg_color) ?? kc?.hero_fg_color ?? primaryText;
   const heroAccent = pickHex(input.hero_accent_color) ?? kc?.hero_accent_color ?? accent;
+  // Hero supporting copy (welcome copy) sits over the cover image, so it falls
+  // back to the hero foreground — never to the card body role.
+  const heroBody =
+    pickHex(input.hero_body_color) ??
+    pickHex((kc as { hero_body_color?: string } | undefined)?.hero_body_color) ??
+    heroFg;
 
   return {
     pageBg, cardBg,
@@ -199,7 +208,7 @@ export function resolveEventTheme(input: BrandingInput): EventTheme {
     buttonPrimaryBg, buttonPrimaryFg,
     buttonSecondaryBg, buttonSecondaryFg,
     navBg, navText, navMuted, navActiveBg, navActiveText,
-    heroBg, heroFg, heroAccent,
+    heroBg, heroFg, heroAccent, heroBody,
   };
 }
 
@@ -249,6 +258,7 @@ export function themeCssVars(theme: EventTheme): CSSProperties {
     "--event-hero-bg": theme.heroBg,
     "--event-hero-fg": theme.heroFg,
     "--event-hero-accent": theme.heroAccent,
+    "--event-hero-body": theme.heroBody,
     "--event-hero-overlay": `color-mix(in srgb, ${theme.heroBg} 70%, transparent)`,
     "--event-hero-overlay-strong": `color-mix(in srgb, ${theme.heroBg} 88%, transparent)`,
     // Derived: muted text on primary/dark surfaces.

@@ -24,7 +24,7 @@ export const EVENT_BRANDING_SELECT_BASE = [
   "primary_text_color",
   "button_primary_bg", "button_primary_fg", "button_secondary_bg", "button_secondary_fg",
   "nav_background_color", "nav_fg_color", "nav_muted_color", "nav_active_fg_color",
-  "hero_bg_color", "hero_fg_color", "hero_accent_color",
+  "hero_bg_color", "hero_fg_color", "hero_accent_color", "hero_body_color",
   "hero_overlay_color", "hero_overlay_opacity",
   "brand_kit_key", "brand_kit_version",
   "palette_key", "page_background_key",
@@ -42,7 +42,7 @@ export const EVENT_BRANDING_SELECT_FALLBACK = EVENT_BRANDING_SELECT_BASE.join(",
 
 /** True when a failed select is caused by a column missing in production. */
 export function isMissingBrandingColumnError(message: string | null | undefined): boolean {
-  return /(cover_focal_x|cover_focal_y|brand_kit_key|brand_kit_version|hero_overlay|page_heading_color|card_heading_color|button_primary_bg|nav_fg_color|hero_bg_color|link_color|page_background_color|card_background_color|palette_key|page_background_key)/i.test(
+  return /(cover_focal_x|cover_focal_y|hero_body_color|brand_kit_key|brand_kit_version|hero_overlay|page_heading_color|card_heading_color|button_primary_bg|nav_fg_color|hero_bg_color|link_color|page_background_color|card_background_color|palette_key|page_background_key)/i.test(
     message ?? "",
   );
 }
@@ -86,6 +86,7 @@ export type EventBrandingRow = {
   hero_bg_color?: string | null;
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
+  hero_body_color?: string | null;
   hero_overlay_color?: string | null;
   hero_overlay_opacity?: number | null;
   brand_kit_key?: string | null;
@@ -142,6 +143,7 @@ export function brandingToScopeProps(b: EventBrandingRow | null | undefined) {
     heroBgColor: b?.hero_bg_color ?? null,
     heroFgColor: b?.hero_fg_color ?? null,
     heroAccentColor: b?.hero_accent_color ?? null,
+    heroBodyColor: b?.hero_body_color ?? null,
 
     fontFamily: resolveFontStack(b?.font_family),
     headingFontFamily: resolveFontStack(b?.heading_font_family),
