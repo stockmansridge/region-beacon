@@ -122,6 +122,54 @@ function statusOrDefault(v: unknown, dflt: Status = "active"): Status | null {
   return null;
 }
 
+/** Optional venue columns that may be missing in older deployments. */
+const OPTIONAL_VENUE_COLUMNS = [
+  "offer_summary",
+  "emotive_text",
+  "emotive_font_family",
+  "points_value",
+  "description",
+  "website_url",
+  "phone",
+];
+
+type SbErrorish = { message?: string; code?: string; details?: string; hint?: string };
+
+function asSbError(e: unknown): SbErrorish {
+  if (e && typeof e === "object") return e as SbErrorish;
+  return { message: String(e) };
+}
+
+/** Full Supabase/PostgREST error text so failures are diagnosable. */
+function describeSbError(e: unknown): string {
+  const err = asSbError(e);
+  const parts = [err.message || "Unknown error"];
+  if (err.code) parts.push(`code ${err.code}`);
+  if (err.details) parts.push(err.details);
+  if (err.hint) parts.push(`hint: ${err.hint}`);
+  return parts.join(" — ");
+}
+
+/** Column name when the error is "column X does not exist" / PGRST204. */
+function unknownColumn(e: unknown): string | null {
+  const err = asSbError(e);
+  const text = `${err.message ?? ""} ${err.details ?? ""}`;
+  const m =
+    text.match(/column\s+"?(?:[\w.]+\.)?([a-z0-9_]+)"?\s+does not exist/i) ??
+    text.match(/Could not find the '([a-z0-9_]+)' column/i);
+  return m ? m[1] : null;
+}
+
+/** Errors that will repeat for every row — stop instead of retrying 100 times. */
+function isFatalSbError(e: unknown): boolean {
+  const err = asSbError(e);
+  const code = err.code ?? "";
+  if (code.startsWith("PGRST3")) return true; // auth / JWT
+  if (["42501", "42P01", "23502", "23514", "23503", "22P02"].includes(code)) return true;
+  const lower = (err.message ?? "").toLowerCase();
+  return lower.includes("permission denied") || lower.includes("row-level security") || lower.includes("failed to fetch");
+}
+
 function downloadTemplate() {
   const wb = XLSX.utils.book_new();
 
