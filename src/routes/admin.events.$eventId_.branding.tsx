@@ -34,6 +34,7 @@ import {
 } from "@/lib/event-assets";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { EVENT_BRANDING_SELECT, EVENT_BRANDING_SELECT_FALLBACK } from "@/lib/event-branding-theme";
+import { resolvePublicLandingCopy } from "@/lib/public-landing-copy";
 import { resolveEventTheme } from "@/lib/event-theme";
 import { contrastRatio } from "@/lib/contrast";
 import {
