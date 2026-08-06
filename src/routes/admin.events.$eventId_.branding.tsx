@@ -340,6 +340,9 @@ function BrandingEditor() {
 
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
+  // Surfaced in the error view so a load failure is diagnosable instead of
+  // showing only "Could not load this event".
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -452,6 +455,7 @@ function BrandingEditor() {
     }
     let cancelled = false;
     setState("loading");
+    setLoadError(null);
     (async () => {
       const { data: event, error: evErr } = await supabase
         .from("events")
@@ -914,6 +918,9 @@ function BrandingEditor() {
     return (
       <div className="p-6 text-sm text-destructive">
         Could not load this event. Please try again.
+        {loadError && (
+          <div className="mt-2 font-mono text-[12px] opacity-80">{loadError}</div>
+        )}
       </div>
     );
   }
