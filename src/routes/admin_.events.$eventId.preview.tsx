@@ -423,7 +423,20 @@ function EventPreview() {
                 >
                   {item.label}
                 </a>
+              ) : (
+                <span
+                  key={item.label}
+                  className="rounded-xl border border-dashed px-3 py-2 text-center opacity-60"
+                  style={{
+                    borderColor: "var(--event-card-border, var(--event-border))",
+                    color: "var(--event-nav-muted, var(--event-card-muted, var(--event-muted)))",
+                  }}
+                  title="Available once the event is published with a public address"
+                >
+                  {item.label}
+                </span>
               );
+
             })}
           </nav>
 
