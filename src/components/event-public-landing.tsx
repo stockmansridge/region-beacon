@@ -205,6 +205,15 @@ export function EventPublicLanding({
   const heroImageUrl = getEventAssetPublicUrl(event.cover_path);
   const logoUrl = getEventAssetPublicUrl(event.logo_path);
 
+  // Logo presentation (shape + optional solid backdrop plate) so the mark stays
+  // legible where it now lives: centred over the hero cover image. Shared with
+  // the posters via src/lib/event-logo-style.ts.
+  const logoStyle = resolveEventLogoStyle({
+    shape: event.logo_shape,
+    backdrop: event.logo_backdrop,
+    backdropColor: event.logo_backdrop_color,
+  });
+
   // Single public description rule: welcome copy → event description → none.
   const landingCopy = resolvePublicLandingCopy({
     welcomeCopy: event.welcome_copy,
