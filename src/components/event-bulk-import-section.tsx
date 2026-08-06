@@ -192,16 +192,6 @@ function unknownColumn(e: unknown): string | null {
   return m ? m[1] : null;
 }
 
-/** Errors that will repeat for every row — stop instead of retrying 100 times. */
-function isFatalSbError(e: unknown): boolean {
-  const err = asSbError(e);
-  const code = err.code ?? "";
-  if (code.startsWith("PGRST3")) return true; // auth / JWT
-  if (["42501", "42P01", "23502", "23514", "23503", "22P02"].includes(code)) return true;
-  const lower = (err.message ?? "").toLowerCase();
-  return lower.includes("permission denied") || lower.includes("row-level security") || lower.includes("failed to fetch");
-}
-
 function downloadTemplate() {
   const wb = XLSX.utils.book_new();
 
