@@ -325,6 +325,28 @@ export function PublicVenuesListPage({
             }}
           />
           <div className="relative mx-auto flex min-h-[260px] max-w-md flex-col justify-end px-5 pb-10 pt-24 sm:min-h-[300px]">
+            {/* Event logo — same dominant hero treatment as the landing page. */}
+            {logoUrl ? (
+              <div className="mb-4 flex justify-center">
+                <div
+                  style={eventLogoBoxStyle(
+                    resolveEventLogoStyle({
+                      shape: event?.logo_shape ?? null,
+                      backdrop: event?.logo_backdrop ?? null,
+                      backdropColor: event?.logo_backdrop_color ?? null,
+                    }),
+                    112,
+                  )}
+                >
+                  <img
+                    src={logoUrl}
+                    alt={event?.name ?? ""}
+                    style={eventLogoImageStyle()}
+                    loading="eager"
+                  />
+                </div>
+              </div>
+            ) : null}
             <p
               className="text-[10px] font-semibold uppercase tracking-[0.32em]"
               style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
