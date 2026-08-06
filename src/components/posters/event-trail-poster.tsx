@@ -1,3 +1,4 @@
+import { resolveEventLogoStyle, eventLogoBoxStyle, eventLogoImageStyle } from "@/lib/event-logo-style";
 import { PosterFrame, POSTER_HEIGHT_PX, POSTER_WIDTH_PX } from "./poster-frame";
 import { PosterQr } from "./poster-qr";
 import type { EventPosterData } from "@/lib/poster-types";
@@ -106,22 +107,31 @@ export function EventTrailPoster({ data, capture = false, previewScale, id }: Pr
             )} 0%, rgba(0,0,0,0.20) 40%, ${softColor(branding.primaryColor, 0.88)} 100%)`,
           }}
         />
-        {/* Logo */}
+        {/* Logo — 200% of its former size (was max 160x72) and framed with the
+            organiser's chosen shape/backdrop so it stays dominant. */}
         {branding.logoUrl && (
-          <img
-            src={branding.logoUrl}
-            alt=""
-            crossOrigin="anonymous"
+          <div
             style={{
               position: "absolute",
               top: 36,
               left: 56,
-              maxWidth: 160,
-              maxHeight: 72,
-              objectFit: "contain",
-              filter: "drop-shadow(0 2px 10px rgba(0,0,0,0.4))",
+              ...eventLogoBoxStyle(
+                resolveEventLogoStyle({
+                  shape: branding.logoShape,
+                  backdrop: branding.logoBackdrop,
+                  backdropColor: branding.logoBackdropColor,
+                }),
+                288,
+              ),
             }}
-          />
+          >
+            <img
+              src={branding.logoUrl}
+              alt=""
+              crossOrigin="anonymous"
+              style={eventLogoImageStyle()}
+            />
+          </div>
         )}
         {/* Hero text block */}
         <div

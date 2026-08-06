@@ -19,6 +19,11 @@ import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 import { PublicLink, PublicNavProvider, type PublicNavMode } from "@/components/public-nav-context";
 import { resolvePublicLandingCopy } from "@/lib/public-landing-copy";
+import {
+  resolveEventLogoStyle,
+  eventLogoBoxStyle,
+  eventLogoImageStyle,
+} from "@/lib/event-logo-style";
 
 /**
  * THE customer landing page.
@@ -87,6 +92,12 @@ export type PublicEventData = {
   hero_accent_color?: string | null;
   /** event_branding.hero_body_color — welcome copy over the hero image. */
   hero_body_color?: string | null;
+  /** event_branding.logo_shape — 'square' | 'circle' (NULL = square). */
+  logo_shape?: string | null;
+  /** event_branding.logo_backdrop — 'transparent' | 'color' (NULL = transparent). */
+  logo_backdrop?: string | null;
+  /** event_branding.logo_backdrop_color — plate colour when backdrop = 'color'. */
+  logo_backdrop_color?: string | null;
   page_heading_color?: string | null;
   page_body_color?: string | null;
   page_muted_color?: string | null;
@@ -193,6 +204,15 @@ export function EventPublicLanding({
 
   const heroImageUrl = getEventAssetPublicUrl(event.cover_path);
   const logoUrl = getEventAssetPublicUrl(event.logo_path);
+
+  // Logo presentation (shape + optional solid backdrop plate) so the mark stays
+  // legible where it now lives: centred over the hero cover image. Shared with
+  // the posters via src/lib/event-logo-style.ts.
+  const logoStyle = resolveEventLogoStyle({
+    shape: event.logo_shape,
+    backdrop: event.logo_backdrop,
+    backdropColor: event.logo_backdrop_color,
+  });
 
   // Single public description rule: welcome copy → event description → none.
   const landingCopy = resolvePublicLandingCopy({
@@ -361,6 +381,25 @@ export function EventPublicLanding({
               }}
             />
             <div className="relative mx-auto flex min-h-[340px] max-w-md flex-col justify-end px-5 pb-16 pt-24 sm:min-h-[380px]">
+              {/* Event logo — the dominant brand mark, centred over the hero
+                  image directly above the title. Replaces the small logo that
+                  used to sit in the top bar. */}
+              {logoUrl ? (
+                <div
+                  data-brand-hint="logo"
+                  title="Event logo — uploaded in the Event logo section"
+                  className="mb-4 flex justify-center"
+                >
+                  <div style={eventLogoBoxStyle(logoStyle, 132)}>
+                    <img
+                      src={logoUrl}
+                      alt={event.name}
+                      style={eventLogoImageStyle()}
+                      loading="eager"
+                    />
+                  </div>
+                </div>
+              ) : null}
               <p
                 data-brand-hint="hero_accent_color"
                 title="Hero eyebrow — Hero accent colour (--event-hero-accent)"

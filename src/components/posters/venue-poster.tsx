@@ -1,3 +1,4 @@
+import { resolveEventLogoStyle, eventLogoBoxStyle, eventLogoImageStyle } from "@/lib/event-logo-style";
 import { PosterFrame, POSTER_WIDTH_PX, POSTER_HEIGHT_PX } from "./poster-frame";
 import { PosterQr } from "./poster-qr";
 import type { VenuePosterData } from "@/lib/poster-types";
@@ -78,6 +79,32 @@ export function VenuePoster({ data, capture = false, previewScale, id }: Props) 
             )} 0%, rgba(0,0,0,0.15) 45%, ${softColor(branding.primaryColor, 0.85)} 100%)`,
           }}
         />
+        {/* Event logo — same dominant treatment as the trail poster so the
+            brand mark reads consistently across printables. */}
+        {branding.logoUrl && (
+          <div
+            style={{
+              position: "absolute",
+              top: 36,
+              left: 56,
+              ...eventLogoBoxStyle(
+                resolveEventLogoStyle({
+                  shape: branding.logoShape,
+                  backdrop: branding.logoBackdrop,
+                  backdropColor: branding.logoBackdropColor,
+                }),
+                288,
+              ),
+            }}
+          >
+            <img
+              src={branding.logoUrl}
+              alt=""
+              crossOrigin="anonymous"
+              style={eventLogoImageStyle()}
+            />
+          </div>
+        )}
         {/* Hero text */}
         <div
           style={{

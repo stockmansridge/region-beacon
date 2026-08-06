@@ -134,6 +134,10 @@ type Branding = {
   hero_body_color: string | null;
   hero_overlay_color: string | null;
   hero_overlay_opacity: number | null;
+  // Event logo presentation (over the hero image + on posters)
+  logo_shape: string | null;
+  logo_backdrop: string | null;
+  logo_backdrop_color: string | null;
 
   // Brand Kit metadata
   brand_kit_key: string | null;
@@ -209,6 +213,10 @@ type Form = {
   // Cover focal point (0–100, "" → default 50 centered).
   cover_focal_x: string;
   cover_focal_y: string;
+  // Event logo presentation. "" → defaults (square / transparent).
+  logo_shape: string;
+  logo_backdrop: string;
+  logo_backdrop_color: string;
 };
 
 const EMPTY_FORM: Form = {
@@ -250,6 +258,9 @@ const EMPTY_FORM: Form = {
   hero_overlay_opacity: "",
   cover_focal_x: "",
   cover_focal_y: "",
+  logo_shape: "",
+  logo_backdrop: "",
+  logo_backdrop_color: "",
 };
 
 /** Form keys that, when edited, should flip brand_kit_key to "custom". */
@@ -311,6 +322,9 @@ function brandingToForm(b: Branding | null): Form {
       b.hero_overlay_opacity != null ? String(b.hero_overlay_opacity) : "",
     cover_focal_x: b.cover_focal_x != null ? String(b.cover_focal_x) : "",
     cover_focal_y: b.cover_focal_y != null ? String(b.cover_focal_y) : "",
+    logo_shape: b.logo_shape ?? "",
+    logo_backdrop: b.logo_backdrop ?? "",
+    logo_backdrop_color: b.logo_backdrop_color ?? "",
   };
 }
 
@@ -690,6 +704,11 @@ function BrandingEditor() {
       // Cover focal point (percentages 0–100). Blank → NULL (defaults to 50).
       cover_focal_x: form.cover_focal_x.trim() ? Math.max(0, Math.min(100, Math.round(Number(form.cover_focal_x)))) : null,
       cover_focal_y: form.cover_focal_y.trim() ? Math.max(0, Math.min(100, Math.round(Number(form.cover_focal_y)))) : null,
+      // Event logo presentation. Blank → NULL → square + transparent.
+      logo_shape: orNull(form.logo_shape),
+      logo_backdrop: orNull(form.logo_backdrop),
+      logo_backdrop_color:
+        form.logo_backdrop === "color" ? orNull(form.logo_backdrop_color) : null,
       // Brand Kit metadata
       brand_kit_key: brandKitKey,
       brand_kit_version: brandKitKey && brandKitKey !== "custom" ? BRAND_KIT_VERSION : null,
@@ -981,6 +1000,10 @@ function BrandingEditor() {
     hero_fg_color: orNullHex(form.hero_fg_color),
     hero_accent_color: orNullHex(form.hero_accent_color),
     hero_body_color: orNullHex(form.hero_body_color),
+    logo_shape: orNullHex(form.logo_shape),
+    logo_backdrop: orNullHex(form.logo_backdrop),
+    logo_backdrop_color:
+      form.logo_backdrop === "color" ? orNullHex(form.logo_backdrop_color) : null,
     page_heading_color: orNullHex(form.page_heading_color),
     page_body_color: orNullHex(form.page_body_color),
     page_muted_color: orNullHex(form.page_muted_color),
@@ -1056,6 +1079,102 @@ function BrandingEditor() {
               }}
               onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
             />
+
+            {/* The logo now sits centred over the hero cover image and at 200%
+                size on the posters, so it needs shape + backdrop controls to
+                stay legible against busy photography. */}
+            <div className="mt-4 space-y-3 border-t border-[#E2E8F0] pt-4">
+              <div>
+                <span className="block text-[13px] font-semibold text-[#0F172A]">Logo shape</span>
+                <p className="mt-0.5 text-[12px] text-[#64748B]">
+                  How the logo is framed over the cover image and on posters.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  {[
+                    { value: "square", label: "Square" },
+                    { value: "circle", label: "Circle" },
+                  ].map((opt) => {
+                    const active = (form.logo_shape || "square") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        disabled={!canEdit || saving}
+                        onClick={() => setForm({ ...form, logo_shape: opt.value })}
+                        className={`rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition ${
+                          active
+                            ? "border-[#0F172A] bg-[#0F172A] text-white"
+                            : "border-[#CBD5E1] bg-white text-[#334155] hover:border-[#94A3B8]"
+                        } disabled:opacity-50`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[13px] font-semibold text-[#0F172A]">Logo backdrop</span>
+                <p className="mt-0.5 text-[12px] text-[#64748B]">
+                  A solid colour behind the logo helps it stand out on a busy hero photo.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  {[
+                    { value: "transparent", label: "Transparent" },
+                    { value: "color", label: "Colour" },
+                  ].map((opt) => {
+                    const active = (form.logo_backdrop || "transparent") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        disabled={!canEdit || saving}
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            logo_backdrop: opt.value,
+                            // Give the colour picker a usable starting value.
+                            logo_backdrop_color:
+                              opt.value === "color" && !form.logo_backdrop_color.trim()
+                                ? "#ffffff"
+                                : form.logo_backdrop_color,
+                          })
+                        }
+                        className={`rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition ${
+                          active
+                            ? "border-[#0F172A] bg-[#0F172A] text-white"
+                            : "border-[#CBD5E1] bg-white text-[#334155] hover:border-[#94A3B8]"
+                        } disabled:opacity-50`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.logo_backdrop === "color" && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="color"
+                      aria-label="Logo backdrop colour"
+                      value={/^#[0-9a-fA-F]{6}$/.test(form.logo_backdrop_color) ? form.logo_backdrop_color : "#ffffff"}
+                      disabled={!canEdit || saving}
+                      onChange={(e) => setForm({ ...form, logo_backdrop_color: e.target.value })}
+                      className="h-9 w-12 cursor-pointer rounded-[8px] border border-[#CBD5E1] bg-white p-1"
+                    />
+                    <input
+                      type="text"
+                      aria-label="Logo backdrop colour hex"
+                      value={form.logo_backdrop_color}
+                      placeholder="#ffffff"
+                      disabled={!canEdit || saving}
+                      onChange={(e) => setForm({ ...form, logo_backdrop_color: e.target.value })}
+                      className="w-28 rounded-[8px] border border-[#CBD5E1] px-2 py-1.5 font-mono text-[13px]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </CollapsibleSection>
           <CollapsibleSection
             id="cover"

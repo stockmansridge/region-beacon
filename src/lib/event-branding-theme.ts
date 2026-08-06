@@ -31,7 +31,10 @@ export const EVENT_BRANDING_SELECT_BASE = [
 ] as const;
 
 /** Columns that may be missing on older production databases. */
-export const EVENT_BRANDING_SELECT_OPTIONAL = ["cover_focal_x", "cover_focal_y"] as const;
+export const EVENT_BRANDING_SELECT_OPTIONAL = [
+  "cover_focal_x", "cover_focal_y",
+  "logo_shape", "logo_backdrop", "logo_backdrop_color",
+] as const;
 
 export const EVENT_BRANDING_SELECT = [
   ...EVENT_BRANDING_SELECT_BASE,
@@ -42,7 +45,7 @@ export const EVENT_BRANDING_SELECT_FALLBACK = EVENT_BRANDING_SELECT_BASE.join(",
 
 /** True when a failed select is caused by a column missing in production. */
 export function isMissingBrandingColumnError(message: string | null | undefined): boolean {
-  return /(cover_focal_x|cover_focal_y|hero_body_color|brand_kit_key|brand_kit_version|hero_overlay|page_heading_color|card_heading_color|button_primary_bg|nav_fg_color|hero_bg_color|link_color|page_background_color|card_background_color|palette_key|page_background_key)/i.test(
+  return /(logo_shape|logo_backdrop|logo_backdrop_color|cover_focal_x|cover_focal_y|hero_body_color|brand_kit_key|brand_kit_version|hero_overlay|page_heading_color|card_heading_color|button_primary_bg|nav_fg_color|hero_bg_color|link_color|page_background_color|card_background_color|palette_key|page_background_key)/i.test(
     message ?? "",
   );
 }
@@ -95,6 +98,9 @@ export type EventBrandingRow = {
   page_background_key?: string | null;
   cover_focal_x?: number | null;
   cover_focal_y?: number | null;
+  logo_shape?: string | null;
+  logo_backdrop?: string | null;
+  logo_backdrop_color?: string | null;
 };
 
 /** Resolve a stored font_family value to a usable CSS font stack. */
