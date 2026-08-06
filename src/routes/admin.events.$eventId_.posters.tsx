@@ -60,6 +60,10 @@ type BrandingRow = {
   card_background_color: string | null;
   font_family: string | null;
   heading_font_family: string | null;
+  // Event logo presentation (may be missing on older databases).
+  logo_shape: string | null;
+  logo_backdrop: string | null;
+  logo_backdrop_color: string | null;
 };
 
 type VenueRow = {
@@ -145,7 +149,7 @@ function PostersPage() {
           supabase
             .from("event_branding")
             .select(
-              "logo_path, cover_path, primary_color, accent_color, palette_key, page_background_color, card_background_color, font_family, heading_font_family",
+              "logo_path, cover_path, primary_color, accent_color, palette_key, page_background_color, card_background_color, font_family, heading_font_family, logo_shape, logo_backdrop, logo_backdrop_color",
             )
             .eq("event_id", ev.id)
             .eq("agency_id", agencyId)
@@ -172,7 +176,12 @@ function PostersPage() {
         // heading_font_family is from a draft migration — degrade gracefully
         // if Postgres reports an undefined column.
         let resolvedBranding = brandingRow;
-        if (brandRes.error && /heading_font_family/.test(brandRes.error.message ?? "")) {
+        if (
+          brandRes.error &&
+          /heading_font_family|logo_shape|logo_backdrop|logo_backdrop_color/.test(
+            brandRes.error.message ?? "",
+          )
+        ) {
           const fallback = await supabase
             .from("event_branding")
             .select(
@@ -183,7 +192,13 @@ function PostersPage() {
             .maybeSingle();
           if (fallback.error) throw fallback.error;
           resolvedBranding = (fallback.data
-            ? { ...fallback.data, heading_font_family: null }
+            ? {
+                ...fallback.data,
+                heading_font_family: null,
+                logo_shape: null,
+                logo_backdrop: null,
+                logo_backdrop_color: null,
+              }
             : null) as BrandingRow | null;
         } else if (brandRes.error) {
           throw brandRes.error;
