@@ -1,6 +1,19 @@
-// Center-burst confetti pop. Renders bright pieces that explode outward
-// from the center of the parent (the progress ring), then fade. Parent
-// must be `position: relative`.
+// Shared milestone celebration burst — the ONLY confetti implementation.
+//
+// Center-burst confetti pop: bright pieces explode outward from the centre of
+// the parent (the progress ring), then fade. Parent must be `position:
+// relative`.
+//
+// Behaviour rules (identical for every event — legacy or brand new):
+//   * Fires on a participant state transition, not on every page load. Pass a
+//     `celebrationKey` describing the achieved state (e.g. "stamps-5" or
+//     "prize-<id>"); once seen, that key never replays for that visitor.
+//   * Plays a finite number of cycles, then stops — it never loops forever.
+//   * Respects `prefers-reduced-motion` (renders nothing).
+//   * Purely decorative and `pointer-events-none`, so it can never block
+//     navigation on mobile.
+
+import { useEffect, useState } from "react";
 
 const COLORS = [
   "#FF3D7F", // hot pink
@@ -33,7 +46,57 @@ const PIECES = Array.from({ length: 22 }, (_, i) => {
   };
 });
 
-export function RingConfetti() {
+const CYCLE_MS = 1600;
+const STORAGE_PREFIX = "gs-celebrated:";
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function alreadyCelebrated(key: string): boolean {
+  try {
+    return window.localStorage.getItem(STORAGE_PREFIX + key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markCelebrated(key: string) {
+  try {
+    window.localStorage.setItem(STORAGE_PREFIX + key, "1");
+  } catch {
+    /* private mode — celebrate again next time rather than crashing */
+  }
+}
+
+export function RingConfetti({
+  celebrationKey,
+  cycles = 2,
+}: {
+  /**
+   * Identifies the achieved state. When provided, the burst plays once per
+   * milestone per visitor instead of on every page load. Omit only for
+   * always-decorative usage.
+   */
+  celebrationKey?: string;
+  cycles?: number;
+}) {
+  // Never render during SSR: the decision depends on motion preference and
+  // per-visitor celebration history.
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    if (celebrationKey && alreadyCelebrated(celebrationKey)) return;
+    setPlaying(true);
+    if (celebrationKey) markCelebrated(celebrationKey);
+    const t = window.setTimeout(() => setPlaying(false), CYCLE_MS * cycles + 200);
+    return () => window.clearTimeout(t);
+  }, [celebrationKey, cycles]);
+
+  if (!playing) return null;
+
   return (
     <div
       aria-hidden
@@ -60,6 +123,7 @@ export function RingConfetti() {
                 ["--cf-ty" as never]: `${p.ty}px`,
                 ["--cf-rot" as never]: `${p.rot}deg`,
                 animationDelay: `${p.delay}ms`,
+                animationIterationCount: cycles,
               }}
             />
           );

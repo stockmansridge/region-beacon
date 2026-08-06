@@ -17,6 +17,7 @@ import { NextRewardCard } from "@/components/next-reward-card";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 import { WhatsHappeningCard } from "@/components/whats-happening-card";
 import { BonusPointsPromo } from "@/components/bonus-points-promo";
+import { RingConfetti } from "@/components/ring-confetti";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 
@@ -468,7 +469,9 @@ function LivePublicLoaded({
               style={{ borderRight: "1px solid var(--event-card-border)" }}
             >
               <div className="relative" style={{ width: ringSize + 32, height: ringSize + 20 }}>
-                {homeData.hasPassport && visited > 0 ? <RingConfetti /> : null}
+                {homeData.hasPassport && visited > 0 ? (
+                  <RingConfetti celebrationKey={`${subdomain}:stamps-${visited}`} />
+                ) : null}
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: ringSize, height: ringSize }}>
                   <svg
                     width={ringSize}
@@ -818,36 +821,3 @@ function NotLiveYet() {
     </div>
   );
 }
-
-// ---- Ring confetti (decorative) ----
-function RingConfetti() {
-  const pieces: Array<{ top: string; left: string; rot: number; color: string; w: number; h: number; delay: string }> = [
-    { top: "4%",  left: "10%", rot: -18, color: "var(--event-accent)", w: 10, h: 4, delay: "0s" },
-    { top: "14%", left: "88%", rot: 22,  color: "var(--event-button-primary-bg)", w: 6,  h: 6, delay: "0.3s" },
-    { top: "48%", left: "-2%", rot: 8,   color: "#F5B841", w: 8,  h: 3, delay: "0.6s" },
-    { top: "56%", left: "94%", rot: -30, color: "#E76F51", w: 4,  h: 8, delay: "0.15s" },
-    { top: "86%", left: "18%", rot: 12,  color: "var(--event-accent)", w: 6,  h: 6, delay: "0.45s" },
-    { top: "90%", left: "78%", rot: -8,  color: "#F5B841", w: 9,  h: 4, delay: "0.75s" },
-  ];
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0">
-      {pieces.map((p, i) => (
-        <span
-          key={i}
-          className="confetti-piece absolute block rounded-[2px]"
-          style={{
-            top: p.top,
-            left: p.left,
-            width: p.w,
-            height: p.h,
-            backgroundColor: p.color,
-            ["--confetti-rot" as any]: `${p.rot}deg`,
-            animationDelay: p.delay,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-
