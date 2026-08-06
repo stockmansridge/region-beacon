@@ -390,14 +390,7 @@ export function EventPublicLanding({
                   title="Event logo — uploaded in the Event logo section"
                   className="mb-4 flex justify-center"
                 >
-                  <div
-                    className="h-[120px] w-[120px] sm:h-[148px] sm:w-[148px]"
-                    style={{
-                      ...eventLogoBoxStyle(logoStyle, 120),
-                      width: undefined,
-                      height: undefined,
-                    }}
-                  >
+                  <div style={eventLogoBoxStyle(logoStyle, 132)}>
                     <img
                       src={logoUrl}
                       alt={event.name}

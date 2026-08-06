@@ -86,7 +86,11 @@ export function eventLogoBoxStyle(
           backgroundColor: style.backdropColor as string,
           boxShadow: "0 10px 30px -12px rgba(0,0,0,0.45)",
         }
-      : {}),
+      : {
+          // No plate: a soft shadow keeps a transparent mark readable on a
+          // light patch of hero photography.
+          filter: "drop-shadow(0 2px 12px rgba(0,0,0,0.45))",
+        }),
   };
 }
 
