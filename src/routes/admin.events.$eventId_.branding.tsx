@@ -73,6 +73,7 @@ type EventRow = {
   agency_id: string;
   name: string;
   public_slug: string | null;
+  description: string | null;
   status: string;
 };
 
@@ -428,7 +429,7 @@ function BrandingEditor() {
     (async () => {
       const { data: event, error: evErr } = await supabase
         .from("events")
-        .select("id, agency_id, name, public_slug, status")
+        .select("id, agency_id, name, public_slug, status, description")
         .eq("id", eventId)
         .eq("agency_id", agencyId)
         .is("deleted_at", null)
@@ -1352,7 +1353,12 @@ function BrandingEditor() {
                 <BrandHoverProbe>
                   <TrailLanding
                     eventName={event.name}
-                    welcomeCopy={form.welcome_copy.trim() || "Welcome! Collect a stamp at each participating venue and unlock rewards along the trail."}
+                    welcomeCopy={
+                      resolvePublicLandingCopy({
+                        welcomeCopy: form.welcome_copy,
+                        description: event.description,
+                      }) ?? undefined
+                    }
                     primaryColor={HEX_RE.test(form.primary_color.trim()) ? form.primary_color.trim() : themeForPreview.primary}
                     accentColor={HEX_RE.test(form.accent_color.trim()) ? form.accent_color.trim() : themeForPreview.accent}
                     fontFamily={getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || undefined)}
