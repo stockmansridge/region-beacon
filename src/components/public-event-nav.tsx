@@ -26,6 +26,7 @@ import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { useEventHasMap } from "@/lib/use-event-has-map";
 import { useEventHasAwards } from "@/lib/use-event-has-awards";
+import { useEventVenueLabels } from "@/lib/use-event-venue-labels";
 
 type ActiveTarget =
   | "home"
@@ -102,6 +103,7 @@ export function PublicEventNav({
   const hasFaq = faqState.kind === "ok" && faqState.entries.length > 0;
   const { hasMap } = useEventHasMap(subdomain);
   const { hasAwards } = useEventHasAwards(subdomain);
+  const venueLabels = useEventVenueLabels(subdomain);
 
   const normalisedOverride: ActiveTarget | undefined =
     activeOverride === "join" ? "passport" : (activeOverride as ActiveTarget | undefined);
@@ -257,6 +259,7 @@ export function PublicEventNav({
           canRegister={canRegister}
           eventName={eventName ?? null}
           logoUrl={logoUrl ?? null}
+          venueLabelPlural={venueLabels.plural}
         />
       )}
 
@@ -317,7 +320,7 @@ export function PublicEventNav({
                 className={bottomItemClass}
                 style={{ color: isActive("venues") ? navActiveFg : navMuted }}
               >
-                <BottomItemContent icon={<MapPin className="h-5 w-5" />} label="Venues" />
+                <BottomItemContent icon={<MapPin className="h-5 w-5" />} label={venueLabels.plural} />
               </PublicLink>
             )}
           </li>
@@ -406,6 +409,7 @@ function MenuDrawer({
   canRegister,
   eventName,
   logoUrl,
+  venueLabelPlural,
 }: {
   onClose: () => void;
   navBg: string;
@@ -420,6 +424,7 @@ function MenuDrawer({
   canRegister: boolean;
   eventName: string | null;
   logoUrl: string | null;
+  venueLabelPlural: string;
 }) {
   const rowClass =
     "flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition hover:bg-white/10 active:bg-white/15";
@@ -491,7 +496,7 @@ function MenuDrawer({
             <li>
               <PublicLink to="/venues" onClick={onClose} className={rowClass}>
                 <MapPin className="h-5 w-5 opacity-80" />
-                Venues
+                {venueLabelPlural}
               </PublicLink>
             </li>
             <li>
