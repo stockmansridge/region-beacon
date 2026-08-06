@@ -1,30 +1,31 @@
-## Plan
+# Fix branding save failure + hero text colour path
 
-1. **Make Custom Brand Kit an actual selectable state**
-   - Turn the current non-clickable Custom tile into a button.
-   - When selected, set `brand_kit_key` to `custom` and keep the user’s current colour fields intact.
-   - Update the reset/clear behaviour so it does not accidentally re-apply a curated Brand Kit.
+## What's wrong
 
-2. **Stop Brand Kits from overriding custom colours**
-   - Adjust the preview and public theme path so `brand_kit_key === "custom"` behaves as no kit.
-   - Add a safeguard in `EventPaletteScope` so custom mode does not count as an active Brand Kit background treatment.
-   - Review the legacy `palette_key` overlay path used by the public homepage so a saved curated palette cannot silently replace the explicit blue/brand colours after saving.
+**1. Branding save/load 400s (PGRST204)**
+The branding editor's data contract includes `cover_focal_x` / `cover_focal_y`, but those columns don't exist in the production database. A draft migration was written (`supabase/migrations-draft-cover-focal/01_event_branding_cover_focal.sql`) but never applied, so PostgREST rejects both the read and the PATCH.
 
-3. **Make Event Logo, Cover Image, and Brand Kit minimised by default**
-   - Wrap the Event Logo and Cover Image upload controls in collapsible sections.
-   - Set Logo, Cover Image, and Brand Kit collapsed by default on page load.
-   - Keep all editing controls unchanged once expanded.
+Confirmed focal-value range: **0–100 percentages** (`src/lib/cover-focal.ts` clamps 0–100 and emits CSS `object-position` percentages; the editor rounds to an integer 0–100 before saving). So the migration uses 0–100 defaults of 50, matching the draft.
 
-4. **Widen and tighten the Live Preview area**
-   - Change the editor/preview split so the preview column is wider on large screens.
-   - Let the preview content use a responsive two-column layout where space allows, while keeping it inside the available viewport height.
-   - Keep the preview pinned on the right and independently scrollable if needed.
+This project uses a self-managed Supabase project (`kyjwifumacnrpgyextzz`) with no direct DB tooling here, so the SQL is delivered as a file for you to run — same pattern as the previous `migrations-prod-*` fixes.
 
-5. **Add hover help for each brand colour field**
-   - Add a small info icon beside every colour-field label.
-   - The hover/focus callout will show the exact field name and what that colour controls, so it is clearer which setting maps to which part of the public page.
-   - Keep the existing helper text visible for quick scanning.
+**2. Hero text colour**
+Public pages (`live.$subdomain.index.tsx`, `passport.$token.tsx`) already use `var(--event-hero-fg, var(--event-primary-fg))`. The shared hero component `src/components/trail-landing.tsx` does not: the hero block sets `text-[var(--event-primary-fg,#F6EFE2)]` on the container and the `<h1>` inherits it, so the editor preview, full preview and the `/t/:agency/e/:event` landing page ignore the saved Hero Text colour. That's the root cause of the white title.
 
-6. **Validate**
-   - Run the project typecheck after implementation.
-   - Use a focused preview/browser check of the branding page to confirm the sections start collapsed, Custom is clickable, and the wider preview fits without blocking the editor.
+## Changes
+
+### Migration (run manually in Supabase SQL editor)
+`supabase/migrations-prod-event-branding-cover-focal/apply.sql`
+- `add column if not exists cover_focal_x/y numeric not null default 50` (no duplicate columns if partially applied)
+- drop/recreate `event_branding_cover_focal_x_check` / `_y_check` range checks 0–100
+- backfill any NULLs to 50 (defensive, in case the draft added them nullable)
+- `notify pgrst, 'reload schema';`
+
+### Frontend
+- `src/components/trail-landing.tsx` — hero `<h1>` (and pitch paragraph) get an explicit `color: var(--event-hero-fg, var(--event-hero-text, var(--event-primary-fg, #ffffff)))`, replacing the inherited white/primary-fg. Eyebrow keeps `--event-hero-accent`; logo/badge keep their own tokens, so hero elements stay independently themable.
+- `src/routes/admin.events.$eventId_.branding.tsx` — surface the real Supabase error (`message`, `details`, `hint`, `code`) in the save banner instead of the generic string, and stop the blind retry when the error is a schema error (`PGRST204` / `42703`): retry only once for the known optional-column fallback, otherwise fail fast with the real message.
+
+Nothing is removed from the frontend contract; the database is brought up to match.
+
+## Verification
+After you run the SQL: reload the branding editor (read succeeds), Save, Save & return, reload to confirm focal + `#41372E` hero colour persist and unrelated fields are untouched, then check the full preview and the public landing page render the same hero colour. Legacy events with no `hero_fg_color` still fall back through the token chain to white.
