@@ -85,6 +85,8 @@ export type PublicEventData = {
   hero_bg_color?: string | null;
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
+  /** event_branding.hero_body_color — welcome copy over the hero image. */
+  hero_body_color?: string | null;
   page_heading_color?: string | null;
   page_body_color?: string | null;
   page_muted_color?: string | null;
@@ -265,6 +267,7 @@ export function EventPublicLanding({
         heroBgColor={event.hero_bg_color ?? null}
         heroFgColor={event.hero_fg_color ?? null}
         heroAccentColor={event.hero_accent_color ?? null}
+        heroBodyColor={event.hero_body_color ?? null}
         pageHeadingColor={event.page_heading_color ?? null}
         pageBodyColor={event.page_body_color ?? null}
         pageMutedColor={event.page_muted_color ?? null}
@@ -373,16 +376,34 @@ export function EventPublicLanding({
               </h1>
               {firstName ? (
                 <p
-                  data-brand-hint="hero_fg_color"
-                  title="Hero supporting text — Event heading colour (--event-hero-fg)"
+                  data-brand-hint="hero_body_color"
+                  title="Hero supporting text — Welcome copy colour (--event-hero-body)"
                   className="mt-1 text-sm sm:text-base"
                   style={{
-                    color: "var(--event-hero-fg, var(--event-primary-fg))",
-                    opacity: 0.95,
+                    color: HERO_BODY_COLOR,
                     textShadow: "0 1px 8px rgba(0,0,0,0.45)",
                   }}
                 >
                   Let’s explore {event.name}.
+                </p>
+              ) : null}
+              {/* Welcome copy — part of the HERO content stack, sitting over the
+                  cover image directly beneath the event heading. It uses its own
+                  hero supporting-copy role (hero_body_color -> --event-hero-body)
+                  and must never inherit the card body colour. Rendered exactly
+                  once, here, for every surface (live, draft preview, ?preview=1,
+                  embedded branding preview). */}
+              {landingCopy ? (
+                <p
+                  data-brand-hint="hero_body_color"
+                  title="Welcome copy — Welcome copy colour (--event-hero-body)"
+                  className="mt-3 whitespace-pre-line text-sm leading-relaxed sm:text-[15px]"
+                  style={{
+                    color: HERO_BODY_COLOR,
+                    textShadow: "0 1px 10px rgba(0,0,0,0.5)",
+                  }}
+                >
+                  {landingCopy}
                 </p>
               ) : null}
             </div>
@@ -587,31 +608,6 @@ export function EventPublicLanding({
               </div>
             )}
           </section>
-
-          {/* Welcome copy — lives on the CARD surface, so it uses the card
-              body text role (card_body_color -> --event-card-text). It must
-              never inherit the hero text colour: it is not over the image. */}
-          {landingCopy ? (
-            <section
-              className="mt-5 rounded-3xl border p-5 shadow-sm"
-              style={{
-                borderColor: "var(--event-card-border)",
-                backgroundColor: "var(--event-card-bg)",
-              }}
-            >
-              <p
-                data-brand-hint="card_body_color"
-                title="Welcome copy — Card body text colour (--event-card-text)"
-                className="whitespace-pre-line text-sm leading-relaxed"
-                style={{
-                  color:
-                    "var(--event-card-text, var(--event-card-body, var(--event-page-text, #41372E)))",
-                }}
-              >
-                {landingCopy}
-              </p>
-            </section>
-          ) : null}
 
           {/* Primary CTA */}
           <div className="mt-5">
