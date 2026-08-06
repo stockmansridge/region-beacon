@@ -709,7 +709,13 @@ export function EventBulkImportSection({
 
     // ---- Venues
     const venuesNext: VenueDraft[] = [];
+    let venueFatal: string | null = null;
     for (const v of drafts.venues) {
+      if (venueFatal) {
+        venuesNext.push({ ...v, result: "skipped", resultMessage: "Not attempted — import stopped after a fatal error." });
+        skipped++;
+        continue;
+      }
       if (v.issues.some((i) => i.level === "error")) {
         skipped++;
         venuesNext.push({ ...v, result: "skipped", resultMessage: "Validation errors" });
@@ -730,93 +736,87 @@ export function EventBulkImportSection({
         emotive_text: v.emotive_text,
         emotive_font_family: v.emotive_font_family,
       };
+      // New venues need every NOT NULL column the manual editor also sends.
+      // points_value has no client default in the import sheet — mirror the
+      // editor's "0" so inserts cannot trip a not-null constraint.
+      const insertExtras: Record<string, unknown> = { points_value: 0 };
 
-      try {
+      const attempt = async (
+        body: Record<string, unknown>,
+      ): Promise<{ id: string | null } | { err: unknown }> => {
         if (existingId) {
           const { error } = await supabase
             .from("venues")
-            .update(patch)
+            .update(body)
             .eq("id", existingId)
             .eq("event_id", eventId)
             .eq("agency_id", agencyId);
-          if (error) throw error;
-          venueIdByKey.set(v.venue_key.toLowerCase(), existingId);
-          venuesUpdated++;
-          venuesNext.push({ ...v, matchedVenueId: existingId, resultVenueId: existingId, result: "updated" });
-        } else {
-          const { data, error } = await supabase
-            .from("venues")
-            .insert({ agency_id: agencyId, event_id: eventId, ...patch })
-            .select("id")
-            .single();
-          if (error) throw error;
-          const id = (data?.id as string) ?? null;
-          if (id) venueIdByKey.set(v.venue_key.toLowerCase(), id);
-          venuesCreated++;
-          venuesNext.push({ ...v, resultVenueId: id, result: "created" });
+          if (error) return { err: error };
+          return { id: existingId };
         }
-      } catch (e) {
-        // Some columns (offer_summary, emotive_text, emotive_font_family) may
-        // not exist in older deployments — retry without the offending ones.
-        const msg = e instanceof Error ? e.message : String(e);
-        const lower = msg.toLowerCase();
-        const strip: string[] = [];
-        if (lower.includes("offer_summary")) strip.push("offer_summary");
-        if (lower.includes("emotive_text")) strip.push("emotive_text");
-        if (lower.includes("emotive_font_family")) strip.push("emotive_font_family");
-        if (strip.length > 0) {
-          try {
-            const slim: Record<string, unknown> = { ...patch };
-            for (const k of strip) delete slim[k];
-            const note = `${strip.join(", ")} not supported in this environment — skipped ${strip.length === 1 ? "that field" : "those fields"}.`;
-            if (existingId) {
-              const { error } = await supabase
-                .from("venues")
-                .update(slim)
-                .eq("id", existingId)
-                .eq("event_id", eventId)
-                .eq("agency_id", agencyId);
-              if (error) throw error;
-              venueIdByKey.set(v.venue_key.toLowerCase(), existingId);
-              venuesUpdated++;
-              venuesNext.push({
-                ...v,
-                matchedVenueId: existingId,
-                resultVenueId: existingId,
-                result: "updated",
-                resultMessage: note,
-              });
-              continue;
-            } else {
-              const { data, error } = await supabase
-                .from("venues")
-                .insert({ agency_id: agencyId, event_id: eventId, ...slim })
-                .select("id")
-                .single();
-              if (error) throw error;
-              const id = (data?.id as string) ?? null;
-              if (id) venueIdByKey.set(v.venue_key.toLowerCase(), id);
-              venuesCreated++;
-              venuesNext.push({
-                ...v,
-                resultVenueId: id,
-                result: "created",
-                resultMessage: note,
-              });
-              continue;
-            }
-          } catch (e2) {
-            venuesNext.push({
-              ...v,
-              result: "error",
-              resultMessage: e2 instanceof Error ? e2.message : String(e2),
-            });
-            continue;
-          }
+        const { data, error } = await supabase
+          .from("venues")
+          .insert({ agency_id: agencyId, event_id: eventId, ...insertExtras, ...body })
+          .select("id")
+          .single();
+        if (error) return { err: error };
+        return { id: (data?.id as string) ?? null };
+      };
+
+      let body: Record<string, unknown> = { ...patch };
+      const dropped: string[] = [];
+      let lastErr: unknown = null;
+      let saved: { id: string | null } | null = null;
+
+      // Retry loop: unknown-column errors (older deployments) strip the
+      // offending optional column and try again. Anything else is reported.
+      for (let tries = 0; tries < 6; tries++) {
+        const res = await attempt(body);
+        if ("id" in res) {
+          saved = res;
+          break;
         }
-        venuesNext.push({ ...v, result: "error", resultMessage: msg });
+        lastErr = res.err;
+        const col = unknownColumn(res.err);
+        if (col && col in body && OPTIONAL_VENUE_COLUMNS.includes(col)) {
+          delete body[col];
+          dropped.push(col);
+          continue;
+        }
+        if (col && col in insertExtras) {
+          delete insertExtras[col];
+          dropped.push(col);
+          continue;
+        }
+        break;
+      }
+
+      if (saved) {
+        const note =
+          dropped.length > 0
+            ? `${dropped.join(", ")} not supported in this environment — skipped ${dropped.length === 1 ? "that field" : "those fields"}.`
+            : undefined;
+        if (saved.id) venueIdByKey.set(v.venue_key.toLowerCase(), saved.id);
+        if (existingId) venuesUpdated++;
+        else venuesCreated++;
+        venuesNext.push({
+          ...v,
+          matchedVenueId: existingId,
+          resultVenueId: saved.id,
+          result: existingId ? "updated" : "created",
+          resultMessage: note,
+        });
+        continue;
+      }
+
+      const detail = describeSbError(lastErr);
+      venuesNext.push({ ...v, result: "error", resultMessage: detail });
+      if (isFatalSbError(lastErr)) {
+        venueFatal = `Venue import stopped: ${detail}`;
+        setFatalError(venueFatal);
       }
     }
+
 
 
     // ---- Venue check-in values (writes to venue_qr_codes.entry_value for
