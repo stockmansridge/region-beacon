@@ -1804,17 +1804,26 @@ function HeroOverlayCard({
 // FontPickers — separate heading + body font dropdowns.
 // ============================================================================
 function FontSelect({
-  value, onChange, disabled, label,
+  value, onChange, disabled, label, customFonts = [],
 }: {
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
   label: string;
+  customFonts?: EventCustomFont[];
 }) {
   const selected = getEventFont(value);
-  const isUnknown = !selected && value.trim().length > 0;
-  const selectValue = selected ? selected.value : isUnknown ? "__unknown__" : "__default__";
-  const triggerStack = selected?.stack;
+  const custom = !selected
+    ? customFonts.find((f) => f.family_name.toLowerCase() === value.trim().toLowerCase()) ?? null
+    : null;
+  const isUnknown = !selected && !custom && value.trim().length > 0;
+  const selectValue = selected
+    ? selected.value
+    : custom
+      ? custom.family_name
+      : isUnknown ? "__unknown__" : "__default__";
+  const triggerStack = selected?.stack ?? (custom ? customFontStack(custom.family_name) : undefined);
+
   return (
     <Field label={label}>
       <Select
