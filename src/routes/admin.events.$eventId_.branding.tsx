@@ -1940,6 +1940,7 @@ function FontPickers({
         value={bodyValue}
         onChange={onBodyChange}
         disabled={disabled}
+        customFonts={customFonts}
       />
 
       <div className="pt-2">
@@ -1954,7 +1955,16 @@ function FontPickers({
         value={emotiveValue}
         onChange={onEmotiveChange}
         disabled={disabled}
+        customFonts={customFonts}
       />
+
+      <CustomFontUploader
+        fonts={customFonts}
+        canUpload={canUpload && !disabled}
+        onUpload={onUpload}
+        onDelete={onDelete}
+      />
+
 
       <div className="space-y-3 rounded-[12px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
         <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#64748B]">Font preview</div>
