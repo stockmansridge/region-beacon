@@ -575,18 +575,23 @@ function BrandingEditor() {
       if (err) { setValidationError(err); return; }
     }
 
+    const isCustomFamily = (v: string) =>
+      customFonts.some((f) => f.family_name.toLowerCase() === v.toLowerCase());
+    const fontOk = (v: string) => isSupportedEventFont(v) || isCustomFamily(v);
+
     const font_family = trim(form.font_family);
-    if (font_family && !isSupportedEventFont(font_family)) {
+    if (font_family && !fontOk(font_family)) {
       setValidationError("Pick a body font from the list."); return;
     }
     const heading_font_family = trim(form.heading_font_family);
-    if (heading_font_family && !isSupportedEventFont(heading_font_family)) {
+    if (heading_font_family && !fontOk(heading_font_family)) {
       setValidationError("Pick a heading font from the list."); return;
     }
     const default_emotive_font_family = trim(form.default_emotive_font_family);
-    if (default_emotive_font_family && !isSupportedEventFont(default_emotive_font_family)) {
+    if (default_emotive_font_family && !fontOk(default_emotive_font_family)) {
       setValidationError("Pick an emotive font from the list."); return;
     }
+
 
     const welcome_copy = trim(form.welcome_copy);
     if (welcome_copy.length > 1000) {
