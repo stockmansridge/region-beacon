@@ -96,6 +96,8 @@
   },
   "overrides": {
     "seroval": "1.6.2",
-    "seroval-plugins": "1.6.2"
+    "seroval-plugins": "1.6.2",
+    "@tanstack/router-core": "1.171.16",
+    "@tanstack/react-router": "1.170.19"
   }
 }
