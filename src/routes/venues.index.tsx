@@ -17,7 +17,7 @@ export const Route = createFileRoute("/venues/")({
     links: [{ rel: "canonical", href: "https://getstampd.com.au/venues" }],
   }),
   // Display-only sort state (see src/lib/venue-sort.ts).
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { sort?: string } => ({
     sort: typeof search.sort === "string" ? search.sort : undefined,
   }),
   component: VenuesCleanRoute,

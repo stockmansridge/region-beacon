@@ -3012,14 +3012,8 @@ function EventDetail() {
                     maxLength={200}
                   />
                 </Field>
-                <Field label="Description">
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="min-h-24 w-full rounded-md border bg-background p-2 text-sm"
-                    maxLength={2000}
-                  />
-                </Field>
+                {/* Description field removed from Event Details (unused in admin UI). */}
+
                 <Field label="Timezone (IANA)" required>
                   <input
                     type="text"
@@ -3085,7 +3079,7 @@ function EventDetail() {
                   ["Timezone", event.timezone],
                   ["Starts at", fmt(event.starts_at)],
                   ["Ends at", fmt(event.ends_at)],
-                  ["Description", event.description ?? "—"],
+                  
                   ["Created", fmt(event.created_at)],
                   ["Updated", fmt(event.updated_at)],
                 ]}
