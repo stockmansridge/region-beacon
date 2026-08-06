@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Stamp, MapPin, Navigation } from "lucide-react";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
@@ -18,12 +18,35 @@ import { tenantHost } from "@/lib/domains";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
+import { VenueSortControl } from "@/components/venue-sort-control";
+import {
+  VENUE_SORT_MIN_COUNT,
+  buildDistanceMap,
+  formatDistance,
+  parseVenueSort,
+  sortVenues,
+  type Coords,
+  type VenueSortKey,
+} from "@/lib/venue-sort";
 
 export const Route = createFileRoute("/live/$subdomain/venues/")({
   head: () => ({ meta: [{ title: "Venues" }] }),
+  // Sort is display-only UI state, kept in the URL so it survives navigation
+  // and browser back. Never persisted to the database.
+  validateSearch: (search: Record<string, unknown>) => ({
+    sort: typeof search.sort === "string" ? search.sort : undefined,
+  }),
   component: function VenuesListRoute() {
     const { subdomain } = Route.useParams();
-    return <PublicVenuesListPage subdomain={subdomain} />;
+    const { sort } = Route.useSearch();
+    const navigate = useNavigate({ from: Route.fullPath });
+    return (
+      <PublicVenuesListPage
+        subdomain={subdomain}
+        sort={parseVenueSort(sort)}
+        onSortChange={(next) => navigate({ search: { sort: next }, replace: false })}
+      />
+    );
   },
 });
 
@@ -93,9 +116,56 @@ type State =
   | { kind: "not_found" }
   | { kind: "ready"; event: EventRow | null; venues: VenueRow[] };
 
-export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
+export function PublicVenuesListPage({
+  subdomain,
+  sort = "az",
+  onSortChange,
+}: {
+  subdomain: string;
+  /** Display-only sort key (from the route's ?sort= param). */
+  sort?: VenueSortKey;
+  onSortChange?: (next: VenueSortKey) => void;
+}) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
+  const [hasPassport, setHasPassport] = useState(false);
+  const [coords, setCoords] = useState<Coords | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  /**
+   * Location is requested ONLY when the visitor picks "Nearest" — never on
+   * page load. On denial/failure we keep the previous sort and surface a
+   * message; the page itself keeps working.
+   */
+  const requestSort = (next: VenueSortKey) => {
+    setLocationError(null);
+    if (next !== "nearest") {
+      onSortChange?.(next);
+      return;
+    }
+    if (coords) {
+      onSortChange?.(next);
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setLocationError("Location access is needed to sort venues by distance.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        onSortChange?.("nearest");
+      },
+      () => {
+        setLocating(false);
+        setLocationError("Location access is needed to sort venues by distance.");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+    );
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +202,7 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
           if (!passport.token) return;
           const stamps = await loadPassportStampState(passport.token);
           if (cancelled) return;
+          setHasPassport(true);
           setVisitedIds(stamps.visitedVenueIds);
         } catch {
           /* ignore */
@@ -157,6 +228,22 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
 
   const { event, venues } = state;
   const labels = resolveVenueLabels(event ?? {});
+  // A "Nearest" URL from a previous visit is honoured only once we have
+  // coordinates; until then the list stays in the default order.
+  // Short lists keep the organiser's saved order and show no controls, so a
+  // stray ?sort= in the URL must not silently reorder them.
+  const showSortControls = venues.length > VENUE_SORT_MIN_COUNT;
+  const requestedSort: VenueSortKey = showSortControls ? sort : "az";
+  const effectiveSort: VenueSortKey =
+    requestedSort === "nearest" && !coords
+      ? "az"
+      : (requestedSort === "unvisited" || requestedSort === "visited") && !hasPassport
+        ? "az"
+        : requestedSort;
+  const distances = buildDistanceMap(venues, requestedSort === "nearest" ? coords : null);
+  const sortedVenues = showSortControls
+    ? sortVenues(venues, { sort: effectiveSort, distances, visitedIds })
+    : venues;
   const logoUrl = getEventAssetPublicUrl(event?.logo_path ?? null);
   const pointsEnabled = venues.some(
     (v) => typeof v.points_value === "number" && (v.points_value ?? 0) > 0,
@@ -271,14 +358,30 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
 
 
 
+        {showSortControls && (
+          <VenueSortControl
+            className="mt-4"
+            sort={effectiveSort}
+            onChange={requestSort}
+            count={venues.length}
+            countLabel={labels.plural}
+            hasPassport={hasPassport}
+            locationError={locationError}
+            locating={locating}
+          />
+        )}
+
         {venues.length === 0 ? (
           <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center text-sm text-[var(--event-text,#3D372C)]">
             No {labels.plural.toLowerCase()} listed yet. Check back soon.
           </div>
         ) : (
           <ul className="mt-4 space-y-4">
-            {venues.map((v) => {
+            {sortedVenues.map((v) => {
               const vid = v.venue_id ?? "";
+              const distanceM = effectiveSort === "nearest" && vid
+                ? distances.get(vid)
+                : undefined;
               const visited = vid ? visitedIds.has(vid) : false;
               const directionsUrl = buildGoogleMapsDirectionsUrl({
                 address: v.address,
@@ -307,6 +410,16 @@ export function PublicVenuesListPage({ subdomain }: { subdomain: string }) {
                         <p className="font-trail-serif text-[16px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)] break-words">
                           {v.name ?? "Unnamed"}
                         </p>
+                        {effectiveSort === "nearest" && (
+                          <p
+                            className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+                            style={{ color: "var(--event-muted,#8A7E66)" }}
+                          >
+                            {distanceM != null
+                              ? `${formatDistance(distanceM)} away`
+                              : "Distance unavailable"}
+                          </p>
+                        )}
                         {v.description && (
                           <p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-text,#3D372C)] sm:line-clamp-4">
                             {v.description}
