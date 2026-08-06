@@ -1,4 +1,5 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
+import { PublicLink } from "@/components/public-nav-context";
 import { useState } from "react";
 import {
   Stamp,
@@ -142,7 +143,7 @@ export function PublicEventNav({
             <Menu className="h-5 w-5" />
           </button>
 
-          <Link
+          <PublicLink
             to="/"
             aria-label={eventName ?? "Home"}
             className="mx-auto flex h-10 max-w-[70%] items-center justify-center"
@@ -161,7 +162,7 @@ export function PublicEventNav({
                 {eventName ?? "Event"}
               </span>
             )}
-          </Link>
+          </PublicLink>
 
           <div className="ml-auto flex items-center gap-1">
             <button
@@ -266,46 +267,46 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             {hasMap ? (
-              <Link
+              <PublicLink
                 to="/map"
                 aria-current={isActive("map") ? "page" : undefined}
                 className={bottomItemClass}
                 style={{ color: isActive("map") ? navActiveFg : navMuted }}
               >
                 <BottomItemContent icon={<MapIcon className="h-5 w-5" />} label="Map" />
-              </Link>
+              </PublicLink>
             ) : (
-              <Link
+              <PublicLink
                 to="/venues"
                 aria-current={isActive("venues") ? "page" : undefined}
                 className={bottomItemClass}
                 style={{ color: isActive("venues") ? navActiveFg : navMuted }}
               >
                 <BottomItemContent icon={<MapPin className="h-5 w-5" />} label="Venues" />
-              </Link>
+              </PublicLink>
             )}
           </li>
 
           <li className="h-full min-w-0">
-            <Link
+            <PublicLink
               to="/leaderboard"
               aria-current={isActive("leaderboard") ? "page" : undefined}
               className={bottomItemClass}
               style={{ color: isActive("leaderboard") ? navActiveFg : navMuted }}
             >
               <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Leaders" />
-            </Link>
+            </PublicLink>
           </li>
 
           <li className="h-full min-w-0">
-            <Link
+            <PublicLink
               to="/offers"
               aria-current={isActive("offers") ? "page" : undefined}
               className={bottomItemClass}
               style={{ color: isActive("offers") ? navActiveFg : navMuted }}
             >
               <BottomItemContent icon={<Tag className="h-5 w-5" />} label="Offers" />
-            </Link>
+            </PublicLink>
           </li>
 
           <li className="h-full min-w-0">
@@ -432,10 +433,10 @@ function MenuDrawer({
         <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
           <ul className="flex flex-col gap-1">
             <li>
-              <Link to="/" onClick={onClose} className={rowClass}>
+              <PublicLink to="/" onClick={onClose} className={rowClass}>
                 <Home className="h-5 w-5 opacity-80" />
                 Home
-              </Link>
+              </PublicLink>
             </li>
             {(canRegister || passportHref) && (
               <li>
@@ -445,61 +446,61 @@ function MenuDrawer({
                     {passportLabel}
                   </a>
                 ) : (
-                  <Link to="/join" onClick={onClose} className={rowClass}>
+                  <PublicLink to="/join" onClick={onClose} className={rowClass}>
                     <Ticket className="h-5 w-5 opacity-80" />
                     {passportLabel}
-                  </Link>
+                  </PublicLink>
                 )}
               </li>
             )}
             <li>
-              <Link to="/venues" onClick={onClose} className={rowClass}>
+              <PublicLink to="/venues" onClick={onClose} className={rowClass}>
                 <MapPin className="h-5 w-5 opacity-80" />
                 Venues
-              </Link>
+              </PublicLink>
             </li>
             <li>
-              <Link to="/offers" onClick={onClose} className={rowClass}>
+              <PublicLink to="/offers" onClick={onClose} className={rowClass}>
                 <Tag className="h-5 w-5 opacity-80" />
                 Offers
-              </Link>
+              </PublicLink>
             </li>
             {hasMap && (
               <li>
-                <Link to="/map" onClick={onClose} className={rowClass}>
+                <PublicLink to="/map" onClick={onClose} className={rowClass}>
                   <MapIcon className="h-5 w-5 opacity-80" />
                   Trail Map
-                </Link>
+                </PublicLink>
               </li>
             )}
             <li>
-              <Link to="/leaderboard" onClick={onClose} className={rowClass}>
+              <PublicLink to="/leaderboard" onClick={onClose} className={rowClass}>
                 <Trophy className="h-5 w-5 opacity-80" />
                 Leaderboard
-              </Link>
+              </PublicLink>
             </li>
             {hasAwards && (
               <li>
-                <Link to="/prizes" onClick={onClose} className={rowClass}>
+                <PublicLink to="/prizes" onClick={onClose} className={rowClass}>
                   <Award className="h-5 w-5 opacity-80" />
                   Prizes
-                </Link>
+                </PublicLink>
               </li>
             )}
             {hasFaq && (
               <li>
-                <Link to="/faq" onClick={onClose} className={rowClass}>
+                <PublicLink to="/faq" onClick={onClose} className={rowClass}>
                   <HelpCircle className="h-5 w-5 opacity-80" />
                   FAQ / Info
-                </Link>
+                </PublicLink>
               </li>
             )}
             {(hasTerms || hasPrivacy) && (
               <li>
-                <Link to="/terms-privacy" onClick={onClose} className={rowClass}>
+                <PublicLink to="/terms-privacy" onClick={onClose} className={rowClass}>
                   <FileText className="h-5 w-5 opacity-80" />
                   Terms &amp; Privacy
-                </Link>
+                </PublicLink>
               </li>
             )}
           </ul>

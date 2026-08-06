@@ -64,30 +64,19 @@ export function previewPathFor(subdomain: string | null, to: string): string | n
 
 export function PublicLink({
   to,
-  className,
-  style,
   children,
   onClick,
-  "aria-label": ariaLabel,
+  ...rest
 }: {
   to: string;
-  className?: string;
-  style?: React.CSSProperties;
   children: ReactNode;
   onClick?: () => void;
-  "aria-label"?: string;
-}) {
+} & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "onClick">) {
   const { mode, subdomain, disabledTitle } = usePublicNav();
 
   if (mode === "live") {
     return (
-      <Link
-        to={to as never}
-        className={className}
-        style={style}
-        onClick={onClick}
-        aria-label={ariaLabel}
-      >
+      <Link to={to as never} onClick={onClick} {...rest}>
         {children}
       </Link>
     );
@@ -97,8 +86,8 @@ export function PublicLink({
   if (!href) {
     return (
       <span
-        className={className}
-        style={{ ...style, cursor: "not-allowed", opacity: 0.6 }}
+        {...rest}
+        style={{ ...rest.style, cursor: "not-allowed", opacity: 0.6 }}
         title={disabledTitle}
         aria-disabled="true"
       >
@@ -107,15 +96,7 @@ export function PublicLink({
     );
   }
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className={className}
-      style={style}
-      onClick={onClick}
-      aria-label={ariaLabel}
-    >
+    <a href={href} target="_blank" rel="noreferrer" onClick={onClick} {...rest}>
       {children}
     </a>
   );
