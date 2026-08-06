@@ -1223,7 +1223,45 @@ function BrandingEditor() {
               onEmotiveChange={(value) => setForm({ ...form, default_emotive_font_family: value })}
               disabled={!canEdit || saving}
               eventName={event.name}
+              customFonts={customFonts}
+              canUpload={canEdit && !!agencyId}
+              onUpload={async (file, familyName) => {
+                if (!agencyId) return { ok: false as const, error: "No agency selected." };
+                const res = await uploadEventCustomFont({
+                  agencyId,
+                  eventId: event.id,
+                  familyName,
+                  file,
+                });
+                if (res.ok) {
+                  setCustomFonts((prev) =>
+                    [...prev, res.font].sort((a, b) => a.family_name.localeCompare(b.family_name)),
+                  );
+                  toast.success(`“${res.font.family_name}” uploaded. Pick it above, then Save.`);
+                }
+                return res;
+              }}
+              onDelete={async (font) => {
+                const res = await deleteEventCustomFont(font);
+                if (!res.ok) {
+                  toast.error(res.error, { duration: 10000, closeButton: true });
+                  return;
+                }
+                setCustomFonts((prev) => prev.filter((f) => f.id !== font.id));
+                setForm((prev) => ({
+                  ...prev,
+                  font_family: prev.font_family === font.family_name ? "" : prev.font_family,
+                  heading_font_family:
+                    prev.heading_font_family === font.family_name ? "" : prev.heading_font_family,
+                  default_emotive_font_family:
+                    prev.default_emotive_font_family === font.family_name
+                      ? ""
+                      : prev.default_emotive_font_family,
+                }));
+                toast.success(`“${font.family_name}” removed. Save to apply.`);
+              }}
             />
+
 
           </CollapsibleSection>
 
