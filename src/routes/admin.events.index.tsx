@@ -794,16 +794,24 @@ function CreateEventDialog({
 
     // Default child rows — best effort. If any fail, surface a warning but
     // still navigate to the detail page so the admin can retry from there.
+    //
+    // Branding is inserted on the CURRENT brand kit + template version so the
+    // new event renders with today's shared design system straight away. If
+    // the deployment predates the semantic columns, retry with the minimal
+    // legacy payload rather than leaving the event with no branding row.
+    async function insertDefaultBranding() {
+      const first = await supabase
+        .from("event_branding")
+        .insert(newEventBrandingInsert(agencyId!, newId) as never);
+      if (!first.error) return first;
+      if (!isMissingBrandingColumnError(first.error.message)) return first;
+      return await supabase
+        .from("event_branding")
+        .insert(newEventBrandingInsertFallback(agencyId!, newId) as never);
+    }
+
     const [brandingRes, checkinRes, leaderboardRes] = await Promise.all([
-      supabase.from("event_branding").insert({
-        agency_id: agencyId,
-        event_id: newId,
-        primary_color: "#0F172A",
-        accent_color: "#3B82F6",
-        font_family: "Inter",
-        welcome_copy: null,
-        terms_url: null,
-      }),
+      insertDefaultBranding(),
       supabase.from("event_checkin_settings").insert({
         agency_id: agencyId,
         event_id: newId,
@@ -815,7 +823,7 @@ function CreateEventDialog({
       supabase.from("leaderboard_settings").insert({
         agency_id: agencyId,
         event_id: newId,
-        is_enabled: false,
+        is_enabled: true,
         display_mode: "first_name_last_initial",
         show_first_name: true,
         show_last_initial: true,
@@ -824,6 +832,7 @@ function CreateEventDialog({
         allow_visitor_opt_out: true,
       }),
     ]);
+
 
     setSaving(false);
 
