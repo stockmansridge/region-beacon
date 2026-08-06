@@ -381,6 +381,32 @@ export function EventPublicLanding({
               }}
             />
             <div className="relative mx-auto flex min-h-[340px] max-w-md flex-col justify-end px-5 pb-16 pt-24 sm:min-h-[380px]">
+              {/* Event logo — the dominant brand mark, centred over the hero
+                  image directly above the title. Replaces the small logo that
+                  used to sit in the top bar. */}
+              {logoUrl ? (
+                <div
+                  data-brand-hint="logo"
+                  title="Event logo — uploaded in the Event logo section"
+                  className="mb-4 flex justify-center"
+                >
+                  <div
+                    className="h-[120px] w-[120px] sm:h-[148px] sm:w-[148px]"
+                    style={{
+                      ...eventLogoBoxStyle(logoStyle, 120),
+                      width: undefined,
+                      height: undefined,
+                    }}
+                  >
+                    <img
+                      src={logoUrl}
+                      alt={event.name}
+                      style={eventLogoImageStyle()}
+                      loading="eager"
+                    />
+                  </div>
+                </div>
+              ) : null}
               <p
                 data-brand-hint="hero_accent_color"
                 title="Hero eyebrow — Hero accent colour (--event-hero-accent)"
