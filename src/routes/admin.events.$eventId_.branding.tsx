@@ -928,6 +928,8 @@ function BrandingEditor() {
           onSaveAndReturn={() => onSave({ returnAfter: true })}
           onCancel={() => navigate({ to: "/admin/events/$eventId", params: { eventId } })}
           eventId={eventId}
+          hasUnsavedChanges={hasUnsavedChanges}
+
         />
       </div>
 
