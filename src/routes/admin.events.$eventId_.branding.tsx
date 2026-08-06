@@ -16,7 +16,11 @@ import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 import { useAgencyContext } from "@/hooks/use-agency-context";
-import { TrailLanding } from "@/components/trail-landing";
+import {
+  EventPublicLanding,
+  type PublicEventData,
+  type PublicVenueData,
+} from "@/components/event-public-landing";
 import {
   DEFAULT_VENUE_LABEL_PLURAL,
   DEFAULT_VENUE_LABEL_SINGULAR,
@@ -152,6 +156,7 @@ type Bundle = {
   branding: Branding | null;
   domains: Domain[];
   venueCount: number;
+  venues: PublicVenueData[];
   hasBranding: boolean;
 };
 
@@ -467,11 +472,12 @@ function BrandingEditor() {
           .order("is_primary", { ascending: false }),
         supabase
           .from("venues")
-          .select("id", { count: "exact", head: true })
+          .select("id, name, address, order_index")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .is("deleted_at", null)
-          .eq("status", "active"),
+          .eq("status", "active")
+          .order("order_index", { ascending: true }),
       ]);
       if (cancelled) return;
       if (brandingRes.error || domainsRes.error || venuesRes.error) {
@@ -483,7 +489,18 @@ function BrandingEditor() {
         event: event as EventRow,
         branding,
         domains: (domainsRes.data ?? []) as Domain[],
-        venueCount: venuesRes.count ?? 0,
+        venueCount: venuesRes.data?.length ?? 0,
+        venues: ((venuesRes.data ?? []) as Array<{
+          id: string;
+          name: string;
+          address: string | null;
+          order_index: number | null;
+        }>).map((v) => ({
+          venue_id: v.id,
+          name: v.name,
+          address: v.address,
+          order_index: v.order_index,
+        })),
         hasBranding: Boolean(brandingRes.data),
       });
       setForm(brandingToForm(branding));
@@ -860,7 +877,7 @@ function BrandingEditor() {
     );
   }
 
-  const { event, branding, venueCount } = bundle;
+  const { event, branding, venueCount, venues } = bundle;
   // Full preview always renders the last SAVED branding, so surface unsaved edits.
   const hasUnsavedChanges =
     JSON.stringify(form) !== JSON.stringify(brandingToForm(branding));
