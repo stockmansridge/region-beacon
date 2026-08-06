@@ -657,6 +657,7 @@ export function EventBulkImportSection({
   const [missingSheets, setMissingSheets] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [importDone, setImportDone] = useState(false);
+  const [fatalError, setFatalError] = useState<string | null>(null);
   const [existingBonusCodes, setExistingBonusCodes] = useState<ExistingBonus[]>([]);
 
   // Fetch existing bonus codes once so we can match by title for updates.
