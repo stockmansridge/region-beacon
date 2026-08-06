@@ -1079,6 +1079,102 @@ function BrandingEditor() {
               }}
               onRemove={() => removeAsset("logo", branding?.logo_path ?? null)}
             />
+
+            {/* The logo now sits centred over the hero cover image and at 200%
+                size on the posters, so it needs shape + backdrop controls to
+                stay legible against busy photography. */}
+            <div className="mt-4 space-y-3 border-t border-[#E2E8F0] pt-4">
+              <div>
+                <span className="block text-[13px] font-semibold text-[#0F172A]">Logo shape</span>
+                <p className="mt-0.5 text-[12px] text-[#64748B]">
+                  How the logo is framed over the cover image and on posters.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  {[
+                    { value: "square", label: "Square" },
+                    { value: "circle", label: "Circle" },
+                  ].map((opt) => {
+                    const active = (form.logo_shape || "square") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        disabled={!canEdit || saving}
+                        onClick={() => setForm({ ...form, logo_shape: opt.value })}
+                        className={`rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition ${
+                          active
+                            ? "border-[#0F172A] bg-[#0F172A] text-white"
+                            : "border-[#CBD5E1] bg-white text-[#334155] hover:border-[#94A3B8]"
+                        } disabled:opacity-50`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[13px] font-semibold text-[#0F172A]">Logo backdrop</span>
+                <p className="mt-0.5 text-[12px] text-[#64748B]">
+                  A solid colour behind the logo helps it stand out on a busy hero photo.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  {[
+                    { value: "transparent", label: "Transparent" },
+                    { value: "color", label: "Colour" },
+                  ].map((opt) => {
+                    const active = (form.logo_backdrop || "transparent") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        disabled={!canEdit || saving}
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            logo_backdrop: opt.value,
+                            // Give the colour picker a usable starting value.
+                            logo_backdrop_color:
+                              opt.value === "color" && !form.logo_backdrop_color.trim()
+                                ? "#ffffff"
+                                : form.logo_backdrop_color,
+                          })
+                        }
+                        className={`rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition ${
+                          active
+                            ? "border-[#0F172A] bg-[#0F172A] text-white"
+                            : "border-[#CBD5E1] bg-white text-[#334155] hover:border-[#94A3B8]"
+                        } disabled:opacity-50`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.logo_backdrop === "color" && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="color"
+                      aria-label="Logo backdrop colour"
+                      value={/^#[0-9a-fA-F]{6}$/.test(form.logo_backdrop_color) ? form.logo_backdrop_color : "#ffffff"}
+                      disabled={!canEdit || saving}
+                      onChange={(e) => setForm({ ...form, logo_backdrop_color: e.target.value })}
+                      className="h-9 w-12 cursor-pointer rounded-[8px] border border-[#CBD5E1] bg-white p-1"
+                    />
+                    <input
+                      type="text"
+                      aria-label="Logo backdrop colour hex"
+                      value={form.logo_backdrop_color}
+                      placeholder="#ffffff"
+                      disabled={!canEdit || saving}
+                      onChange={(e) => setForm({ ...form, logo_backdrop_color: e.target.value })}
+                      className="w-28 rounded-[8px] border border-[#CBD5E1] px-2 py-1.5 font-mono text-[13px]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </CollapsibleSection>
           <CollapsibleSection
             id="cover"
