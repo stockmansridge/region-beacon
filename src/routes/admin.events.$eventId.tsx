@@ -5769,7 +5769,11 @@ function EventSetupWarnings({
             <div className="shrink-0">
               {it.action.kind === "anchor" ? (
                 <a
-                  href={it.action.href}
+                  href={sectionHref(it.action.href)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (it.action?.kind === "anchor") jumpToSection(it.action.href);
+                  }}
                   className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted"
                 >
                   {it.action.label}
