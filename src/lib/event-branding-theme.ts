@@ -31,7 +31,10 @@ export const EVENT_BRANDING_SELECT_BASE = [
 ] as const;
 
 /** Columns that may be missing on older production databases. */
-export const EVENT_BRANDING_SELECT_OPTIONAL = ["cover_focal_x", "cover_focal_y"] as const;
+export const EVENT_BRANDING_SELECT_OPTIONAL = [
+  "cover_focal_x", "cover_focal_y",
+  "logo_shape", "logo_backdrop", "logo_backdrop_color",
+] as const;
 
 export const EVENT_BRANDING_SELECT = [
   ...EVENT_BRANDING_SELECT_BASE,
