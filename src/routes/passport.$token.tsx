@@ -625,7 +625,10 @@ function PassportView({
                 className="relative"
                 style={{ width: ringSize, height: ringSize }}
               >
-                {stampedCount > 0 ? <RingConfetti /> : null}
+                {stampedCount > 0 ? (
+                  <RingConfetti celebrationKey={`${token}:stamps-${stampedCount}`} />
+                ) : null}
+
                 <svg
                   width={ringSize}
                   height={ringSize}
