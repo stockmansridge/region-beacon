@@ -1884,6 +1884,7 @@ function FontSelect({
 
 function FontPickers({
   headingValue, bodyValue, emotiveValue, onHeadingChange, onBodyChange, onEmotiveChange, disabled, eventName,
+  customFonts, canUpload, onUpload, onDelete,
 }: {
   headingValue: string;
   bodyValue: string;
@@ -1893,13 +1894,22 @@ function FontPickers({
   onEmotiveChange: (v: string) => void;
   disabled?: boolean;
   eventName: string;
+  customFonts: EventCustomFont[];
+  canUpload: boolean;
+  onUpload: (file: File, familyName: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onDelete: (font: EventCustomFont) => Promise<void>;
 }) {
-  const headingStack =
-    getEventFont(headingValue)?.stack ?? (headingValue.trim() || undefined);
-  const bodyStack =
-    getEventFont(bodyValue)?.stack ?? (bodyValue.trim() || undefined);
-  const emotiveStack =
-    getEventFont(emotiveValue)?.stack ?? (emotiveValue.trim() || "'Caveat', 'Segoe Script', cursive");
+  const stackFor = (value: string, fallback?: string) => {
+    const curated = getEventFont(value)?.stack;
+    if (curated) return curated;
+    const trimmed = value.trim();
+    if (!trimmed) return fallback;
+    const custom = customFonts.find((f) => f.family_name.toLowerCase() === trimmed.toLowerCase());
+    return custom ? customFontStack(custom.family_name) : trimmed;
+  };
+  const headingStack = stackFor(headingValue);
+  const bodyStack = stackFor(bodyValue);
+  const emotiveStack = stackFor(emotiveValue, "'Caveat', 'Segoe Script', cursive");
   // Heading font falls back to body font when unset.
   const heroPreviewStack = headingStack ?? bodyStack;
   return (
@@ -1915,7 +1925,9 @@ function FontPickers({
         value={headingValue}
         onChange={onHeadingChange}
         disabled={disabled}
+        customFonts={customFonts}
       />
+
 
       <div className="pt-2">
         <div className="text-sm font-semibold text-[#111827]">Body font</div>
