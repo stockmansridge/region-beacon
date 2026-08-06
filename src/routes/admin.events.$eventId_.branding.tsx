@@ -1406,7 +1406,7 @@ function BrandingEditor() {
 // Header — top action bar
 // ============================================================================
 function Header({
-  event, primaryDomain, canEdit, saving, onSave, onSaveAndReturn, onCancel, eventId,
+  event, primaryDomain, canEdit, saving, onSave, onSaveAndReturn, onCancel, eventId, hasUnsavedChanges,
 }: {
   event: EventRow;
   primaryDomain: Domain | null;
@@ -1416,6 +1416,7 @@ function Header({
   onSaveAndReturn: () => void;
   onCancel: () => void;
   eventId: string;
+  hasUnsavedChanges?: boolean;
 }) {
   return (
     <div className="flex items-start justify-between gap-4">
@@ -1432,15 +1433,25 @@ function Header({
           </span>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-start gap-2">
         <Link to="/admin/events/$eventId" params={{ eventId }}
           className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]">
           ← Back to event
         </Link>
-        <Link to="/admin/events/$eventId/preview" params={{ eventId }} target="_blank"
-          className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]">
-          Open full preview
-        </Link>
+        <div className="flex flex-col items-start">
+          <Link to="/admin/events/$eventId/preview" params={{ eventId }} target="_blank"
+            title={hasUnsavedChanges
+              ? "Full preview shows the last saved branding — save to see your latest edits"
+              : "Full preview matches the embedded preview"}
+            className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC]">
+            Open full preview
+          </Link>
+          {hasUnsavedChanges && (
+            <span className="mt-1 max-w-[200px] text-[11px] leading-4 text-[#B45309]">
+              Unsaved changes — full preview shows the last saved branding. Save first.
+            </span>
+          )}
+        </div>
         <button type="button" onClick={onCancel} disabled={saving}
           className="inline-flex h-10 items-center rounded-[10px] border border-[#D9E2EF] bg-white px-4 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50">
           Discard changes
@@ -1448,6 +1459,7 @@ function Header({
         {canEdit && (
           <>
             <button type="button" onClick={onSave} disabled={saving}
+
               className="inline-flex h-10 items-center rounded-[10px] border border-[#2F6FE4] bg-white px-4 text-sm font-semibold text-[#2F6FE4] hover:bg-[#EAF2FF] disabled:cursor-not-allowed disabled:opacity-50">
               {saving ? "Saving…" : "Save"}
             </button>
