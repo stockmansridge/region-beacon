@@ -1226,6 +1226,12 @@ export function EventBulkImportSection({
         </div>
       )}
 
+      {fatalError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <span className="font-semibold">Import stopped.</span> {fatalError}
+        </div>
+      )}
+
       {drafts && !importDone && (
         <div className="space-y-5">
           <PreviewBlock title="Venues">
