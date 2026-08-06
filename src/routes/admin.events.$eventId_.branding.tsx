@@ -134,6 +134,10 @@ type Branding = {
   hero_body_color: string | null;
   hero_overlay_color: string | null;
   hero_overlay_opacity: number | null;
+  // Event logo presentation (over the hero image + on posters)
+  logo_shape: string | null;
+  logo_backdrop: string | null;
+  logo_backdrop_color: string | null;
 
   // Brand Kit metadata
   brand_kit_key: string | null;
@@ -209,6 +213,10 @@ type Form = {
   // Cover focal point (0–100, "" → default 50 centered).
   cover_focal_x: string;
   cover_focal_y: string;
+  // Event logo presentation. "" → defaults (square / transparent).
+  logo_shape: string;
+  logo_backdrop: string;
+  logo_backdrop_color: string;
 };
 
 const EMPTY_FORM: Form = {
@@ -250,6 +258,9 @@ const EMPTY_FORM: Form = {
   hero_overlay_opacity: "",
   cover_focal_x: "",
   cover_focal_y: "",
+  logo_shape: "",
+  logo_backdrop: "",
+  logo_backdrop_color: "",
 };
 
 /** Form keys that, when edited, should flip brand_kit_key to "custom". */
@@ -311,6 +322,9 @@ function brandingToForm(b: Branding | null): Form {
       b.hero_overlay_opacity != null ? String(b.hero_overlay_opacity) : "",
     cover_focal_x: b.cover_focal_x != null ? String(b.cover_focal_x) : "",
     cover_focal_y: b.cover_focal_y != null ? String(b.cover_focal_y) : "",
+    logo_shape: b.logo_shape ?? "",
+    logo_backdrop: b.logo_backdrop ?? "",
+    logo_backdrop_color: b.logo_backdrop_color ?? "",
   };
 }
 
@@ -690,6 +704,11 @@ function BrandingEditor() {
       // Cover focal point (percentages 0–100). Blank → NULL (defaults to 50).
       cover_focal_x: form.cover_focal_x.trim() ? Math.max(0, Math.min(100, Math.round(Number(form.cover_focal_x)))) : null,
       cover_focal_y: form.cover_focal_y.trim() ? Math.max(0, Math.min(100, Math.round(Number(form.cover_focal_y)))) : null,
+      // Event logo presentation. Blank → NULL → square + transparent.
+      logo_shape: orNull(form.logo_shape),
+      logo_backdrop: orNull(form.logo_backdrop),
+      logo_backdrop_color:
+        form.logo_backdrop === "color" ? orNull(form.logo_backdrop_color) : null,
       // Brand Kit metadata
       brand_kit_key: brandKitKey,
       brand_kit_version: brandKitKey && brandKitKey !== "custom" ? BRAND_KIT_VERSION : null,
@@ -981,6 +1000,10 @@ function BrandingEditor() {
     hero_fg_color: orNullHex(form.hero_fg_color),
     hero_accent_color: orNullHex(form.hero_accent_color),
     hero_body_color: orNullHex(form.hero_body_color),
+    logo_shape: orNullHex(form.logo_shape),
+    logo_backdrop: orNullHex(form.logo_backdrop),
+    logo_backdrop_color:
+      form.logo_backdrop === "color" ? orNullHex(form.logo_backdrop_color) : null,
     page_heading_color: orNullHex(form.page_heading_color),
     page_body_color: orNullHex(form.page_body_color),
     page_muted_color: orNullHex(form.page_muted_color),
