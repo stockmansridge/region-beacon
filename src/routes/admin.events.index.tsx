@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { PUBLIC_TENANT_ROOT_DOMAIN } from "@/lib/domains";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { useAuth } from "@/hooks/use-auth";
+import { newEventBrandingInsert, newEventBrandingInsertFallback } from "@/lib/event-defaults";
+import { isMissingBrandingColumnError } from "@/lib/event-branding-theme";
 import {
   Dialog,
   DialogContent,
