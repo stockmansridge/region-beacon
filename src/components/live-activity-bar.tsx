@@ -107,15 +107,16 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
       cancelled = true;
       clearInterval(t);
     };
-  }, [subdomain, dismissed]);
+  }, [subdomain]);
 
   useEffect(() => {
-    if (items.length === 0) return;
+    if (items.length === 0 || dismissed) return;
     if (cyclesShown.current >= MAX_CYCLES) {
       setDismissed(true);
       return;
     }
     setPhase("in");
+
     const holdMs = 6000;
     const outMs = 400;
     const restMs = 5000;
