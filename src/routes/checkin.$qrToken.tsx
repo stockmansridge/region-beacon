@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { LiveActivityBar } from "@/components/live-activity-bar";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { PoweredByGetStampd } from "@/components/brand";
 import { classifyHost } from "@/components/host-router";
@@ -348,6 +349,7 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
   const branding = useEventBrandingKeys(subdomain);
   return (
     <EventPaletteScope {...brandingScopeProps(branding)} className="min-h-screen">
+      {subdomain && <LiveActivityBar subdomain={subdomain} />}
       {outcome.kind === "loading" && (
         <div className="flex min-h-screen items-center justify-center text-sm text-[var(--event-page-muted)]">
           Recording your stamp…
