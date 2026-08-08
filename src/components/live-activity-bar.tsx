@@ -135,7 +135,7 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
       clearTimeout(restTimer);
       clearTimeout(advanceTimer);
     };
-  }, [items, index]);
+  }, [items, index, dismissed]);
 
   if (dismissed || items.length === 0 || phase === "rest") return null;
   const current = items[index % items.length];
