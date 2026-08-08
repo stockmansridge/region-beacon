@@ -12,6 +12,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
+import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { matchRootDomain, tenantHost } from "@/lib/domains";
@@ -460,6 +461,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       {...brandingScopeProps(branding)}
       className="min-h-screen px-4 pb-6"
     >
+      <LiveActivityBar subdomain={subdomain} />
       <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}

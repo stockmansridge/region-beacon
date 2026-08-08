@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
+import { LiveActivityBar } from "@/components/live-activity-bar";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
@@ -54,6 +55,7 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
       {...brandingScopeProps(branding)}
       className="min-h-screen px-4 pb-4"
     >
+      <LiveActivityBar subdomain={subdomain} />
       <div className="mx-auto max-w-5xl">
         <PublicEventNav
           subdomain={subdomain}

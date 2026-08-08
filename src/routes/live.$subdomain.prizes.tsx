@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
+import { LiveActivityBar } from "@/components/live-activity-bar";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
@@ -370,6 +371,7 @@ export function AwardsPage({
       {...brandingScopeProps(branding)}
       className="min-h-screen px-4 pb-4"
     >
+      <LiveActivityBar subdomain={subdomain} />
       <div className="mx-auto max-w-5xl">
         <PublicEventNav
           subdomain={subdomain}
