@@ -70,9 +70,9 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
   const [phase, setPhase] = useState<"in" | "out" | "rest">("in");
   const [dismissed, setDismissed] = useState(false);
   const cyclesShown = useRef(0);
+  const seenKeys = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (dismissed) return;
     let cancelled = false;
     const load = async () => {
       try {
@@ -82,7 +82,19 @@ export function LiveActivityBar({ subdomain }: { subdomain: string }) {
           { _hostname: host },
         );
         if (cancelled || error || !data) return;
-        setItems(buildItems(data as HappeningPayload));
+        const next = buildItems(data as HappeningPayload);
+        // Any activity we have not shown before re-opens the bar, even if the
+        // visitor dismissed it earlier or the cycle cap was reached. This is
+        // what makes a fresh check-in / prize unlock pop up straight away.
+        const hasFresh = next.some((i) => !seenKeys.current.has(i.key));
+        for (const i of next) seenKeys.current.add(i.key);
+        setItems(next);
+        if (hasFresh) {
+          cyclesShown.current = 0;
+          setIndex(0);
+          setPhase("in");
+          setDismissed(false);
+        }
       } catch {
         /* silently hide */
       }
