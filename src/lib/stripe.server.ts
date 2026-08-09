@@ -19,6 +19,8 @@ export function isPaidPlanCode(code: string): code is PaidPlanCode {
   return (PAID_PLAN_CODES as readonly string[]).includes(code);
 }
 
+export type StripePaymentEnvironment = "live" | "test";
+
 export function getStripeClient(): Stripe {
   const key = readServerEnv("STRIPE_SECRET_KEY");
   if (!key) {
@@ -30,6 +32,28 @@ export function getStripeClient(): Stripe {
   // without pinning. The wire format is stable across minor versions.
   return new Stripe(key, { apiVersion: "2024-09-30.acacia" as never });
 }
+
+/**
+ * Stripe client for a specific payment environment. "live" is the existing
+ * production configuration and is never modified. "test" uses the separate
+ * Stripe Sandbox key and is only ever selected server-side for platform
+ * admins while SMS test mode is enabled.
+ */
+export function getStripeClientFor(env: StripePaymentEnvironment): Stripe {
+  if (env === "live") return getStripeClient();
+  const key = readServerEnv("STRIPE_TEST_SECRET_KEY");
+  if (!key) {
+    throw new Error(
+      "Stripe Sandbox is not configured. Set STRIPE_TEST_SECRET_KEY in Lovable Cloud secrets.",
+    );
+  }
+  return new Stripe(key, { apiVersion: "2024-09-30.acacia" as never });
+}
+
+export function getTestWebhookSecret(): string | null {
+  return readServerEnv("STRIPE_TEST_WEBHOOK_SECRET") ?? null;
+}
+
 
 export function getPriceIdForPlan(plan: PaidPlanCode): string {
   const map: Record<PaidPlanCode, string | undefined> = {
