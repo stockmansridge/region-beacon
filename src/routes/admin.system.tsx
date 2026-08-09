@@ -20,6 +20,7 @@ import {
   Trash2,
   Archive,
   MailCheck,
+  MessageSquare,
 } from "lucide-react";
 import { authUrl } from "@/lib/auth-redirect";
 import { tenantUrl } from "@/lib/domains";
