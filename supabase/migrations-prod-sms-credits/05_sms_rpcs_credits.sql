@@ -291,32 +291,34 @@ security definer
 set search_path = public
 as $$
 declare
-  camp public.sms_campaigns;
-  acct public.sms_credit_accounts;
+  camp_agency_id uuid;
+  camp_event_id uuid;
+  cur_balance bigint;
   new_balance bigint;
 begin
   if _credits is null or _credits <= 0 then
     return jsonb_build_object('ok', true, 'credits_returned', 0);
   end if;
 
-  select * into camp from public.sms_campaigns where id = _campaign_id;
-  if camp.id is null then
+  select agency_id, event_id into camp_agency_id, camp_event_id
+    from public.sms_campaigns where id = _campaign_id;
+  if camp_agency_id is null then
     raise exception 'sms_campaign_recredit: campaign not found';
   end if;
 
-  acct := public.sms_lock_credit_account(camp.agency_id);
-  new_balance := acct.balance_credits + _credits;
+  cur_balance := public.sms_lock_credit_balance(camp_agency_id);
+  new_balance := cur_balance + _credits;
 
   update public.sms_credit_accounts
      set balance_credits = new_balance,
          lifetime_used_credits = greatest(0, lifetime_used_credits - _credits)
-   where agency_id = camp.agency_id;
+   where agency_id = camp_agency_id;
 
   insert into public.sms_credit_transactions (
     agency_id, event_id, transaction_type, credits, balance_after,
     sms_campaign_id, description
   ) values (
-    camp.agency_id, camp.event_id, 'failed_send_recredit', _credits, new_balance,
+    camp_agency_id, camp_event_id, 'failed_send_recredit', _credits, new_balance,
     _campaign_id, coalesce(_reason, 'Unsent SMS segments returned')
   );
 
