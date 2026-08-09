@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { createSmsCreditCheckout } from "@/lib/sms-credits.functions";
+import { AdminSmsComposer } from "@/components/admin-sms-composer";
 
 export const Route = createFileRoute("/admin/communications")({
   head: () => ({
