@@ -15,6 +15,7 @@ import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticPanel } from "@/components/diagnostic-panel";
 import { sendPassportEmail } from "@/lib/passport-email.functions";
+import { isSmsCapableMobile } from "@/lib/sms/phone";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
   component: function LiveJoinRoute() {
