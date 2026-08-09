@@ -54,6 +54,7 @@ Your information is used to:
 - administer any prize draws or rewards offered by the Event
 - contact you about your passport or the Event when necessary
 - send you marketing communications, only if you have explicitly opted in
+- send you event updates and alerts by SMS, only if you have explicitly opted in to SMS for this Event
 
 ## Who can see it
 
