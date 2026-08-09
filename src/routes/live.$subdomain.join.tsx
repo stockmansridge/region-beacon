@@ -467,6 +467,25 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         console.warn("passport email failed", e);
       });
 
+      // SMS consent is recorded separately from the email marketing opt-in, and
+      // only when a usable mobile number was supplied. The RPC appends to the
+      // consent ledger against this passport (channel + number + timestamp).
+      if (form.sms_opt_in && smsCapable) {
+        const { error: smsError } = await supabase.rpc("update_sms_consent", {
+          _raw_token: row.access_token,
+          _decision: "granted",
+          _mobile: form.mobile.trim(),
+          _source: "public_join",
+          _client_ip: null,
+          _user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        });
+        if (smsError) {
+          // Never block signup on consent recording; the participant simply
+          // stays opted out and can opt in later.
+          // eslint-disable-next-line no-console
+          console.warn("sms consent not recorded", smsError.message);
+        }
+      }
 
 
       // If user was redirected from a venue QR scan, send them back there.
