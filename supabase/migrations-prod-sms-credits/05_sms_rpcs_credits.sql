@@ -340,7 +340,7 @@ set search_path = public
 as $$
 declare
   uid uuid := auth.uid();
-  acct public.sms_credit_accounts;
+  cur_balance bigint;
   new_balance bigint;
 begin
   if not public.is_platform_admin(uid) then
@@ -353,8 +353,8 @@ begin
     raise exception 'sms_admin_adjust_credits: a reason is required';
   end if;
 
-  acct := public.sms_lock_credit_account(_agency_id);
-  new_balance := acct.balance_credits + _credits;
+  cur_balance := public.sms_lock_credit_balance(_agency_id);
+  new_balance := cur_balance + _credits;
   if new_balance < 0 then
     raise exception 'sms_admin_adjust_credits: adjustment would make the balance negative';
   end if;
