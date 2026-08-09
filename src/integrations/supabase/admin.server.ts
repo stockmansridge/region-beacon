@@ -14,18 +14,18 @@ function pickEnv(...names: string[]): string | undefined {
 }
 
 export function getSupabaseAdmin(): SupabaseClient {
-  const url = pickEnv(
-    "GETSTAMPD_SUPABASE_URL",
-    "SUPABASE_URL",
-    "VITE_SUPABASE_URL",
-  );
+  // The project URL is public, so fall back to it rather than failing: only the
+  // service-role key genuinely has to be supplied by the runtime.
+  const url =
+    pickEnv("GETSTAMPD_SUPABASE_URL", "SUPABASE_URL", "VITE_SUPABASE_URL") ??
+    CURRENT_PROJECT_URL;
   const serviceKey = pickEnv(
     "GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
   );
-  if (!url || !serviceKey) {
+  if (!serviceKey) {
     throw new Error(
-      "Missing GetStampd database server config. For getstampd.com.au, set GETSTAMPD_SUPABASE_URL and GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY on the Cloudflare Worker named region-beacon, then redeploy it.",
+      "Missing service-role key on the server. On Cloudflare Worker \"region-beacon\" → Settings → Variables and Secrets, add GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_ROLE_KEY), then redeploy the Worker.",
     );
   }
   return createClient(url, serviceKey, {
