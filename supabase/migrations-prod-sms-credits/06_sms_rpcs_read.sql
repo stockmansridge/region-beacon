@@ -16,6 +16,15 @@
 
 begin;
 
+-- Preflight: 01 must be applied first. Fail loudly, not cryptically.
+do $$
+begin
+  if to_regclass('public.sms_credit_accounts') is null then
+    raise exception '06_sms_rpcs_read.sql: apply 01_sms_credit_core.sql first (public.sms_credit_accounts is missing)';
+  end if;
+end;
+$$;
+
 create or replace function public.sms_account_summary(_agency_id uuid)
 returns jsonb
 language plpgsql
