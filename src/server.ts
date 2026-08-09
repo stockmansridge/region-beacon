@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { classifyHost } from "./components/host-router";
+import { hasServerEnv, setServerEnvBindings } from "./lib/server-env.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -42,6 +43,11 @@ function handleWorkerHealth(request: Request): Response {
         deployTarget: (import.meta.env.VITE_DEPLOY_TARGET as string | undefined) ?? null,
         hasSupabaseUrl: Boolean(supabaseUrl),
         hasSupabaseKey: Boolean(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
+        hasRuntimeSupabaseUrl: hasServerEnv("GETSTAMPD_SUPABASE_URL"),
+        hasRuntimeSupabaseServiceKey: hasServerEnv(
+          "GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY",
+        ),
+        hasRuntimeStripeTestKey: hasServerEnv("STRIPE_TEST_SECRET_KEY"),
         supabaseUrlHost,
         nodeEnv: "production",
       },
@@ -106,6 +112,7 @@ async function normalizeCatastrophicSsrResponse(
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    setServerEnvBindings(env);
     const url = new URL(request.url);
     const host = request.headers.get("host") ?? url.host;
     let classification = "unknown";
