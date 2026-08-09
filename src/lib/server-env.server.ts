@@ -13,11 +13,26 @@ type ProcessLike = {
   env?: Record<string, string | undefined>;
 };
 
+let workerEnv: Record<string, unknown> | undefined;
+
+/**
+ * Makes Cloudflare Worker bindings available to server helpers. The custom
+ * Worker entry receives these as the second fetch argument; they are not
+ * guaranteed to be mirrored onto process.env by the runtime.
+ */
+export function setServerEnvBindings(env: unknown): void {
+  if (typeof env !== "object" || env === null) return;
+  workerEnv = env as Record<string, unknown>;
+}
+
 export function readServerEnv(name: string): string | undefined {
   const runtime = globalThis as typeof globalThis & {
     Deno?: DenoLike;
     process?: ProcessLike;
   };
+
+  const workerValue = workerEnv?.[name];
+  if (typeof workerValue === "string" && workerValue) return workerValue;
 
   try {
     const denoGet = runtime.Deno?.env?.get;

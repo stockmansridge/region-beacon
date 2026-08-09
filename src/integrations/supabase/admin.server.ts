@@ -25,7 +25,7 @@ export function getSupabaseAdmin(): SupabaseClient {
   );
   if (!url || !serviceKey) {
     throw new Error(
-      "Missing GetStampd Supabase server config. Set GETSTAMPD_SUPABASE_URL and GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY in Lovable Cloud secrets.",
+      "Missing GetStampd database server config. For getstampd.com.au, set GETSTAMPD_SUPABASE_URL and GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY on the Cloudflare Worker named region-beacon, then redeploy it.",
     );
   }
   return createClient(url, serviceKey, {
