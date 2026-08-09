@@ -292,6 +292,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     mobile: "",
     postcode: "",
     marketing_opt_in: false,
+    sms_opt_in: false,
     accept_terms: false,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
