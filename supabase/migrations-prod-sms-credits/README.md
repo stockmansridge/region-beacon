@@ -12,6 +12,7 @@ drops, safe to re-run. Nothing here has been applied for you.
 | 04 | `04_sms_idempotency_and_settings.sql` | `sms_stripe_events` (webhook replay guard), `sms_provider_settings` (wholesale $0.072/segment, 20% minimum markup — platform admin only), `sms_inbound_messages` (STOP audit) | Wholesale cost is editable by platform admins and has **no customer grants at all**. |
 | 05 | `05_sms_rpcs_credits.sql` | `sms_credit_purchase_apply` (service_role only, idempotent), `sms_campaign_reserve_and_queue` (atomic `FOR UPDATE` reserve), `sms_campaign_recredit` (service_role only), `sms_admin_adjust_credits` (platform admin, ledger-only) | There is **no** function that overwrites `balance_credits`. |
 | 06 | `06_sms_rpcs_read.sql` | `sms_account_summary`, `system_admin_sms_overview`, `system_admin_sms_pack_margins` | Margin/wholesale data only ever returned to platform admins. |
+| 08 | `08_sms_pack_prices.sql` | Re-prices the four standard packs so all clear the 20% markup floor at the $0.072 wholesale seed: 1k $95, 5k $450, 10k $875, 25k $2,200 | Retail prices only. Does **not** touch `sms_provider_settings`. |
 | 07 | `07_sms_recipient_resolution.sql` | `sms_resolve_audience`, `sms_audience_count`, `sms_apply_opt_out` (STOP), `sms_record_consent` | 05 calls `sms_resolve_audience` at runtime, so 07 must be applied before any send is attempted. |
 
 ## If 05/06 report `type "public.sms_credit_accounts" does not exist`
@@ -53,11 +54,11 @@ select public.sms_normalise_au_mobile('not a number');  -- null
 select * from public.system_admin_sms_pack_margins();
 ```
 
-Expected pack markups at $0.072/segment wholesale: 1k ≈ 32%, 5k ≈ 18%,
-10k ≈ 15%, 25k ≈ 8%. **The 5k, 10k and 25k packs fall below the 20% minimum
-markup at this wholesale rate** and will be flagged `below_minimum_markup = true`.
-See the note in `docs/sms/CLICKSEND_SMS_AUDIT.md` — pricing is yours to decide;
-the code only reports it and never auto-changes customer prices.
+After applying `08_sms_pack_prices.sql`, expected markups at the $0.072/segment
+wholesale seed are 1k ≈ 31.9%, 5k ≈ 25.0%, 10k ≈ 21.5%, 25k ≈ 22.2% — all above
+the 20% minimum, so `below_minimum_markup` should be `false` for all four packs.
+The wholesale cost stays at $0.072 and is platform-admin editable later; pricing
+is yours to decide, the code only reports it and never auto-changes prices.
 
 ## Rollback
 

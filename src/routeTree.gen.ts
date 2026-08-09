@@ -31,6 +31,7 @@ import { Route as WorkspaceNotFoundRouteImport } from './routes/workspace-not-fo
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminCommunicationsRouteImport } from './routes/admin.communications'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as AdminUpdatePasswordRouteImport } from './routes/admin.update-password'
@@ -182,6 +183,11 @@ const AdminAccountRoute = AdminAccountRouteImport.update({
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCommunicationsRoute = AdminCommunicationsRouteImport.update({
+  id: '/communications',
+  path: '/communications',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
@@ -425,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/communications': typeof AdminCommunicationsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
@@ -490,6 +497,7 @@ export interface FileRoutesByTo {
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/communications': typeof AdminCommunicationsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
@@ -557,6 +565,7 @@ export interface FileRoutesById {
   '/workspace-not-found': typeof WorkspaceNotFoundRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/communications': typeof AdminCommunicationsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/system': typeof AdminSystemRoute
   '/admin/update-password': typeof AdminUpdatePasswordRoute
@@ -625,6 +634,7 @@ export interface FileRouteTypes {
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
+    | '/admin/communications'
     | '/admin/login'
     | '/admin/system'
     | '/admin/update-password'
@@ -690,6 +700,7 @@ export interface FileRouteTypes {
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
+    | '/admin/communications'
     | '/admin/login'
     | '/admin/system'
     | '/admin/update-password'
@@ -756,6 +767,7 @@ export interface FileRouteTypes {
     | '/workspace-not-found'
     | '/admin/account'
     | '/admin/analytics'
+    | '/admin/communications'
     | '/admin/login'
     | '/admin/system'
     | '/admin/update-password'
@@ -1008,6 +1020,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/admin/analytics'
       preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/communications': {
+      id: '/admin/communications'
+      path: '/communications'
+      fullPath: '/admin/communications'
+      preLoaderRoute: typeof AdminCommunicationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/login': {
@@ -1310,6 +1329,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAccountRoute: typeof AdminAccountRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminCommunicationsRoute: typeof AdminCommunicationsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSystemRoute: typeof AdminSystemRoute
   AdminUpdatePasswordRoute: typeof AdminUpdatePasswordRoute
@@ -1325,6 +1345,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAccountRoute: AdminAccountRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminCommunicationsRoute: AdminCommunicationsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSystemRoute: AdminSystemRoute,
   AdminUpdatePasswordRoute: AdminUpdatePasswordRoute,
@@ -1418,13 +1439,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

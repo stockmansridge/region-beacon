@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, BarChart3, LogOut, Shield, CreditCard, Bug, Menu, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Calendar, BarChart3, LogOut, Shield, CreditCard, Bug, Menu, LifeBuoy, MessageSquare } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { signOut } from "@/hooks/use-auth";
 import { GetStampdLogo } from "@/components/brand";
@@ -22,6 +22,7 @@ const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/events", label: "Events", icon: Calendar, exact: false },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
+  { to: "/admin/communications", label: "Communications", icon: MessageSquare, exact: false },
 ] as const;
 
 export function AdminShell({
@@ -76,10 +77,11 @@ export function AdminShell({
     agencyRole === "agency_admin";
 
   const NavLinks = () => {
-    const [dash, events, analytics] = navItems;
+    const [dash, events, analytics, comms] = navItems;
     const dashActive = isActive(dash.to, dash.exact);
     const evActive = isActive(events.to, events.exact);
     const anActive = isActive(analytics.to, analytics.exact);
+    const commsActive = isActive(comms.to, comms.exact);
     const acctActive = isActive("/admin/account", false);
     const sysActive = isActive("/admin/system", false);
     return (
@@ -95,6 +97,10 @@ export function AdminShell({
         <Link to={analytics.to} className={linkClass(anActive)}>
           <analytics.icon className={iconClass(anActive)} />
           {analytics.label}
+        </Link>
+        <Link to={comms.to} className={linkClass(commsActive)}>
+          <comms.icon className={iconClass(commsActive)} />
+          {comms.label}
         </Link>
         {showAccount && (
           <Link to="/admin/account" className={linkClass(acctActive)}>
