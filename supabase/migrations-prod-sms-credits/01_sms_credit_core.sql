@@ -169,14 +169,15 @@ create policy sms_credit_packs_write
   using (public.is_platform_admin(auth.uid()))
   with check (public.is_platform_admin(auth.uid()));
 
--- Seed the launch packs. Prices are AUD cents. Re-running does not change
--- prices an admin has since edited.
+-- Seed the launch packs. Prices are AUD cents, set so every pack clears the
+-- 20% minimum markup at the $0.072/segment wholesale assumption.
+-- Re-running does not change prices an admin has since edited.
 insert into public.sms_credit_packs (code, name, credits, price_cents, currency, badge, sort_order)
 values
   ('sms_1k',  '1,000 SMS Credits',   1000,   9500, 'AUD', null,           10),
-  ('sms_5k',  '5,000 SMS Credits',   5000,  42500, 'AUD', 'Popular',      20),
-  ('sms_10k', '10,000 SMS Credits', 10000,  82500, 'AUD', 'Large events', 30),
-  ('sms_25k', '25,000 SMS Credits', 25000, 195000, 'AUD', 'Major events', 40)
+  ('sms_5k',  '5,000 SMS Credits',   5000,  45000, 'AUD', 'Popular',      20),
+  ('sms_10k', '10,000 SMS Credits', 10000,  87500, 'AUD', 'Large events', 30),
+  ('sms_25k', '25,000 SMS Credits', 25000, 220000, 'AUD', 'Major events', 40)
 on conflict (code) do nothing;
 
 commit;
