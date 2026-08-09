@@ -203,6 +203,19 @@ serve(async (req) => {
     const meta = params.metadata ?? {};
     if (meta["purchase_type"] !== "sms_credits") return;
 
+    // The environment comes from the verified signing secret, never from
+    // metadata. A mismatch means the payload belongs to another environment:
+    // refuse rather than credit the wrong ledger.
+    const metaEnv = meta["payment_environment"];
+    if (metaEnv && metaEnv !== paymentEnvironment) {
+      console.error("[stripe-webhook] sms_credits environment mismatch", {
+        event_id: params.eventId,
+        metadata_environment: metaEnv,
+        verified_environment: paymentEnvironment,
+      });
+      return;
+    }
+
     const agencyId = meta["agency_id"] ?? params.agencyIdHint;
     const credits = Number(meta["credits"] ?? "0");
     const packId = meta["sms_credit_pack_id"] ?? null;
@@ -215,13 +228,15 @@ serve(async (req) => {
       return;
     }
 
-    // Event-level replay guard.
+    // Event-level replay guard, scoped per environment.
     const { error: guardErr } = await admin.from("sms_stripe_events").insert({
       stripe_event_id: params.eventId,
       event_type: params.eventType,
       agency_id: agencyId,
+      payment_environment: paymentEnvironment,
       payload_summary: {
         ...meta,
+        payment_environment: paymentEnvironment,
         stripe_checkout_session_id: params.checkoutSessionId,
         stripe_payment_intent_id: params.paymentIntentId,
         amount_paid_cents: params.amountPaidCents,
@@ -233,6 +248,7 @@ serve(async (req) => {
       if ((guardErr as { code?: string }).code === "23505") {
         console.log("[stripe-webhook] sms_credits event already processed", {
           event_id: params.eventId,
+          payment_environment: paymentEnvironment,
         });
         return;
       }
@@ -247,16 +263,22 @@ serve(async (req) => {
       _stripe_checkout_session_id: params.checkoutSessionId,
       _stripe_payment_intent_id: params.paymentIntentId,
       _pack_id: packId,
-      _description: `SMS credit purchase (${credits} credits)`,
+      _description:
+        paymentEnvironment === "test"
+          ? `TEST SMS credit purchase (${credits} credits — Stripe Sandbox)`
+          : `SMS credit purchase (${credits} credits)`,
+      _payment_environment: paymentEnvironment,
     });
     if (error) {
       throw new Error(error.message);
     }
     console.log("[stripe-webhook] sms credits applied", {
+      payment_environment: paymentEnvironment,
       agency_id: agencyId,
       credits,
       result: data,
     });
+
   }
 
   try {
