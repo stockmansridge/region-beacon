@@ -14,30 +14,46 @@
 
 begin;
 
--- Internal: get (or create) the organisation's credit account, locked.
-create or replace function public.sms_lock_credit_account(_agency_id uuid)
-returns public.sms_credit_accounts
+-- Preflight: 01 (and 02) must be applied first. Fail loudly, not cryptically.
+do $$
+begin
+  if to_regclass('public.sms_credit_accounts') is null then
+    raise exception '05_sms_rpcs_credits.sql: apply 01_sms_credit_core.sql first (public.sms_credit_accounts is missing)';
+  end if;
+  if to_regclass('public.sms_campaigns') is null then
+    raise exception '05_sms_rpcs_credits.sql: apply 02_sms_campaigns.sql first (public.sms_campaigns is missing)';
+  end if;
+end;
+$$;
+
+-- Internal: get (or create) the organisation's credit account, locked, and
+-- return its current balance. Returns a scalar so this file never depends on
+-- the sms_credit_accounts row type at creation time.
+drop function if exists public.sms_lock_credit_account(uuid);
+
+create or replace function public.sms_lock_credit_balance(_agency_id uuid)
+returns bigint
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-  acct public.sms_credit_accounts;
+  bal bigint;
 begin
   insert into public.sms_credit_accounts (agency_id)
   values (_agency_id)
   on conflict (agency_id) do nothing;
 
-  select * into acct
+  select balance_credits into bal
     from public.sms_credit_accounts
    where agency_id = _agency_id
      for update;
 
-  return acct;
+  return coalesce(bal, 0);
 end;
 $$;
 
-revoke all on function public.sms_lock_credit_account(uuid) from public;
+revoke all on function public.sms_lock_credit_balance(uuid) from public;
 
 -- 1. Purchase (Stripe webhook only) --------------------------------------
 create or replace function public.sms_credit_purchase_apply(
@@ -56,7 +72,7 @@ security definer
 set search_path = public
 as $$
 declare
-  acct public.sms_credit_accounts;
+  cur_balance bigint;
   new_balance bigint;
   tx_id uuid;
 begin
