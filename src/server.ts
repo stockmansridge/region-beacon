@@ -47,7 +47,11 @@ function handleWorkerHealth(request: Request): Response {
         hasRuntimeSupabaseServiceKey: hasServerEnv(
           "GETSTAMPD_SUPABASE_SERVICE_ROLE_KEY",
         ),
+        hasAltSupabaseUrl: hasServerEnv("SUPABASE_URL"),
+        hasAltSupabaseServiceKey: hasServerEnv("SUPABASE_SERVICE_ROLE_KEY"),
         hasRuntimeStripeTestKey: hasServerEnv("STRIPE_TEST_SECRET_KEY"),
+        hasRuntimeStripeTestWebhookSecret: hasServerEnv("STRIPE_TEST_WEBHOOK_SECRET"),
+        hasRuntimeStripeLiveKey: hasServerEnv("STRIPE_SECRET_KEY"),
         supabaseUrlHost,
         nodeEnv: "production",
       },
