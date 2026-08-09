@@ -168,9 +168,13 @@ serve(async (req) => {
       stripe_event_id: params.eventId,
       event_type: params.eventType,
       agency_id: agencyId,
-      stripe_checkout_session_id: params.checkoutSessionId,
-      stripe_payment_intent_id: params.paymentIntentId,
-      payload: meta,
+      payload_summary: {
+        ...meta,
+        stripe_checkout_session_id: params.checkoutSessionId,
+        stripe_payment_intent_id: params.paymentIntentId,
+        amount_paid_cents: params.amountPaidCents,
+        currency: params.currency,
+      },
     });
     if (guardErr) {
       // 23505 = unique violation -> already handled.
