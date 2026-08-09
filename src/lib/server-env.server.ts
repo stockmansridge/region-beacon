@@ -29,8 +29,20 @@ export function readServerEnv(name: string): string | undefined {
     // Ignore unavailable env accessors and try the next runtime shape.
   }
 
+  // Bare `process` identifier: in the Worker/SSR bundle `globalThis.process`
+  // may be absent even though the injected `process.env` binding works.
+  try {
+    if (typeof process !== "undefined" && process.env) {
+      const value = process.env[name];
+      if (value) return value;
+    }
+  } catch {
+    // Ignore and fall through.
+  }
+
   return runtime.process?.env?.[name] || undefined;
 }
+
 
 export function hasServerEnv(name: string): boolean {
   return Boolean(readServerEnv(name));
