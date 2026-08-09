@@ -66,6 +66,10 @@ GetStampd, as the platform provider, processes your information on behalf of the
 
 Marketing opt-in is always optional. If you opt in, you can withdraw your consent at any time by following the unsubscribe instructions in any marketing message, or by contacting the organiser.
 
+## SMS updates
+
+SMS consent is separate from email marketing consent, and is only used where you have explicitly ticked the SMS option for this Event. Where you have opted in, the organiser may send you event updates, alerts and reminders by SMS to the mobile number you provided. You can withdraw SMS consent at any time by replying STOP to any message, which stops all further SMS immediately, or by contacting the organiser. We keep a record of when SMS consent was given or withdrawn, and for which mobile number.
+
 ## Retention
 
 Your passport and related event data are retained for the duration of the Event and for a reasonable period afterwards to administer rewards, support requests, and statutory record-keeping. After that period the organiser may delete or anonymise the data. Specific retention periods are set by the organiser.
