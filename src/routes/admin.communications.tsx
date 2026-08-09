@@ -374,40 +374,36 @@ function Communications() {
         )}
       </section>
 
-      {/* Payment wall / campaign composer gate */}
-      <section className="rounded-[16px] border border-[#E6ECF4] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 rounded-[10px] bg-[#F1F5F9] p-2">
-            {hasCredits ? (
-              <MessageSquare className="h-5 w-5 text-[#2F6FE4]" />
-            ) : (
+      {/* Campaign composer — gated on having credits */}
+      {hasCredits && agencyId ? (
+        <AdminSmsComposer
+          agencyId={agencyId}
+          balanceCredits={summary?.balance_credits ?? 0}
+          isTestMode={isTestMode}
+          onSent={() => void load()}
+        />
+      ) : (
+        <section className="rounded-[16px] border border-[#E6ECF4] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 rounded-[10px] bg-[#F1F5F9] p-2">
               <Lock className="h-5 w-5 text-[#64748B]" />
-            )}
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold tracking-[-0.01em] text-[#111827]">SMS campaigns</h2>
-            {hasCredits ? (
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold tracking-[-0.01em] text-[#111827]">SMS campaigns</h2>
               <p className="text-sm leading-6 text-[#64748B]">
-                Your balance is ready. Campaign sending is intentionally switched off until the
-                purchase → payment → automatic credit activation flow has been verified end to end with
-                a live Stripe payment. Once that test passes, the composer (audience selection, message
-                preview and segment/credit estimate) unlocks here.
-              </p>
-            ) : (
-              <p className="text-sm leading-6 text-[#64748B]">
-                You need SMS credits before you can create a campaign. Buy a pack above — credits are
+                You need SMS credits before you can send a campaign. Buy a pack above — credits are
                 added automatically once Stripe confirms your payment. No manual approval, no waiting on
                 us.
               </p>
-            )}
-            <div className="flex items-center gap-2 rounded-[10px] bg-[#F8FAFC] px-3 py-2 text-xs text-[#64748B]">
-              <ShieldCheck className="h-4 w-4 text-[#16A34A]" />
-              Only participants who explicitly opted in to SMS are ever included, and STOP replies opt
-              them out immediately.
+              <div className="flex items-center gap-2 rounded-[10px] bg-[#F8FAFC] px-3 py-2 text-xs text-[#64748B]">
+                <ShieldCheck className="h-4 w-4 text-[#16A34A]" />
+                Only participants who explicitly opted in to SMS are ever included, and STOP replies opt
+                them out immediately.
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Ledger */}
       <section className="space-y-4">
