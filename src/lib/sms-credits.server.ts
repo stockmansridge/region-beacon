@@ -3,12 +3,16 @@
 // Nothing in this file grants credits. Crediting happens ONLY in the
 // Stripe webhook (supabase/functions/stripe-webhook) via the
 // sms_credit_purchase_apply() RPC, which is idempotent.
+//
+// Live vs test: the payment environment is resolved HERE, server-side, from
+// the platform-admin SMS payment mode plus the caller's platform-admin
+// status. The browser can never supply or influence it.
 
-import { getStripeClient } from "@/lib/stripe.server";
+import { getStripeClientFor, type StripePaymentEnvironment } from "@/lib/stripe.server";
 import { getSupabaseAdmin, getSupabaseAsUser } from "@/integrations/supabase/admin.server";
 
 export type SmsCheckoutResult =
-  | { ok: true; url: string }
+  | { ok: true; url: string; payment_environment: StripePaymentEnvironment }
   | { ok: false; error: string };
 
 type PackRow = {
@@ -55,16 +59,36 @@ async function authorisePurchaser(accessToken: string, agencyId: string) {
       error: "You don't have permission to buy SMS credits for this organisation.",
     };
   }
-  return { ok: true as const, userId, email };
+  return { ok: true as const, userId, email, isPlatformAdmin };
 }
 
-/** Reuses (or creates) the organisation's Stripe customer record. */
+/**
+ * Sandbox checkout is only ever reachable when BOTH hold:
+ *   1. the caller is a platform admin (verified server-side above), and
+ *   2. SMS payment mode is set to "test" by a platform admin.
+ * Everyone else always gets the live Stripe environment.
+ */
+async function resolvePaymentEnvironment(
+  isPlatformAdmin: boolean,
+): Promise<StripePaymentEnvironment> {
+  if (!isPlatformAdmin) return "live";
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin
+    .from("sms_provider_settings")
+    .select("sms_payment_mode")
+    .eq("id", true)
+    .maybeSingle();
+  if (error) return "live";
+  return (data?.sms_payment_mode as string | undefined) === "test" ? "test" : "live";
+}
+
+/** Reuses (or creates) the organisation's LIVE Stripe customer record. */
 async function ensureStripeCustomer(
   agencyId: string,
   fallbackEmail: string | null,
 ): Promise<string> {
   const admin = getSupabaseAdmin();
-  const stripe = getStripeClient();
+  const stripe = getStripeClientFor("live");
 
   const { data: account, error } = await admin
     .from("agency_billing_accounts")
@@ -105,6 +129,8 @@ export async function createSmsCreditCheckoutSession(input: {
   const auth = await authorisePurchaser(input.accessToken, input.agencyId);
   if (!auth.ok) return { ok: false, error: auth.error };
 
+  const env = await resolvePaymentEnvironment(auth.isPlatformAdmin);
+
   const admin = getSupabaseAdmin();
   // Server-side price: the browser never supplies an amount.
   const { data: pack, error: packErr } = await admin
@@ -117,11 +143,16 @@ export async function createSmsCreditCheckoutSession(input: {
   if (!pack) return { ok: false, error: "That SMS credit pack is not available." };
 
   const p = pack as PackRow;
-  const stripe = getStripeClient();
-  const customerId = await ensureStripeCustomer(input.agencyId, auth.email);
+  const stripe = getStripeClientFor(env);
+  const isTest = env === "test";
+
+  // Live customer records don't exist in Sandbox, so test checkouts identify
+  // the buyer by email only. Live behaviour is unchanged.
+  const customerId = isTest ? null : await ensureStripeCustomer(input.agencyId, auth.email);
 
   const metadata: Record<string, string> = {
     purchase_type: "sms_credits",
+    payment_environment: env,
     agency_id: input.agencyId,
     sms_credit_pack_id: p.id,
     sms_credit_pack_code: p.code,
@@ -133,11 +164,21 @@ export async function createSmsCreditCheckoutSession(input: {
     ? input.returnPath
     : "/admin/communications";
 
+  const productName = isTest
+    ? `${p.name} — GetStampd SMS (TEST)`
+    : `${p.name} — GetStampd SMS`;
+  const productDescription = `${Number(p.credits).toLocaleString("en-AU")} prepaid SMS credits${
+    isTest ? " (Stripe Sandbox test purchase — no monetary value)" : ""
+  }`;
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    customer: customerId,
+    ...(customerId ? { customer: customerId } : {}),
+    ...(isTest && auth.email ? { customer_email: auth.email } : {}),
     line_items: [
-      p.stripe_price_id
+      // Live price ids don't exist in Sandbox, so test sessions always use
+      // inline price_data built from the same server-side pack row.
+      !isTest && p.stripe_price_id
         ? { price: p.stripe_price_id, quantity: 1 }
         : {
             quantity: 1,
@@ -145,8 +186,8 @@ export async function createSmsCreditCheckoutSession(input: {
               currency: (p.currency ?? "AUD").toLowerCase(),
               unit_amount: p.price_cents,
               product_data: {
-                name: `${p.name} — GetStampd SMS`,
-                description: `${Number(p.credits).toLocaleString("en-AU")} prepaid SMS credits`,
+                name: productName,
+                description: productDescription,
               },
             },
           },
@@ -159,5 +200,6 @@ export async function createSmsCreditCheckoutSession(input: {
   });
 
   if (!session.url) return { ok: false, error: "Stripe did not return a checkout URL." };
-  return { ok: true, url: session.url };
+  return { ok: true, url: session.url, payment_environment: env };
 }
+

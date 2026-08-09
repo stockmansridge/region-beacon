@@ -1,3 +1,4 @@
+import { SmsPaymentModeSection } from "@/components/admin-sms-payment-mode";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -19,6 +20,7 @@ import {
   Trash2,
   Archive,
   MailCheck,
+  MessageSquare,
 } from "lucide-react";
 import { authUrl } from "@/lib/auth-redirect";
 import { tenantUrl } from "@/lib/domains";
@@ -780,6 +782,9 @@ function SystemAdmin() {
           <TabsTrigger value="billing" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
             <CreditCard className="h-4 w-4" /> Billing
           </TabsTrigger>
+          <TabsTrigger value="sms" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
+            <MessageSquare className="h-4 w-4" /> SMS payments
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-[8px] data-[state=active]:bg-[#EAF2FF] data-[state=active]:text-[#1F56C5]">
             <Settings2 className="h-4 w-4" /> System settings
           </TabsTrigger>
@@ -799,6 +804,7 @@ function SystemAdmin() {
           <TabsContent value="support"><SupportTicketsSection /></TabsContent>
           <TabsContent value="audit"><AuditSection /></TabsContent>
           <TabsContent value="billing"><BillingSection /></TabsContent>
+          <TabsContent value="sms"><SmsPaymentModeSection /></TabsContent>
           <TabsContent value="settings"><SettingsSection /></TabsContent>
         </div>
       </Tabs>

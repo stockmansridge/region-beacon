@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MessageSquare, Loader2, RefreshCw, Wallet, Lock, ShieldCheck } from "lucide-react";
+import { MessageSquare, Loader2, RefreshCw, Wallet, Lock, ShieldCheck, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,7 @@ type PackRow = {
 
 type LedgerRow = {
   id: string;
+  payment_environment: string | null;
   transaction_type: string;
   credits: number;
   balance_after: number;
@@ -55,6 +56,10 @@ type Summary = {
   lifetime_purchased_credits: number;
   lifetime_used_credits: number;
   can_purchase: boolean;
+  /** Environment this caller is actually transacting in (server-decided). */
+  active_payment_environment: "live" | "test";
+  is_platform_admin: boolean;
+  live_balance_credits: number;
 };
 
 const money = (cents: number, currency = "AUD") =>
@@ -97,7 +102,7 @@ function Communications() {
         supabase
           .from("sms_credit_transactions")
           .select(
-            "id, transaction_type, credits, balance_after, amount_paid_cents, currency, description, created_at",
+            "id, payment_environment, transaction_type, credits, balance_after, amount_paid_cents, currency, description, created_at",
           )
           .eq("agency_id", agencyId)
           .order("created_at", { ascending: false })
@@ -109,11 +114,16 @@ function Communications() {
       if (ledgerRes.error) throw new Error(ledgerRes.error.message);
 
       const s = (summaryRes.data ?? {}) as Record<string, unknown>;
+      const live = (s.live ?? {}) as Record<string, unknown>;
       setSummary({
         balance_credits: Number(s.balance_credits ?? 0),
         lifetime_purchased_credits: Number(s.lifetime_purchased_credits ?? 0),
         lifetime_used_credits: Number(s.lifetime_used_credits ?? 0),
         can_purchase: Boolean(s.can_purchase),
+        active_payment_environment:
+          s.active_payment_environment === "test" ? "test" : "live",
+        is_platform_admin: Boolean(s.is_platform_admin),
+        live_balance_credits: Number(live.balance_credits ?? s.balance_credits ?? 0),
       });
       setPacks((packsRes.data ?? []) as PackRow[]);
       setLedger((ledgerRes.data ?? []) as LedgerRow[]);
@@ -189,6 +199,14 @@ function Communications() {
     [agencyId],
   );
 
+  const isTestMode = summary?.active_payment_environment === "test";
+  const visibleLedger = useMemo(
+    () =>
+      ledger.filter(
+        (row) => (row.payment_environment ?? "live") === (isTestMode ? "test" : "live"),
+      ),
+    [ledger, isTestMode],
+  );
   const balance = summary?.balance_credits ?? 0;
   const canPurchase = summary?.can_purchase ?? false;
   const hasCredits = balance > 0;
@@ -223,12 +241,40 @@ function Communications() {
         </div>
       )}
 
+      {isTestMode && (
+        <div className="rounded-[14px] border-2 border-[#F59E0B] bg-[#FFFBEB] px-5 py-4">
+          <div className="flex items-start gap-3">
+            <FlaskConical className="mt-0.5 h-5 w-5 text-[#B45309]" />
+            <div>
+              <div className="text-sm font-bold uppercase tracking-wide text-[#92400E]">
+                SMS test mode
+              </div>
+              <p className="mt-1 text-sm leading-6 text-[#92400E]">
+                Purchases and SMS credits on this page are for testing only. No real payment or SMS
+                delivery will occur. Stripe Sandbox is used, and TEST credits are held in a separate
+                balance that can never be spent on live sends.
+              </p>
+              <p className="mt-1 text-xs text-[#B45309]">
+                Your live SMS credit balance is {num(summary?.live_balance_credits ?? 0)} and is
+                unaffected while test mode is on.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Balance */}
       <section className="rounded-[16px] border border-[#E6ECF4] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 text-sm font-medium text-[#64748B]">
-              <Wallet className="h-4 w-4 text-[#2F6FE4]" /> SMS credit balance
+              <Wallet className="h-4 w-4 text-[#2F6FE4]" />
+              {isTestMode ? "TEST SMS credit balance" : "SMS credit balance"}
+              {isTestMode && (
+                <span className="rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-bold uppercase text-[#92400E]">
+                  Test
+                </span>
+              )}
             </div>
             <div className="mt-2 text-4xl font-semibold tracking-[-0.02em] text-[#111827]">
               {loading && !summary ? "—" : num(balance)}
@@ -281,7 +327,9 @@ function Communications() {
                   className="flex flex-col rounded-[16px] border border-[#E6ECF4] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-base font-semibold text-[#111827]">{pack.name}</h3>
+                    <h3 className="text-base font-semibold text-[#111827]">
+                      {isTestMode ? pack.name.replace("SMS Credits", "Test SMS Credits") : pack.name}
+                    </h3>
                     {pack.badge && (
                       <span className="rounded-full bg-[#EFF6FF] px-2.5 py-1 text-xs font-medium text-[#2F6FE4]">
                         {pack.badge}
@@ -291,8 +339,14 @@ function Communications() {
                   <div className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-[#111827]">
                     {money(pack.price_cents, currency)}
                   </div>
+                  {isTestMode && (
+                    <p className="mt-0.5 text-xs font-bold uppercase tracking-wide text-[#B45309]">
+                      Test payment — Stripe Sandbox
+                    </p>
+                  )}
                   <p className="mt-1 text-sm text-[#64748B]">
-                    {num(pack.credits)} credits · ${unit.toFixed(3)} per SMS
+                    {num(pack.credits)} {isTestMode ? "test credits" : "credits"} · $
+                    {unit.toFixed(3)} per SMS
                   </p>
                   <button
                     type="button"
@@ -301,7 +355,11 @@ function Communications() {
                     className="mt-5 inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#2F6FE4] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_16px_rgba(47,111,228,0.28)] transition-colors hover:bg-[#255BC4] disabled:cursor-not-allowed disabled:bg-[#CBD5E1] disabled:shadow-none"
                   >
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                    {busy ? "Opening Stripe…" : "Buy credits"}
+                    {busy
+                      ? "Opening Stripe…"
+                      : isTestMode
+                        ? "Buy test credits"
+                        : "Buy credits"}
                   </button>
                 </div>
               );
@@ -360,7 +418,7 @@ function Communications() {
           </p>
         </div>
         <div className="overflow-hidden rounded-[16px] border border-[#E6ECF4] bg-white">
-          {ledger.length === 0 ? (
+          {visibleLedger.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-[#64748B]">
               {loading ? "Loading…" : "No SMS credit transactions yet."}
             </div>
@@ -377,7 +435,7 @@ function Communications() {
                 </tr>
               </thead>
               <tbody>
-                {ledger.map((row) => (
+                {visibleLedger.map((row) => (
                   <tr key={row.id} className="border-t border-[#E6ECF4]">
                     <td className="px-5 py-3 text-[#64748B]">
                       {new Date(row.created_at).toLocaleString("en-AU", {
@@ -389,7 +447,14 @@ function Communications() {
                       })}
                     </td>
                     <td className="px-5 py-3 text-[#111827]">
-                      {TX_LABEL[row.transaction_type] ?? row.transaction_type}
+                      <span className="inline-flex items-center gap-2">
+                        {(row.payment_environment ?? "live") === "test" && (
+                          <span className="rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-bold uppercase text-[#92400E]">
+                            Test
+                          </span>
+                        )}
+                        {TX_LABEL[row.transaction_type] ?? row.transaction_type}
+                      </span>
                     </td>
                     <td className="px-5 py-3 text-[#64748B]">{row.description ?? "—"}</td>
                     <td
