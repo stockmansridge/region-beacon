@@ -87,8 +87,8 @@ begin
     );
   end if;
 
-  acct := public.sms_lock_credit_account(_agency_id);
-  new_balance := acct.balance_credits + _credits;
+  cur_balance := public.sms_lock_credit_balance(_agency_id);
+  new_balance := cur_balance + _credits;
 
   update public.sms_credit_accounts
      set balance_credits = new_balance,
