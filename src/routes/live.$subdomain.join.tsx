@@ -87,6 +87,8 @@ type FormState = {
   mobile: string;
   postcode: string;
   marketing_opt_in: boolean;
+  /** SMS is a separate consent from marketing_opt_in — never reuse that flag. */
+  sms_opt_in: boolean;
   accept_terms: boolean;
 };
 
@@ -99,6 +101,7 @@ function buildFormSchema(requirePostcode: boolean) {
       ? z.string().trim().min(3, "Please enter your postcode").max(16, "Postcode is too long")
       : z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
     marketing_opt_in: z.boolean(),
+    sms_opt_in: z.boolean(),
     accept_terms: z.literal(true, {
       errorMap: () => ({ message: "You must accept the terms & privacy policy" }),
     }),
