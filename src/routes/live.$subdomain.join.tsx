@@ -394,6 +394,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
       _mobile_present: Boolean(form.mobile.trim()),
       _postcode_present: Boolean(form.postcode.trim()),
       _marketing_opt_in: form.marketing_opt_in,
+      _sms_opt_in_requested: form.sms_opt_in,
+      _sms_capable_mobile: smsCapable,
       _accepted_terms_version_id: event.current_terms_version_id,
       _locale: locale,
     };
@@ -1303,6 +1305,8 @@ function buildSupportReport(
       "_mobile_present",
       "_postcode_present",
       "_marketing_opt_in",
+      "_sms_opt_in_requested",
+      "_sms_capable_mobile",
       "_accepted_terms_version_id",
       "_locale",
     ]);
