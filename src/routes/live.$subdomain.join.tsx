@@ -354,6 +354,10 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     [],
   );
 
+  // A mobile number that normalises to E.164 is required before SMS consent can
+  // be recorded as active — same rule the database enforces.
+  const smsCapable = useMemo(() => isSmsCapableMobile(form.mobile), [form.mobile]);
+
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
