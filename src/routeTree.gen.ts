@@ -71,6 +71,8 @@ import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.e
 import { Route as AdminEventsEventIdLeaderboardRouteImport } from './routes/admin.events.$eventId_.leaderboard'
 import { Route as AdminEventsEventIdPostersRouteImport } from './routes/admin.events.$eventId_.posters'
 import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
+import { Route as ApiPublicSmsDeliveryRouteImport } from './routes/api/public/sms/delivery'
+import { Route as ApiPublicSmsInboundRouteImport } from './routes/api/public/sms/inbound'
 import { Route as LiveSubdomainVenuesIndexRouteImport } from './routes/live.$subdomain.venues.index'
 import { Route as LiveSubdomainVenuesVenueIdRouteImport } from './routes/live.$subdomain.venues.$venueId'
 import { Route as TAgencySlugEEventSlugRouteImport } from './routes/t.$agencySlug.e.$eventSlug'
@@ -391,6 +393,16 @@ const AdminEventsEventIdPreviewRoute =
     path: '/admin/events/$eventId/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSmsDeliveryRoute = ApiPublicSmsDeliveryRouteImport.update({
+  id: '/api/public/sms/delivery',
+  path: '/api/public/sms/delivery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSmsInboundRoute = ApiPublicSmsInboundRouteImport.update({
+  id: '/api/public/sms/inbound',
+  path: '/api/public/sms/inbound',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveSubdomainVenuesIndexRoute =
   LiveSubdomainVenuesIndexRouteImport.update({
     id: '/live/$subdomain/venues/',
@@ -472,6 +484,8 @@ export interface FileRoutesByFullPath {
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/posters': typeof AdminEventsEventIdPostersRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
+  '/api/public/sms/delivery': typeof ApiPublicSmsDeliveryRoute
+  '/api/public/sms/inbound': typeof ApiPublicSmsInboundRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
   '/live/$subdomain/venues/': typeof LiveSubdomainVenuesIndexRoute
@@ -538,6 +552,8 @@ export interface FileRoutesByTo {
   '/admin/events/$eventId/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId/posters': typeof AdminEventsEventIdPostersRoute
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
+  '/api/public/sms/delivery': typeof ApiPublicSmsDeliveryRoute
+  '/api/public/sms/inbound': typeof ApiPublicSmsInboundRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesIndexRoute
@@ -606,6 +622,8 @@ export interface FileRoutesById {
   '/admin/events/$eventId_/leaderboard': typeof AdminEventsEventIdLeaderboardRoute
   '/admin/events/$eventId_/posters': typeof AdminEventsEventIdPostersRoute
   '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
+  '/api/public/sms/delivery': typeof ApiPublicSmsDeliveryRoute
+  '/api/public/sms/inbound': typeof ApiPublicSmsInboundRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
   '/live/$subdomain/venues/': typeof LiveSubdomainVenuesIndexRoute
@@ -675,6 +693,8 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/posters'
     | '/admin/events/$eventId/preview'
+    | '/api/public/sms/delivery'
+    | '/api/public/sms/inbound'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
     | '/live/$subdomain/venues/'
@@ -741,6 +761,8 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId/leaderboard'
     | '/admin/events/$eventId/posters'
     | '/admin/events/$eventId/preview'
+    | '/api/public/sms/delivery'
+    | '/api/public/sms/inbound'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
     | '/live/$subdomain/venues'
@@ -808,6 +830,8 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId_/leaderboard'
     | '/admin/events/$eventId_/posters'
     | '/admin_/events/$eventId/preview'
+    | '/api/public/sms/delivery'
+    | '/api/public/sms/inbound'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
     | '/live/$subdomain/venues/'
@@ -862,6 +886,8 @@ export interface RootRouteChildren {
   LiveSubdomainTermsPrivacyRoute: typeof LiveSubdomainTermsPrivacyRoute
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
+  ApiPublicSmsDeliveryRoute: typeof ApiPublicSmsDeliveryRoute
+  ApiPublicSmsInboundRoute: typeof ApiPublicSmsInboundRoute
   LiveSubdomainVenuesVenueIdRoute: typeof LiveSubdomainVenuesVenueIdRoute
   LiveSubdomainVenuesIndexRoute: typeof LiveSubdomainVenuesIndexRoute
 }
@@ -1302,6 +1328,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsEventIdPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sms/delivery': {
+      id: '/api/public/sms/delivery'
+      path: '/api/public/sms/delivery'
+      fullPath: '/api/public/sms/delivery'
+      preLoaderRoute: typeof ApiPublicSmsDeliveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/sms/inbound': {
+      id: '/api/public/sms/inbound'
+      path: '/api/public/sms/inbound'
+      fullPath: '/api/public/sms/inbound'
+      preLoaderRoute: typeof ApiPublicSmsInboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/venues/': {
       id: '/live/$subdomain/venues/'
       path: '/live/$subdomain/venues'
@@ -1433,19 +1473,11 @@ const rootRouteChildren: RootRouteChildren = {
   LiveSubdomainTermsPrivacyRoute: LiveSubdomainTermsPrivacyRoute,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
+  ApiPublicSmsDeliveryRoute: ApiPublicSmsDeliveryRoute,
+  ApiPublicSmsInboundRoute: ApiPublicSmsInboundRoute,
   LiveSubdomainVenuesVenueIdRoute: LiveSubdomainVenuesVenueIdRoute,
   LiveSubdomainVenuesIndexRoute: LiveSubdomainVenuesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
