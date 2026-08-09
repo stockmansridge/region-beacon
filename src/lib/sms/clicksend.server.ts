@@ -4,6 +4,7 @@
 // works on Lovable-hosted SSR and on the Cloudflare Worker.
 
 import { readServerEnv } from "@/lib/server-env.server";
+import { normaliseAuMobile } from "@/lib/sms/phone";
 
 const CLICKSEND_BASE = "https://rest.clicksend.com/v3";
 
