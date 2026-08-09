@@ -54,6 +54,7 @@ Your information is used to:
 - administer any prize draws or rewards offered by the Event
 - contact you about your passport or the Event when necessary
 - send you marketing communications, only if you have explicitly opted in
+- send you event updates and alerts by SMS, only if you have explicitly opted in to SMS for this Event
 
 ## Who can see it
 
@@ -64,6 +65,10 @@ GetStampd, as the platform provider, processes your information on behalf of the
 ## Marketing
 
 Marketing opt-in is always optional. If you opt in, you can withdraw your consent at any time by following the unsubscribe instructions in any marketing message, or by contacting the organiser.
+
+## SMS updates
+
+SMS consent is separate from email marketing consent, and is only used where you have explicitly ticked the SMS option for this Event. Where you have opted in, the organiser may send you event updates, alerts and reminders by SMS to the mobile number you provided. You can withdraw SMS consent at any time by replying STOP to any message, which stops all further SMS immediately, or by contacting the organiser. We keep a record of when SMS consent was given or withdrawn, and for which mobile number.
 
 ## Retention
 

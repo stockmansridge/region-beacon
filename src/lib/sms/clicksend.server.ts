@@ -4,6 +4,7 @@
 // works on Lovable-hosted SSR and on the Cloudflare Worker.
 
 import { readServerEnv } from "@/lib/server-env.server";
+import { normaliseAuMobile } from "@/lib/sms/phone";
 
 const CLICKSEND_BASE = "https://rest.clicksend.com/v3";
 
@@ -29,19 +30,12 @@ export function getClickSendConfig(): ClickSendConfig | null {
   return { username, apiKey, sender };
 }
 
-/** Canonical AU E.164 normalisation. Mirrors sms_normalise_au_mobile() in SQL. */
-export function normaliseAuMobile(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const digits = String(raw).replace(/[^\d+]/g, "");
-  if (!digits) return null;
-  if (digits.startsWith("+")) {
-    return /^\+[1-9]\d{7,14}$/.test(digits) ? digits : null;
-  }
-  if (digits.startsWith("614") && digits.length === 11) return `+${digits}`;
-  if (digits.startsWith("04") && digits.length === 10) return `+61${digits.slice(1)}`;
-  if (digits.startsWith("4") && digits.length === 9) return `+61${digits}`;
-  return null;
-}
+/**
+ * Canonical AU E.164 normalisation. Mirrors sms_normalise_au_mobile() in SQL.
+ * Implementation lives in the client-safe module so the public join form and
+ * the sender cannot drift apart.
+ */
+export { normaliseAuMobile } from "@/lib/sms/phone";
 
 type ClickSendMessage = {
   body: string;
