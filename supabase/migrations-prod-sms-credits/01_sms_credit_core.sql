@@ -14,6 +14,27 @@
 
 begin;
 
+-- 0. Preflight: this file depends on public.agencies and the shared
+-- updated_at trigger helper. If either is missing, stop with a clear message
+-- (this is the usual reason 05/06 later report "type ... does not exist").
+do $$
+begin
+  if to_regclass('public.agencies') is null then
+    raise exception '01_sms_credit_core.sql: public.agencies is missing — wrong database?';
+  end if;
+end;
+$$;
+
+create or replace function public.tg_set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 -- 1. Credit accounts ------------------------------------------------------
 create table if not exists public.sms_credit_accounts (
   id uuid primary key default gen_random_uuid(),

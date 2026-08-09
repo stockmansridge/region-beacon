@@ -14,30 +14,46 @@
 
 begin;
 
--- Internal: get (or create) the organisation's credit account, locked.
-create or replace function public.sms_lock_credit_account(_agency_id uuid)
-returns public.sms_credit_accounts
+-- Preflight: 01 (and 02) must be applied first. Fail loudly, not cryptically.
+do $$
+begin
+  if to_regclass('public.sms_credit_accounts') is null then
+    raise exception '05_sms_rpcs_credits.sql: apply 01_sms_credit_core.sql first (public.sms_credit_accounts is missing)';
+  end if;
+  if to_regclass('public.sms_campaigns') is null then
+    raise exception '05_sms_rpcs_credits.sql: apply 02_sms_campaigns.sql first (public.sms_campaigns is missing)';
+  end if;
+end;
+$$;
+
+-- Internal: get (or create) the organisation's credit account, locked, and
+-- return its current balance. Returns a scalar so this file never depends on
+-- the sms_credit_accounts row type at creation time.
+drop function if exists public.sms_lock_credit_account(uuid);
+
+create or replace function public.sms_lock_credit_balance(_agency_id uuid)
+returns bigint
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-  acct public.sms_credit_accounts;
+  bal bigint;
 begin
   insert into public.sms_credit_accounts (agency_id)
   values (_agency_id)
   on conflict (agency_id) do nothing;
 
-  select * into acct
+  select balance_credits into bal
     from public.sms_credit_accounts
    where agency_id = _agency_id
      for update;
 
-  return acct;
+  return coalesce(bal, 0);
 end;
 $$;
 
-revoke all on function public.sms_lock_credit_account(uuid) from public;
+revoke all on function public.sms_lock_credit_balance(uuid) from public;
 
 -- 1. Purchase (Stripe webhook only) --------------------------------------
 create or replace function public.sms_credit_purchase_apply(
@@ -56,7 +72,7 @@ security definer
 set search_path = public
 as $$
 declare
-  acct public.sms_credit_accounts;
+  cur_balance bigint;
   new_balance bigint;
   tx_id uuid;
 begin
@@ -87,8 +103,8 @@ begin
     );
   end if;
 
-  acct := public.sms_lock_credit_account(_agency_id);
-  new_balance := acct.balance_credits + _credits;
+  cur_balance := public.sms_lock_credit_balance(_agency_id);
+  new_balance := cur_balance + _credits;
 
   update public.sms_credit_accounts
      set balance_credits = new_balance,
@@ -149,7 +165,7 @@ security definer
 set search_path = public
 as $$
 declare
-  acct public.sms_credit_accounts;
+  cur_balance bigint;
   uid uuid := auth.uid();
   recipient_count integer := 0;
   credits_needed bigint := 0;
@@ -193,20 +209,20 @@ begin
 
   credits_needed := recipient_count::bigint * _segments_per_recipient::bigint;
 
-  acct := public.sms_lock_credit_account(_agency_id);
+  cur_balance := public.sms_lock_credit_balance(_agency_id);
 
-  if acct.balance_credits < credits_needed then
+  if cur_balance < credits_needed then
     return jsonb_build_object(
       'ok', false,
       'reason', 'insufficient_credits',
       'credits_required', credits_needed,
-      'balance_credits', acct.balance_credits,
-      'shortfall', credits_needed - acct.balance_credits,
+      'balance_credits', cur_balance,
+      'shortfall', credits_needed - cur_balance,
       'recipients', recipient_count
     );
   end if;
 
-  new_balance := acct.balance_credits - credits_needed;
+  new_balance := cur_balance - credits_needed;
 
   if _campaign_id is not null then
     update public.sms_campaigns
@@ -291,32 +307,34 @@ security definer
 set search_path = public
 as $$
 declare
-  camp public.sms_campaigns;
-  acct public.sms_credit_accounts;
+  camp_agency_id uuid;
+  camp_event_id uuid;
+  cur_balance bigint;
   new_balance bigint;
 begin
   if _credits is null or _credits <= 0 then
     return jsonb_build_object('ok', true, 'credits_returned', 0);
   end if;
 
-  select * into camp from public.sms_campaigns where id = _campaign_id;
-  if camp.id is null then
+  select agency_id, event_id into camp_agency_id, camp_event_id
+    from public.sms_campaigns where id = _campaign_id;
+  if camp_agency_id is null then
     raise exception 'sms_campaign_recredit: campaign not found';
   end if;
 
-  acct := public.sms_lock_credit_account(camp.agency_id);
-  new_balance := acct.balance_credits + _credits;
+  cur_balance := public.sms_lock_credit_balance(camp_agency_id);
+  new_balance := cur_balance + _credits;
 
   update public.sms_credit_accounts
      set balance_credits = new_balance,
          lifetime_used_credits = greatest(0, lifetime_used_credits - _credits)
-   where agency_id = camp.agency_id;
+   where agency_id = camp_agency_id;
 
   insert into public.sms_credit_transactions (
     agency_id, event_id, transaction_type, credits, balance_after,
     sms_campaign_id, description
   ) values (
-    camp.agency_id, camp.event_id, 'failed_send_recredit', _credits, new_balance,
+    camp_agency_id, camp_event_id, 'failed_send_recredit', _credits, new_balance,
     _campaign_id, coalesce(_reason, 'Unsent SMS segments returned')
   );
 
@@ -340,7 +358,7 @@ set search_path = public
 as $$
 declare
   uid uuid := auth.uid();
-  acct public.sms_credit_accounts;
+  cur_balance bigint;
   new_balance bigint;
 begin
   if not public.is_platform_admin(uid) then
@@ -353,8 +371,8 @@ begin
     raise exception 'sms_admin_adjust_credits: a reason is required';
   end if;
 
-  acct := public.sms_lock_credit_account(_agency_id);
-  new_balance := acct.balance_credits + _credits;
+  cur_balance := public.sms_lock_credit_balance(_agency_id);
+  new_balance := cur_balance + _credits;
   if new_balance < 0 then
     raise exception 'sms_admin_adjust_credits: adjustment would make the balance negative';
   end if;
