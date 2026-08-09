@@ -237,7 +237,6 @@ serve(async (req) => {
 
         const subId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null;
 
-        const agencyId = session.metadata?.agency_id ?? session.client_reference_id ?? null;
         if (subId) {
           let sub = await stripe.subscriptions.retrieve(subId);
           if (agencyId && (!sub.metadata?.agency_id || !sub.metadata?.plan_code)) {
@@ -252,11 +251,28 @@ serve(async (req) => {
         }
         break;
       }
+      case "payment_intent.succeeded": {
+        // Safety net for one-off SMS credit payments if the checkout session
+        // event is missed. Idempotency makes the overlap harmless.
+        const pi = event.data.object as Stripe.PaymentIntent;
+        await applySmsCreditPurchase({
+          eventId: event.id,
+          eventType: event.type,
+          metadata: pi.metadata as Record<string, string>,
+          agencyIdHint: pi.metadata?.agency_id ?? null,
+          checkoutSessionId: null,
+          paymentIntentId: pi.id,
+          amountPaidCents: pi.amount_received ?? pi.amount ?? null,
+          currency: pi.currency ? pi.currency.toUpperCase() : "AUD",
+        });
+        break;
+      }
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
         await applySubscription(event.data.object as Stripe.Subscription);
         break;
+
       default:
         break;
     }
