@@ -24,7 +24,9 @@ set search_path = public
 as $$
 declare
   uid uuid := auth.uid();
-  acct public.sms_credit_accounts;
+  v_balance bigint;
+  v_purchased bigint;
+  v_used bigint;
 begin
   if uid is null then
     raise exception 'forbidden: authentication required' using errcode = '42501';
@@ -41,13 +43,16 @@ begin
   values (_agency_id)
   on conflict (agency_id) do nothing;
 
-  select * into acct from public.sms_credit_accounts where agency_id = _agency_id;
+  select balance_credits, lifetime_purchased_credits, lifetime_used_credits
+    into v_balance, v_purchased, v_used
+    from public.sms_credit_accounts
+   where agency_id = _agency_id;
 
   return jsonb_build_object(
     'agency_id', _agency_id,
-    'balance_credits', acct.balance_credits,
-    'lifetime_purchased_credits', acct.lifetime_purchased_credits,
-    'lifetime_used_credits', acct.lifetime_used_credits,
+    'balance_credits', coalesce(v_balance, 0),
+    'lifetime_purchased_credits', coalesce(v_purchased, 0),
+    'lifetime_used_credits', coalesce(v_used, 0),
     'can_purchase', (public.is_platform_admin(uid) or public.is_agency_admin(uid, _agency_id))
   );
 end;
