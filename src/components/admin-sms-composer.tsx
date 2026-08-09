@@ -75,7 +75,12 @@ export function AdminSmsComposer({
 
   const segments = useMemo(() => calculateSegments(message), [message]);
   const billedSegments = useMemo(
-    () => worstCaseSegments(message, events.find((e) => e.id === eventId)?.name ?? "your event"),
+    () =>
+      worstCaseSegments(message, {
+        event_name: events.find((e) => e.id === eventId)?.name ?? "your event",
+        // Worst-case public passport link length.
+        link: "https://xxxxxxxxxxxxxxxxxxxx.getstampd.com.au",
+      }).segments,
     [message, events, eventId],
   );
 
