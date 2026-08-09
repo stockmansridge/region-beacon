@@ -39,6 +39,8 @@ serve(async (req) => {
 
   const webhookSecret = getEnv("STRIPE_WEBHOOK_SECRET");
   const stripeSecretKey = getEnv("STRIPE_SECRET_KEY");
+  const testWebhookSecret = getEnv("STRIPE_TEST_WEBHOOK_SECRET");
+  const testStripeSecretKey = getEnv("STRIPE_TEST_SECRET_KEY");
   const supabaseUrl = getEnv("SUPABASE_URL");
   const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
   if (!webhookSecret || !stripeSecretKey || !supabaseUrl || !serviceRoleKey) {
@@ -51,27 +53,77 @@ serve(async (req) => {
     return new Response("Missing Stripe signature", { status: 400 });
   }
 
-  const stripe = new Stripe(stripeSecretKey, {
+  const liveStripe = new Stripe(stripeSecretKey, {
     apiVersion: "2024-04-10",
     httpClient: Stripe.createFetchHttpClient(),
   });
+  const testStripe = testStripeSecretKey
+    ? new Stripe(testStripeSecretKey, {
+        apiVersion: "2024-04-10",
+        httpClient: Stripe.createFetchHttpClient(),
+      })
+    : null;
+
   const rawBody = await req.text();
-  let event: Stripe.Event;
+
+  // Two Stripe environments, two signing secrets. Each candidate secret is
+  // verified with full signature checking — never relaxed, never shared. The
+  // secret that verifies decides the payment environment.
+  let verified: Stripe.Event | null = null;
+  let paymentEnvironment: "live" | "test" = "live";
   try {
-    event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
-  } catch (err) {
-    console.error("[stripe-webhook] signature verification failed", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return new Response("Invalid signature", { status: 400 });
+    verified = await liveStripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
+    paymentEnvironment = "live";
+  } catch (liveErr) {
+    if (!testWebhookSecret) {
+      console.error("[stripe-webhook] signature verification failed", {
+        error: liveErr instanceof Error ? liveErr.message : String(liveErr),
+      });
+      return new Response("Invalid signature", { status: 400 });
+    }
+    try {
+      const verifier = testStripe ?? liveStripe;
+      verified = await verifier.webhooks.constructEventAsync(rawBody, signature, testWebhookSecret);
+      paymentEnvironment = "test";
+    } catch (testErr) {
+      console.error("[stripe-webhook] signature verification failed (live and test)", {
+        live_error: liveErr instanceof Error ? liveErr.message : String(liveErr),
+        test_error: testErr instanceof Error ? testErr.message : String(testErr),
+      });
+      return new Response("Invalid signature", { status: 400 });
+    }
   }
+  if (!verified) return new Response("Invalid signature", { status: 400 });
+  const event: Stripe.Event = verified;
+
+  // Cross-check the verified secret against Stripe's own livemode flag.
+  const expectedLive = paymentEnvironment === "live";
+  if (typeof event.livemode === "boolean" && event.livemode !== expectedLive) {
+    console.error("[stripe-webhook] livemode/secret mismatch", {
+      event_id: event.id,
+      livemode: event.livemode,
+      resolved_environment: paymentEnvironment,
+    });
+    return new Response("Environment mismatch", { status: 400 });
+  }
+
+  const stripe = paymentEnvironment === "test" && testStripe ? testStripe : liveStripe;
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   async function applySubscription(sub: Stripe.Subscription, agencyIdHint?: string | null) {
+    // Subscription billing is a LIVE-only concern. Sandbox subscription
+    // events must never touch production subscription records.
+    if (paymentEnvironment !== "live") {
+      console.log("[stripe-webhook] ignoring test-mode subscription event", {
+        subscription_id: sub.id,
+      });
+      return;
+    }
     const agencyId = agencyIdHint ?? sub.metadata?.agency_id ?? null;
+
     if (!agencyId) {
       console.error("[stripe-webhook] subscription has no agency_id metadata", { subscription_id: sub.id });
       return;
