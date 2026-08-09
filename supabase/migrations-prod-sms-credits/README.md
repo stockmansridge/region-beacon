@@ -14,7 +14,26 @@ drops, safe to re-run. Nothing here has been applied for you.
 | 06 | `06_sms_rpcs_read.sql` | `sms_account_summary`, `system_admin_sms_overview`, `system_admin_sms_pack_margins` | Margin/wholesale data only ever returned to platform admins. |
 | 07 | `07_sms_recipient_resolution.sql` | `sms_resolve_audience`, `sms_audience_count`, `sms_apply_opt_out` (STOP), `sms_record_consent` | 05 calls `sms_resolve_audience` at runtime, so 07 must be applied before any send is attempted. |
 
+## If 05/06 report `type "public.sms_credit_accounts" does not exist`
+
+That error means **01 (or 02) did not actually apply** — the tables are absent, so
+the RPC bodies cannot resolve them. 05 and 06 no longer use table row types and
+now start with a preflight that names the missing file. Re-run 01 and 02 first,
+confirm with:
+
+```sql
+select to_regclass('public.sms_credit_accounts') as accounts,
+       to_regclass('public.sms_credit_transactions') as ledger,
+       to_regclass('public.sms_credit_packs') as packs,
+       to_regclass('public.sms_campaigns') as campaigns,
+       to_regclass('public.sms_campaign_recipients') as recipients;
+```
+
+All five must be non-null before running 05/06. In the Supabase SQL editor run
+each file as a whole and check the result pane for an error before moving on.
+
 ## Verify after applying
+
 
 ```sql
 -- Tables + packs
