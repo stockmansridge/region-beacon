@@ -27,12 +27,11 @@ export const createSmsCreditCheckout = createServerFn({ method: "POST" })
         returnPath: data.return_path ?? "/admin/communications",
       });
     } catch (err) {
-      console.error("[sms-credit-checkout] failed", {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error("[sms-credit-checkout] failed", { error: detail });
       return {
         ok: false as const,
-        error: "Could not open Stripe Checkout. Please try again.",
+        error: `Could not open Stripe Checkout: ${detail}`,
       };
     }
   });
