@@ -149,7 +149,7 @@ security definer
 set search_path = public
 as $$
 declare
-  acct public.sms_credit_accounts;
+  cur_balance bigint;
   uid uuid := auth.uid();
   recipient_count integer := 0;
   credits_needed bigint := 0;
