@@ -44,7 +44,9 @@ export function getStripeClientFor(env: StripePaymentEnvironment): Stripe {
   const key = readServerEnv("STRIPE_TEST_SECRET_KEY");
   if (!key) {
     throw new Error(
-      "Stripe Sandbox is not configured. Set STRIPE_TEST_SECRET_KEY in Lovable Cloud secrets.",
+      "Stripe Sandbox is not configured for this deployment. Add STRIPE_TEST_SECRET_KEY " +
+        "(and STRIPE_TEST_WEBHOOK_SECRET) to the Cloudflare Worker 'region-beacon' → " +
+        "Settings → Variables and Secrets, then redeploy the Worker.",
     );
   }
   return new Stripe(key, { apiVersion: "2024-09-30.acacia" as never });
