@@ -193,20 +193,20 @@ begin
 
   credits_needed := recipient_count::bigint * _segments_per_recipient::bigint;
 
-  acct := public.sms_lock_credit_account(_agency_id);
+  cur_balance := public.sms_lock_credit_balance(_agency_id);
 
-  if acct.balance_credits < credits_needed then
+  if cur_balance < credits_needed then
     return jsonb_build_object(
       'ok', false,
       'reason', 'insufficient_credits',
       'credits_required', credits_needed,
-      'balance_credits', acct.balance_credits,
-      'shortfall', credits_needed - acct.balance_credits,
+      'balance_credits', cur_balance,
+      'shortfall', credits_needed - cur_balance,
       'recipients', recipient_count
     );
   end if;
 
-  new_balance := acct.balance_credits - credits_needed;
+  new_balance := cur_balance - credits_needed;
 
   if _campaign_id is not null then
     update public.sms_campaigns
