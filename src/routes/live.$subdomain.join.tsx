@@ -560,24 +560,9 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         // localStorage unavailable — token still shown on success screen
       }
 
-      // Legacy path only: SMS consent is a second call, so it can fail on its
-      // own. We never leave that failure silent — the visitor is told.
-      if (rpcName === "register_visitor" && form.sms_opt_in && smsCapable) {
-        const { error: smsError } = await supabase.rpc("update_sms_consent", {
-          _raw_token: row.access_token,
-          _decision: "granted",
-          _mobile: form.mobile.trim(),
-          _source: "public_join",
-          _client_ip: null,
-          _user_agent: userAgent,
-        });
-        if (smsError) {
-          consentWarning =
-            "Your passport was created, but we could not save your SMS preference. You can opt in again from your passport.";
-          // eslint-disable-next-line no-console
-          console.warn("sms consent not recorded", smsError.message);
-        }
-      }
+      // Consent is recorded inside register_participant's transaction, so there
+      // is no second consent call that can fail on its own.
+      setConsentWarning(null);
 
       // Email the passport link after signup. The success screen still shows
       // the link if this fails, so we never block completion on delivery.
@@ -585,7 +570,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         // eslint-disable-next-line no-console
         console.warn("passport email failed", e);
       });
-      setConsentWarning(consentWarning);
+
 
 
 
