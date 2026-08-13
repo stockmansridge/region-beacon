@@ -211,7 +211,7 @@ function Header({ subdomain }: { subdomain: string }) {
       <h1
         className="mt-2 text-3xl font-semibold sm:text-4xl"
         style={{
-          color: "var(--event-page-heading)",
+          color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
           fontFamily: "var(--event-font, inherit)",
         }}
       >
@@ -219,7 +219,7 @@ function Header({ subdomain }: { subdomain: string }) {
       </h1>
       <p
         className="mt-2 text-sm"
-        style={{ color: "var(--event-page-muted)" }}
+        style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
       >
         Ranked by total points. Passport stamps are still shown so you can track venue progress.
       </p>
