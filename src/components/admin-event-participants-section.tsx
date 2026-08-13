@@ -541,6 +541,19 @@ export function AdminEventParticipantsSection({
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {formatDate(r.created_at)}
                   </td>
+                  <td className="px-3 py-2.5">
+                    <ConsentBadge state={r.terms_state ?? null} kind="terms" at={r.terms_at} />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <ConsentBadge state={r.sms_state ?? null} kind="sms" at={r.sms_at} />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <ConsentBadge
+                      state={r.marketing_state ?? null}
+                      kind="marketing"
+                      at={r.marketing_at}
+                    />
+                  </td>
                   <td className="px-3 py-2.5 text-right">
                     <button
                       type="button"
