@@ -2499,8 +2499,20 @@ function AssetUploader({
   const url = getEventAssetPublicUrl(currentPath);
   const label = kind === "logo" ? "Event logo" : "Cover image";
   const helper = kind === "logo"
-    ? "Shown in the header of your event page. Square images look best."
+    ? "Shown over the hero image on your event pages and printed on posters."
     : "Wide hero image shown at the top of your event page.";
+  const specs = kind === "logo"
+    ? [
+        "Recommended: 1000 × 1000 px square PNG with a transparent background, under ~300 KB",
+        "Minimum: 600 × 600 px (posters print the logo at 288 px)",
+        "Leave ~8% clear space inside the square so the circle shape option doesn't clip it",
+      ]
+    : [
+        "Recommended: 1600 × 1200 px (4:3) JPG, under ~500 KB",
+        "Minimum: 1200 × 900 px · above 2000 px wide only adds load time",
+        "Keep the key subject near the middle, then fine-tune with the focal point positioner",
+      ];
+
   const limitMB = Math.round(EVENT_ASSET_MAX_BYTES[kind] / (1024 * 1024));
   const accept = EVENT_ASSET_ALLOWED_MIME.join(",");
   const disabled = !canEdit || busy || removing;
@@ -2531,6 +2543,15 @@ function AssetUploader({
         <div className="text-[11px] text-[#64748B]">PNG, JPG, WebP · max {limitMB} MB</div>
       </div>
       <p className="text-sm leading-6 text-[#64748B]">{helper}</p>
+      <ul className="space-y-1 rounded-[12px] border border-[#DBEAFE] bg-[#F1F6FE] px-3 py-2.5 text-[12px] leading-5 text-[#334155]">
+        {specs.map((s) => (
+          <li key={s} className="flex gap-2">
+            <span aria-hidden className="text-[#2F6FE4]">•</span>
+            <span>{s}</span>
+          </li>
+        ))}
+      </ul>
+
       <div className={`rounded-[16px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-6 ${url ? "" : "text-center"}`}>
         {url ? (
           <div className={`relative mx-auto flex items-center justify-center overflow-hidden border border-[#E6ECF4] bg-white ${previewClass}`}>
