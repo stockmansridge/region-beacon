@@ -158,6 +158,12 @@ function splitName(full: string): { first: string; last: string } {
 
 function friendlyError(raw: string | undefined): string {
   if (!raw) return "Could not create your passport. Please try again.";
+  if (
+    /register_participant/i.test(raw) ||
+    /schema cache/i.test(raw) ||
+    raw.includes("42883")
+  )
+    return "Registration is temporarily unavailable — the signup service is not fully set up for this event. Please contact the organiser.";
   if (raw.includes("event_not_available"))
     return "This event is not accepting registrations yet.";
   if (raw.includes("terms_not_configured"))
@@ -477,13 +483,13 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
     try {
       const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : null;
-      let consentWarning: string | null = null;
-
-      // Preferred path: ONE transactional RPC that creates the participant and
-      // records Terms + SMS + Marketing together, so signup can never succeed
-      // with missing consent data.
-      let rpcName = "register_participant";
-      let { data, error } = await supabase.rpc("register_participant", {
+      // ONE transactional RPC creates the participant and records Terms + SMS
+      // + Marketing together. There is deliberately NO legacy fallback: the old
+      // register_visitor path could not record consent, so falling back to it
+      // silently produced email-only participants. If this call fails we stop
+      // and surface the real database error instead of half-registering.
+      const rpcName = "register_participant";
+      const { data, error } = await supabase.rpc("register_participant", {
         _event_id: event.event_id,
         _email: form.email.trim(),
         _full_name: form.full_name.trim() || null,
@@ -498,32 +504,16 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         _user_agent: userAgent,
       });
 
-      // Fallback for databases where the new RPC has not been applied yet:
-      // the previously deployed register_visitor + update_sms_consent path.
-      const missingFn =
-        error != null &&
-        ((error as { code?: string }).code === "42883" ||
-          /register_participant/i.test(error.message ?? "") ||
-          /schema cache/i.test(error.message ?? ""));
-      if (missingFn) {
-        rpcName = "register_visitor";
-        const legacy = await supabase.rpc("register_visitor", {
-          _event_id: event.event_id,
-          _email: form.email.trim(),
-          _full_name: form.full_name.trim(),
-          _first_name: first,
-          _last_name: last,
-          _mobile: form.mobile.trim() || null,
-          _postcode: form.postcode.trim() || null,
-          _marketing_opt_in: form.marketing_opt_in,
-          _accepted_terms_version_id: event.current_terms_version_id,
-          _locale: locale,
-          _client_ip: null,
-          _user_agent: null,
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error("register_participant failed", {
+          code: (error as { code?: string }).code ?? null,
+          message: error.message,
+          details: (error as { details?: string }).details ?? null,
+          hint: (error as { hint?: string }).hint ?? null,
         });
-        data = legacy.data;
-        error = legacy.error;
       }
+
 
       if (error) {
         setTopError(friendlyError(error.message));
@@ -576,24 +566,9 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         // localStorage unavailable — token still shown on success screen
       }
 
-      // Legacy path only: SMS consent is a second call, so it can fail on its
-      // own. We never leave that failure silent — the visitor is told.
-      if (rpcName === "register_visitor" && form.sms_opt_in && smsCapable) {
-        const { error: smsError } = await supabase.rpc("update_sms_consent", {
-          _raw_token: row.access_token,
-          _decision: "granted",
-          _mobile: form.mobile.trim(),
-          _source: "public_join",
-          _client_ip: null,
-          _user_agent: userAgent,
-        });
-        if (smsError) {
-          consentWarning =
-            "Your passport was created, but we could not save your SMS preference. You can opt in again from your passport.";
-          // eslint-disable-next-line no-console
-          console.warn("sms consent not recorded", smsError.message);
-        }
-      }
+      // Consent is recorded inside register_participant's transaction, so there
+      // is no second consent call that can fail on its own.
+      setConsentWarning(null);
 
       // Email the passport link after signup. The success screen still shows
       // the link if this fails, so we never block completion on delivery.
@@ -601,7 +576,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         // eslint-disable-next-line no-console
         console.warn("passport email failed", e);
       });
-      setConsentWarning(consentWarning);
+
 
 
 
@@ -617,7 +592,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
       setTopError("Could not create your passport. Please try again.");
       setDebugInfo({
         stage: "exception",
-        rpc: "register_visitor",
+        rpc: "register_participant",
         payload_shape: payloadShape,
         error_message: e instanceof Error ? e.message : String(e),
         event_id: event.event_id,
@@ -1408,7 +1383,7 @@ function buildSupportReport(
     page_url: typeof window !== "undefined" ? window.location.href : null,
     public_subdomain: ctx.subdomain,
     event_id: ctx.event_id,
-    rpc: (debug as { rpc?: string }).rpc ?? "register_visitor",
+    rpc: (debug as { rpc?: string }).rpc ?? "register_participant",
     failure_stage: (debug as { stage?: string }).stage ?? "unknown",
     supabase_error_code: (debug as { error_code?: unknown }).error_code ?? null,
     supabase_error_message: (debug as { error_message?: unknown }).error_message ?? null,
