@@ -74,6 +74,9 @@ type PublicEvent = {
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
   require_postcode?: boolean | null;
+  /** Event-level participant field settings. Email is always required. */
+  require_name?: boolean | null;
+  require_mobile?: boolean | null;
 };
 
 type LoadState =
