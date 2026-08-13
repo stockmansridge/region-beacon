@@ -2543,6 +2543,15 @@ function AssetUploader({
         <div className="text-[11px] text-[#64748B]">PNG, JPG, WebP · max {limitMB} MB</div>
       </div>
       <p className="text-sm leading-6 text-[#64748B]">{helper}</p>
+      <ul className="space-y-1 rounded-[12px] border border-[#DBEAFE] bg-[#F1F6FE] px-3 py-2.5 text-[12px] leading-5 text-[#334155]">
+        {specs.map((s) => (
+          <li key={s} className="flex gap-2">
+            <span aria-hidden className="text-[#2F6FE4]">•</span>
+            <span>{s}</span>
+          </li>
+        ))}
+      </ul>
+
       <div className={`rounded-[16px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-6 ${url ? "" : "text-center"}`}>
         {url ? (
           <div className={`relative mx-auto flex items-center justify-center overflow-hidden border border-[#E6ECF4] bg-white ${previewClass}`}>
