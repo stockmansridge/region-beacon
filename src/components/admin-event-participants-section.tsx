@@ -13,7 +13,7 @@ import {
  * exists at all (historical participants) — it must never be shown as an
  * opt-out.
  */
-type ConsentState = "granted" | "revoked" | "not_recorded";
+type ConsentState = "accepted" | "opted_in" | "opted_out" | "not_recorded";
 
 type ParticipantRow = {
   passport_id: string;
@@ -30,20 +30,27 @@ type ParticipantRow = {
   latest_activity_at: string | null;
   created_at: string;
   passport_status: string;
-  terms_state: ConsentState | null;
-  terms_at: string | null;
-  sms_state: ConsentState | null;
-  sms_at: string | null;
-  marketing_state: ConsentState | null;
-  marketing_at: string | null;
+  /** 'accepted' | 'not_recorded' */
+  terms_status: ConsentState | null;
+  terms_accepted_at: string | null;
+  /** 'opted_in' | 'opted_out' | 'not_recorded' */
+  sms_status: ConsentState | null;
+  sms_consent_updated_at: string | null;
+  marketing_status: ConsentState | null;
+  marketing_consent_updated_at: string | null;
 };
 
 type ConsentKind = "terms" | "sms" | "marketing";
 
 function consentLabel(state: ConsentState | null, kind: ConsentKind): string {
-  if (state === "granted") return kind === "terms" ? "Accepted" : "Opted in";
-  if (state === "revoked") return kind === "terms" ? "Not accepted" : "Opted out";
+  if (state === "accepted" || state === "opted_in")
+    return kind === "terms" ? "Accepted" : "Opted in";
+  if (state === "opted_out") return "Opted out";
   return "Not recorded";
+}
+
+function isGranted(state: ConsentState | null): boolean {
+  return state === "accepted" || state === "opted_in";
 }
 
 function ConsentBadge({
@@ -57,9 +64,9 @@ function ConsentBadge({
 }) {
   const label = consentLabel(state, kind);
   const tone =
-    state === "granted"
+    isGranted(state)
       ? "bg-emerald-50 text-emerald-700"
-      : state === "revoked"
+      : state === "opted_out"
       ? "bg-amber-50 text-amber-700"
       : "bg-slate-100 text-slate-600";
   return (
@@ -71,7 +78,7 @@ function ConsentBadge({
       title={at ? `Recorded ${formatDate(at)}` : "No consent record"}
     >
       <span aria-hidden="true">
-        {state === "granted" ? "✓" : state === "revoked" ? "✕" : "–"}
+        {isGranted(state) ? "✓" : state === "opted_out" ? "✕" : "–"}
       </span>
       {label}
     </span>
@@ -108,9 +115,9 @@ type ParticipantCsvRow = ParticipantRow & {
 function toParticipantCsvRow(r: ParticipantRow): ParticipantCsvRow {
   return {
     ...r,
-    terms_label: consentLabel(r.terms_state, "terms"),
-    sms_label: consentLabel(r.sms_state, "sms"),
-    marketing_label: consentLabel(r.marketing_state, "marketing"),
+    terms_label: consentLabel(r.terms_status, "terms"),
+    sms_label: consentLabel(r.sms_status, "sms"),
+    marketing_label: consentLabel(r.marketing_status, "marketing"),
   };
 }
 
@@ -120,11 +127,11 @@ const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantCsvRow>> = [
   { label: "Mobile", key: "mobile" },
   { label: "Postcode", key: "postcode" },
   { label: "Terms accepted", key: "terms_label" },
-  { label: "Terms accepted at", key: "terms_at" },
+  { label: "Terms accepted at", key: "terms_accepted_at" },
   { label: "SMS consent", key: "sms_label" },
-  { label: "SMS consent at", key: "sms_at" },
+  { label: "SMS consent at", key: "sms_consent_updated_at" },
   { label: "Marketing consent", key: "marketing_label" },
-  { label: "Marketing consent at", key: "marketing_at" },
+  { label: "Marketing consent at", key: "marketing_consent_updated_at" },
   { label: "Passport status", key: "passport_status" },
   { label: "Passport stamps", key: "passport_stamp_count" },
   { label: "Total points", key: "total_points" },
@@ -542,16 +549,16 @@ export function AdminEventParticipantsSection({
                     {formatDate(r.created_at)}
                   </td>
                   <td className="px-3 py-2.5">
-                    <ConsentBadge state={r.terms_state ?? null} kind="terms" at={r.terms_at} />
+                    <ConsentBadge state={r.terms_status ?? null} kind="terms" at={r.terms_accepted_at} />
                   </td>
                   <td className="px-3 py-2.5">
-                    <ConsentBadge state={r.sms_state ?? null} kind="sms" at={r.sms_at} />
+                    <ConsentBadge state={r.sms_status ?? null} kind="sms" at={r.sms_consent_updated_at} />
                   </td>
                   <td className="px-3 py-2.5">
                     <ConsentBadge
-                      state={r.marketing_state ?? null}
+                      state={r.marketing_status ?? null}
                       kind="marketing"
-                      at={r.marketing_at}
+                      at={r.marketing_consent_updated_at}
                     />
                   </td>
                   <td className="px-3 py-2.5 text-right">
