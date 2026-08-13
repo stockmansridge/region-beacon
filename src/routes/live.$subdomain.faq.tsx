@@ -9,6 +9,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { LinkifyText } from "@/components/linkify-text";
 
 export const Route = createFileRoute("/live/$subdomain/faq")({
   component: function FaqRoute() {
@@ -178,7 +179,7 @@ function FaqAccordion({ entries }: { entries: FaqEntry[] }) {
                 id={panelId}
                 className="px-4 pb-4 -mt-1 text-sm leading-relaxed text-[var(--event-body,#3D372C)] whitespace-pre-line"
               >
-                {entry.answer}
+                <LinkifyText text={entry.answer} />
               </div>
             )}
           </li>
