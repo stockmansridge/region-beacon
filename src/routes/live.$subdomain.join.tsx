@@ -164,6 +164,17 @@ function friendlyError(raw: string | undefined): string {
     return "Registration is not available yet. Terms and privacy are still being configured.";
   if (raw.includes("terms_version_invalid"))
     return "Terms have been updated. Refresh and try again.";
+  if (raw.includes("terms_not_accepted"))
+    return "Please accept the terms & privacy policy to continue.";
+  if (raw.includes("email_invalid")) return "Enter a valid email address.";
+  if (raw.includes("name_required")) return "Please enter your name.";
+  if (raw.includes("mobile_required")) return "Please enter your mobile number.";
+  if (raw.includes("mobile_invalid"))
+    return "Enter a valid Australian mobile number, or leave it blank.";
+  if (raw.includes("postcode_required")) return "Please enter your postcode.";
+  if (raw.includes("postcode_invalid")) return "Enter a valid postcode.";
+  if (raw.includes("sms_requires_mobile"))
+    return "Add a valid Australian mobile number to receive SMS updates, or untick the SMS box.";
   return "Could not create your passport. Please try again.";
 }
 
