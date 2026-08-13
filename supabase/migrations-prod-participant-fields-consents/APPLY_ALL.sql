@@ -20,7 +20,6 @@ begin;
 --
 -- Additive, idempotent, backward compatible. Apply in the Supabase SQL editor.
 
-begin;
 
 alter table public.events
   add column if not exists require_name boolean not null default true,
@@ -62,7 +61,6 @@ revoke all on function public.get_event_registration_settings(text) from public;
 grant execute on function public.get_event_registration_settings(text)
   to anon, authenticated, service_role;
 
-commit;
 
 -- Verification
 --   select * from public.get_event_registration_settings('<subdomain>.getstampd.com.au');
@@ -93,7 +91,6 @@ commit;
 --
 -- Additive, idempotent. Apply in the Supabase SQL editor.
 
-begin;
 
 -- Efficient "latest decision per visitor per consent type" lookups.
 create index if not exists idx_visitor_consents_event_visitor_type
@@ -155,7 +152,6 @@ $$;
 revoke all on function public.participant_consent_state(uuid) from public;
 grant execute on function public.participant_consent_state(uuid) to service_role;
 
-commit;
 
 -- Verification
 --   select * from public.participant_consent_state('<event_id>'::uuid) limit 20;
@@ -190,7 +186,6 @@ commit;
 --
 -- Additive, idempotent, backward compatible. Apply in the Supabase SQL editor.
 
-begin;
 
 create or replace function public.register_participant(
   _event_id uuid,
@@ -414,7 +409,6 @@ grant execute on function public.register_participant(
   uuid, citext, text, text, text, boolean, uuid, boolean, boolean, text, inet, text
 ) to anon, authenticated, service_role;
 
-commit;
 
 -- Verification
 --   select * from public.register_participant(
@@ -444,7 +438,6 @@ commit;
 --
 -- Apply in the Supabase SQL editor AFTER 02.
 
-begin;
 
 drop function if exists public.get_admin_event_participants_with_points(uuid);
 
@@ -581,7 +574,6 @@ $$;
 revoke all on function public.get_admin_event_participants_with_points(uuid) from public;
 grant execute on function public.get_admin_event_participants_with_points(uuid) to authenticated;
 
-commit;
 
 -- Verification
 --   select display_name, email, postcode, terms_status, sms_status, marketing_status
