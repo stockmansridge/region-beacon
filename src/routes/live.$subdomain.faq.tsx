@@ -179,7 +179,7 @@ function FaqAccordion({ entries }: { entries: FaqEntry[] }) {
                 id={panelId}
                 className="px-4 pb-4 -mt-1 text-sm leading-relaxed text-[var(--event-body,#3D372C)] whitespace-pre-line"
               >
-                {entry.answer}
+                <LinkifyText text={entry.answer} />
               </div>
             )}
           </li>
