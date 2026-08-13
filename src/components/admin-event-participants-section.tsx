@@ -30,20 +30,27 @@ type ParticipantRow = {
   latest_activity_at: string | null;
   created_at: string;
   passport_status: string;
-  terms_state: ConsentState | null;
-  terms_at: string | null;
-  sms_state: ConsentState | null;
-  sms_at: string | null;
-  marketing_state: ConsentState | null;
-  marketing_at: string | null;
+  /** 'accepted' | 'not_recorded' */
+  terms_status: ConsentState | null;
+  terms_accepted_at: string | null;
+  /** 'opted_in' | 'opted_out' | 'not_recorded' */
+  sms_status: ConsentState | null;
+  sms_consent_updated_at: string | null;
+  marketing_status: ConsentState | null;
+  marketing_consent_updated_at: string | null;
 };
 
 type ConsentKind = "terms" | "sms" | "marketing";
 
 function consentLabel(state: ConsentState | null, kind: ConsentKind): string {
-  if (state === "granted") return kind === "terms" ? "Accepted" : "Opted in";
-  if (state === "revoked") return kind === "terms" ? "Not accepted" : "Opted out";
+  if (state === "accepted" || state === "opted_in")
+    return kind === "terms" ? "Accepted" : "Opted in";
+  if (state === "opted_out") return "Opted out";
   return "Not recorded";
+}
+
+function isGranted(state: ConsentState | null): boolean {
+  return state === "accepted" || state === "opted_in";
 }
 
 function ConsentBadge({
