@@ -96,12 +96,50 @@ type FormState = {
   accept_terms: boolean;
 };
 
-function buildFormSchema(requirePostcode: boolean) {
+/** Event-level participant field settings. Email is never configurable. */
+export type FieldSettings = {
+  requireName: boolean;
+  requireMobile: boolean;
+  requirePostcode: boolean;
+};
+
+/** Production defaults — what the join form did before these settings existed. */
+export const DEFAULT_FIELD_SETTINGS: FieldSettings = {
+  requireName: true,
+  requireMobile: false,
+  requirePostcode: false,
+};
+
+function fieldSettings(event: PublicEvent): FieldSettings {
+  return {
+    requireName: event.require_name ?? DEFAULT_FIELD_SETTINGS.requireName,
+    requireMobile: event.require_mobile ?? DEFAULT_FIELD_SETTINGS.requireMobile,
+    requirePostcode: Boolean(event.require_postcode),
+  };
+}
+
+function buildFormSchema(settings: FieldSettings) {
   return z.object({
-    full_name: z.string().trim().min(2, "Please enter your full name").max(120, "Name is too long"),
+    full_name: settings.requireName
+      ? z.string().trim().min(2, "Please enter your full name").max(120, "Name is too long")
+      : z.string().trim().max(120, "Name is too long").optional().or(z.literal("")),
     email: z.string().trim().email("Enter a valid email").max(254, "Email is too long"),
-    mobile: z.string().trim().max(32, "Mobile is too long").optional().or(z.literal("")),
-    postcode: requirePostcode
+    mobile: settings.requireMobile
+      ? z
+          .string()
+          .trim()
+          .min(1, "Please enter your mobile number")
+          .max(32, "Mobile is too long")
+          .refine((v) => isSmsCapableMobile(v), "Enter a valid Australian mobile number")
+      : z
+          .string()
+          .trim()
+          .max(32, "Mobile is too long")
+          .refine(
+            (v) => v.trim() === "" || isSmsCapableMobile(v),
+            "Enter a valid Australian mobile number, or leave this blank",
+          ),
+    postcode: settings.requirePostcode
       ? z.string().trim().min(3, "Please enter your postcode").max(16, "Postcode is too long")
       : z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
     marketing_opt_in: z.boolean(),
@@ -111,7 +149,6 @@ function buildFormSchema(requirePostcode: boolean) {
     }),
   });
 }
-const formSchema = buildFormSchema(false);
 
 function splitName(full: string): { first: string; last: string } {
   const parts = full.trim().split(/\s+/);
