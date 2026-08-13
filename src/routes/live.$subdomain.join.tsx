@@ -463,26 +463,60 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     };
 
     try {
-      const { data, error } = await supabase.rpc("register_visitor", {
+      const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : null;
+      let consentWarning: string | null = null;
+
+      // Preferred path: ONE transactional RPC that creates the participant and
+      // records Terms + SMS + Marketing together, so signup can never succeed
+      // with missing consent data.
+      let rpcName = "register_participant";
+      let { data, error } = await supabase.rpc("register_participant", {
         _event_id: event.event_id,
         _email: form.email.trim(),
-        _full_name: form.full_name.trim(),
-        _first_name: first,
-        _last_name: last,
+        _full_name: form.full_name.trim() || null,
         _mobile: form.mobile.trim() || null,
         _postcode: form.postcode.trim() || null,
-        _marketing_opt_in: form.marketing_opt_in,
+        _accept_terms: form.accept_terms === true,
         _accepted_terms_version_id: event.current_terms_version_id,
+        _sms_opt_in: form.sms_opt_in,
+        _marketing_opt_in: form.marketing_opt_in,
         _locale: locale,
         _client_ip: null,
-        _user_agent: null,
+        _user_agent: userAgent,
       });
+
+      // Fallback for databases where the new RPC has not been applied yet:
+      // the previously deployed register_visitor + update_sms_consent path.
+      const missingFn =
+        error != null &&
+        ((error as { code?: string }).code === "42883" ||
+          /register_participant/i.test(error.message ?? "") ||
+          /schema cache/i.test(error.message ?? ""));
+      if (missingFn) {
+        rpcName = "register_visitor";
+        const legacy = await supabase.rpc("register_visitor", {
+          _event_id: event.event_id,
+          _email: form.email.trim(),
+          _full_name: form.full_name.trim(),
+          _first_name: first,
+          _last_name: last,
+          _mobile: form.mobile.trim() || null,
+          _postcode: form.postcode.trim() || null,
+          _marketing_opt_in: form.marketing_opt_in,
+          _accepted_terms_version_id: event.current_terms_version_id,
+          _locale: locale,
+          _client_ip: null,
+          _user_agent: null,
+        });
+        data = legacy.data;
+        error = legacy.error;
+      }
 
       if (error) {
         setTopError(friendlyError(error.message));
         setDebugInfo({
           stage: "rpc_error",
-          rpc: "register_visitor",
+          rpc: rpcName,
           payload_shape: payloadShape,
           error_message: error.message,
           error_code: (error as { code?: string }).code ?? null,
@@ -504,7 +538,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         setTopError("Could not create your passport. Please try again.");
         setDebugInfo({
           stage: "empty_rpc_response",
-          rpc: "register_visitor",
+          rpc: rpcName,
           payload_shape: payloadShape,
           returned_data: data,
           event_id: event.event_id,
@@ -529,32 +563,33 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         // localStorage unavailable — token still shown on success screen
       }
 
-      // Email the passport link after signup. The success screen still shows
-      // the link if this fails, so we never block completion on delivery.
-      await sendPassportEmailFn({ data: { token: row.access_token } }).catch((e) => {
-        // eslint-disable-next-line no-console
-        console.warn("passport email failed", e);
-      });
-
-      // SMS consent is recorded separately from the email marketing opt-in, and
-      // only when a usable mobile number was supplied. The RPC appends to the
-      // consent ledger against this passport (channel + number + timestamp).
-      if (form.sms_opt_in && smsCapable) {
+      // Legacy path only: SMS consent is a second call, so it can fail on its
+      // own. We never leave that failure silent — the visitor is told.
+      if (rpcName === "register_visitor" && form.sms_opt_in && smsCapable) {
         const { error: smsError } = await supabase.rpc("update_sms_consent", {
           _raw_token: row.access_token,
           _decision: "granted",
           _mobile: form.mobile.trim(),
           _source: "public_join",
           _client_ip: null,
-          _user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          _user_agent: userAgent,
         });
         if (smsError) {
-          // Never block signup on consent recording; the participant simply
-          // stays opted out and can opt in later.
+          consentWarning =
+            "Your passport was created, but we could not save your SMS preference. You can opt in again from your passport.";
           // eslint-disable-next-line no-console
           console.warn("sms consent not recorded", smsError.message);
         }
       }
+
+      // Email the passport link after signup. The success screen still shows
+      // the link if this fails, so we never block completion on delivery.
+      await sendPassportEmailFn({ data: { token: row.access_token } }).catch((e) => {
+        // eslint-disable-next-line no-console
+        console.warn("passport email failed", e);
+      });
+      setConsentWarning(consentWarning);
+
 
 
       // If user was redirected from a venue QR scan, send them back there.
