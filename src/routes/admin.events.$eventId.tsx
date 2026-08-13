@@ -3127,40 +3127,77 @@ function EventDetail() {
             />
           </Section>
 
-          <Section title="Registration form" tab="overview">
+          <Section title="Participant information collected at signup" tab="overview">
             <div className="mb-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
-              Controls what visitors are required to provide when they sign up on the public join page.
+              Choose which details visitors must provide on the public join page.
+              Email address is always required and cannot be turned off, because
+              it is how participants receive their passport link.
+            </div>
+            <div className="mb-4 flex items-center justify-between gap-4 rounded-[12px] border border-[#E6ECF4] bg-white px-4 py-3">
+              <span className="space-y-1">
+                <span className="block text-sm font-medium text-[#111827]">Email address</span>
+                <span className="block text-xs leading-5 text-[#64748B]">
+                  Always required — used to deliver the participant’s passport link.
+                </span>
+              </span>
+              <span className="rounded-full bg-[#EFF6FF] px-2.5 py-1 text-xs font-semibold text-[#1F56C5]">
+                Always required
+              </span>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <ToggleRow
+              <ParticipantFieldToggle
+                title="Require name"
+                description="When on, visitors must enter their name to complete registration."
+                column="require_name"
+                checked={
+                  (bundle.event as { require_name?: boolean | null }).require_name !== false
+                }
+                eventId={bundle.event.id}
+                agencyId={agencyId}
+                canEdit={canEdit}
+                onOptimistic={(v) =>
+                  setBundle((b) =>
+                    b ? { ...b, event: { ...b.event, require_name: v } as typeof b.event } : b,
+                  )
+                }
+                onLabels={{ on: "Name is now required", off: "Name is now optional" }}
+              />
+              <ParticipantFieldToggle
+                title="Require phone number"
+                description="When on, visitors must enter a valid Australian mobile number. Needed before they can be sent SMS updates."
+                column="require_mobile"
+                checked={Boolean(
+                  (bundle.event as { require_mobile?: boolean | null }).require_mobile,
+                )}
+                eventId={bundle.event.id}
+                agencyId={agencyId}
+                canEdit={canEdit}
+                onOptimistic={(v) =>
+                  setBundle((b) =>
+                    b ? { ...b, event: { ...b.event, require_mobile: v } as typeof b.event } : b,
+                  )
+                }
+                onLabels={{
+                  on: "Phone number is now required",
+                  off: "Phone number is now optional",
+                }}
+              />
+              <ParticipantFieldToggle
                 title="Require postcode"
-                description="When on, visitors must enter a postcode to complete registration. Powers the postcode breakdown in Analytics."
+                description="When on, visitors must enter a postcode. Powers the postcode breakdown in Analytics."
+                column="require_postcode"
                 checked={Boolean(bundle.event.require_postcode)}
-                onChange={async (v) => {
-                  if (!canEdit || !agencyId) return;
-                  const prev = Boolean(bundle.event.require_postcode);
-                  setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: v } } : b));
-                  const { error } = await supabase
-                    .from("events")
-                    .update({ require_postcode: v })
-                    .eq("id", bundle.event.id)
-                    .eq("agency_id", agencyId);
-                  if (error) {
-                    setBundle((b) => (b ? { ...b, event: { ...b.event, require_postcode: prev } } : b));
-                    if (
-                      (error as any).code === "42703" ||
-                      /require_postcode/i.test(error.message ?? "")
-                    ) {
-                      toast.error(
-                        "Postcode toggle isn't available yet — the database update for this feature hasn't been applied.",
-                      );
-                    } else {
-                      toast.error(`Could not update setting: ${error.message}`);
-                    }
-                    return;
-                  }
-
-                  toast.success(v ? "Postcode is now required" : "Postcode is now optional");
+                eventId={bundle.event.id}
+                agencyId={agencyId}
+                canEdit={canEdit}
+                onOptimistic={(v) =>
+                  setBundle((b) =>
+                    b ? { ...b, event: { ...b.event, require_postcode: v } } : b,
+                  )
+                }
+                onLabels={{
+                  on: "Postcode is now required",
+                  off: "Postcode is now optional",
                 }}
               />
             </div>
@@ -5487,6 +5524,67 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+
+/**
+ * Toggle for one "collected at signup" participant field. Persists a single
+ * boolean column on `events`, rolling the optimistic UI back on failure and
+ * explaining clearly when the column has not been migrated yet.
+ */
+function ParticipantFieldToggle({
+  title,
+  description,
+  column,
+  checked,
+  eventId,
+  agencyId,
+  canEdit,
+  onOptimistic,
+  onLabels,
+}: {
+  title: string;
+  description: string;
+  column: "require_name" | "require_mobile" | "require_postcode";
+  checked: boolean;
+  eventId: string;
+  agencyId: string | null;
+  canEdit: boolean;
+  onOptimistic: (next: boolean) => void;
+  onLabels: { on: string; off: string };
+}) {
+  return (
+    <ToggleRow
+      title={title}
+      description={description}
+      checked={checked}
+      disabled={!canEdit}
+      onChange={async (v) => {
+        if (!canEdit || !agencyId) return;
+        const prev = checked;
+        onOptimistic(v);
+        const { error } = await supabase
+          .from("events")
+          .update({ [column]: v } as never)
+          .eq("id", eventId)
+          .eq("agency_id", agencyId);
+        if (error) {
+          onOptimistic(prev);
+          if (
+            (error as { code?: string }).code === "42703" ||
+            new RegExp(column, "i").test(error.message ?? "")
+          ) {
+            toast.error(
+              `${title} isn't available yet — the database update for this feature hasn't been applied.`,
+            );
+          } else {
+            toast.error(`Could not update setting: ${error.message}`);
+          }
+          return;
+        }
+        toast.success(v ? onLabels.on : onLabels.off);
+      }}
+    />
   );
 }
 

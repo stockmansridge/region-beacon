@@ -74,6 +74,9 @@ type PublicEvent = {
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
   require_postcode?: boolean | null;
+  /** Event-level participant field settings. Email is always required. */
+  require_name?: boolean | null;
+  require_mobile?: boolean | null;
 };
 
 type LoadState =
@@ -93,12 +96,50 @@ type FormState = {
   accept_terms: boolean;
 };
 
-function buildFormSchema(requirePostcode: boolean) {
+/** Event-level participant field settings. Email is never configurable. */
+export type FieldSettings = {
+  requireName: boolean;
+  requireMobile: boolean;
+  requirePostcode: boolean;
+};
+
+/** Production defaults — what the join form did before these settings existed. */
+export const DEFAULT_FIELD_SETTINGS: FieldSettings = {
+  requireName: true,
+  requireMobile: false,
+  requirePostcode: false,
+};
+
+function fieldSettings(event: PublicEvent): FieldSettings {
+  return {
+    requireName: event.require_name ?? DEFAULT_FIELD_SETTINGS.requireName,
+    requireMobile: event.require_mobile ?? DEFAULT_FIELD_SETTINGS.requireMobile,
+    requirePostcode: Boolean(event.require_postcode),
+  };
+}
+
+function buildFormSchema(settings: FieldSettings) {
   return z.object({
-    full_name: z.string().trim().min(2, "Please enter your full name").max(120, "Name is too long"),
+    full_name: settings.requireName
+      ? z.string().trim().min(2, "Please enter your full name").max(120, "Name is too long")
+      : z.string().trim().max(120, "Name is too long").optional().or(z.literal("")),
     email: z.string().trim().email("Enter a valid email").max(254, "Email is too long"),
-    mobile: z.string().trim().max(32, "Mobile is too long").optional().or(z.literal("")),
-    postcode: requirePostcode
+    mobile: settings.requireMobile
+      ? z
+          .string()
+          .trim()
+          .min(1, "Please enter your mobile number")
+          .max(32, "Mobile is too long")
+          .refine((v) => isSmsCapableMobile(v), "Enter a valid Australian mobile number")
+      : z
+          .string()
+          .trim()
+          .max(32, "Mobile is too long")
+          .refine(
+            (v) => v.trim() === "" || isSmsCapableMobile(v),
+            "Enter a valid Australian mobile number, or leave this blank",
+          ),
+    postcode: settings.requirePostcode
       ? z.string().trim().min(3, "Please enter your postcode").max(16, "Postcode is too long")
       : z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
     marketing_opt_in: z.boolean(),
@@ -108,7 +149,6 @@ function buildFormSchema(requirePostcode: boolean) {
     }),
   });
 }
-const formSchema = buildFormSchema(false);
 
 function splitName(full: string): { first: string; last: string } {
   const parts = full.trim().split(/\s+/);
@@ -124,6 +164,17 @@ function friendlyError(raw: string | undefined): string {
     return "Registration is not available yet. Terms and privacy are still being configured.";
   if (raw.includes("terms_version_invalid"))
     return "Terms have been updated. Refresh and try again.";
+  if (raw.includes("terms_not_accepted"))
+    return "Please accept the terms & privacy policy to continue.";
+  if (raw.includes("email_invalid")) return "Enter a valid email address.";
+  if (raw.includes("name_required")) return "Please enter your name.";
+  if (raw.includes("mobile_required")) return "Please enter your mobile number.";
+  if (raw.includes("mobile_invalid"))
+    return "Enter a valid Australian mobile number, or leave it blank.";
+  if (raw.includes("postcode_required")) return "Please enter your postcode.";
+  if (raw.includes("postcode_invalid")) return "Enter a valid postcode.";
+  if (raw.includes("sms_requires_mobile"))
+    return "Add a valid Australian mobile number to receive SMS updates, or untick the SMS box.";
   return "Could not create your passport. Please try again.";
 }
 
@@ -199,19 +250,31 @@ export function LiveJoinPage({ subdomain }: { subdomain: string }) {
         setState({ kind: "not_live" });
         return;
       }
-      // Pull registration-form settings (require_postcode). Small dedicated
-      // RPC so we don't need to extend get_public_event_by_domain.
+      // Pull participant field settings (name / mobile / postcode required).
+      // Small dedicated RPC so we don't need to extend
+      // get_public_event_by_domain. Missing columns fall back to the defaults
+      // that match what production did before these settings existed.
       try {
         const { data: regData } = await supabase.rpc(
           "get_event_registration_settings",
           { _hostname: host },
         );
-        const reg = (regData?.[0] ?? null) as { require_postcode?: boolean | null } | null;
+        const reg = (regData?.[0] ?? null) as {
+          require_postcode?: boolean | null;
+          require_name?: boolean | null;
+          require_mobile?: boolean | null;
+        } | null;
         if (reg && typeof reg.require_postcode === "boolean") {
           evt.require_postcode = reg.require_postcode;
         }
+        if (reg && typeof reg.require_name === "boolean") {
+          evt.require_name = reg.require_name;
+        }
+        if (reg && typeof reg.require_mobile === "boolean") {
+          evt.require_mobile = reg.require_mobile;
+        }
       } catch {
-        // RPC not yet applied — fall back to default (optional postcode).
+        // RPC not yet applied — fall back to the safe defaults.
       }
       if (cancelled) return;
       if (!evt.current_terms_version_id) {
@@ -301,6 +364,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   const [topError, setTopError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
   const [success, setSuccess] = useState<{ token: string; passport_id: string } | null>(null);
+  /** Set when signup completed but a consent write could not be saved. */
+  const [consentWarning, setConsentWarning] = useState<string | null>(null);
   const [showRegisterAgain, setShowRegisterAgain] = useState(false);
   const [saved, setSaved] = useState<SavedPassport | null>(() =>
     readSavedPassport(event.event_id),
@@ -358,6 +423,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   // A mobile number that normalises to E.164 is required before SMS consent can
   // be recorded as active — same rule the database enforces.
   const smsCapable = useMemo(() => isSmsCapableMobile(form.mobile), [form.mobile]);
+  const settings = useMemo(() => fieldSettings(event), [event]);
 
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -367,7 +433,16 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     setTopError(null);
     setDebugInfo(null);
 
-    const parsed = buildFormSchema(Boolean(event.require_postcode)).safeParse(form);
+    // SMS consent can never be recorded without an SMS-capable number.
+    if (form.sms_opt_in && !smsCapable) {
+      setErrors({
+        mobile:
+          "Add a valid Australian mobile number to receive SMS updates, or untick the SMS box.",
+      });
+      return;
+    }
+
+    const parsed = buildFormSchema(settings).safeParse(form);
     if (!parsed.success) {
       const next: Partial<Record<keyof FormState, string>> = {};
       for (const issue of parsed.error.issues) {
@@ -401,26 +476,60 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     };
 
     try {
-      const { data, error } = await supabase.rpc("register_visitor", {
+      const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : null;
+      let consentWarning: string | null = null;
+
+      // Preferred path: ONE transactional RPC that creates the participant and
+      // records Terms + SMS + Marketing together, so signup can never succeed
+      // with missing consent data.
+      let rpcName = "register_participant";
+      let { data, error } = await supabase.rpc("register_participant", {
         _event_id: event.event_id,
         _email: form.email.trim(),
-        _full_name: form.full_name.trim(),
-        _first_name: first,
-        _last_name: last,
+        _full_name: form.full_name.trim() || null,
         _mobile: form.mobile.trim() || null,
         _postcode: form.postcode.trim() || null,
-        _marketing_opt_in: form.marketing_opt_in,
+        _accept_terms: form.accept_terms === true,
         _accepted_terms_version_id: event.current_terms_version_id,
+        _sms_opt_in: form.sms_opt_in,
+        _marketing_opt_in: form.marketing_opt_in,
         _locale: locale,
         _client_ip: null,
-        _user_agent: null,
+        _user_agent: userAgent,
       });
+
+      // Fallback for databases where the new RPC has not been applied yet:
+      // the previously deployed register_visitor + update_sms_consent path.
+      const missingFn =
+        error != null &&
+        ((error as { code?: string }).code === "42883" ||
+          /register_participant/i.test(error.message ?? "") ||
+          /schema cache/i.test(error.message ?? ""));
+      if (missingFn) {
+        rpcName = "register_visitor";
+        const legacy = await supabase.rpc("register_visitor", {
+          _event_id: event.event_id,
+          _email: form.email.trim(),
+          _full_name: form.full_name.trim(),
+          _first_name: first,
+          _last_name: last,
+          _mobile: form.mobile.trim() || null,
+          _postcode: form.postcode.trim() || null,
+          _marketing_opt_in: form.marketing_opt_in,
+          _accepted_terms_version_id: event.current_terms_version_id,
+          _locale: locale,
+          _client_ip: null,
+          _user_agent: null,
+        });
+        data = legacy.data;
+        error = legacy.error;
+      }
 
       if (error) {
         setTopError(friendlyError(error.message));
         setDebugInfo({
           stage: "rpc_error",
-          rpc: "register_visitor",
+          rpc: rpcName,
           payload_shape: payloadShape,
           error_message: error.message,
           error_code: (error as { code?: string }).code ?? null,
@@ -442,7 +551,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         setTopError("Could not create your passport. Please try again.");
         setDebugInfo({
           stage: "empty_rpc_response",
-          rpc: "register_visitor",
+          rpc: rpcName,
           payload_shape: payloadShape,
           returned_data: data,
           event_id: event.event_id,
@@ -467,32 +576,33 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         // localStorage unavailable — token still shown on success screen
       }
 
-      // Email the passport link after signup. The success screen still shows
-      // the link if this fails, so we never block completion on delivery.
-      await sendPassportEmailFn({ data: { token: row.access_token } }).catch((e) => {
-        // eslint-disable-next-line no-console
-        console.warn("passport email failed", e);
-      });
-
-      // SMS consent is recorded separately from the email marketing opt-in, and
-      // only when a usable mobile number was supplied. The RPC appends to the
-      // consent ledger against this passport (channel + number + timestamp).
-      if (form.sms_opt_in && smsCapable) {
+      // Legacy path only: SMS consent is a second call, so it can fail on its
+      // own. We never leave that failure silent — the visitor is told.
+      if (rpcName === "register_visitor" && form.sms_opt_in && smsCapable) {
         const { error: smsError } = await supabase.rpc("update_sms_consent", {
           _raw_token: row.access_token,
           _decision: "granted",
           _mobile: form.mobile.trim(),
           _source: "public_join",
           _client_ip: null,
-          _user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          _user_agent: userAgent,
         });
         if (smsError) {
-          // Never block signup on consent recording; the participant simply
-          // stays opted out and can opt in later.
+          consentWarning =
+            "Your passport was created, but we could not save your SMS preference. You can opt in again from your passport.";
           // eslint-disable-next-line no-console
           console.warn("sms consent not recorded", smsError.message);
         }
       }
+
+      // Email the passport link after signup. The success screen still shows
+      // the link if this fails, so we never block completion on delivery.
+      await sendPassportEmailFn({ data: { token: row.access_token } }).catch((e) => {
+        // eslint-disable-next-line no-console
+        console.warn("passport email failed", e);
+      });
+      setConsentWarning(consentWarning);
+
 
 
       // If user was redirected from a venue QR scan, send them back there.
@@ -519,11 +629,23 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
   if (success) {
     return (
-      <SuccessScreen
-        event={event}
-        token={success.token}
-        subdomain={subdomain}
-      />
+      <>
+        {consentWarning && (
+          <div
+            role="alert"
+            className="px-4 pt-3"
+          >
+            <div className="mx-auto max-w-md rounded-xl border border-[#E8B5A3] bg-[#FBE3D6] px-3 py-2 text-sm text-[#7A2E13]">
+              {consentWarning}
+            </div>
+          </div>
+        )}
+        <SuccessScreen
+          event={event}
+          token={success.token}
+          subdomain={subdomain}
+        />
+      </>
     );
   }
 
@@ -709,7 +831,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
           <Field
             label="Full name"
-            required
+            required={settings.requireName}
+            optional={!settings.requireName}
             error={errors.full_name}
             input={
               <input
@@ -719,6 +842,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 onChange={(e) => update("full_name", e.target.value)}
                 className="trail-input"
                 maxLength={120}
+                required={settings.requireName}
               />
             }
           />
@@ -740,7 +864,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           />
           <Field
             label="Mobile"
-            optional
+            required={settings.requireMobile}
+            optional={!settings.requireMobile}
             error={errors.mobile}
             input={
               <input
@@ -751,13 +876,14 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 onChange={(e) => update("mobile", e.target.value)}
                 className="trail-input"
                 maxLength={32}
+                required={settings.requireMobile}
               />
             }
           />
           <Field
             label="Postcode"
-            required={Boolean(event.require_postcode)}
-            optional={!event.require_postcode}
+            required={settings.requirePostcode}
+            optional={!settings.requirePostcode}
             error={errors.postcode}
             input={
               <input
@@ -768,7 +894,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 onChange={(e) => update("postcode", e.target.value)}
                 className="trail-input"
                 maxLength={16}
-                required={Boolean(event.require_postcode)}
+                required={settings.requirePostcode}
               />
             }
           />

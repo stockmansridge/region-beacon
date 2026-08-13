@@ -8,12 +8,20 @@ import {
   type CsvHeader,
 } from "@/lib/csv";
 
+/**
+ * Canonical consent state per channel. "not_recorded" means no consent row
+ * exists at all (historical participants) — it must never be shown as an
+ * opt-out.
+ */
+type ConsentState = "granted" | "revoked" | "not_recorded";
+
 type ParticipantRow = {
   passport_id: string;
   visitor_id: string;
   display_name: string;
   email: string | null;
   mobile: string | null;
+  postcode: string | null;
   passport_stamp_count: number;
   total_points: number;
   venue_points: number;
@@ -22,7 +30,53 @@ type ParticipantRow = {
   latest_activity_at: string | null;
   created_at: string;
   passport_status: string;
+  terms_state: ConsentState | null;
+  terms_at: string | null;
+  sms_state: ConsentState | null;
+  sms_at: string | null;
+  marketing_state: ConsentState | null;
+  marketing_at: string | null;
 };
+
+type ConsentKind = "terms" | "sms" | "marketing";
+
+function consentLabel(state: ConsentState | null, kind: ConsentKind): string {
+  if (state === "granted") return kind === "terms" ? "Accepted" : "Opted in";
+  if (state === "revoked") return kind === "terms" ? "Not accepted" : "Opted out";
+  return "Not recorded";
+}
+
+function ConsentBadge({
+  state,
+  kind,
+  at,
+}: {
+  state: ConsentState | null;
+  kind: ConsentKind;
+  at: string | null;
+}) {
+  const label = consentLabel(state, kind);
+  const tone =
+    state === "granted"
+      ? "bg-emerald-50 text-emerald-700"
+      : state === "revoked"
+      ? "bg-amber-50 text-amber-700"
+      : "bg-slate-100 text-slate-600";
+  return (
+    <span
+      className={
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium " +
+        tone
+      }
+      title={at ? `Recorded ${formatDate(at)}` : "No consent record"}
+    >
+      <span aria-hidden="true">
+        {state === "granted" ? "✓" : state === "revoked" ? "✕" : "–"}
+      </span>
+      {label}
+    </span>
+  );
+}
 
 type SortKey =
   | "total_points"
@@ -45,10 +99,32 @@ function formatDate(value: string | null): string {
   }
 }
 
-const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantRow>> = [
+type ParticipantCsvRow = ParticipantRow & {
+  terms_label: string;
+  sms_label: string;
+  marketing_label: string;
+};
+
+function toParticipantCsvRow(r: ParticipantRow): ParticipantCsvRow {
+  return {
+    ...r,
+    terms_label: consentLabel(r.terms_state, "terms"),
+    sms_label: consentLabel(r.sms_state, "sms"),
+    marketing_label: consentLabel(r.marketing_state, "marketing"),
+  };
+}
+
+const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantCsvRow>> = [
   { label: "Participant name", key: "display_name" },
   { label: "Email", key: "email" },
   { label: "Mobile", key: "mobile" },
+  { label: "Postcode", key: "postcode" },
+  { label: "Terms accepted", key: "terms_label" },
+  { label: "Terms accepted at", key: "terms_at" },
+  { label: "SMS consent", key: "sms_label" },
+  { label: "SMS consent at", key: "sms_at" },
+  { label: "Marketing consent", key: "marketing_label" },
+  { label: "Marketing consent at", key: "marketing_at" },
   { label: "Passport status", key: "passport_status" },
   { label: "Passport stamps", key: "passport_stamp_count" },
   { label: "Total points", key: "total_points" },
@@ -102,7 +178,7 @@ function exportParticipantsCsv(
 ) {
   try {
     if (rows.length === 0) return;
-    const csv = toCsv(rows, PARTICIPANT_CSV_HEADERS);
+    const csv = toCsv(rows.map(toParticipantCsvRow), PARTICIPANT_CSV_HEADERS);
     const slug = sanitiseCsvFilename(eventName || "event");
     const filename = `getstampd-${slug}-participants-${todayStamp()}.csv`;
     downloadCsv(filename, csv);
@@ -371,7 +447,7 @@ export function AdminEventParticipantsSection({
         </div>
       ) : (
         <div className="overflow-x-auto rounded-[12px] border border-[#E6ECF4] bg-white">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[1200px] text-left text-sm">
             <thead className="bg-[#F4F7FB] text-xs uppercase tracking-wide text-[#64748B]">
               <tr>
                 <Th onClick={() => toggleSort("display_name")}>
@@ -404,6 +480,9 @@ export function AdminEventParticipantsSection({
                 <Th onClick={() => toggleSort("created_at")}>
                   Registered{sortArrow("created_at")}
                 </Th>
+                <Th>Terms</Th>
+                <Th>SMS</Th>
+                <Th>Marketing</Th>
                 <Th className="text-right">Actions</Th>
               </tr>
             </thead>
@@ -419,9 +498,9 @@ export function AdminEventParticipantsSection({
                     <div className="font-medium text-[#111827]">
                       {r.display_name || "Guest"}
                     </div>
-                    {(r.email || r.mobile) && (
+                    {(r.email || r.mobile || r.postcode) && (
                       <div className="text-xs text-muted-foreground">
-                        {[r.email, r.mobile].filter(Boolean).join(" · ")}
+                        {[r.email, r.mobile, r.postcode].filter(Boolean).join(" · ")}
                       </div>
                     )}
                   </td>
@@ -462,6 +541,19 @@ export function AdminEventParticipantsSection({
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {formatDate(r.created_at)}
                   </td>
+                  <td className="px-3 py-2.5">
+                    <ConsentBadge state={r.terms_state ?? null} kind="terms" at={r.terms_at} />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <ConsentBadge state={r.sms_state ?? null} kind="sms" at={r.sms_at} />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <ConsentBadge
+                      state={r.marketing_state ?? null}
+                      kind="marketing"
+                      at={r.marketing_at}
+                    />
+                  </td>
                   <td className="px-3 py-2.5 text-right">
                     <button
                       type="button"
@@ -476,7 +568,7 @@ export function AdminEventParticipantsSection({
                 </tr>
                 {isExpanded && (
                   <tr className="border-t border-[#E6ECF4] bg-[#F8FAFD]">
-                    <td colSpan={9} className="px-3 py-3">
+                    <td colSpan={12} className="px-3 py-3">
                       <ParticipantBonusClaims
                         eventId={eventId}
                         passportId={r.passport_id}
