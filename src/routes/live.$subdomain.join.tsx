@@ -1383,7 +1383,7 @@ function buildSupportReport(
     page_url: typeof window !== "undefined" ? window.location.href : null,
     public_subdomain: ctx.subdomain,
     event_id: ctx.event_id,
-    rpc: (debug as { rpc?: string }).rpc ?? "register_visitor",
+    rpc: (debug as { rpc?: string }).rpc ?? "register_participant",
     failure_stage: (debug as { stage?: string }).stage ?? "unknown",
     supabase_error_code: (debug as { error_code?: unknown }).error_code ?? null,
     supabase_error_message: (debug as { error_message?: unknown }).error_message ?? null,
