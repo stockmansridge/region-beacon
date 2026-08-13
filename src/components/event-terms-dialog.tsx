@@ -64,6 +64,14 @@ function bumpVersionLabel(label: string): string {
   return `${m[1]}${next}${m[3]}`;
 }
 
+function isDuplicateVersionError(error: { code?: string; message: string }): boolean {
+  return (
+    error.code === "23505" ||
+    error.message.includes("event_terms_versions_unique") ||
+    error.message.toLowerCase().includes("duplicate key value")
+  );
+}
+
 
 export type EventTermsDialogProps = {
   open: boolean;
@@ -215,6 +223,24 @@ export function EventTermsDialog({
       let lastErr: { code?: string; message: string } | null = null;
       let label = parsed.data.version_label;
 
+      // Pick an unused label up front. The retry below still protects against
+      // two admins saving the same event concurrently.
+      const { data: existingVersions, error: versionsErr } = await supabase
+        .from("event_terms_versions")
+        .select("terms_version")
+        .eq("event_id", eventId)
+        .eq("agency_id", agencyId);
+
+      if (versionsErr) {
+        setError(`Could not check existing versions: ${versionsErr.message}`);
+        return;
+      }
+
+      const usedLabels = new Set(
+        (existingVersions ?? []).map((row) => String(row.terms_version)),
+      );
+      while (usedLabels.has(label)) label = bumpVersionLabel(label);
+
       for (let attempt = 0; attempt < 25; attempt++) {
         const { data, error: insertErr } = await supabase
           .from("event_terms_versions")
@@ -233,7 +259,7 @@ export function EventTermsDialog({
         lastErr = insertErr
           ? { code: (insertErr as { code?: string }).code, message: insertErr.message }
           : { message: "Failed to create terms version" };
-        if (lastErr.code !== "23505") break;
+        if (!isDuplicateVersionError(lastErr)) break;
         label = bumpVersionLabel(label);
       }
 
