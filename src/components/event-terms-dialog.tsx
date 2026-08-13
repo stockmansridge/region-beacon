@@ -52,6 +52,19 @@ const LocalSchema = BaseSchema.extend({
 
 const FormSchema = z.discriminatedUnion("legal_source", [ExternalSchema, LocalSchema]);
 
+/**
+ * Increment the trailing number of a version label ("1.0" -> "1.1",
+ * "v2" -> "v3", "final" -> "final.2"). Used to avoid duplicate-key errors
+ * on the append-only version ledger.
+ */
+function bumpVersionLabel(label: string): string {
+  const m = label.match(/^(.*?)(\d+)(\D*)$/);
+  if (!m) return `${label}.2`;
+  const next = String(Number(m[2]) + 1);
+  return `${m[1]}${next}${m[3]}`;
+}
+
+
 export type EventTermsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -194,16 +207,41 @@ export function EventTermsDialog({
               published_by: publishedBy,
             };
 
-      const { data: inserted, error: insertErr } = await supabase
-        .from("event_terms_versions")
-        .insert(insertRow as never)
-        .select("id")
-        .single();
+      // The version ledger is append-only with a unique
+      // (event_id, terms_version, privacy_version) key. If the admin saves
+      // again without changing the label, auto-bump the label instead of
+      // failing with a duplicate-key error.
+      let inserted: { id: string } | null = null;
+      let lastErr: { code?: string; message: string } | null = null;
+      let label = parsed.data.version_label;
 
-      if (insertErr || !inserted?.id) {
-        setError(insertErr?.message ?? "Failed to create terms version");
+      for (let attempt = 0; attempt < 25; attempt++) {
+        const { data, error: insertErr } = await supabase
+          .from("event_terms_versions")
+          .insert({
+            ...insertRow,
+            terms_version: label,
+            privacy_version: label,
+          } as never)
+          .select("id")
+          .single();
+
+        if (!insertErr && data?.id) {
+          inserted = data as { id: string };
+          break;
+        }
+        lastErr = insertErr
+          ? { code: (insertErr as { code?: string }).code, message: insertErr.message }
+          : { message: "Failed to create terms version" };
+        if (lastErr.code !== "23505") break;
+        label = bumpVersionLabel(label);
+      }
+
+      if (!inserted?.id) {
+        setError(lastErr?.message ?? "Failed to create terms version");
         return;
       }
+
 
       const { error: updateErr } = await supabase
         .from("events")
