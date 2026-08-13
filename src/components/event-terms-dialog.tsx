@@ -52,6 +52,19 @@ const LocalSchema = BaseSchema.extend({
 
 const FormSchema = z.discriminatedUnion("legal_source", [ExternalSchema, LocalSchema]);
 
+/**
+ * Increment the trailing number of a version label ("1.0" -> "1.1",
+ * "v2" -> "v3", "final" -> "final.2"). Used to avoid duplicate-key errors
+ * on the append-only version ledger.
+ */
+function bumpVersionLabel(label: string): string {
+  const m = label.match(/^(.*?)(\d+)(\D*)$/);
+  if (!m) return `${label}.2`;
+  const next = String(Number(m[2]) + 1);
+  return `${m[1]}${next}${m[3]}`;
+}
+
+
 export type EventTermsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
