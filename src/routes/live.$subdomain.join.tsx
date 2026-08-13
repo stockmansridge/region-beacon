@@ -618,11 +618,23 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
   if (success) {
     return (
-      <SuccessScreen
-        event={event}
-        token={success.token}
-        subdomain={subdomain}
-      />
+      <>
+        {consentWarning && (
+          <div
+            role="alert"
+            className="px-4 pt-3"
+          >
+            <div className="mx-auto max-w-md rounded-xl border border-[#E8B5A3] bg-[#FBE3D6] px-3 py-2 text-sm text-[#7A2E13]">
+              {consentWarning}
+            </div>
+          </div>
+        )}
+        <SuccessScreen
+          event={event}
+          token={success.token}
+          subdomain={subdomain}
+        />
+      </>
     );
   }
 
