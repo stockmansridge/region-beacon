@@ -8,12 +8,20 @@ import {
   type CsvHeader,
 } from "@/lib/csv";
 
+/**
+ * Canonical consent state per channel. "not_recorded" means no consent row
+ * exists at all (historical participants) — it must never be shown as an
+ * opt-out.
+ */
+type ConsentState = "granted" | "revoked" | "not_recorded";
+
 type ParticipantRow = {
   passport_id: string;
   visitor_id: string;
   display_name: string;
   email: string | null;
   mobile: string | null;
+  postcode: string | null;
   passport_stamp_count: number;
   total_points: number;
   venue_points: number;
@@ -22,7 +30,53 @@ type ParticipantRow = {
   latest_activity_at: string | null;
   created_at: string;
   passport_status: string;
+  terms_state: ConsentState | null;
+  terms_at: string | null;
+  sms_state: ConsentState | null;
+  sms_at: string | null;
+  marketing_state: ConsentState | null;
+  marketing_at: string | null;
 };
+
+type ConsentKind = "terms" | "sms" | "marketing";
+
+function consentLabel(state: ConsentState | null, kind: ConsentKind): string {
+  if (state === "granted") return kind === "terms" ? "Accepted" : "Opted in";
+  if (state === "revoked") return kind === "terms" ? "Not accepted" : "Opted out";
+  return "Not recorded";
+}
+
+function ConsentBadge({
+  state,
+  kind,
+  at,
+}: {
+  state: ConsentState | null;
+  kind: ConsentKind;
+  at: string | null;
+}) {
+  const label = consentLabel(state, kind);
+  const tone =
+    state === "granted"
+      ? "bg-emerald-50 text-emerald-700"
+      : state === "revoked"
+      ? "bg-amber-50 text-amber-700"
+      : "bg-slate-100 text-slate-600";
+  return (
+    <span
+      className={
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium " +
+        tone
+      }
+      title={at ? `Recorded ${formatDate(at)}` : "No consent record"}
+    >
+      <span aria-hidden="true">
+        {state === "granted" ? "✓" : state === "revoked" ? "✕" : "–"}
+      </span>
+      {label}
+    </span>
+  );
+}
 
 type SortKey =
   | "total_points"
