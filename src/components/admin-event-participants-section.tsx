@@ -1,3 +1,4 @@
+import { Check, Minus, X } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -7,6 +8,7 @@ import {
   toCsv,
   type CsvHeader,
 } from "@/lib/csv";
+
 
 /**
  * Canonical consent state per channel. "not_recorded" means no consent row
