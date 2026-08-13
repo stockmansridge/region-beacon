@@ -4145,7 +4145,7 @@ function EventDetail() {
                   <VenueImageField
                     kind="logo"
                     label="Logo"
-                    helpText={`Square works best. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.logo / (1024 * 1024))} MB.`}
+                    helpText={`Square works best. Recommended: 1000×1000 px PNG with transparent background. JPG / WebP also accepted, up to ${Math.round(VENUE_ASSET_MAX_BYTES.logo / (1024 * 1024))} MB.`}
                     path={venueForm.logo_path}
                     canEdit={canEdit}
                     busy={venueAssetBusy === "logo"}
@@ -4155,7 +4155,7 @@ function EventDetail() {
                   <VenueImageField
                     kind="cover"
                     label="Hero / cover image"
-                    helpText={`Wide hero image. PNG / JPG / WebP, up to ${Math.round(VENUE_ASSET_MAX_BYTES.cover / (1024 * 1024))} MB.`}
+                    helpText={`Wide hero image. Recommended: 1600×1200 px (4:3) JPG. PNG / WebP also accepted, up to ${Math.round(VENUE_ASSET_MAX_BYTES.cover / (1024 * 1024))} MB.`}
                     path={venueForm.cover_path}
                     canEdit={canEdit}
                     busy={venueAssetBusy === "cover"}

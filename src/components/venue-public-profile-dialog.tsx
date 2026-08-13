@@ -431,7 +431,7 @@ export function VenuePublicProfileDialog({
             <AssetField
               kind="logo"
               label="Logo"
-              helpText={`Square works best. PNG / JPG / WebP, up to ${mb(VENUE_ASSET_MAX_BYTES.logo)}.`}
+              helpText={`Square works best. Recommended: 1000×1000 px PNG with transparent background. JPG / WebP also accepted, up to ${mb(VENUE_ASSET_MAX_BYTES.logo)}.`}
               path={logoPath}
               canEdit={canEdit}
               busy={busyKind === "logo"}
@@ -442,7 +442,7 @@ export function VenuePublicProfileDialog({
             <AssetField
               kind="cover"
               label="Hero / cover image"
-              helpText={`Wide hero image. PNG / JPG / WebP, up to ${mb(VENUE_ASSET_MAX_BYTES.cover)}.`}
+              helpText={`Wide hero image. Recommended: 1600×1200 px (4:3) JPG. PNG / WebP also accepted, up to ${mb(VENUE_ASSET_MAX_BYTES.cover)}.`}
               path={coverPath}
               canEdit={canEdit}
               busy={busyKind === "cover"}
