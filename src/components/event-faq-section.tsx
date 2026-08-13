@@ -241,21 +241,44 @@ export function EventFaqSection({
                 key={d.key}
                 className="rounded-[12px] border border-[#D9E2EF] bg-white p-4 space-y-3"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-[#64748B]">
                     Entry {idx + 1}
                   </span>
                   {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => removeEntry(d.key)}
-                      disabled={saving}
-                      className="text-xs font-medium text-[#B91C1C] hover:underline disabled:opacity-50"
-                    >
-                      Remove
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveEntry(d.key, -1)}
+                        disabled={saving || idx === 0}
+                        aria-label={`Move entry ${idx + 1} up`}
+                        title="Move up"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#D9E2EF] bg-white text-sm text-[#334155] hover:bg-muted disabled:opacity-40"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveEntry(d.key, 1)}
+                        disabled={saving || idx === drafts.length - 1}
+                        aria-label={`Move entry ${idx + 1} down`}
+                        title="Move down"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#D9E2EF] bg-white text-sm text-[#334155] hover:bg-muted disabled:opacity-40"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeEntry(d.key)}
+                        disabled={saving}
+                        className="ml-2 text-xs font-medium text-[#B91C1C] hover:underline disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   )}
                 </div>
+
 
                 <label className="block space-y-1">
                   <span className="block text-xs font-medium text-[#334155]">
