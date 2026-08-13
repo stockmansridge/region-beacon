@@ -831,7 +831,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
           <Field
             label="Full name"
-            required
+            required={settings.requireName}
+            optional={!settings.requireName}
             error={errors.full_name}
             input={
               <input
@@ -841,6 +842,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 onChange={(e) => update("full_name", e.target.value)}
                 className="trail-input"
                 maxLength={120}
+                required={settings.requireName}
               />
             }
           />
@@ -862,7 +864,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
           />
           <Field
             label="Mobile"
-            optional
+            required={settings.requireMobile}
+            optional={!settings.requireMobile}
             error={errors.mobile}
             input={
               <input
@@ -873,13 +876,14 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 onChange={(e) => update("mobile", e.target.value)}
                 className="trail-input"
                 maxLength={32}
+                required={settings.requireMobile}
               />
             }
           />
           <Field
             label="Postcode"
-            required={Boolean(event.require_postcode)}
-            optional={!event.require_postcode}
+            required={settings.requirePostcode}
+            optional={!settings.requirePostcode}
             error={errors.postcode}
             input={
               <input
@@ -890,7 +894,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 onChange={(e) => update("postcode", e.target.value)}
                 className="trail-input"
                 maxLength={16}
-                required={Boolean(event.require_postcode)}
+                required={settings.requirePostcode}
               />
             }
           />
