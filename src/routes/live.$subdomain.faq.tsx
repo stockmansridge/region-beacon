@@ -9,6 +9,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { LinkifyText } from "@/components/linkify-text";
 
 export const Route = createFileRoute("/live/$subdomain/faq")({
   component: function FaqRoute() {
