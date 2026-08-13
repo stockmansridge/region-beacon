@@ -5490,6 +5490,67 @@ function Field({
   );
 }
 
+/**
+ * Toggle for one "collected at signup" participant field. Persists a single
+ * boolean column on `events`, rolling the optimistic UI back on failure and
+ * explaining clearly when the column has not been migrated yet.
+ */
+function ParticipantFieldToggle({
+  title,
+  description,
+  column,
+  checked,
+  eventId,
+  agencyId,
+  canEdit,
+  onOptimistic,
+  onLabels,
+}: {
+  title: string;
+  description: string;
+  column: "require_name" | "require_mobile" | "require_postcode";
+  checked: boolean;
+  eventId: string;
+  agencyId: string | null;
+  canEdit: boolean;
+  onOptimistic: (next: boolean) => void;
+  onLabels: { on: string; off: string };
+}) {
+  return (
+    <ToggleRow
+      title={title}
+      description={description}
+      checked={checked}
+      disabled={!canEdit}
+      onChange={async (v) => {
+        if (!canEdit || !agencyId) return;
+        const prev = checked;
+        onOptimistic(v);
+        const { error } = await supabase
+          .from("events")
+          .update({ [column]: v } as never)
+          .eq("id", eventId)
+          .eq("agency_id", agencyId);
+        if (error) {
+          onOptimistic(prev);
+          if (
+            (error as { code?: string }).code === "42703" ||
+            new RegExp(column, "i").test(error.message ?? "")
+          ) {
+            toast.error(
+              `${title} isn't available yet — the database update for this feature hasn't been applied.`,
+            );
+          } else {
+            toast.error(`Could not update setting: ${error.message}`);
+          }
+          return;
+        }
+        toast.success(v ? onLabels.on : onLabels.off);
+      }}
+    />
+  );
+}
+
 function ToggleRow({
   title,
   description,
