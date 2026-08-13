@@ -498,9 +498,9 @@ export function AdminEventParticipantsSection({
                     <div className="font-medium text-[#111827]">
                       {r.display_name || "Guest"}
                     </div>
-                    {(r.email || r.mobile) && (
+                    {(r.email || r.mobile || r.postcode) && (
                       <div className="text-xs text-muted-foreground">
-                        {[r.email, r.mobile].filter(Boolean).join(" · ")}
+                        {[r.email, r.mobile, r.postcode].filter(Boolean).join(" · ")}
                       </div>
                     )}
                   </td>
