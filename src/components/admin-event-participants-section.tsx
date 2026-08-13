@@ -178,7 +178,7 @@ function exportParticipantsCsv(
 ) {
   try {
     if (rows.length === 0) return;
-    const csv = toCsv(rows, PARTICIPANT_CSV_HEADERS);
+    const csv = toCsv(rows.map(toParticipantCsvRow), PARTICIPANT_CSV_HEADERS);
     const slug = sanitiseCsvFilename(eventName || "event");
     const filename = `getstampd-${slug}-participants-${todayStamp()}.csv`;
     downloadCsv(filename, csv);
