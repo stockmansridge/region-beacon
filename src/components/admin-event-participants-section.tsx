@@ -1,3 +1,4 @@
+import { Check, Minus, X } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -7,6 +8,7 @@ import {
   toCsv,
   type CsvHeader,
 } from "@/lib/csv";
+
 
 /**
  * Canonical consent state per channel. "not_recorded" means no consent row
@@ -63,24 +65,36 @@ function ConsentBadge({
   at: string | null;
 }) {
   const label = consentLabel(state, kind);
-  const tone =
-    isGranted(state)
-      ? "bg-emerald-50 text-emerald-700"
-      : state === "opted_out"
-      ? "bg-amber-50 text-amber-700"
-      : "bg-slate-100 text-slate-600";
+  const isYes = isGranted(state);
+  const isNo = state === "opted_out";
+  const isUnknown = !isYes && !isNo;
+
+  const icon = isYes ? (
+    <Check className="h-4 w-4 text-emerald-600" strokeWidth={2.5} />
+  ) : isNo ? (
+    <X className="h-4 w-4 text-red-600" strokeWidth={2.5} />
+  ) : (
+    <Minus className="h-4 w-4 text-amber-500" strokeWidth={2.5} />
+  );
+
+  const containerTone = isYes
+    ? "bg-emerald-50"
+    : isNo
+    ? "bg-red-50"
+    : "bg-amber-50";
+
+  const tooltip = [
+    label,
+    at ? `Recorded ${formatDate(at)}` : "No consent record date",
+  ].join("\n");
+
   return (
     <span
-      className={
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium " +
-        tone
-      }
-      title={at ? `Recorded ${formatDate(at)}` : "No consent record"}
+      className={`inline-flex items-center justify-center rounded-full p-1 ${containerTone}`}
+      title={tooltip}
+      aria-label={`${label}${at ? `, recorded ${formatDate(at)}` : ""}`}
     >
-      <span aria-hidden="true">
-        {isGranted(state) ? "✓" : state === "opted_out" ? "✕" : "–"}
-      </span>
-      {label}
+      {icon}
     </span>
   );
 }
