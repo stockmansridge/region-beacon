@@ -99,10 +99,32 @@ function formatDate(value: string | null): string {
   }
 }
 
-const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantRow>> = [
+type ParticipantCsvRow = ParticipantRow & {
+  terms_label: string;
+  sms_label: string;
+  marketing_label: string;
+};
+
+function toParticipantCsvRow(r: ParticipantRow): ParticipantCsvRow {
+  return {
+    ...r,
+    terms_label: consentLabel(r.terms_state, "terms"),
+    sms_label: consentLabel(r.sms_state, "sms"),
+    marketing_label: consentLabel(r.marketing_state, "marketing"),
+  };
+}
+
+const PARTICIPANT_CSV_HEADERS: Array<CsvHeader<ParticipantCsvRow>> = [
   { label: "Participant name", key: "display_name" },
   { label: "Email", key: "email" },
   { label: "Mobile", key: "mobile" },
+  { label: "Postcode", key: "postcode" },
+  { label: "Terms accepted", key: "terms_label" },
+  { label: "Terms accepted at", key: "terms_at" },
+  { label: "SMS consent", key: "sms_label" },
+  { label: "SMS consent at", key: "sms_at" },
+  { label: "Marketing consent", key: "marketing_label" },
+  { label: "Marketing consent at", key: "marketing_at" },
   { label: "Passport status", key: "passport_status" },
   { label: "Passport stamps", key: "passport_stamp_count" },
   { label: "Total points", key: "total_points" },
