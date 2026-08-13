@@ -158,6 +158,12 @@ function splitName(full: string): { first: string; last: string } {
 
 function friendlyError(raw: string | undefined): string {
   if (!raw) return "Could not create your passport. Please try again.";
+  if (
+    /register_participant/i.test(raw) ||
+    /schema cache/i.test(raw) ||
+    raw.includes("42883")
+  )
+    return "Registration is temporarily unavailable — the signup service is not fully set up for this event. Please contact the organiser.";
   if (raw.includes("event_not_available"))
     return "This event is not accepting registrations yet.";
   if (raw.includes("terms_not_configured"))
@@ -586,7 +592,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
       setTopError("Could not create your passport. Please try again.");
       setDebugInfo({
         stage: "exception",
-        rpc: "register_visitor",
+        rpc: "register_participant",
         payload_shape: payloadShape,
         error_message: e instanceof Error ? e.message : String(e),
         event_id: event.event_id,
