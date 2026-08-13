@@ -447,7 +447,7 @@ export function AdminEventParticipantsSection({
         </div>
       ) : (
         <div className="overflow-x-auto rounded-[12px] border border-[#E6ECF4] bg-white">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[1200px] text-left text-sm">
             <thead className="bg-[#F4F7FB] text-xs uppercase tracking-wide text-[#64748B]">
               <tr>
                 <Th onClick={() => toggleSort("display_name")}>
@@ -568,7 +568,7 @@ export function AdminEventParticipantsSection({
                 </tr>
                 {isExpanded && (
                   <tr className="border-t border-[#E6ECF4] bg-[#F8FAFD]">
-                    <td colSpan={9} className="px-3 py-3">
+                    <td colSpan={12} className="px-3 py-3">
                       <ParticipantBonusClaims
                         eventId={eventId}
                         passportId={r.passport_id}
