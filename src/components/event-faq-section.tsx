@@ -116,6 +116,19 @@ export function EventFaqSection({
     setDrafts((prev) => prev.filter((d) => d.key !== key));
   }
 
+  function moveEntry(key: string, direction: -1 | 1) {
+    setDrafts((prev) => {
+      const idx = prev.findIndex((d) => d.key === key);
+      if (idx < 0) return prev;
+      const target = idx + direction;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  }
+
+
   async function saveAll() {
     if (!canEdit) return;
     if (eventIdSaveError) {
