@@ -353,6 +353,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   const [topError, setTopError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
   const [success, setSuccess] = useState<{ token: string; passport_id: string } | null>(null);
+  /** Set when signup completed but a consent write could not be saved. */
+  const [consentWarning, setConsentWarning] = useState<string | null>(null);
   const [showRegisterAgain, setShowRegisterAgain] = useState(false);
   const [saved, setSaved] = useState<SavedPassport | null>(() =>
     readSavedPassport(event.event_id),
