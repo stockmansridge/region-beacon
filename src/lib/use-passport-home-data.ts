@@ -169,12 +169,29 @@ export function usePassportHomeData(eventId: string | null | undefined): Passpor
   return state;
 }
 
+/**
+ * The "next milestone" is the cheapest prize the visitor cannot enter yet —
+ * i.e. the lowest points_required strictly above their current points.
+ * Ranking / sort_order on the prizes page is only a tie-breaker.
+ */
 export function pickNextReward(awards: PublicEventAward[]): PublicEventAward | null {
   if (!awards || awards.length === 0) return null;
-  const sorted = [...awards].sort(
+  const byPoints = [...awards].sort(
     (a, b) =>
-      (a.sort_order ?? 0) - (b.sort_order ?? 0) ||
-      a.points_required - b.points_required,
+      (a.points_required ?? 0) - (b.points_required ?? 0) ||
+      (a.sort_order ?? 0) - (b.sort_order ?? 0),
   );
-  return sorted.find((a) => !a.is_eligible) ?? null;
+  // Current points: server-computed passport_points (same value on every row).
+  const current =
+    byPoints.find((a) => typeof a.passport_points === "number")?.passport_points ?? 0;
+
+  // Prizes still out of reach on points alone.
+  const abovePoints = byPoints.filter(
+    (a) => Math.max(0, a.points_required ?? 0) > current,
+  );
+  if (abovePoints.length > 0) return abovePoints[0];
+
+  // Points threshold met everywhere — fall back to any prize not yet eligible
+  // (e.g. still requires visiting all locations), cheapest first.
+  return byPoints.find((a) => !a.is_eligible) ?? null;
 }
