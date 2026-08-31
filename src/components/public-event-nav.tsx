@@ -28,6 +28,7 @@ import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { useEventHasMap } from "@/lib/use-event-has-map";
 import { useEventHasAwards } from "@/lib/use-event-has-awards";
 import { useEventVenueLabels } from "@/lib/use-event-venue-labels";
+import { usePageViewTracking } from "@/lib/use-page-view-tracking";
 
 type ActiveTarget =
   | "home"
