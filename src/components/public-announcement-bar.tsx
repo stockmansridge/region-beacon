@@ -134,15 +134,19 @@ export function PublicAnnouncementBar({
 
   if (visible.length === 0) return null;
 
-  const navBg = "var(--event-nav-bg, var(--event-primary, #1F3D2B))";
-  const navFg = "var(--event-nav-fg, var(--event-primary-fg, #F6EFE2))";
+  const navBg = navBgProp ?? "var(--event-nav-bg, var(--event-primary, #1F3D2B))";
+  const navFg = navFgProp ?? "var(--event-nav-fg, var(--event-primary-fg, #F6EFE2))";
 
   return (
     <div
       className="-mx-4 w-auto"
       role="region"
       aria-label="Event announcements"
-      style={{ backgroundColor: navBg, color: navFg }}
+      style={{
+        backgroundColor: navBg,
+        color: navFg,
+        borderBottom: "3px solid #000",
+      }}
     >
       {visible.map((a, idx) => {
         const safeHref =
@@ -155,16 +159,14 @@ export function PublicAnnouncementBar({
             key={`${k}-${idx}`}
             style={
               isLast
-                ? {
-                    borderBottom: `3px solid color-mix(in srgb, ${navFg} 85%, transparent)`,
-                  }
+                ? undefined
                 : {
                     borderBottom: `1px solid color-mix(in srgb, ${navFg} 25%, transparent)`,
                   }
             }
           >
-            <div className="mx-auto flex min-h-[52px] max-w-2xl items-center gap-3 px-6 py-3 sm:px-8">
-              <div className="min-w-0 flex-1 text-center">
+            <div className="relative mx-auto flex min-h-[56px] max-w-2xl items-center justify-center px-12 py-3 sm:px-14">
+              <div className="min-w-0 text-center">
                 <p className="break-words text-[13px] font-bold leading-snug">
                   {message}
                 </p>
@@ -183,7 +185,7 @@ export function PublicAnnouncementBar({
                 type="button"
                 onClick={() => dismiss(a)}
                 aria-label="Dismiss announcement"
-                className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center self-center rounded-full hover:bg-white/10"
+                className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full hover:bg-white/10 sm:right-4"
               >
                 <span aria-hidden className="text-lg font-bold leading-none">×</span>
               </button>
