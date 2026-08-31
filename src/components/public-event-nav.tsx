@@ -130,7 +130,7 @@ export function PublicEventNav({
 
   return (
     <>
-      <PublicAnnouncementBar subdomain={subdomain} />
+      <PublicAnnouncementBar subdomain={subdomain} navBg={navBg} navFg={navFg} />
       {/* Sticky app-style header */}
       <header
         className={
