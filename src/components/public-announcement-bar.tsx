@@ -29,13 +29,6 @@ type PublicAnnouncement = {
   link_url: string | null;
 };
 
-const TONE_SURFACE: Record<Tone, string> = {
-  info: "border-[#BFDBFE] bg-[#EFF6FF] text-[#1E40AF]",
-  success: "border-[#86EFAC] bg-[#ECFDF5] text-[#047857]",
-  warning: "border-[#FDBA74] bg-[#FFF7ED] text-[#B45309]",
-  urgent: "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]",
-};
-
 function normaliseTone(t: PublicAnnouncement["tone"]): Tone {
   return t === "success" || t === "warning" || t === "urgent" ? t : "info";
 }

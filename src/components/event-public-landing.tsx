@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveVenueLabels } from "@/lib/venue-labels";
-import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { focalObjectPosition } from "@/lib/cover-focal";
@@ -465,7 +464,6 @@ export function EventPublicLanding({
         >
           {subdomain ? (
             <div className="pt-2">
-              <PublicAnnouncementBar subdomain={subdomain} />
             </div>
           ) : null}
 
