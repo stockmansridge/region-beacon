@@ -3274,6 +3274,22 @@ function EventsSection({
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-[#0F172A]">{r.agency_name}</TableCell>
+                    <TableCell className="max-w-[200px] text-sm">
+                      {r.owner_name || r.owner_email ? (
+                        <>
+                          <div className="truncate text-[#0F172A]">
+                            {r.owner_name ?? r.owner_email}
+                          </div>
+                          {r.owner_email ? (
+                            <div className="truncate text-[10px] text-[#94A3B8]" title={r.owner_email}>
+                              {r.owner_email}
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="text-[#94A3B8]">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {statusPill(r.status)}
                       {r.activation_status ? (
