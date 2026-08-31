@@ -161,6 +161,10 @@ type EventRow = {
   agency_id: string;
   agency_name: string;
   agency_slug: string | null;
+  /** Organisation owner (linked user). Present once the events-owner
+   *  migration has been applied; older DBs omit these fields. */
+  owner_name?: string | null;
+  owner_email?: string | null;
   event_name: string;
   event_slug: string | null;
   public_slug: string | null;
@@ -1902,6 +1906,11 @@ function OrganisationDetailDrawer({
                         <div className="text-[11px] text-[#64748B]">
                           {fmtNum(e.checkin_count)} check-ins · {fmtNum(e.passport_count)} passports
                         </div>
+                        {e.owner_name || e.owner_email ? (
+                          <div className="text-[11px] text-[#94A3B8]">
+                            Owner: {e.owner_name ?? e.owner_email}
+                          </div>
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-2">
                         {statusPill(e.status)}
@@ -3115,6 +3124,8 @@ function EventsSection({
       return (
         r.event_name.toLowerCase().includes(needle) ||
         r.agency_name.toLowerCase().includes(needle) ||
+        (r.owner_name ?? "").toLowerCase().includes(needle) ||
+        (r.owner_email ?? "").toLowerCase().includes(needle) ||
         (r.public_slug ?? "").toLowerCase().includes(needle)
       );
     });
@@ -3232,6 +3243,7 @@ function EventsSection({
             <TableRow className="bg-[#F8FAFC]">
               <TableHead>Event</TableHead>
               <TableHead>Organisation</TableHead>
+              <TableHead>Owner</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Public URL</TableHead>
               <TableHead className="text-right">Venues</TableHead>
@@ -3244,10 +3256,10 @@ function EventsSection({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={10} />
+              <LoadingRow cols={11} />
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-8 text-center text-sm text-[#64748B]">
+                <TableCell colSpan={11} className="py-8 text-center text-sm text-[#64748B]">
                   No events match.
                 </TableCell>
               </TableRow>
@@ -3267,6 +3279,22 @@ function EventsSection({
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-[#0F172A]">{r.agency_name}</TableCell>
+                    <TableCell className="max-w-[200px] text-sm">
+                      {r.owner_name || r.owner_email ? (
+                        <>
+                          <div className="truncate text-[#0F172A]">
+                            {r.owner_name ?? r.owner_email}
+                          </div>
+                          {r.owner_email ? (
+                            <div className="truncate text-[10px] text-[#94A3B8]" title={r.owner_email}>
+                              {r.owner_email}
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="text-[#94A3B8]">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {statusPill(r.status)}
                       {r.activation_status ? (
