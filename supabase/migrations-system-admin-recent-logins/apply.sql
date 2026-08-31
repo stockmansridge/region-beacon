@@ -56,5 +56,9 @@ $$;
 revoke all on function public.system_admin_recent_logins(int) from public;
 grant execute on function public.system_admin_recent_logins(int) to authenticated;
 
+-- Make the new function visible to the Data API immediately.
+notify pgrst, 'reload schema';
+
+
 -- Verify (as a platform_admin user):
 -- select * from public.system_admin_recent_logins(25);
