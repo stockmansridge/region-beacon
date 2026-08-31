@@ -193,6 +193,7 @@ function Analytics() {
       setPrizeRules((prRes.data ?? []) as PrizeRule[]);
       setBonusScans((bRes.error ? [] : (bRes.data ?? [])) as BonusScanRow[]);
       setPageViews((pvRes.error ? [] : (pvRes.data ?? [])) as PageViewRow[]);
+      setPageViewsError(pvRes.error ? pvRes.error.message : null);
       setLoading(false);
     })();
     return () => {
