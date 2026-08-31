@@ -706,7 +706,7 @@ export function VenueMapKitPicker({
       setDebugAttempts(attempts);
       setSearchError("Search failed. Try again, or set the address manually below.");
     }
-  }, [autocompletePlaces, buildVariants, getBestCentre, maybeRequestGeolocation, resolveCompletion, searchPlaces]);
+  }, [autocompletePlaces, buildVariants, geocodeAddress, getBestCentre, maybeRequestGeolocation, resolveCompletion, searchPlaces]);
 
 
   const runSearch = useCallback(() => {
