@@ -3119,6 +3119,8 @@ function EventsSection({
       return (
         r.event_name.toLowerCase().includes(needle) ||
         r.agency_name.toLowerCase().includes(needle) ||
+        (r.owner_name ?? "").toLowerCase().includes(needle) ||
+        (r.owner_email ?? "").toLowerCase().includes(needle) ||
         (r.public_slug ?? "").toLowerCase().includes(needle)
       );
     });
