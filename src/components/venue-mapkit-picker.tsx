@@ -256,6 +256,13 @@ export function VenueMapKitPicker({
       markerRef.current = annotation;
     }
     mapRef.current.setCenterAnimated(coord, true);
+    // Zoom in to street level so the pin is clearly on the found address.
+    try {
+      if (typeof mapRef.current.cameraDistance === "number" && mapRef.current.cameraDistance > 4000) {
+        mapRef.current.cameraDistance = 800;
+      }
+    } catch { /* ignore */ }
+
   }, [onChange]);
 
   // Init
