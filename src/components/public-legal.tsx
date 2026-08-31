@@ -72,6 +72,23 @@ export function PublicLegalShell({
   children: React.ReactNode;
 }) {
   const b = useEventBrandingKeys(subdomain);
+
+  // Hold the page back until branding has resolved to prevent the default
+  // GetStampd theme from flashing for a frame.
+  if (!b.ready) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center text-sm"
+        style={{
+          backgroundColor: "var(--event-page-bg)",
+          color: "var(--event-page-muted)",
+        }}
+      >
+        Loading…
+      </div>
+    );
+  }
+
   return (
     <EventPaletteScope
       {...brandingScopeProps(b)}
@@ -314,6 +331,23 @@ export function CombinedLegalPage({
   initialOpen?: "terms" | "privacy" | "both";
 }) {
   const state = useLegal(subdomain);
+  const branding = useEventBrandingKeys(subdomain);
+
+  // Hold the page back until branding has resolved to prevent the default
+  // GetStampd theme from flashing for a frame.
+  if (!branding.ready) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center text-sm"
+        style={{
+          backgroundColor: "var(--event-page-bg)",
+          color: "var(--event-page-muted)",
+        }}
+      >
+        Loading…
+      </div>
+    );
+  }
 
   if (state.kind === "loading") {
     return (
