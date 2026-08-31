@@ -654,7 +654,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
         <div className="mb-5 text-center">
           <div
             className="text-[10px] font-medium uppercase tracking-[0.32em]"
-            style={{ color: "var(--event-hero-accent, var(--event-accent))" }}
+            style={{ color: "var(--event-page-text)" }}
           >
             Start your passport
           </div>
