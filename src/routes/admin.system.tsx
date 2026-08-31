@@ -1,5 +1,5 @@
 import { SmsPaymentModeSection } from "@/components/admin-sms-payment-mode";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { setSupportAgency } from "@/lib/support-agency";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
