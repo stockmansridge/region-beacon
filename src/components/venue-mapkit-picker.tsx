@@ -906,7 +906,7 @@ export function VenueMapKitPicker({
           {showSearchDiag && (
             <div className="rounded-md border bg-muted/30 p-2 text-[10px] leading-snug">
               <div className="mb-1 font-semibold">Search diagnostics</div>
-              <div>build_marker: <code>2026-06-11T12:00Z · live-path-audit-1 · autocomplete-first</code></div>
+              <div>build_marker: <code>2026-08-31T09:30Z · completion-resolve+geocode-fallback</code></div>
               <div>autocomplete available: <code>{(() => { try { const w = window as any; return String(typeof w.mapkit?.Search?.prototype?.autocomplete === "function"); } catch { return "unknown"; } })()}</code></div>
               <div>raw query: <code>{searchQuery}</code></div>
               <div>town hint: <code>{townHint || "(none)"}</code></div>
