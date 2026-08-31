@@ -266,7 +266,7 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav: Passport · Cellar Doors · Offers · Prizes · More */}
+      {/* Fixed bottom mobile nav: Passport · Prizes · Cellar Doors · Offers · More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
@@ -307,12 +307,27 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             <PublicLink
+              to="/prizes"
+              aria-current={isActive("prizes") ? "page" : undefined}
+              className={bottomItemClass}
+              style={{ color: isActive("prizes") ? navActiveFg : navMuted }}
+            >
+              <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Prizes" />
+            </PublicLink>
+          </li>
+
+          <li className="h-full min-w-0">
+            <PublicLink
               to="/venues"
               aria-current={isActive("venues") ? "page" : undefined}
               className={bottomItemClass}
               style={{ color: isActive("venues") ? navActiveFg : navMuted }}
             >
-              <BottomItemContent icon={<MapPin className="h-5 w-5" />} label="Cellar Doors" />
+              <BottomItemContent
+                icon={<MapPin className="h-5 w-5" />}
+                label="Cellar"
+                subLabel="DOORS"
+              />
             </PublicLink>
           </li>
 
@@ -324,17 +339,6 @@ export function PublicEventNav({
               style={{ color: isActive("offers") ? navActiveFg : navMuted }}
             >
               <BottomItemContent icon={<Tag className="h-5 w-5" />} label="Offers" />
-            </PublicLink>
-          </li>
-
-          <li className="h-full min-w-0">
-            <PublicLink
-              to="/prizes"
-              aria-current={isActive("prizes") ? "page" : undefined}
-              className={bottomItemClass}
-              style={{ color: isActive("prizes") ? navActiveFg : navMuted }}
-            >
-              <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Prizes" />
             </PublicLink>
           </li>
 
@@ -373,14 +377,23 @@ const bottomItemClass =
 function BottomItemContent({
   icon,
   label,
+  subLabel,
 }: {
   icon: React.ReactNode;
   label: string;
+  subLabel?: string;
 }) {
   return (
     <>
       <span className="flex h-6 w-6 items-center justify-center">{icon}</span>
-      <span className="h-4 text-[10px] leading-4 whitespace-nowrap">{label}</span>
+      <span className="flex flex-col items-center">
+        <span className="h-4 text-[10px] leading-4 whitespace-nowrap">{label}</span>
+        {subLabel ? (
+          <span className="h-4 text-[10px] leading-4 whitespace-nowrap">{subLabel}</span>
+        ) : (
+          <span className="h-4" aria-hidden="true" />
+        )}
+      </span>
     </>
   );
 }
