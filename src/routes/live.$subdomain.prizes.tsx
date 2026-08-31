@@ -366,8 +366,23 @@ export function AwardsPage({
 
   const avatars = recentCheckins.slice(0, 5);
 
+  if (!branding.ready) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center text-sm"
+        style={{
+          backgroundColor: "var(--event-page-bg)",
+          color: "var(--event-page-muted)",
+        }}
+      >
+        Loading…
+      </div>
+    );
+  }
+
   return (
     <EventPaletteScope
+
       {...brandingScopeProps(branding)}
       className="min-h-screen px-4 pb-4"
     >
