@@ -63,13 +63,25 @@ type SearchResult = {
 };
 
 type DebugAttempt = {
-  api: "autocomplete" | "search";
+  api: "autocomplete" | "search" | "geocode";
   query: string;
   regionCentre: { lat: number; lng: number } | null;
   regionSpan: number | null;
   rawCount: number;
+  resolved?: number;
+  note?: string;
   topRaw: Array<{ name: string; address: string; country: string; isAU: boolean }>;
 };
+
+/** Normalise dashes/whitespace — Apple's geocoder dislikes en/em dashes in ranges. */
+function normaliseQuery(q: string): string {
+  return q
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\s*-\s*/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 
 const AU_CENTROID = { lat: -25.2744, lng: 133.7751 };
 const BUSINESS_WORDS = /\b(wines?|winery|wineries|cellar|brewery|distillery|cafe|caf\u00e9|restaurant|bar|pub|hotel|motel|market|farm|orchard|venue|gallery|museum|brewing|estate|vineyard|bakery|kitchen)\b/i;
