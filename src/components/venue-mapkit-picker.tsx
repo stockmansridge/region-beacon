@@ -419,8 +419,58 @@ export function VenueMapKitPicker({
     [],
   );
 
-  // Resolve an autocomplete completion (which may lack coordinate) into one
-  // or more full Place results by re-running search on its display string.
+  // Resolve an autocomplete completion OBJECT via MapKit search. This is the
+  // canonical Apple path: passing the completion back to search.search()
+  // returns the exact place Apple matched, including its coordinate.
+  const searchByCompletion = useCallback(
+    (completion: any, centre: { lat: number; lng: number } | null, span: number): Promise<any[]> => {
+      const mapkit = window.mapkit;
+      if (!mapkit) return Promise.resolve([]);
+      return new Promise((resolve) => {
+        try {
+          const c = centre ?? AU_CENTROID;
+          const coordinate = new mapkit.Coordinate(c.lat, c.lng);
+          const region = new mapkit.CoordinateRegion(coordinate, new mapkit.CoordinateSpan(span, span));
+          const search = new mapkit.Search({ language: "en-AU", region, coordinate });
+          search.search(completion, (err: any, data: any) => {
+            if (err) { resolve([]); return; }
+            resolve(data?.places ?? []);
+          });
+        } catch {
+          resolve([]);
+        }
+      });
+    },
+    [],
+  );
+
+  // Geocode a plain address string — last-resort resolver for street
+  // addresses that POI search does not return.
+  const geocodeAddress = useCallback(
+    (q: string, centre: { lat: number; lng: number } | null, span: number): Promise<any[]> => {
+      const mapkit = window.mapkit;
+      if (!mapkit || !q) return Promise.resolve([]);
+      return new Promise((resolve) => {
+        try {
+          const c = centre ?? AU_CENTROID;
+          const coordinate = new mapkit.Coordinate(c.lat, c.lng);
+          const region = new mapkit.CoordinateRegion(coordinate, new mapkit.CoordinateSpan(span, span));
+          const geocoder = new mapkit.Geocoder({ language: "en-AU", getsUserLocation: false });
+          geocoder.lookup(q, (err: any, data: any) => {
+            if (err) { resolve([]); return; }
+            resolve(data?.results ?? []);
+          }, { region, coordinate, limitToCountries: "AU" });
+        } catch {
+          resolve([]);
+        }
+      });
+    },
+    [],
+  );
+
+  // Resolve an autocomplete completion (which usually lacks a coordinate) into
+  // one or more full Place results. Tries, in order: embedded coordinate →
+  // search-by-completion → string search → geocode.
   const resolveCompletion = useCallback(
     async (completion: any, centre: { lat: number; lng: number } | null, span: number): Promise<any[]> => {
       // Some completions already have coordinate + structured address.
@@ -434,14 +484,33 @@ export function VenueMapKitPicker({
           poiCategory: completion?.poiCategory,
         }];
       }
-      const q = Array.isArray(completion?.displayLines) && completion.displayLines.length
-        ? completion.displayLines.join(", ")
-        : (completion?.title ?? "");
+
+      const viaCompletion = await searchByCompletion(completion, centre, span);
+      if (viaCompletion.length) return viaCompletion;
+
+      const lines: string[] = Array.isArray(completion?.displayLines)
+        ? completion.displayLines.filter(Boolean)
+        : [];
+      const q = normaliseQuery(lines.length ? lines.join(", ") : (completion?.title ?? ""));
       if (!q) return [];
-      return searchPlaces(q, centre, span);
+
+      const viaSearch = await searchPlaces(q, centre, span);
+      if (viaSearch.length) return viaSearch;
+
+      const viaGeocode = await geocodeAddress(q, centre, span);
+      if (viaGeocode.length) return viaGeocode;
+
+      // Fall back to geocoding just the street line + locality without any
+      // POI name noise (e.g. "178-184 Woodward St, Orange NSW").
+      if (lines.length > 1) {
+        const trimmed = normaliseQuery(`${lines[0]}, ${lines[lines.length - 1]}`);
+        if (trimmed !== q) return geocodeAddress(trimmed, centre, span);
+      }
+      return [];
     },
-    [searchPlaces],
+    [geocodeAddress, searchByCompletion, searchPlaces],
   );
+
 
   // Build the ordered query variants to try. Each variant is paired with a
   // region centre + span so Apple ranks results locally first, AU second,
