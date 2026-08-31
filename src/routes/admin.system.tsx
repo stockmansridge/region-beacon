@@ -3251,10 +3251,10 @@ function EventsSection({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingRow cols={10} />
+              <LoadingRow cols={11} />
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-8 text-center text-sm text-[#64748B]">
+                <TableCell colSpan={11} className="py-8 text-center text-sm text-[#64748B]">
                   No events match.
                 </TableCell>
               </TableRow>
