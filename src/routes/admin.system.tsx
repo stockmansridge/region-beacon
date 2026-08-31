@@ -1906,6 +1906,11 @@ function OrganisationDetailDrawer({
                         <div className="text-[11px] text-[#64748B]">
                           {fmtNum(e.checkin_count)} check-ins · {fmtNum(e.passport_count)} passports
                         </div>
+                        {e.owner_name || e.owner_email ? (
+                          <div className="text-[11px] text-[#94A3B8]">
+                            Owner: {e.owner_name ?? e.owner_email}
+                          </div>
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-2">
                         {statusPill(e.status)}
