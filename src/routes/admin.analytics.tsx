@@ -19,6 +19,7 @@ import {
   Calendar,
   Trophy,
   CheckCircle2,
+  Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -80,6 +81,14 @@ type BonusScanRow = {
   metadata: { bonus_code_name?: string | null; venue_id?: string | null } | null;
 };
 
+type PageViewRow = {
+  id: string;
+  event_id: string;
+  path: string;
+  device_id: string;
+  created_at: string;
+};
+
 type DateFilter = "all" | "7d" | "30d";
 
 function startDateFor(filter: DateFilter): Date | null {
@@ -101,6 +110,7 @@ function Analytics() {
   const [passports, setPassports] = useState<PassportRow[]>([]);
   const [prizeRules, setPrizeRules] = useState<PrizeRule[]>([]);
   const [bonusScans, setBonusScans] = useState<BonusScanRow[]>([]);
+  const [pageViews, setPageViews] = useState<PageViewRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -158,6 +168,14 @@ function Analytics() {
         .select("id, event_id, participant_id, source_id, points_awarded, created_at, metadata")
         .eq("agency_id", agencyId)
         .eq("award_type", "bonus");
+      // Page views — tolerate a missing table on schemas without the
+      // event-page-views migration applied.
+      const pvRes = await supabase
+        .from("event_page_views")
+        .select("id, event_id, path, device_id, created_at")
+        .eq("agency_id", agencyId)
+        .order("created_at", { ascending: false })
+        .limit(50000);
       if (cancelled) return;
       const anyErr =
         evRes.error || vRes.error || cRes.error || viRes.error || pRes.error;
@@ -173,6 +191,7 @@ function Analytics() {
       setPassports((pRes.data ?? []) as PassportRow[]);
       setPrizeRules((prRes.data ?? []) as PrizeRule[]);
       setBonusScans((bRes.error ? [] : (bRes.data ?? [])) as BonusScanRow[]);
+      setPageViews((pvRes.error ? [] : (pvRes.data ?? [])) as PageViewRow[]);
       setLoading(false);
     })();
     return () => {
@@ -264,6 +283,41 @@ function Analytics() {
     }
     return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [fVisitors]);
+
+  // Page views — anonymous traffic on the public event pages.
+  const fPageViews = useMemo(
+    () => pageViews.filter((v) => inEvent(v.event_id) && inRange(v.created_at)),
+    [pageViews, filteredEventIds, fromDate],
+  );
+
+  const pageViewStats = useMemo(() => {
+    const devices = new Set<string>();
+    const byDay = new Map<string, number>();
+    const byPath = new Map<string, { count: number; devices: Set<string> }>();
+    for (const v of fPageViews) {
+      devices.add(v.device_id);
+      const day = v.created_at.slice(0, 10);
+      byDay.set(day, (byDay.get(day) ?? 0) + 1);
+      const entry = byPath.get(v.path) ?? { count: 0, devices: new Set<string>() };
+      entry.count += 1;
+      entry.devices.add(v.device_id);
+      byPath.set(v.path, entry);
+    }
+    const total = fPageViews.length;
+    return {
+      total,
+      uniqueDevices: devices.size,
+      byDay: Array.from(byDay.entries()).sort(([a], [b]) => a.localeCompare(b)),
+      paths: Array.from(byPath.entries())
+        .map(([path, e]) => ({
+          path,
+          count: e.count,
+          unique: e.devices.size,
+          pct: total ? (e.count / total) * 100 : 0,
+        }))
+        .sort((a, b) => b.count - a.count),
+    };
+  }, [fPageViews]);
 
   // Postcode breakdown — where are visitors coming from?
   const postcodeStats = useMemo(() => {
@@ -467,6 +521,17 @@ function Analytics() {
       })),
     );
 
+  const exportPageViews = () =>
+    downloadCsv(
+      `page-views-${Date.now()}.csv`,
+      pageViewStats.paths.map((r) => ({
+        path: r.path,
+        views: r.count,
+        unique_devices: r.unique,
+        share_pct: r.pct.toFixed(1),
+      })),
+    );
+
   const exportPostcodes = () =>
     downloadCsv(
       `postcodes-${Date.now()}.csv`,
@@ -582,6 +647,8 @@ function Analytics() {
               icon={TrendingUp}
             />
             <Stat label="Completed trails" value={completedCount} icon={Trophy} />
+            <Stat label="Page views" value={pageViewStats.total} icon={Eye} />
+            <Stat label="Unique devices" value={pageViewStats.uniqueDevices} icon={TrendingUp} />
           </div>
 
           {/* Registrations over time */}
@@ -617,6 +684,55 @@ function Analytics() {
                         <tr key={day} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
                           <td className={tdClass}>{day}</td>
                           <td className={`${tdClass} text-right font-medium text-[#111827]`}>{n}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </section>
+
+          {/* Page views */}
+          <section className={cardClass}>
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Page views</h3>
+                <p className="text-sm leading-6 text-[#64748B]">
+                  Anonymous traffic on your public event pages, including people who never register.
+                  Counted once per page per device every 30 minutes.
+                </p>
+              </div>
+              <button type="button" onClick={exportPageViews} className={secondaryBtn}>
+                <Download className="h-4 w-4" /> Page views CSV
+              </button>
+            </div>
+            {pageViewStats.total === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
+                No page views recorded yet for this selection.
+              </div>
+            ) : (
+              <>
+                <div className="rounded-[14px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
+                  <Sparkline data={pageViewStats.byDay.map(([, n]) => n)} />
+                </div>
+                <div className={`mt-4 max-h-72 overflow-auto ${tableWrap}`}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className={thClass}>Page</th>
+                        <th className={`${thClass} text-right`}>Views</th>
+                        <th className={`${thClass} text-right`}>Unique devices</th>
+                        <th className={`${thClass} text-right`}>Share</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageViewStats.paths.map((r) => (
+                        <tr key={r.path} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                          <td className={tdClass}>{r.path}</td>
+                          <td className={`${tdClass} text-right font-medium text-[#111827]`}>{r.count}</td>
+                          <td className={`${tdClass} text-right`}>{r.unique}</td>
+                          <td className={`${tdClass} text-right`}>{r.pct.toFixed(1)}%</td>
                         </tr>
                       ))}
                     </tbody>

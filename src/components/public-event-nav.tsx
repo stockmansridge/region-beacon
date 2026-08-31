@@ -28,6 +28,7 @@ import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { useEventHasMap } from "@/lib/use-event-has-map";
 import { useEventHasAwards } from "@/lib/use-event-has-awards";
 import { useEventVenueLabels } from "@/lib/use-event-venue-labels";
+import { usePageViewTracking } from "@/lib/use-page-view-tracking";
 
 type ActiveTarget =
   | "home"
@@ -105,6 +106,10 @@ export function PublicEventNav({
   const { hasMap } = useEventHasMap(subdomain);
   const { hasAwards } = useEventHasAwards(subdomain);
   const venueLabels = useEventVenueLabels(subdomain);
+
+  // Anonymous page-view counting for Analytics. Runs on every public event
+  // page because the nav is rendered on all of them.
+  usePageViewTracking(eventId, pathname);
 
   const normalisedOverride: ActiveTarget | undefined =
     activeOverride === "join" ? "passport" : (activeOverride as ActiveTarget | undefined);
