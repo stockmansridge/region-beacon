@@ -266,7 +266,7 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav: Passport · Map · Leaders · Offers · More */}
+      {/* Fixed bottom mobile nav: Passport · Cellar Doors · Offers · Prizes · More */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
@@ -305,37 +305,14 @@ export function PublicEventNav({
             )}
           </li>
 
-
-          <li className="h-full min-w-0">
-            {hasMap ? (
-              <PublicLink
-                to="/map"
-                aria-current={isActive("map") ? "page" : undefined}
-                className={bottomItemClass}
-                style={{ color: isActive("map") ? navActiveFg : navMuted }}
-              >
-                <BottomItemContent icon={<MapIcon className="h-5 w-5" />} label="Map" />
-              </PublicLink>
-            ) : (
-              <PublicLink
-                to="/venues"
-                aria-current={isActive("venues") ? "page" : undefined}
-                className={bottomItemClass}
-                style={{ color: isActive("venues") ? navActiveFg : navMuted }}
-              >
-                <BottomItemContent icon={<MapPin className="h-5 w-5" />} label={venueLabels.plural} />
-              </PublicLink>
-            )}
-          </li>
-
           <li className="h-full min-w-0">
             <PublicLink
-              to="/leaderboard"
-              aria-current={isActive("leaderboard") ? "page" : undefined}
+              to="/venues"
+              aria-current={isActive("venues") ? "page" : undefined}
               className={bottomItemClass}
-              style={{ color: isActive("leaderboard") ? navActiveFg : navMuted }}
+              style={{ color: isActive("venues") ? navActiveFg : navMuted }}
             >
-              <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Leaders" />
+              <BottomItemContent icon={<MapPin className="h-5 w-5" />} label="Cellar Doors" />
             </PublicLink>
           </li>
 
@@ -347,6 +324,17 @@ export function PublicEventNav({
               style={{ color: isActive("offers") ? navActiveFg : navMuted }}
             >
               <BottomItemContent icon={<Tag className="h-5 w-5" />} label="Offers" />
+            </PublicLink>
+          </li>
+
+          <li className="h-full min-w-0">
+            <PublicLink
+              to="/prizes"
+              aria-current={isActive("prizes") ? "page" : undefined}
+              className={bottomItemClass}
+              style={{ color: isActive("prizes") ? navActiveFg : navMuted }}
+            >
+              <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Prizes" />
             </PublicLink>
           </li>
 
