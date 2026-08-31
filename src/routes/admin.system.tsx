@@ -963,14 +963,27 @@ function LatestLoginsTable({
   const load = async () => {
     setLoading(true);
     setError(null);
-    const { data, error } = await (supabase.rpc as any)(
-      "system_admin_recent_logins",
-      { _limit: 25 },
-    );
-    if (error) setError(error.message);
-    else setRows((data ?? []) as RecentLogin[]);
+    // The RPC may not be deployed yet on this database, or may exist with a
+    // different signature. Try the argument form first, then the no-arg form.
+    let res = await (supabase.rpc as any)("system_admin_recent_logins", {
+      _limit: 25,
+    });
+    if (res.error && /schema cache|does not exist|not find the function/i.test(res.error.message ?? "")) {
+      res = await (supabase.rpc as any)("system_admin_recent_logins");
+    }
+    if (res.error) {
+      const msg = res.error.message ?? "Unknown error";
+      setError(
+        /schema cache|does not exist|not find the function/i.test(msg)
+          ? "Latest logins isn't available on this database yet. Run supabase/migrations-system-admin-recent-logins/apply.sql in the Supabase SQL editor, then reload."
+          : msg,
+      );
+    } else {
+      setRows((res.data ?? []) as RecentLogin[]);
+    }
     setLoading(false);
   };
+
 
   useEffect(() => {
     void load();
