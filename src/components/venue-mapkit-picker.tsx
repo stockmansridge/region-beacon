@@ -602,49 +602,90 @@ export function VenueMapKitPicker({
 
     try {
       for (const v of variants) {
-        // (a) autocomplete
-        const completions = await autocompletePlaces(v.query, v.centre, v.span);
-        if (seq !== searchSeqRef.current) return;
-        attempts.push({
-          api: "autocomplete",
-          query: v.query,
-          regionCentre: v.centre,
-          regionSpan: v.span,
-          rawCount: completions.length,
-          topRaw: completions.slice(0, 5).map((c: any) => ({
-            name: c?.displayLines?.[0] ?? c?.title ?? "",
-            address: c?.displayLines?.slice(1).join(", ") ?? "",
-            country: c?.country ?? c?.countryCode ?? "",
-            isAU: placeIsAU(c),
-          })),
-        });
-        // Resolve up to top 5 completions to full places.
-        for (const c of completions.slice(0, 5)) {
-          const places = await resolveCompletion(c, v.centre, v.span);
+        const vQuery = normaliseQuery(v.query);
+        try {
+          // (a) autocomplete
+          const completions = await autocompletePlaces(vQuery, v.centre, v.span);
           if (seq !== searchSeqRef.current) return;
-          consumePlaces(places, "autocomplete");
-        }
-        if (goodEnough(collected)) break;
+          const before = collected.length;
+          // Resolve up to top 5 completions to full places.
+          for (const c of completions.slice(0, 5)) {
+            try {
+              const places = await resolveCompletion(c, v.centre, v.span);
+              if (seq !== searchSeqRef.current) return;
+              consumePlaces(places, "autocomplete");
+            } catch {
+              /* keep going — one bad completion must not kill the search */
+            }
+          }
+          attempts.push({
+            api: "autocomplete",
+            query: vQuery,
+            regionCentre: v.centre,
+            regionSpan: v.span,
+            rawCount: completions.length,
+            resolved: collected.length - before,
+            topRaw: completions.slice(0, 5).map((c: any) => ({
+              name: c?.displayLines?.[0] ?? c?.title ?? "",
+              address: c?.displayLines?.slice(1).join(", ") ?? "",
+              country: c?.country ?? c?.countryCode ?? "",
+              isAU: placeIsAU(c),
+            })),
+          });
+          if (goodEnough(collected)) break;
 
-        // (b) direct search fallback
-        const places = await searchPlaces(v.query, v.centre, v.span);
-        if (seq !== searchSeqRef.current) return;
-        attempts.push({
-          api: "search",
-          query: v.query,
-          regionCentre: v.centre,
-          regionSpan: v.span,
-          rawCount: places.length,
-          topRaw: places.slice(0, 5).map((p: any) => ({
-            name: p?.name ?? "",
-            address: p?.formattedAddress ?? "",
-            country: p?.country ?? p?.countryCode ?? "",
-            isAU: placeIsAU(p),
-          })),
-        });
-        consumePlaces(places, "search");
-        if (goodEnough(collected)) break;
+          // (b) direct search fallback
+          const places = await searchPlaces(vQuery, v.centre, v.span);
+          if (seq !== searchSeqRef.current) return;
+          attempts.push({
+            api: "search",
+            query: vQuery,
+            regionCentre: v.centre,
+            regionSpan: v.span,
+            rawCount: places.length,
+            topRaw: places.slice(0, 5).map((p: any) => ({
+              name: p?.name ?? "",
+              address: p?.formattedAddress ?? "",
+              country: p?.country ?? p?.countryCode ?? "",
+              isAU: placeIsAU(p),
+            })),
+          });
+          consumePlaces(places, "search");
+          if (goodEnough(collected)) break;
+
+          // (c) geocode fallback — street addresses that POI search misses.
+          if (collected.length === 0) {
+            const geo = await geocodeAddress(vQuery, v.centre, v.span);
+            if (seq !== searchSeqRef.current) return;
+            attempts.push({
+              api: "geocode",
+              query: vQuery,
+              regionCentre: v.centre,
+              regionSpan: v.span,
+              rawCount: geo.length,
+              topRaw: geo.slice(0, 5).map((p: any) => ({
+                name: p?.name ?? "",
+                address: p?.formattedAddress ?? "",
+                country: p?.country ?? p?.countryCode ?? "",
+                isAU: placeIsAU(p),
+              })),
+            });
+            consumePlaces(geo, "search");
+            if (goodEnough(collected)) break;
+          }
+        } catch (err) {
+          attempts.push({
+            api: "search",
+            query: vQuery,
+            regionCentre: v.centre,
+            regionSpan: v.span,
+            rawCount: 0,
+            note: `variant failed: ${err instanceof Error ? err.message : String(err)}`,
+            topRaw: [],
+          });
+        }
       }
+
 
       collected.sort((a, b) => b.score - a.score);
       const hasAU = collected.some((r) => r.isAU);
