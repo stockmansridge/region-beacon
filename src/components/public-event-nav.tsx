@@ -368,8 +368,8 @@ export function PublicEventNav({
 
 /**
  * Shared classes for every bottom-nav item (links and the More button alike).
- * One fixed-height column: 24px icon row + 16px label row, identical padding,
- * no margins/transforms, colour is the only thing that changes when active.
+ * One fixed-height column: 24px icon row + 16–32px label block, identical
+ * padding, no margins/transforms, colour is the only thing that changes when active.
  */
 const bottomItemClass =
   "flex h-full w-full appearance-none flex-col items-center justify-center border-0 bg-transparent p-0 m-0 font-semibold uppercase tracking-[0.12em] transition-colors";
