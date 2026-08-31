@@ -63,13 +63,25 @@ type SearchResult = {
 };
 
 type DebugAttempt = {
-  api: "autocomplete" | "search";
+  api: "autocomplete" | "search" | "geocode";
   query: string;
   regionCentre: { lat: number; lng: number } | null;
   regionSpan: number | null;
   rawCount: number;
+  resolved?: number;
+  note?: string;
   topRaw: Array<{ name: string; address: string; country: string; isAU: boolean }>;
 };
+
+/** Normalise dashes/whitespace — Apple's geocoder dislikes en/em dashes in ranges. */
+function normaliseQuery(q: string): string {
+  return q
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\s*-\s*/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 
 const AU_CENTROID = { lat: -25.2744, lng: 133.7751 };
 const BUSINESS_WORDS = /\b(wines?|winery|wineries|cellar|brewery|distillery|cafe|caf\u00e9|restaurant|bar|pub|hotel|motel|market|farm|orchard|venue|gallery|museum|brewing|estate|vineyard|bakery|kitchen)\b/i;
@@ -244,6 +256,13 @@ export function VenueMapKitPicker({
       markerRef.current = annotation;
     }
     mapRef.current.setCenterAnimated(coord, true);
+    // Zoom in to street level so the pin is clearly on the found address.
+    try {
+      if (typeof mapRef.current.cameraDistance === "number" && mapRef.current.cameraDistance > 4000) {
+        mapRef.current.cameraDistance = 800;
+      }
+    } catch { /* ignore */ }
+
   }, [onChange]);
 
   // Init
@@ -407,8 +426,58 @@ export function VenueMapKitPicker({
     [],
   );
 
-  // Resolve an autocomplete completion (which may lack coordinate) into one
-  // or more full Place results by re-running search on its display string.
+  // Resolve an autocomplete completion OBJECT via MapKit search. This is the
+  // canonical Apple path: passing the completion back to search.search()
+  // returns the exact place Apple matched, including its coordinate.
+  const searchByCompletion = useCallback(
+    (completion: any, centre: { lat: number; lng: number } | null, span: number): Promise<any[]> => {
+      const mapkit = window.mapkit;
+      if (!mapkit) return Promise.resolve([]);
+      return new Promise((resolve) => {
+        try {
+          const c = centre ?? AU_CENTROID;
+          const coordinate = new mapkit.Coordinate(c.lat, c.lng);
+          const region = new mapkit.CoordinateRegion(coordinate, new mapkit.CoordinateSpan(span, span));
+          const search = new mapkit.Search({ language: "en-AU", region, coordinate });
+          search.search(completion, (err: any, data: any) => {
+            if (err) { resolve([]); return; }
+            resolve(data?.places ?? []);
+          });
+        } catch {
+          resolve([]);
+        }
+      });
+    },
+    [],
+  );
+
+  // Geocode a plain address string — last-resort resolver for street
+  // addresses that POI search does not return.
+  const geocodeAddress = useCallback(
+    (q: string, centre: { lat: number; lng: number } | null, span: number): Promise<any[]> => {
+      const mapkit = window.mapkit;
+      if (!mapkit || !q) return Promise.resolve([]);
+      return new Promise((resolve) => {
+        try {
+          const c = centre ?? AU_CENTROID;
+          const coordinate = new mapkit.Coordinate(c.lat, c.lng);
+          const region = new mapkit.CoordinateRegion(coordinate, new mapkit.CoordinateSpan(span, span));
+          const geocoder = new mapkit.Geocoder({ language: "en-AU", getsUserLocation: false });
+          geocoder.lookup(q, (err: any, data: any) => {
+            if (err) { resolve([]); return; }
+            resolve(data?.results ?? []);
+          }, { region, coordinate, limitToCountries: "AU" });
+        } catch {
+          resolve([]);
+        }
+      });
+    },
+    [],
+  );
+
+  // Resolve an autocomplete completion (which usually lacks a coordinate) into
+  // one or more full Place results. Tries, in order: embedded coordinate →
+  // search-by-completion → string search → geocode.
   const resolveCompletion = useCallback(
     async (completion: any, centre: { lat: number; lng: number } | null, span: number): Promise<any[]> => {
       // Some completions already have coordinate + structured address.
@@ -422,14 +491,33 @@ export function VenueMapKitPicker({
           poiCategory: completion?.poiCategory,
         }];
       }
-      const q = Array.isArray(completion?.displayLines) && completion.displayLines.length
-        ? completion.displayLines.join(", ")
-        : (completion?.title ?? "");
+
+      const viaCompletion = await searchByCompletion(completion, centre, span);
+      if (viaCompletion.length) return viaCompletion;
+
+      const lines: string[] = Array.isArray(completion?.displayLines)
+        ? completion.displayLines.filter(Boolean)
+        : [];
+      const q = normaliseQuery(lines.length ? lines.join(", ") : (completion?.title ?? ""));
       if (!q) return [];
-      return searchPlaces(q, centre, span);
+
+      const viaSearch = await searchPlaces(q, centre, span);
+      if (viaSearch.length) return viaSearch;
+
+      const viaGeocode = await geocodeAddress(q, centre, span);
+      if (viaGeocode.length) return viaGeocode;
+
+      // Fall back to geocoding just the street line + locality without any
+      // POI name noise (e.g. "178-184 Woodward St, Orange NSW").
+      if (lines.length > 1) {
+        const trimmed = normaliseQuery(`${lines[0]}, ${lines[lines.length - 1]}`);
+        if (trimmed !== q) return geocodeAddress(trimmed, centre, span);
+      }
+      return [];
     },
-    [searchPlaces],
+    [geocodeAddress, searchByCompletion, searchPlaces],
   );
+
 
   // Build the ordered query variants to try. Each variant is paired with a
   // region centre + span so Apple ranks results locally first, AU second,
@@ -521,49 +609,90 @@ export function VenueMapKitPicker({
 
     try {
       for (const v of variants) {
-        // (a) autocomplete
-        const completions = await autocompletePlaces(v.query, v.centre, v.span);
-        if (seq !== searchSeqRef.current) return;
-        attempts.push({
-          api: "autocomplete",
-          query: v.query,
-          regionCentre: v.centre,
-          regionSpan: v.span,
-          rawCount: completions.length,
-          topRaw: completions.slice(0, 5).map((c: any) => ({
-            name: c?.displayLines?.[0] ?? c?.title ?? "",
-            address: c?.displayLines?.slice(1).join(", ") ?? "",
-            country: c?.country ?? c?.countryCode ?? "",
-            isAU: placeIsAU(c),
-          })),
-        });
-        // Resolve up to top 5 completions to full places.
-        for (const c of completions.slice(0, 5)) {
-          const places = await resolveCompletion(c, v.centre, v.span);
+        const vQuery = normaliseQuery(v.query);
+        try {
+          // (a) autocomplete
+          const completions = await autocompletePlaces(vQuery, v.centre, v.span);
           if (seq !== searchSeqRef.current) return;
-          consumePlaces(places, "autocomplete");
-        }
-        if (goodEnough(collected)) break;
+          const before = collected.length;
+          // Resolve up to top 5 completions to full places.
+          for (const c of completions.slice(0, 5)) {
+            try {
+              const places = await resolveCompletion(c, v.centre, v.span);
+              if (seq !== searchSeqRef.current) return;
+              consumePlaces(places, "autocomplete");
+            } catch {
+              /* keep going — one bad completion must not kill the search */
+            }
+          }
+          attempts.push({
+            api: "autocomplete",
+            query: vQuery,
+            regionCentre: v.centre,
+            regionSpan: v.span,
+            rawCount: completions.length,
+            resolved: collected.length - before,
+            topRaw: completions.slice(0, 5).map((c: any) => ({
+              name: c?.displayLines?.[0] ?? c?.title ?? "",
+              address: c?.displayLines?.slice(1).join(", ") ?? "",
+              country: c?.country ?? c?.countryCode ?? "",
+              isAU: placeIsAU(c),
+            })),
+          });
+          if (goodEnough(collected)) break;
 
-        // (b) direct search fallback
-        const places = await searchPlaces(v.query, v.centre, v.span);
-        if (seq !== searchSeqRef.current) return;
-        attempts.push({
-          api: "search",
-          query: v.query,
-          regionCentre: v.centre,
-          regionSpan: v.span,
-          rawCount: places.length,
-          topRaw: places.slice(0, 5).map((p: any) => ({
-            name: p?.name ?? "",
-            address: p?.formattedAddress ?? "",
-            country: p?.country ?? p?.countryCode ?? "",
-            isAU: placeIsAU(p),
-          })),
-        });
-        consumePlaces(places, "search");
-        if (goodEnough(collected)) break;
+          // (b) direct search fallback
+          const places = await searchPlaces(vQuery, v.centre, v.span);
+          if (seq !== searchSeqRef.current) return;
+          attempts.push({
+            api: "search",
+            query: vQuery,
+            regionCentre: v.centre,
+            regionSpan: v.span,
+            rawCount: places.length,
+            topRaw: places.slice(0, 5).map((p: any) => ({
+              name: p?.name ?? "",
+              address: p?.formattedAddress ?? "",
+              country: p?.country ?? p?.countryCode ?? "",
+              isAU: placeIsAU(p),
+            })),
+          });
+          consumePlaces(places, "search");
+          if (goodEnough(collected)) break;
+
+          // (c) geocode fallback — street addresses that POI search misses.
+          if (collected.length === 0) {
+            const geo = await geocodeAddress(vQuery, v.centre, v.span);
+            if (seq !== searchSeqRef.current) return;
+            attempts.push({
+              api: "geocode",
+              query: vQuery,
+              regionCentre: v.centre,
+              regionSpan: v.span,
+              rawCount: geo.length,
+              topRaw: geo.slice(0, 5).map((p: any) => ({
+                name: p?.name ?? "",
+                address: p?.formattedAddress ?? "",
+                country: p?.country ?? p?.countryCode ?? "",
+                isAU: placeIsAU(p),
+              })),
+            });
+            consumePlaces(geo, "search");
+            if (goodEnough(collected)) break;
+          }
+        } catch (err) {
+          attempts.push({
+            api: "search",
+            query: vQuery,
+            regionCentre: v.centre,
+            regionSpan: v.span,
+            rawCount: 0,
+            note: `variant failed: ${err instanceof Error ? err.message : String(err)}`,
+            topRaw: [],
+          });
+        }
       }
+
 
       collected.sort((a, b) => b.score - a.score);
       const hasAU = collected.some((r) => r.isAU);
@@ -584,7 +713,7 @@ export function VenueMapKitPicker({
       setDebugAttempts(attempts);
       setSearchError("Search failed. Try again, or set the address manually below.");
     }
-  }, [autocompletePlaces, buildVariants, getBestCentre, maybeRequestGeolocation, resolveCompletion, searchPlaces]);
+  }, [autocompletePlaces, buildVariants, geocodeAddress, getBestCentre, maybeRequestGeolocation, resolveCompletion, searchPlaces]);
 
 
   const runSearch = useCallback(() => {
@@ -777,7 +906,7 @@ export function VenueMapKitPicker({
           {showSearchDiag && (
             <div className="rounded-md border bg-muted/30 p-2 text-[10px] leading-snug">
               <div className="mb-1 font-semibold">Search diagnostics</div>
-              <div>build_marker: <code>2026-06-11T12:00Z · live-path-audit-1 · autocomplete-first</code></div>
+              <div>build_marker: <code>2026-08-31T09:30Z · completion-resolve+geocode-fallback</code></div>
               <div>autocomplete available: <code>{(() => { try { const w = window as any; return String(typeof w.mapkit?.Search?.prototype?.autocomplete === "function"); } catch { return "unknown"; } })()}</code></div>
               <div>raw query: <code>{searchQuery}</code></div>
               <div>town hint: <code>{townHint || "(none)"}</code></div>
