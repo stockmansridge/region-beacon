@@ -91,16 +91,15 @@ function Login() {
     (async () => {
       const serverPending = await getMyPendingOrganisationSignupServer();
       const localPending = readPendingOrganisationSignup();
-      const pending = serverPending ?? localPending;
-      const pendingEmail = pending?.email ?? null;
-      const emailMatches = !!pending && !!sessionEmail &&
-        pending.email.toLowerCase().trim() === sessionEmail.toLowerCase().trim();
+      const pending = serverPending ?? localPending ?? undefined;
       // eslint-disable-next-line no-console
       console.log("[admin-login] pending signup lookup", {
         signedInEmail: sessionEmail ?? null,
-        hasPending: !!serverPending,
-        pendingEmail: serverPending?.email ?? null,
-        organisationName: serverPending?.businessName ?? null,
+        hasServerPending: !!serverPending,
+        hasLocalPending: !!localPending,
+        serverPendingEmail: serverPending?.email ?? null,
+        localPendingEmail: localPending?.email ?? null,
+        organisationName: serverPending?.businessName ?? localPending?.businessName ?? null,
         status: serverPending?.status ?? null,
         lastError: serverPending?.lastError ?? null,
       });
@@ -118,18 +117,23 @@ function Login() {
           agencyId: result.ok ? result.agencyId ?? null : null,
           error: result.ok ? null : result.message,
         });
-      } else {
+      } else if (localPending) {
+        const pendingEmail = localPending.email ?? null;
         // eslint-disable-next-line no-console
-        console.log("[admin-login] post-auth pending-signup audit", {
-          signedInEmail: sessionEmail,
-          serverPendingExists: false,
-          localPendingExists: !!localPending,
+        console.log("[admin-login] local pending signup recovery", {
+          signedInEmail: sessionEmail ?? null,
           pendingEmail,
-          pendingBusinessName: pending?.businessName ?? null,
-          pendingIntention: pending?.intention ?? null,
-          emailMatchesSignedIn: emailMatches,
+          pendingBusinessName: localPending.businessName ?? null,
         });
         result = await completePendingOrganisationSignup();
+      } else {
+        // eslint-disable-next-line no-console
+        console.log("[admin-login] ordinary login - no pending organisation signup", {
+          signedInEmail: sessionEmail ?? null,
+        });
+        writeLastOrganisationSignupError(null);
+        window.location.assign("/admin");
+        return;
       }
       if (cancelled) return;
       if (result.ok) {
