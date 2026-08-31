@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { tenantHost } from "@/lib/domains";
@@ -141,7 +140,6 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
   return (
     <EventPaletteScope {...brandingScopeProps(branding)} className="min-h-screen px-4 pb-8 sm:pb-12">
       <LiveActivityBar subdomain={subdomain} />
-      <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
         eventId={eventId}

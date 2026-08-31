@@ -29,13 +29,6 @@ type PublicAnnouncement = {
   link_url: string | null;
 };
 
-const TONE_SURFACE: Record<Tone, string> = {
-  info: "border-[#BFDBFE] bg-[#EFF6FF] text-[#1E40AF]",
-  success: "border-[#86EFAC] bg-[#ECFDF5] text-[#047857]",
-  warning: "border-[#FDBA74] bg-[#FFF7ED] text-[#B45309]",
-  urgent: "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]",
-};
-
 function normaliseTone(t: PublicAnnouncement["tone"]): Tone {
   return t === "success" || t === "warning" || t === "urgent" ? t : "info";
 }
@@ -115,13 +108,15 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
 
   return (
     <div
-      className="mx-auto w-full max-w-2xl space-y-2 px-3 pt-3 sm:px-4"
+      className="-mx-4 w-auto"
       role="region"
       aria-label="Event announcements"
+      style={{
+        backgroundColor: "var(--event-page-bg, #F6EFE2)",
+        color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
+      }}
     >
       {visible.map((a, idx) => {
-        const tone = normaliseTone(a.tone);
-        const surface = TONE_SURFACE[tone];
         const safeHref =
           a.link_url && /^https:\/\//i.test(a.link_url) ? a.link_url : null;
         const message = (a.message ?? "").trim();
@@ -129,31 +124,37 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
         return (
           <div
             key={`${k}-${idx}`}
-            className={`flex items-start gap-3 rounded-[12px] border px-3 py-2.5 text-sm leading-snug shadow-sm sm:px-4 ${surface}`}
+            className="border-b"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--event-page-heading, #1F3D2B) 12%, transparent)",
+            }}
           >
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 break-words sm:line-clamp-3">
-                {message}
-              </p>
-              {safeHref && (
-                <a
-                  href={safeHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center text-xs font-medium underline underline-offset-2 opacity-80 hover:opacity-100"
-                >
-                  {a.link_label ?? "Learn more"} ↗
-                </a>
-              )}
+            <div className="mx-auto flex max-w-2xl items-start gap-3 px-4 py-2.5">
+              <div className="min-w-0 flex-1">
+                <p className="break-words text-[13px] font-bold leading-snug">
+                  {message}
+                </p>
+                {safeHref && (
+                  <a
+                    href={safeHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center text-xs font-bold underline underline-offset-2 opacity-80 hover:opacity-100"
+                  >
+                    {a.link_label ?? "Learn more"} ↗
+                  </a>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => dismiss(a)}
+                aria-label="Dismiss announcement"
+                className="-mr-1 inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full hover:bg-black/5"
+              >
+                <span aria-hidden className="text-lg font-bold leading-none">×</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => dismiss(a)}
-              aria-label="Dismiss announcement"
-              className="-mr-1 inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-current/70 hover:bg-black/5"
-            >
-              <span aria-hidden className="text-base leading-none">×</span>
-            </button>
           </div>
         );
       })}

@@ -9,7 +9,6 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
-import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
@@ -288,7 +287,6 @@ export function PublicVenuesListPage({
       className="min-h-screen pb-10"
     >
       <LiveActivityBar subdomain={subdomain} />
-      <PublicAnnouncementBar subdomain={subdomain} />
       <PublicEventNav
         subdomain={subdomain}
         eventName={event?.name}

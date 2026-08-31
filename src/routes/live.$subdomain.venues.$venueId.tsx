@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
-import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
@@ -275,7 +274,6 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       className="min-h-screen pb-12"
     >
       <LiveActivityBar subdomain={subdomain} />
-      <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} /></div>
       <div className="mx-auto max-w-md">
         <div

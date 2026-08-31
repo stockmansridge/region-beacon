@@ -1,4 +1,5 @@
 import { useLocation } from "@tanstack/react-router";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import {
   PublicLink,
   buildEventHref,
@@ -78,7 +79,6 @@ export function PublicEventNav({
    */
   transparentHeader?: boolean;
 }) {
-  void subdomain;
   // Header / bottom-nav / drawer surfaces consume the nav tokens so they
   // can be themed independently of buttons. Tokens fall back to the
   // primary colour when no nav background has been configured, which
@@ -130,6 +130,7 @@ export function PublicEventNav({
 
   return (
     <>
+      <PublicAnnouncementBar subdomain={subdomain} />
       {/* Sticky app-style header */}
       <header
         className={

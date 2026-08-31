@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
 import { QrScanner } from "@/components/qr-scanner";
-import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { matchRootDomain } from "@/lib/domains";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,7 +146,6 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       headingFontFamily={g<string>("heading_font_family")}
       className="min-h-screen pb-12"
     >
-      <PublicAnnouncementBar subdomain={subdomain} />
       <div className="px-4">
         <PublicEventNav
           subdomain={subdomain}
