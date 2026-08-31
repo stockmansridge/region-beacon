@@ -41,7 +41,15 @@ function dismissKeyFor(a: PublicAnnouncement): string {
 
 const STORAGE_PREFIX = "pa_dismissed_v3:";
 
-export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
+export function PublicAnnouncementBar({
+  subdomain,
+  navBg: navBgProp,
+  navFg: navFgProp,
+}: {
+  subdomain: string;
+  navBg?: string;
+  navFg?: string;
+}) {
   const [rows, setRows] = useState<PublicAnnouncement[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
