@@ -1,4 +1,5 @@
 import { useLocation } from "@tanstack/react-router";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import {
   PublicLink,
   buildEventHref,
