@@ -111,6 +111,7 @@ function Analytics() {
   const [prizeRules, setPrizeRules] = useState<PrizeRule[]>([]);
   const [bonusScans, setBonusScans] = useState<BonusScanRow[]>([]);
   const [pageViews, setPageViews] = useState<PageViewRow[]>([]);
+  const [pageViewsError, setPageViewsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
