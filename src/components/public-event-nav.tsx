@@ -36,6 +36,7 @@ type ActiveTarget =
   | "map"
   | "venues"
   | "offers"
+  | "prizes"
   | "leaderboard"
   | "more";
 
