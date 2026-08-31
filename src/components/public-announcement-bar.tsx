@@ -85,13 +85,33 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
     return rows.filter((r) => (r.message ?? "").trim() && !dismissed.has(dismissKeyFor(r)));
   }, [rows, dismissed]);
 
+  // Prune stale dismissals so old keys can never suppress future
+  // announcements — only keys for currently-served messages are kept.
+  useEffect(() => {
+    if (rows.length === 0) return;
+    const live = new Set(rows.map(dismissKeyFor));
+    const pruned = new Set([...dismissed].filter((k) => live.has(k)));
+    if (pruned.size === dismissed.size) return;
+    setDismissed(pruned);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(
+          `${STORAGE_PREFIX}${subdomain}`,
+          JSON.stringify([...pruned]),
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
 
   function dismiss(a: PublicAnnouncement) {
     const next = new Set(dismissed);
     const k = dismissKeyFor(a);
     next.add(k);
     setDismissed(next);
-    
+
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(
@@ -106,32 +126,37 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
 
   if (visible.length === 0) return null;
 
+  const navBg = "var(--event-nav-bg, var(--event-primary, #1F3D2B))";
+  const navFg = "var(--event-nav-fg, var(--event-primary-fg, #F6EFE2))";
+
   return (
     <div
       className="-mx-4 w-auto"
       role="region"
       aria-label="Event announcements"
-      style={{
-        backgroundColor: "var(--event-page-bg, #F6EFE2)",
-        color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
-      }}
+      style={{ backgroundColor: navBg, color: navFg }}
     >
       {visible.map((a, idx) => {
         const safeHref =
           a.link_url && /^https:\/\//i.test(a.link_url) ? a.link_url : null;
         const message = (a.message ?? "").trim();
         const k = dismissKeyFor(a);
+        const isLast = idx === visible.length - 1;
         return (
           <div
             key={`${k}-${idx}`}
-            className="border-b"
-            style={{
-              borderColor:
-                "color-mix(in srgb, var(--event-page-heading, #1F3D2B) 12%, transparent)",
-            }}
+            style={
+              isLast
+                ? {
+                    borderBottom: `3px solid color-mix(in srgb, ${navFg} 85%, transparent)`,
+                  }
+                : {
+                    borderBottom: `1px solid color-mix(in srgb, ${navFg} 25%, transparent)`,
+                  }
+            }
           >
-            <div className="mx-auto flex max-w-2xl items-start gap-3 px-4 py-2.5">
-              <div className="min-w-0 flex-1">
+            <div className="mx-auto flex min-h-[52px] max-w-2xl items-center gap-3 px-6 py-3 sm:px-8">
+              <div className="min-w-0 flex-1 text-center">
                 <p className="break-words text-[13px] font-bold leading-snug">
                   {message}
                 </p>
@@ -150,7 +175,7 @@ export function PublicAnnouncementBar({ subdomain }: { subdomain: string }) {
                 type="button"
                 onClick={() => dismiss(a)}
                 aria-label="Dismiss announcement"
-                className="-mr-1 inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full hover:bg-black/5"
+                className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center self-center rounded-full hover:bg-white/10"
               >
                 <span aria-hidden className="text-lg font-bold leading-none">×</span>
               </button>
