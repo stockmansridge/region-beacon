@@ -3238,6 +3238,7 @@ function EventsSection({
             <TableRow className="bg-[#F8FAFC]">
               <TableHead>Event</TableHead>
               <TableHead>Organisation</TableHead>
+              <TableHead>Owner</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Public URL</TableHead>
               <TableHead className="text-right">Venues</TableHead>
