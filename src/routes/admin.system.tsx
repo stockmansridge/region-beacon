@@ -161,6 +161,10 @@ type EventRow = {
   agency_id: string;
   agency_name: string;
   agency_slug: string | null;
+  /** Organisation owner (linked user). Present once the events-owner
+   *  migration has been applied; older DBs omit these fields. */
+  owner_name?: string | null;
+  owner_email?: string | null;
   event_name: string;
   event_slug: string | null;
   public_slug: string | null;
