@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAccess } from "@/hooks/use-admin-access";
+import { useSupportAgency } from "@/lib/support-agency";
 
 export type AgencyOption = {
   id: string;
@@ -28,6 +29,8 @@ export type AgencyContext = {
  */
 export function useAgencyContext(): AgencyContext {
   const access = useAdminAccess();
+  const support = useSupportAgency();
+  const supportId = support?.id ?? null;
   const [state, setState] = useState<AgencyContext>({
     status: "loading",
     isPlatformAdmin: false,
@@ -55,6 +58,27 @@ export function useAgencyContext(): AgencyContext {
               error: null,
             },
       );
+      return;
+    }
+
+    // Platform-admin support session: a support agency override pins the
+    // whole admin surface to the organisation being supported. RLS still
+    // gates the data via the platform_admin policies.
+    if (access.isPlatformAdmin && support) {
+      const option: AgencyOption = {
+        id: support.id,
+        name: support.name,
+        slug: support.slug ?? "",
+        role: "platform_admin",
+      };
+      setState({
+        status: "ready",
+        isPlatformAdmin: true,
+        agencies: [option],
+        selected: option,
+        ambiguousSelection: false,
+        error: null,
+      });
       return;
     }
 
@@ -113,7 +137,7 @@ export function useAgencyContext(): AgencyContext {
     return () => {
       cancelled = true;
     };
-  }, [access.status, access.memberships, access.isPlatformAdmin]);
+  }, [access.status, access.memberships, access.isPlatformAdmin, supportId, support?.name, support?.slug]);
 
   return state;
 }
