@@ -1,5 +1,6 @@
 import { SmsPaymentModeSection } from "@/components/admin-sms-payment-mode";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { setSupportAgency } from "@/lib/support-agency";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
@@ -726,6 +727,11 @@ function SystemAdmin() {
     },
     [],
   );
+  const [usersQuery, setUsersQuery] = useState("");
+  const goToUser = useCallback((email: string | null) => {
+    setUsersQuery(email ?? "");
+    setTab("users");
+  }, []);
 
   if (access.status === "loading") {
     return (
@@ -792,12 +798,14 @@ function SystemAdmin() {
 
         <div className="mt-5">
           <TabsContent value="overview">
-            <OverviewSection goToEvents={goToEvents} goToOrgs={goToOrgs} />
+            <OverviewSection goToEvents={goToEvents} goToOrgs={goToOrgs} goToUser={goToUser} />
           </TabsContent>
           <TabsContent value="orgs">
             <OrganisationsSection filter={orgsFilter} setFilter={setOrgsFilter} />
           </TabsContent>
-          <TabsContent value="users"><UsersSection /></TabsContent>
+          <TabsContent value="users">
+            <UsersSection initialQuery={usersQuery} />
+          </TabsContent>
           <TabsContent value="events">
             <EventsSection filter={eventsFilter} setFilter={setEventsFilter} />
           </TabsContent>
@@ -817,9 +825,11 @@ function SystemAdmin() {
 function OverviewSection({
   goToEvents,
   goToOrgs,
+  goToUser,
 }: {
   goToEvents: (patch: Partial<EventsFilter>) => void;
   goToOrgs: (patch: Partial<OrgsFilter>) => void;
+  goToUser: (email: string | null) => void;
 }) {
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
@@ -853,6 +863,7 @@ function OverviewSection({
   if (!data) return <EmptyState title="No data" message="No overview data returned." />;
 
   return (
+    <div className="space-y-5">
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Organisations"
@@ -924,6 +935,112 @@ function OverviewSection({
         title="View all organisations"
       />
     </div>
+    <LatestLoginsTable goToUser={goToUser} />
+    </div>
+  );
+}
+
+type RecentLogin = {
+  user_id: string;
+  email: string | null;
+  last_sign_in_at: string | null;
+  created_at: string | null;
+  is_platform_admin: boolean | null;
+  agency_id: string | null;
+  agency_name: string | null;
+  agency_role: string | null;
+};
+
+function LatestLoginsTable({
+  goToUser,
+}: {
+  goToUser: (email: string | null) => void;
+}) {
+  const [rows, setRows] = useState<RecentLogin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await (supabase.rpc as any)(
+      "system_admin_recent_logins",
+      { _limit: 25 },
+    );
+    if (error) setError(error.message);
+    else setRows((data ?? []) as RecentLogin[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  return (
+    <Card>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold text-[#111827]">Latest logins</div>
+          <div className="text-xs text-[#64748B]">
+            Most recent sign-ins across the platform. Click a row to view the user.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="rounded-[10px] border border-[#D9E2EF] bg-white px-3 py-1.5 text-xs font-medium text-[#334155] hover:bg-[#F8FAFC]"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="py-6 text-center text-sm text-[#64748B]">Loading logins…</div>
+      ) : error ? (
+        <ErrorBanner message={error} onRetry={load} />
+      ) : rows.length === 0 ? (
+        <EmptyState title="No logins" message="No sign-in activity recorded yet." />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-[#E6ECF4] text-xs uppercase tracking-wide text-[#64748B]">
+                <th className="py-2 pr-4 font-medium">User</th>
+                <th className="py-2 pr-4 font-medium">Organisation</th>
+                <th className="py-2 pr-4 font-medium">Role</th>
+                <th className="py-2 pr-4 font-medium">Last sign-in</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr
+                  key={r.user_id}
+                  onClick={() => goToUser(r.email)}
+                  className="cursor-pointer border-b border-[#F1F5F9] hover:bg-[#F8FAFC]"
+                  title="View this user in the Users tab"
+                >
+                  <td className="py-2.5 pr-4 font-medium text-[#111827]">
+                    {r.email ?? "—"}
+                    {r.is_platform_admin && (
+                      <span className="ml-2 rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[11px] font-semibold text-[#1F56C5]">
+                        Platform admin
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-2.5 pr-4 text-[#334155]">{r.agency_name ?? "—"}</td>
+                  <td className="py-2.5 pr-4 text-[#64748B]">
+                    {r.agency_role ? formatRoleLabel(r.agency_role) : "—"}
+                  </td>
+                  <td className="py-2.5 pr-4 text-[#64748B]">
+                    {fmtDateTime(r.last_sign_in_at)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -1778,6 +1895,13 @@ function OrganisationDetailDrawer({
                         <Link
                           to="/admin/events/$eventId"
                           params={{ eventId: e.event_id }}
+                          onClick={() =>
+                            setSupportAgency({
+                              id: e.agency_id,
+                              name: e.agency_name ?? "Organisation",
+                              slug: e.agency_slug ?? null,
+                            })
+                          }
                           className="text-xs font-medium text-[#1F56C5] hover:underline"
                         >
                           Open
@@ -1865,11 +1989,15 @@ function OrganisationDetailDrawer({
 
 // -------- Users ----------------------------------------------------------
 
-function UsersSection() {
+function UsersSection({ initialQuery = "" }: { initialQuery?: string }) {
   const [rows, setRows] = useState<UserRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
+
+  useEffect(() => {
+    if (initialQuery) setQ(initialQuery);
+  }, [initialQuery]);
   const [scope, setScope] = useState<string>("all");
   const [role, setRole] = useState<string>("all");
   const [selected, setSelected] = useState<UserRow | null>(null);
@@ -3167,6 +3295,13 @@ function EventsSection({
                         <Link
                           to="/admin/events/$eventId"
                           params={{ eventId: r.event_id }}
+                          onClick={() =>
+                            setSupportAgency({
+                              id: r.agency_id,
+                              name: r.agency_name ?? "Organisation",
+                              slug: r.agency_slug ?? null,
+                            })
+                          }
                           className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
                           title="Open event admin"
                         >
@@ -3479,6 +3614,13 @@ function EventDetailDrawer({
               <Link
                 to="/admin/events/$eventId"
                 params={{ eventId: event.event_id }}
+                onClick={() =>
+                  setSupportAgency({
+                    id: event.agency_id,
+                    name: event.agency_name ?? "Organisation",
+                    slug: event.agency_slug ?? null,
+                  })
+                }
                 className="inline-flex items-center gap-1 rounded-[8px] bg-[#1F56C5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1849A8]"
               >
                 Open event admin
@@ -3839,6 +3981,13 @@ function ActiveSubdomainsCard() {
                       <Link
                         to="/admin/events/$eventId"
                         params={{ eventId: r.event_id }}
+                        onClick={() =>
+                          setSupportAgency({
+                            id: r.agency_id,
+                            name: r.agency_name ?? "Organisation",
+                            slug: (r as { agency_slug?: string | null }).agency_slug ?? null,
+                          })
+                        }
                         className="inline-flex items-center gap-1 rounded-[8px] border border-[#D9E2EF] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC]"
                       >
                         Open

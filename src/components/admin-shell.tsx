@@ -10,6 +10,7 @@ import { useDiagnosticsEnabled } from "@/lib/diagnostics";
 import { Switch } from "@/components/ui/switch";
 import { formatRoleLabel } from "@/lib/role-labels";
 import { ContactSupportDialog } from "@/components/contact-support-dialog";
+import { clearSupportAgency, useSupportAgency } from "@/lib/support-agency";
 import {
   Sheet,
   SheetContent,
@@ -48,6 +49,7 @@ export function AdminShell({
   const [diagnosticsEnabled, setDiagnosticsEnabled] = useDiagnosticsEnabled();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const supportAgency = useSupportAgency();
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/admin/login", replace: true });
@@ -263,6 +265,28 @@ export function AdminShell({
               </div>
             </div>
           </header>
+          {isPlatformAdmin && supportAgency ? (
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[#FED7AA] bg-[#FFF7ED] px-4 py-2 text-xs text-[#9A3412] sm:px-6 lg:px-8">
+              <span className="flex items-center gap-2">
+                <LifeBuoy className="h-3.5 w-3.5" />
+                <strong className="font-semibold">Support session</strong>
+                <span>
+                  You are working inside <strong>{supportAgency.name}</strong> as
+                  platform admin. Changes you make are real.
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  clearSupportAgency();
+                  navigate({ to: "/admin/system" });
+                }}
+                className="rounded-[8px] border border-[#FDBA74] bg-white px-2 py-1 font-medium text-[#9A3412] hover:bg-[#FFF1E5]"
+              >
+                Exit support session
+              </button>
+            </div>
+          ) : null}
           <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
             <div className="space-y-5"><BuildMarker visible={!!isPlatformAdmin && diagnosticsEnabled} />{children ?? <Outlet />}</div>
           </main>
