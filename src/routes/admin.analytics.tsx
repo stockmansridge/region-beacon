@@ -111,6 +111,7 @@ function Analytics() {
   const [prizeRules, setPrizeRules] = useState<PrizeRule[]>([]);
   const [bonusScans, setBonusScans] = useState<BonusScanRow[]>([]);
   const [pageViews, setPageViews] = useState<PageViewRow[]>([]);
+  const [pageViewsError, setPageViewsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -192,6 +193,7 @@ function Analytics() {
       setPrizeRules((prRes.data ?? []) as PrizeRule[]);
       setBonusScans((bRes.error ? [] : (bRes.data ?? [])) as BonusScanRow[]);
       setPageViews((pvRes.error ? [] : (pvRes.data ?? [])) as PageViewRow[]);
+      setPageViewsError(pvRes.error ? pvRes.error.message : null);
       setLoading(false);
     })();
     return () => {
@@ -707,9 +709,14 @@ function Analytics() {
                 <Download className="h-4 w-4" /> Page views CSV
               </button>
             </div>
-            {pageViewStats.total === 0 ? (
+            {pageViewsError ? (
+              <div className="rounded-[12px] border border-amber-300 bg-amber-50 px-5 py-5 text-sm text-amber-900">
+                Page views could not be read: {pageViewsError}
+              </div>
+            ) : pageViewStats.total === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">
-                No page views recorded yet for this selection.
+                No page views recorded yet for this selection. Views are collected from
+                now on as visitors browse your public event pages.
               </div>
             ) : (
               <>
