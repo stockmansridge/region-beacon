@@ -221,7 +221,10 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 function Header({ subdomain }: { subdomain: string }) {
   return (
     <div className="mb-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--event-hero-accent)]">
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.32em]"
+        style={{ color: "var(--event-page-text)" }}
+      >
         {subdomain}.getstampd.com.au
       </p>
       <h1
@@ -242,6 +245,7 @@ function Header({ subdomain }: { subdomain: string }) {
     </div>
   );
 }
+
 
 
 function Card({ children }: { children: React.ReactNode }) {
