@@ -760,7 +760,7 @@ function PassportView({
                       style={{ color: "var(--event-card-text)" }}
                     >
                       Earn {nextAward.points_remaining} more point
-                      {nextAward.points_remaining === 1 ? "" : "s"} to enter{" "}
+                      {nextAward.points_remaining === 1 ? "" : "s"} to unlock{" "}
                       <span style={{ color: "var(--event-card-heading)" }}>
                         {nextAward.title}
                       </span>
@@ -778,7 +778,7 @@ function PassportView({
                       className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
-                      Ready to enter
+                      Ready to unlock
                     </div>
                     <div
                       className="text-[11px] leading-snug"
@@ -1301,7 +1301,7 @@ function AwardRow({ award }: { award: PublicEventAward }) {
             {award.points_required} {award.points_required === 1 ? "pt" : "pts"} required
             {award.requires_all_locations ? " · all locations" : ""}
             {!unlocked && award.points_remaining > 0
-              ? ` · ${award.points_remaining} more to enter`
+              ? ` · ${award.points_remaining} more to unlock`
               : ""}
           </div>
         </div>
