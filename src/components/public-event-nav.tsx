@@ -144,7 +144,9 @@ export function PublicEventNav({
 
   return (
     <>
-      <PublicAnnouncementBar subdomain={subdomain} navBg={navBg} navFg={navFg} />
+      {!hideAnnouncementBar && (
+        <PublicAnnouncementBar subdomain={subdomain} navBg={navBg} navFg={navFg} />
+      )}
       {/* Sticky app-style header */}
       <header
         className={
