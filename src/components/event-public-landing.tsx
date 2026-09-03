@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicEventNav } from "@/components/public-event-nav";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { focalObjectPosition } from "@/lib/cover-focal";
 import { PoweredByGetStampd } from "@/components/brand";
