@@ -36,9 +36,10 @@ grant all on public.event_page_views to service_role;
 
 alter table public.event_page_views enable row level security;
 
+-- Do not add a restrictive deny-all policy here. RLS already denies access
+-- when no permissive policy matches; a restrictive USING (false) policy would
+-- also override the legitimate platform-admin and agency-member policies below.
 drop policy if exists deny_all on public.event_page_views;
-create policy deny_all on public.event_page_views
-  as restrictive for all to public using (false) with check (false);
 
 drop policy if exists platform_admin_all on public.event_page_views;
 create policy platform_admin_all on public.event_page_views
