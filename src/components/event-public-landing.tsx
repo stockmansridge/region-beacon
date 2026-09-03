@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { PublicEventNav } from "@/components/public-event-nav";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { focalObjectPosition } from "@/lib/cover-focal";
 import { PoweredByGetStampd } from "@/components/brand";
@@ -335,6 +336,15 @@ export function EventPublicLanding({
           </div>
         )}
 
+        {/* Announcement bar in normal flow so it pushes the hero down */}
+        {subdomain ? (
+          <PublicAnnouncementBar
+            subdomain={subdomain}
+            navBg={`var(--event-nav-bg, ${event.primary_color ?? "var(--event-primary,#1F3D2B)"})`}
+            navFg={`var(--event-nav-fg, var(--event-primary-fg,#F6EFE2))`}
+          />
+        ) : null}
+
         {/* Full-bleed hero with overlaid header */}
         <div className="relative">
           <div className="absolute inset-x-0 top-0 z-40 px-4">
@@ -350,6 +360,7 @@ export function EventPublicLanding({
               eventId={event.event_id}
               activeOverride="home"
               transparentHeader
+              hideAnnouncementBar
             />
           </div>
 

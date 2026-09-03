@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 import { PublicEventNav } from "@/components/public-event-nav";
+import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import { classifyHost } from "@/components/host-router";
 import {
   EMPTY_PASSPORT_STAMP_STATE,
@@ -514,6 +515,14 @@ function PassportView({
     <>
       {subdomain && <LiveActivityBar subdomain={subdomain} />}
       <PrizeUnlockAnnouncer eventId={passport.event_id ?? null} />
+      {/* Announcement bar in normal flow so it pushes the hero down */}
+      {subdomain && (
+        <PublicAnnouncementBar
+          subdomain={subdomain}
+          navBg={`var(--event-nav-bg, ${PRIMARY})`}
+          navFg={`var(--event-nav-fg, var(--event-primary-fg,#F6EFE2))`}
+        />
+      )}
       {/* Full-bleed hero with overlaid header */}
       <div className="relative">
         {subdomain && (
@@ -528,6 +537,7 @@ function PassportView({
               passportHref={passportUrl}
               eventId={passport.event_id}
               transparentHeader
+              hideAnnouncementBar
             />
           </div>
         )}
