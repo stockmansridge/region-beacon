@@ -61,6 +61,7 @@ export function PublicEventNav({
   passportHref: passportHrefOverride,
   eventId,
   transparentHeader = false,
+  hideAnnouncementBar = false,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -80,6 +81,12 @@ export function PublicEventNav({
    * drawer behaviour are unchanged.
    */
   transparentHeader?: boolean;
+  /**
+   * When true, the announcement bar is not rendered here. Use this when the
+   * nav is absolutely positioned over a hero and the bar is rendered in
+   * normal flow above it by the caller.
+   */
+  hideAnnouncementBar?: boolean;
 }) {
   // Header / bottom-nav / drawer surfaces consume the nav tokens so they
   // can be themed independently of buttons. Tokens fall back to the
