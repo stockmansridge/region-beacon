@@ -381,6 +381,8 @@ export function PublicEventNav({
           </li>
         </ul>
       </nav>
+      </div>
+
 
       {/* Bottom-nav clearance: only on mobile while this nav is mounted */}
       <style>{`
