@@ -280,10 +280,21 @@ export function PublicEventNav({
         />
       )}
 
-      {/* Fixed bottom mobile nav: Passport · Prizes · Cellar Doors · Offers · More */}
+      {/* Fixed bottom mobile nav: Passport · Prizes · Cellar Doors · Offers · More.
+          The nav is anchored to the bottom of a full-height (100dvh) fixed
+          wrapper rather than to the viewport bottom directly. On Android
+          browsers with a bottom URL/search bar (Firefox, Chrome), `bottom: 0`
+          can resolve to the large viewport and end up hidden behind that bar;
+          `100dvh` tracks the visible viewport instead so the nav always sits
+          just above the browser chrome. */}
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-40 md:hidden"
+        style={{ height: "100dvh" }}
+        aria-hidden={false}
+      >
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t md:hidden"
+        className="pointer-events-auto absolute inset-x-0 bottom-0 border-t"
         style={{
           paddingBottom: "env(safe-area-inset-bottom)",
           background: navBg,
@@ -295,6 +306,7 @@ export function PublicEventNav({
           className="mx-auto grid h-16 max-w-md"
           style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}
         >
+
           <li className="h-full min-w-0">
             {passportHref ? (
               <a
@@ -369,6 +381,8 @@ export function PublicEventNav({
           </li>
         </ul>
       </nav>
+      </div>
+
 
       {/* Bottom-nav clearance: only on mobile while this nav is mounted */}
       <style>{`
