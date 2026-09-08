@@ -6,6 +6,7 @@ import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { LiveActivityBar } from "@/components/live-activity-bar";
+import { BookmarkButton } from "@/components/bookmark-button";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { VenueMiniMap } from "@/components/venue-mini-map";
@@ -305,6 +306,9 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
         <div className="px-4">
           <div className="relative z-10 -mt-10 flex items-end gap-3">
+            <div className="order-2 ml-auto self-end pb-1">
+              <BookmarkButton eventId={state.eventId} kind="venue" venueId={venue.id} />
+            </div>
             <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border-4 border-[var(--event-page-bg,#F6EFE2)] bg-[var(--event-card-bg,#FBF5E8)] shadow-lg">
               {logoUrl ? (
                 <img
