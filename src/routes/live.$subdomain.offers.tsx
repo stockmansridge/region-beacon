@@ -11,6 +11,7 @@ import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 
 import { LiveActivityBar } from "@/components/live-activity-bar";
+import { BookmarkButton } from "@/components/bookmark-button";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicTrailTabs } from "@/components/public-trail-tabs";
@@ -235,7 +236,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                 v.offer_display_foreground_colour,
               );
               return (
-                <li key={vid}>
+                <li key={vid} className="relative">
                   <PublicLink
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
@@ -285,7 +286,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                     {/* Strong circular chevron (far right) */}
                     <span
                       aria-hidden
-                      className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full shadow-sm transition group-hover:translate-x-0.5"
+                      className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-full shadow-sm transition group-hover:translate-x-0.5"
                       style={{
                         background: "var(--event-button-primary-bg, var(--event-primary, #1F3D2B))",
                         color: "var(--event-button-primary-fg, var(--event-primary-fg, #F6EFE2))",
@@ -294,6 +295,14 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                       <ChevronRight className="h-5 w-5" />
                     </span>
                   </PublicLink>
+                  <div className="absolute right-2 top-2 z-10">
+                    <BookmarkButton
+                      eventId={event?.event_id ?? null}
+                      kind="offer"
+                      venueId={vid}
+                      size="sm"
+                    />
+                  </div>
                 </li>
               );
             })}

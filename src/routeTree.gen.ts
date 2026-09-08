@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as JoinRouteImport } from './routes/join'
@@ -58,6 +59,7 @@ import { Route as CollectBonusTokenRouteImport } from './routes/collect.bonus.$t
 import { Route as DemoCheckinVenueIdRouteImport } from './routes/demo.checkin.$venueId'
 import { Route as DemoWineriesVenueIdRouteImport } from './routes/demo.wineries.$venueId'
 import { Route as LiveSubdomainIndexRouteImport } from './routes/live.$subdomain.index'
+import { Route as LiveSubdomainBookmarksRouteImport } from './routes/live.$subdomain.bookmarks'
 import { Route as LiveSubdomainFaqRouteImport } from './routes/live.$subdomain.faq'
 import { Route as LiveSubdomainJoinRouteImport } from './routes/live.$subdomain.join'
 import { Route as LiveSubdomainLeaderboardRouteImport } from './routes/live.$subdomain.leaderboard'
@@ -85,6 +87,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookmarksRoute = BookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -322,6 +329,11 @@ const LiveSubdomainIndexRoute = LiveSubdomainIndexRouteImport.update({
   path: '/live/$subdomain/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiveSubdomainBookmarksRoute = LiveSubdomainBookmarksRouteImport.update({
+  id: '/live/$subdomain/bookmarks',
+  path: '/live/$subdomain/bookmarks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveSubdomainFaqRoute = LiveSubdomainFaqRouteImport.update({
   id: '/live/$subdomain/faq',
   path: '/live/$subdomain/faq',
@@ -424,6 +436,7 @@ const TAgencySlugEEventSlugRoute = TAgencySlugEEventSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/bookmarks': typeof BookmarksRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -469,6 +482,7 @@ export interface FileRoutesByFullPath {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/bookmarks': typeof LiveSubdomainBookmarksRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
@@ -492,6 +506,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bookmarks': typeof BookmarksRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -537,6 +552,7 @@ export interface FileRoutesByTo {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/bookmarks': typeof LiveSubdomainBookmarksRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
@@ -562,6 +578,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/bookmarks': typeof BookmarksRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/join': typeof JoinRoute
@@ -607,6 +624,7 @@ export interface FileRoutesById {
   '/collect/bonus/$token': typeof CollectBonusTokenRoute
   '/demo/checkin/$venueId': typeof DemoCheckinVenueIdRoute
   '/demo/wineries/$venueId': typeof DemoWineriesVenueIdRoute
+  '/live/$subdomain/bookmarks': typeof LiveSubdomainBookmarksRoute
   '/live/$subdomain/faq': typeof LiveSubdomainFaqRoute
   '/live/$subdomain/join': typeof LiveSubdomainJoinRoute
   '/live/$subdomain/leaderboard': typeof LiveSubdomainLeaderboardRoute
@@ -633,6 +651,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/bookmarks'
     | '/contact'
     | '/faq'
     | '/join'
@@ -678,6 +697,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/bookmarks'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
@@ -701,6 +721,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/bookmarks'
     | '/contact'
     | '/faq'
     | '/join'
@@ -746,6 +767,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/bookmarks'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
@@ -770,6 +792,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/bookmarks'
     | '/contact'
     | '/faq'
     | '/join'
@@ -815,6 +838,7 @@ export interface FileRouteTypes {
     | '/collect/bonus/$token'
     | '/demo/checkin/$venueId'
     | '/demo/wineries/$venueId'
+    | '/live/$subdomain/bookmarks'
     | '/live/$subdomain/faq'
     | '/live/$subdomain/join'
     | '/live/$subdomain/leaderboard'
@@ -840,6 +864,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  BookmarksRoute: typeof BookmarksRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   JoinRoute: typeof JoinRoute
@@ -875,6 +900,7 @@ export interface RootRouteChildren {
   VenuesIndexRoute: typeof VenuesIndexRoute
   CollectBonusTokenRoute: typeof CollectBonusTokenRoute
   DemoCheckinVenueIdRoute: typeof DemoCheckinVenueIdRoute
+  LiveSubdomainBookmarksRoute: typeof LiveSubdomainBookmarksRoute
   LiveSubdomainFaqRoute: typeof LiveSubdomainFaqRoute
   LiveSubdomainJoinRoute: typeof LiveSubdomainJoinRoute
   LiveSubdomainLeaderboardRoute: typeof LiveSubdomainLeaderboardRoute
@@ -906,6 +932,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bookmarks': {
+      id: '/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/bookmarks'
+      preLoaderRoute: typeof BookmarksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -1237,6 +1270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/live/$subdomain/bookmarks': {
+      id: '/live/$subdomain/bookmarks'
+      path: '/live/$subdomain/bookmarks'
+      fullPath: '/live/$subdomain/bookmarks'
+      preLoaderRoute: typeof LiveSubdomainBookmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/faq': {
       id: '/live/$subdomain/faq'
       path: '/live/$subdomain/faq'
@@ -1427,6 +1467,7 @@ const TAgencySlugRouteWithChildren = TAgencySlugRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  BookmarksRoute: BookmarksRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   JoinRoute: JoinRoute,
@@ -1462,6 +1503,7 @@ const rootRouteChildren: RootRouteChildren = {
   VenuesIndexRoute: VenuesIndexRoute,
   CollectBonusTokenRoute: CollectBonusTokenRoute,
   DemoCheckinVenueIdRoute: DemoCheckinVenueIdRoute,
+  LiveSubdomainBookmarksRoute: LiveSubdomainBookmarksRoute,
   LiveSubdomainFaqRoute: LiveSubdomainFaqRoute,
   LiveSubdomainJoinRoute: LiveSubdomainJoinRoute,
   LiveSubdomainLeaderboardRoute: LiveSubdomainLeaderboardRoute,

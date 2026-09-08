@@ -85,6 +85,7 @@ const REBASEABLE = [
   "/map",
   "/leaderboard",
   "/prizes",
+  "/bookmarks",
   "/faq",
   "/terms",
   "/privacy",

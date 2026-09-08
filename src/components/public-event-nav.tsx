@@ -22,6 +22,7 @@ import {
   MapPin,
   Ticket,
   Share2,
+  Bookmark,
 } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
@@ -545,6 +546,12 @@ function MenuDrawer({
                 </PublicLink>
               </li>
             )}
+            <li>
+              <PublicLink to="/bookmarks" onClick={onClose} className={rowClass}>
+                <Bookmark className="h-5 w-5 opacity-80" />
+                My Bookmarks
+              </PublicLink>
+            </li>
             <li>
               <PublicLink to="/leaderboard" onClick={onClose} className={rowClass}>
                 <Trophy className="h-5 w-5 opacity-80" />
