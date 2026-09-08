@@ -750,11 +750,8 @@ function BrandingEditor() {
       logo_backdrop: orNull(form.logo_backdrop),
       logo_backdrop_color:
         form.logo_backdrop === "color" ? orNull(form.logo_backdrop_color) : null,
-      // Optional custom public menu item
-      custom_link_label: custom_link_label || null,
-      custom_link_url: custom_link_url || null,
-      custom_link_enabled:
-        form.custom_link_enabled && Boolean(custom_link_label) && Boolean(custom_link_url),
+      // Optional custom public menu item is owned by the event page's
+      // Branding tab, so this editor never writes those columns.
       // Brand Kit metadata
       brand_kit_key: brandKitKey,
       brand_kit_version: brandKitKey && brandKitKey !== "custom" ? BRAND_KIT_VERSION : null,
