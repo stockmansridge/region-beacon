@@ -412,11 +412,7 @@ export function AwardsPage({
             Prizes
           </TabButton>
           <TabButton active={tab === "bonus"} onClick={() => setTab("bonus")}>
-            Bonus Points {bonuses && bonuses.length > 0 && (
-              <span className="ml-1.5 rounded-full bg-[var(--event-primary,#1F3D2B)] px-1.5 py-0.5 text-[10px] text-[var(--event-primary-fg,#FFF)]">
-                {bonuses.length}
-              </span>
-            )}
+            Bonus Points
           </TabButton>
         </div>
 
