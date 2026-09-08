@@ -38,7 +38,7 @@ export function useEventCustomLink(
           setLink(null);
           return;
         }
-        setLink({ label: label.slice(0, 15), url });
+        setLink({ label: label.slice(0, 16), url });
       } catch {
         if (!cancelled) setLink(null);
       }
