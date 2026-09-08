@@ -23,12 +23,14 @@ import {
   Ticket,
   Share2,
   Bookmark,
+  ExternalLink,
 } from "lucide-react";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { useEventFaqByDomain } from "@/lib/use-event-faq";
 import { useEventHasMap } from "@/lib/use-event-has-map";
 import { useEventHasAwards } from "@/lib/use-event-has-awards";
 import { useEventVenueLabels } from "@/lib/use-event-venue-labels";
+import { useEventCustomLink } from "@/lib/use-event-custom-link";
 import { usePageViewTracking } from "@/lib/use-page-view-tracking";
 
 type ActiveTarget =
@@ -114,6 +116,7 @@ export function PublicEventNav({
   const { hasMap } = useEventHasMap(subdomain);
   const { hasAwards } = useEventHasAwards(subdomain);
   const venueLabels = useEventVenueLabels(subdomain);
+  const customLink = useEventCustomLink(subdomain);
 
   // Anonymous page-view counting for Analytics. Runs on every public event
   // page because the nav is rendered on all of them.
@@ -278,6 +281,7 @@ export function PublicEventNav({
           eventName={eventName ?? null}
           logoUrl={logoUrl ?? null}
           venueLabelPlural={venueLabels.plural}
+          customLink={customLink}
         />
       )}
 
@@ -443,6 +447,7 @@ function MenuDrawer({
   eventName,
   logoUrl,
   venueLabelPlural,
+  customLink,
 }: {
   onClose: () => void;
   navBg: string;
@@ -458,6 +463,7 @@ function MenuDrawer({
   eventName: string | null;
   logoUrl: string | null;
   venueLabelPlural: string;
+  customLink: { label: string; url: string } | null;
 }) {
   const rowClass =
     "flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition hover:bg-white/10 active:bg-white/15";
@@ -571,6 +577,20 @@ function MenuDrawer({
                   <HelpCircle className="h-5 w-5 opacity-80" />
                   FAQ / Info
                 </PublicLink>
+              </li>
+            )}
+            {customLink && (
+              <li>
+                <a
+                  href={customLink.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onClose}
+                  className={rowClass}
+                >
+                  <ExternalLink className="h-5 w-5 opacity-80" />
+                  {customLink.label}
+                </a>
               </li>
             )}
             {(hasTerms || hasPrivacy) && (
