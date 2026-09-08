@@ -665,8 +665,8 @@ function BrandingEditor() {
     if (pErr) { setValidationError(pErr); return; }
 
     const custom_link_label = trim(form.custom_link_label);
-    if (custom_link_label.length > 15) {
-      setValidationError("Menu item name must be 15 characters or fewer."); return;
+    if (custom_link_label.length > 16) {
+      setValidationError("Menu item name must be 16 characters or fewer."); return;
     }
     const custom_link_url = normalizeWebsiteUrl(form.custom_link_url) ?? "";
     if (form.custom_link_enabled && (!custom_link_label || !custom_link_url)) {
@@ -1575,13 +1575,13 @@ function BrandingEditor() {
                   Adds one extra link to the public event menu. Configure it, save, then switch it on.
                 </p>
                 <div className="space-y-4">
-                  <Field label="Name (max 15 characters)">
+                  <Field label="Name (max 16 characters)">
                     <input type="text" value={form.custom_link_label}
-                      onChange={(e) => setForm({ ...form, custom_link_label: e.target.value.slice(0, 15) })}
+                      onChange={(e) => setForm({ ...form, custom_link_label: e.target.value.slice(0, 16) })}
                       placeholder="Book a table" disabled={!canEdit || saving} maxLength={15}
                       className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50" />
                     <div className="mt-1 text-right text-xs text-muted-foreground">
-                      {form.custom_link_label.length}/15
+                      {form.custom_link_label.length}/16
                     </div>
                   </Field>
                   <Field label="Address">
