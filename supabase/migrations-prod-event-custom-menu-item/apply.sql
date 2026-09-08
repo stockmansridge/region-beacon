@@ -24,17 +24,12 @@ comment on column public.event_branding.custom_link_url is
 comment on column public.event_branding.custom_link_enabled is
   'When true and label + url are set, the custom item is shown in the public event menu.';
 
-do $$
-begin
-  if not exists (
-    select 1 from pg_constraint where conname = 'event_branding_custom_link_label_check'
-  ) then
-    alter table public.event_branding
-      add constraint event_branding_custom_link_label_check
-      check (custom_link_label is null or char_length(custom_link_label) <= 16);
-  end if;
-end
-$$;
+alter table public.event_branding
+  drop constraint if exists event_branding_custom_link_label_check;
+
+alter table public.event_branding
+  add constraint event_branding_custom_link_label_check
+  check (custom_link_label is null or char_length(custom_link_label) <= 16);
 
 -- Public read path. Companion RPC (same approach as
 -- get_public_event_logo_style) so the wide get_public_event_by_domain
