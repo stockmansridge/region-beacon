@@ -3107,7 +3107,11 @@ function EventDetail() {
               <EmptyNotice>No branding configured yet.</EmptyNotice>
             )}
             <div className="mt-6">
-              <CustomMenuItemCard eventId={event.id} canEdit={canEdit} />
+              <CustomMenuItemCard
+                eventId={event.id}
+                agencyId={event.agency_id}
+                canEdit={canEdit}
+              />
             </div>
           </Section>
 
