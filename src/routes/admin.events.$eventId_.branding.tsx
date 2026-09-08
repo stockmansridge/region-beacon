@@ -664,14 +664,6 @@ function BrandingEditor() {
     const pErr = validateVenueLabel(venue_label_plural, "Plural venue label");
     if (pErr) { setValidationError(pErr); return; }
 
-    const custom_link_label = trim(form.custom_link_label);
-    if (custom_link_label.length > 16) {
-      setValidationError("Menu item name must be 16 characters or fewer."); return;
-    }
-    const custom_link_url = normalizeWebsiteUrl(form.custom_link_url) ?? "";
-    if (form.custom_link_enabled && (!custom_link_label || !custom_link_url)) {
-      setValidationError("Add a menu item name and address before turning the custom menu item on."); return;
-    }
 
     let hero_overlay_opacity_num: number | null = null;
     if (form.hero_overlay_opacity.trim()) {
