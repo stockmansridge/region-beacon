@@ -571,14 +571,6 @@ function MenuDrawer({
               </PublicLink>
             </li>
 
-            {hasFaq && (
-              <li>
-                <PublicLink to="/faq" onClick={onClose} className={rowClass}>
-                  <HelpCircle className="h-5 w-5 opacity-80" />
-                  FAQ / Info
-                </PublicLink>
-              </li>
-            )}
             {customLink && (
               <li>
                 <a
@@ -593,6 +585,15 @@ function MenuDrawer({
                 </a>
               </li>
             )}
+            {hasFaq && (
+              <li>
+                <PublicLink to="/faq" onClick={onClose} className={rowClass}>
+                  <HelpCircle className="h-5 w-5 opacity-80" />
+                  FAQ / Info
+                </PublicLink>
+              </li>
+            )}
+
             {(hasTerms || hasPrivacy) && (
               <li>
                 <PublicLink to="/terms-privacy" onClick={onClose} className={rowClass}>

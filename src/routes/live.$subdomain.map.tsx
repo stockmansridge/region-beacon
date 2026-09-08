@@ -13,6 +13,7 @@ import { resolveVenueLabels } from "@/lib/venue-labels";
 import { buildAppleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
+import { usePassportBookmarks } from "@/lib/use-passport-bookmarks";
 import { PoweredByGetStampd } from "@/components/brand";
 import { matchRootDomain, tenantHost } from "@/lib/domains";
 import {
@@ -74,7 +75,7 @@ type EventRow = {
   logo_path?: string | null;
 };
 
-type Filter = "all" | "visited" | "not_visited";
+type Filter = "all" | "visited" | "not_visited" | "bookmarked";
 
 type MapDiagnostics = {
   tokenStatus: "pending" | "ok" | "error";
@@ -115,6 +116,11 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const [selected, setSelected] = useState<VenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const hasPassport = passportState.hasPassport;
+  const bookmarks = usePassportBookmarks(event?.event_id ?? null);
+  const bookmarkedVenueIds = useMemo(
+    () => new Set(bookmarks.rows.filter((r) => r.kind === "venue").map((r) => r.venue_id)),
+    [bookmarks.rows],
+  );
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -178,8 +184,10 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     if (!hasPassport || filter === "all") return geoVenues;
     if (filter === "visited")
       return geoVenues.filter((v) => v.venue_id && visitedIds.has(v.venue_id));
+    if (filter === "bookmarked")
+      return geoVenues.filter((v) => v.venue_id && bookmarkedVenueIds.has(v.venue_id));
     return geoVenues.filter((v) => v.venue_id && !visitedIds.has(v.venue_id));
-  }, [geoVenues, filter, visitedIds, hasPassport]);
+  }, [geoVenues, filter, visitedIds, hasPassport, bookmarkedVenueIds]);
 
   // Init MapKit
   useEffect(() => {
@@ -559,6 +567,9 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
                       { k: "all", label: "All" },
                       { k: "visited", label: "Visited" },
                       { k: "not_visited", label: "Not visited" },
+                      ...(bookmarks.enabled
+                        ? [{ k: "bookmarked" as Filter, label: "Bookmarked" }]
+                        : []),
                     ] as Array<{ k: Filter; label: string }>
                   ).map((f) => {
                     const active = filter === f.k;
