@@ -3106,6 +3106,9 @@ function EventDetail() {
             ) : (
               <EmptyNotice>No branding configured yet.</EmptyNotice>
             )}
+            <div className="mt-6">
+              <CustomMenuItemCard eventId={event.id} canEdit={canEdit} />
+            </div>
           </Section>
 
 
@@ -5035,6 +5038,153 @@ function ColorSwatch({ value }: { value: string | null }) {
       />
       <code className="text-xs">{value}</code>
     </span>
+  );
+}
+
+/**
+ * Optional extra item in the public event menu. Owned here (Branding tab on the
+ * event page) rather than in the landing-page branding editor, so the editor
+ * never writes these columns.
+ */
+function CustomMenuItemCard({
+  eventId,
+  canEdit,
+}: {
+  eventId: string;
+  canEdit: boolean;
+}) {
+  const [label, setLabel] = useState("");
+  const [url, setUrl] = useState("");
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("event_branding")
+        .select("custom_link_label, custom_link_url, custom_link_enabled")
+        .eq("event_id", eventId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        setUnavailable(true);
+      } else {
+        const row = (data ?? null) as {
+          custom_link_label?: string | null;
+          custom_link_url?: string | null;
+          custom_link_enabled?: boolean | null;
+        } | null;
+        setLabel((row?.custom_link_label ?? "").slice(0, 16));
+        setUrl(row?.custom_link_url ?? "");
+        setEnabled(Boolean(row?.custom_link_enabled));
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
+
+  async function save() {
+    const trimmedLabel = label.trim().slice(0, 16);
+    const normalisedUrl = normalizeWebsiteUrl(url) ?? "";
+    if (enabled && (!trimmedLabel || !normalisedUrl)) {
+      toast.error("Add a menu item name and address before turning it on.");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("event_branding")
+      .upsert(
+        {
+          event_id: eventId,
+          custom_link_label: trimmedLabel || null,
+          custom_link_url: normalisedUrl || null,
+          custom_link_enabled: enabled && Boolean(trimmedLabel) && Boolean(normalisedUrl),
+        },
+        { onConflict: "event_id" },
+      );
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setLabel(trimmedLabel);
+    setUrl(normalisedUrl);
+    toast.success("Custom menu item saved.");
+  }
+
+  if (unavailable) {
+    return (
+      <EmptyNotice>
+        Custom menu item isn&apos;t available on this database yet.
+      </EmptyNotice>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border bg-muted/30 p-4">
+      <div className="mb-1 text-sm font-semibold">Custom menu item</div>
+      <p className="mb-3 text-xs leading-5 text-muted-foreground">
+        Adds one extra link to the public event menu. Configure it, save, then switch it on.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block text-xs font-medium text-muted-foreground">
+          Name (max 16 characters)
+          <input
+            type="text"
+            value={label}
+            onChange={(e) => setLabel(e.target.value.slice(0, 16))}
+            placeholder="Book a table"
+            maxLength={16}
+            disabled={!canEdit || saving || loading}
+            className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground disabled:opacity-50"
+          />
+          <span className="mt-1 block text-right">{label.length}/16</span>
+        </label>
+        <label className="block text-xs font-medium text-muted-foreground">
+          Address
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onBlur={(e) => {
+              const normalised = normalizeWebsiteUrl(e.target.value);
+              if (normalised) setUrl(normalised);
+            }}
+            placeholder="https://example.com"
+            maxLength={500}
+            disabled={!canEdit || saving || loading}
+            className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground disabled:opacity-50"
+          />
+          <span className="mt-1 block">https:// is added automatically.</span>
+        </label>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            disabled={!canEdit || saving || loading}
+            className="h-4 w-4 rounded border"
+          />
+          Show this item in the public menu
+        </label>
+        <button
+          type="button"
+          onClick={save}
+          disabled={!canEdit || saving || loading}
+          className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save menu item"}
+        </button>
+      </div>
+    </div>
   );
 }
 
