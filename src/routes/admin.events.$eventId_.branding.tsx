@@ -1569,41 +1569,6 @@ function BrandingEditor() {
                   placeholder="Venue" disabled={!canEdit || saving} maxLength={VENUE_LABEL_MAX}
                   className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50" />
               </Field>
-              <div className="rounded-[12px] border border-[#D9E2EF] bg-[#F8FAFC] p-4">
-                <div className="mb-1 text-sm font-semibold text-[#111827]">Custom menu item</div>
-                <p className="mb-3 text-xs leading-5 text-[#64748B]">
-                  Adds one extra link to the public event menu. Configure it, save, then switch it on.
-                </p>
-                <div className="space-y-4">
-                  <Field label="Name (max 16 characters)">
-                    <input type="text" value={form.custom_link_label}
-                      onChange={(e) => setForm({ ...form, custom_link_label: e.target.value.slice(0, 16) })}
-                      placeholder="Book a table" disabled={!canEdit || saving} maxLength={15}
-                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50" />
-                    <div className="mt-1 text-right text-xs text-muted-foreground">
-                      {form.custom_link_label.length}/16
-                    </div>
-                  </Field>
-                  <Field label="Address">
-                    <input type="text" value={form.custom_link_url}
-                      onChange={(e) => setForm({ ...form, custom_link_url: e.target.value })}
-                      onBlur={(e) => {
-                        const normalised = normalizeWebsiteUrl(e.target.value);
-                        if (normalised) setForm((prev) => ({ ...prev, custom_link_url: normalised }));
-                      }}
-                      placeholder="https://example.com" disabled={!canEdit || saving} maxLength={500}
-                      className="h-10 w-full rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm text-[#111827] placeholder:text-[#94A3B8] focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50" />
-                    <p className="mt-1 text-xs text-[#64748B]">https:// is added automatically.</p>
-                  </Field>
-                  <label className="flex items-center gap-3 text-sm text-[#111827]">
-                    <input type="checkbox" checked={form.custom_link_enabled}
-                      onChange={(e) => setForm({ ...form, custom_link_enabled: e.target.checked })}
-                      disabled={!canEdit || saving}
-                      className="h-4 w-4 rounded border-[#D9E2EF]" />
-                    Show this item in the public menu
-                  </label>
-                </div>
-              </div>
 
               <Field label="Plural venue label">
                 <input type="text" value={form.venue_label_plural}
