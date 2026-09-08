@@ -5052,9 +5052,11 @@ function ColorSwatch({ value }: { value: string | null }) {
  */
 function CustomMenuItemCard({
   eventId,
+  agencyId,
   canEdit,
 }: {
   eventId: string;
+  agencyId: string;
   canEdit: boolean;
 }) {
   const [label, setLabel] = useState("");
