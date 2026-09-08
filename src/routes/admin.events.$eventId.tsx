@@ -5103,17 +5103,27 @@ function CustomMenuItemCard({
       return;
     }
     setSaving(true);
-    const { error } = await supabase
+    const payload = {
+      custom_link_label: trimmedLabel || null,
+      custom_link_url: normalisedUrl || null,
+      custom_link_enabled: enabled && Boolean(trimmedLabel) && Boolean(normalisedUrl),
+    };
+    // event_branding.agency_id is NOT NULL, so an upsert that only carries
+    // event_id fails when the row already exists (it inserts). Update first,
+    // then insert with agency_id when there is no row yet.
+    const updated = await supabase
       .from("event_branding")
-      .upsert(
-        {
-          event_id: eventId,
-          custom_link_label: trimmedLabel || null,
-          custom_link_url: normalisedUrl || null,
-          custom_link_enabled: enabled && Boolean(trimmedLabel) && Boolean(normalisedUrl),
-        },
-        { onConflict: "event_id" },
-      );
+      .update(payload)
+      .eq("event_id", eventId)
+      .select("event_id")
+      .maybeSingle();
+    let error = updated.error;
+    if (!error && !updated.data) {
+      const inserted = await supabase
+        .from("event_branding")
+        .insert({ event_id: eventId, agency_id: agencyId, ...payload });
+      error = inserted.error;
+    }
     setSaving(false);
     if (error) {
       toast.error(error.message);
