@@ -149,7 +149,9 @@ export function PublicEventNav({
   return (
     <>
       {!hideAnnouncementBar && (
-        <PublicAnnouncementBar subdomain={subdomain} navBg={navBg} navFg={navFg} />
+        <div className="-mx-4">
+          <PublicAnnouncementBar subdomain={subdomain} navBg={navBg} navFg={navFg} />
+        </div>
       )}
       {/* Sticky app-style header */}
       <header
