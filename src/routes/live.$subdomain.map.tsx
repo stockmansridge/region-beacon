@@ -118,7 +118,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
   const hasPassport = passportState.hasPassport;
   const bookmarks = usePassportBookmarks(event?.event_id ?? null);
   const bookmarkedVenueIds = useMemo(
-    () => new Set(bookmarks.rows.filter((r) => r.kind === "venue").map((r) => r.venue_id)),
+    () => new Set(bookmarks.rows.map((r) => r.venue_id)),
     [bookmarks.rows],
   );
 

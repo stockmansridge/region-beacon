@@ -139,7 +139,7 @@ export function PublicAnnouncementBar({
 
   return (
     <div
-      className="-mx-4 w-auto"
+      className="w-full"
       role="region"
       aria-label="Event announcements"
       style={{
