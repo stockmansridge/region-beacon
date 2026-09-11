@@ -606,6 +606,16 @@ export function BonusCodesSection({
               {zipBusy ? "Preparing ZIP…" : "Download all QR codes (ZIP)"}
             </button>
           )}
+          {canEdit && sortedRows.length > 0 && (
+            <button
+              type="button"
+              onClick={downloadSheetPdf}
+              disabled={sheetBusy}
+              className="inline-flex h-9 items-center rounded-lg border bg-white px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            >
+              {sheetBusy ? "Building sheet…" : "Download print sheet (A4 PDF)"}
+            </button>
+          )}
           <label className="ml-auto inline-flex items-center gap-2 text-xs text-[#475569]">
             <span className="font-medium">Show</span>
             <select
