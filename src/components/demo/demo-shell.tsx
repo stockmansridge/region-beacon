@@ -83,8 +83,8 @@ export function DemoShell({
       navFgColor={null}
       navMutedColor={null}
       navActiveFgColor={null}
-      heroBgColor={null}
-      heroFgColor={null}
+      heroBgColor={DEMO_EVENT.hero_bg_color}
+      heroFgColor={DEMO_EVENT.hero_fg_color}
       heroAccentColor={null}
       fontFamily={DEMO_EVENT.font_family}
       headingFontFamily={null}
