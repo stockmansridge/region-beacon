@@ -873,37 +873,14 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 borderColor: "var(--event-card-border)",
               }}
             />
-            <span>
-              Send me updates about this event and future trails (optional).
-            </span>
-          </label>
-
-          {/* SMS consent — deliberately separate from the email opt-in above. */}
-          <label
-            className="mt-3 flex items-start gap-3 text-sm"
-            style={{ color: "var(--event-card-text)" }}
-          >
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded"
-              checked={form.sms_opt_in}
-              onChange={(e) => update("sms_opt_in", e.target.checked)}
-              style={{
-                accentColor: "var(--event-button-primary-bg)",
-                borderColor: "var(--event-card-border)",
-              }}
-            />
-            <span>
-              Send me SMS updates about this event
-              <span className="mt-1 block text-xs opacity-75">
-                Get event alerts and important updates by SMS. You can opt out at any time by
-                replying STOP.
-                {form.sms_opt_in && !smsCapable ? (
-                  <span className="mt-1 block font-medium">
-                    Add a valid Australian mobile number above so we can send these updates —
-                    without one, SMS stays switched off.
-                  </span>
-                ) : null}
+            <span className="flex flex-col">
+              <span className="font-semibold">
+                Keep me in the loop with Orange Wine Quest
+              </span>
+              <span className="mt-0.5 text-xs opacity-85">
+                Get updates on prizes and winners, special offers, upcoming events, wine
+                experiences and future Orange Wine Quests from Orange Region Vignerons
+                Association. You can unsubscribe at any time.
               </span>
             </span>
           </label>
