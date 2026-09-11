@@ -15,7 +15,7 @@ import { Stamp, Trophy, MapPin, Tag } from "lucide-react";
 export const Route = createFileRoute("/demo/")({
   head: () => ({
     meta: [
-      { title: "Cargo Road Wine Quest — GetStampd demo" },
+      { title: "Orange Wine Quest — GetStampd demo" },
       {
         name: "description",
         content:
