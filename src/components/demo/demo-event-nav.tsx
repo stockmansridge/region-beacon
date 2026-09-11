@@ -351,7 +351,7 @@ function DemoMenuDrawer({
             </li>
             <li>
               <Link to="/demo/wineries" onClick={onClose} className={rowClass}>
-                <MapPin className="h-5 w-5 opacity-80" /> Wineries
+                <MapPin className="h-5 w-5 opacity-80" /> Cellar Doors
               </Link>
             </li>
             <li>

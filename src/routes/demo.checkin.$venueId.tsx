@@ -10,7 +10,7 @@ export const Route = createFileRoute("/demo/checkin/$venueId")({
   notFoundComponent: () => (
     <DemoShell>
       <div className="py-16 text-center text-sm" style={{ color: "var(--event-muted)" }}>
-        Winery not found in demo.
+        Cellar door not found in demo.
       </div>
     </DemoShell>
   ),
