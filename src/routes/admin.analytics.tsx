@@ -163,12 +163,24 @@ function Analytics() {
           .eq("agency_id", agencyId)
           .eq("is_active", true),
       ]);
-      // Bonus scans — tolerate a missing table on older schemas.
-      const bRes = await supabase
+      // Bonus scans — the ledger timestamps rows with `awarded_at`; older
+      // schemas may only have `created_at`, so fall back when needed.
+      let bRes = await supabase
         .from("participant_point_awards")
-        .select("id, event_id, participant_id, source_id, points_awarded, created_at, metadata")
+        .select(
+          "id, event_id, participant_id, source_id, points_awarded, created_at:awarded_at, metadata",
+        )
         .eq("agency_id", agencyId)
         .eq("award_type", "bonus");
+      if (bRes.error) {
+        bRes = await supabase
+          .from("participant_point_awards")
+          .select(
+            "id, event_id, participant_id, source_id, points_awarded, created_at, metadata",
+          )
+          .eq("agency_id", agencyId)
+          .eq("award_type", "bonus");
+      }
       // Page views — tolerate a missing table on schemas without the
       // event-page-views migration applied.
       const pvRes = await supabase
