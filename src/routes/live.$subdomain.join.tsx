@@ -90,7 +90,7 @@ type FormState = {
   mobile: string;
   postcode: string;
   marketing_opt_in: boolean;
-  /** SMS is a separate consent from marketing_opt_in — never reuse that flag. */
+  /** SMS consent is no longer collected on the public signup page. */
   sms_opt_in: boolean;
   accept_terms: boolean;
 };
@@ -142,6 +142,7 @@ function buildFormSchema(settings: FieldSettings) {
       ? z.string().trim().min(3, "Please enter your postcode").max(16, "Postcode is too long")
       : z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
     marketing_opt_in: z.boolean(),
+    // SMS consent is no longer shown on the signup page; always recorded as false.
     sms_opt_in: z.boolean(),
     accept_terms: z.literal(true, {
       errorMap: () => ({ message: "You must accept the terms & privacy policy" }),
@@ -178,8 +179,6 @@ function friendlyError(raw: string | undefined): string {
     return "Enter a valid Australian mobile number, or leave it blank.";
   if (raw.includes("postcode_required")) return "Please enter your postcode.";
   if (raw.includes("postcode_invalid")) return "Enter a valid postcode.";
-  if (raw.includes("sms_requires_mobile"))
-    return "Add a valid Australian mobile number to receive SMS updates, or untick the SMS box.";
   return "Could not create your passport. Please try again.";
 }
 
@@ -361,7 +360,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     mobile: "",
     postcode: "",
     marketing_opt_in: true,
-    sms_opt_in: true,
+    sms_opt_in: false,
     accept_terms: false,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -425,9 +424,6 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     [],
   );
 
-  // A mobile number that normalises to E.164 is required before SMS consent can
-  // be recorded as active — same rule the database enforces.
-  const smsCapable = useMemo(() => isSmsCapableMobile(form.mobile), [form.mobile]);
   const settings = useMemo(() => fieldSettings(event), [event]);
 
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
@@ -437,15 +433,6 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     e.preventDefault();
     setTopError(null);
     setDebugInfo(null);
-
-    // SMS consent can never be recorded without an SMS-capable number.
-    if (form.sms_opt_in && !smsCapable) {
-      setErrors({
-        mobile:
-          "Add a valid Australian mobile number to receive SMS updates, or untick the SMS box.",
-      });
-      return;
-    }
 
     const parsed = buildFormSchema(settings).safeParse(form);
     if (!parsed.success) {
@@ -474,8 +461,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
       _mobile_present: Boolean(form.mobile.trim()),
       _postcode_present: Boolean(form.postcode.trim()),
       _marketing_opt_in: form.marketing_opt_in,
-      _sms_opt_in_requested: form.sms_opt_in,
-      _sms_capable_mobile: smsCapable,
+      _sms_opt_in_requested: false,
+      _sms_capable_mobile: false,
       _accepted_terms_version_id: event.current_terms_version_id,
       _locale: locale,
     };
@@ -886,37 +873,14 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
                 borderColor: "var(--event-card-border)",
               }}
             />
-            <span>
-              Send me updates about this event and future trails (optional).
-            </span>
-          </label>
-
-          {/* SMS consent — deliberately separate from the email opt-in above. */}
-          <label
-            className="mt-3 flex items-start gap-3 text-sm"
-            style={{ color: "var(--event-card-text)" }}
-          >
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded"
-              checked={form.sms_opt_in}
-              onChange={(e) => update("sms_opt_in", e.target.checked)}
-              style={{
-                accentColor: "var(--event-button-primary-bg)",
-                borderColor: "var(--event-card-border)",
-              }}
-            />
-            <span>
-              Send me SMS updates about this event
-              <span className="mt-1 block text-xs opacity-75">
-                Get event alerts and important updates by SMS. You can opt out at any time by
-                replying STOP.
-                {form.sms_opt_in && !smsCapable ? (
-                  <span className="mt-1 block font-medium">
-                    Add a valid Australian mobile number above so we can send these updates —
-                    without one, SMS stays switched off.
-                  </span>
-                ) : null}
+            <span className="flex flex-col">
+              <span className="font-semibold">
+                Keep me in the loop with Orange Wine Quest
+              </span>
+              <span className="mt-0.5 text-xs opacity-85">
+                Get updates on prizes and winners, special offers, upcoming events, wine
+                experiences and future Orange Wine Quests from Orange Region Vignerons
+                Association. You can unsubscribe at any time.
               </span>
             </span>
           </label>
