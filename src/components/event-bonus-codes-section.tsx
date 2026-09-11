@@ -107,6 +107,7 @@ export function BonusCodesSection({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"active" | "disabled" | "all">("active");
   const [zipBusy, setZipBusy] = useState(false);
+  const [sheetBusy, setSheetBusy] = useState(false);
 
   const venueMap = useMemo(() => {
     const m = new Map<string, VenueLite>();
@@ -443,6 +444,116 @@ export function BonusCodesSection({
     }
   }
 
+  // Bulk print sheet: A4 portrait, 2 columns x 3 rows of QR codes per page
+  // with dashed cut guides so organisers can cut and distribute them.
+  async function downloadSheetPdf() {
+    if (sheetBusy) return;
+    setSheetBusy(true);
+    try {
+      const [{ jsPDF }, QRCode] = await Promise.all([
+        import("jspdf"),
+        import("qrcode").then((m) => m.default ?? m),
+      ]);
+
+      type Cell = { title: string; subtitle: string | null; url: string };
+      const cells: Cell[] = [];
+      for (const row of sortedRows) {
+        if (row.scope === "per_venue") {
+          for (const vb of venueBonuses.filter(
+            (vb) => vb.bonus_code_id === row.id && vb.is_active,
+          )) {
+            cells.push({
+              title: row.name,
+              subtitle: venueMap.get(vb.venue_id)?.name ?? "Unknown venue",
+              url: buildBonusUrl(vb.qr_code_token),
+            });
+          }
+        } else {
+          cells.push({
+            title: row.name,
+            subtitle: null,
+            url: buildBonusUrl(row.qr_code_token),
+          });
+        }
+      }
+
+      if (cells.length === 0) {
+        toast.error("No bonus QR codes to download.");
+        return;
+      }
+
+      const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = doc.internal.pageSize.getWidth(); // 210
+      const pageH = doc.internal.pageSize.getHeight(); // 297
+      const margin = 10;
+      const cols = 2;
+      const rowsPerPage = 3;
+      const cellW = (pageW - margin * 2) / cols;
+      const cellH = (pageH - margin * 2) / rowsPerPage;
+      const perPage = cols * rowsPerPage;
+
+      for (let i = 0; i < cells.length; i++) {
+        const cell = cells[i];
+        const idx = i % perPage;
+        if (i > 0 && idx === 0) doc.addPage();
+        const col = idx % cols;
+        const rowIdx = Math.floor(idx / cols);
+        const x = margin + col * cellW;
+        const y = margin + rowIdx * cellH;
+
+        // Cut guide
+        doc.setDrawColor("#94A3B8");
+        doc.setLineWidth(0.2);
+        doc.setLineDashPattern([1.5, 1.5], 0);
+        doc.rect(x, y, cellW, cellH);
+        doc.setLineDashPattern([], 0);
+
+        const qrDataUrl = await QRCode.toDataURL(cell.url, {
+          errorCorrectionLevel: "H",
+          margin: 1,
+          width: 1024,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+
+        const qrSize = Math.min(cellW - 24, cellH - 40);
+        const qrX = x + (cellW - qrSize) / 2;
+        const qrY = y + 10;
+        doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize, undefined, "FAST");
+
+        let textY = qrY + qrSize + 7;
+        doc.setTextColor("#111111");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        const titleLines = doc
+          .splitTextToSize(cell.title, cellW - 16)
+          .slice(0, 2) as string[];
+        doc.text(titleLines, x + cellW / 2, textY, { align: "center" });
+        textY += 5 * titleLines.length;
+
+        if (cell.subtitle) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          doc.setTextColor("#334155");
+          const subLines = doc
+            .splitTextToSize(cell.subtitle, cellW - 16)
+            .slice(0, 2) as string[];
+          doc.text(subLines, x + cellW / 2, textY, { align: "center" });
+        }
+      }
+
+      doc.save("getstampd-bonus-codes-sheet.pdf");
+      toast.success(
+        `${cells.length} bonus QR code${cells.length === 1 ? "" : "s"} added to the print sheet.`,
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not build the print sheet.",
+      );
+    } finally {
+      setSheetBusy(false);
+    }
+  }
+
   const sortedRows = useMemo(() => {
     const all = rows ?? [];
     if (statusFilter === "active") return all.filter((r) => r.is_active);
@@ -493,6 +604,16 @@ export function BonusCodesSection({
               className="inline-flex h-9 items-center rounded-lg border bg-white px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
             >
               {zipBusy ? "Preparing ZIP…" : "Download all QR codes (ZIP)"}
+            </button>
+          )}
+          {canEdit && sortedRows.length > 0 && (
+            <button
+              type="button"
+              onClick={downloadSheetPdf}
+              disabled={sheetBusy}
+              className="inline-flex h-9 items-center rounded-lg border bg-white px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            >
+              {sheetBusy ? "Building sheet…" : "Download print sheet (A4 PDF)"}
             </button>
           )}
           <label className="ml-auto inline-flex items-center gap-2 text-xs text-[#475569]">
