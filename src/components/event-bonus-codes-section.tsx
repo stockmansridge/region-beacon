@@ -106,6 +106,7 @@ export function BonusCodesSection({
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"active" | "disabled" | "all">("active");
+  const [zipBusy, setZipBusy] = useState(false);
 
   const venueMap = useMemo(() => {
     const m = new Map<string, VenueLite>();
@@ -367,6 +368,81 @@ export function BonusCodesSection({
     }
   }
 
+  // Bulk ZIP download: regenerates each QR PNG in the browser using the exact
+  // same renderer, caption and filename as the individual download buttons.
+  async function downloadAllZip() {
+    if (zipBusy) return;
+    setZipBusy(true);
+    try {
+      const [{ default: JSZip }, { renderQrPngDataUrl, dataUrlToBase64 }] =
+        await Promise.all([import("jszip"), import("@/lib/qr-png")]);
+      const zip = new JSZip();
+      const used = new Set<string>();
+      const addPng = (baseName: string, base64: string) => {
+        let name = `${baseName}.png`;
+        let n = 2;
+        while (used.has(name)) name = `${baseName}-${n++}.png`;
+        used.add(name);
+        zip.file(name, base64, { base64: true });
+      };
+
+      let count = 0;
+      for (const row of sortedRows) {
+        if (row.scope === "per_venue") {
+          const perVenueRows = venueBonuses.filter(
+            (vb) => vb.bonus_code_id === row.id && vb.is_active,
+          );
+          for (const vb of perVenueRows) {
+            const venueName = venueMap.get(vb.venue_id)?.name ?? "Unknown venue";
+            const dataUrl = await renderQrPngDataUrl({
+              value: buildBonusUrl(vb.qr_code_token),
+              size: 160,
+              caption: `${row.name} — ${venueName}`,
+            });
+            addPng(
+              `getstampd-bonus-${sanitizeFilename(row.name)}-${sanitizeFilename(venueName)}`,
+              dataUrlToBase64(dataUrl),
+            );
+            count++;
+          }
+        } else {
+          const dataUrl = await renderQrPngDataUrl({
+            value: buildBonusUrl(row.qr_code_token),
+            size: 180,
+            caption: row.name,
+          });
+          addPng(
+            `getstampd-bonus-code-${sanitizeFilename(row.name)}`,
+            dataUrlToBase64(dataUrl),
+          );
+          count++;
+        }
+      }
+
+      if (count === 0) {
+        toast.error("No bonus QR codes to download.");
+        return;
+      }
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "getstampd-bonus-codes.zip";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`${count} bonus QR code${count === 1 ? "" : "s"} downloaded.`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not build the ZIP download.",
+      );
+    } finally {
+      setZipBusy(false);
+    }
+  }
+
   const sortedRows = useMemo(() => {
     const all = rows ?? [];
     if (statusFilter === "active") return all.filter((r) => r.is_active);
@@ -407,6 +483,16 @@ export function BonusCodesSection({
               className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
             >
               Add bonus code
+            </button>
+          )}
+          {canEdit && sortedRows.length > 0 && (
+            <button
+              type="button"
+              onClick={downloadAllZip}
+              disabled={zipBusy}
+              className="inline-flex h-9 items-center rounded-lg border bg-white px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            >
+              {zipBusy ? "Preparing ZIP…" : "Download all QR codes (ZIP)"}
             </button>
           )}
           <label className="ml-auto inline-flex items-center gap-2 text-xs text-[#475569]">
