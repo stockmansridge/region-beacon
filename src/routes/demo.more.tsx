@@ -11,7 +11,7 @@ import {
   Home,
 } from "lucide-react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_EVENT, DEMO_FAQ, useDemoPassport } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT, DEMO_FAQ, useDemoPassport } from "@/lib/demo-event";
 
 export const Route = createFileRoute("/demo/more")({
   head: () => ({ meta: [{ title: `More — ${DEMO_EVENT.name} demo` }] }),
@@ -29,9 +29,14 @@ function DemoMore() {
 
         <nav className="mt-4 rounded-2xl border" style={{ borderColor: "var(--event-card-border)", backgroundColor: "var(--event-card-bg)" }}>
           <MoreRow to="/demo" icon={<Home className="h-4 w-4" />} label="Home" />
-          <MoreRow to="/demo/wineries" icon={<MapPin className="h-4 w-4" />} label="Wineries" />
+          <MoreRow
+            to="/demo/wineries"
+            icon={<MapPin className="h-4 w-4" />}
+            label={DEMO_EVENT.venue_label_plural}
+          />
           <MoreRow to="/demo/offers" icon={<Tag className="h-4 w-4" />} label="Offers" />
           <MoreRow to="/demo/rewards" icon={<Trophy className="h-4 w-4" />} label="Prizes" />
+          <MoreRow to="/demo/leaderboard" icon={<Award className="h-4 w-4" />} label="Leaders" />
           <MoreRow to="/demo/invite" icon={<Share2 className="h-4 w-4" />} label="Invite friends" />
         </nav>
 

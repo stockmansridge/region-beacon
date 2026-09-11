@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, MapPin, Navigation } from "lucide-react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_VENUES, useDemoPassport, DEMO_EVENT } from "@/lib/demo-cargo-road";
+import { DEMO_VENUES, useDemoPassport, DEMO_EVENT } from "@/lib/demo-event";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/demo/wineries")({
-  head: () => ({ meta: [{ title: `Wineries — ${DEMO_EVENT.name} demo` }] }),
+  head: () => ({ meta: [{ title: `Cellar Doors — ${DEMO_EVENT.name} demo` }] }),
   component: DemoWineries,
 });
 
@@ -15,7 +15,7 @@ function DemoWineries() {
     <DemoShell activeNav="venues">
       <main className="pb-20">
         <h1 className="text-xl font-semibold" style={{ color: "var(--event-heading)" }}>
-          Wineries
+          Cellar Doors
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--event-muted)" }}>
           Six cellar doors across the ridge. Tap any winery for details, offers and directions.

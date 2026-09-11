@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Copy, Mail, MessageCircle, Share2 } from "lucide-react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_EVENT } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT } from "@/lib/demo-event";
 
 export const Route = createFileRoute("/demo/invite")({
   head: () => ({ meta: [{ title: `Invite friends — ${DEMO_EVENT.name} demo` }] }),

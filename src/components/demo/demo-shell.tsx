@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Info } from "lucide-react";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { DEMO_EVENT, useDemoPassport } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT, useDemoPassport } from "@/lib/demo-event";
 import { DemoEventNav } from "./demo-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
@@ -64,7 +64,7 @@ export function DemoShell({
       backgroundKey={null}
       primaryColor={DEMO_EVENT.primary_color}
       accentColor={DEMO_EVENT.accent_color}
-      pageBackgroundColor={null}
+      pageBackgroundColor={DEMO_EVENT.page_background_color}
       cardBackgroundColor={null}
       textColor={null}
       mutedTextColor={null}
@@ -83,8 +83,8 @@ export function DemoShell({
       navFgColor={null}
       navMutedColor={null}
       navActiveFgColor={null}
-      heroBgColor={null}
-      heroFgColor={null}
+      heroBgColor={DEMO_EVENT.hero_bg_color}
+      heroFgColor={DEMO_EVENT.hero_fg_color}
       heroAccentColor={null}
       fontFamily={DEMO_EVENT.font_family}
       headingFontFamily={null}

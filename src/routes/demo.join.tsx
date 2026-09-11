@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_EVENT, useDemoPassport } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT, useDemoPassport } from "@/lib/demo-event";
 
 export const Route = createFileRoute("/demo/join")({
   head: () => ({ meta: [{ title: `Join — ${DEMO_EVENT.name} demo` }] }),

@@ -7,16 +7,16 @@ import {
   DEMO_OFFERS,
   DEMO_BONUS_CHALLENGES,
   useDemoPassport,
-} from "@/lib/demo-cargo-road";
+} from "@/lib/demo-event";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/demo/wineries/$venueId")({
-  head: () => ({ meta: [{ title: `Winery — ${DEMO_EVENT.name} demo` }] }),
+  head: () => ({ meta: [{ title: `Cellar Door — ${DEMO_EVENT.name} demo` }] }),
   component: DemoVenueDetail,
   notFoundComponent: () => (
     <DemoShell>
       <div className="py-16 text-center text-sm" style={{ color: "var(--event-muted)" }}>
-        Winery not found in demo.
+        Cellar door not found in demo.
         <div className="mt-3">
           <Link to="/demo/wineries" className="underline">
             Back to wineries

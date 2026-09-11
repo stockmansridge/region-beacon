@@ -6,7 +6,7 @@ import {
   DEMO_VENUES,
   DEMO_AWARDS,
   useDemoPassport,
-} from "@/lib/demo-cargo-road";
+} from "@/lib/demo-event";
 
 export const Route = createFileRoute("/demo/passport")({
   head: () => ({ meta: [{ title: `My passport — ${DEMO_EVENT.name} demo` }] }),

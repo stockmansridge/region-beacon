@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin, Navigation, Check } from "lucide-react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_EVENT, DEMO_VENUES, useDemoPassport } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT, DEMO_VENUES, useDemoPassport } from "@/lib/demo-event";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/demo/trail-map")({
@@ -20,7 +20,7 @@ function DemoTrailMap() {
           Map
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--event-muted)" }}>
-          Six wineries across the Cargo Road ridge. Tap a pin for details.
+          Cellar doors across the Orange wine region. Tap a pin for details.
         </p>
 
         {/* Faux map hero */}

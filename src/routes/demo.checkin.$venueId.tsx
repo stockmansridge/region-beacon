@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-ro
 import { useEffect } from "react";
 import { Check } from "lucide-react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_EVENT, DEMO_VENUES, useDemoPassport } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT, DEMO_VENUES, useDemoPassport } from "@/lib/demo-event";
 
 export const Route = createFileRoute("/demo/checkin/$venueId")({
   head: () => ({ meta: [{ title: `Check in — ${DEMO_EVENT.name} demo` }] }),
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/demo/checkin/$venueId")({
   notFoundComponent: () => (
     <DemoShell>
       <div className="py-16 text-center text-sm" style={{ color: "var(--event-muted)" }}>
-        Winery not found in demo.
+        Cellar door not found in demo.
       </div>
     </DemoShell>
   ),
