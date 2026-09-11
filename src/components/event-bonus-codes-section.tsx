@@ -106,6 +106,7 @@ export function BonusCodesSection({
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"active" | "disabled" | "all">("active");
+  const [zipBusy, setZipBusy] = useState(false);
 
   const venueMap = useMemo(() => {
     const m = new Map<string, VenueLite>();
