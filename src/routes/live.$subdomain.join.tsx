@@ -360,7 +360,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     mobile: "",
     postcode: "",
     marketing_opt_in: true,
-    sms_opt_in: true,
+    sms_opt_in: false,
     accept_terms: false,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -424,9 +424,6 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     [],
   );
 
-  // A mobile number that normalises to E.164 is required before SMS consent can
-  // be recorded as active — same rule the database enforces.
-  const smsCapable = useMemo(() => isSmsCapableMobile(form.mobile), [form.mobile]);
   const settings = useMemo(() => fieldSettings(event), [event]);
 
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
@@ -436,15 +433,6 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     e.preventDefault();
     setTopError(null);
     setDebugInfo(null);
-
-    // SMS consent can never be recorded without an SMS-capable number.
-    if (form.sms_opt_in && !smsCapable) {
-      setErrors({
-        mobile:
-          "Add a valid Australian mobile number to receive SMS updates, or untick the SMS box.",
-      });
-      return;
-    }
 
     const parsed = buildFormSchema(settings).safeParse(form);
     if (!parsed.success) {
@@ -473,8 +461,8 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
       _mobile_present: Boolean(form.mobile.trim()),
       _postcode_present: Boolean(form.postcode.trim()),
       _marketing_opt_in: form.marketing_opt_in,
-      _sms_opt_in_requested: form.sms_opt_in,
-      _sms_capable_mobile: smsCapable,
+      _sms_opt_in_requested: false,
+      _sms_capable_mobile: false,
       _accepted_terms_version_id: event.current_terms_version_id,
       _locale: locale,
     };
