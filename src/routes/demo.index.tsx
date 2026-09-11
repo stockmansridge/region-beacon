@@ -244,10 +244,72 @@ function DemoHome() {
 
         {/* Quick links */}
         <section className="mt-6 grid grid-cols-2 gap-3">
-          <QuickTile to="/demo/wineries" icon={<MapPin className="h-5 w-5" />} label="Wineries" />
+          <QuickTile
+            to="/demo/wineries"
+            icon={<MapPin className="h-5 w-5" />}
+            label={DEMO_EVENT.venue_label_plural}
+          />
           <QuickTile to="/demo/offers" icon={<Tag className="h-5 w-5" />} label="Offers" />
           <QuickTile to="/demo/trail-map" icon={<Stamp className="h-5 w-5" />} label="Map" />
           <QuickTile to="/demo/rewards" icon={<Trophy className="h-5 w-5" />} label="Prizes" />
+        </section>
+
+        {/* Sample live activity */}
+        <section className="mt-6">
+          <div
+            className="rounded-3xl border p-5 shadow-sm"
+            style={{
+              borderColor: "var(--event-card-border)",
+              backgroundColor: "var(--event-card-bg)",
+            }}
+          >
+            <h3
+              className="text-[16px] font-bold"
+              style={{
+                color: "var(--event-card-heading)",
+                fontFamily: "var(--event-font)",
+              }}
+            >
+              What's Happening Now
+            </h3>
+            <ul className="mt-4 flex flex-col gap-4">
+              {DEMO_ACTIVITY.slice(0, 3).map((a) => (
+                <li key={`${a.first_name}-${a.venue_name}`} className="flex gap-3">
+                  <span aria-hidden className="text-xl leading-none">🔥</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] leading-snug" style={{ color: "var(--event-card-text)" }}>
+                      <span className="font-semibold" style={{ color: "var(--event-card-heading)" }}>
+                        {a.first_name}
+                      </span>{" "}
+                      just visited{" "}
+                      <span className="font-semibold" style={{ color: "var(--event-card-heading)" }}>
+                        {a.venue_name}
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-[12px]" style={{ color: "var(--event-card-muted)" }}>
+                      {a.minutes_ago < 60
+                        ? `${a.minutes_ago} mins ago`
+                        : `${Math.round(a.minutes_ago / 60)} hr${a.minutes_ago >= 120 ? "s" : ""} ago`}
+                    </p>
+                  </div>
+                </li>
+              ))}
+              <li className="flex gap-3">
+                <span aria-hidden className="text-xl leading-none">🍷</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] leading-snug" style={{ color: "var(--event-card-text)" }}>
+                    <span className="font-semibold" style={{ color: "var(--event-card-heading)" }}>
+                      {DEMO_EXPLORERS_TODAY} people are exploring
+                    </span>{" "}
+                    the trail today
+                  </p>
+                  <p className="mt-0.5 text-[12px]" style={{ color: "var(--event-card-muted)" }}>
+                    Join them!
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
         </section>
 
         <div className="mt-8 flex justify-center">
