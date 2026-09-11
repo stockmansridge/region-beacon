@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Info } from "lucide-react";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { DEMO_EVENT, useDemoPassport } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT, useDemoPassport } from "@/lib/demo-event";
 import { DemoEventNav } from "./demo-event-nav";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 

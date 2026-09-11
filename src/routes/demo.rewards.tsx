@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Lock, Trophy } from "lucide-react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_AWARDS, DEMO_EVENT, useDemoPassport } from "@/lib/demo-cargo-road";
+import { DEMO_AWARDS, DEMO_EVENT, useDemoPassport } from "@/lib/demo-event";
 
 export const Route = createFileRoute("/demo/rewards")({
   head: () => ({ meta: [{ title: `Prizes — ${DEMO_EVENT.name} demo` }] }),

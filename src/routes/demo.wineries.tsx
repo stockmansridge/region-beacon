@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, MapPin, Navigation } from "lucide-react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_VENUES, useDemoPassport, DEMO_EVENT } from "@/lib/demo-cargo-road";
+import { DEMO_VENUES, useDemoPassport, DEMO_EVENT } from "@/lib/demo-event";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/demo/wineries")({

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Tag } from "lucide-react";
 import { DemoShell } from "@/components/demo/demo-shell";
-import { DEMO_EVENT, DEMO_OFFERS, DEMO_VENUES } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT, DEMO_OFFERS, DEMO_VENUES } from "@/lib/demo-event";
 
 export const Route = createFileRoute("/demo/offers")({
   head: () => ({ meta: [{ title: `Offers — ${DEMO_EVENT.name} demo` }] }),

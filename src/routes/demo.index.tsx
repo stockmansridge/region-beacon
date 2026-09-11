@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { DemoShell } from "@/components/demo/demo-shell";
 import { PoweredByGetStampd } from "@/components/brand";
-import { DEMO_EVENT, DEMO_VENUES, DEMO_AWARDS, useDemoPassport } from "@/lib/demo-cargo-road";
+import { DEMO_EVENT, DEMO_VENUES, DEMO_AWARDS, useDemoPassport } from "@/lib/demo-event";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { Stamp, Trophy, MapPin, Tag } from "lucide-react";
 

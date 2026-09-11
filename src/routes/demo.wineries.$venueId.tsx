@@ -7,7 +7,7 @@ import {
   DEMO_OFFERS,
   DEMO_BONUS_CHALLENGES,
   useDemoPassport,
-} from "@/lib/demo-cargo-road";
+} from "@/lib/demo-event";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 
 export const Route = createFileRoute("/demo/wineries/$venueId")({
