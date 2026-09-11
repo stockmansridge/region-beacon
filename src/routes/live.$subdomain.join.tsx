@@ -90,7 +90,7 @@ type FormState = {
   mobile: string;
   postcode: string;
   marketing_opt_in: boolean;
-  /** SMS is a separate consent from marketing_opt_in — never reuse that flag. */
+  /** SMS consent is no longer collected on the public signup page. */
   sms_opt_in: boolean;
   accept_terms: boolean;
 };
@@ -142,6 +142,7 @@ function buildFormSchema(settings: FieldSettings) {
       ? z.string().trim().min(3, "Please enter your postcode").max(16, "Postcode is too long")
       : z.string().trim().max(16, "Postcode is too long").optional().or(z.literal("")),
     marketing_opt_in: z.boolean(),
+    // SMS consent is no longer shown on the signup page; always recorded as false.
     sms_opt_in: z.boolean(),
     accept_terms: z.literal(true, {
       errorMap: () => ({ message: "You must accept the terms & privacy policy" }),
@@ -178,8 +179,6 @@ function friendlyError(raw: string | undefined): string {
     return "Enter a valid Australian mobile number, or leave it blank.";
   if (raw.includes("postcode_required")) return "Please enter your postcode.";
   if (raw.includes("postcode_invalid")) return "Enter a valid postcode.";
-  if (raw.includes("sms_requires_mobile"))
-    return "Add a valid Australian mobile number to receive SMS updates, or untick the SMS box.";
   return "Could not create your passport. Please try again.";
 }
 
