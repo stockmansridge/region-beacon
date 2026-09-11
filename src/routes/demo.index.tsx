@@ -24,7 +24,7 @@ export const Route = createFileRoute("/demo/")({
       { property: "og:title", content: "See GetStampd in action — demo trail" },
       {
         property: "og:description",
-        content: "A live demo of the Cargo Road Wine Quest passport powered by GetStampd.",
+        content: "A live demo of the Orange Wine Quest passport powered by GetStampd.",
       },
       { property: "og:url", content: "https://getstampd.com.au/demo" },
     ],
