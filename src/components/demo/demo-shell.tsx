@@ -64,7 +64,7 @@ export function DemoShell({
       backgroundKey={null}
       primaryColor={DEMO_EVENT.primary_color}
       accentColor={DEMO_EVENT.accent_color}
-      pageBackgroundColor={null}
+      pageBackgroundColor={DEMO_EVENT.page_background_color}
       cardBackgroundColor={null}
       textColor={null}
       mutedTextColor={null}
