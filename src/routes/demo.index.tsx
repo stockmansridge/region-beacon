@@ -188,7 +188,7 @@ function DemoHome() {
                 className="text-center text-[11px] font-medium uppercase tracking-[0.18em]"
                 style={{ color: "var(--event-card-muted)" }}
               >
-                Wineries visited
+                {DEMO_EVENT.venue_label_plural} visited
               </div>
             </div>
 
