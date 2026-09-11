@@ -41,6 +41,7 @@ import { Route as CheckinQrTokenRouteImport } from './routes/checkin.$qrToken'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as DemoInviteRouteImport } from './routes/demo.invite'
 import { Route as DemoJoinRouteImport } from './routes/demo.join'
+import { Route as DemoLeaderboardRouteImport } from './routes/demo.leaderboard'
 import { Route as DemoMoreRouteImport } from './routes/demo.more'
 import { Route as DemoOffersRouteImport } from './routes/demo.offers'
 import { Route as DemoPassportRouteImport } from './routes/demo.passport'
@@ -237,6 +238,11 @@ const DemoInviteRoute = DemoInviteRouteImport.update({
 const DemoJoinRoute = DemoJoinRouteImport.update({
   id: '/demo/join',
   path: '/demo/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoLeaderboardRoute = DemoLeaderboardRouteImport.update({
+  id: '/demo/leaderboard',
+  path: '/demo/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoMoreRoute = DemoMoreRouteImport.update({
@@ -464,6 +470,7 @@ export interface FileRoutesByFullPath {
   '/checkin/$qrToken': typeof CheckinQrTokenRoute
   '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
+  '/demo/leaderboard': typeof DemoLeaderboardRoute
   '/demo/more': typeof DemoMoreRoute
   '/demo/offers': typeof DemoOffersRoute
   '/demo/passport': typeof DemoPassportRoute
@@ -534,6 +541,7 @@ export interface FileRoutesByTo {
   '/checkin/$qrToken': typeof CheckinQrTokenRoute
   '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
+  '/demo/leaderboard': typeof DemoLeaderboardRoute
   '/demo/more': typeof DemoMoreRoute
   '/demo/offers': typeof DemoOffersRoute
   '/demo/passport': typeof DemoPassportRoute
@@ -606,6 +614,7 @@ export interface FileRoutesById {
   '/checkin/$qrToken': typeof CheckinQrTokenRoute
   '/demo/invite': typeof DemoInviteRoute
   '/demo/join': typeof DemoJoinRoute
+  '/demo/leaderboard': typeof DemoLeaderboardRoute
   '/demo/more': typeof DemoMoreRoute
   '/demo/offers': typeof DemoOffersRoute
   '/demo/passport': typeof DemoPassportRoute
@@ -679,6 +688,7 @@ export interface FileRouteTypes {
     | '/checkin/$qrToken'
     | '/demo/invite'
     | '/demo/join'
+    | '/demo/leaderboard'
     | '/demo/more'
     | '/demo/offers'
     | '/demo/passport'
@@ -749,6 +759,7 @@ export interface FileRouteTypes {
     | '/checkin/$qrToken'
     | '/demo/invite'
     | '/demo/join'
+    | '/demo/leaderboard'
     | '/demo/more'
     | '/demo/offers'
     | '/demo/passport'
@@ -820,6 +831,7 @@ export interface FileRouteTypes {
     | '/checkin/$qrToken'
     | '/demo/invite'
     | '/demo/join'
+    | '/demo/leaderboard'
     | '/demo/more'
     | '/demo/offers'
     | '/demo/passport'
@@ -885,6 +897,7 @@ export interface RootRouteChildren {
   CheckinQrTokenRoute: typeof CheckinQrTokenRoute
   DemoInviteRoute: typeof DemoInviteRoute
   DemoJoinRoute: typeof DemoJoinRoute
+  DemoLeaderboardRoute: typeof DemoLeaderboardRoute
   DemoMoreRoute: typeof DemoMoreRoute
   DemoOffersRoute: typeof DemoOffersRoute
   DemoPassportRoute: typeof DemoPassportRoute
@@ -1142,6 +1155,13 @@ declare module '@tanstack/react-router' {
       path: '/demo/join'
       fullPath: '/demo/join'
       preLoaderRoute: typeof DemoJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/leaderboard': {
+      id: '/demo/leaderboard'
+      path: '/demo/leaderboard'
+      fullPath: '/demo/leaderboard'
+      preLoaderRoute: typeof DemoLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/more': {
@@ -1488,6 +1508,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckinQrTokenRoute: CheckinQrTokenRoute,
   DemoInviteRoute: DemoInviteRoute,
   DemoJoinRoute: DemoJoinRoute,
+  DemoLeaderboardRoute: DemoLeaderboardRoute,
   DemoMoreRoute: DemoMoreRoute,
   DemoOffersRoute: DemoOffersRoute,
   DemoPassportRoute: DemoPassportRoute,
