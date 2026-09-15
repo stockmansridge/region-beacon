@@ -585,15 +585,15 @@ function AwardEditorDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0">
+        <DialogHeader className="px-6 pb-4 pt-6 pr-12">
           <DialogTitle>{isEdit ? "Edit prize" : "Create prize"}</DialogTitle>
           <DialogDescription>
             Prizes become unlockable once a participant meets the criteria below.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="award-title">Title *</Label>
             <Input
@@ -731,7 +731,7 @@ function AwardEditorDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-0 border-t bg-white px-6 py-4">
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
