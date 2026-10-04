@@ -715,6 +715,26 @@ export function EventBulkImportSection({
     };
   }, [agencyId, eventId]);
 
+  // Plan venue limit, so the pre-check can warn before the database rejects rows.
+  const [venueCap, setVenueCap] = useState<{ limit: number | null; used: number; plan: string } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [{ data: limits }, { count }] = await Promise.all([
+        (supabase.rpc as unknown as (fn: string, a: Record<string, unknown>) => Promise<{ data: unknown }>)
+          .call(supabase, "get_agency_plan_limits", { _agency_id: agencyId }),
+        supabase.from("venues").select("id", { count: "exact", head: true }).eq("agency_id", agencyId).is("deleted_at", null),
+      ]);
+      const l = (limits ?? {}) as { venue_limit?: number | null; plan_code?: string };
+      if (!cancelled && limits) {
+        setVenueCap({ limit: l.venue_limit ?? null, used: count ?? 0, plan: l.plan_code ?? "free" });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [agencyId, eventId, importDone]);
+
   const existingVenueByName = useMemo(() => {
     const m = new Map<string, string>();
     for (const v of existingVenues) m.set(v.name.trim().toLowerCase(), v.id);
@@ -1282,6 +1302,22 @@ export function EventBulkImportSection({
           {parseError}
         </div>
       )}
+
+      {drafts && !importDone && venueCap && venueCap.limit != null && (() => {
+        const newCount = drafts.venues.filter(
+          (v) => !v.issues.some((i) => i.level === "error") && !existingVenueByName.has(v.name.trim().toLowerCase()),
+        ).length;
+        const room = Math.max(0, venueCap.limit - venueCap.used);
+        if (newCount <= room) return null;
+        return (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-3 text-sm text-destructive" role="alert">
+            <span className="font-semibold">Plan venue limit reached.</span> Your organisation is on the{" "}
+            <strong>{venueCap.plan}</strong> plan, which allows {venueCap.limit} venues. You already have{" "}
+            {venueCap.used}, so only {room} of the {newCount} new venues in this file can be added. Upgrade the plan
+            (or ask a system admin to set a plan override) before importing.
+          </div>
+        );
+      })()}
 
       {fatalError && (
         <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-3 text-sm text-destructive" role="alert">
