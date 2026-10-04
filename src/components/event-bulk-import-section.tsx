@@ -1240,7 +1240,16 @@ export function EventBulkImportSection({
   }
 
   const hasErrors = (totals?.errors ?? 0) > 0;
-  const canConfirm = !!drafts && !hasErrors && missingSheets.length === 0 && !importing && !importDone;
+  // Hard block: file would push the organisation over its plan venue limit.
+  const overVenueLimit = (() => {
+    if (!drafts || !venueCap || venueCap.limit == null) return false;
+    const newCount = drafts.venues.filter(
+      (v) => !v.issues.some((i) => i.level === "error") && !existingVenueByName.has(v.name.trim().toLowerCase()),
+    ).length;
+    const room = Math.max(0, venueCap.limit - venueCap.used);
+    return newCount > room;
+  })();
+  const canConfirm = !!drafts && !hasErrors && missingSheets.length === 0 && !importing && !importDone && !overVenueLimit;
 
   return (
     <div className="space-y-5">
@@ -1311,10 +1320,11 @@ export function EventBulkImportSection({
         if (newCount <= room) return null;
         return (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-3 text-sm text-destructive" role="alert">
-            <span className="font-semibold">Plan venue limit reached.</span> Your organisation is on the{" "}
+            <span className="font-semibold">Import blocked — plan venue limit exceeded.</span> Your organisation is on the{" "}
             <strong>{venueCap.plan}</strong> plan, which allows {venueCap.limit} venues. You already have{" "}
-            {venueCap.used}, so only {room} of the {newCount} new venues in this file can be added. Upgrade the plan
-            (or ask a system admin to set a plan override) before importing.
+            {venueCap.used}, so only {room} of the {newCount} new venues in this file would fit. The import has been
+            stopped to avoid a partial import. Upgrade the plan (or ask a system admin to set a plan override), or
+            remove {newCount - room} venue{newCount - room === 1 ? "" : "s"} from the file and re-upload.
           </div>
         );
       })()}
