@@ -37,10 +37,10 @@ export function ResultPaletteScope({ children, className, ...props }: ComponentP
 }
 
 /** Plain in-event anchor: public keeps the original <a href>; preview routes through PublicLink and stays inside the preview. */
-export function ResultAnchor({ href, className, children, style }: { href: string; className?: string; children: ReactNode; style?: React.CSSProperties }) {
+export function ResultAnchor({ href, children, ...rest }: { href: string; className?: string; children: ReactNode; style?: React.CSSProperties } & Record<`data-${string}`, string | undefined>) {
   const preview = useResultPreview();
-  if (preview) return <PublicLink to={href} className={className} style={style}>{children}</PublicLink>;
-  return <a href={href} className={className} style={style}>{children}</a>;
+  if (preview) return <PublicLink to={href} {...rest}>{children}</PublicLink>;
+  return <a href={href} {...rest}>{children}</a>;
 }
 
 /** Public: router Link (unchanged). Preview: PublicLink, which stays inside the preview. */
