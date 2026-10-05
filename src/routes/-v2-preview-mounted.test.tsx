@@ -437,14 +437,115 @@ describe("PublicEventNav override precedence", () => {
       { id: "venues", label: "Stops", icon: "map" }, { id: "passport", label: "My Pass", icon: "stamp" },
       { id: "prizes", label: "Rewards", icon: "trophy" }, { id: "offers", label: "Deals", icon: "tag" },
       { id: "more", label: "Explore", icon: "more" },
-    ] }, records: { "shared.navigation.tabItem": { venues: { normal: { iconColor: "#123456", iconBackgroundColor: "#654321" } } } } } as never;
+    ] }, records: {
+      "shared.navigation.tabItem": { venues: { normal: { color: "#0F0F0F", iconColor: "#123456", iconBackgroundColor: "#654321" } }, prizes: { normal: { color: "#0E0E0E" } } },
+      "shared.navigation.currentTab": { venues: { normal: { color: "#C0FFEE", iconColor: "#ABCDEF", iconBackgroundColor: "#FEDCBA" } } },
+    } } as never;
     const { container } = render(inPreview(<PublicStyleScope overrides={configured} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" brandingSelection /></PublicStyleScope>, "/venues/venue-a"));
     const tabs = Array.from(container.querySelectorAll<HTMLElement>("nav[aria-label='Primary'] li > *"));
     expect(tabs.map((tab) => tab.textContent?.trim())).toEqual(["Stops", "My Pass", "Rewards", "Deals", "Explore"]);
     const venue = tabs[0];
-    expect(venue.dataset.brandInstance).toBe("shared.navigation.tabItem@venues");
+    // Current page: inactive per-tab override (#0F0F0F) is NOT applied; current-page override paints.
+    expect(venue.dataset.brandInstance).toBe("shared.navigation.currentTab@venues");
     expect(venue.getAttribute("aria-current")).toBe("page");
-    expect(venue.style.getPropertyValue("--item-icon-color")).toBe("#123456");
-    expect(venue.style.getPropertyValue("--item-icon-bg")).toBe("#654321");
+    expect(venue.dataset.navTab).toBe("current");
+    expect(venue.style.color).toBe("#C0FFEE");
+    expect(venue.style.getPropertyValue("--item-icon-color")).toBe("#ABCDEF");
+    expect(venue.style.getPropertyValue("--item-icon-bg")).toBe("#FEDCBA");
+    const css = Array.from(container.querySelectorAll("style")).map((style) => style.textContent).join("\n");
+    expect(css).toContain('[data-event-style="shared.navigation.currentTab"][data-event-record="venues"]{color:#C0FFEE!important');
+    // Inactive tab keeps its own override; legacy shared item/active CSS still reaches tabs via aliases.
+    const prizes = tabs[2];
+    expect(prizes.dataset.navTab).toBe("inactive");
+    expect(prizes.style.color).toBe("#0E0E0E");
+    expect(css).toContain(':where([data-nav-tab="current"]){color:#BB0003!important');
+    expect(css).toContain(':where([data-nav-tab="inactive"]){color:#AA0001!important');
+  });
+});
+
+describe("f034e969 follow-up repairs", () => {
+  const branding = { ready: true, eventId: "event-v2", templateVersion: "v2" as const } as any;
+
+  it("Passport: stamp card target is the real card; progress bar + prize progress consume track/fill", () => {
+    const doc = { version: 1, items: {
+      "passport.stamps.surface": { normal: { backgroundColor: "#101010" } },
+      "passport.progress.bar": { normal: { progressTrackColor: "#202020", progressFillColor: "#303030" } },
+      "passport.holder.name": { normal: { color: "#404040" } },
+      "passport.summary.pointsLabel": { normal: { fontSize: 14 } },
+    } } as never;
+    const passport = { passport_id: "preview", event_id: "event-v2", first_name: "Sample", full_name: "Sample Visitor", checkin_count: 1 } as PassportRow;
+    const stamps = { ...EMPTY_PASSPORT_STAMP_STATE, status: "ok", totalVenueCount: 2, visitedCount: 1, allVenues: [{ venue_id: "v1", name: "A", stamped: true }, { venue_id: "v2", name: "B", stamped: false }] } as never;
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PassportPreview passport={passport} eventName="Trail" stamps={stamps} token="preview" subdomain="preview" branding={branding} awards={[]} preview /></PublicStyleScope>, "/passport/preview"));
+    const card = container.querySelector<HTMLElement>('[data-event-style="passport.stamps.surface"]')!;
+    expect(card.className).toMatch(/rounded-3xl/);
+    expect(card.querySelector(".grid")).not.toBeNull();
+    expect(card.style.backgroundColor).toBe("#101010");
+    const bar = container.querySelector<HTMLElement>('[data-event-style="passport.progress.bar"]')!;
+    expect(bar.style.getPropertyValue("--item-progress-track")).toBe("#202020");
+    expect(bar.style.backgroundColor).toContain("--item-progress-track");
+    expect((bar.firstElementChild as HTMLElement).style.backgroundColor).toContain("--item-progress-fill");
+    expect(container.querySelector<HTMLElement>('[data-event-style="passport.holder.name"]')!.style.color).toBe("#404040");
+    expect(container.querySelector<HTMLElement>('[data-event-style="passport.summary.pointsLabel"]')!.style.fontSize).toBe("14px");
+    expect(container.querySelector('[data-event-style="passport.summary.nextValue"][data-event-record="none"]')).not.toBeNull();
+  });
+
+  it("Bookmarks: venue and offer leaves, thumbnail and arrow are separately selectable; V1 has no markers", async () => {
+    const { PublicBookmarksPage } = await import("./live.$subdomain.bookmarks");
+    const rows = [
+      { kind: "venue", venue_id: "venue-a", venue_name: "Estate", logo_path: null, cover_path: null, offer_summary: null, created_at: "" },
+      { kind: "offer", venue_id: "venue-b", venue_name: "Cellar", logo_path: null, cover_path: null, offer_summary: "Free tasting\nMore", created_at: "" },
+    ] as never;
+    const doc = { version: 1, items: { "bookmarks.card.name": { normal: { color: "#111111" } } }, records: { "bookmarks.card.offer": { "venue-b": { normal: { color: "#222222", fontSize: 15 } } }, "bookmarks.card.thumb": { "venue-a": { normal: { iconBackgroundColor: "#333333" } } } } } as never;
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PublicBookmarksPage subdomain="preview" previewData={{ branding: { ...branding, styleOverrides: doc }, eventId: "event-v2", enabled: true, rows }} /></PublicStyleScope>, "/bookmarks"));
+    const inst = (id: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${id}"]`);
+    expect(inst("bookmarks.card.type@venue-a")?.textContent).toBe("Venue");
+    expect(inst("bookmarks.card.type@venue-b")?.textContent).toBe("Offer");
+    expect(inst("bookmarks.card.name@venue-a")?.style.color).toBe("#111111");
+    expect(inst("bookmarks.card.offer@venue-b")?.style.color).toBe("#222222");
+    expect(inst("bookmarks.card.offer@venue-a")).toBeNull();
+    expect(inst("bookmarks.card.thumb@venue-a")?.style.backgroundColor).toBe("#333333");
+    expect(inst("bookmarks.card.chevron@venue-b")?.querySelector("svg")).not.toBeNull();
+    cleanup();
+    const v1 = render(inPreview(<PublicBookmarksPage subdomain="preview" previewData={{ branding: { ...branding, templateVersion: "v1" }, eventId: "event-v1", enabled: true, rows }} />, "/bookmarks"));
+    expect(v1.container.querySelector("[data-event-style]")).toBeNull();
+    expect(v1.container.textContent).toContain("Free tasting");
+  });
+
+  it("Venue detail V1 keeps the original single CTA (mt-6, no collect panel copy)", async () => {
+    const { PublicVenueDetailPage } = await import("./live.$subdomain.venues.$venueId");
+    const venue = { venue_id: "venue-a", name: "Estate", description: null, offer_summary: null, offer_display_icon: null, offer_display_colour: null, offer_display_foreground_colour: null, address: null, website_url: null, phone: null, logo_path: null, cover_path: null, lat: null, lng: null, order_index: 0 };
+    const v1 = render(inPreview(<PublicVenueDetailPage subdomain="preview" venueId="venue-a" previewData={{ event: { event_id: "e1", name: "Trail", public_template_version: null } as never, venue }} />, "/venues/venue-a"));
+    const cta = Array.from(v1.container.querySelectorAll<HTMLElement>("a,span")).find((n) => n.textContent?.includes("Scan venue QR"))!;
+    expect(cta.className.startsWith("mt-6 flex")).toBe(true);
+    expect(v1.container.textContent).not.toContain("Collect your points");
+    expect(v1.container.querySelector("[data-event-style]")).toBeNull();
+    cleanup();
+    const v2 = render(inPreview(<PublicStyleScope overrides={{ version: 1, items: {} }} eventId="e2"><PublicVenueDetailPage subdomain="preview" venueId="venue-a" previewData={{ event: { event_id: "e2", name: "Trail", public_template_version: "v2" } as never, venue }} /></PublicStyleScope>, "/venues/venue-a"));
+    expect(v2.container.textContent).toContain("Collect your points");
+  });
+
+  it("menu display name buffers multiword typing, commits trimmed on blur, empty resets, and round-trips", async () => {
+    const { NavLabelField } = await import("./admin.events.$eventId_.branding");
+    const { parsePublicStyleOverrides } = await import("@/lib/public-style-overrides");
+    const commit = vi.fn();
+    const { container } = render(<NavLabelField value="" placeholder="Stops" disabled={false} commit={commit} />);
+    const input = container.querySelector("input")!;
+    fireEvent.change(input, { target: { value: "My " } });
+    expect(input.value).toBe("My ");
+    fireEvent.change(input, { target: { value: "My  Stops " } });
+    expect(commit).not.toHaveBeenCalled();
+    fireEvent.blur(input);
+    expect(commit).toHaveBeenLastCalledWith("My Stops");
+    const doc = parsePublicStyleOverrides({ version: 1, items: {}, navigation: { items: [{ id: "venues", label: "My Stops", icon: "pin" }, { id: "prizes", icon: "trophy" }] } });
+    expect(doc.navigation!.items.find((i) => i.id === "venues")!.label).toBe("My Stops");
+    expect(doc.navigation!.items.find((i) => i.id === "prizes")!.label).toBeUndefined();
+    expect(parsePublicStyleOverrides(JSON.parse(JSON.stringify(doc)))).toEqual(doc);
+  });
+
+  it("venues tab inherits the event's plural label when no name is saved", () => {
+    const { container } = render(inPreview(<PublicStyleScope overrides={{ version: 1, items: {} }} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" venueLabels={{ singular: "Cellar", plural: "Cellars" } as never} /></PublicStyleScope>, "/"));
+    const tabs = Array.from(container.querySelectorAll<HTMLElement>("nav[aria-label='Primary'] li > *")).map((t) => t.textContent?.trim());
+    expect(tabs).toContain("Cellars");
+    expect(tabs).not.toContain("Venues");
   });
 });

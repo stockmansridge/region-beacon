@@ -619,18 +619,28 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
             hasAddress={Boolean(venue.address)}
           />
 
-          <PublicStyleTarget id="venue.collect.surface" recordId={venueId}><div className="mt-6 rounded-2xl border p-3">
-          <PublicStyleTarget id="venue.collect.heading" recordId={venueId}><div className="mb-2 text-center text-sm font-semibold">Collect your points</div></PublicStyleTarget>
-          <PublicStyleTarget id="venue.collect.body" recordId={venueId}><p className="mb-3 text-center text-sm">Scan the QR code to collect your points</p></PublicStyleTarget>
-          <PublicStyleTarget id="venue.collect.cta" recordId={venueId}><Link
-            to="/scan"
-            className="flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-center text-sm font-semibold text-[var(--event-primary-fg,#F6EFE2)] shadow transition hover:opacity-95"
-            style={{ backgroundColor: "var(--event-primary,#1F3D2B)" }}
-          >
-            <PublicStyleTarget id="venue.collect.icon" recordId={venueId}><span aria-hidden>📷</span></PublicStyleTarget>
-            Scan venue QR to collect your stamp
-          </Link></PublicStyleTarget>
-          </div></PublicStyleTarget>
+          {(() => {
+            const cta = (v2Cta: boolean) => (
+              <PublicStyleTarget id="venue.collect.cta" recordId={venueId}><Link
+                to="/scan"
+                className={`${v2Cta ? "" : "mt-6 "}flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-center text-sm font-semibold text-[var(--event-primary-fg,#F6EFE2)] shadow transition hover:opacity-95`}
+                style={{ backgroundColor: "var(--event-primary,#1F3D2B)" }}
+              >
+                <PublicStyleTarget id="venue.collect.icon" recordId={venueId}><span aria-hidden>📷</span></PublicStyleTarget>
+                Scan venue QR to collect your stamp
+              </Link></PublicStyleTarget>
+            );
+            // V1 keeps the original single CTA (mt-6, no extra copy); the
+            // collect panel exists only in V2.
+            if (!v2) return cta(false);
+            return (
+              <PublicStyleTarget id="venue.collect.surface" recordId={venueId}><div className="mt-6 rounded-2xl border p-3">
+                <PublicStyleTarget id="venue.collect.heading" recordId={venueId}><div className="mb-2 text-center text-sm font-semibold">Collect your points</div></PublicStyleTarget>
+                <PublicStyleTarget id="venue.collect.body" recordId={venueId}><p className="mb-3 text-center text-sm">Scan the QR code to collect your points</p></PublicStyleTarget>
+                {cta(true)}
+              </div></PublicStyleTarget>
+            );
+          })()}
 
           <div className="mt-8 flex justify-center"><PoweredByGetStampd variant="trail" /></div>
         </div>

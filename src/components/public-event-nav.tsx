@@ -1,4 +1,4 @@
-import { DEFAULT_PUBLIC_NAVIGATION, mergeStyleOverride, type PublicNavIconId, type PublicNavItemId } from "@/lib/public-style-overrides";
+import { DEFAULT_PUBLIC_NAVIGATION, mergeStyleOverride, publicNavItemLabel, type PublicNavIconId, type PublicNavItemId, type PublicNavigationItem } from "@/lib/public-style-overrides";
 import { useLocation } from "@tanstack/react-router";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import {
@@ -360,6 +360,7 @@ export function PublicEventNav({
               selectable={brandingSelection}
               navMuted={navMuted}
               navActiveFg={navActiveFg}
+              venuesPlural={venueLabels.plural}
             />
           )) : <>
           <li className="h-full min-w-0">
@@ -464,22 +465,28 @@ const NAV_ICONS: Record<PublicNavIconId, React.ReactNode> = {
   map: <MapIcon className="h-5 w-5" />, leaderboard: <Award className="h-5 w-5" />,
 };
 
-function V2BottomItem({ item, active, passportHref, passportTarget, onMore, selectable, navMuted, navActiveFg }: {
-  item: { id: PublicNavItemId; label: string; icon: PublicNavIconId }; active: boolean;
+function V2BottomItem({ item, active, passportHref, passportTarget, onMore, selectable, navMuted, navActiveFg, venuesPlural }: {
+  item: PublicNavigationItem; active: boolean;
   passportHref: string | null; passportTarget: string; onMore: () => void; selectable: boolean;
-  navMuted: string; navActiveFg: string;
+  navMuted: string; navActiveFg: string; venuesPlural?: string | null;
 }) {
+  // Inheritance (well-defined, no cross-mixing):
+  //   inactive: nav defaults → shared item → this tab's inactive override
+  //   current : nav defaults → shared active item → current-page default → this tab's current-page override
+  // The tab's inactive override never paints the current tab, so it cannot hide the current-page look.
   const shared = usePublicStyleTarget(active ? "shared.navigation.activeItem" : "shared.navigation.item");
-  const perItem = usePublicStyleTarget("shared.navigation.tabItem", { recordId: item.id, selectable });
+  const perItem = usePublicStyleTarget(active ? "shared.navigation.currentTab" : "shared.navigation.tabItem", { recordId: item.id, selectable });
+  const label = publicNavItemLabel(item, venuesPlural);
   const props = {
     ...perItem,
+    "data-nav-tab": active ? "current" : "inactive",
     className: bottomItemClass,
     style: mergeStyleOverride(mergeStyleOverride({ color: active ? navActiveFg : navMuted }, shared.style), perItem.style),
     "aria-current": active ? "page" as const : undefined,
   };
-  const content = <BottomItemContent icon={NAV_ICONS[item.icon]} label={item.label} />;
-  if (item.id === "more") return <li className="h-full min-w-0"><button {...props} type="button" aria-label={item.label} onClick={onMore}>{content}</button></li>;
-  if (item.id === "passport" && passportHref) return <li className="h-full min-w-0"><a {...props} href={passportTarget} aria-label={item.label}>{content}</a></li>;
+  const content = <BottomItemContent icon={NAV_ICONS[item.icon]} label={label} />;
+  if (item.id === "more") return <li className="h-full min-w-0"><button {...props} type="button" aria-label={label} onClick={onMore}>{content}</button></li>;
+  if (item.id === "passport" && passportHref) return <li className="h-full min-w-0"><a {...props} href={passportTarget} aria-label={label}>{content}</a></li>;
   const to: string = item.id === "passport" ? "/join" : `/${item.id}`;
   return <li className="h-full min-w-0"><PublicLink {...props} to={to}>{content}</PublicLink></li>;
 }

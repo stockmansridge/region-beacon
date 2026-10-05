@@ -548,7 +548,7 @@ export function PassportPreview({
             />
           </div>
         )}
-        <section
+        <PublicStyleTarget id="passport.hero.surface"><section
           className="relative w-full overflow-hidden"
           style={{
             backgroundColor: "var(--event-hero-bg, var(--event-primary))",
@@ -615,7 +615,7 @@ export function PassportPreview({
               Let’s explore {eventName ?? "the trail"}.
             </p></PublicStyleTarget>
           </div>
-        </section>
+        </section></PublicStyleTarget>
       </div>
 
       <PublicStyleTarget id="passport.page.surface"><main
@@ -689,12 +689,12 @@ export function PassportPreview({
                   </span></PublicStyleTarget>
                 </div>
               </div>
-              <div
+              <PublicStyleTarget id="passport.summary.visitedLabel"><div
                 className="text-center text-[11px] font-medium uppercase tracking-[0.18em]"
                 style={{ color: "var(--event-card-muted)" }}
               >
                 {totalVenues === 1 ? labelSingular : labelPlural} visited
-              </div>
+              </div></PublicStyleTarget>
             </div>
 
             {/* Right: points (top) + tier (bottom) */}
@@ -705,44 +705,44 @@ export function PassportPreview({
                   borderBottom: "1px solid var(--event-card-border)",
                 }}
               >
-                <div
+                <PublicStyleTarget id="passport.summary.points"><div
                   className="font-trail-serif text-2xl font-semibold leading-none"
                   style={{ color: "var(--event-card-heading)" }}
                 >
                   {pointsEarned ?? stampedCount}
-                </div>
-                <div
+                </div></PublicStyleTarget>
+                <PublicStyleTarget id="passport.summary.pointsLabel"><div
                   className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                   style={{ color: "var(--event-card-muted)" }}
                 >
                   Points earned
-                </div>
+                </div></PublicStyleTarget>
               </div>
               <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
                 {resolvedAwards == null ? (
                   <>
-                    <div
+                    <PublicStyleTarget id="passport.summary.nextValue" recordId="loading"><div
                       className="font-trail-serif text-2xl font-semibold leading-none"
                       style={{ color: "var(--event-card-heading)" }}
                     >
                       —
-                    </div>
-                    <div
+                    </div></PublicStyleTarget>
+                    <PublicStyleTarget id="passport.summary.nextLabel" recordId="loading"><div
                       className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
                       To next milestone
-                    </div>
-                    <div
+                    </div></PublicStyleTarget>
+                    <PublicStyleTarget id="passport.summary.nextBody" recordId="loading"><div
                       className="text-[10px]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
                       loading…
-                    </div>
+                    </div></PublicStyleTarget>
                   </>
                 ) : resolvedAwards.length === 0 ? (
                   <>
-                    <div className="flex items-center gap-1.5">
+                    <PublicStyleTarget id="passport.summary.nextValue" recordId="none"><div className="flex items-center gap-1.5">
                       <span aria-hidden className="text-base leading-none">✨</span>
                       <span
                         className="font-trail-serif text-sm font-semibold leading-tight"
@@ -750,29 +750,29 @@ export function PassportPreview({
                       >
                         More prizes ahead
                       </span>
-                    </div>
-                    <div
+                    </div></PublicStyleTarget>
+                    <PublicStyleTarget id="passport.summary.nextLabel" recordId="none"><div
                       className="text-[10px] font-medium uppercase tracking-[0.18em]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
                       stay tuned
-                    </div>
+                    </div></PublicStyleTarget>
                   </>
                 ) : nextAward && nextAward.points_remaining > 0 ? (
                   <>
-                    <div
+                    <PublicStyleTarget id="passport.summary.nextValue" recordId="remaining"><div
                       className="font-trail-serif text-2xl font-semibold leading-none"
                       style={{ color: "var(--event-card-heading)" }}
                     >
                       {nextAward.points_remaining}
-                    </div>
-                    <div
+                    </div></PublicStyleTarget>
+                    <PublicStyleTarget id="passport.summary.nextLabel" recordId="remaining"><div
                       className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
                       To next milestone
-                    </div>
-                    <div
+                    </div></PublicStyleTarget>
+                    <PublicStyleTarget id="passport.summary.nextBody" recordId="remaining"><div
                       className="text-[11px] leading-snug"
                       style={{ color: "var(--event-card-text)" }}
                     >
@@ -781,32 +781,32 @@ export function PassportPreview({
                       <span style={{ color: "var(--event-card-heading)" }}>
                         {nextAward.title}
                       </span>
-                    </div>
+                    </div></PublicStyleTarget>
                   </>
                 ) : nextAward ? (
                   <>
-                    <div
+                    <PublicStyleTarget id="passport.summary.nextValue" recordId="ready"><div
                       className="font-trail-serif text-2xl font-semibold leading-none"
                       style={{ color: "var(--event-card-heading)" }}
                     >
                       0
-                    </div>
-                    <div
+                    </div></PublicStyleTarget>
+                    <PublicStyleTarget id="passport.summary.nextLabel" recordId="ready"><div
                       className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
                       Ready to unlock
-                    </div>
-                    <div
+                    </div></PublicStyleTarget>
+                    <PublicStyleTarget id="passport.summary.nextBody" recordId="ready"><div
                       className="text-[11px] leading-snug"
                       style={{ color: "var(--event-card-text)" }}
                     >
                       {nextAward.title}
-                    </div>
+                    </div></PublicStyleTarget>
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center gap-1.5">
+                    <PublicStyleTarget id="passport.summary.nextValue" recordId="complete"><div className="flex items-center gap-1.5">
                       <span aria-hidden className="text-base leading-none">🎉</span>
                       <span
                         className="font-trail-serif text-sm font-semibold leading-tight"
@@ -814,13 +814,13 @@ export function PassportPreview({
                       >
                         All prizes unlocked
                       </span>
-                    </div>
-                    <div
+                    </div></PublicStyleTarget>
+                    <PublicStyleTarget id="passport.summary.nextLabel" recordId="complete"><div
                       className="text-[10px] font-medium uppercase tracking-[0.18em]"
                       style={{ color: "var(--event-card-muted)" }}
                     >
                       you're in every draw
-                    </div>
+                    </div></PublicStyleTarget>
                   </>
                 )}
               </div>
@@ -880,25 +880,25 @@ export function PassportPreview({
             backgroundColor: "var(--event-card-bg)",
           }}
         >
-          <div
+          <PublicStyleTarget id="passport.holder.label"><div
             className="text-[10px] font-medium uppercase tracking-[0.22em]"
             style={{ color: "var(--event-card-muted)" }}
           >
             Passport holder
-          </div>
-          <div
+          </div></PublicStyleTarget>
+          <PublicStyleTarget id="passport.holder.name"><div
             className="mt-1 font-trail-serif text-lg font-semibold"
             style={{ color: "var(--event-card-heading)" }}
           >
             {passport.full_name ?? "Visitor"}
-          </div>
+          </div></PublicStyleTarget>
           {passport.email && (
-            <div
+            <PublicStyleTarget id="passport.holder.email"><div
               className="mt-0.5 break-all text-sm"
               style={{ color: "var(--event-card-text)", opacity: 0.85 }}
             >
               {passport.email}
-            </div>
+            </div></PublicStyleTarget>
           )}
           <PublicStyleTarget id="passport.actions.copyLink"><button
             type="button"
@@ -968,22 +968,22 @@ function TrailProgressInline({
         >
           Trail Progress
         </h2></PublicStyleTarget>
-        <span
+        <PublicStyleTarget id="passport.progress.percent"><span
           className="text-[11px] font-bold uppercase tracking-[0.18em]"
           style={{ color: "var(--event-card-muted)" }}
         >
           {pct}% complete
-        </span>
+        </span></PublicStyleTarget>
       </div>
-      <PublicStyleTarget id="passport.stamps.surface"><div
+      <PublicStyleTarget id="passport.progress.bar"><div
         className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
-        style={{ backgroundColor: "var(--event-card-border)" }}
+        style={{ backgroundColor: "var(--item-progress-track, var(--event-card-border))" }}
       >
         <div
           className="h-full rounded-full transition-all"
           style={{
             width: `${pct}%`,
-            backgroundColor: "var(--event-button-primary-bg)",
+            backgroundColor: "var(--item-progress-fill, var(--event-button-primary-bg))",
           }}
         />
       </div></PublicStyleTarget>
@@ -1058,14 +1058,14 @@ function StampGrid({
             Collect stamps as you visit each stop.
           </p></PublicStyleTarget>
         </div>
-        <span
+        <PublicStyleTarget id="passport.stamps.hint"><span
           className="shrink-0 text-[10px] font-medium uppercase tracking-[0.22em]"
           style={{ color: "var(--event-page-muted)" }}
         >
           Tap for details
-        </span>
+        </span></PublicStyleTarget>
       </div>
-      <div
+      <PublicStyleTarget id="passport.stamps.surface"><div
         className="rounded-3xl border p-5 shadow-sm"
         style={{
           borderColor: "var(--event-card-border)",
@@ -1081,7 +1081,7 @@ function StampGrid({
             />
           ))}
         </div>
-      </div>
+      </div></PublicStyleTarget>
       {bonusVenueIds.size > 0 && (
         <div
           className="mt-3 flex items-center justify-center gap-2 text-[11px]"
@@ -1346,15 +1346,15 @@ function AwardRow({ award }: { award: PublicEventAward }) {
       </div>
       <PublicStyleTarget id="passport.award.progress" recordId={award.id}><div
         className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
-        style={{ backgroundColor: "var(--event-card-border)" }}
+        style={{ backgroundColor: "var(--item-progress-track, var(--event-card-border))" }}
       >
         <div
           className="h-full rounded-full transition-all"
           style={{
             width: `${pct}%`,
             backgroundColor: unlocked
-              ? "var(--event-button-primary-bg)"
-              : "var(--event-accent)",
+              ? "var(--item-progress-fill, var(--event-button-primary-bg))"
+              : "var(--item-progress-fill, var(--event-accent))",
           }}
         />
       </div></PublicStyleTarget>

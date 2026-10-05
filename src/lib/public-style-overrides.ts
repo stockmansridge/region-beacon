@@ -58,16 +58,28 @@ export const PUBLIC_NAV_ITEM_IDS = ["passport", "prizes", "venues", "offers", "m
 export type PublicNavItemId = (typeof PUBLIC_NAV_ITEM_IDS)[number];
 export const PUBLIC_NAV_ICON_IDS = ["stamp", "trophy", "pin", "tag", "more", "home", "map", "leaderboard"] as const;
 export type PublicNavIconId = (typeof PUBLIC_NAV_ICON_IDS)[number];
-export type PublicNavigationItem = { id: PublicNavItemId; label: string; icon: PublicNavIconId };
+/** `label` absent = inherit (venues tab inherits the event's plural venue label). */
+export type PublicNavigationItem = { id: PublicNavItemId; label?: string; icon: PublicNavIconId };
+export const DEFAULT_PUBLIC_NAV_LABELS: Record<PublicNavItemId, string> = { passport: "Passport", prizes: "Prizes", venues: "Venues", offers: "Offers", more: "More" };
+export const PUBLIC_NAV_LABEL_MAX = 24;
+/** Commit-time label validation: trimmed, collapsed whitespace, no markup; null = invalid/empty. */
+export function cleanPublicNavLabel(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.replace(/[\u0000-\u001F\u007F<>]/g, "").replace(/\s+/g, " ").trim();
+  return value && value.length <= PUBLIC_NAV_LABEL_MAX ? value : null;
+}
+export function publicNavItemLabel(item: PublicNavigationItem, venuesPlural?: string | null): string {
+  return item.label ?? (item.id === "venues" && venuesPlural ? venuesPlural : DEFAULT_PUBLIC_NAV_LABELS[item.id]);
+}
 export type PublicNavigationConfig = { items: PublicNavigationItem[] };
 
 export const DEFAULT_PUBLIC_NAVIGATION: PublicNavigationConfig = {
   items: [
-    { id: "passport", label: "Passport", icon: "stamp" },
-    { id: "prizes", label: "Prizes", icon: "trophy" },
-    { id: "venues", label: "Venues", icon: "pin" },
-    { id: "offers", label: "Offers", icon: "tag" },
-    { id: "more", label: "More", icon: "more" },
+    { id: "passport", icon: "stamp" },
+    { id: "prizes", icon: "trophy" },
+    { id: "venues", icon: "pin" },
+    { id: "offers", icon: "tag" },
+    { id: "more", icon: "more" },
   ],
 };
 
@@ -140,14 +152,16 @@ const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
 const LEADERBOARD_RANK_SLOTS = ["first", "second", "third", "other"] as const;
 const LEADERBOARD_TIER_SLOTS = ["explorer", "gold", "silver", "bronze", "complete", "other"] as const;
 const LEADERBOARD_COMPLETION_SLOTS = ["completed"] as const;
+const PASSPORT_NEXT_REWARD_SLOTS = ["loading", "none", "remaining", "ready", "complete"] as const;
 const LEGAL_SECTION_SLOTS = ["terms", "privacy"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
   { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
   { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
-  { id: "shared.navigation.tabItem", page: "shared", section: "Navigation", label: "Bottom menu item", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, repeat: "template", similarGroup: "navigation-items" },
+  { id: "shared.navigation.tabItem", page: "shared", section: "Navigation", label: "Bottom menu item — inactive", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, repeat: "template", similarGroup: "navigation-items" },
   { id: "shared.backLink", page: "shared", section: "Back links", label: "Back link", kind: "text", properties: ["color", "iconColor", "fontFamily", "fontSize", "fontWeight", "lineHeight"], states: ["hover", "focus", "active"], repeat: "template", recordIds: PUBLIC_BACK_LINK_CONTEXTS },
+  { id: "shared.navigation.currentTab", page: "shared", section: "Navigation", label: "Bottom menu item — current page", kind: "button", properties: NAVIGATION_BUTTON, states: ["hover", "focus", "active"], repeat: "template", recordIds: PUBLIC_NAV_ITEM_IDS, similarGroup: "navigation-items" },
   { id: "shared.navigation.drawer", page: "shared", section: "Navigation", label: "Menu drawer", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.surface", page: "shared", section: "Announcements", label: "Announcement bar", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.text", page: "shared", section: "Announcements", label: "Announcement text", kind: "text", properties: TEXT },
@@ -197,6 +211,19 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "leaderboard.row.meta", page: "leaderboard", section: "Person cards", label: "Venue / bonus breakdown", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
   { id: "passport.stamp.label", page: "passport", section: "Stamps", label: "Venue stamp label", kind: "text", properties: TEXT, repeat: "venue" },
   { id: "passport.stamps.surface", page: "passport", section: "Stamps", label: "Stamp collection card", kind: "surface", properties: SURFACE },
+  { id: "passport.hero.surface", page: "passport", section: "Hero", label: "Passport hero background", kind: "surface", properties: SURFACE },
+  { id: "passport.progress.bar", page: "passport", section: "Progress", label: "Trail progress bar", kind: "progress", properties: PROGRESS },
+  { id: "passport.progress.percent", page: "passport", section: "Progress", label: "Percent complete", kind: "text", properties: TEXT },
+  { id: "passport.summary.visitedLabel", page: "passport", section: "Progress", label: "Visited label", kind: "text", properties: TEXT },
+  { id: "passport.summary.points", page: "passport", section: "Progress", label: "Points number", kind: "text", properties: TEXT },
+  { id: "passport.summary.pointsLabel", page: "passport", section: "Progress", label: "Points earned label", kind: "text", properties: TEXT },
+  { id: "passport.summary.nextValue", page: "passport", section: "Progress", label: "Next reward headline", kind: "text", properties: TEXT, repeat: "template", recordIds: PASSPORT_NEXT_REWARD_SLOTS },
+  { id: "passport.summary.nextLabel", page: "passport", section: "Progress", label: "Next reward label", kind: "text", properties: TEXT, repeat: "template", recordIds: PASSPORT_NEXT_REWARD_SLOTS },
+  { id: "passport.summary.nextBody", page: "passport", section: "Progress", label: "Current reward text", kind: "text", properties: TEXT, repeat: "template", recordIds: PASSPORT_NEXT_REWARD_SLOTS },
+  { id: "passport.stamps.hint", page: "passport", section: "Stamps", label: "Tap for details hint", kind: "text", properties: TEXT },
+  { id: "passport.holder.label", page: "passport", section: "Passport holder", label: "Passport holder label", kind: "text", properties: TEXT },
+  { id: "passport.holder.name", page: "passport", section: "Passport holder", label: "Holder name", kind: "text", properties: TEXT },
+  { id: "passport.holder.email", page: "passport", section: "Passport holder", label: "Holder email", kind: "text", properties: TEXT },
 
   { id: "join.page.surface", page: "join", section: "Page", label: "Join page", kind: "surface", properties: SURFACE },
   { id: "join.form.surface", page: "join", section: "Form", label: "Registration form", kind: "surface", properties: SURFACE },
@@ -298,6 +325,11 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "bookmarks.page.heading", page: "bookmarks", section: "Page", label: "Bookmarks heading", kind: "text", properties: TEXT },
   { id: "bookmarks.page.intro", page: "bookmarks", section: "Page", label: "Bookmarks intro", kind: "text", properties: TEXT },
   { id: "bookmarks.card", page: "bookmarks", section: "Bookmarks", label: "Bookmark card", kind: "surface", properties: SURFACE, repeat: "venue" },
+  { id: "bookmarks.card.type", page: "bookmarks", section: "Bookmarks", label: "Bookmark type label (Venue / Offer)", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "bookmarks.card.name", page: "bookmarks", section: "Bookmarks", label: "Bookmarked venue name", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "bookmarks.card.offer", page: "bookmarks", section: "Bookmarks", label: "Bookmarked offer summary", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "bookmarks.card.thumb", page: "bookmarks", section: "Bookmarks", label: "Bookmark thumbnail / fallback icon", kind: "icon", properties: ICON, repeat: "venue" },
+  { id: "bookmarks.card.chevron", page: "bookmarks", section: "Bookmarks", label: "Bookmark arrow", kind: "icon", properties: ["iconColor"], repeat: "venue" },
   { id: "bookmarks.empty.surface", page: "bookmarks", section: "Empty state", label: "Empty card", kind: "surface", properties: SURFACE },
   { id: "bookmarks.empty.heading", page: "bookmarks", section: "Empty state", label: "Empty heading", kind: "text", properties: TEXT },
   { id: "bookmarks.empty.body", page: "bookmarks", section: "Empty state", label: "Empty message", kind: "text", properties: TEXT },
@@ -456,14 +488,15 @@ function cleanNavigation(raw: unknown, errors?: string[]): PublicNavigationConfi
     if (typeof item.id !== "string" || !allowedIds.has(item.id) || seen.has(item.id)) {
       errors?.push(`navigation.items.${index}.id is invalid or duplicated`); continue;
     }
-    if (typeof item.label !== "string" || !item.label.trim() || item.label.trim().length > 24) {
+    const label = item.label === undefined || item.label === null ? undefined : cleanPublicNavLabel(item.label);
+    if (label === null) {
       errors?.push(`navigation.items.${index}.label is invalid`); continue;
     }
     if (typeof item.icon !== "string" || !allowedIcons.has(item.icon)) {
       errors?.push(`navigation.items.${index}.icon is invalid`); continue;
     }
     seen.add(item.id);
-    items.push({ id: item.id as PublicNavItemId, label: item.label.trim(), icon: item.icon as PublicNavIconId });
+    items.push({ id: item.id as PublicNavItemId, ...(label ? { label } : {}), icon: item.icon as PublicNavIconId });
   }
   for (const fallback of DEFAULT_PUBLIC_NAVIGATION.items) if (!seen.has(fallback.id)) items.push(fallback);
   return { items };
@@ -714,6 +747,15 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
       if (properties.iconColor) rules.push(`${scoped}${pseudo} svg{color:${properties.iconColor}!important}`);
     }
   };
+  // V2 bottom tabs carry per-tab markers; shared item/current styles reach them
+  // through zero-specificity aliases so any per-tab rule always wins.
+  const NAV_ALIASES: Record<string, string> = {
+    "shared.navigation.item": ':where([data-nav-tab="inactive"])',
+    "shared.navigation.activeItem": ':where([data-nav-tab="current"])',
+  };
+  for (const [id, item] of Object.entries(parsed.items)) {
+    if (NAV_ALIASES[id]) add(NAV_ALIASES[id], item, DEFINITIONS.get(id)?.kind, id);
+  }
   for (const [id, item] of Object.entries(parsed.items)) add(`[data-event-style="${id}"]`, item, DEFINITIONS.get(id)?.kind, id);
   for (const [id, records] of Object.entries(parsed.records ?? {})) {
     for (const [recordId, item] of Object.entries(records)) {
