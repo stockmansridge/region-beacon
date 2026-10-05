@@ -820,3 +820,25 @@ describe("Prizes V2 section toggle", () => {
     expect(t("prizes.tabs.item@prizes")).not.toBeNull();
   });
 });
+
+describe("Result page bottom buttons", () => {
+  it("V2 check-in/bonus show editable passport + Back to event buttons with event wording; V1 check-in unchanged; tasting name not duplicated", () => {
+    const doc = { version: 1, items: { "checkin.result.backButton": { normal: { backgroundColor: "transparent", color: "#123456" } } }, copy: { labels: { "bonus.result.backButton": "Home", "checkin.result.button": "My stamps" } } };
+    const ev = { ...V2_EVENT, v2_style_config: doc };
+    const c = render(inPreview(<V2ResultPreview page="checkin" state="stamped" event={ev} venueName="Cellar" />));
+    const back = c.container.querySelector<HTMLElement>('[data-brand-role="checkin.result.backButton"]')!;
+    expect(back.textContent).toBe("Back to event");
+    expect(back.style.color).toBe("#123456");
+    expect(c.getByText("My stamps")).toBeTruthy();
+    cleanup();
+    const b = render(inPreview(<V2ResultPreview page="bonus" state="claimed" event={ev} venueName={null} />));
+    expect(b.container.querySelector('[data-brand-role="bonus.result.backButton"]')?.textContent).toBe("Home");
+    expect(b.container.querySelector('[data-brand-role="bonus.result.button"]')?.textContent).toBe("View my passport");
+    cleanup();
+    const v1 = render(inPreview(<V2ResultPreview page="checkin" state="stamped" event={V1_EVENT} venueName="Cellar" />));
+    expect(v1.queryByText("Back to event")).toBeNull();
+    cleanup();
+    const t = render(inPreview(<V2ResultPreview page="tasting" state="claimed" event={ev} venueName={null} />));
+    expect(t.queryAllByText("Sample (editor only)").length).toBe(1);
+  });
+});
