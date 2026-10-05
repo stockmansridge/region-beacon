@@ -597,8 +597,9 @@ function JoinForm({ event, subdomain, preview = false, previewState }: { event: 
 
   return (
     <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
-      <div className="px-4 pt-2">
-      </div>
+      {/* Legacy V1 top spacer; V2 headers meet the viewport top. */}
+      {event.public_template_version === "v2" ? null : <div className="px-4 pt-2">
+      </div>}
       <PublicEventNav
         subdomain={subdomain}
         eventName={event.name}
@@ -1068,8 +1069,9 @@ function SuccessScreen({
 
   return (
     <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
-      <div className="px-4 pt-2">
-      </div>
+      {/* Legacy V1 top spacer; V2 headers meet the viewport top. */}
+      {event.public_template_version === "v2" ? null : <div className="px-4 pt-2">
+      </div>}
       <PublicEventNav
         subdomain={subdomain}
         eventName={event.name}
@@ -1248,8 +1250,9 @@ function InfoScreen({
   const accent = event.accent_color ?? "#B5572A";
   return (
     <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
-      <div className="px-4 pt-2">
-      </div>
+      {/* Legacy V1 top spacer; V2 headers meet the viewport top. */}
+      {event.public_template_version === "v2" ? null : <div className="px-4 pt-2">
+      </div>}
       <PublicEventNav
         subdomain={subdomain}
         eventName={event.name}

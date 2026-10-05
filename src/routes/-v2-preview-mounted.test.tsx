@@ -638,3 +638,75 @@ describe("final source-review corrections", () => {
     expect(icon.style.getPropertyValue("--item-icon-color")).toBe("#123123");
   });
 });
+
+describe("header title + top spacing", () => {
+  const LONG = "Bathurst & Backroads Wine and Food Passport Trail";
+  const renderNav = (doc: any) => render(inPreview(<PublicStyleScope overrides={doc} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName={LONG} /></PublicStyleScope>, "/faq"));
+
+  it("title is its own target, falls back to legacy nav item styles, and honours display text + wrap", () => {
+    const r = renderNav({ version: 1, items: { "shared.navigation.item": { normal: { color: "#111111", fontSize: 13 } }, "shared.navigation.title": { normal: { fontSize: 18, textAlign: "left" } } }, header: { title: "Bathurst Backroads Trail", titleWrap: true } });
+    const title = r.container.querySelector<HTMLElement>('[data-event-style="shared.navigation.title"]')!;
+    expect(title.textContent).toBe("Bathurst Backroads Trail");
+    expect(title.style.color).toBe("#111111"); // legacy fallback
+    expect(title.style.fontSize).toBe("18px"); // title wins
+    expect(title.className).toContain("whitespace-normal");
+    expect(title.className).not.toContain("truncate");
+    const link = title.closest("a")!;
+    expect(link.className.split(" ")).not.toContain("h-10"); expect(link.className).not.toContain("max-w-[70%]");
+    const row = link.parentElement!;
+    expect(row.className).toContain("min-h-14");
+    expect(row.className.split(" ")).not.toContain("h-14");
+    expect(r.container.querySelector('button[aria-label="Open menu"]')!.className).toContain("h-10 w-10");
+    cleanup();
+    const def = renderNav({ version: 1, items: {} });
+    const t2 = def.container.querySelector<HTMLElement>('[data-event-style="shared.navigation.title"]')!;
+    expect(t2.textContent).toBe(LONG); // real event name by default
+    expect(t2.className).toContain("truncate");
+  });
+
+  it("V1 header keeps the legacy markup", () => {
+    const { container } = render(inPreview(<PublicEventNav subdomain="preview" eventId="e" eventName={LONG} />, "/faq"));
+    expect(container.querySelector('a[aria-label="' + LONG + '"]')!.className).toBe("mx-auto flex h-10 max-w-[70%] items-center justify-center");
+  });
+
+  it("header config parses/validates and round-trips; unknown keys and markup are rejected", async () => {
+    const { parsePublicStyleOverrides, validatePublicStyleOverrides } = await import("@/lib/public-style-overrides");
+    const doc = parsePublicStyleOverrides({ version: 1, items: {}, header: { title: "  My   <b>Trail</b> ", titleWrap: true } });
+    expect(doc.header).toEqual({ title: "My bTrail/b", titleWrap: true });
+    expect(parsePublicStyleOverrides(JSON.parse(JSON.stringify(doc)))).toEqual(doc);
+    expect(validatePublicStyleOverrides({ version: 1, items: {}, header: { css: "x", titleWrap: "yes" } }).errors.length).toBe(2);
+  });
+
+  it("header wording input buffers multiword typing, commits on blur/Enter, resets and toggles wrap", async () => {
+    const { HeaderTitleInspector } = await import("./admin.events.$eventId_.branding");
+    const update = vi.fn();
+    const r = render(<HeaderTitleInspector eventName="Real Name" header={{}} disabled={false} update={update} />);
+    const input = r.container.querySelector<HTMLInputElement>("#header-title")!;
+    let v = ""; for (const ch of "Wine Trail ") { v += ch; fireEvent.change(input, { target: { value: v } }); expect(input.value).toBe(v); }
+    expect(update).not.toHaveBeenCalled();
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(update).toHaveBeenLastCalledWith({ title: "Wine Trail" });
+    r.rerender(<HeaderTitleInspector eventName="Real Name" header={{ title: "Wine Trail" }} disabled={false} update={update} />);
+    fireEvent.change(input, { target: { value: "" } }); fireEvent.blur(input);
+    expect(update).toHaveBeenLastCalledWith({ title: null });
+    fireEvent.click(r.getByRole("button", { name: "Wrap" }));
+    expect(update).toHaveBeenLastCalledWith({ titleWrap: true });
+  });
+
+  it("join page: V2 has no top spacer before the header; V1 keeps it", async () => {
+    const src = (await import("node:fs")).readFileSync("src/routes/live.$subdomain.join.tsx", "utf8");
+    expect(src.match(/public_template_version === "v2" \? null : <div className="px-4 pt-2">/g)?.length).toBe(3);
+    expect(src.match(/<div className="px-4 pt-2">/g)?.length).toBe(3);
+  });
+
+  it("passport 'More prizes ahead' words inherit the line colour in V2", () => {
+    const doc = { version: 1, items: {}, records: { "passport.summary.nextValue": { none: { normal: { color: "#ABC123", fontSize: 16 } } } } } as never;
+    const passport = { passport_id: "preview", event_id: "e", first_name: "S", full_name: "S V", checkin_count: 0 } as PassportRow;
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="e"><PassportPreview passport={passport} eventName="Trail" stamps={{ ...EMPTY_PASSPORT_STAMP_STATE, status: "ok" }} token="preview" subdomain="preview" branding={{ ready: true, eventId: "e", templateVersion: "v2", styleOverrides: doc } as any} awards={[]} preview /></PublicStyleScope>, "/passport/preview"));
+    const line = container.querySelector<HTMLElement>('[data-brand-instance="passport.summary.nextValue@none"]')!;
+    expect(line.style.color).toBe("#ABC123");
+    const words = Array.from(line.querySelectorAll("span")).find((n) => n.textContent === "More prizes ahead")!;
+    expect(words.getAttribute("style")).toBeNull();
+    expect(words.className).toBe("");
+  });
+});

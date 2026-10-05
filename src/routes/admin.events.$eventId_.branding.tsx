@@ -95,7 +95,7 @@ import {
   publicNavItemLabel,
   PUBLIC_BACK_LINK_CONTEXTS,
   PUBLIC_BACK_LINK_LABEL_MAX,
-  cleanPublicBackLinkLabel,
+  cleanPublicBackLinkLabel, cleanPublicHeaderTitle, PUBLIC_HEADER_TITLE_MAX,
   type PublicBackLinkContext,
   type PublicBackLinkLabelKey,
   emptyPublicStyleOverrides,
@@ -2687,6 +2687,17 @@ function VisualBrandingEditor({
             changeIcon={(id, icon) => updateNavigationItem(id, { icon })}
             move={moveNavigationItem}
           /> : null}
+          {itemMeta?.id === "shared.navigation.title" ? <HeaderTitleInspector
+            eventName={event?.name ?? ""} header={form.style_overrides.header ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
+            update={(patch) => updateStyleDocument((next) => {
+              const merged = { ...(next.header ?? {}), ...patch };
+              const header: { title?: string; titleWrap?: boolean } = {};
+              if (merged.title) header.title = merged.title;
+              if (merged.titleWrap === true) header.titleWrap = true;
+              const { header: _old, ...rest } = next;
+              return Object.keys(header).length ? { ...rest, header } : rest;
+            })}
+          /> : null}
           {itemMeta?.id === "shared.backLink" ? <BackLinkLabelInspector
             context={(PUBLIC_BACK_LINK_CONTEXTS as readonly string[]).includes(selectedRecord ?? "") ? selectedRecord as PublicBackLinkContext : null}
             labels={form.style_overrides.backLinks?.labels ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
@@ -4185,6 +4196,48 @@ export function BackLinkLabelField({ id, value, disabled, commit }: { id: string
     </div>
     {error ? <p className="text-xs text-destructive">{error}</p> : null}
   </>;
+}
+
+/** Header wording (event-scoped display text; the event's real name is never changed) + wrap mode. */
+export function HeaderTitleInspector({ eventName, header, disabled, update }: {
+  eventName: string; header: { title?: string; titleWrap?: boolean }; disabled: boolean;
+  update: (patch: { title?: string | null; titleWrap?: boolean | null }) => void;
+}) {
+  const value = header.title ?? "";
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setDraft(value); setError(null); }, [value]);
+  const apply = () => {
+    if (!draft.trim()) { setError(null); if (value) update({ title: null }); else setDraft(""); return; }
+    const cleaned = cleanPublicHeaderTitle(draft);
+    if (!cleaned) { setError(`Use 1–${PUBLIC_HEADER_TITLE_MAX} characters, no < or >.`); return; }
+    setError(null);
+    if (cleaned !== value) update({ title: cleaned }); else setDraft(cleaned);
+  };
+  return (
+    <div className="mt-6 space-y-4 border-t pt-4">
+      <div><h3 className="text-sm font-semibold">Header wording</h3><p className="text-xs text-muted-foreground">Only changes the text in the top bar for this event. The event's name and links stay the same.</p></div>
+      <div className="space-y-1.5">
+        <label htmlFor="header-title" className="text-sm font-medium">Title text</label>
+        <div className="flex gap-2">
+          <input id="header-title" aria-label="Header title text" maxLength={PUBLIC_HEADER_TITLE_MAX + 8} value={draft} placeholder={eventName || "Event name"} disabled={disabled}
+            onChange={(event) => setDraft(event.target.value)} onBlur={apply}
+            onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); } if (event.key === "Escape") { event.stopPropagation(); setDraft(value); setError(null); } }}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm" />
+          <Button type="button" variant="outline" size="sm" disabled={disabled || !value} onClick={() => { setDraft(""); update({ title: null }); }}>Reset</Button>
+        </div>
+        {error ? <p className="text-xs text-destructive">{error}</p> : <p className="text-xs text-muted-foreground">Leave empty to show “{eventName || "the event name"}”.</p>}
+      </div>
+      <div className="space-y-1.5">
+        <div className="text-sm font-medium">Long titles</div>
+        <div className="flex gap-2" role="group" aria-label="Long titles">
+          <Button type="button" size="sm" variant={header.titleWrap ? "outline" : "default"} aria-pressed={!header.titleWrap} disabled={disabled} onClick={() => update({ titleWrap: null })}>Single line</Button>
+          <Button type="button" size="sm" variant={header.titleWrap ? "default" : "outline"} aria-pressed={!!header.titleWrap} disabled={disabled} onClick={() => update({ titleWrap: true })}>Wrap</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Wrap shows the whole title on more than one line; the bar grows to fit.</p>
+      </div>
+    </div>
+  );
 }
 
 function BackLinkLabelInspector({ context, labels, disabled, setLabel }: {

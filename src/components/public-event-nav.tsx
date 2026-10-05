@@ -1,4 +1,4 @@
-import { DEFAULT_PUBLIC_NAVIGATION, mergeStyleOverride, publicNavItemLabel, type PublicNavIconId, type PublicNavItemId, type PublicNavigationItem } from "@/lib/public-style-overrides";
+import { DEFAULT_PUBLIC_NAVIGATION, mergeStyleOverride, publicNavItemLabel, type PublicNavIconId, type PublicNavItemId, type PublicNavigationItem, publicHeaderTitle } from "@/lib/public-style-overrides";
 import { useLocation } from "@tanstack/react-router";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import {
@@ -112,6 +112,9 @@ export function PublicEventNav({
   const navigationItem = usePublicStyleTarget("shared.navigation.item", { selectable: brandingSelection });
   const navigationActiveItem = usePublicStyleTarget("shared.navigation.activeItem", { selectable: brandingSelection });
   const navigationDrawer = usePublicStyleTarget("shared.navigation.drawer", { selectable: brandingSelection });
+  const navigationTitle = usePublicStyleTarget("shared.navigation.title", { selectable: brandingSelection });
+  const headerTitle = isV2Style ? publicHeaderTitle(styleDocument, eventName) : (eventName ?? "Event");
+  const titleWrap = isV2Style && styleDocument?.header?.titleWrap === true;
   // Header / bottom-nav / drawer surfaces consume the nav tokens so they
   // can be themed independently of buttons. Tokens fall back to the
   // primary colour when no nav background has been configured, which
@@ -197,7 +200,9 @@ export function PublicEventNav({
         }, navigationSurface.style)}
       >
         <div
-          className="mx-auto grid h-14 max-w-2xl grid-cols-[44px_1fr_auto] items-center px-3"
+          className={isV2Style
+            ? `mx-auto grid ${titleWrap ? "min-h-14 py-1" : "h-14"} max-w-2xl grid-cols-[minmax(44px,auto)_minmax(0,1fr)_minmax(44px,auto)] items-center gap-1 px-3`
+            : "mx-auto grid h-14 max-w-2xl grid-cols-[44px_1fr_auto] items-center px-3"}
           style={{ color: navFg }}
         >
           <button
@@ -215,7 +220,23 @@ export function PublicEventNav({
           {/* The logo is NOT shown here. It lives centred over the hero image on
               the landing page, where it can be dominant; the top bar keeps the
               event name so the header stays legible over any hero photo. */}
+{isV2Style ? (
           <PublicLink
+            to="/"
+            aria-label={eventName ?? "Home"}
+            className={titleWrap ? "flex min-h-10 min-w-0 items-center justify-center px-1 py-1.5" : "flex h-10 min-w-0 items-center justify-center px-1"}
+          >
+            {/* Separate title target; legacy shared navigation item overrides remain the fallback. */}
+            <span
+              {...navigationTitle}
+              className={titleWrap ? "block w-full whitespace-normal break-words text-center text-[14px] font-semibold uppercase leading-tight tracking-[0.22em]" : "block w-full truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"}
+              style={mergeStyleOverride(mergeStyleOverride({ color: navFg }, navigationItem.style), navigationTitle.style)}
+            >
+              {headerTitle}
+            </span>
+          </PublicLink>
+          ) : (
+                    <PublicLink
             to="/"
             aria-label={eventName ?? "Home"}
             className="mx-auto flex h-10 max-w-[70%] items-center justify-center"
@@ -228,6 +249,7 @@ export function PublicEventNav({
               {eventName ?? "Event"}
             </span>
           </PublicLink>
+          )}
 
           <div className="ml-auto flex items-center gap-1">
             <button
