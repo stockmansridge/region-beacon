@@ -8,6 +8,7 @@ export function BonusPointsPromo({ subdomain, preview = false }: { subdomain?: s
   const iconStyle = usePublicStyleTarget("home.bonusPromo.icon", { selectable: true });
   const headingStyle = usePublicStyleTarget("home.bonusPromo.heading", { selectable: true });
   const bodyStyle = usePublicStyleTarget("home.bonusPromo.body", { selectable: true });
+  const moreStyle = usePublicStyleTarget("home.bonusPromo.more", { selectable: true });
   const AnyLink = Link as unknown as React.ComponentType<Record<string, unknown>>;
   const linkProps: Record<string, unknown> = subdomain
     ? {
@@ -32,7 +33,7 @@ export function BonusPointsPromo({ subdomain, preview = false }: { subdomain?: s
           Scan special bonus QR codes at venues to earn extra points.
         </p>
       </div>
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
+      <span {...moreStyle} style={moreStyle.style} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
         More <ArrowRight className="h-3 w-3" />
       </span>
     </AnyLink>

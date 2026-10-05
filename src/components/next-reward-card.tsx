@@ -22,6 +22,9 @@ export function NextRewardCard({
   const iconStyle = usePublicStyleTarget("home.nextPrize.icon", { selectable: true });
   const headingStyle = usePublicStyleTarget("home.nextPrize.heading", { selectable: true });
   const progressStyle = usePublicStyleTarget("home.nextPrize.progress", { selectable: true });
+  const titleStyle = usePublicStyleTarget("home.nextPrize.title", { selectable: true });
+  const descStyle = usePublicStyleTarget("home.nextPrize.description", { selectable: true });
+  const pointsStyle = usePublicStyleTarget("home.nextPrize.points", { selectable: true });
   const live = usePassportHomeData(previewAwards ? null : eventId);
   const data = previewAwards
     ? { ...live, loading: false, hasPassport: true, awards: previewAwards }
@@ -67,15 +70,17 @@ export function NextRewardCard({
               Next prize
             </p>
             <p
+              {...titleStyle}
               className="mt-0.5 truncate text-[15px] font-semibold"
-              style={{ color: "var(--event-card-heading)" }}
+              style={{ color: "var(--event-card-heading)", ...titleStyle.style }}
             >
               {next.title}
             </p>
             {next.description && (
               <p
+                {...descStyle}
                 className="mt-0.5 line-clamp-2 text-[12px]"
-                style={{ color: "var(--event-card-muted)" }}
+                style={{ color: "var(--event-card-muted)", ...descStyle.style }}
               >
                 {next.description}
               </p>
@@ -102,8 +107,9 @@ export function NextRewardCard({
             />
           </div>
           <div
+            {...pointsStyle}
             className="mt-1.5 flex items-center justify-between text-[11px] font-medium"
-            style={{ color: "var(--event-card-muted)" }}
+            style={{ color: "var(--event-card-muted)", ...pointsStyle.style }}
           >
             <span>
               {have} / {required} pts
