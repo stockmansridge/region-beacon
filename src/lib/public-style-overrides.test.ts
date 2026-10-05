@@ -139,6 +139,22 @@ describe("record merge and validation", () => {
     expect(resolvePublicTemplateVersion(null)).toBe("v1");
     expect(resolvePublicTemplateVersion("v2")).toBe("v2");
   });
+  it("round-trips only allowlisted non-identifying leaderboard template slots", () => {
+    const source = { version: 1, items: { "leaderboard.rank": { normal: { color: "#112233" } } }, records: {
+      "leaderboard.rank.surface": {
+        first: { normal: { backgroundColor: "#AABBCC" } },
+        "passport-person-123": { normal: { backgroundColor: "#DDEEFF" } },
+      },
+      "leaderboard.tier.text": { explorer: { normal: { color: "#223344" } }, unknown: { normal: { color: "#334455" } } },
+    } };
+    const parsed = parsePublicStyleOverrides(source);
+    expect(parsed.items["leaderboard.rank"]?.normal?.color).toBe("#112233");
+    expect(parsed.records?.["leaderboard.rank.surface"]?.first?.normal?.backgroundColor).toBe("#AABBCC");
+    expect(parsed.records?.["leaderboard.rank.surface"]?.["passport-person-123"]).toBeUndefined();
+    expect(parsed.records?.["leaderboard.tier.text"]?.explorer?.normal?.color).toBe("#223344");
+    expect(parsed.records?.["leaderboard.tier.text"]?.unknown).toBeUndefined();
+    expect(parsePublicStyleOverrides(JSON.parse(JSON.stringify(parsed)))).toEqual(parsed);
+  });
 });
 
 describe("canonical public V1/V2 boundary", () => {
