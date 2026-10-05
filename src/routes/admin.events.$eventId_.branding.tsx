@@ -2009,6 +2009,7 @@ function VisualBrandingEditor({
   canEdit, saving, saveError, saveSuccess, hasUnsavedChanges, onSave, onSaveAndReturn,
   onBack, onExit, selectedKit, applyBrandKit, selectCustomBrandKit, clearBrandKit,
   customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove, v2ConfigForDraft,
+  v1Form, onV2Activated,
 }: {
   event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
   venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
@@ -2025,62 +2026,76 @@ function VisualBrandingEditor({
   onAssetUpload: (kind: EventAssetKind, file: File) => Promise<string | null>;
   onAssetRemove: (kind: EventAssetKind) => Promise<string | null>;
   v2ConfigForDraft: () => PublicStyleOverrideDocument;
+  v1Form: Form;
+  onV2Activated: (confirmed: { public_template_version: string; v2_style_config: PublicStyleOverrideDocument }) => void;
 }) {
-  const [hoveredRole, setHoveredRole] = useState<EditorSelection | null>(null);
-  const [stylePage, setStylePage] = useState("home");
-  const [styleState, setStyleState] = useState<"normal" | "hover" | "focus" | "active" | "disabled">("normal");
+  const [hoveredInstance, setHoveredInstance] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<string | null>(null);
+  const [recordScope, setRecordScope] = useState<"record" | "type">("record");
+  const [styleState, setStyleState] = useState<PublicStyleState>("normal");
   const [stylePast, setStylePast] = useState<PublicStyleOverrideDocument[]>([]);
   const [styleFuture, setStyleFuture] = useState<PublicStyleOverrideDocument[]>([]);
-  const previewRef = useRef<HTMLDivElement | null>(null);
+  const [activating, setActivating] = useState(false);
+  const [frameDoc, setFrameDoc] = useState<Document | null>(null);
+  const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
+  const busy = saving || activating;
   const sharedRole = selectedRole && selectedRole in VISUAL_ROLE_META ? selectedRole as VisualBrandRole : null;
   const itemMeta = selectedRole ? PUBLIC_STYLE_ELEMENTS.find((item) => item.id === selectedRole) ?? null : null;
-  const roleMeta = sharedRole ? VISUAL_ROLE_META[sharedRole] : null;
-  void primaryDomain; void eventId; void selectedKit; void agencyId;
+  const panelRole = sharedRole ?? (itemMeta ? ITEM_SHARED_ROLE[itemMeta.id] ?? null : null);
+  const roleMeta = panelRole ? VISUAL_ROLE_META[panelRole] : null;
+  const recordTarget = itemMeta?.repeat && selectedRecord && recordScope === "record" ? selectedRecord : null;
+  const selectedInstance = itemMeta ? (selectedRecord ? `${itemMeta.id}@${selectedRecord}` : itemMeta.id) : selectedRole;
+  void primaryDomain; void eventId; void selectedKit; void agencyId; void confirmImmediateAssetAction;
 
   const selectFromEvent = (target: EventTarget | null) => {
-    const element = target instanceof Element ? target.closest<HTMLElement>("[data-brand-role]") : null;
+    const node = target as Element | null;
+    const element = node && typeof node.closest === "function" ? node.closest<HTMLElement>("[data-brand-role]") : null;
     const role = element?.dataset.brandRole;
-    if (role && (role in VISUAL_ROLE_META || PUBLIC_STYLE_ELEMENTS.some((item) => item.id === role))) {
-      setSelectedRole(role as EditorSelection);
-    }
+    if (!role || !(role in VISUAL_ROLE_META || PUBLIC_STYLE_ELEMENTS.some((item) => item.id === role))) return;
+    const instance = element?.dataset.brandInstance ?? role;
+    const at = instance.indexOf("@");
+    setSelectedRecord(at > 0 ? instance.slice(at + 1) : null);
+    setRecordScope("record");
+    setStyleState("normal");
+    setSelectedRole(role as EditorSelection);
   };
 
+  const selectFromNavigator = (role: EditorSelection) => { setSelectedRecord(null); setStyleState("normal"); setSelectedRole(role); };
+
   const updateStyleDocument = (recipe: (draft: PublicStyleOverrideDocument) => PublicStyleOverrideDocument) => {
-    if (!canEdit || saving) return;
-    setForm((current) => {
-      const before = parsePublicStyleOverrides(current.style_overrides);
-      const next = parsePublicStyleOverrides(recipe(before));
-      setStylePast((history) => [...history.slice(-49), before]);
-      setStyleFuture([]);
-      return { ...current, style_overrides: next };
-    });
+    if (!canEdit || busy) return;
+    const before = parsePublicStyleOverrides(form.style_overrides);
+    const next = parsePublicStyleOverrides(recipe(structuredClone(before)));
+    if (JSON.stringify(before) === JSON.stringify(next)) return;
+    setStylePast((history) => [...history.slice(-49), before]);
+    setStyleFuture([]);
+    setForm((current) => ({ ...current, style_overrides: next }));
   };
 
   const undoStyle = () => {
     const previous = stylePast.at(-1);
     if (!previous) return;
-    setForm((current) => {
-      setStyleFuture((future) => [current.style_overrides, ...future].slice(0, 50));
-      return { ...current, style_overrides: previous };
-    });
+    setStyleFuture((future) => [form.style_overrides, ...future].slice(0, 50));
     setStylePast((history) => history.slice(0, -1));
+    setForm((current) => ({ ...current, style_overrides: previous }));
   };
 
   const redoStyle = () => {
     const next = styleFuture[0];
     if (!next) return;
-    setForm((current) => {
-      setStylePast((history) => [...history.slice(-49), current.style_overrides]);
-      return { ...current, style_overrides: next };
-    });
+    setStylePast((history) => [...history.slice(-49), form.style_overrides]);
     setStyleFuture((future) => future.slice(1));
+    setForm((current) => ({ ...current, style_overrides: next }));
   };
+
+  const currentOverride = (document: PublicStyleOverrideDocument) => itemMeta
+    ? (recordTarget ? document.records?.[itemMeta.id]?.[recordTarget] : document.items[itemMeta.id])
+    : undefined;
 
   const setItemProperty = (property: PublicStyleProperty, value: string | number | null) => {
     if (!itemMeta) return;
-    updateStyleDocument((document) => {
-      const next = structuredClone(document);
-      const item = next.items[itemMeta.id] ?? {};
+    updateStyleDocument((next) => {
+      const item = { ...(currentOverride(next) ?? {}) };
       if (styleState === "normal") {
         const normal = { ...(item.normal ?? {}) };
         if (value === null || value === "") delete normal[property]; else normal[property] = value;
@@ -2092,37 +2107,123 @@ function VisualBrandingEditor({
         if (Object.keys(stateValues).length) states[styleState] = stateValues; else delete states[styleState];
         item.states = Object.keys(states).length ? states : undefined;
       }
-      if (!item.normal && !item.states) delete next.items[itemMeta.id]; else next.items[itemMeta.id] = item;
+      const empty = !item.normal && !item.states;
+      if (recordTarget) {
+        const records = { ...(next.records ?? {}) };
+        const forItem = { ...(records[itemMeta.id] ?? {}) };
+        if (empty) delete forItem[recordTarget]; else forItem[recordTarget] = item;
+        if (Object.keys(forItem).length) records[itemMeta.id] = forItem; else delete records[itemMeta.id];
+        next.records = records;
+      } else if (empty) delete next.items[itemMeta.id];
+      else next.items[itemMeta.id] = item;
       return next;
     });
   };
 
+  const resetItem = () => {
+    if (!itemMeta) return;
+    updateStyleDocument((next) => {
+      if (recordTarget) {
+        const forItem = { ...(next.records?.[itemMeta.id] ?? {}) };
+        delete forItem[recordTarget];
+        next.records = { ...(next.records ?? {}), [itemMeta.id]: forItem };
+      } else delete next.items[itemMeta.id];
+      return next;
+    });
+  };
+
+  // Keyboard: Ctrl/Cmd+Z undo, Shift+Ctrl/Cmd+Z or Ctrl+Y redo, Escape clears selection.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (event.key === "Escape") { setSelectedRole(null); return; }
+      if (!(event.metaKey || event.ctrlKey)) return;
+      if (event.key.toLowerCase() === "z" && !event.shiftKey) { event.preventDefault(); undoStyle(); }
+      else if ((event.key.toLowerCase() === "z" && event.shiftKey) || event.key.toLowerCase() === "y") { event.preventDefault(); redoStyle(); }
+    };
+    window.addEventListener("keydown", onKey);
+    frameDoc?.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); frameDoc?.removeEventListener("keydown", onKey); };
+  });
+
+  const previewConfig = v2ConfigForDraft();
+  const previewKey = JSON.stringify(previewConfig);
+
+  // Force the chosen appearance on the selected instance and read the
+  // effective (inherited or overridden) rendered colours back for the inspector.
+  useEffect(() => {
+    if (!frameDoc) return;
+    frameDoc.querySelectorAll("[data-preview-state]").forEach((node) => node.removeAttribute("data-preview-state"));
+    if (!itemMeta || !selectedInstance) { setInherited({}); return; }
+    const element = frameDoc.querySelector<HTMLElement>(`[data-brand-instance="${CSS.escape(selectedInstance)}"]`)
+      ?? frameDoc.querySelector<HTMLElement>(`[data-event-style="${CSS.escape(itemMeta.id)}"]`);
+    if (!element) { setInherited({}); return; }
+    if (styleState !== "normal") element.setAttribute("data-preview-state", styleState);
+    const view = frameDoc.defaultView;
+    if (!view) return;
+    const css = view.getComputedStyle(element);
+    const icon = element.querySelector("svg");
+    const iconCss = icon ? view.getComputedStyle(icon) : null;
+    const varValue = (name: string) => css.getPropertyValue(name).trim();
+    setInherited({
+      color: cssColourToHex(css.color),
+      backgroundColor: cssColourToHex(css.backgroundColor),
+      borderColor: cssColourToHex(css.borderTopColor),
+      iconColor: iconCss ? cssColourToHex(iconCss.color) : cssColourToHex(css.color),
+      iconBackgroundColor: cssColourToHex(varValue("--item-icon-bg") || css.backgroundColor),
+      progressTrackColor: cssColourToHex(varValue("--item-progress-track")) || theme.border,
+      progressFillColor: cssColourToHex(varValue("--item-progress-fill")) || theme.accent,
+      fontFamily: css.fontFamily.split(",")[0]?.replace(/["']/g, "").trim(),
+      fontSize: String(Math.round(parseFloat(css.fontSize))),
+      fontWeight: css.fontWeight,
+      lineHeight: css.lineHeight === "normal" ? "" : String(Math.round((parseFloat(css.lineHeight) / parseFloat(css.fontSize)) * 100) / 100),
+      textAlign: css.textAlign,
+      opacity: String(Math.round(parseFloat(css.opacity) * 100)),
+    });
+  }, [frameDoc, itemMeta?.id, selectedInstance, styleState, previewKey, previewWidth, theme]);
+
   const activateV2 = async () => {
-    if (!canEdit || saving || !agencyId) return;
+    if (!canEdit || busy || !agencyId) return;
+    const checked = validatePublicStyleOverrides(v2ConfigForDraft());
+    if (checked.errors.length) { toast.error(`V2 was not activated: ${checked.errors.join("; ")}.`); return; }
     if (!window.confirm("Use the V2 public template for this event? This activates only this event and saves this V2 configuration atomically.")) return;
-    const { data, error } = await (supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
-      "save_event_v2_branding",
-      { _agency_id: agencyId, _event_id: eventId, _config: v2ConfigForDraft(), _activate: true },
-    );
-    if (error || data?.[0]?.public_template_version !== "v2") {
-      toast.error(`V2 was not activated. ${error?.message ?? "No confirmed response was returned."}`);
-      return;
+    setActivating(true);
+    try {
+      const { data, error } = await (supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
+        "save_event_v2_branding",
+        { _agency_id: agencyId, _event_id: eventId, _config: checked.document, _activate: true },
+      );
+      const confirmed = data?.[0];
+      if (error || confirmed?.public_template_version !== "v2" || !confirmed.v2_style_config) {
+        toast.error(`V2 was not activated. ${error?.message ?? "No confirmed response was returned."}`);
+        return;
+      }
+      onV2Activated(confirmed);
+      toast.success("V2 is now live for this event only.");
+    } catch (error) {
+      toast.error(`V2 was not activated. ${error instanceof Error ? error.message : "Unexpected error."}`);
+    } finally {
+      setActivating(false);
     }
-    toast.success("V2 is now live for this event only.");
   };
 
-  const handlePreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target);
+  // Labelled quick choices from THIS event's current draft theme + Brand Kit + session colours.
+  const quickColours: QuickColour[] = dedupeQuick([
+    { colour: theme.primary, label: "Primary" }, { colour: theme.accent, label: "Accent" },
+    { colour: theme.pageBg, label: "Page background" }, { colour: theme.cardBg, label: "Card background" },
+    { colour: theme.pageText, label: "Page text" }, { colour: theme.cardText, label: "Card text" },
+    { colour: theme.buttonPrimaryBg, label: "Primary button" }, { colour: theme.buttonPrimaryFg, label: "Primary button text" },
+    { colour: theme.border, label: "Border" }, { colour: theme.heroBg, label: "Hero background" },
+    ...(selectedKit ? Object.entries(selectedKit.colors).map(([name, colour]) => ({ colour: String(colour), label: `Brand Kit: ${name}` })) : []),
+    ...recentColours.map((colour) => ({ colour, label: "Recent" })),
+  ]);
+  const rememberColour = (value: string) => {
+    if (HEX_RE.test(value)) setRecentColours((current) => [value.toUpperCase(), ...current.filter((item) => item !== value.toUpperCase())].slice(0, 6));
   };
-
-  const quickColours = Array.from(new Set([
-    form.primary_color, form.accent_color,
-    ...(selectedKit ? Object.values(selectedKit.colors) : []),
-    ...recentColours,
-  ].filter((value): value is string => HEX_RE.test(value)))).slice(0, 10);
 
   const resolvedFor = (field: ColourField) => ({
     primary_color: theme.primary, accent_color: theme.accent, link_color: theme.link,
@@ -2134,7 +2235,7 @@ function VisualBrandingEditor({
     button_secondary_fg: theme.buttonSecondaryFg, nav_background_color: theme.navBg,
     nav_fg_color: theme.navText, nav_muted_color: theme.navMuted, nav_active_fg_color: theme.navActiveText,
     hero_bg_color: theme.heroBg, hero_fg_color: theme.heroFg, hero_accent_color: theme.heroAccent,
-    hero_body_color: theme.heroBody, hero_overlay_color: form.primary_color || theme.primary,
+    hero_body_color: theme.heroBody, hero_overlay_color: form.hero_overlay_color || theme.heroBg,
     logo_backdrop_color: form.logo_backdrop_color || "#FFFFFF",
   })[field];
 
@@ -2149,6 +2250,16 @@ function VisualBrandingEditor({
     return undefined;
   };
 
+  // Welcome copy: show the EFFECTIVE text and where it comes from, without writing anything on open.
+  const welcomeOverride = form.welcome_copy !== v1Form.welcome_copy;
+  const effectiveWelcome = resolvePublicLandingCopy({ welcomeCopy: form.welcome_copy, description: previewEvent.description ?? null }) ?? "";
+  const welcomeSource = form.welcome_copy.trim()
+    ? (welcomeOverride ? "V2 welcome message for this event" : "Existing welcome message (inherited)")
+    : (previewEvent.description?.trim() ? "Event description (inherited)" : "No welcome message");
+
+  const override = itemMeta ? currentOverride(parsePublicStyleOverrides(form.style_overrides)) : undefined;
+  const wiredPages = new Set(PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => item.page));
+
   return (
     <div className="min-h-screen bg-muted/40">
       <div className="sticky top-0 z-[80] border-b bg-background/95 px-4 py-3 backdrop-blur">
@@ -2156,84 +2267,249 @@ function VisualBrandingEditor({
           <div>
             <div className="text-xs font-semibold uppercase text-muted-foreground">V2 visual branding editor</div>
             <h1 className="text-lg font-semibold">{event.name}</h1>
+            <div className="text-xs text-muted-foreground">{branding?.public_template_version === "v2" ? "This event is live on V2 — saving updates its live pages." : "This event is live on the existing template — saving keeps V2 as an inactive draft."}</div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`text-xs font-medium ${saveError ? "text-destructive" : hasUnsavedChanges ? "text-amber-700" : "text-emerald-700"}`}>
-              {saving ? "Saving…" : saveError ? "Save failed" : hasUnsavedChanges ? "Unsaved changes" : saveSuccess ? "Saved" : "All changes saved"}
+            <span role="status" className={`text-xs font-medium ${saveError ? "text-destructive" : hasUnsavedChanges ? "text-amber-700" : "text-emerald-700"}`}>
+              {activating ? "Activating…" : saving ? "Saving…" : saveError ? "Save failed" : hasUnsavedChanges ? "Unsaved changes" : saveSuccess ? "Saved" : "All changes saved"}
             </span>
-            <Button type="button" variant="outline" onClick={onBack}>Back to existing editor</Button>
-            <Button type="button" variant="outline" onClick={onExit}>Back to event</Button>
-            {canEdit && <Button type="button" variant="outline" onClick={onSave} disabled={saving}>Save</Button>}
-            {canEdit && branding?.public_template_version !== "v2" && <Button type="button" variant="outline" onClick={activateV2} disabled={saving}>Use V2 for this event</Button>}
-            {canEdit && <Button type="button" onClick={onSaveAndReturn} disabled={saving}>Save and return</Button>}
+            <Button type="button" variant="outline" onClick={onBack} disabled={busy}>Back to existing editor</Button>
+            <Button type="button" variant="outline" onClick={onExit} disabled={busy}>Back to event</Button>
+            {canEdit && <Button type="button" variant="outline" onClick={onSave} disabled={busy}>{saving ? "Saving…" : "Save"}</Button>}
+            {canEdit && branding?.public_template_version !== "v2" && <Button type="button" variant="outline" onClick={activateV2} disabled={busy}>{activating ? "Activating…" : "Use V2 for this event"}</Button>}
+            {canEdit && <Button type="button" onClick={onSaveAndReturn} disabled={busy}>Save and return</Button>}
           </div>
         </div>
       </div>
       {!canEdit && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">View-only access. You can inspect settings, but cannot change or save them.</div></div>}
       {(saveError || saveSuccess) && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
-      <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[210px_minmax(420px,1fr)_350px]">
+      <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[230px_minmax(420px,1fr)_360px]">
         <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Page</div>
-          <Select value={stylePage} onValueChange={setStylePage}>
-            <SelectTrigger className="mb-3"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Array.from(new Set(PUBLIC_STYLE_ELEMENTS.map((item) => item.page))).map((page) => <SelectItem key={page} value={page}>{page === "home" ? "Landing / home" : page.charAt(0).toUpperCase() + page.slice(1)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">This page</div>
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Landing / home</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
-            {PUBLIC_STYLE_ELEMENTS.filter((item) => item.page === stylePage).map((item) => <button key={item.id} type="button" onClick={() => setSelectedRole(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+            {PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
           <div className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Shared theme</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
-            {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => setSelectedRole(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+            {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => selectFromNavigator(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
+          <p className="mt-4 rounded-md bg-muted p-2 text-xs text-muted-foreground">Other public pages ({PUBLIC_STYLE_PAGES_PENDING.filter((page) => !wiredPages.has(page)).join(", ")}) are not editable in V2 yet.</p>
         </nav>
 
         <section className="min-w-0 rounded-md border bg-background p-3">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">Click anything to edit its shared appearance. Public actions are disabled here.</p></div>
+            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">Click anything to edit that item. Public actions are disabled here.</p></div>
             <div className="inline-flex rounded-md border p-1" aria-label="Preview width">
-              <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview"><Smartphone className="h-4 w-4" /></Button>
-              <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview"><Monitor className="h-4 w-4" /></Button>
+              <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview" aria-pressed={previewWidth === "mobile"}><Smartphone className="h-4 w-4" /></Button>
+              <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview" aria-pressed={previewWidth === "desktop"}><Monitor className="h-4 w-4" /></Button>
             </div>
           </div>
           <div className="overflow-x-auto rounded-md bg-muted p-3">
-            <div
-              ref={previewRef}
-              className="v2-brand-preview relative mx-auto overflow-hidden rounded-md border bg-background shadow-sm transition-[width] [transform:translateZ(0)]"
-              style={{ width: previewWidth === "mobile" ? 390 : 1024, maxWidth: "100%" }}
-              onClickCapture={handlePreviewClick}
-              onAuxClickCapture={(event) => event.preventDefault()}
-              onKeyDownCapture={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target); } }}
-              onPointerOver={(event) => { const el = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-brand-role]") : null; setHoveredRole((el?.dataset.brandRole as VisualBrandRole | undefined) ?? null); }}
-              onPointerLeave={() => setHoveredRole(null)}
-              aria-label="Selectable customer landing page preview"
-            >
-              <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview [data-brand-role="${hoveredRole ?? "__none"}"]{outline-color:color-mix(in srgb,var(--primary) 55%,transparent)}.v2-brand-preview [data-brand-role="${selectedRole ?? "__none"}"]{outline:3px solid var(--primary);outline-offset:-3px}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}`}</style>
-              <div className="max-h-[calc(100vh-13rem)] overflow-y-auto">
-                <PublicEventTemplate subdomain={null} event={{ ...previewEvent, v2_style_config: v2ConfigForDraft() }} venues={venues} mode="preview" forceTemplate="v2" />
+            <PreviewFrame width={previewWidth === "mobile" ? 390 : 1280} onDocument={setFrameDoc}>
+              <div
+                className="v2-brand-preview"
+                onClickCapture={(event) => { event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target); }}
+                onAuxClickCapture={(event) => event.preventDefault()}
+                onSubmitCapture={(event) => event.preventDefault()}
+                onKeyDownCapture={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target); } }}
+                onPointerOver={(event) => { const node = event.target as Element; const el = typeof node.closest === "function" ? node.closest<HTMLElement>("[data-brand-role]") : null; setHoveredInstance(el?.dataset.brandInstance ?? el?.dataset.brandRole ?? null); }}
+                onPointerLeave={() => setHoveredInstance(null)}
+              >
+                <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}${hoveredInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(hoveredInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(hoveredInstance)}"]:not([data-brand-instance]){outline-color:color-mix(in srgb,#2563EB 60%,transparent)}` : ""}${selectedInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(selectedInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(selectedInstance)}"]:not([data-brand-instance]){outline:3px solid #2563EB!important;outline-offset:-3px}` : ""}`}</style>
+                <PublicEventTemplate subdomain={null} event={{ ...previewEvent, v2_style_config: previewConfig }} venues={venues} mode="preview" forceTemplate="v2" />
               </div>
-            </div>
+            </PreviewFrame>
           </div>
         </section>
 
         <aside className="rounded-md border bg-background p-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          {!roleMeta && !itemMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an area from the navigator.</p></div></div> : itemMeta ? <ItemStyleInspector item={itemMeta} document={form.style_overrides} state={styleState} setState={setStyleState} setProperty={setItemProperty} reset={() => updateStyleDocument((document) => ({ ...document, items: Object.fromEntries(Object.entries(document.items).filter(([id]) => id !== itemMeta.id)) }))} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0} disabled={!canEdit || saving} clear={() => setSelectedRole(null)} /> : roleMeta ? <>
-            <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description}</p></div><Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
+          {!roleMeta && !itemMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an item from the navigator.</p></div></div> : null}
+          {itemMeta ? <ItemStyleInspector
+            item={itemMeta} values={(styleState === "normal" ? override?.normal : override?.states?.[styleState]) ?? {}} hasOverride={Boolean(override)}
+            inherited={inherited} state={styleState} setState={setStyleState} setProperty={(property, value) => { setItemProperty(property, value); if (typeof value === "string") rememberColour(value); }}
+            reset={resetItem} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0}
+            disabled={!canEdit || busy} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
+            record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope } : null}
+          /> : null}
+          {roleMeta && panelRole ? <div className={itemMeta ? "mt-6 border-t pt-4" : ""}>
+            <div className="flex items-start justify-between gap-3"><div>{itemMeta ? <div className="text-xs font-semibold uppercase text-muted-foreground">Shared settings for this area</div> : null}<h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description} {itemMeta ? "These affect every item that uses them." : ""}</p></div>{!itemMeta ? <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button> : null}</div>
             <div className="mt-5 space-y-5">
-              {selectedRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || saving} />}
-              {selectedRole === "fonts" || selectedRole === "heroHeading" || selectedRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || saving} eventName={event.name} customFonts={customFonts} canUpload={false} onUpload={async () => ({ ok: false as const, error: "Use the existing editor to manage uploaded fonts." })} onDelete={async () => {}} /> : null}
-              {selectedRole === "welcome" && <Field label="Welcome message"><textarea value={form.welcome_copy} maxLength={1000} disabled={!canEdit || saving} onChange={(event) => setForm((current) => ({ ...current, welcome_copy: event.target.value }))} className="min-h-28 w-full rounded-md border bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring" /><div className="text-right text-xs text-muted-foreground">{form.welcome_copy.length}/1000</div></Field>}
-              {selectedRole === "logo" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="logo" currentPath={branding?.logo_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("logo", file)} onRemove={() => onAssetRemove("logo")} /><Field label="Logo shape"><Select value={form.logo_shape || "square"} onValueChange={(value) => setForm((current) => ({ ...current, logo_shape: value }))} disabled={!canEdit || saving}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="square">Square</SelectItem><SelectItem value="circle">Circle</SelectItem></SelectContent></Select></Field><Field label="Logo backdrop"><Select value={form.logo_backdrop || "transparent"} onValueChange={(value) => setForm((current) => ({ ...current, logo_backdrop: value }))} disabled={!canEdit || saving}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transparent">Transparent</SelectItem><SelectItem value="color">Colour</SelectItem></SelectContent></Select></Field></>}
-              {selectedRole === "cover" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="cover" currentPath={branding?.cover_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("cover", file)} onRemove={() => onAssetRemove("cover")} />{branding?.cover_path && <CoverPositioner imageUrl={getEventAssetPublicUrl(branding.cover_path)} focalX={form.cover_focal_x ? Number(form.cover_focal_x) : 50} focalY={form.cover_focal_y ? Number(form.cover_focal_y) : 50} disabled={!canEdit || saving} onChange={(x, y) => setForm((current) => ({ ...current, cover_focal_x: String(x), cover_focal_y: String(y) }))} />}</>}
-              {roleMeta.fields.map((field) => <div key={field} className="space-y-2"><ColorRoleRow label={COLOUR_LABELS[field]} fieldName={field} helper={roleMeta.description} resolved={resolvedFor(field)} value={form[field]} onChange={(value) => { editColour(field, value); if (HEX_RE.test(value)) setRecentColours((current) => [value.toUpperCase(), ...current.filter((item) => item !== value.toUpperCase())].slice(0, 6)); }} disabled={!canEdit || saving} warnings={fieldWarnings(field)} />{quickColours.length > 0 && <div className="flex flex-wrap gap-1" aria-label={`Quick colours for ${COLOUR_LABELS[field]}`}>{quickColours.map((colour) => <button key={colour} type="button" title={colour} aria-label={`Use ${colour}`} disabled={!canEdit || saving} onClick={() => editColour(field, colour)} className="h-6 w-6 rounded-sm border focus-visible:ring-2 focus-visible:ring-ring" style={{ backgroundColor: colour }} />)}</div>}</div>)}
-              {selectedRole === "hero" || selectedRole === "cover" ? <HeroOverlayCard colorValue={form.hero_overlay_color} opacityValue={form.hero_overlay_opacity} primaryFallback={form.primary_color || theme.primary} disabled={!canEdit || saving} onColorChange={(value) => editColour("hero_overlay_color", value)} onOpacityChange={(value) => setForm((current) => ({ ...current, hero_overlay_opacity: value }))} /> : null}
+              {panelRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || busy} />}
+              {panelRole === "fonts" || panelRole === "heroHeading" || panelRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || busy} eventName={event.name} customFonts={customFonts} canUpload={false} onUpload={async () => ({ ok: false as const, error: "Use the existing editor to manage uploaded fonts." })} onDelete={async () => {}} /> : null}
+              {panelRole === "welcome" && <Field label="Welcome message">
+                <div className="mb-1 text-xs text-muted-foreground">Source: <span className="font-medium text-foreground">{welcomeSource}</span></div>
+                <textarea aria-label="Welcome message" value={form.welcome_copy.trim() ? form.welcome_copy : effectiveWelcome} maxLength={1000} disabled={!canEdit || busy} onChange={(event) => setForm((current) => ({ ...current, welcome_copy: event.target.value }))} className="min-h-28 w-full rounded-md border bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring" />
+                <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Clearing the box shows the event description again.</span><span>{(form.welcome_copy.trim() ? form.welcome_copy : effectiveWelcome).length}/1000</span></div>
+                <Button type="button" variant="ghost" size="sm" disabled={!canEdit || busy || !welcomeOverride} onClick={() => setForm((current) => ({ ...current, welcome_copy: v1Form.welcome_copy }))}>Use inherited message</Button>
+              </Field>}
+              {panelRole === "logo" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="logo" currentPath={branding?.logo_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("logo", file)} onRemove={() => onAssetRemove("logo")} /><Field label="Logo shape"><Select value={form.logo_shape || "square"} onValueChange={(value) => setForm((current) => ({ ...current, logo_shape: value }))} disabled={!canEdit || busy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="square">Square</SelectItem><SelectItem value="circle">Circle</SelectItem></SelectContent></Select></Field><Field label="Logo backdrop"><Select value={form.logo_backdrop || "transparent"} onValueChange={(value) => setForm((current) => ({ ...current, logo_backdrop: value }))} disabled={!canEdit || busy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transparent">Transparent</SelectItem><SelectItem value="color">Colour</SelectItem></SelectContent></Select></Field></>}
+              {panelRole === "cover" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="cover" currentPath={branding?.cover_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("cover", file)} onRemove={() => onAssetRemove("cover")} />{branding?.cover_path && <CoverPositioner imageUrl={getEventAssetPublicUrl(branding.cover_path)} focalX={form.cover_focal_x ? Number(form.cover_focal_x) : 50} focalY={form.cover_focal_y ? Number(form.cover_focal_y) : 50} disabled={!canEdit || busy} onChange={(x, y) => setForm((current) => ({ ...current, cover_focal_x: String(x), cover_focal_y: String(y) }))} />}</>}
+              {roleMeta.fields.map((field) => <ColourControl key={field} label={COLOUR_LABELS[field]} value={form[field] as string} inherited={resolvedFor(field)} quickColours={quickColours} disabled={!canEdit || busy} warning={fieldWarnings(field)} onCommit={(value) => { editColour(field, (value ?? "") as Form[typeof field]); if (value) rememberColour(value); }} />)}
+              {panelRole === "hero" || panelRole === "cover" ? <HeroOverlayCard colorValue={form.hero_overlay_color} opacityValue={form.hero_overlay_opacity} primaryFallback={form.hero_overlay_color || theme.heroBg} disabled={!canEdit || busy} onColorChange={(value) => editColour("hero_overlay_color", value)} onOpacityChange={(value) => setForm((current) => ({ ...current, hero_overlay_opacity: value }))} /> : null}
             </div>
-          </> : null}
+          </div> : null}
         </aside>
       </div>
     </div>
+  );
+}
+
+/** Items whose real public component carries a V2 marker on the home page today. */
+const V2_WIRED_ITEMS = new Set<string>([
+  "home.page.surface", "home.hero.surface", "home.hero.cover", "home.hero.logo", "home.hero.welcomeLabel",
+  "home.hero.heading", "home.hero.welcomeCopy", "home.summary.surface", "home.summary.ring",
+  "home.primaryCta", "home.shareButton", "home.prizesButton", "home.venuesButton",
+  "home.bonusPromo.surface", "home.bonusPromo.icon", "home.bonusPromo.heading", "home.bonusPromo.body",
+  "home.nextPrize.surface", "home.nextPrize.icon", "home.nextPrize.heading", "home.nextPrize.progress",
+  "home.collect.surface", "home.collect.heading", "home.collect.cta", "home.stamps.tile", "home.stamps.label",
+]);
+const PUBLIC_STYLE_PAGES_PENDING = ["passport", "join", "venues", "venue", "offers", "prizes", "map", "leaderboard", "faq", "legal", "scan", "checkin", "bonus", "tasting", "shared navigation"];
+
+/** Item → the shared Theme panel that also controls it (shown below the item inspector). */
+const ITEM_SHARED_ROLE: Partial<Record<string, VisualBrandRole>> = {
+  "home.hero.surface": "hero", "home.hero.cover": "cover", "home.hero.logo": "logo",
+  "home.hero.heading": "heroHeading", "home.hero.welcomeCopy": "welcome", "home.page.surface": "page",
+};
+
+type PublicStyleState = "normal" | "hover" | "focus" | "active" | "disabled";
+type QuickColour = { colour: string; label: string };
+
+function dedupeQuick(list: QuickColour[]): QuickColour[] {
+  const seen = new Set<string>();
+  return list.filter((entry) => {
+    if (!HEX_RE.test(entry.colour)) return false;
+    const key = entry.colour.toUpperCase();
+    if (seen.has(key)) return false;
+    seen.add(key); return true;
+  }).map((entry) => ({ ...entry, colour: entry.colour.toUpperCase() })).slice(0, 16);
+}
+
+function cssAttr(value: string) { return value.replace(/["\\]/g, "\\$&"); }
+
+/** rgb()/rgba()/hex → #RRGGBB, or "transparent" for fully transparent; "" if unknown. */
+export function cssColourToHex(value: string | null | undefined): string {
+  if (!value) return "";
+  const v = value.trim();
+  if (HEX_RE.test(v)) return v.toUpperCase();
+  if (v === "transparent") return "transparent";
+  const match = v.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/i);
+  if (!match) return "";
+  const alpha = match[4] == null ? 1 : match[4].endsWith("%") ? parseFloat(match[4]) / 100 : parseFloat(match[4]);
+  if (alpha === 0) return "transparent";
+  return `#${[match[1], match[2], match[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join("").toUpperCase()}`;
+}
+
+/**
+ * Real responsive viewport: a same-origin iframe whose document mirrors the
+ * app's stylesheets/fonts, with the REAL public components portalled in. Media
+ * queries, fixed positioning and 100dvh resolve against the frame, not the admin window.
+ */
+function PreviewFrame({ width, onDocument, children }: { width: number; onDocument: (doc: Document | null) => void; children: React.ReactNode }) {
+  const ref = useRef<HTMLIFrameElement | null>(null);
+  const [body, setBody] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const iframe = ref.current;
+    const doc = iframe?.contentDocument;
+    if (!doc) return;
+    doc.open();
+    doc.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0"></body></html>');
+    doc.close();
+    doc.documentElement.className = document.documentElement.className;
+    const clones = new Map<Node, HTMLElement>();
+    const sync = () => {
+      const originals = Array.from(document.head.querySelectorAll<HTMLElement>('style, link[rel="stylesheet"]'));
+      for (const original of originals) {
+        const existing = clones.get(original);
+        if (!existing) {
+          const clone = original.cloneNode(true) as HTMLElement;
+          clones.set(original, clone);
+          doc.head.appendChild(clone);
+        } else if (original.tagName === "STYLE" && existing.textContent !== original.textContent) {
+          existing.textContent = original.textContent;
+        }
+      }
+      for (const [original, clone] of clones) {
+        if (!original.isConnected) { clone.remove(); clones.delete(original); }
+      }
+    };
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.head, { childList: true, subtree: true, characterData: true });
+    setBody(doc.body);
+    onDocument(doc);
+    return () => { observer.disconnect(); onDocument(null); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <>
+      <iframe
+        ref={ref}
+        title="Customer page preview"
+        data-testid="v2-preview-frame"
+        className="mx-auto block rounded-md border bg-background shadow-sm"
+        style={{ width, maxWidth: width === 390 ? width : "100%", height: "calc(100vh - 13rem)", minHeight: 560 }}
+      />
+      {body ? createPortal(children, body) : null}
+    </>
+  );
+}
+
+/**
+ * One reusable colour control: effective inherited swatch, picker, editable
+ * HEX with a local buffer (partial input is never discarded), labelled quick
+ * choices and "Use default". Selecting it never writes anything.
+ */
+function ColourControl({ label, value, inherited, quickColours, disabled, onCommit, warning, allowTransparent }: {
+  label: string; value: string | null | undefined; inherited: string; quickColours: QuickColour[];
+  disabled: boolean; onCommit: (value: string | null) => void; warning?: React.ReactNode; allowTransparent?: boolean;
+}) {
+  const current = value && HEX_RE.test(value) ? value.toUpperCase() : "";
+  const [draft, setDraft] = useState(current);
+  useEffect(() => setDraft(current), [current]);
+  const effective = current || inherited;
+  const invalid = draft !== "" && draft !== current && !HEX_RE.test(draft);
+  const checker = "repeating-conic-gradient(#d4d4d8 0% 25%, #ffffff 0% 50%) 50% / 10px 10px";
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between"><label className="text-sm font-medium">{label}</label><span className="text-[11px] text-muted-foreground">{current ? "Custom" : `Inherited${inherited ? `: ${inherited}` : ""}`}</span></div>
+      <div className="flex gap-2">
+        <span className="relative h-10 w-12 shrink-0 overflow-hidden rounded border" style={{ background: effective === "transparent" || !effective ? checker : effective }}>
+          <input type="color" aria-label={`${label} picker`} value={HEX_RE.test(effective) ? effective : "#FFFFFF"} disabled={disabled} onChange={(event) => onCommit(event.target.value.toUpperCase())} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+        </span>
+        <input aria-label={`${label} hex`} value={draft} placeholder={inherited || "Use default"} disabled={disabled}
+          onChange={(event) => { const next = event.target.value.trim(); setDraft(next); if (HEX_RE.test(next)) onCommit(next.toUpperCase()); else if (next === "") onCommit(null); }}
+          onBlur={() => { if (!HEX_RE.test(draft) && draft !== "") setDraft(current); }}
+          className={`h-10 min-w-0 flex-1 rounded-md border bg-background px-3 font-mono text-sm ${invalid ? "border-destructive" : ""}`} />
+        <Button type="button" variant="ghost" size="sm" disabled={disabled || !current} onClick={() => onCommit(null)}>Use default</Button>
+      </div>
+      {invalid ? <p className="text-xs text-destructive">Enter a 6-digit HEX colour such as #1F3D2B.</p> : null}
+      <div className="flex flex-wrap gap-1" aria-label={`Quick colours for ${label}`}>
+        {allowTransparent ? <button type="button" title="Transparent" aria-label="Use transparent" disabled className="h-6 w-6 rounded-sm border opacity-40" style={{ background: checker }} /> : null}
+        {quickColours.map((entry) => <button key={`${entry.label}-${entry.colour}`} type="button" title={`${entry.label} ${entry.colour}`} aria-label={`Use ${entry.label} ${entry.colour}`} disabled={disabled} onClick={() => onCommit(entry.colour)} className={`h-6 w-6 rounded-sm border focus-visible:ring-2 focus-visible:ring-ring ${current === entry.colour ? "ring-2 ring-primary" : ""}`} style={{ backgroundColor: entry.colour }} />)}
+      </div>
+      {warning}
+    </div>
+  );
+}
+
+/** Numeric input with a local buffer: commits only valid in-range values, shows errors otherwise. */
+function NumberControl({ label, property, value, inherited, min, max, step, disabled, onCommit, unit }: {
+  label: string; property: PublicStyleProperty; value: number | undefined; inherited?: string;
+  min: number; max: number; step: number; disabled: boolean; onCommit: (value: number | null) => void; unit?: string;
+}) {
+  const current = value == null ? "" : String(value);
+  const [draft, setDraft] = useState(current);
+  useEffect(() => setDraft(current), [current]);
+  const parsed = draft === "" ? null : Number(draft);
+  const valid = draft === "" || (parsed != null && publicStylePropertyValue(property, parsed) !== null);
+  return (
+    <Field label={label}>
+      <input type="number" inputMode="decimal" aria-label={label} min={min} max={max} step={step} value={draft} placeholder={inherited ? `${inherited}${unit ?? ""} (inherited)` : "Default"} disabled={disabled}
+        onChange={(event) => { const next = event.target.value; setDraft(next); if (next === "") onCommit(null); else if (publicStylePropertyValue(property, Number(next)) !== null) onCommit(Number(next)); }}
+        onBlur={() => { if (!valid) setDraft(current); }}
+        className={`h-10 w-full rounded-md border bg-background px-3 ${valid ? "" : "border-destructive"}`} />
+      {!valid ? <p className="text-xs text-destructive">Use a value from {min} to {max}.</p> : null}
+    </Field>
   );
 }
 
@@ -2245,25 +2521,47 @@ const PROPERTY_LABELS: Record<PublicStyleProperty, string> = {
   backgroundGradient: "Gradient",
 };
 
-function ItemStyleInspector({ item, document, state, setState, setProperty, reset, undo, redo, canUndo, canRedo, disabled, clear }: {
-  item: PublicStyleElementDefinition; document: PublicStyleOverrideDocument;
-  state: "normal" | "hover" | "focus" | "active" | "disabled";
-  setState: (state: "normal" | "hover" | "focus" | "active" | "disabled") => void;
+function ItemStyleInspector({ item, values, hasOverride, inherited, state, setState, setProperty, reset, undo, redo, canUndo, canRedo, disabled, clear, quickColours, customFonts, record }: {
+  item: PublicStyleElementDefinition; values: Partial<Record<PublicStyleProperty, string | number>>; hasOverride: boolean;
+  inherited: Partial<Record<PublicStyleProperty, string>>;
+  state: PublicStyleState; setState: (state: PublicStyleState) => void;
   setProperty: (property: PublicStyleProperty, value: string | number | null) => void;
   reset: () => void; undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean; disabled: boolean; clear: () => void;
+  quickColours: QuickColour[]; customFonts: EventCustomFont[];
+  record: { id: string; scope: "record" | "type"; setScope: (scope: "record" | "type") => void } | null;
 }) {
-  const saved = document.items[item.id];
-  const values = state === "normal" ? saved?.normal ?? {} : saved?.states?.[state] ?? {};
   const colourProperties = item.properties.filter((property) => property.endsWith("Color") || property === "color");
   const hasTypography = item.properties.includes("fontFamily");
+  const [gradient, setGradient] = useState(String(values.backgroundGradient ?? ""));
+  useEffect(() => setGradient(String(values.backgroundGradient ?? "")), [values.backgroundGradient]);
+  const gradientInvalid = gradient !== "" && publicStylePropertyValue("backgroundGradient", gradient) === null;
+  const opacityPercent = typeof values.opacity === "number" ? Math.round(values.opacity * 100) : null;
   return <>
-    <div className="flex items-start justify-between gap-3"><div><div className="text-xs font-semibold uppercase text-muted-foreground">This item</div><h2 className="text-lg font-semibold">{item.label}</h2><p className="mt-1 text-sm text-muted-foreground">Changes only this named item. Existing Theme and Brand Kit values remain the fallback.</p></div><Button type="button" size="icon" variant="ghost" onClick={clear} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
-    <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !saved}>Reset this item</Button></div>
-    {item.states?.length ? <Field label="Appearance"><Select value={state} onValueChange={(value) => setState(value as typeof state)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
+    <div className="flex items-start justify-between gap-3"><div><div className="text-xs font-semibold uppercase text-muted-foreground">{record?.scope === "type" ? "All items of this type" : "This item"}</div><h2 className="text-lg font-semibold">{item.label}</h2><p className="mt-1 text-sm text-muted-foreground">Changes only this named item{record?.scope === "record" ? " for this one record" : ""}. Theme and Brand Kit values remain the fallback.</p></div><Button type="button" size="icon" variant="ghost" onClick={clear} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
+    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">This one only</SelectItem><SelectItem value="type">Every {item.repeat === "award" ? "prize" : "venue"} (type default)</SelectItem></SelectContent></Select></Field> : null}
+    <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !hasOverride}>Reset this item</Button></div>
+    {item.states?.length ? <Field label="Appearance (shown in the preview)"><Select value={state} onValueChange={(value) => setState(value as PublicStyleState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
     <div className="mt-5 space-y-4">
-      {colourProperties.map((property) => <div key={property} className="space-y-2"><label className="text-sm font-medium">{PROPERTY_LABELS[property]}</label><div className="flex gap-2"><input type="color" value={typeof values[property] === "string" && HEX_RE.test(String(values[property])) ? String(values[property]) : "#000000"} disabled={disabled} onChange={(event) => setProperty(property, event.target.value.toUpperCase())} className="h-10 w-12 rounded border bg-background p-1" /><input value={values[property] == null ? "" : String(values[property])} placeholder="Use default" disabled={disabled} onChange={(event) => setProperty(property, event.target.value)} className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 font-mono text-sm" /><Button type="button" variant="ghost" size="sm" disabled={disabled || values[property] == null} onClick={() => setProperty(property, null)}>Use default</Button></div></div>)}
-      {item.properties.includes("backgroundGradient") ? <Field label="Gradient"><input value={String(values.backgroundGradient ?? "")} placeholder="Use default" disabled={disabled} onChange={(event) => setProperty("backgroundGradient", event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm" /></Field> : null}
-      {hasTypography ? <><Field label="Font family"><Select value={String(values.fontFamily ?? "default")} onValueChange={(value) => setProperty("fontFamily", value === "default" ? null : value)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Use default</SelectItem>{EVENT_FONTS.map((font) => <SelectItem key={font.value} value={font.value}>{font.label}</SelectItem>)}</SelectContent></Select></Field><div className="grid grid-cols-2 gap-3"><Field label="Font size"><input type="number" min={8} max={96} value={values.fontSize ?? ""} placeholder="Default" disabled={disabled} onChange={(event) => setProperty("fontSize", event.target.value ? Number(event.target.value) : null)} className="h-10 w-full rounded-md border bg-background px-3" /></Field><Field label="Weight"><Select value={String(values.fontWeight ?? "default")} onValueChange={(value) => setProperty("fontWeight", value === "default" ? null : Number(value))} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Default</SelectItem>{[400,500,600,700].map((weight) => <SelectItem key={weight} value={String(weight)}>{weight}</SelectItem>)}</SelectContent></Select></Field><Field label="Line height"><input type="number" min={0.8} max={2.5} step={0.1} value={values.lineHeight ?? ""} placeholder="Default" disabled={disabled} onChange={(event) => setProperty("lineHeight", event.target.value ? Number(event.target.value) : null)} className="h-10 w-full rounded-md border bg-background px-3" /></Field><Field label="Alignment"><Select value={String(values.textAlign ?? "default")} onValueChange={(value) => setProperty("textAlign", value === "default" ? null : value)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Default</SelectItem>{["left","center","right"].map((align) => <SelectItem key={align} value={align}>{align}</SelectItem>)}</SelectContent></Select></Field></div></> : null}
+      {colourProperties.map((property) => <ColourControl key={property} label={PROPERTY_LABELS[property]} value={values[property] as string | undefined} inherited={inherited[property] ?? ""} quickColours={quickColours} disabled={disabled} allowTransparent={property === "backgroundColor"} onCommit={(value) => setProperty(property, value)} />)}
+      {item.properties.includes("opacity") ? <Field label={item.id === "home.hero.cover" ? "Tint layer opacity" : "Opacity"}>
+        <div className="flex items-center gap-3">
+          <input type="range" aria-label="Opacity" min={0} max={100} step={1} value={opacityPercent ?? Number(inherited.opacity ?? 100)} disabled={disabled} onChange={(event) => setProperty("opacity", Number(event.target.value) / 100)} className="flex-1" />
+          <span className="w-16 text-right text-sm tabular-nums">{opacityPercent ?? inherited.opacity ?? 100}%{opacityPercent == null ? " ·inh" : ""}</span>
+          <Button type="button" variant="ghost" size="sm" disabled={disabled || opacityPercent == null} onClick={() => setProperty("opacity", null)}>Use default</Button>
+        </div>
+        {item.id === "home.hero.cover" ? <p className="text-xs text-muted-foreground">Fades the tint layer only (image and text are unaffected). It multiplies the shared overlay strength below.</p> : null}
+      </Field> : null}
+      {item.properties.includes("backgroundGradient") ? <Field label="Gradient">
+        <input aria-label="Gradient" value={gradient} placeholder="Use default, e.g. linear-gradient(180deg,#000000,#333333)" disabled={disabled} onChange={(event) => { const next = event.target.value; setGradient(next); if (next === "") setProperty("backgroundGradient", null); else if (publicStylePropertyValue("backgroundGradient", next) !== null) setProperty("backgroundGradient", next.trim()); }} className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${gradientInvalid ? "border-destructive" : ""}`} />
+        {gradientInvalid ? <p className="text-xs text-destructive">Use linear-gradient(…) or radial-gradient(…).</p> : null}
+      </Field> : null}
+      {hasTypography ? <><Field label="Font family"><Select value={String(values.fontFamily ?? "default")} onValueChange={(value) => setProperty("fontFamily", value === "default" ? null : value)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Use default{inherited.fontFamily ? ` (${inherited.fontFamily})` : ""}</SelectItem>{customFonts.map((font) => <SelectItem key={`custom-${font.id}`} value={font.family_name}>{font.family_name} (uploaded)</SelectItem>)}{EVENT_FONTS.map((font) => <SelectItem key={font.value} value={font.value}>{font.label}</SelectItem>)}</SelectContent></Select></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <NumberControl label="Font size (px)" property="fontSize" value={values.fontSize as number | undefined} inherited={inherited.fontSize} min={8} max={96} step={1} disabled={disabled} onCommit={(value) => setProperty("fontSize", value)} unit="px" />
+          <Field label="Weight"><Select value={String(values.fontWeight ?? "default")} onValueChange={(value) => setProperty("fontWeight", value === "default" ? null : Number(value))} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Default{inherited.fontWeight ? ` (${inherited.fontWeight})` : ""}</SelectItem>{[400,500,600,700].map((weight) => <SelectItem key={weight} value={String(weight)}>{weight}</SelectItem>)}</SelectContent></Select></Field>
+          <NumberControl label="Line height" property="lineHeight" value={values.lineHeight as number | undefined} inherited={inherited.lineHeight} min={0.8} max={2.5} step={0.1} disabled={disabled} onCommit={(value) => setProperty("lineHeight", value)} />
+          <Field label="Alignment"><Select value={String(values.textAlign ?? "default")} onValueChange={(value) => setProperty("textAlign", value === "default" ? null : value)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Default{inherited.textAlign ? ` (${inherited.textAlign})` : ""}</SelectItem>{["left","center","right"].map((align) => <SelectItem key={align} value={align}>{align}</SelectItem>)}</SelectContent></Select></Field>
+        </div></> : null}
     </div>
   </>;
 }
