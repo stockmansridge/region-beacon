@@ -14,12 +14,15 @@ vi.mock('@tanstack/react-router', async () => {
 });
 
 // Mock other problematic hooks if any
-vi.mock('@/components/public-nav-context', () => ({
-  PublicLink: ({ children }: any) => <a>{children}</a>,
-  PublicNavProvider: ({ children }: any) => <div>{children}</div>,
-  usePublicNav: () => ({ mode: 'preview', subdomain: null, activePath: '/offers', previewFeatures: { hasFaq: true, hasMap: true, hasAwards: true } }),
-  eventNavBaseFromPathname: () => null,
-}));
+vi.mock('@/components/public-nav-context', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/public-nav-context')>();
+  return {
+    ...actual,
+    PublicLink: ({ children }: any) => <a>{children}</a>,
+    PublicNavProvider: ({ children }: any) => <div>{children}</div>,
+    usePublicNav: () => ({ mode: 'preview', subdomain: null, activePath: '/offers', previewFeatures: { hasFaq: true, hasMap: true, hasAwards: true } }),
+  };
+});
 
 import { PublicOffersPage } from './live.$subdomain.offers';
 
