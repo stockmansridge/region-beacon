@@ -88,6 +88,7 @@ import {
   PUBLIC_STYLE_ELEMENTS,
   emptyPublicStyleOverrides,
   parsePublicStyleOverrides,
+  resolvePublicTemplateVersion,
   validatePublicStyleOverrides,
   publicStylePropertyValue,
   type PublicStyleElementId,

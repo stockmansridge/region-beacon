@@ -7,7 +7,7 @@ import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { classifyHost } from "@/components/host-router";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { sendScanEmail } from "@/lib/passport-email.functions";
 
 export const Route = createFileRoute("/collect/bonus/$token")({
@@ -179,7 +179,10 @@ function BonusClaimPage() {
 export function BonusView({ outcome }: { outcome: Outcome }) {
   const preview = useResultPreview();
   const subdomain = preview ? null : getSubdomain();
-  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
+  const branding = useEventBrandingKeys(subdomain);
+  const scopeProps = branding.templateVersion === "v2"
+    ? brandingScopeProps(branding)
+    : { paletteKey: branding.paletteKey, backgroundKey: branding.backgroundKey };
 
   if (outcome.kind === "loading") {
     return (
@@ -198,8 +201,7 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
       : "You have already claimed this bonus code. Your points total has not changed.";
     return (
       <ResultPaletteScope
-        paletteKey={paletteKey}
-        backgroundKey={backgroundKey}
+        {...scopeProps}
         className="min-h-screen px-4 py-8"
       >
         <div className="mx-auto w-full max-w-md">
@@ -209,7 +211,7 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
               style={{ background: `linear-gradient(160deg, ${PRIMARY} 0%, #14271C 100%)` }}
             >
               <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-page-bg,#F6EFE2)]">
-                <div
+                <PublicStyleTarget id="bonus.result.icon"><div
                   className="flex h-20 w-20 items-center justify-center rounded-full border-2"
                   style={{
                     borderColor: GOLD,
@@ -218,13 +220,13 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
                   }}
                 >
                   <Sparkles className="h-9 w-9" style={{ color: GOLD }} />
-                </div>
-                <div
+                </div></PublicStyleTarget>
+                <PublicStyleTarget id="bonus.result.kicker"><div
                   className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em]"
                   style={{ color: GOLD }}
                 >
                   {kicker}
-                </div>
+                </div></PublicStyleTarget>
                 <PublicStyleTarget id="bonus.result.heading"><h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
                   {title}
                 </h1></PublicStyleTarget>
@@ -234,9 +236,9 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
                   </p>
                 )}
                 <PublicStyleTarget id="bonus.result.body"><p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">{body}</p></PublicStyleTarget>
-                <p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
+                <PublicStyleTarget id="bonus.result.status"><p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
                   Your total points: {outcome.row.total_points}
-                </p>
+                </p></PublicStyleTarget>
               </div>
             </div></PublicStyleTarget>
           </section>
@@ -323,12 +325,12 @@ export function FailureCard({
         </h1></PublicStyleTarget>
         <PublicStyleTarget id="bonus.failure.body"><p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{body}</p></PublicStyleTarget>
         <div className="mt-6">
-          <a
+          <PublicStyleTarget id="bonus.failure.button"><a
             href={actionHref}
             className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-6 text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
           >
             {actionLabel}
-          </a>
+          </a></PublicStyleTarget>
         </div>
       </div>
     </div>
