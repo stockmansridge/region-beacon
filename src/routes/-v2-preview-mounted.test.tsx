@@ -496,7 +496,7 @@ describe("f034e969 follow-up repairs", () => {
       { kind: "offer", venue_id: "venue-b", venue_name: "Cellar", logo_path: null, cover_path: null, offer_summary: "Free tasting\nMore", created_at: "" },
     ] as never;
     const doc = { version: 1, items: { "bookmarks.card.name": { normal: { color: "#111111" } } }, records: { "bookmarks.card.offer": { "venue-b": { normal: { color: "#222222", fontSize: 15 } } }, "bookmarks.card.thumb": { "venue-a": { normal: { iconBackgroundColor: "#333333" } } } } } as never;
-    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PublicBookmarksPage subdomain="preview" previewData={{ branding, eventId: "event-v2", enabled: true, rows }} /></PublicStyleScope>, "/bookmarks"));
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PublicBookmarksPage subdomain="preview" previewData={{ branding: { ...branding, styleOverrides: doc }, eventId: "event-v2", enabled: true, rows }} /></PublicStyleScope>, "/bookmarks"));
     const inst = (id: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${id}"]`);
     expect(inst("bookmarks.card.type@venue-a")?.textContent).toBe("Venue");
     expect(inst("bookmarks.card.type@venue-b")?.textContent).toBe("Offer");
