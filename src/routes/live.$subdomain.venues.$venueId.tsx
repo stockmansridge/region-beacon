@@ -20,6 +20,7 @@ import { Star, Users, Check, Circle, Sparkles, Camera } from "lucide-react";
 import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "@/lib/event-fonts";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
+import { PublicStyleTarget } from "@/components/public-style-target";
 
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
@@ -326,9 +327,9 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
           </div>
 
           <div className="mt-4 flex items-start justify-between gap-3">
-            <h1 className="font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]">
+            <PublicStyleTarget id="venues.card.heading" recordId={venueId}><h1 className="font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]">
               {venue.name}
-            </h1>
+            </h1></PublicStyleTarget>
             {extras && extras.points_value > 0 && (
               <span
                 className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] shadow-sm"
@@ -566,7 +567,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
                 lng: venue.lng,
               });
               return directionsUrl ? (
-                <a
+                <PublicStyleTarget id="venue.actions.directions" recordId={venueId}><a
                   href={directionsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -574,11 +575,11 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
                 >
                   <span>Get directions</span>
                   <span aria-hidden>↗</span>
-                </a>
+                </a></PublicStyleTarget>
               ) : null;
             })()}
             {venue.website_url && (
-              <a
+              <PublicStyleTarget id="venue.actions.website" recordId={venueId}><a
                 href={venue.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -586,7 +587,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
               >
                 <span>Visit website</span>
                 <span aria-hidden>↗</span>
-              </a>
+              </a></PublicStyleTarget>
             )}
             {venue.phone && (
               <a

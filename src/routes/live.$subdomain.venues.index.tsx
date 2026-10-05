@@ -21,6 +21,7 @@ import { loadPassportStampState } from "@/lib/passport-stamps";
 import { VenueSortControl } from "@/components/venue-sort-control";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
+import { PublicStyleTarget } from "@/components/public-style-target";
 import {
   VENUE_SORT_MIN_COUNT,
   buildDistanceMap,
@@ -284,7 +285,7 @@ export function PublicVenuesListPage({
         </div>
 
         <div className="mb-5 mt-6 px-1">
-          <h1
+          <PublicStyleTarget id="venues.page.heading"><h1
             className="font-event-heading text-[28px] font-semibold leading-tight"
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
@@ -292,7 +293,7 @@ export function PublicVenuesListPage({
             }}
           >
             {labels.plural}
-          </h1>
+          </h1></PublicStyleTarget>
           <p
             className="mt-2 text-[13.5px] leading-relaxed"
             style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
@@ -347,8 +348,8 @@ export function PublicVenuesListPage({
               const points = v.points_value ?? 0;
               const showPoints = pointsEnabled && points > 0;
               return (
-                <li key={vid || Math.random()}>
-                  <div className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md">
+                <li key={vid || `missing-${v.order_index ?? "venue"}`}>
+                  <PublicStyleTarget id="venues.card.surface" recordId={vid}><div className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/60 hover:shadow-md">
                     <PublicLink
                       to="/venues/$venueId"
                       params={{ venueId: vid }}
@@ -360,9 +361,9 @@ export function PublicVenuesListPage({
                         visited={visited}
                       />
                       <div className="flex min-w-0 flex-col gap-1.5 p-3">
-                        <p className="font-event-heading text-[16px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))] break-words">
+                        <PublicStyleTarget id="venues.card.heading" recordId={vid}><p className="font-event-heading text-[16px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))] break-words">
                           {v.name ?? "Unnamed"}
-                        </p>
+                        </p></PublicStyleTarget>
                         {effectiveSort === "nearest" && (
                           <p
                             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
@@ -374,9 +375,9 @@ export function PublicVenuesListPage({
                           </p>
                         )}
                         {v.description && (
-                          <p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-text,#3D372C))] sm:line-clamp-4">
+                          <PublicStyleTarget id="venues.card.meta" recordId={vid}><p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-text,#3D372C))] sm:line-clamp-4">
                             {v.description}
-                          </p>
+                          </p></PublicStyleTarget>
                         )}
                         {hasOffer && (() => {
                           const OfferIcon = resolveOfferIcon(v.offer_display_icon);
@@ -434,7 +435,7 @@ export function PublicVenuesListPage({
                         )}
                       </div>
                     )}
-                  </div>
+                  </div></PublicStyleTarget>
                 </li>
               );
             })}
