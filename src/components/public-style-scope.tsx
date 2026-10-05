@@ -9,8 +9,8 @@ import {
   type PublicStyleOverrideDocument,
 } from "@/lib/public-style-overrides";
 
-type PublicStyleContextValue = { enabled: boolean; document: PublicStyleOverrideDocument | null };
-const PublicStyleContext = createContext<PublicStyleContextValue>({ enabled: false, document: null });
+type PublicStyleContextValue = { enabled: boolean; document: PublicStyleOverrideDocument | null; eventId: string | null };
+const PublicStyleContext = createContext<PublicStyleContextValue>({ enabled: false, document: null, eventId: null });
 
 export function usePublicStyleTarget(
   id: PublicStyleElementId,
@@ -18,8 +18,13 @@ export function usePublicStyleTarget(
 ) {
   const context = useContext(PublicStyleContext);
   return context.enabled
-    ? publicStyleTarget(context.document, id, options)
+    ? publicStyleTarget(context.document, id, { ...options, eventId: context.eventId })
     : { style: {} };
+}
+
+/** True only inside an explicit V2 style scope (V1 pages never see one). */
+export function usePublicStyleEnabled() {
+  return useContext(PublicStyleContext).enabled;
 }
 
 /**
@@ -56,9 +61,9 @@ export function PublicStyleScope({
     if (custom.length) void ensureCustomFontFaces(custom, eventId ?? undefined);
   }, [fontKey, eventId]);
   if (!enabled) return children;
-  const css = publicStyleCss(document, scope);
+  const css = publicStyleCss(document, scope, eventId);
   return (
-    <PublicStyleContext.Provider value={{ enabled: true, document }}>
+    <PublicStyleContext.Provider value={{ enabled: true, document, eventId: eventId ?? null }}>
       <div data-public-style-version={document.version} data-public-style-root={scope}>
         {css ? <style>{css}</style> : null}
         {children}

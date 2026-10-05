@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Bookmark, ChevronRight, Tag } from "lucide-react";
@@ -78,7 +79,7 @@ export function PublicBookmarksPage({ subdomain, previewData }: { subdomain: str
       />
       <div className="mx-auto max-w-md">
         <div className="mb-5 mt-6 px-1">
-          <h1
+          <PublicStyleTarget id="bookmarks.page.heading"><h1
             className="text-[28px] font-semibold leading-tight"
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
@@ -86,13 +87,13 @@ export function PublicBookmarksPage({ subdomain, previewData }: { subdomain: str
             }}
           >
             My Bookmarks
-          </h1>
-          <p
+          </h1></PublicStyleTarget>
+          <PublicStyleTarget id="bookmarks.page.intro"><p
             className="mt-2 text-[13.5px] leading-relaxed"
             style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
           >
             Everything you saved for later. Tap an item to open it again.
-          </p>
+          </p></PublicStyleTarget>
         </div>
 
         {!enabled ? (
@@ -115,7 +116,7 @@ export function PublicBookmarksPage({ subdomain, previewData }: { subdomain: str
                 (r.offer_summary ?? "").split("\n").filter(Boolean)[0] ?? "";
               return (
                 <li key={`${r.kind}:${r.venue_id}`}>
-                  <PublicLink
+                  <PublicStyleTarget id="bookmarks.card" recordId={r.venue_id}><PublicLink
                     to="/venues/$venueId"
                     params={{ venueId: r.venue_id }}
                     className="flex items-center gap-3 rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-3 shadow-sm transition hover:shadow-md"
@@ -143,7 +144,7 @@ export function PublicBookmarksPage({ subdomain, previewData }: { subdomain: str
                       ) : null}
                     </span>
                     <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-50" />
-                  </PublicLink>
+                  </PublicLink></PublicStyleTarget>
                 </li>
               );
             })}
@@ -169,18 +170,18 @@ function EmptyCard({
 }) {
   return (
     <div className="rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-6 text-center">
-      <p className="text-[16px] font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
+      <PublicStyleTarget id="bookmarks.empty.heading"><p className="text-[16px] font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
         {title}
-      </p>
-      <p className="mt-2 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
+      </p></PublicStyleTarget>
+      <PublicStyleTarget id="bookmarks.empty.body"><p className="mt-2 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
         {body}
-      </p>
-      <PublicLink
+      </p></PublicStyleTarget>
+      <PublicStyleTarget id="bookmarks.empty.cta"><PublicLink
         to={action.to}
         className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.22em] text-[var(--event-link,var(--event-primary,#1F3D2B))] underline-offset-4 hover:underline"
       >
         {action.label}
-      </PublicLink>
+      </PublicLink></PublicStyleTarget>
     </div>
   );
 }

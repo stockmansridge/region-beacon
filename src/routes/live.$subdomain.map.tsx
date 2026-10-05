@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
@@ -485,7 +486,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
 
       <div className="mx-auto mt-4 max-w-5xl">
         <div className="mb-3">
-          <h1
+          <PublicStyleTarget id="map.page.heading"><h1
             className="text-2xl font-semibold"
             style={{
               color: "var(--event-page-heading)",
@@ -493,14 +494,14 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
             }}
           >
             Map
-          </h1>
+          </h1></PublicStyleTarget>
           {hasPassport && totalCount > 0 && (
-            <p
+            <PublicStyleTarget id="map.page.count"><p
               className="mt-1 text-xs uppercase tracking-[0.18em]"
               style={{ color: "var(--event-page-muted)" }}
             >
               {visitedCount} of {totalCount} {labels.plural.toLowerCase()} visited
-            </p>
+            </p></PublicStyleTarget>
           )}
         </div>
 
@@ -515,7 +516,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
             }}
           >
             <span>Create a passport to track visited {labels.plural.toLowerCase()}.</span>
-            <PublicLink
+            <PublicStyleTarget id="map.page.join"><PublicLink
               to="/join"
               className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
               style={{
@@ -524,7 +525,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
               }}
             >
               Start passport
-            </PublicLink>
+            </PublicLink></PublicStyleTarget>
           </div>
         )}
 
@@ -578,7 +579,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
                   ).map((f) => {
                     const active = filter === f.k;
                     return (
-                      <button
+                      <PublicStyleTarget id="map.controls.item"><button
                         key={f.k}
                         type="button"
                         onClick={() => setFilter(f.k)}
@@ -593,7 +594,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
                         }}
                       >
                         {f.label}
-                      </button>
+                      </button></PublicStyleTarget>
                     );
                   })}
                 </div>
@@ -626,23 +627,23 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
               color: "var(--event-card-text)",
             }}
           >
-            <p
+            <PublicStyleTarget id="map.unmapped.label"><p
               className="mb-2 font-semibold uppercase tracking-[0.18em]"
               style={{ color: "var(--event-card-muted)" }}
             >
               {labels.plural} without map locations
-            </p>
+            </p></PublicStyleTarget>
             <ul className="space-y-1">
               {unmappedVenues.map((v) => (
                 <li key={v.venue_id ?? Math.random()}>
-                  <PublicLink
+                  <PublicStyleTarget id="map.unmapped.link" recordId={v.venue_id ?? null}><PublicLink
                     to="/venues/$venueId"
                     params={{ venueId: v.venue_id ?? "" }}
                     className="underline-offset-2 hover:underline"
                     style={{ color: "var(--event-link)" }}
                   >
                     {v.name ?? "Venue"}
-                  </PublicLink>
+                  </PublicLink></PublicStyleTarget>
                 </li>
               ))}
             </ul>
@@ -718,7 +719,7 @@ function SelectedVenueCard({
         backgroundColor: "var(--event-card-bg)",
       }}
     >
-      <button
+      <PublicStyleTarget id="map.card.close"><button
         type="button"
         onClick={onClose}
         aria-label="Close venue card"
@@ -731,8 +732,8 @@ function SelectedVenueCard({
         }}
       >
         ×
-      </button>
-      <PublicLink
+      </button></PublicStyleTarget>
+      <PublicStyleTarget id="map.list.card" recordId={venue.venue_id ?? null}><PublicLink
         to="/venues/$venueId"
         params={{ venueId: venue.venue_id ?? "" }}
         className="flex items-stretch gap-3 p-2.5 pr-10 transition focus:outline-none focus-visible:ring-2"
@@ -756,12 +757,12 @@ function SelectedVenueCard({
         )}
         <div className="flex min-w-0 flex-1 flex-col justify-center">
           <div className="flex items-center gap-2">
-            <p
+            <PublicStyleTarget id="map.card.heading" recordId={venue.venue_id ?? null}><p
               className="truncate font-trail-serif text-[16px] font-semibold leading-tight"
               style={{ color: "var(--event-card-heading)" }}
             >
               {venue.name ?? "Venue"}
-            </p>
+            </p></PublicStyleTarget>
             {visited ? (
               <span
                 className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]"
@@ -786,12 +787,12 @@ function SelectedVenueCard({
             )}
           </div>
           {venue.description && (
-            <p
+            <PublicStyleTarget id="map.card.body" recordId={venue.venue_id ?? null}><p
               className="mt-1 line-clamp-2 text-[12px] leading-snug"
               style={{ color: "var(--event-card-text)" }}
             >
               {venue.description}
-            </p>
+            </p></PublicStyleTarget>
           )}
           <div className="mt-1.5 flex items-center gap-3">
             <span
@@ -801,7 +802,7 @@ function SelectedVenueCard({
               View details
             </span>
             {directions && (
-              <a
+              <PublicStyleTarget id="map.card.directions" recordId={venue.venue_id ?? null}><a
                 href={directions}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -810,7 +811,7 @@ function SelectedVenueCard({
                 style={{ color: "var(--event-link)" }}
               >
                 <span aria-hidden>📍</span> Directions ↗
-              </a>
+              </a></PublicStyleTarget>
             )}
           </div>
         </div>
@@ -821,7 +822,7 @@ function SelectedVenueCard({
         >
           ›
         </span>
-      </PublicLink>
+      </PublicLink></PublicStyleTarget>
     </div>
   );
 }

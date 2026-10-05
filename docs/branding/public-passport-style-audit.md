@@ -128,3 +128,34 @@ Evidence legend: **UNIT** = focused resolver regression; **SRC** = source review
 Both Save and "Use V2 for this event" share this helper, so activation can never report live without a confirmed config write.
 
 **Still required outside the codebase:** apply `supabase/migrations-draft-event-style-overrides/01–03` to the target environment. Until at least migration 01 is applied, V2 persistence is BLOCKED there; the editor now says so explicitly instead of failing with a raw schema-cache error.
+
+## Status update — typed targets on every previewable page
+
+Source of truth for "wired": `V2_WIRED_ITEMS` in the editor, regenerated from the real
+`PublicStyleTarget` / `role()` / `itemRole()` call sites. The navigator lists only wired items and
+shows "Not yet editable on this page" for registry entries without a real node.
+
+Wired this pass (real rendered node, V2 scope only; V1 output carries no marker — tested on Offers):
+- Venues list: intro, distance line (per venue), directions link (per venue).
+- Venue detail: name (now `venue.page.heading`, no longer shares the list card ID), emotive, description,
+  offer text, bonus name/points/description, join link, phone button.
+- Offers: heading, intro, venue name, title, details (per venue).
+- Prizes: hero heading/body, tabs, sort pills, prize card surface/heading/body/meta (per award id), bonus card surface/heading/body/meta.
+- Map: heading, visited count, start button, filter buttons, unmapped label/link, selected card close/heading/body/directions, list card.
+- FAQ: eyebrow, heading, status, question button, question text, answer.
+- Leaderboard: eyebrow, heading, intro, empty heading/body, visitor name, footnote.
+- Bookmarks: heading, intro, card (per venue), empty heading/body/button.
+- Terms/Privacy (`terms`/`privacy` picker keys map to `legal` items): eyebrow, heading, body, meta, section toggle.
+- Join: heading, intro, notice, returning heading/body/button, terms/privacy links, submit, footnote, success heading/body/buttons, status heading/message.
+- Passport: eyebrow, name, message, copy/support buttons, progress heading/body, stamps heading/intro/empty, prizes heading/intro, prize description.
+
+Still NOT wired (shown as such in the editor): join form surface/heading/labels/fields/errors/consent,
+passport page surface/ring/number/stamp tiles, leaderboard row/rank, map markers, prize badge/progress,
+offer badge, venues sort control, venue bookmark, FAQ item surface, legal section surface, home summary progress,
+shared announcement/activity/footer, and all Scan / Check-in / Bonus / Tasting result screens (not yet in the picker).
+
+Verified (automated, real components via react-dom/server, real PublicNavProvider/PublicLink):
+V1 Offers emits no V2 markers/styles; V2 Offers applies type default + per-record override to the correct
+venue only and leaves sibling body text unchanged; legal heading override doesn't touch legal body;
+font aliases distinct for "A B"/"AB" and across events; inline and state CSS use the same alias.
+Not verified: browser layout, saved/reload against the live database, the remaining pages' rendered parity.

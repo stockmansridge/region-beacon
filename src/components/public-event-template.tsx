@@ -31,6 +31,20 @@ export function PublicEventTemplate({
 }) {
   const template = forceTemplate ?? resolvePublicTemplateVersion(event.public_template_version);
   const renderedEvent = template === "v2" ? applyV2Theme(event) : { ...event, style_overrides: null };
+  if (template !== "v2") {
+    // Legacy V1: exactly the historic landing render (its own palette scope, no V2 wrapper).
+    return (
+      <EventPublicLanding
+        subdomain={subdomain}
+        event={renderedEvent}
+        venues={venues}
+        mode={mode}
+        previewNotice={previewNotice}
+        templateVersion={template}
+        onPreviewNavigate={onPreviewNavigate}
+      />
+    );
+  }
   return (
     <PublicEventBrandingScope event={event} forceV2={template === "v2"}>
       <EventPublicLanding

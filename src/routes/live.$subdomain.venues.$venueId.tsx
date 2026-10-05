@@ -21,6 +21,7 @@ import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
 
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
@@ -99,7 +100,7 @@ type BonusChallenge = {
   social_hashtags?: string | null;
 };
 
-export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { subdomain: string; venueId: string; previewData?: { event: EventBrand; venue: VenueRow } }) {
+export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { subdomain: string; venueId: string; previewData?: { event: EventBrand; venue: VenueRow; extras?: { emotive_text: string | null; emotive_font_family: string | null; default_emotive_font_family: string | null; points_value: number } | null } }) {
   const [state, setState] = useState<State>(() => previewData ? {
     kind: "ready", venue: previewData.venue, eventId: previewData.event.event_id ?? null,
     eventName: previewData.event.name ?? null, eventLogoPath: previewData.event.logo_path ?? null, brand: previewData.event,
@@ -120,6 +121,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
       setState({ kind: "ready", venue: previewData.venue, eventId: previewData.event.event_id ?? null, eventName: previewData.event.name ?? null, eventLogoPath: previewData.event.logo_path ?? null, brand: previewData.event });
       setVisited({ kind: "not_visited" });
       setBonusChallenges([]);
+      setExtras(previewData.extras ?? null);
       return;
     }
     let cancelled = false;
@@ -232,6 +234,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
     link.dataset.eventFont = href;
     document.head.appendChild(link);
   }, [extras?.emotive_text, emotiveFontValue]);
+  const v2 = resolvePublicTemplateVersion(state.kind === "ready" ? state.brand?.public_template_version : null) === "v2";
   const emotiveStack =
     getEventFont(emotiveFontValue)?.stack ?? "'Caveat', 'Segoe Script', cursive";
 
@@ -273,11 +276,11 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
 
   return (
     <EventPaletteScope
-      {...(state.brand ? publicEventScopeProps(state.brand) : { paletteKey: null })}
+      {...(state.brand ? publicEventScopeProps(state.brand, false, "detail") : { paletteKey: null })}
       className="min-h-screen pb-12"
     >
       {!previewData && <LiveActivityBar subdomain={subdomain} />}
-      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} venueLabels={resolveVenueLabels(state.brand ?? {})} activeOverride="venues" brandingSelection={Boolean(previewData)} /></div>
+      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} venueLabels={v2 ? resolveVenueLabels(state.brand ?? {}) : undefined} activeOverride={v2 ? "venues" : undefined} brandingSelection={Boolean(previewData)} /></div>
       <div className="mx-auto max-w-md">
         <div
           className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/9]"
@@ -327,7 +330,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
           </div>
 
           <div className="mt-4 flex items-start justify-between gap-3">
-            <PublicStyleTarget id="venues.card.heading" recordId={venueId}><h1 className="font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]">
+            <PublicStyleTarget id="venue.page.heading" recordId={venueId}><h1 className={v2 ? "font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]" : "font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]"}>
               {venue.name}
             </h1></PublicStyleTarget>
             {extras && extras.points_value > 0 && (
@@ -363,28 +366,28 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
           {visited.kind === "no_passport" && (
             <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-1 text-[11px] font-medium text-[var(--event-text,#3D372C)]">
               <span>Create a passport to track visited venues</span>
-              <PublicLink to="/join" className="font-semibold text-[var(--event-primary,#1F3D2B)] underline underline-offset-2">
+              <PublicStyleTarget id="venue.page.join"><PublicLink to="/join" className="font-semibold text-[var(--event-primary,#1F3D2B)] underline underline-offset-2">
                 Start
-              </PublicLink>
+              </PublicLink></PublicStyleTarget>
             </div>
           )}
 
           {extras?.emotive_text && (
-            <p
+            <PublicStyleTarget id="venue.page.emotive" recordId={venueId}><p
               className="mt-4 whitespace-pre-line text-2xl leading-snug"
               style={{
                 fontFamily: emotiveStack,
-                color: "var(--event-page-heading,var(--event-primary,#1F3D2B))",
+                color: v2 ? "var(--event-page-heading,var(--event-primary,#1F3D2B))" : "var(--event-primary,#1F3D2B)",
               }}
             >
               {extras.emotive_text}
-            </p>
+            </p></PublicStyleTarget>
           )}
 
           {venue.description && (
-            <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-page-text,var(--event-text,#3D372C))]">
+            <PublicStyleTarget id="venue.page.body" recordId={venueId}><p className={v2 ? "mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-page-text,var(--event-text,#3D372C))]" : "mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-text,#3D372C)]"}>
               {venue.description}
-            </p>
+            </p></PublicStyleTarget>
           )}
 
 
@@ -408,9 +411,9 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
                     Offer
                   </div>
-                  <p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-text,#3D372C)]">
+                  <PublicStyleTarget id="venue.offer.body" recordId={venueId}><p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-text,#3D372C)]">
                     {venue.offer_summary}
-                  </p>
+                  </p></PublicStyleTarget>
                 </div>
               </div>
             );
@@ -456,30 +459,30 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
                       <Users className="h-5 w-5" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h3
+                      <PublicStyleTarget id="venue.bonus.heading"><h3
                         className="font-trail-serif text-[16px] font-semibold leading-snug"
                         style={{ color: "var(--event-primary,#1F3D2B)" }}
                       >
                         {challenge.name}
-                      </h3>
-                      <p
+                      </h3></PublicStyleTarget>
+                      <PublicStyleTarget id="venue.bonus.meta"><p
                         className="mt-0.5 text-[13px]"
                         style={{ color: "var(--event-muted,#8A7E66)" }}
                       >
                         {challenge.kind === "social"
                           ? "Share on socials"
                           : `Earn +${challenge.points_value} bonus points`}
-                      </p>
+                      </p></PublicStyleTarget>
                     </div>
                   </div>
 
                   {challenge.description && (
-                    <p
+                    <PublicStyleTarget id="venue.bonus.body"><p
                       className="mt-3 whitespace-pre-line text-[14px] leading-relaxed"
                       style={{ color: "var(--event-text,#3D372C)" }}
                     >
                       {challenge.description}
-                    </p>
+                    </p></PublicStyleTarget>
                   )}
 
                   {challenge.kind === "social" &&
@@ -590,13 +593,13 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
               </a></PublicStyleTarget>
             )}
             {venue.phone && (
-              <a
+              <PublicStyleTarget id="venue.actions.phone" recordId={venueId}><a
                 href={`tel:${venue.phone.replace(/\s+/g, "")}`}
                 className="flex items-center justify-between rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm font-medium text-[var(--event-primary,#1F3D2B)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/40"
               >
                 <span>Call {venue.phone}</span>
                 <span aria-hidden>›</span>
-              </a>
+              </a></PublicStyleTarget>
             )}
           </div>
 

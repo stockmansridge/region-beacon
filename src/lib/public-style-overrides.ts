@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { v2FontFamilyValue } from "@/lib/event-font-alias";
 
 export const PUBLIC_STYLE_DOCUMENT_VERSION = 1 as const;
 
@@ -22,6 +23,7 @@ export type PublicStylePage =
   | "leaderboard"
   | "faq"
   | "legal"
+  | "bookmarks"
   | "scan"
   | "checkin"
   | "bonus"
@@ -177,6 +179,88 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "legal.heading", page: "legal", section: "Content", label: "Legal page heading", kind: "text", properties: TEXT },
   { id: "legal.body", page: "legal", section: "Content", label: "Legal page text", kind: "text", properties: TEXT },
 
+  { id: "venues.page.intro", page: "venues", section: "Page", label: "Venues intro text", kind: "text", properties: TEXT },
+  { id: "venues.card.distance", page: "venues", section: "Venue cards", label: "Distance / status line", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "venues.card.directions", page: "venues", section: "Venue cards", label: "Directions link", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
+  { id: "venue.page.heading", page: "venue", section: "Header", label: "Venue name", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "venue.page.emotive", page: "venue", section: "Header", label: "Emotive text", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "venue.page.body", page: "venue", section: "Header", label: "Venue description", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "venue.page.join", page: "venue", section: "Header", label: "Start passport link", kind: "button", properties: BUTTON, states: INTERACTIVE },
+  { id: "venue.offer.body", page: "venue", section: "Offer", label: "Offer text", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "venue.bonus.heading", page: "venue", section: "Bonus challenges", label: "Bonus challenge name", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "venue.bonus.meta", page: "venue", section: "Bonus challenges", label: "Bonus challenge points", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "venue.bonus.body", page: "venue", section: "Bonus challenges", label: "Bonus challenge description", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "venue.actions.phone", page: "venue", section: "Actions", label: "Phone button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
+  { id: "offers.page.heading", page: "offers", section: "Page", label: "Offers heading", kind: "text", properties: TEXT },
+  { id: "offers.page.intro", page: "offers", section: "Page", label: "Offers intro text", kind: "text", properties: TEXT },
+  { id: "offers.card.venue", page: "offers", section: "Offers", label: "Offer venue name", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "offers.card.heading", page: "offers", section: "Offers", label: "Offer title", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "offers.card.body", page: "offers", section: "Offers", label: "Offer details", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "prizes.hero.heading", page: "prizes", section: "Hero", label: "Prizes heading", kind: "text", properties: TEXT },
+  { id: "prizes.hero.body", page: "prizes", section: "Hero", label: "Prizes intro text", kind: "text", properties: TEXT },
+  { id: "prizes.sort.item", page: "prizes", section: "Tabs", label: "Sort option", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
+  { id: "prizes.card.body", page: "prizes", section: "Prize cards", label: "Prize description", kind: "text", properties: TEXT, repeat: "award" },
+  { id: "prizes.card.meta", page: "prizes", section: "Prize cards", label: "Prize draw / points line", kind: "text", properties: TEXT, repeat: "award" },
+  { id: "prizes.bonus.surface", page: "prizes", section: "Bonus cards", label: "Bonus card", kind: "surface", properties: SURFACE, repeat: "template" },
+  { id: "prizes.bonus.heading", page: "prizes", section: "Bonus cards", label: "Bonus name", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "prizes.bonus.body", page: "prizes", section: "Bonus cards", label: "Bonus description", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "prizes.bonus.meta", page: "prizes", section: "Bonus cards", label: "Bonus distance / venues", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "map.page.heading", page: "map", section: "Page", label: "Map heading", kind: "text", properties: TEXT },
+  { id: "map.page.count", page: "map", section: "Page", label: "Visited count", kind: "text", properties: TEXT },
+  { id: "map.page.join", page: "map", section: "Page", label: "Start passport button", kind: "button", properties: BUTTON, states: INTERACTIVE },
+  { id: "map.unmapped.label", page: "map", section: "Venue list", label: "Unmapped venues label", kind: "text", properties: TEXT },
+  { id: "map.unmapped.link", page: "map", section: "Venue list", label: "Unmapped venue link", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
+  { id: "map.card.close", page: "map", section: "Selected venue", label: "Close button", kind: "button", properties: BUTTON, states: INTERACTIVE },
+  { id: "map.card.heading", page: "map", section: "Selected venue", label: "Venue name", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "map.card.body", page: "map", section: "Selected venue", label: "Venue description", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "map.card.directions", page: "map", section: "Selected venue", label: "Directions link", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
+  { id: "faq.page.eyebrow", page: "faq", section: "Page", label: "FAQ eyebrow", kind: "text", properties: TEXT },
+  { id: "faq.page.heading", page: "faq", section: "Page", label: "FAQ heading", kind: "text", properties: TEXT },
+  { id: "faq.state.message", page: "faq", section: "Page", label: "FAQ status message", kind: "text", properties: TEXT },
+  { id: "faq.item.toggle", page: "faq", section: "Questions", label: "FAQ question button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
+  { id: "leaderboard.page.eyebrow", page: "leaderboard", section: "Page", label: "Leaderboard eyebrow", kind: "text", properties: TEXT },
+  { id: "leaderboard.page.intro", page: "leaderboard", section: "Page", label: "Leaderboard intro", kind: "text", properties: TEXT },
+  { id: "leaderboard.empty.heading", page: "leaderboard", section: "Empty state", label: "Empty heading", kind: "text", properties: TEXT },
+  { id: "leaderboard.empty.body", page: "leaderboard", section: "Empty state", label: "Empty message", kind: "text", properties: TEXT },
+  { id: "leaderboard.row.name", page: "leaderboard", section: "Leaderboard", label: "Visitor name", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "leaderboard.footnote", page: "leaderboard", section: "Leaderboard", label: "Footnote", kind: "text", properties: TEXT },
+  { id: "bookmarks.page.heading", page: "bookmarks", section: "Page", label: "Bookmarks heading", kind: "text", properties: TEXT },
+  { id: "bookmarks.page.intro", page: "bookmarks", section: "Page", label: "Bookmarks intro", kind: "text", properties: TEXT },
+  { id: "bookmarks.card", page: "bookmarks", section: "Bookmarks", label: "Bookmark card", kind: "surface", properties: SURFACE, repeat: "venue" },
+  { id: "bookmarks.empty.surface", page: "bookmarks", section: "Empty state", label: "Empty card", kind: "surface", properties: SURFACE },
+  { id: "bookmarks.empty.heading", page: "bookmarks", section: "Empty state", label: "Empty heading", kind: "text", properties: TEXT },
+  { id: "bookmarks.empty.body", page: "bookmarks", section: "Empty state", label: "Empty message", kind: "text", properties: TEXT },
+  { id: "bookmarks.empty.cta", page: "bookmarks", section: "Empty state", label: "Browse button", kind: "button", properties: BUTTON, states: INTERACTIVE },
+  { id: "legal.eyebrow", page: "legal", section: "Content", label: "Legal eyebrow", kind: "text", properties: TEXT },
+  { id: "legal.meta", page: "legal", section: "Content", label: "Legal version / link text", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "legal.section.surface", page: "legal", section: "Sections", label: "Legal section card", kind: "surface", properties: SURFACE, repeat: "template" },
+  { id: "legal.section.toggle", page: "legal", section: "Sections", label: "Legal section heading button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
+  { id: "join.page.heading", page: "join", section: "Page", label: "Join heading", kind: "text", properties: TEXT },
+  { id: "join.page.intro", page: "join", section: "Page", label: "Join intro", kind: "text", properties: TEXT },
+  { id: "join.page.notice", page: "join", section: "Page", label: "Already-registered notice", kind: "text", properties: TEXT },
+  { id: "join.returning.heading", page: "join", section: "Returning visitor", label: "Returning heading", kind: "text", properties: TEXT },
+  { id: "join.returning.body", page: "join", section: "Returning visitor", label: "Returning message", kind: "text", properties: TEXT },
+  { id: "join.returning.registerAgain", page: "join", section: "Returning visitor", label: "Register again button", kind: "button", properties: BUTTON, states: INTERACTIVE },
+  { id: "join.form.consent", page: "join", section: "Form", label: "Consent text", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "join.form.link", page: "join", section: "Form", label: "Terms / privacy link", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
+  { id: "join.form.footnote", page: "join", section: "Form", label: "Form footnote", kind: "text", properties: TEXT },
+  { id: "join.success.heading", page: "join", section: "Success", label: "Success heading", kind: "text", properties: TEXT },
+  { id: "join.success.body", page: "join", section: "Success", label: "Success message", kind: "text", properties: TEXT },
+  { id: "join.success.button", page: "join", section: "Success", label: "Success button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
+  { id: "join.state.heading", page: "join", section: "States", label: "Status heading", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "passport.hero.eyebrow", page: "passport", section: "Hero", label: "My Passport label", kind: "text", properties: TEXT },
+  { id: "passport.hero.heading", page: "passport", section: "Hero", label: "Visitor name", kind: "text", properties: TEXT },
+  { id: "passport.hero.body", page: "passport", section: "Hero", label: "Hero message", kind: "text", properties: TEXT },
+  { id: "passport.actions.copyLink", page: "passport", section: "Actions", label: "Copy passport link", kind: "button", properties: BUTTON, states: INTERACTIVE },
+  { id: "passport.actions.support", page: "passport", section: "Actions", label: "Copy support details", kind: "button", properties: BUTTON, states: INTERACTIVE },
+  { id: "passport.progress.heading", page: "passport", section: "Progress", label: "Trail progress heading", kind: "text", properties: TEXT },
+  { id: "passport.progress.body", page: "passport", section: "Progress", label: "Trail progress message", kind: "text", properties: TEXT },
+  { id: "passport.stamps.heading", page: "passport", section: "Stamps", label: "Stamps heading", kind: "text", properties: TEXT },
+  { id: "passport.stamps.intro", page: "passport", section: "Stamps", label: "Stamps intro", kind: "text", properties: TEXT },
+  { id: "passport.stamps.empty", page: "passport", section: "Stamps", label: "No venues message", kind: "text", properties: TEXT },
+  { id: "passport.rewards.heading", page: "passport", section: "Prizes", label: "Prizes heading", kind: "text", properties: TEXT },
+  { id: "passport.rewards.intro", page: "passport", section: "Prizes", label: "Prizes intro", kind: "text", properties: TEXT },
+  { id: "passport.award.body", page: "passport", section: "Prizes", label: "Prize description", kind: "text", properties: TEXT, repeat: "award" },
   { id: "scan.control", page: "scan", section: "Scanner", label: "Scanner control", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "checkin.result.surface", page: "checkin", section: "Result", label: "Check-in result", kind: "surface", properties: SURFACE },
   { id: "checkin.result.heading", page: "checkin", section: "Result", label: "Check-in result heading", kind: "text", properties: TEXT },
@@ -372,14 +456,14 @@ export function publicStyleItem(
 }
 
 /** Element-level CSS. Icon colour never paints the element text; icon background only paints icon surfaces. */
-function standardStyle(properties: PublicStyleProperties | undefined, kind?: PublicStyleElementDefinition["kind"]): CSSProperties {
+function standardStyle(properties: PublicStyleProperties | undefined, kind?: PublicStyleElementDefinition["kind"], eventId?: string | null): CSSProperties {
   if (!properties) return {};
   return {
     ...(properties.color ? { color: String(properties.color) } : {}),
     ...(properties.backgroundColor ? { backgroundColor: String(properties.backgroundColor) } : {}),
     ...(properties.backgroundGradient ? { backgroundImage: String(properties.backgroundGradient) } : {}),
     ...(properties.borderColor ? { borderColor: String(properties.borderColor) } : {}),
-    ...(properties.fontFamily ? { fontFamily: String(properties.fontFamily) } : {}),
+    ...(properties.fontFamily ? { fontFamily: v2FontFamilyValue(String(properties.fontFamily), eventId) } : {}),
     ...(typeof properties.fontSize === "number" ? { fontSize: properties.fontSize } : {}),
     ...(typeof properties.fontWeight === "number" ? { fontWeight: properties.fontWeight } : {}),
     ...(typeof properties.lineHeight === "number" ? { lineHeight: properties.lineHeight } : {}),
@@ -401,7 +485,7 @@ function variableStyle(properties: PublicStyleProperties | undefined): Record<st
 export function publicStyleTarget(
   document: PublicStyleOverrideDocument | null | undefined,
   id: PublicStyleElementId,
-  options?: { recordId?: string | null; selectable?: boolean },
+  options?: { recordId?: string | null; selectable?: boolean; eventId?: string | null },
 ): {
   "data-event-style"?: string;
   "data-event-record"?: string;
@@ -415,7 +499,7 @@ export function publicStyleTarget(
     "data-event-style": id,
     ...(options?.recordId ? { "data-event-record": options.recordId } : {}),
     ...(options?.selectable ? { "data-brand-role": id, "data-brand-instance": options.recordId ? `${id}@${options.recordId}` : id } : {}),
-    style: { ...standardStyle(normal, DEFINITIONS.get(id)?.kind), ...variableStyle(normal) } as CSSProperties,
+    style: { ...standardStyle(normal, DEFINITIONS.get(id)?.kind, options?.eventId), ...variableStyle(normal) } as CSSProperties,
   };
 }
 
@@ -425,12 +509,12 @@ const CSS_SCOPE = /^[A-Za-z0-9_-]{1,64}$/;
  * Item CSS, confined to ONE scope root (`[data-public-style-root="<scope>"]`)
  * so two event scopes in one document never affect each other.
  */
-export function publicStyleCss(document: PublicStyleOverrideDocument | null | undefined, scope?: string): string {
+export function publicStyleCss(document: PublicStyleOverrideDocument | null | undefined, scope?: string, eventId?: string | null): string {
   const parsed = parsePublicStyleOverrides(document);
   const root = scope && CSS_SCOPE.test(scope) ? `[data-public-style-root="${scope}"] ` : "";
   const rules: string[] = [];
   const declaration = (properties: PublicStyleProperties, kind?: PublicStyleElementDefinition["kind"]) => {
-    const style = standardStyle(properties, kind) as Record<string, string | number | undefined>;
+    const style = standardStyle(properties, kind, eventId) as Record<string, string | number | undefined>;
     const pairs = Object.entries(style).map(([key, value]) => {
       const cssKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       return `${cssKey}:${typeof value === "number" && key === "fontSize" ? `${value}px` : value}!important`;

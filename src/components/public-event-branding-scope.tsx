@@ -34,8 +34,46 @@ export function resolvePublicBrandingEvent(
   };
 }
 
-/** Complete mapping for public pages that already own their palette wrapper. */
-export function publicEventScopeProps(source: PublicBrandingEvent, forceV2 = false) {
+/**
+ * Exact historic (V1) prop bags per page family, copied from the pre-V2
+ * baseline. V1 pages receive ONLY these keys so legacy output is unchanged;
+ * the complete canonical map below is used for explicit V2 only.
+ */
+const V1_FULL = [
+  "paletteKey", "backgroundKey", "pageBackgroundColor", "cardBackgroundColor", "primaryColor", "accentColor",
+  "textColor", "mutedTextColor", "cardTextColor", "cardMutedTextColor", "borderColor", "primaryTextColor",
+  "navBackgroundColor", "brandKitKey", "linkColor", "cardBorderColor", "buttonPrimaryBg", "buttonPrimaryFg",
+  "buttonSecondaryBg", "buttonSecondaryFg", "navFgColor", "navMutedColor", "navActiveFgColor", "heroBgColor",
+  "heroFgColor", "heroAccentColor", "fontFamily",
+] as const;
+export const V1_SCOPE_PROFILES = {
+  /** venues list + offers */
+  list: [...V1_FULL, "headingFontFamily"],
+  /** join (no heading font in the historic mapping) */
+  join: [...V1_FULL],
+  /** venue detail used a reduced subset */
+  detail: [
+    "paletteKey", "backgroundKey", "pageBackgroundColor", "cardBackgroundColor", "primaryColor", "accentColor",
+    "textColor", "mutedTextColor", "cardTextColor", "cardMutedTextColor", "borderColor", "primaryTextColor",
+    "fontFamily", "headingFontFamily",
+  ],
+} as const;
+export type V1ScopeProfile = keyof typeof V1_SCOPE_PROFILES;
+
+/**
+ * Page palette props. V2 → complete canonical map. V1 → the page's exact
+ * historic prop bag (pass `v1Profile`), with no eventId/overrides.
+ */
+export function publicEventScopeProps(source: PublicBrandingEvent, forceV2 = false, v1Profile?: V1ScopeProfile) {
+  const full = canonicalScopeProps(source, forceV2);
+  if (full.templateVersion === "v2" || !v1Profile) return full;
+  const keep = new Set<string>(V1_SCOPE_PROFILES[v1Profile]);
+  const legacy: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(full)) if (keep.has(key)) legacy[key] = value;
+  return { ...legacy, templateVersion: "v1" as const } as Partial<typeof full> & { paletteKey: string | null; templateVersion: "v1" };
+}
+
+function canonicalScopeProps(source: PublicBrandingEvent, forceV2 = false) {
   const { event, isV2 } = resolvePublicBrandingEvent(source, forceV2);
   return {
     paletteKey: event.palette_key ?? null, backgroundKey: event.page_background_key ?? null,

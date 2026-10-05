@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -224,13 +225,13 @@ export function PublicLeaderboardPage({ subdomain, previewData }: { subdomain: s
 function Header({ subdomain }: { subdomain: string }) {
   return (
     <div className="mb-6">
-      <p
+      <PublicStyleTarget id="leaderboard.page.eyebrow"><p
         className="text-[11px] font-semibold uppercase tracking-[0.32em]"
         style={{ color: "var(--event-page-text)" }}
       >
         {subdomain}.getstampd.com.au
-      </p>
-      <h1
+      </p></PublicStyleTarget>
+      <PublicStyleTarget id="leaderboard.heading"><h1
         className="mt-2 text-3xl font-semibold sm:text-4xl"
         style={{
           color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
@@ -238,13 +239,13 @@ function Header({ subdomain }: { subdomain: string }) {
         }}
       >
         Leaderboard
-      </h1>
-      <p
+      </h1></PublicStyleTarget>
+      <PublicStyleTarget id="leaderboard.page.intro"><p
         className="mt-2 text-sm"
         style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
       >
         Ranked by total points. Passport stamps are still shown so you can track venue progress.
-      </p>
+      </p></PublicStyleTarget>
     </div>
   );
 }
@@ -263,12 +264,12 @@ function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <Card>
       <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-[var(--event-page-heading,var(--event-primary,#1F3D2B))]/10" />
-      <h2 className="font-trail-serif text-center text-xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]">
+      <PublicStyleTarget id="leaderboard.empty.heading"><h2 className="font-trail-serif text-center text-xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]">
         {title}
-      </h2>
-      <p className="mx-auto mt-2 max-w-sm text-center text-sm leading-relaxed text-[var(--event-card-text)]/80">
+      </h2></PublicStyleTarget>
+      <PublicStyleTarget id="leaderboard.empty.body"><p className="mx-auto mt-2 max-w-sm text-center text-sm leading-relaxed text-[var(--event-card-text)]/80">
         {body}
-      </p>
+      </p></PublicStyleTarget>
     </Card>
   );
 }
@@ -297,9 +298,9 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
           >
             <RankBadge rank={r.rank ?? i + 1} />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-trail-serif text-base font-semibold text-[var(--event-card-heading)]">
+              <PublicStyleTarget id="leaderboard.row.name"><p className="truncate font-trail-serif text-base font-semibold text-[var(--event-card-heading)]">
                 {r.display_name ?? "Guest"}
-              </p>
+              </p></PublicStyleTarget>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 {tier && (
                   <span
@@ -367,10 +368,10 @@ function RankBadge({ rank }: { rank: number }) {
 
 function PrivacyNote() {
   return (
-    <p className="mx-auto mt-6 max-w-md text-center text-[11px] leading-relaxed text-[var(--event-page-muted)]">
+    <PublicStyleTarget id="leaderboard.footnote"><p className="mx-auto mt-6 max-w-md text-center text-[11px] leading-relaxed text-[var(--event-page-muted)]">
       Names are shown according to the organiser's privacy settings. We never
       publish email, phone, postcode, or full names.
-    </p>
+    </p></PublicStyleTarget>
   );
 }
 

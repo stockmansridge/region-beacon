@@ -303,7 +303,7 @@ export function EventPublicLanding({
   return (
     <PublicNavProvider mode={mode} subdomain={subdomain} preservePreviewAppearance={mode === "preview"} onPreviewNavigate={onPreviewNavigate}>
       {brandingScoped ? (
-        <LandingContent />
+        renderLandingContent()
       ) : <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2} eventId={event.event_id}>
       <EventPaletteScope
         paletteKey={event.palette_key ?? null}
@@ -346,13 +346,13 @@ export function EventPublicLanding({
         eventId={event.event_id}
         className="min-h-screen"
       >
-        <LandingContent />
+        {renderLandingContent()}
       </EventPaletteScope>
       </PublicStyleScope>}
     </PublicNavProvider>
   );
 
-  function LandingContent() {
+  function renderLandingContent() {
     return <>
         {subdomain ? <LiveActivityBar subdomain={subdomain} /> : null}
         <PrizeUnlockAnnouncer eventId={event.event_id} />
