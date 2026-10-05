@@ -1,3 +1,5 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
+import { ResultLink, ResultPaletteScope, useResultPreview } from "@/components/result-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -36,7 +38,7 @@ type ClaimRow = {
   message: string | null;
 };
 
-type Outcome =
+export type Outcome =
   | { kind: "loading" }
   | { kind: "claimed"; row: ClaimRow; passportToken: string }
   | { kind: "already"; row: ClaimRow; passportToken: string }
@@ -174,8 +176,9 @@ function BonusClaimPage() {
   return <BonusView outcome={outcome} />;
 }
 
-function BonusView({ outcome }: { outcome: Outcome }) {
-  const subdomain = getSubdomain();
+export function BonusView({ outcome }: { outcome: Outcome }) {
+  const preview = useResultPreview();
+  const subdomain = preview ? null : getSubdomain();
   const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
 
   if (outcome.kind === "loading") {
@@ -194,14 +197,14 @@ function BonusView({ outcome }: { outcome: Outcome }) {
       ? `You earned ${outcome.row.points_awarded} points.`
       : "You have already claimed this bonus code. Your points total has not changed.";
     return (
-      <EventPaletteScope
+      <ResultPaletteScope
         paletteKey={paletteKey}
         backgroundKey={backgroundKey}
         className="min-h-screen px-4 py-8"
       >
         <div className="mx-auto w-full max-w-md">
           <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
-            <div
+            <PublicStyleTarget id="bonus.result.surface"><div
               className="relative h-[420px] w-full"
               style={{ background: `linear-gradient(160deg, ${PRIMARY} 0%, #14271C 100%)` }}
             >
@@ -222,31 +225,31 @@ function BonusView({ outcome }: { outcome: Outcome }) {
                 >
                   {kicker}
                 </div>
-                <h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
+                <PublicStyleTarget id="bonus.result.heading"><h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
                   {title}
-                </h1>
+                </h1></PublicStyleTarget>
                 {outcome.row.bonus_code_name && (
                   <p className="mt-1 text-base text-[var(--event-page-bg,#F6EFE2)]/90">
                     {outcome.row.bonus_code_name}
                   </p>
                 )}
-                <p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">{body}</p>
+                <PublicStyleTarget id="bonus.result.body"><p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">{body}</p></PublicStyleTarget>
                 <p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
                   Your total points: {outcome.row.total_points}
                 </p>
               </div>
-            </div>
+            </div></PublicStyleTarget>
           </section>
 
           <div className="mt-5 space-y-2.5">
-            <Link
+            <PublicStyleTarget id="bonus.result.button"><ResultLink
               to="/passport/$token"
               params={{ token: outcome.passportToken }}
               className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
               style={{ backgroundColor: PRIMARY }}
             >
               View my passport
-            </Link>
+            </ResultLink></PublicStyleTarget>
             <a
               href="/"
               className="flex h-11 w-full items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
@@ -255,7 +258,7 @@ function BonusView({ outcome }: { outcome: Outcome }) {
             </a>
           </div>
         </div>
-      </EventPaletteScope>
+      </ResultPaletteScope>
     );
 
   }
@@ -300,7 +303,7 @@ function BonusView({ outcome }: { outcome: Outcome }) {
   return <FailureCard title={title} body={body} actionLabel="Back to event" actionHref="/" />;
 }
 
-function FailureCard({
+export function FailureCard({
   title,
   body,
   actionLabel,
@@ -315,10 +318,10 @@ function FailureCard({
     <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] px-6 py-10">
       <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-8 text-center shadow-sm">
         <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-primary,#1F3D2B)]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+        <PublicStyleTarget id="bonus.failure.heading"><h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           {title}
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{body}</p>
+        </h1></PublicStyleTarget>
+        <PublicStyleTarget id="bonus.failure.body"><p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{body}</p></PublicStyleTarget>
         <div className="mt-6">
           <a
             href={actionHref}

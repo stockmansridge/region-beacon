@@ -1,3 +1,4 @@
+import { V2ResultPreview, RESULT_PAGE_STATES, type ResultPreviewPage } from "@/components/v2-result-previews";
 import { ChevronDown, Info, Monitor, Redo2, Smartphone, Undo2, X } from "lucide-react";
 import { loadV2PreviewContent, loadV2PreviewVenueExtras, previewHasMap, type V2PreviewContent, type V2PreviewVenueExtras } from "@/lib/v2-preview-content";
 import {
@@ -28,7 +29,7 @@ import { PublicEventTemplate } from "@/components/public-event-template";
 import { PublicVenuesListPage, type VenueRow as ListVenueRow } from "@/routes/live.$subdomain.venues.index";
 import { PublicVenueDetailPage, type VenueRow as DetailVenueRow } from "@/routes/live.$subdomain.venues.$venueId";
 import { PublicOffersPage, type OfferVenue } from "@/routes/live.$subdomain.offers";
-import { LiveJoinPage, type JoinPreviewEvent } from "@/routes/live.$subdomain.join";
+import { LiveJoinPage, type JoinPreviewEvent, type JoinPreviewState } from "@/routes/live.$subdomain.join";
 import { AwardsPage } from "@/routes/live.$subdomain.prizes";
 import { PublicTrailMapPage, type MapEventRow } from "@/routes/live.$subdomain.map";
 import { PublicLeaderboardPage } from "@/routes/live.$subdomain.leaderboard";
@@ -482,24 +483,26 @@ function formToPreviewEvent(
   event: { id: string; name: string; public_slug?: string | null; description?: string | null },
   branding: Branding | null,
   form: Form,
+  publicBase?: Record<string, unknown> | null,
 ): PublicEventData & { public_template_version?: string | null; v2_style_config?: PublicStyleOverrideDocument | null } {
   const orNullHex = (v: string) => (v.trim() ? v.trim() : null);
   return {
+    ...(publicBase ?? {}),
     event_id: event.id,
     name: event.name,
     public_slug: event.public_slug ?? "",
     description: event.description ?? null,
-    starts_at: null,
-    ends_at: null,
-    timezone: null,
+    starts_at: (publicBase?.starts_at as string | null | undefined) ?? null,
+    ends_at: (publicBase?.ends_at as string | null | undefined) ?? null,
+    timezone: (publicBase?.timezone as string | null | undefined) ?? null,
     logo_path: branding?.logo_path ?? null,
     cover_path: branding?.cover_path ?? null,
     cover_focal_x: form.cover_focal_x.trim() ? Number(form.cover_focal_x) : null,
     cover_focal_y: form.cover_focal_y.trim() ? Number(form.cover_focal_y) : null,
     primary_color: orNullHex(form.primary_color),
     accent_color: orNullHex(form.accent_color),
-    palette_key: null,
-    page_background_key: null,
+    palette_key: (publicBase?.palette_key as string | null | undefined) ?? null,
+    page_background_key: (publicBase?.page_background_key as string | null | undefined) ?? null,
     page_background_color: orNullHex(form.page_background_color),
     card_background_color: orNullHex(form.card_background_color),
     text_color: orNullHex(form.page_heading_color),
@@ -514,7 +517,7 @@ function formToPreviewEvent(
       getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || null),
     welcome_copy: form.welcome_copy.trim() || null,
     terms_url: orNullHex(form.terms_url),
-    current_terms_version_id: null,
+    current_terms_version_id: (publicBase?.current_terms_version_id as string | null | undefined) ?? null,
     venue_label_singular: form.venue_label_singular || null,
     venue_label_plural: form.venue_label_plural || null,
     hero_overlay_color: orNullHex(form.hero_overlay_color),
@@ -2157,14 +2160,34 @@ function VisualBrandingEditor({
   const [styleFuture, setStyleFuture] = useState<PublicStyleOverrideDocument[]>([]);
   const [activating, setActivating] = useState(false);
   const [frameDoc, setFrameDoc] = useState<Document | null>(null);
-  const [previewPage, setPreviewPage] = useState<"home" | "join" | "passport" | "venues" | "venue" | "offers" | "prizes" | "map" | "leaderboard" | "faq" | "terms" | "privacy" | "legal" | "bookmarks">("home");
-  const [previewSource, setPreviewSource] = useState<"draft" | "saved">("draft");
+  // Navigator lists what the real preview DOM actually renders right now.
+  const [renderedIds, setRenderedIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const body = frameDoc?.body;
+    if (!body) return;
+    let raf = 0;
+    const scan = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const next = new Set(Array.from(body.querySelectorAll<HTMLElement>("[data-event-style]")).map((el) => el.dataset.eventStyle ?? ""));
+        setRenderedIds((prev) => (prev.size === next.size && [...next].every((id) => prev.has(id)) ? prev : next));
+      });
+    };
+    scan();
+    const observer = new MutationObserver(scan);
+    observer.observe(body, { childList: true, subtree: true });
+    return () => { observer.disconnect(); cancelAnimationFrame(raf); };
+  }, [frameDoc]);
+  const [previewPage, setPreviewPage] = useState<"home" | "join" | "passport" | "venues" | "venue" | "offers" | "prizes" | "map" | "leaderboard" | "faq" | "terms" | "privacy" | "legal" | "bookmarks" | ResultPreviewPage>("home");
+  const [previewSource, setPreviewSource] = useState<"draft" | "saved" | "live">("draft");
   const [previewInteraction, setPreviewInteraction] = useState<"select" | "navigate">("select");
   const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
   // Real, read-only public content for this event; person-specific states use labelled samples.
   const [publicContent, setPublicContent] = useState<V2PreviewContent | null>(null);
   const [venueExtras, setVenueExtras] = useState<V2PreviewVenueExtras | null>(null);
   const [sampleState, setSampleState] = useState<"populated" | "empty">("populated");
+  // Page-specific safe sample states (preview fixtures only; never submitted or stored).
+  const [pageStateChoice, setPageStateChoice] = useState<Record<string, string>>({});
   const previewSubdomain = primaryDomain?.public_subdomain ?? null;
   useEffect(() => {
     let cancelled = false;
@@ -2386,9 +2409,12 @@ function VisualBrandingEditor({
   const override = itemMeta ? currentOverride(parsePublicStyleOverrides(form.style_overrides)) : undefined;
   const savedConfig = parsePublicStyleOverrides(branding?.v2_style_config);
   // Saved view: immutable saved event + saved branding row through the same complete mapping.
-  const savedBaselineEvent = formToPreviewEvent(event, branding, brandingToV2Form(branding));
+  const savedBaselineEvent = formToPreviewEvent(event, branding, brandingToV2Form(branding), publicContent?.event ?? null);
+  // Live template: the event's actual public row and saved template version, never forced to V2.
+  const liveIsV2 = branding?.public_template_version === "v2";
+  const liveEvent = { ...(liveIsV2 ? savedBaselineEvent : formToPreviewEvent(event, branding, brandingToForm(branding), publicContent?.event ?? null)), public_template_version: branding?.public_template_version ?? null, v2_style_config: liveIsV2 ? savedConfig : null } as PublicBrandingEvent;
 
-  const draftEvent = { ...(previewSource === "draft" ? previewEvent : savedBaselineEvent), public_template_version: "v2", v2_style_config: previewSource === "draft" ? previewConfig : savedConfig } as PublicBrandingEvent;
+  const draftEvent = (previewSource === "live" ? liveEvent : { ...(previewSource === "draft" ? formToPreviewEvent(event, branding, form, publicContent?.event ?? null) : savedBaselineEvent), public_template_version: "v2", v2_style_config: previewSource === "draft" ? previewConfig : savedConfig }) as PublicBrandingEvent;
   const fixtureBranding = resolveEventBrandingKeys(draftEvent as never, { public_template_version: "v2", v2_style_config: draftEvent.v2_style_config ?? null });
   const listVenues: ListVenueRow[] = venues.map((venue) => ({
     venue_id: venue.venue_id, name: venue.name, description: venue.description ?? null,
@@ -2407,6 +2433,14 @@ function VisualBrandingEditor({
   }, [previewSubdomain, selectedVenueId]);
   const previewLabels = resolveVenueLabels(draftEvent);
   const populated = sampleState === "populated";
+  const PAGE_STATES: Record<string, Array<[string, string]>> = {
+    join: [["new", "New visitor"], ["returning", "Returning visitor"], ["error", "Form errors"], ["success", "Registered (success)"]],
+    passport: [["partial", "Some stamps"], ["empty", "No stamps yet"], ["complete", "All stamps"]],
+    prizes: [["unlocked", "Has passport"], ["locked", "No passport yet"]],
+    ...RESULT_PAGE_STATES,
+  };
+  const pageStates = PAGE_STATES[previewPage] ?? [];
+  const pageState = pageStates.find(([key]) => key === pageStateChoice[previewPage])?.[0] ?? pageStates[0]?.[0] ?? "";
   const realFaq = publicContent?.faq ?? [];
   const realAwards = publicContent?.awards ?? [];
   const faqEntries = !populated ? [] : realFaq.length ? realFaq : [{ question: "Sample question (no FAQ published yet)", answer: "Sample answer shown only in the editor.", order_index: 0 }];
@@ -2434,13 +2468,15 @@ function VisualBrandingEditor({
     else if (to === "/bookmarks") setPreviewPage("bookmarks");
     else if (to === "/terms") setPreviewPage("terms");
     else if (to === "/privacy") setPreviewPage("privacy");
+    else if (to === "/terms-privacy" || to === "/legal") setPreviewPage("legal");
   };
   const renderPreviewPage = () => {
     if (previewPage === "venues") return <PublicVenuesListPage subdomain="preview" previewData={{ event: draftEvent as never, venues: listVenues }} />;
     if (previewPage === "offers") return <PublicOffersPage subdomain="preview" previewData={{ event: draftEvent as never, offers: listVenues.filter((venue) => venue.offer_summary).map((venue) => ({ ...venue, offer_summary: venue.offer_summary! })) as OfferVenue[] }} />;
     if (previewPage === "venue" && selectedVenue?.venue_id) return <PublicVenueDetailPage subdomain="preview" venueId={selectedVenue.venue_id} previewData={{ event: draftEvent, venue: selectedVenue as DetailVenueRow, extras: venueExtras }} />;
-    if (previewPage === "join") return <LiveJoinPage subdomain="preview" previewEvent={draftEvent as JoinPreviewEvent} />;
-    if (previewPage === "prizes") return <AwardsPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, awards: awardEntries, bonuses: [], recentCheckins: [], hasPassport: true }} />;
+    if (previewPage === "scan" || previewPage === "checkin" || previewPage === "bonus" || previewPage === "tasting") return <V2ResultPreview page={previewPage} state={pageState} event={{ ...draftEvent, event_id: event.id, name: event.name }} venueName={selectedVenue?.name ?? null} />;
+    if (previewPage === "join") return <LiveJoinPage subdomain="preview" previewEvent={draftEvent as JoinPreviewEvent} previewState={pageState as JoinPreviewState} />;
+    if (previewPage === "prizes") return <AwardsPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, awards: awardEntries, bonuses: [], recentCheckins: [], hasPassport: pageState !== "locked" }} />;
     if (previewPage === "map") return <PublicTrailMapPage subdomain="preview" previewData={{ branding: fixtureBranding, event: { ...draftEvent, event_id: event.id, name: event.name } as MapEventRow, venues: listVenues.map((venue) => ({ ...venue, event_found: true })) }} />;
     if (previewPage === "leaderboard") return <PublicLeaderboardPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, rows: !populated ? [] : [{ rank: 1, display_name: "Sample visitor (editor only)", stamps: 3, points: 30, venue_points: 30, bonus_points: 0, visit_count: 3, tier: "Explorer", is_completed: false, is_enabled: true, event_found: true }] }} />;
     if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: faqEntries }} />;
@@ -2448,10 +2484,10 @@ function VisualBrandingEditor({
     if (["terms", "privacy", "legal"].includes(previewPage)) return <CombinedLegalPage subdomain="preview" initialOpen={previewPage === "terms" ? "terms" : previewPage === "privacy" ? "privacy" : "both"} previewData={{ branding: fixtureBranding, row: publicContent?.legal ?? { event_id: event.id, event_name: event.name, legal_source: "local_text", terms_title: "Terms", terms_body: "Sample terms for preview.", terms_url: null, privacy_title: "Privacy", privacy_body: "Sample privacy information for preview.", privacy_url: null, terms_version: null, privacy_version: null, effective_at: null } as LegalRow }} />;
     if (previewPage === "passport") {
       const passport = { passport_id: "preview-passport", event_id: event.id, status: "active", completed_at: null, leaderboard_opt_out: false, email: "preview@example.invalid", full_name: "Sample Visitor", first_name: "Sample", last_name: "Visitor", mobile: null, postcode: null, marketing_opt_in: false, checkin_count: 1 } as PassportRow;
-      const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: previewLabels.singular, venue_label_plural: previewLabels.plural, total_venues: listVenues.length, stamped_count: 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: index === 0, checked_in_at: index === 0 ? new Date(0).toISOString() : null })));
+      const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: previewLabels.singular, venue_label_plural: previewLabels.plural, total_venues: listVenues.length, stamped_count: pageState === "empty" ? 0 : pageState === "complete" ? listVenues.length : 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: pageState === "complete" || (pageState !== "empty" && index === 0), checked_in_at: pageState === "complete" || (pageState !== "empty" && index === 0) ? new Date(0).toISOString() : null })));
       return <PassportPreview passport={passport} eventName={event.name} stamps={stamps} token="preview" subdomain={null} branding={fixtureBranding} awards={awardEntries} preview />;
     }
-    return <PublicEventTemplate subdomain={null} event={draftEvent} venues={venues} mode="preview" forceTemplate="v2" onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined} />;
+    return <PublicEventTemplate subdomain={null} event={draftEvent} venues={venues} mode="preview" forceTemplate={previewSource === "live" ? (liveIsV2 ? "v2" : "v1") : "v2"} onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined} />;
   };
 
   return (
@@ -2482,7 +2518,12 @@ function VisualBrandingEditor({
         <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-4 lg:max-h-[calc(100%-2rem)] lg:overflow-y-auto">
           <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{previewPage === "home" ? "Landing / home" : previewPage === "venue" ? "Venue detail" : previewPage}</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
-            {PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id) && (item.page === (["terms", "privacy"].includes(previewPage) ? "legal" : previewPage) || item.page === "shared")).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+            {(() => {
+              const pg = ["terms", "privacy"].includes(previewPage) ? "legal" : previewPage;
+              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || item.id === "shared.navigation.drawer"));
+              const sections = [...new Set(items.map((item) => `${item.page === "shared" ? "Shared" : ""}${item.page === "shared" ? " · " : ""}${item.section}`))];
+              return sections.map((section) => <div key={section} className="col-span-full"><div className="mb-1 mt-2 text-[11px] font-semibold text-muted-foreground">{section}</div><div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">{items.filter((item) => `${item.page === "shared" ? "Shared · " : ""}${item.section}` === section).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}</div></div>);
+            })()}
           </div>
           <div className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Shared theme</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
@@ -2493,19 +2534,25 @@ function VisualBrandingEditor({
 
         <section className="min-w-0 rounded-md border bg-background p-3">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Showing: {previewSource === "draft" ? "V2 draft (unsaved edits)" : "Saved V2 configuration"}</span> · <span className="font-semibold text-foreground">Visitors currently see: {branding?.public_template_version === "v2" ? "V2" : "V1 (existing template)"}</span>{branding?.public_template_version !== "v2" ? " — differences from the live site are expected until V2 is activated." : "."} Public actions are disabled.</p></div>
+            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Showing: {previewSource === "draft" ? "V2 draft (unsaved edits)" : previewSource === "saved" ? "Saved V2 configuration" : `Live template (${liveIsV2 ? "V2" : "V1"}, read-only)`}</span> · <span className="font-semibold text-foreground">Visitors currently see: {branding?.public_template_version === "v2" ? "V2" : "V1 (existing template)"}</span>{branding?.public_template_version !== "v2" ? " — differences from the live site are expected until V2 is activated." : "."} Public actions are disabled.</p></div>
             <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
               <SelectTrigger className="w-44" aria-label="Page"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="terms">Terms</SelectItem><SelectItem value="privacy">Privacy</SelectItem><SelectItem value="legal">Terms / Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem></SelectContent>
+              <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="terms">Terms</SelectItem><SelectItem value="privacy">Privacy</SelectItem><SelectItem value="legal">Terms / Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem><SelectItem value="scan">Scan (camera off)</SelectItem><SelectItem value="checkin">Check-in result</SelectItem><SelectItem value="bonus">Bonus result</SelectItem><SelectItem value="tasting">Tasting result</SelectItem></SelectContent>
             </Select>
             <Select value={previewSource} onValueChange={(value) => setPreviewSource(value as typeof previewSource)}>
               <SelectTrigger className="w-44" aria-label="Preview source"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="draft">V2 draft</SelectItem><SelectItem value="saved">Saved V2 config</SelectItem></SelectContent>
+              <SelectContent><SelectItem value="draft">V2 draft</SelectItem><SelectItem value="saved">Saved V2 config</SelectItem><SelectItem value="live">Live template (read-only)</SelectItem></SelectContent>
             </Select>
             <Select value={sampleState} onValueChange={(value) => setSampleState(value as typeof sampleState)}>
               <SelectTrigger className="w-40" aria-label="Sample state"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="populated">Populated state</SelectItem><SelectItem value="empty">Empty state</SelectItem></SelectContent>
             </Select>
+            {pageStates.length > 0 && (
+              <Select value={pageState} onValueChange={(value) => setPageStateChoice((prev) => ({ ...prev, [previewPage]: value }))}>
+                <SelectTrigger className="w-48" aria-label="Page state"><SelectValue /></SelectTrigger>
+                <SelectContent>{pageStates.map(([key, label]) => <SelectItem key={key} value={key}>{label} (sample)</SelectItem>)}</SelectContent>
+              </Select>
+            )}
             {listVenues.length > 0 && ["venue", "venues", "offers", "map", "passport", "home"].includes(previewPage) && (
               <Select value={selectedVenue?.venue_id ?? ""} onValueChange={(value) => { setSelectedRecord(value); setRecordScope("record"); }}>
                 <SelectTrigger className="w-48" aria-label="Record"><SelectValue placeholder={`Choose ${previewLabels.singular.toLowerCase()}`} /></SelectTrigger>
@@ -2533,7 +2580,7 @@ function VisualBrandingEditor({
                 onPointerLeave={() => setHoveredInstance(null)}
               >
                 <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}${hoveredInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(hoveredInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(hoveredInstance)}"]:not([data-brand-instance]){outline-color:color-mix(in srgb,#2563EB 60%,transparent)}` : ""}${selectedInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(selectedInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(selectedInstance)}"]:not([data-brand-instance]){outline:3px solid #2563EB!important;outline-offset:-3px}` : ""}`}</style>
-                <PublicNavProvider mode="preview" subdomain={null} preservePreviewAppearance activePath={previewPage === "home" ? "/" : `/${previewPage === "venue" ? `venues/${selectedVenue?.venue_id ?? "preview"}` : previewPage}`} previewFeatures={previewFeatures} onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined}>
+                <PublicNavProvider mode="preview" subdomain={null} preservePreviewAppearance activePath={previewPage === "home" ? "/" : previewPage === "legal" ? "/terms-privacy" : `/${previewPage === "venue" ? `venues/${selectedVenue?.venue_id ?? "preview"}` : previewPage}`} previewFeatures={previewFeatures} onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined}>
                   {renderPreviewPage()}
                 </PublicNavProvider>
               </div>
@@ -2576,6 +2623,7 @@ function VisualBrandingEditor({
 
 /** Items whose real public component carries a V2 marker (kept in sync with PublicStyleTarget / role() call sites). */
 const V2_WIRED_ITEMS = new Set<string>([
+  "bonus.failure.body","bonus.failure.heading","bonus.result.body","bonus.result.button","bonus.result.heading","bonus.result.surface","checkin.failure.body","checkin.failure.button","checkin.failure.heading","checkin.result.body","checkin.result.button","checkin.result.heading","checkin.result.surface","scan.body","scan.camera","scan.control","scan.error","scan.heading","tasting.failure.body","tasting.failure.heading","tasting.result.body","tasting.result.button","tasting.result.heading","tasting.result.surface",
   "bookmarks.card", "bookmarks.empty.body", "bookmarks.empty.cta", "bookmarks.empty.heading", "bookmarks.page.heading",
   "bookmarks.page.intro", "faq.item.answer", "faq.item.question", "faq.item.toggle", "faq.page.eyebrow",
   "faq.page.heading", "faq.state.message", "home.bonusPromo.body", "home.bonusPromo.heading", "home.bonusPromo.icon",
@@ -2679,17 +2727,32 @@ function PreviewFrame({ width, onDocument, children }: { width: number; onDocume
     return () => { observer.disconnect(); onDocument(null); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // The iframe keeps its true viewport width (390px or desktop) so the public
+  // page's media queries match a real device; the admin column only scales it.
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box || typeof ResizeObserver === "undefined") return;
+    const update = () => setScale(Math.min(1, box.clientWidth / width));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [width]);
+  const height = 760;
   return (
-    <>
+    <div ref={boxRef} className="w-full overflow-hidden" style={{ height: height * scale }}>
       <iframe
         ref={ref}
         title="Customer page preview"
         data-testid="v2-preview-frame"
-        className="mx-auto block rounded-md border bg-background shadow-sm"
-        style={{ width, maxWidth: width === 390 ? width : "100%", height: "calc(100vh - 13rem)", minHeight: 560 }}
+        data-viewport-width={width}
+        className="block rounded-md border bg-background shadow-sm"
+        style={{ width, height, transform: `scale(${scale})`, transformOrigin: "top left", marginLeft: scale < 1 ? 0 : `calc((100% - ${width}px) / 2)` }}
       />
       {body ? createPortal(children, body) : null}
-    </>
+    </div>
   );
 }
 

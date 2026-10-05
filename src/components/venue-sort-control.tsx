@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 import { useId, useState } from "react";
 import { ArrowUpDown } from "lucide-react";
 import {
@@ -38,7 +39,7 @@ export function VenueSortControl({
   const [announce, setAnnounce] = useState<string>("");
 
   return (
-    <div className={className}>
+    <PublicStyleTarget id="venues.controls.sort"><div className={className}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p
           className="text-[12px] font-semibold"
@@ -109,6 +110,6 @@ export function VenueSortControl({
       <p aria-live="polite" className="sr-only">
         {announce}
       </p>
-    </div>
+    </div></PublicStyleTarget>
   );
 }

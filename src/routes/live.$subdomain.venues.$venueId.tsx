@@ -17,6 +17,8 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
 import { resolveVenueLabels } from "@/lib/venue-labels";
 import { Star, Users, Check, Circle, Sparkles, Camera } from "lucide-react";
+import { ensureCustomFontFaces } from "@/lib/event-custom-fonts";
+import { v2FontFamilyValue } from "@/lib/event-font-alias";
 import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "@/lib/event-fonts";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
@@ -235,8 +237,16 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
     document.head.appendChild(link);
   }, [extras?.emotive_text, emotiveFontValue]);
   const v2 = resolvePublicTemplateVersion(state.kind === "ready" ? state.brand?.public_template_version : null) === "v2";
-  const emotiveStack =
-    getEventFont(emotiveFontValue)?.stack ?? "'Caveat', 'Segoe Script', cursive";
+  const v2EventId = v2 && state.kind === "ready" ? state.eventId : null;
+  // V2: uploaded emotive fonts load and render through the event-scoped alias.
+  // V1 keeps the original curated-or-Caveat resolution unchanged.
+  useEffect(() => {
+    if (!v2EventId || !extras?.emotive_text || getEventFont(emotiveFontValue)) return;
+    void ensureCustomFontFaces([emotiveFontValue], v2EventId);
+  }, [v2EventId, extras?.emotive_text, emotiveFontValue]);
+  const emotiveStack = v2EventId && !getEventFont(emotiveFontValue)
+    ? v2FontFamilyValue(emotiveFontValue, v2EventId)
+    : getEventFont(emotiveFontValue)?.stack ?? "'Caveat', 'Segoe Script', cursive";
 
 
 
