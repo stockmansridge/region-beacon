@@ -2410,7 +2410,7 @@ function VisualBrandingEditor({
 
 /** Items whose real public component carries a V2 marker on the home page today. */
 const V2_WIRED_ITEMS = new Set<string>([
-  "home.page.surface", "home.hero.surface", "home.hero.cover", "home.hero.logo", "home.hero.welcomeLabel",
+  "home.page.surface", "home.hero.surface", "home.hero.image", "home.hero.cover", "home.hero.logo", "home.hero.welcomeLabel",
   "home.hero.heading", "home.hero.welcomeCopy", "home.summary.surface", "home.summary.ring",
   "home.primaryCta", "home.shareButton", "home.prizesButton", "home.venuesButton",
   "home.bonusPromo.surface", "home.bonusPromo.icon", "home.bonusPromo.heading", "home.bonusPromo.body",
@@ -2421,7 +2421,7 @@ const PUBLIC_STYLE_PAGES_PENDING = ["passport", "join", "venues", "venue", "offe
 
 /** Item → the shared Theme panel that also controls it (shown below the item inspector). */
 const ITEM_SHARED_ROLE: Partial<Record<string, VisualBrandRole>> = {
-  "home.hero.surface": "hero", "home.hero.cover": "cover", "home.hero.logo": "logo",
+  "home.hero.surface": "hero", "home.hero.image": "cover", "home.hero.cover": "cover", "home.hero.logo": "logo",
   "home.hero.heading": "heroHeading", "home.hero.welcomeCopy": "welcome", "home.page.surface": "page",
 };
 

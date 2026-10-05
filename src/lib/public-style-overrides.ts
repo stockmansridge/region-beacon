@@ -104,7 +104,8 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "shared.activity.surface", page: "shared", section: "Activity", label: "Activity notification", kind: "surface", properties: SURFACE },
   { id: "shared.footer.text", page: "shared", section: "Footer", label: "Powered by text", kind: "text", properties: TEXT },
 
-  { id: "home.hero.surface", page: "home", section: "Hero", label: "Hero background", kind: "surface", properties: SURFACE },
+  { id: "home.hero.surface", page: "home", section: "Hero", label: "Hero background", kind: "surface", properties: ["backgroundColor", "borderColor", "backgroundGradient"] },
+  { id: "home.hero.image", page: "home", section: "Hero", label: "Hero image", kind: "surface", properties: ["opacity"] },
   { id: "home.hero.cover", page: "home", section: "Hero", label: "Cover image overlay", kind: "surface", properties: ["opacity", "backgroundGradient"] },
   { id: "home.hero.logo", page: "home", section: "Hero", label: "Event logo backdrop", kind: "surface", properties: SURFACE },
   { id: "home.hero.welcomeLabel", page: "home", section: "Hero", label: "Welcome label", kind: "text", properties: TEXT },
