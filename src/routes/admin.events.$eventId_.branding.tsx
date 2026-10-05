@@ -2630,7 +2630,7 @@ function VisualBrandingEditor({
             disabled={!canEdit || busy || comparisonReadOnly} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
             record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope, label: itemMeta.id === "shared.navigation.tabItem" ? "menu item" : undefined } : null}
           /> : null}
-          {itemMeta?.id === "shared.navigation.tabItem" ? <NavigationMenuInspector
+          {itemMeta && ["shared.navigation.surface", "shared.navigation.item", "shared.navigation.activeItem", "shared.navigation.tabItem"].includes(itemMeta.id) ? <NavigationMenuInspector
             items={navItems} selectedId={selectedRecord} disabled={!canEdit || busy || comparisonReadOnly}
             select={(id) => { setSelectedRecord(id); setRecordScope("record"); }}
             rename={(id, label) => updateNavigationItem(id, { label })}
