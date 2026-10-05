@@ -7,3 +7,8 @@ export function useResultCopy() {
   const document = usePublicStyleDocument();
   return (key: PublicCopyKey) => (v2 ? publicCopy(document, key) : PUBLIC_COPY_DEFAULTS[key]);
 }
+
+/** Render-time wording leaf; reads the style scope at its own position in the tree. */
+export function ResultCopy({ k }: { k: PublicCopyKey }) {
+  return useResultCopy()(k);
+}
