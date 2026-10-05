@@ -307,6 +307,7 @@ function SlideCard({
       className={cn(
         "group relative h-[360px] overflow-hidden rounded-3xl shadow-lg transition-all duration-500 sm:h-[420px]",
         active ? "ring-2 ring-[#C8A24A]" : "opacity-90 hover:opacity-100",
+        className,
       )}
     >
       <img
