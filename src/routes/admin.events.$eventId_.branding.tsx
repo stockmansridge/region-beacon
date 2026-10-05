@@ -1,3 +1,5 @@
+import { Input as BackLinkInput } from "@/components/ui/input";
+import { Label as BackLinkFieldLabel } from "@/components/ui/label";
 import { V2ResultPreview, RESULT_PAGE_STATES, type ResultPreviewPage } from "@/components/v2-result-previews";
 import { ChevronDown, Info, Monitor, Redo2, Smartphone, Undo2, X } from "lucide-react";
 import { loadV2PreviewContent, loadV2PreviewVenueExtras, previewHasMap, type V2PreviewContent, type V2PreviewVenueExtras } from "@/lib/v2-preview-content";
@@ -88,6 +90,11 @@ import {
   PUBLIC_STYLE_ELEMENTS,
   DEFAULT_PUBLIC_NAVIGATION,
   PUBLIC_NAV_ICON_IDS,
+  PUBLIC_BACK_LINK_CONTEXTS,
+  PUBLIC_BACK_LINK_LABEL_MAX,
+  cleanPublicBackLinkLabel,
+  type PublicBackLinkContext,
+  type PublicBackLinkLabelKey,
   emptyPublicStyleOverrides,
   parsePublicStyleOverrides,
   resolvePublicTemplateVersion,
@@ -4096,9 +4103,9 @@ function BackLinkLabelInspector({ context, labels, disabled, setLabel }: {
 }) {
   const field = (key: PublicBackLinkLabelKey, title: string, hint: string) => (
     <div className="space-y-1.5">
-      <Label htmlFor={`back-label-${key}`}>{title}</Label>
+      <BackLinkFieldLabel htmlFor={`back-label-${key}`}>{title}</BackLinkFieldLabel>
       <div className="flex gap-2">
-        <Input id={`back-label-${key}`} maxLength={PUBLIC_BACK_LINK_LABEL_MAX} disabled={disabled} placeholder="Original wording"
+        <BackLinkInput id={`back-label-${key}`} maxLength={PUBLIC_BACK_LINK_LABEL_MAX} disabled={disabled} placeholder="Original wording"
           value={labels[key] ?? ""} onChange={(event) => setLabel(key, event.target.value.trim() ? event.target.value : null)} />
         <Button type="button" variant="outline" size="sm" disabled={disabled || !labels[key]} onClick={() => setLabel(key, null)}>Reset</Button>
       </div>
