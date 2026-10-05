@@ -454,10 +454,41 @@ function BrandingEditor() {
   const [editorMode, setEditorMode] = useState<"classic" | "v2">(
     search.editor === "v2" ? "v2" : "classic",
   );
+  const [selectedRole, setSelectedRole] = useState<VisualBrandRole | null>(null);
+  const [previewWidth, setPreviewWidth] = useState<"mobile" | "desktop">("mobile");
+  const [recentColours, setRecentColours] = useState<string[]>([]);
 
   useEffect(() => {
     setEditorMode(search.editor === "v2" ? "v2" : "classic");
   }, [search.editor]);
+
+  const hasUnsavedChanges = bundle
+    ? JSON.stringify(form) !== JSON.stringify(brandingToForm(bundle.branding))
+    : false;
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    if (editorMode !== "v2") return;
+    const clearSelection = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedRole(null);
+    };
+    window.addEventListener("keydown", clearSelection);
+    return () => window.removeEventListener("keydown", clearSelection);
+  }, [editorMode]);
+
+  function changeEditorMode(mode: "classic" | "v2") {
+    setEditorMode(mode);
+    const url = new URL(window.location.href);
+    if (mode === "v2") url.searchParams.set("editor", "v2");
+    else url.searchParams.delete("editor");
+    window.history.replaceState(window.history.state, "", url);
+  }
 
   // Uploaded (custom) fonts for this event.
   const [customFonts, setCustomFonts] = useState<EventCustomFont[]>([]);
