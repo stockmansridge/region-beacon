@@ -134,7 +134,7 @@ describe("Version-specific result profiles", () => {
     expect(surface.getAttribute("style")).toContain("linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)");
     expect(container.querySelector("[data-event-style]")).toBeNull();
     expect(container.innerHTML.toLowerCase()).not.toContain("#101010");
-    expect(container.innerHTML.toLowerCase()).not.toContain("#aa0001");
+    expect(container.innerHTML.toLowerCase()).not.toContain("#AA0001");
   });
   it("V1 Check-in preview keeps its historic full prop bag (raw primary applied, V2 theme ignored)", () => {
     const { container } = render(inPreview(<V2ResultPreview page="checkin" state="stamped" event={V1_EVENT} venueName={null} />));
@@ -145,7 +145,7 @@ describe("Version-specific result profiles", () => {
     const { container } = render(inPreview(<V2ResultPreview page="bonus" state="claimed" event={V2_EVENT} venueName={null} />));
     expect(varOf(container, "--event-primary")).toBe("#0a0b0c");
     const heading = container.querySelector<HTMLElement>('[data-event-style="bonus.result.heading"]')!;
-    expect(heading.style.color.toLowerCase()).toMatch(/#aa0001|rgb\(170, 0, 1\)/);
+    expect(heading.style.color.toLowerCase()).toMatch(/#AA0001|rgb\(170, 0, 1\)/);
     expect(container.querySelector<HTMLElement>('[data-event-style="bonus.result.body"]')!.style.color).toBe("");
   });
   it("Public V1 Bonus view (no preview) uses the exact legacy gradient too", () => {
@@ -224,8 +224,8 @@ describe("formToPreviewEvent emotive font", () => {
 describe("PublicEventNav override precedence", () => {
   const doc = { version: 1, items: {
     "shared.navigation.surface": { normal: { backgroundColor: "#112233", borderColor: "#445566" } },
-    "shared.navigation.item": { normal: { color: "#aa0001", fontSize: 13, iconColor: "#00aa02" } },
-    "shared.navigation.activeItem": { normal: { color: "#bb0003", backgroundColor: "#0000cc" } },
+    "shared.navigation.item": { normal: { color: "#AA0001", fontSize: 13, iconColor: "#00AA02" } },
+    "shared.navigation.activeItem": { normal: { color: "#BB0003", backgroundColor: "#0000CC" } },
     "shared.navigation.drawer": { normal: { backgroundColor: "#778899" } },
   } } as never;
 
@@ -248,20 +248,20 @@ describe("PublicEventNav override precedence", () => {
       expect(bar.style.borderColor).toBe("#445566");
     }
     const eventName = Array.from(container.querySelectorAll<HTMLElement>("header span")).find((s) => s.textContent === "Trail")!;
-    expect(eventName.style.color).toBe("#aa0001");
+    expect(eventName.style.color).toBe("#AA0001");
     const tabs = Array.from(bottom.querySelectorAll<HTMLElement>("li > *"));
-    const active = tabs.filter((t) => t.style.color === "#bb0003");
-    const inactive = tabs.filter((t) => t.style.color === "#aa0001");
+    const active = tabs.filter((t) => t.style.color === "#BB0003");
+    const inactive = tabs.filter((t) => t.style.color === "#AA0001");
     expect(inactive.length).toBeGreaterThan(0);
     for (const t of inactive) {
       expect(t.style.fontSize).toBe("13px");
       const leaf = t.querySelector<HTMLElement>("span.whitespace-nowrap")!;
       expect(leaf.className).not.toMatch(/text-\[10px\]|leading-4/);
       expect(getComputedStyle(leaf).fontSize).toBe("13px");
-      expect(t.style.getPropertyValue("--item-icon-color")).toBe("#00aa02");
+      expect(t.style.getPropertyValue("--item-icon-color")).toBe("#00AA02");
       expect(t.querySelector<HTMLElement>("span[style*='--item-icon-color']")).not.toBeNull();
     }
-    for (const t of active) expect(t.style.backgroundColor).toBe("#0000cc");
+    for (const t of active) expect(t.style.backgroundColor).toBe("#0000CC");
     const menuButton = container.querySelector<HTMLElement>("button[aria-label='Open menu']")!;
     await act(async () => { fireEvent.click(menuButton); });
     const aside = document.querySelector<HTMLElement>("aside")!;
