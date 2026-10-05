@@ -453,7 +453,6 @@ describe("PublicEventNav override precedence", () => {
     expect(venue.style.getPropertyValue("--item-icon-color")).toBe("#ABCDEF");
     expect(venue.style.getPropertyValue("--item-icon-bg")).toBe("#FEDCBA");
     const css = Array.from(container.querySelectorAll("style")).map((style) => style.textContent).join("\n");
-    expect(css).not.toMatch(/data-event-style="shared\.navigation\.tabItem"\]\[data-event-record="venues"\][^{]*\{[^}]*#0F0F0F[^}]*\}/.source ? /x^/ : /x^/);
     expect(css).toContain('[data-event-style="shared.navigation.currentTab"][data-event-record="venues"]{color:#C0FFEE!important');
     // Inactive tab keeps its own override; legacy shared item/active CSS still reaches tabs via aliases.
     const prizes = tabs[2];
