@@ -397,7 +397,8 @@ export function EventPublicLanding({
           >
             {heroImageUrl ? (
               <img
-                {...brandRole("cover")}
+                {...(isV2 ? itemRole("home.hero.image") : brandRole("cover"))}
+                data-brand-hint="Hero image"
                 src={heroImageUrl}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
@@ -410,7 +411,7 @@ export function EventPublicLanding({
             <div
               {...(isV2 ? itemRole("home.hero.cover") : {})}
               data-brand-hint="Cover tint overlay"
-              className="absolute inset-0"
+              className={`absolute inset-0${isV2 && mode === "preview" ? " pointer-events-none" : ""}`}
               style={{
                 background:
                   "linear-gradient(180deg, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 0%, var(--event-hero-overlay, rgba(0,0,0,0.2)) 40%, var(--event-hero-overlay-strong, rgba(0,0,0,0.65)) 100%)",
