@@ -742,6 +742,13 @@ export function PassportPreview({
                   </>
                 ) : resolvedAwards.length === 0 ? (
                   <>
+                    {v2 ? (
+                    <PublicStyleTarget id="passport.summary.nextValue" recordId="none"><div className="flex items-center gap-1.5 font-trail-serif text-sm font-semibold leading-tight" style={{ color: "var(--event-card-heading)" }}>
+                      <span aria-hidden className="text-base leading-none">✨</span>
+                      {/* Inherits the line's colour/typography in V2. */}
+                      <span>More prizes ahead</span>
+                    </div></PublicStyleTarget>
+                    ) : (
                     <PublicStyleTarget id="passport.summary.nextValue" recordId="none"><div className="flex items-center gap-1.5">
                       <span aria-hidden className="text-base leading-none">✨</span>
                       <span
@@ -751,6 +758,7 @@ export function PassportPreview({
                         More prizes ahead
                       </span>
                     </div></PublicStyleTarget>
+                    )}
                     <PublicStyleTarget id="passport.summary.nextLabel" recordId="none"><div
                       className="text-[10px] font-medium uppercase tracking-[0.18em]"
                       style={{ color: "var(--event-card-muted)" }}
@@ -806,6 +814,13 @@ export function PassportPreview({
                   </>
                 ) : (
                   <>
+                    {v2 ? (
+                    <PublicStyleTarget id="passport.summary.nextValue" recordId="complete"><div className="flex items-center gap-1.5 font-trail-serif text-sm font-semibold leading-tight" style={{ color: "var(--event-card-heading)" }}>
+                      <span aria-hidden className="text-base leading-none">🎉</span>
+                      {/* Inherits the line's colour/typography in V2. */}
+                      <span>All prizes unlocked</span>
+                    </div></PublicStyleTarget>
+                    ) : (
                     <PublicStyleTarget id="passport.summary.nextValue" recordId="complete"><div className="flex items-center gap-1.5">
                       <span aria-hidden className="text-base leading-none">🎉</span>
                       <span
@@ -815,6 +830,7 @@ export function PassportPreview({
                         All prizes unlocked
                       </span>
                     </div></PublicStyleTarget>
+                    )}
                     <PublicStyleTarget id="passport.summary.nextLabel" recordId="complete"><div
                       className="text-[10px] font-medium uppercase tracking-[0.18em]"
                       style={{ color: "var(--event-card-muted)" }}

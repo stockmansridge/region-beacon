@@ -90,7 +90,35 @@ export type PublicStyleOverrideDocument = {
   theme?: PublicV2Theme;
   navigation?: PublicNavigationConfig;
   backLinks?: PublicBackLinkConfig;
+  header?: PublicHeaderConfig;
 };
+
+/** Event-scoped header display text + layout. Never renames the event itself. */
+export type PublicHeaderConfig = { title?: string; titleWrap?: boolean };
+export const PUBLIC_HEADER_TITLE_MAX = 80;
+export function cleanPublicHeaderTitle(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.replace(/[\u0000-\u001F\u007F<>]/g, "").replace(/\s+/g, " ").trim();
+  return value && value.length <= PUBLIC_HEADER_TITLE_MAX ? value : null;
+}
+export function publicHeaderTitle(document: PublicStyleOverrideDocument | null | undefined, eventName: string | null | undefined): string {
+  return document?.header?.title ?? eventName ?? "Event";
+}
+function cleanHeader(raw: unknown, errors?: string[]): PublicHeaderConfig | undefined {
+  if (raw === undefined) return undefined;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) { errors?.push("header must be an object"); return undefined; }
+  const source = raw as Record<string, unknown>;
+  const result: PublicHeaderConfig = {};
+  for (const key of Object.keys(source)) if (key !== "title" && key !== "titleWrap") errors?.push(`header.${key} is not allowed`);
+  if (source.title !== undefined) {
+    const title = cleanPublicHeaderTitle(source.title);
+    if (title) result.title = title; else errors?.push("header.title is invalid");
+  }
+  if (source.titleWrap !== undefined) {
+    if (typeof source.titleWrap === "boolean") result.titleWrap = source.titleWrap; else errors?.push("header.titleWrap must be true or false");
+  }
+  return Object.keys(result).length ? result : undefined;
+}
 
 /** Stable back-link contexts. Destinations are fixed in code; only the label is configurable. */
 export const PUBLIC_BACK_LINK_CONTEXTS = ["legal", "faq", "prizes", "leaderboard", "join", "join-complete", "venue", "passport-missing"] as const;
@@ -156,6 +184,7 @@ const PASSPORT_NEXT_REWARD_SLOTS = ["loading", "none", "remaining", "ready", "co
 const LEGAL_SECTION_SLOTS = ["terms", "privacy"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
+  { id: "shared.navigation.title", page: "shared", section: "Navigation", label: "Header event title", kind: "text", properties: TEXT },
   { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
   { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
@@ -619,6 +648,7 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
   const theme = cleanTheme(source.theme, errors);
   const navigation = cleanNavigation(source.navigation, errors);
   const backLinks = cleanBackLinks(source.backLinks, errors);
+  const header = cleanHeader(source.header, errors);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
@@ -626,6 +656,7 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
     ...(theme ? { theme } : {}),
     ...(navigation ? { navigation } : {}),
     ...(backLinks ? { backLinks } : {}),
+    ...(header ? { header } : {}),
   };
 }
 
