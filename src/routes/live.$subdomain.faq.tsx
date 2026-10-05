@@ -1,3 +1,4 @@
+import { PublicBackLink } from "@/components/public-back-link";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -89,12 +90,8 @@ export function FaqPage({ subdomain, previewData }: { subdomain: string; preview
       </div>
 
       <div className="mx-auto mt-6 max-w-2xl">
-        <Link
-          to="/"
-          className="inline-flex items-center text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
-        >
-          ← Back to event
-        </Link>
+        <PublicBackLink context="faq" to="/" label="Back to event" legacy="link"
+          legacyClassName="inline-flex items-center text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline" />
 
         <div className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm sm:p-10">
           {eventInfo.event_name && (

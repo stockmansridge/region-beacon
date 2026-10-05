@@ -1,3 +1,4 @@
+import { PublicBackLink } from "@/components/public-back-link";
 import { isValidElement } from "react";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { PublicLink } from "@/components/public-nav-context";
@@ -614,13 +615,9 @@ function JoinForm({ event, subdomain, preview = false, previewState }: { event: 
         style={event.font_family ? { fontFamily: event.font_family } : undefined}
       >
         <div className="mb-3">
-          <Link
-            to="/"
-            className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-page-muted)" }}
-          >
-            ← Back
-          </Link>
+          <PublicBackLink context="join" to="/" label="Back" legacy="link"
+            legacyClassName="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
+            legacyStyle={{ color: "var(--event-page-muted)" }} />
         </div>
         <div className="mb-5 text-center">
           <div
@@ -1263,13 +1260,9 @@ function InfoScreen({
       />
       <div className="mx-auto w-full max-w-md px-4 pb-12 pt-4">
         <div className="mb-3">
-          <Link
-            to="/"
-            className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--event-page-muted)" }}
-          >
-            ← Back
-          </Link>
+          <PublicBackLink context="join-complete" to="/" label="Back" legacy="link"
+            legacyClassName="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em]"
+            legacyStyle={{ color: "var(--event-page-muted)" }} />
         </div>
         <div
           className="rounded-3xl border p-8 text-center shadow-sm"
