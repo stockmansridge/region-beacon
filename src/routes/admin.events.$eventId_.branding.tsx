@@ -2806,7 +2806,7 @@ function VisualBrandingEditor({
             <div className="flex items-start justify-between gap-3"><div>{itemMeta ? <div className="text-xs font-semibold uppercase text-muted-foreground">Shared settings for this area</div> : null}<h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description} {itemMeta ? "These affect every item that uses them." : ""}</p></div>{!itemMeta ? <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button> : null}</div>
             <div className="mt-5 space-y-5">
               {panelRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || busy || comparisonReadOnly} />}
-              {panelRole === "fonts" || panelRole === "heroHeading" || panelRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || busy || comparisonReadOnly} eventName={event.name} customFonts={customFonts} canUpload={canEdit && !!agencyId && !comparisonReadOnly} onUpload={onFontUpload} onDelete={onFontDelete} /> : null}
+              {panelRole === "fonts" || panelRole === "heroHeading" || panelRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || busy || comparisonReadOnly} eventName={event.name} customFonts={customFonts} canUpload={canEdit && !!agencyId && !comparisonReadOnly} uploadDisabledReason={comparisonReadOnly ? "Switch the preview back to your draft to upload fonts." : !canEdit ? "You don't have permission to edit this event's branding." : !agencyId ? "Select an organisation first." : busy ? "Wait for saving to finish." : null} onUpload={onFontUpload} onDelete={onFontDelete} /> : null}
               {panelRole === "welcome" && <Field label="Welcome message">
                 <div className="mb-1 text-xs text-muted-foreground">Source: <span className="font-medium text-foreground">{welcomeSource}</span></div>
                 <textarea aria-label="Welcome message" value={form.welcome_copy.trim() ? form.welcome_copy : effectiveWelcome} maxLength={1000} disabled={!canEdit || busy || comparisonReadOnly} onChange={(event) => setForm((current) => ({ ...current, welcome_copy: event.target.value }))} className="min-h-28 w-full rounded-md border bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring" />
@@ -3677,8 +3677,9 @@ function FontSelect({
 
 function FontPickers({
   headingValue, bodyValue, emotiveValue, onHeadingChange, onBodyChange, onEmotiveChange, disabled, eventName,
-  customFonts, canUpload, onUpload, onDelete,
+  customFonts, canUpload, onUpload, onDelete, uploadDisabledReason,
 }: {
+  uploadDisabledReason?: string | null;
   headingValue: string;
   bodyValue: string;
   emotiveValue: string;
@@ -3756,6 +3757,7 @@ function FontPickers({
         canUpload={canUpload && !disabled}
         onUpload={onUpload}
         onDelete={onDelete}
+        disabledReason={uploadDisabledReason ?? (disabled ? "Font uploads are unavailable while saving or in view-only mode." : !canUpload ? "You don't have permission to upload fonts for this event." : null)}
       />
 
 
@@ -3791,8 +3793,9 @@ function FontPickers({
 // CustomFontUploader — upload your own font file (with licensing warning).
 // ============================================================================
 function CustomFontUploader({
-  fonts, canUpload, onUpload, onDelete,
+  fonts, canUpload, onUpload, onDelete, disabledReason,
 }: {
+  disabledReason?: string | null;
   fonts: EventCustomFont[];
   canUpload: boolean;
   onUpload: (file: File, familyName: string) => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -3882,8 +3885,22 @@ function CustomFontUploader({
             setFile(f);
             if (f) setFamilyName((prev) => prev || suggestFamilyName(f.name));
           }}
-          className="block w-full text-xs text-[#334155] file:mr-3 file:rounded-[8px] file:border-0 file:bg-[#EAF2FF] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#2F6FE4]"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
         />
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={!canUpload || busy}
+            onClick={() => inputRef.current?.click()}
+            className="inline-flex h-9 items-center rounded-[8px] bg-[#EAF2FF] px-3 text-xs font-semibold text-[#2F6FE4] hover:bg-[#DCE9FF] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Choose font file
+          </button>
+          <span className="min-w-0 truncate text-xs text-[#334155]">{file ? file.name : "No file chosen"}</span>
+        </div>
+        {!canUpload && disabledReason ? <p className="text-xs text-[#92400E]">{disabledReason}</p> : null}
 
         {file && (
           <>
