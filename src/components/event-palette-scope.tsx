@@ -7,7 +7,8 @@ import {
   getPaletteOrDefault,
 } from "@/lib/event-palettes";
 import { buildGoogleFontsHref, isSupportedEventFont } from "@/lib/event-fonts";
-import { ensureCustomFontFaces, eventScopedCustomFontFamily } from "@/lib/event-custom-fonts";
+import { ensureCustomFontFaces } from "@/lib/event-custom-fonts";
+import { v2FontFamilyValue } from "@/lib/event-font-alias";
 import { PublicStyleScope } from "@/components/public-style-scope";
 import type { PublicStyleOverrideDocument, PublicTemplateVersion } from "@/lib/public-style-overrides";
 
@@ -120,10 +121,10 @@ export function EventPaletteScope({
   applyBackground?: boolean;
 }) {
   const scopedFont = templateVersion === "v2" && eventId && fontFamily && !isSupportedEventFont(fontFamily)
-    ? `'${eventScopedCustomFontFamily(fontFamily.split(",")[0].replace(/['"]/g, "").trim(), eventId)}', ui-sans-serif, system-ui, sans-serif`
+    ? v2FontFamilyValue(fontFamily, eventId)
     : fontFamily;
   const scopedHeadingFont = templateVersion === "v2" && eventId && headingFontFamily && !isSupportedEventFont(headingFontFamily)
-    ? `'${eventScopedCustomFontFamily(headingFontFamily.split(",")[0].replace(/['"]/g, "").trim(), eventId)}', ui-sans-serif, system-ui, sans-serif`
+    ? v2FontFamilyValue(headingFontFamily, eventId)
     : headingFontFamily;
   const hasCustomPalette =
     paletteKey === "custom" ||
@@ -180,8 +181,8 @@ export function EventPaletteScope({
     const custom = [fontFamily, headingFontFamily].filter(
       (v) => v && !isSupportedEventFont(v),
     );
-    if (custom.length > 0) void ensureCustomFontFaces(custom, eventId ?? undefined);
-  }, [fontFamily, headingFontFamily, eventId]);
+    if (custom.length > 0) void ensureCustomFontFaces(custom, templateVersion === "v2" ? eventId ?? undefined : undefined);
+  }, [fontFamily, headingFontFamily, eventId, templateVersion]);
 
 
   if (

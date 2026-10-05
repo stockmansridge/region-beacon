@@ -51,11 +51,8 @@ export function customFontStack(family: string): string {
   return `'${family.replace(/'/g, "")}', ui-sans-serif, system-ui, sans-serif`;
 }
 
-export function eventScopedCustomFontFamily(family: string, eventId: string): string {
-  const safeEvent = eventId.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 48);
-  const safeFamily = family.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 32);
-  return `gs-${safeEvent}-${safeFamily}`;
-}
+export { eventScopedCustomFontFamily } from "@/lib/event-font-alias";
+import { eventScopedCustomFontFamily } from "@/lib/event-font-alias";
 
 export function extOf(filename: string): string {
   const m = /\.([A-Za-z0-9]+)$/.exec(filename.trim());
