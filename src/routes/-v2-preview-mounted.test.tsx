@@ -243,15 +243,15 @@ describe("PublicEventNav override precedence", () => {
     const header = container.querySelector<HTMLElement>("header")!;
     const bottom = container.querySelector<HTMLElement>("nav[aria-label='Primary']")!;
     for (const bar of [header, bottom]) {
-      expect(bar.style.backgroundColor).toBe("rgb(17, 34, 51)");
-      expect(bar.style.background === "" || bar.style.background.includes("17, 34, 51")).toBeTruthy();
-      expect(bar.style.borderColor).toBe("rgb(68, 85, 102)");
+      expect(bar.style.backgroundColor).toBe("#112233");
+      expect(bar.style.background === "" || bar.style.background.includes("#112233")).toBeTruthy();
+      expect(bar.style.borderColor).toBe("#445566");
     }
     const eventName = Array.from(container.querySelectorAll<HTMLElement>("header span")).find((s) => s.textContent === "Trail")!;
-    expect(eventName.style.color).toBe("rgb(170, 0, 1)");
+    expect(eventName.style.color).toBe("#aa0001");
     const tabs = Array.from(bottom.querySelectorAll<HTMLElement>("li > *"));
-    const active = tabs.filter((t) => t.style.color === "rgb(187, 0, 3)");
-    const inactive = tabs.filter((t) => t.style.color === "rgb(170, 0, 1)");
+    const active = tabs.filter((t) => t.style.color === "#bb0003");
+    const inactive = tabs.filter((t) => t.style.color === "#aa0001");
     expect(inactive.length).toBeGreaterThan(0);
     for (const t of inactive) {
       expect(t.style.fontSize).toBe("13px");
@@ -261,11 +261,11 @@ describe("PublicEventNav override precedence", () => {
       expect(t.style.getPropertyValue("--item-icon-color")).toBe("#00aa02");
       expect(t.querySelector<HTMLElement>("span[style*='--item-icon-color']")).not.toBeNull();
     }
-    for (const t of active) expect(t.style.backgroundColor).toBe("rgb(0, 0, 204)");
+    for (const t of active) expect(t.style.backgroundColor).toBe("#0000cc");
     const menuButton = container.querySelector<HTMLElement>("button[aria-label='Open menu']")!;
     await act(async () => { fireEvent.click(menuButton); });
     const aside = document.querySelector<HTMLElement>("aside")!;
-    expect(aside.style.backgroundColor).toBe("rgb(119, 136, 153)");
-    expect(aside.style.background === "" || aside.style.background.includes("119, 136, 153")).toBeTruthy();
+    expect(aside.style.backgroundColor).toBe("#778899");
+    expect(aside.style.background === "" || aside.style.background.includes("#778899")).toBeTruthy();
   });
 });
