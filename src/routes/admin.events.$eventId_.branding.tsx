@@ -1,4 +1,5 @@
 import { ChevronDown, Info, Monitor, Redo2, Smartphone, Undo2, X } from "lucide-react";
+import { loadV2PreviewContent, loadV2PreviewVenueExtras, previewHasMap, type V2PreviewContent, type V2PreviewVenueExtras } from "@/lib/v2-preview-content";
 import {
   Select,
   SelectContent,
@@ -2160,6 +2161,16 @@ function VisualBrandingEditor({
   const [previewSource, setPreviewSource] = useState<"draft" | "saved">("draft");
   const [previewInteraction, setPreviewInteraction] = useState<"select" | "navigate">("select");
   const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
+  // Real, read-only public content for this event; person-specific states use labelled samples.
+  const [publicContent, setPublicContent] = useState<V2PreviewContent | null>(null);
+  const [venueExtras, setVenueExtras] = useState<V2PreviewVenueExtras | null>(null);
+  const [sampleState, setSampleState] = useState<"populated" | "empty">("populated");
+  const previewSubdomain = primaryDomain?.public_subdomain ?? null;
+  useEffect(() => {
+    let cancelled = false;
+    void loadV2PreviewContent(previewSubdomain, event.id).then((content) => { if (!cancelled) setPublicContent(content); });
+    return () => { cancelled = true; };
+  }, [previewSubdomain, event.id]);
   const busy = saving || activating;
   const sharedRole = selectedRole && selectedRole in VISUAL_ROLE_META ? selectedRole as VisualBrandRole : null;
   const itemMeta: PublicStyleElementDefinition | null = selectedRole ? PUBLIC_STYLE_ELEMENTS.find((item) => item.id === selectedRole) ?? null : null;
@@ -2383,11 +2394,30 @@ function VisualBrandingEditor({
   const listVenues: ListVenueRow[] = venues.map((venue) => ({
     venue_id: venue.venue_id, name: venue.name, description: venue.description ?? null,
     address: venue.address ?? null, website_url: venue.website_url ?? null, phone: venue.phone ?? null, logo_path: venue.logo_path ?? null,
-    cover_path: venue.cover_path ?? null, lat: null, lng: null, offer_summary: venue.offer_summary ?? null,
+    cover_path: venue.cover_path ?? null, lat: venue.lat ?? null, lng: venue.lng ?? null, offer_summary: venue.offer_summary ?? null,
     offer_display_icon: venue.offer_display_icon ?? null, offer_display_colour: venue.offer_display_colour ?? null, offer_display_foreground_colour: venue.offer_display_foreground_colour ?? null,
     points_value: venue.points_value ?? null, order_index: venue.order_index ?? null, event_found: true,
   }));
   const selectedVenue = listVenues.find((venue) => venue.venue_id === selectedRecord) ?? listVenues[0] ?? null;
+  const selectedVenueId = selectedVenue?.venue_id ?? null;
+  useEffect(() => {
+    let cancelled = false;
+    setVenueExtras(null);
+    if (selectedVenueId) void loadV2PreviewVenueExtras(previewSubdomain, selectedVenueId).then((row) => { if (!cancelled) setVenueExtras(row); });
+    return () => { cancelled = true; };
+  }, [previewSubdomain, selectedVenueId]);
+  const previewLabels = resolveVenueLabels(draftEvent);
+  const populated = sampleState === "populated";
+  const realFaq = publicContent?.faq ?? [];
+  const realAwards = publicContent?.awards ?? [];
+  const faqEntries = !populated ? [] : realFaq.length ? realFaq : [{ question: "Sample question (no FAQ published yet)", answer: "Sample answer shown only in the editor.", order_index: 0 }];
+  const awardEntries = !populated ? [] : realAwards;
+  const previewFeatures = {
+    hasFaq: realFaq.length > 0,
+    hasMap: previewHasMap(listVenues, publicContent?.eventMapPath ?? null),
+    hasAwards: realAwards.length > 0,
+    venueLabels: previewLabels,
+  };
   const navigatePreview = (to: string, params?: Record<string, string | undefined>) => {
     if (to === "/") setPreviewPage("home");
     else if (to === "/venues/$venueId" || /^\/venues\/[^/]+$/.test(to)) {
@@ -2409,18 +2439,18 @@ function VisualBrandingEditor({
   const renderPreviewPage = () => {
     if (previewPage === "venues") return <PublicVenuesListPage subdomain="preview" previewData={{ event: draftEvent as never, venues: listVenues }} />;
     if (previewPage === "offers") return <PublicOffersPage subdomain="preview" previewData={{ event: draftEvent as never, offers: listVenues.filter((venue) => venue.offer_summary).map((venue) => ({ ...venue, offer_summary: venue.offer_summary! })) as OfferVenue[] }} />;
-    if (previewPage === "venue" && selectedVenue?.venue_id) return <PublicVenueDetailPage subdomain="preview" venueId={selectedVenue.venue_id} previewData={{ event: draftEvent, venue: selectedVenue as DetailVenueRow }} />;
+    if (previewPage === "venue" && selectedVenue?.venue_id) return <PublicVenueDetailPage subdomain="preview" venueId={selectedVenue.venue_id} previewData={{ event: draftEvent, venue: selectedVenue as DetailVenueRow, extras: venueExtras }} />;
     if (previewPage === "join") return <LiveJoinPage subdomain="preview" previewEvent={draftEvent as JoinPreviewEvent} />;
-    if (previewPage === "prizes") return <AwardsPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, awards: [], bonuses: [], recentCheckins: [], hasPassport: true }} />;
+    if (previewPage === "prizes") return <AwardsPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, awards: awardEntries, bonuses: [], recentCheckins: [], hasPassport: true }} />;
     if (previewPage === "map") return <PublicTrailMapPage subdomain="preview" previewData={{ branding: fixtureBranding, event: { ...draftEvent, event_id: event.id, name: event.name } as MapEventRow, venues: listVenues.map((venue) => ({ ...venue, event_found: true })) }} />;
-    if (previewPage === "leaderboard") return <PublicLeaderboardPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, rows: [{ rank: 1, display_name: "Sample visitor", stamps: 3, points: 30, venue_points: 30, bonus_points: 0, visit_count: 3, tier: "Explorer", is_completed: false, is_enabled: true, event_found: true }] }} />;
-    if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: [{ question: "How does the passport work?", answer: "Visit participating stops and collect stamps.", order_index: 0 }] }} />;
+    if (previewPage === "leaderboard") return <PublicLeaderboardPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, rows: !populated ? [] : [{ rank: 1, display_name: "Sample visitor (editor only)", stamps: 3, points: 30, venue_points: 30, bonus_points: 0, visit_count: 3, tier: "Explorer", is_completed: false, is_enabled: true, event_found: true }] }} />;
+    if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: faqEntries }} />;
     if (previewPage === "bookmarks") return <PublicBookmarksPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, enabled: true, rows: [] }} />;
-    if (["terms", "privacy", "legal"].includes(previewPage)) return <CombinedLegalPage subdomain="preview" initialOpen={previewPage === "terms" ? "terms" : previewPage === "privacy" ? "privacy" : "both"} previewData={{ branding: fixtureBranding, row: { event_id: event.id, event_name: event.name, legal_source: "local_text", terms_title: "Terms", terms_body: "Sample terms for preview.", terms_url: null, privacy_title: "Privacy", privacy_body: "Sample privacy information for preview.", privacy_url: null, terms_version: null, privacy_version: null, effective_at: null } as LegalRow }} />;
+    if (["terms", "privacy", "legal"].includes(previewPage)) return <CombinedLegalPage subdomain="preview" initialOpen={previewPage === "terms" ? "terms" : previewPage === "privacy" ? "privacy" : "both"} previewData={{ branding: fixtureBranding, row: publicContent?.legal ?? { event_id: event.id, event_name: event.name, legal_source: "local_text", terms_title: "Terms", terms_body: "Sample terms for preview.", terms_url: null, privacy_title: "Privacy", privacy_body: "Sample privacy information for preview.", privacy_url: null, terms_version: null, privacy_version: null, effective_at: null } as LegalRow }} />;
     if (previewPage === "passport") {
       const passport = { passport_id: "preview-passport", event_id: event.id, status: "active", completed_at: null, leaderboard_opt_out: false, email: "preview@example.invalid", full_name: "Sample Visitor", first_name: "Sample", last_name: "Visitor", mobile: null, postcode: null, marketing_opt_in: false, checkin_count: 1 } as PassportRow;
-      const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: "Stop", venue_label_plural: "Stops", total_venues: listVenues.length, stamped_count: 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: index === 0, checked_in_at: index === 0 ? new Date(0).toISOString() : null })));
-      return <PassportPreview passport={passport} eventName={event.name} stamps={stamps} token="preview" subdomain={null} branding={fixtureBranding} awards={[]} preview />;
+      const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: previewLabels.singular, venue_label_plural: previewLabels.plural, total_venues: listVenues.length, stamped_count: 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: index === 0, checked_in_at: index === 0 ? new Date(0).toISOString() : null })));
+      return <PassportPreview passport={passport} eventName={event.name} stamps={stamps} token="preview" subdomain={null} branding={fixtureBranding} awards={awardEntries} preview />;
     }
     return <PublicEventTemplate subdomain={null} event={draftEvent} venues={venues} mode="preview" forceTemplate="v2" onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined} />;
   };
@@ -2494,7 +2524,7 @@ function VisualBrandingEditor({
                 onPointerLeave={() => setHoveredInstance(null)}
               >
                 <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}${hoveredInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(hoveredInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(hoveredInstance)}"]:not([data-brand-instance]){outline-color:color-mix(in srgb,#2563EB 60%,transparent)}` : ""}${selectedInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(selectedInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(selectedInstance)}"]:not([data-brand-instance]){outline:3px solid #2563EB!important;outline-offset:-3px}` : ""}`}</style>
-                <PublicNavProvider mode="preview" subdomain={null} preservePreviewAppearance activePath={previewPage === "home" ? "/" : `/${previewPage === "venue" ? `venues/${selectedVenue?.venue_id ?? "preview"}` : previewPage}`} previewFeatures={{ hasFaq: true, hasMap: true, hasAwards: true, venueLabels: { singular: "Stop", plural: "Stops" } }} onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined}>
+                <PublicNavProvider mode="preview" subdomain={null} preservePreviewAppearance activePath={previewPage === "home" ? "/" : `/${previewPage === "venue" ? `venues/${selectedVenue?.venue_id ?? "preview"}` : previewPage}`} previewFeatures={previewFeatures} onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined}>
                   {renderPreviewPage()}
                 </PublicNavProvider>
               </div>
