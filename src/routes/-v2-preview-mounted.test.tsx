@@ -361,8 +361,9 @@ describe("Special Offers V2 targets", () => {
       "offers.card.badge": { normal: { iconColor: "#101112", iconBackgroundColor: "#202122", borderColor: "#303132" } },
       "offers.card.placeholderIcon": { normal: { iconColor: "#404142", iconBackgroundColor: "#505152", borderColor: "#606162" } },
     }, records: {
-      "offers.card.badge": { "venue-image": { normal: { iconColor: "#AAAAAA", iconBackgroundColor: "#BBBBBB", borderColor: "#CCCCCC", opacity: 0.7 } } },
+      "offers.card.badge": { "venue-image": { normal: { iconColor: "#AAAAAA", iconBackgroundColor: "#BBBBBB", borderColor: "#CCCCCC" } } },
       "offers.card.placeholderIcon": { "venue-image": { normal: { iconColor: "#DDDDDD", iconBackgroundColor: "#EEEEEE", borderColor: "#FFFFFF" } } },
+      "offers.card.heading": { "venue-image": { normal: { color: "#777777", fontSize: 17 } } },
     } } as never;
     for (const id of ["offers.card.badge", "offers.card.placeholderIcon"] as const) {
       for (const property of ["iconColor", "iconBackgroundColor", "borderColor"] as const) {
@@ -376,8 +377,9 @@ describe("Special Offers V2 targets", () => {
       }
     }
     const roundTrip = parsePSO(JSON.parse(JSON.stringify(applied)));
-    expect(roundTrip.records?.["offers.card.badge"]?.["venue-image"]?.normal).toEqual({ opacity: 0.7 });
+    expect(roundTrip.records?.["offers.card.badge"]).toBeUndefined();
     expect(roundTrip.records?.["offers.card.placeholderIcon"]).toBeUndefined();
+    expect(roundTrip.records?.["offers.card.heading"]?.["venue-image"]?.normal).toEqual({ color: "#777777", fontSize: 17 });
     const noImages = offers.map((offer) => ({ ...offer, cover_path: null, logo_path: null }));
     const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, v2_style_config: roundTrip }, offers: noImages }} />, "/offers"));
     for (const venueId of ["venue-no-image", "venue-image"]) {
