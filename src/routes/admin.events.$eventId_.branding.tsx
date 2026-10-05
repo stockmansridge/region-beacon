@@ -114,6 +114,8 @@ import {
   cleanPublicCopy,
   publicStyleAllowsTransparent,
   isPublicCopyKey,
+  PUBLIC_PRIZE_TAB_IDS,
+  type PublicPrizeTabId,
   PUBLIC_COPY_DEFAULTS,
   PUBLIC_COPY_MAX,
   publicTrailTabLabel,
@@ -2610,7 +2612,7 @@ function VisualBrandingEditor({
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {(() => {
               const pg = previewPage;
-              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || ["shared.navigation.drawer", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab", ...(["venues", "offers"].includes(pg) ? ["shared.trailTabs.surface", "shared.trailTabs.tab", "shared.trailTabs.currentTab"] : [])].includes(item.id)));
+              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || ["shared.navigation.drawer", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab", ...(["venues", "offers"].includes(pg) ? ["shared.trailTabs.surface", "shared.trailTabs.tab", "shared.trailTabs.currentTab"] : []), ...(pg === "prizes" ? ["prizes.tabs.surface", "prizes.tabs.item", "prizes.tabs.currentItem"] : [])].includes(item.id)));
               const sections = [...new Set(items.map((item) => `${item.page === "shared" ? "Shared" : ""}${item.page === "shared" ? " · " : ""}${item.section}`))];
               return sections.map((section) => <div key={section} className="col-span-full"><div className="mb-1 mt-2 text-[11px] font-semibold text-muted-foreground">{section}</div><div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">{items.filter((item) => `${item.page === "shared" ? "Shared · " : ""}${item.section}` === section).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}</div></div>);
             })()}
@@ -2717,6 +2719,23 @@ function VisualBrandingEditor({
               return Object.keys(labels).length ? { ...rest, trailTabs: { labels } } : rest;
             })}
           /> : null}
+          {itemMeta && ["prizes.tabs.item", "prizes.tabs.currentItem"].includes(itemMeta.id) ? (() => {
+            const tabId: PublicPrizeTabId = selectedRecord === "bonus" ? "bonus" : "prizes";
+            const key = `prizes.tabs.${tabId}` as const;
+            const current = form.style_overrides.copy?.labels[key] ?? "";
+            return <div className="space-y-3">
+              <Field label="Toggle item"><Select value={tabId} onValueChange={(value) => { setSelectedRecord(value); setRecordScope("record"); setStyleState("normal"); }} disabled={!canEdit || busy || comparisonReadOnly}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{PUBLIC_PRIZE_TAB_IDS.map((id) => <SelectItem key={id} value={id}>{form.style_overrides.copy?.labels[`prizes.tabs.${id}`] ?? PUBLIC_COPY_DEFAULTS[`prizes.tabs.${id}`]}</SelectItem>)}</SelectContent></Select></Field>
+              <p className="text-xs text-muted-foreground">{itemMeta.id === "prizes.tabs.currentItem" ? "Selected look: shows on whichever tab is open." : "Unselected look: shows on tabs that aren't open."} Switch tabs in Navigate mode to see the other look.</p>
+              <CopyTextField key={`${key}:${current}`} value={current} placeholder={PUBLIC_COPY_DEFAULTS[key]} disabled={!canEdit || busy || comparisonReadOnly}
+                commit={(value) => updateStyleDocument((next) => {
+                  const labels = { ...(next.copy?.labels ?? {}) };
+                  const cleaned = value === null ? null : cleanPublicCopy(value);
+                  if (cleaned === null) delete labels[key]; else labels[key] = cleaned.slice(0, 24);
+                  const { copy: _old, ...rest } = next;
+                  return Object.keys(labels).length ? { ...rest, copy: { labels } } : rest;
+                })} />
+            </div>;
+          })() : null}
           {itemMeta && isPublicCopyKey(itemMeta.id) ? (() => {
             const key = itemMeta.id;
             const current = form.style_overrides.copy?.labels[key] ?? "";
