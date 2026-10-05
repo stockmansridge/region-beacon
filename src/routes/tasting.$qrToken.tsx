@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { classifyHost } from "@/components/host-router";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { usePublicStyleEnabled } from "@/components/public-style-scope";
 
 export const Route = createFileRoute("/tasting/$qrToken")({
   head: () => ({ meta: [{ title: "Tasting points — GetStampd" }] }),
@@ -154,9 +155,10 @@ function TastingClaimPage() {
 
 export function TastingView({ outcome }: { outcome: Outcome }) {
   const preview = useResultPreview();
+  const inheritedV2Scope = usePublicStyleEnabled();
   const subdomain = preview ? null : getSubdomain();
   const branding = useEventBrandingKeys(subdomain);
-  const isV2 = preview || branding.templateVersion === "v2";
+  const isV2 = inheritedV2Scope || branding.templateVersion === "v2";
   const scopeProps = branding.templateVersion === "v2"
     ? brandingScopeProps(branding)
     : { paletteKey: branding.paletteKey, backgroundKey: branding.backgroundKey };

@@ -9,6 +9,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { classifyHost } from "@/components/host-router";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { sendScanEmail } from "@/lib/passport-email.functions";
+import { usePublicStyleEnabled } from "@/components/public-style-scope";
 
 export const Route = createFileRoute("/collect/bonus/$token")({
   head: () => ({ meta: [{ title: "Bonus points — GetStampd" }] }),
@@ -178,9 +179,10 @@ function BonusClaimPage() {
 
 export function BonusView({ outcome }: { outcome: Outcome }) {
   const preview = useResultPreview();
+  const inheritedV2Scope = usePublicStyleEnabled();
   const subdomain = preview ? null : getSubdomain();
   const branding = useEventBrandingKeys(subdomain);
-  const isV2 = preview || branding.templateVersion === "v2";
+  const isV2 = inheritedV2Scope || branding.templateVersion === "v2";
   const scopeProps = branding.templateVersion === "v2"
     ? brandingScopeProps(branding)
     : { paletteKey: branding.paletteKey, backgroundKey: branding.backgroundKey };
