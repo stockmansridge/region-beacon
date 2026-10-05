@@ -2133,6 +2133,7 @@ function VisualBrandingEditor({
   const [activating, setActivating] = useState(false);
   const [frameDoc, setFrameDoc] = useState<Document | null>(null);
   const [previewPage, setPreviewPage] = useState<"home" | "venues" | "venue" | "offers">("home");
+  const [previewSource, setPreviewSource] = useState<"draft" | "saved">("draft");
   const [previewInteraction, setPreviewInteraction] = useState<"select" | "navigate">("select");
   const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
   const busy = saving || activating;
@@ -2349,7 +2350,7 @@ function VisualBrandingEditor({
 
   const override = itemMeta ? currentOverride(parsePublicStyleOverrides(form.style_overrides)) : undefined;
   const wiredPages = new Set<string>(PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => item.page));
-  const draftEvent = { ...previewEvent, public_template_version: "v2", v2_style_config: previewConfig } as PublicBrandingEvent;
+  const draftEvent = { ...previewEvent, public_template_version: "v2", v2_style_config: previewSource === "draft" ? previewConfig : parsePublicStyleOverrides(branding?.v2_style_config) } as PublicBrandingEvent;
   const listVenues: ListVenueRow[] = venues.map((venue) => ({
     venue_id: venue.venue_id, name: venue.name, description: venue.description ?? null,
     address: venue.address ?? null, website_url: venue.website_url ?? null, phone: venue.phone ?? null, logo_path: venue.logo_path ?? null,
@@ -2412,10 +2413,14 @@ function VisualBrandingEditor({
 
         <section className="min-w-0 rounded-md border bg-background p-3">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">V2 draft · live template {branding?.public_template_version === "v2" ? "V2" : "V1"}. Public actions are disabled.</p></div>
+            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">{previewSource === "draft" ? "Unsaved V2 draft" : "Saved V2 configuration"} · live template {branding?.public_template_version === "v2" ? "V2" : "V1"}. Public actions are disabled.</p></div>
             <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
               <SelectTrigger className="w-44" aria-label="Page"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem></SelectContent>
+            </Select>
+            <Select value={previewSource} onValueChange={(value) => setPreviewSource(value as typeof previewSource)}>
+              <SelectTrigger className="w-44" aria-label="Preview source"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="draft">V2 draft</SelectItem><SelectItem value="saved">Saved V2 config</SelectItem></SelectContent>
             </Select>
             <div className="inline-flex rounded-md border p-1" aria-label="Preview interaction">
               <Button type="button" size="sm" variant={previewInteraction === "select" ? "default" : "ghost"} onClick={() => setPreviewInteraction("select")}>Select / Edit</Button>
