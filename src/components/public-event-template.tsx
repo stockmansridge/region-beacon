@@ -19,6 +19,7 @@ export function PublicEventTemplate({
   mode = "live",
   previewNotice,
   forceTemplate,
+  onPreviewNavigate,
 }: {
   subdomain: string | null;
   event: PublicEventTemplateData;
@@ -26,6 +27,7 @@ export function PublicEventTemplate({
   mode?: PublicNavMode;
   previewNotice?: React.ReactNode;
   forceTemplate?: PublicTemplateVersion;
+  onPreviewNavigate?: (to: string, params?: Record<string, string | undefined>) => void;
 }) {
   const template = forceTemplate ?? resolvePublicTemplateVersion(event.public_template_version);
   const renderedEvent = template === "v2" ? applyV2Theme(event) : { ...event, style_overrides: null };
@@ -39,6 +41,7 @@ export function PublicEventTemplate({
         previewNotice={previewNotice}
         templateVersion={template}
         brandingScoped
+        onPreviewNavigate={onPreviewNavigate}
       />
     </PublicEventBrandingScope>
   );
