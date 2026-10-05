@@ -24,6 +24,10 @@ import {
   type PublicVenueData,
 } from "@/components/event-public-landing";
 import { PublicEventTemplate } from "@/components/public-event-template";
+import { PublicVenuesListPage, type VenueRow as ListVenueRow } from "@/routes/live.$subdomain.venues.index";
+import { PublicVenueDetailPage, type VenueRow as DetailVenueRow } from "@/routes/live.$subdomain.venues.$venueId";
+import { PublicOffersPage, type OfferVenue } from "@/routes/live.$subdomain.offers";
+import type { PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import {
   DEFAULT_VENUE_LABEL_PLURAL,
   DEFAULT_VENUE_LABEL_SINGULAR,
@@ -732,7 +736,7 @@ function BrandingEditor() {
           .order("is_primary", { ascending: false }),
         supabase
           .from("venues")
-          .select("id, name, address, order_index")
+          .select("id, name, description, address, website_url, phone, logo_path, cover_path, lat, lng, offer_summary, offer_display_icon, offer_display_colour, offer_display_foreground_colour, points_value, order_index")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .is("deleted_at", null)
@@ -760,13 +764,37 @@ function BrandingEditor() {
         venues: ((venuesRes.data ?? []) as Array<{
           id: string;
           name: string;
+          description: string | null;
           address: string | null;
+          website_url: string | null;
+          phone: string | null;
+          logo_path: string | null;
+          cover_path: string | null;
+          lat: number | null;
+          lng: number | null;
+          offer_summary: string | null;
+          offer_display_icon: string | null;
+          offer_display_colour: string | null;
+          offer_display_foreground_colour: string | null;
+          points_value: number | null;
           order_index: number | null;
         }>).map((v) => ({
           venue_id: v.id,
           name: v.name,
           address: v.address,
           order_index: v.order_index,
+          description: v.description,
+          website_url: v.website_url,
+          phone: v.phone,
+          logo_path: v.logo_path,
+          cover_path: v.cover_path,
+          lat: v.lat,
+          lng: v.lng,
+          offer_summary: v.offer_summary,
+          offer_display_icon: v.offer_display_icon,
+          offer_display_colour: v.offer_display_colour,
+          offer_display_foreground_colour: v.offer_display_foreground_colour,
+          points_value: v.points_value,
         })),
         hasBranding: Boolean(brandingRes.data),
       });
@@ -2103,6 +2131,7 @@ function VisualBrandingEditor({
   const [styleFuture, setStyleFuture] = useState<PublicStyleOverrideDocument[]>([]);
   const [activating, setActivating] = useState(false);
   const [frameDoc, setFrameDoc] = useState<Document | null>(null);
+  const [previewPage, setPreviewPage] = useState<"home" | "venues" | "venue" | "offers">("home");
   const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
   const busy = saving || activating;
   const sharedRole = selectedRole && selectedRole in VISUAL_ROLE_META ? selectedRole as VisualBrandRole : null;
@@ -2318,6 +2347,21 @@ function VisualBrandingEditor({
 
   const override = itemMeta ? currentOverride(parsePublicStyleOverrides(form.style_overrides)) : undefined;
   const wiredPages = new Set<string>(PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => item.page));
+  const draftEvent = { ...previewEvent, public_template_version: "v2", v2_style_config: previewConfig } as PublicBrandingEvent;
+  const listVenues: ListVenueRow[] = venues.map((venue) => ({
+    venue_id: venue.venue_id, name: venue.name, description: venue.description ?? null,
+    address: venue.address ?? null, website_url: venue.website_url ?? null, phone: venue.phone ?? null, logo_path: venue.logo_path ?? null,
+    cover_path: venue.cover_path ?? null, lat: null, lng: null, offer_summary: venue.offer_summary ?? null,
+    offer_display_icon: venue.offer_display_icon ?? null, offer_display_colour: venue.offer_display_colour ?? null, offer_display_foreground_colour: venue.offer_display_foreground_colour ?? null,
+    points_value: venue.points_value ?? null, order_index: venue.order_index ?? null, event_found: true,
+  }));
+  const selectedVenue = listVenues.find((venue) => venue.venue_id === selectedRecord) ?? listVenues[0] ?? null;
+  const renderPreviewPage = () => {
+    if (previewPage === "venues") return <PublicVenuesListPage subdomain="preview" previewData={{ event: draftEvent as never, venues: listVenues }} />;
+    if (previewPage === "offers") return <PublicOffersPage subdomain="preview" previewData={{ event: draftEvent as never, offers: listVenues.filter((venue) => venue.offer_summary).map((venue) => ({ ...venue, offer_summary: venue.offer_summary! })) as OfferVenue[] }} />;
+    if (previewPage === "venue" && selectedVenue?.venue_id) return <PublicVenueDetailPage subdomain="preview" venueId={selectedVenue.venue_id} previewData={{ event: draftEvent, venue: selectedVenue as DetailVenueRow }} />;
+    return <PublicEventTemplate subdomain={null} event={draftEvent} venues={venues} mode="preview" forceTemplate="v2" />;
+  };
 
   return (
     <div className="min-h-screen bg-muted/40">
@@ -2344,7 +2388,7 @@ function VisualBrandingEditor({
       {(saveError || saveSuccess) && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
       <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[230px_minmax(420px,1fr)_360px]">
         <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Landing / home</div>
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{previewPage === "home" ? "Landing / home" : previewPage === "venue" ? "Venue detail" : previewPage}</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
@@ -2352,12 +2396,16 @@ function VisualBrandingEditor({
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => selectFromNavigator(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
-          <p className="mt-4 rounded-md bg-muted p-2 text-xs text-muted-foreground">Other public pages ({PUBLIC_STYLE_PAGES_PENDING.filter((page) => !wiredPages.has(page)).join(", ")}) are not editable in V2 yet.</p>
+          <p className="mt-4 rounded-md bg-muted p-2 text-xs text-muted-foreground">Unwired element inspectors: {PUBLIC_STYLE_PAGES_PENDING.filter((page) => !wiredPages.has(page)).join(", ")}.</p>
         </nav>
 
         <section className="min-w-0 rounded-md border bg-background p-3">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">Click anything to edit that item. Public actions are disabled here.</p></div>
+            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">V2 draft · live template {branding?.public_template_version === "v2" ? "V2" : "V1"}. Public actions are disabled.</p></div>
+            <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
+              <SelectTrigger className="w-44" aria-label="Page"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem></SelectContent>
+            </Select>
             <div className="inline-flex rounded-md border p-1" aria-label="Preview width">
               <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview" aria-pressed={previewWidth === "mobile"}><Smartphone className="h-4 w-4" /></Button>
               <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview" aria-pressed={previewWidth === "desktop"}><Monitor className="h-4 w-4" /></Button>
@@ -2375,7 +2423,7 @@ function VisualBrandingEditor({
                 onPointerLeave={() => setHoveredInstance(null)}
               >
                 <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}${hoveredInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(hoveredInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(hoveredInstance)}"]:not([data-brand-instance]){outline-color:color-mix(in srgb,#2563EB 60%,transparent)}` : ""}${selectedInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(selectedInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(selectedInstance)}"]:not([data-brand-instance]){outline:3px solid #2563EB!important;outline-offset:-3px}` : ""}`}</style>
-                <PublicEventTemplate subdomain={null} event={{ ...previewEvent, v2_style_config: previewConfig }} venues={venues} mode="preview" forceTemplate="v2" />
+                {renderPreviewPage()}
               </div>
             </PreviewFrame>
           </div>

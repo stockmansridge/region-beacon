@@ -31,10 +31,12 @@ export function PublicStyleScope({
   overrides,
   enabled = true,
   children,
+  eventId,
 }: {
   overrides?: PublicStyleOverrideDocument | null;
   enabled?: boolean;
   children: ReactNode;
+  eventId?: string | null;
 }) {
   const scope = `ps${useId().replace(/[^A-Za-z0-9_-]/g, "")}`;
   const document = parsePublicStyleOverrides(overrides);
@@ -51,8 +53,8 @@ export function PublicStyleScope({
       window.document.head.appendChild(link);
     }
     const custom = list.filter((family) => !isSupportedEventFont(family));
-    if (custom.length) void ensureCustomFontFaces(custom);
-  }, [fontKey]);
+    if (custom.length) void ensureCustomFontFaces(custom, eventId ?? undefined);
+  }, [fontKey, eventId]);
   if (!enabled) return children;
   const css = publicStyleCss(document, scope);
   return (

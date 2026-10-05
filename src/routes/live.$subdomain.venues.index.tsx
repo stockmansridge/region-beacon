@@ -19,6 +19,8 @@ import { buildGoogleMapsDirectionsUrl } from "@/lib/venue-directions";
 import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
 import { VenueSortControl } from "@/components/venue-sort-control";
+import { loadPublicV2Branding } from "@/lib/use-event-palette";
+import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import {
   VENUE_SORT_MIN_COUNT,
   buildDistanceMap,
@@ -51,7 +53,7 @@ export const Route = createFileRoute("/live/$subdomain/venues/")({
 });
 
 
-type VenueRow = {
+export type VenueRow = {
   venue_id: string | null;
   name: string | null;
   description: string | null;
@@ -71,7 +73,7 @@ type VenueRow = {
   event_found: boolean | null;
 };
 
-type EventRow = {
+export type EventRow = PublicBrandingEvent & {
   event_id: string;
   name: string;
   primary_color: string | null;
@@ -123,13 +125,15 @@ export function PublicVenuesListPage({
   subdomain,
   sort = "az",
   onSortChange,
+  previewData,
 }: {
   subdomain: string;
   /** Display-only sort key (from the route's ?sort= param). */
   sort?: VenueSortKey;
   onSortChange?: (next: VenueSortKey) => void;
+  previewData?: { event: EventRow; venues: VenueRow[] };
 }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
+  const [state, setState] = useState<State>(() => previewData ? { kind: "ready", ...previewData } : { kind: "loading" });
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [hasPassport, setHasPassport] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
@@ -171,15 +175,20 @@ export function PublicVenuesListPage({
   };
 
   useEffect(() => {
+    if (previewData) {
+      setState({ kind: "ready", ...previewData });
+      return;
+    }
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
       const host = tenantHost(subdomain);
 
-      const [{ data: venueData, error: venueErr }, { data: evtData }] =
+      const [{ data: venueData, error: venueErr }, { data: evtData }, v2] =
         await Promise.all([
           supabase.rpc("get_public_venues_by_domain", { _hostname: host }),
           supabase.rpc("get_public_event_by_domain", { _hostname: host }),
+          loadPublicV2Branding(host),
         ]);
       if (cancelled) return;
 
@@ -196,7 +205,7 @@ export function PublicVenuesListPage({
 
       const venues = rows.filter((r) => r.event_found !== false && r.venue_id);
       const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
-      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
+      const evt = evtRaw ? applyPaletteToEvent({ ...evtRaw, ...v2 }) : null;
       setState({ kind: "ready", event: evt, venues });
 
       if (evt?.event_id) {
@@ -215,7 +224,7 @@ export function PublicVenuesListPage({
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewData]);
 
   if (state.kind === "loading") {
     return (
@@ -256,34 +265,7 @@ export function PublicVenuesListPage({
 
   return (
     <EventPaletteScope
-      paletteKey={event?.palette_key ?? null}
-      backgroundKey={event?.page_background_key ?? null}
-      pageBackgroundColor={event?.page_background_color ?? null}
-      cardBackgroundColor={event?.card_background_color ?? null}
-      primaryColor={event?.primary_color ?? null}
-      accentColor={event?.accent_color ?? null}
-      textColor={event?.text_color ?? null}
-      mutedTextColor={event?.muted_text_color ?? null}
-      cardTextColor={event?.card_text_color ?? null}
-      cardMutedTextColor={event?.card_muted_text_color ?? null}
-      borderColor={event?.border_color ?? null}
-      primaryTextColor={event?.primary_text_color ?? null}
-      navBackgroundColor={event?.nav_background_color ?? null}
-      brandKitKey={event?.brand_kit_key ?? null}
-      linkColor={event?.link_color ?? null}
-      cardBorderColor={event?.card_border_color ?? null}
-      buttonPrimaryBg={event?.button_primary_bg ?? null}
-      buttonPrimaryFg={event?.button_primary_fg ?? null}
-      buttonSecondaryBg={event?.button_secondary_bg ?? null}
-      buttonSecondaryFg={event?.button_secondary_fg ?? null}
-      navFgColor={event?.nav_fg_color ?? null}
-      navMutedColor={event?.nav_muted_color ?? null}
-      navActiveFgColor={event?.nav_active_fg_color ?? null}
-      heroBgColor={event?.hero_bg_color ?? null}
-      heroFgColor={event?.hero_fg_color ?? null}
-      heroAccentColor={event?.hero_accent_color ?? null}
-      fontFamily={event?.font_family ?? null}
-      headingFontFamily={event?.heading_font_family ?? null}
+      {...(event ? publicEventScopeProps(event) : { paletteKey: null })}
       className="min-h-screen pb-10"
     >
       <LiveActivityBar subdomain={subdomain} />
@@ -302,7 +284,7 @@ export function PublicVenuesListPage({
 
         <div className="mb-5 mt-6 px-1">
           <h1
-            className="text-[28px] font-semibold leading-tight"
+            className="font-event-heading text-[28px] font-semibold leading-tight"
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
               fontFamily: "var(--event-font, inherit)",
@@ -377,13 +359,13 @@ export function PublicVenuesListPage({
                         visited={visited}
                       />
                       <div className="flex min-w-0 flex-col gap-1.5 p-3">
-                        <p className="font-trail-serif text-[16px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)] break-words">
+                        <p className="font-event-heading text-[16px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))] break-words">
                           {v.name ?? "Unnamed"}
                         </p>
                         {effectiveSort === "nearest" && (
                           <p
                             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-                            style={{ color: "var(--event-muted,#8A7E66)" }}
+                            style={{ color: "var(--event-card-muted,var(--event-muted,#8A7E66))" }}
                           >
                             {distanceM != null
                               ? `${formatDistance(distanceM)} away`
@@ -391,7 +373,7 @@ export function PublicVenuesListPage({
                           </p>
                         )}
                         {v.description && (
-                          <p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-text,#3D372C)] sm:line-clamp-4">
+                          <p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-text,#3D372C))] sm:line-clamp-4">
                             {v.description}
                           </p>
                         )}

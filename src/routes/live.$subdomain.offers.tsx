@@ -16,6 +16,8 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicTrailTabs } from "@/components/public-trail-tabs";
 import { tenantHost } from "@/lib/domains";
+import { loadPublicV2Branding } from "@/lib/use-event-palette";
+import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 
 export const Route = createFileRoute("/live/$subdomain/offers")({
   head: () => ({ meta: [{ title: "Offers" }] }),
@@ -25,7 +27,7 @@ export const Route = createFileRoute("/live/$subdomain/offers")({
   },
 });
 
-type VenueRow = {
+export type VenueRow = {
   venue_id: string | null;
   name: string | null;
   description: string | null;
@@ -42,7 +44,7 @@ type VenueRow = {
   event_found: boolean | null;
 };
 
-type EventRow = {
+export type EventRow = PublicBrandingEvent & {
   event_id: string;
   name: string;
   primary_color: string | null;
@@ -79,26 +81,31 @@ type EventRow = {
   cover_path?: string | null;
 };
 
-type OfferVenue = VenueRow & { offer_summary: string };
+export type OfferVenue = VenueRow & { offer_summary: string };
 
 type State =
   | { kind: "loading" }
   | { kind: "not_found" }
   | { kind: "ready"; event: EventRow | null; offers: OfferVenue[] };
 
-export function PublicOffersPage({ subdomain }: { subdomain: string }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
+export function PublicOffersPage({ subdomain, previewData }: { subdomain: string; previewData?: { event: EventRow; offers: OfferVenue[] } }) {
+  const [state, setState] = useState<State>(() => previewData ? { kind: "ready", ...previewData } : { kind: "loading" });
 
   useEffect(() => {
+    if (previewData) {
+      setState({ kind: "ready", ...previewData });
+      return;
+    }
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
       const host = tenantHost(subdomain);
 
-      const [{ data: venueData, error: venueErr }, { data: evtData }] =
+      const [{ data: venueData, error: venueErr }, { data: evtData }, v2] =
         await Promise.all([
           supabase.rpc("get_public_venues_by_domain", { _hostname: host }),
           supabase.rpc("get_public_event_by_domain", { _hostname: host }),
+          loadPublicV2Branding(host),
         ]);
       if (cancelled) return;
 
@@ -122,13 +129,13 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         .map((v) => ({ ...v, offer_summary: v.offer_summary!.trim() }));
 
       const evtRaw = (evtData?.[0] ?? null) as EventRow | null;
-      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
+      const evt = evtRaw ? applyPaletteToEvent({ ...evtRaw, ...v2 }) : null;
       setState({ kind: "ready", event: evt, offers });
     })();
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewData]);
 
   if (state.kind === "loading") {
     return (
@@ -148,34 +155,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
   return (
     <EventPaletteScope
-      paletteKey={event?.palette_key ?? null}
-      backgroundKey={event?.page_background_key ?? null}
-      pageBackgroundColor={event?.page_background_color ?? null}
-      cardBackgroundColor={event?.card_background_color ?? null}
-      primaryColor={event?.primary_color ?? null}
-      accentColor={event?.accent_color ?? null}
-      textColor={event?.text_color ?? null}
-      mutedTextColor={event?.muted_text_color ?? null}
-      cardTextColor={event?.card_text_color ?? null}
-      cardMutedTextColor={event?.card_muted_text_color ?? null}
-      borderColor={event?.border_color ?? null}
-      primaryTextColor={event?.primary_text_color ?? null}
-      navBackgroundColor={event?.nav_background_color ?? null}
-      brandKitKey={event?.brand_kit_key ?? null}
-      linkColor={event?.link_color ?? null}
-      cardBorderColor={event?.card_border_color ?? null}
-      buttonPrimaryBg={event?.button_primary_bg ?? null}
-      buttonPrimaryFg={event?.button_primary_fg ?? null}
-      buttonSecondaryBg={event?.button_secondary_bg ?? null}
-      buttonSecondaryFg={event?.button_secondary_fg ?? null}
-      navFgColor={event?.nav_fg_color ?? null}
-      navMutedColor={event?.nav_muted_color ?? null}
-      navActiveFgColor={event?.nav_active_fg_color ?? null}
-      heroBgColor={event?.hero_bg_color ?? null}
-      heroFgColor={event?.hero_fg_color ?? null}
-      heroAccentColor={event?.hero_accent_color ?? null}
-      fontFamily={event?.font_family ?? null}
-      headingFontFamily={event?.heading_font_family ?? null}
+      {...(event ? publicEventScopeProps(event) : { paletteKey: null })}
       className="min-h-screen px-4 pb-10"
     >
       <LiveActivityBar subdomain={subdomain} />
@@ -194,7 +174,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
         <div className="mb-5 mt-6 px-1">
           <h1
-            className="text-[28px] font-semibold leading-tight"
+            className="font-event-heading text-[28px] font-semibold leading-tight"
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
               fontFamily: "var(--event-font, inherit)",
@@ -257,7 +237,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                       <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
                         {v.name ?? "Venue"}
                       </p>
-                      <p className="mt-1 line-clamp-2 font-trail-serif text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
+                      <p className="mt-1 line-clamp-2 font-event-heading text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
                         {offerTitle}
                       </p>
                       {offerBody && (

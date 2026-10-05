@@ -4,8 +4,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { buildGoogleFontsHref } from "@/lib/event-fonts";
+import {
+  parsePublicStyleOverrides,
+  resolvePublicTemplateVersion,
+  type PublicStyleOverrideDocument,
+  type PublicTemplateVersion,
+} from "@/lib/public-style-overrides";
 
 export type EventBrandingKeys = {
+  eventId: string | null;
   paletteKey: string | null;
   backgroundKey: string | null;
   primaryColor: string | null;
@@ -55,10 +62,13 @@ export type EventBrandingKeys = {
   fontFamily: string | null;
   /** Separate heading font for hero event titles. Falls back to fontFamily. */
   headingFontFamily: string | null;
+  templateVersion: PublicTemplateVersion;
+  styleOverrides: PublicStyleOverrideDocument | null;
   ready: boolean;
 };
 
 const EMPTY: EventBrandingKeys = {
+  eventId: null,
   paletteKey: null,
   backgroundKey: null,
   primaryColor: null,
@@ -97,6 +107,8 @@ const EMPTY: EventBrandingKeys = {
   coverFocalY: null,
   fontFamily: null,
   headingFontFamily: null,
+  templateVersion: "v1",
+  styleOverrides: null,
   ready: false,
 };
 
@@ -142,7 +154,33 @@ export function brandingScopeProps(b: EventBrandingKeys) {
     cardMutedColor: b.cardMutedColor,
     fontFamily: b.fontFamily,
     headingFontFamily: b.headingFontFamily,
+    eventId: b.eventId,
+    templateVersion: b.templateVersion,
+    styleOverrides: b.styleOverrides,
   };
+}
+
+export async function loadPublicV2Branding(host: string): Promise<{
+  public_template_version: PublicTemplateVersion;
+  v2_style_config: PublicStyleOverrideDocument | null;
+}> {
+  try {
+    const result = await (supabase.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>)("get_public_event_v2_branding", { _hostname: host });
+    const payload = Array.isArray(result.data) ? result.data[0] : result.data;
+    const row = payload && typeof payload === "object"
+      ? payload as { public_template_version?: unknown; v2_style_config?: unknown }
+      : null;
+    const version = resolvePublicTemplateVersion(row?.public_template_version);
+    return {
+      public_template_version: version,
+      v2_style_config: version === "v2" ? parsePublicStyleOverrides(row?.v2_style_config) : null,
+    };
+  } catch {
+    return { public_template_version: "v1", v2_style_config: null };
+  }
 }
 
 export function useEventBrandingKeys(
@@ -159,9 +197,10 @@ export function useEventBrandingKeys(
     (async () => {
       try {
         const host = tenantHost(subdomain);
-        const { data } = await supabase.rpc("get_public_event_by_domain", {
-          _hostname: host,
-        });
+        const [{ data }, v2] = await Promise.all([
+          supabase.rpc("get_public_event_by_domain", { _hostname: host }),
+          loadPublicV2Branding(host),
+        ]);
         if (cancelled) return;
         const row = (data?.[0] ?? null) as {
           palette_key?: string | null;
@@ -202,8 +241,10 @@ export function useEventBrandingKeys(
           cover_focal_y?: number | null;
           font_family?: string | null;
           heading_font_family?: string | null;
+          event_id?: string | null;
         } | null;
         setKeys({
+          eventId: row?.event_id ?? null,
           paletteKey: row?.palette_key ?? null,
           backgroundKey: row?.page_background_key ?? null,
           primaryColor: row?.primary_color ?? null,
@@ -242,6 +283,8 @@ export function useEventBrandingKeys(
           coverFocalY: typeof row?.cover_focal_y === "number" ? row.cover_focal_y : null,
           fontFamily: row?.font_family ?? null,
           headingFontFamily: row?.heading_font_family ?? null,
+          templateVersion: v2.public_template_version,
+          styleOverrides: v2.v2_style_config,
           ready: true,
         });
       } catch {

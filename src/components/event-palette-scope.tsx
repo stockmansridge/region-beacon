@@ -8,6 +8,8 @@ import {
 } from "@/lib/event-palettes";
 import { buildGoogleFontsHref, isSupportedEventFont } from "@/lib/event-fonts";
 import { ensureCustomFontFaces } from "@/lib/event-custom-fonts";
+import { PublicStyleScope } from "@/components/public-style-scope";
+import type { PublicStyleOverrideDocument, PublicTemplateVersion } from "@/lib/public-style-overrides";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -66,6 +68,9 @@ export function EventPaletteScope({
   cardMutedColor,
   fontFamily,
   headingFontFamily,
+  eventId,
+  templateVersion = "v1",
+  styleOverrides,
   children,
   className,
   applyBackground = true,
@@ -107,6 +112,9 @@ export function EventPaletteScope({
   cardMutedColor?: string | null;
   fontFamily?: string | null;
   headingFontFamily?: string | null;
+  eventId?: string | null;
+  templateVersion?: PublicTemplateVersion;
+  styleOverrides?: PublicStyleOverrideDocument | null;
   children: ReactNode;
   className?: string;
   applyBackground?: boolean;
@@ -166,8 +174,8 @@ export function EventPaletteScope({
     const custom = [fontFamily, headingFontFamily].filter(
       (v) => v && !isSupportedEventFont(v),
     );
-    if (custom.length > 0) void ensureCustomFontFaces(custom);
-  }, [fontFamily, headingFontFamily]);
+    if (custom.length > 0) void ensureCustomFontFaces(custom, eventId ?? undefined);
+  }, [fontFamily, headingFontFamily, eventId]);
 
 
   if (
@@ -178,7 +186,10 @@ export function EventPaletteScope({
     !fontFamily &&
     !headingFontFamily
   ) {
-    return <div className={className}>{children}</div>;
+    const content = <div className={className}>{children}</div>;
+    return templateVersion === "v2"
+      ? <PublicStyleScope overrides={styleOverrides} eventId={eventId}>{content}</PublicStyleScope>
+      : content;
   }
 
   const theme = resolveEventTheme({
@@ -274,9 +285,12 @@ export function EventPaletteScope({
       ? { ["--event-heading-font" as any]: headingFontFamily }
       : {}),
   };
-  return (
+  const content = (
     <div className={className} style={style}>
       {children}
     </div>
   );
+  return templateVersion === "v2"
+    ? <PublicStyleScope overrides={styleOverrides} eventId={eventId}>{content}</PublicStyleScope>
+    : content;
 }
