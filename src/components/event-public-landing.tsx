@@ -839,7 +839,7 @@ export function EventPublicLanding({
           {/* App-style stacked sections */}
           <div className="mt-5 flex flex-col gap-5">
             <PassportStampGrid
-              eventId={event.event_id}
+              eventId={isEditorPreview ? null : event.event_id}
               venueLabelPlural={venueLabels.plural}
               canRegister={canRegister}
             />
