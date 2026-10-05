@@ -137,6 +137,7 @@ export function PublicEventNav({
     : location.pathname);
   const { passportHref: derivedPassportHref } = useCurrentEventPassport(isPreview ? null : eventId, !isPreview);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
+  const headerSide = canRegister || passportHref ? 84 : 40;
   const [menuOpen, setMenuOpen] = useState(false);
   const faqState = useEventFaqByDomain(isPreview ? null : subdomain);
   const hasFaq = previewNav.previewFeatures?.hasFaq ?? (faqState.kind === "ok" && faqState.entries.length > 0);
@@ -257,7 +258,7 @@ export function PublicEventNav({
           </PublicLink>
           )}
 
-          <div className="ml-auto flex items-center gap-1">
+          <div className={isV2Style ? "flex items-center justify-end gap-1" : "ml-auto flex items-center gap-1"}>
             <button
               {...navigationItem}
               type="button"

@@ -601,6 +601,7 @@ function JoinForm({ event, subdomain, preview = false, previewState }: { event: 
       {event.public_template_version === "v2" ? null : <div className="px-4 pt-2">
       </div>}
       <PublicEventNav
+        fullBleed={event.public_template_version !== "v2"}
         subdomain={subdomain}
         eventName={event.name}
         primaryColor={primary}
@@ -1073,6 +1074,7 @@ function SuccessScreen({
       {event.public_template_version === "v2" ? null : <div className="px-4 pt-2">
       </div>}
       <PublicEventNav
+        fullBleed={event.public_template_version !== "v2"}
         subdomain={subdomain}
         eventName={event.name}
         primaryColor={primary}
@@ -1254,6 +1256,7 @@ function InfoScreen({
       {event.public_template_version === "v2" ? null : <div className="px-4 pt-2">
       </div>}
       <PublicEventNav
+        fullBleed={event.public_template_version !== "v2"}
         subdomain={subdomain}
         eventName={event.name}
         primaryColor={primary}
