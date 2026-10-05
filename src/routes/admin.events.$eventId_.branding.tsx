@@ -2451,6 +2451,8 @@ function VisualBrandingEditor({
   }));
   const selectedVenue = listVenues.find((venue) => venue.venue_id === selectedRecord) ?? listVenues[0] ?? null;
   const selectedVenueId = selectedVenue?.venue_id ?? null;
+  const offerVenues = listVenues.filter((venue) => Boolean(venue.offer_summary));
+  const selectedOffer = offerVenues.find((venue) => venue.venue_id === selectedRecord) ?? offerVenues[0] ?? null;
   useEffect(() => {
     let cancelled = false;
     setVenueExtras(null);
@@ -2470,7 +2472,7 @@ function VisualBrandingEditor({
   const pageState = pageStates.find(([key]) => key === pageStateChoice[previewPage])?.[0] ?? pageStates[0]?.[0] ?? "";
   const previewOffers = listVenues.filter((venue) => venue.offer_summary).map((venue) => ({
     ...venue,
-    ...(pageState === "no_image" && venue.venue_id === selectedVenueId ? { cover_path: null, logo_path: null } : {}),
+    ...(pageState === "no_image" && venue.venue_id === selectedOffer?.venue_id ? { cover_path: null, logo_path: null } : {}),
     offer_summary: venue.offer_summary as string,
   })) as OfferVenue[];
   const realFaq = publicContent?.faq ?? [];
@@ -2595,9 +2597,9 @@ function VisualBrandingEditor({
               </Select>
             )}
             {listVenues.length > 0 && ["venue", "venues", "offers", "map", "passport", "home"].includes(previewPage) && (
-              <Select value={selectedVenue?.venue_id ?? ""} onValueChange={(value) => { setSelectedRecord(value); setRecordScope("record"); }}>
+              <Select value={(previewPage === "offers" ? selectedOffer : selectedVenue)?.venue_id ?? ""} onValueChange={(value) => { setSelectedRecord(value); setRecordScope("record"); }}>
                 <SelectTrigger className="w-48" aria-label="Record"><SelectValue placeholder={`Choose ${previewLabels.singular.toLowerCase()}`} /></SelectTrigger>
-                <SelectContent>{listVenues.filter((venue) => venue.venue_id).map((venue) => <SelectItem key={venue.venue_id!} value={venue.venue_id!}>{venue.name ?? "Untitled"}</SelectItem>)}</SelectContent>
+                <SelectContent>{(previewPage === "offers" ? offerVenues : listVenues).filter((venue) => venue.venue_id).map((venue) => <SelectItem key={venue.venue_id!} value={venue.venue_id!}>{venue.name ?? "Untitled"}</SelectItem>)}</SelectContent>
               </Select>
             )}
             <div className="inline-flex rounded-md border p-1" aria-label="Preview interaction">
