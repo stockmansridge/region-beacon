@@ -192,7 +192,6 @@ describe("Map pin resolver (shared by MapKit annotations and preview marker)", (
     expect(annotation).toEqual({ color: "#555555", glyphColor: "#333333" });
     applyMapMarkerSelection(annotation, normal, false);
     expect(annotation).toEqual({ color: "#111111", glyphColor: "#222222" });
-    const visited = resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-a", visited: true, hasPassport: true });
     const { container } = render(
       <PublicStyleScope overrides={doc} eventId="e">
         <MapMarkerGlyph style={normal} recordId="venue-a" />
