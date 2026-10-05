@@ -16,6 +16,8 @@ import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicTrailTabs } from "@/components/public-trail-tabs";
 import { tenantHost } from "@/lib/domains";
+import { loadPublicV2Branding } from "@/lib/use-event-palette";
+import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 
 export const Route = createFileRoute("/live/$subdomain/offers")({
   head: () => ({ meta: [{ title: "Offers" }] }),
@@ -42,7 +44,7 @@ type VenueRow = {
   event_found: boolean | null;
 };
 
-type EventRow = {
+type EventRow = PublicBrandingEvent & {
   event_id: string;
   name: string;
   primary_color: string | null;
@@ -95,10 +97,11 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
       setState({ kind: "loading" });
       const host = tenantHost(subdomain);
 
-      const [{ data: venueData, error: venueErr }, { data: evtData }] =
+      const [{ data: venueData, error: venueErr }, { data: evtData }, v2] =
         await Promise.all([
           supabase.rpc("get_public_venues_by_domain", { _hostname: host }),
           supabase.rpc("get_public_event_by_domain", { _hostname: host }),
+          loadPublicV2Branding(host),
         ]);
       if (cancelled) return;
 
@@ -122,7 +125,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
         .map((v) => ({ ...v, offer_summary: v.offer_summary!.trim() }));
 
       const evtRaw = (evtData?.[0] ?? null) as EventRow | null;
-      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
+      const evt = evtRaw ? applyPaletteToEvent({ ...evtRaw, ...v2 }) : null;
       setState({ kind: "ready", event: evt, offers });
     })();
     return () => {
@@ -148,34 +151,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
   return (
     <EventPaletteScope
-      paletteKey={event?.palette_key ?? null}
-      backgroundKey={event?.page_background_key ?? null}
-      pageBackgroundColor={event?.page_background_color ?? null}
-      cardBackgroundColor={event?.card_background_color ?? null}
-      primaryColor={event?.primary_color ?? null}
-      accentColor={event?.accent_color ?? null}
-      textColor={event?.text_color ?? null}
-      mutedTextColor={event?.muted_text_color ?? null}
-      cardTextColor={event?.card_text_color ?? null}
-      cardMutedTextColor={event?.card_muted_text_color ?? null}
-      borderColor={event?.border_color ?? null}
-      primaryTextColor={event?.primary_text_color ?? null}
-      navBackgroundColor={event?.nav_background_color ?? null}
-      brandKitKey={event?.brand_kit_key ?? null}
-      linkColor={event?.link_color ?? null}
-      cardBorderColor={event?.card_border_color ?? null}
-      buttonPrimaryBg={event?.button_primary_bg ?? null}
-      buttonPrimaryFg={event?.button_primary_fg ?? null}
-      buttonSecondaryBg={event?.button_secondary_bg ?? null}
-      buttonSecondaryFg={event?.button_secondary_fg ?? null}
-      navFgColor={event?.nav_fg_color ?? null}
-      navMutedColor={event?.nav_muted_color ?? null}
-      navActiveFgColor={event?.nav_active_fg_color ?? null}
-      heroBgColor={event?.hero_bg_color ?? null}
-      heroFgColor={event?.hero_fg_color ?? null}
-      heroAccentColor={event?.hero_accent_color ?? null}
-      fontFamily={event?.font_family ?? null}
-      headingFontFamily={event?.heading_font_family ?? null}
+      {...(event ? publicEventScopeProps(event) : { paletteKey: null })}
       className="min-h-screen px-4 pb-10"
     >
       <LiveActivityBar subdomain={subdomain} />

@@ -186,7 +186,10 @@ export function EventPaletteScope({
     !fontFamily &&
     !headingFontFamily
   ) {
-    return <div className={className}>{children}</div>;
+    const content = <div className={className}>{children}</div>;
+    return templateVersion === "v2"
+      ? <PublicStyleScope overrides={styleOverrides} eventId={eventId}>{content}</PublicStyleScope>
+      : content;
   }
 
   const theme = resolveEventTheme({
