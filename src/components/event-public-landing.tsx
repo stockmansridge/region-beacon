@@ -313,6 +313,8 @@ export function EventPublicLanding({
         heroFgColor={event.hero_fg_color ?? null}
         heroAccentColor={event.hero_accent_color ?? null}
         heroBodyColor={event.hero_body_color ?? null}
+        heroOverlayColor={event.hero_overlay_color ?? null}
+        heroOverlayOpacity={event.hero_overlay_opacity ?? null}
         pageHeadingColor={isV2 ? event.page_heading_color ?? null : null}
         pageBodyColor={isV2 ? event.page_body_color ?? null : null}
         pageMutedColor={isV2 ? event.page_muted_color ?? null : null}
