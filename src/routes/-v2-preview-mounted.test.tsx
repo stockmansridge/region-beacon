@@ -657,6 +657,9 @@ describe("header title + top spacing", () => {
     const row = link.parentElement!;
     expect(row.className).toContain("min-h-14");
     expect(row.className.split(" ")).not.toContain("h-14");
+    const [left, , right] = row.style.gridTemplateColumns.split(" ");
+    expect(left).toBe(right); // equal side tracks → title centred on the header
+    expect(row.querySelectorAll(":scope > div:last-child > *").length).toBeLessThanOrEqual(2);
     expect(r.container.querySelector('button[aria-label="Open menu"]')!.className).toContain("h-10 w-10");
     cleanup();
     const def = renderNav({ version: 1, items: {} });

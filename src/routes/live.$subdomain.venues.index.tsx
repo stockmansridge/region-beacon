@@ -274,6 +274,7 @@ export function PublicVenuesListPage({
     >
       {!previewData && <LiveActivityBar subdomain={subdomain} />}
       <PublicEventNav
+        fullBleed={!v2}
         subdomain={subdomain}
         eventName={event?.name}
         primaryColor={event?.primary_color}

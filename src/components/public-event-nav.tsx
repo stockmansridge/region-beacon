@@ -70,6 +70,7 @@ export function PublicEventNav({
   transparentHeader = false,
   hideAnnouncementBar = false,
   brandingSelection: brandingSelectionProp = false,
+  fullBleed = true,
   venueLabels: venueLabelsOverride,
 }: {
   subdomain: string;
@@ -98,6 +99,8 @@ export function PublicEventNav({
   hideAnnouncementBar?: boolean;
   /** Adds inert semantic selection markers only inside the admin V2 preview. */
   brandingSelection?: boolean;
+  /** Default -mx-4 bleed assumes a px-4 parent; pass false when the parent is unpadded. */
+  fullBleed?: boolean;
   /** Resolved event labels; preview supplies these to avoid public network reads. */
   venueLabels?: VenueLabels;
 }) {
@@ -134,6 +137,7 @@ export function PublicEventNav({
     : location.pathname);
   const { passportHref: derivedPassportHref } = useCurrentEventPassport(isPreview ? null : eventId, !isPreview);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
+  const headerSide = canRegister || passportHref ? 84 : 40;
   const [menuOpen, setMenuOpen] = useState(false);
   const faqState = useEventFaqByDomain(isPreview ? null : subdomain);
   const hasFaq = previewNav.previewFeatures?.hasFaq ?? (faqState.kind === "ok" && faqState.entries.length > 0);
@@ -188,8 +192,8 @@ export function PublicEventNav({
         title="Top navigation — Navigation background · Navigation text / icons"
         className={
           transparentHeader
-            ? "sticky top-0 z-40 -mx-4"
-            : "sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
+            ? `sticky top-0 z-40 ${fullBleed ? "-mx-4" : ""}`
+            : `sticky top-0 z-40 ${fullBleed ? "-mx-4 " : ""}mb-5 border-b backdrop-blur`
         }
         style={mergeStyleOverride({
           background: transparentHeader ? "transparent" : navBg,
@@ -201,9 +205,12 @@ export function PublicEventNav({
       >
         <div
           className={isV2Style
-            ? `mx-auto grid ${titleWrap ? "min-h-14 py-1" : "h-14"} max-w-2xl grid-cols-[minmax(44px,auto)_minmax(0,1fr)_minmax(44px,auto)] items-center gap-1 px-3`
+            ? `mx-auto grid ${titleWrap ? "min-h-14 py-1" : "h-14"} max-w-2xl items-center gap-1 px-3`
             : "mx-auto grid h-14 max-w-2xl grid-cols-[44px_1fr_auto] items-center px-3"}
-          style={{ color: navFg }}
+          // V2: both side tracks equal the right action group's width (Share,
+          // plus Passport when shown: 2×40px + 4px gap) so the title is centred.
+          data-header-sides={isV2Style ? headerSide : undefined}
+          style={isV2Style ? { color: navFg, gridTemplateColumns: `${headerSide}px minmax(0,1fr) ${headerSide}px` } : { color: navFg }}
         >
           <button
             {...navigationItem}
@@ -251,7 +258,7 @@ export function PublicEventNav({
           </PublicLink>
           )}
 
-          <div className="ml-auto flex items-center gap-1">
+          <div className={isV2Style ? "flex items-center justify-end gap-1" : "ml-auto flex items-center gap-1"}>
             <button
               {...navigationItem}
               type="button"
