@@ -812,8 +812,8 @@ describe("Prizes V2 section toggle", () => {
     const { container, getByText } = render(inPreview(<AwardsPage subdomain="preview" previewData={{ branding, eventInfo: { event_id: "e1", event_name: "T" } as never, awards: [], bonuses: [], recentCheckins: [], hasPassport: true }} />, "/prizes"));
     const t = (i: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${i}"]`);
     expect(t("prizes.tabs.surface")?.style.backgroundColor).toBe("transparent");
-    expect(t("prizes.tabs.currentItem@prizes")?.style.backgroundColor).toBe("rgb(34, 34, 34)");
-    expect(t("prizes.tabs.item@bonus")?.style.color).toBe("rgb(51, 51, 51)");
+    expect(t("prizes.tabs.currentItem@prizes")?.style.backgroundColor).toBe("#222222");
+    expect(t("prizes.tabs.item@bonus")?.style.color).toBe("#333333");
     expect(getByText("Extras")).toBeTruthy();
     fireEvent.click(getByText("Extras"));
     expect(t("prizes.tabs.currentItem@bonus")).not.toBeNull();
