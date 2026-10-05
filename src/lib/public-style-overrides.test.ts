@@ -11,6 +11,7 @@ import {
   validatePublicStyleOverrides,
 } from "./public-style-overrides";
 import { publicEventScopeProps } from "@/components/public-event-branding-scope";
+import { resolveEventBrandingKeys, brandingScopeProps } from "@/lib/use-event-palette";
 
 describe("V2 theme round-trip (finding 5)", () => {
   it("keeps all four button bg/fg keys alongside *_color keys", () => {
@@ -111,6 +112,22 @@ describe("record merge and validation", () => {
 });
 
 describe("canonical public V1/V2 boundary", () => {
+  it("maps V2 theme values into the shared hook-based page scope", () => {
+    const config = parsePublicStyleOverrides({ version: 1, items: {}, theme: { nav_background_color: "#112233", page_body_color: "#445566" } });
+    const keys = resolveEventBrandingKeys({ event_id: "event-v2", nav_background_color: "#FFFFFF", page_body_color: "#EEEEEE" } as never, { public_template_version: "v2", v2_style_config: config });
+    const scope = brandingScopeProps(keys);
+    expect(keys.navBackgroundColor).toBe("#112233");
+    expect(keys.pageBodyColor).toBe("#445566");
+    expect(scope.navBackgroundColor).toBe("#112233");
+    expect(scope.pageBodyColor).toBe("#445566");
+  });
+
+  it("does not expose V2-only split text roles to V1", () => {
+    const keys = resolveEventBrandingKeys({ event_id: "event-v1", nav_background_color: "#FFFFFF", page_body_color: "#445566" } as never, { public_template_version: "v1", v2_style_config: null });
+    expect(keys.navBackgroundColor).toBe("#FFFFFF");
+    expect(keys.pageBodyColor).toBeNull();
+    expect(keys.styleOverrides).toBeNull();
+  });
   it("carries event identity and V2 overrides through the shared scope mapper", () => {
     const config = parsePublicStyleOverrides({ version: 1, items: { "shared.navigation.surface": { normal: { backgroundColor: "#123456" } } } });
     const props = publicEventScopeProps({ event_id: "event-a", public_template_version: "v2", v2_style_config: config } as never);

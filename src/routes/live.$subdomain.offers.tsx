@@ -159,7 +159,7 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
       {...(event ? publicEventScopeProps(event) : { paletteKey: null })}
       className="min-h-screen px-4 pb-10"
     >
-      <LiveActivityBar subdomain={subdomain} />
+      {!previewData && <LiveActivityBar subdomain={subdomain} />}
       <PublicEventNav
         subdomain={subdomain}
         eventName={event?.name}
