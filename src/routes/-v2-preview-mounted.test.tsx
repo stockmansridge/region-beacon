@@ -283,7 +283,7 @@ describe("Special Offers V2 targets", () => {
     { venue_id: "venue-no-image", name: "No Image", offer_summary: "A gift", cover_path: null, logo_path: null, offer_display_icon: "gift", offer_display_colour: "#112233", offer_display_foreground_colour: "#F1F2F3", event_found: true },
     { venue_id: "venue-image", name: "Has Image", offer_summary: "A second gift", cover_path: "cover.jpg", logo_path: null, offer_display_icon: "gift", offer_display_colour: null, offer_display_foreground_colour: null, event_found: true },
   ] as OfferVenue[];
-  const event = { ...V2_EVENT, name: "Trail" } as OffersEventRow;
+  const event = { ...V2_EVENT, name: "Trail" } as unknown as OffersEventRow;
 
   it("selects and paints each no-image icon node independently while preserving badge defaults", () => {
     const overrides = { version: 1, items: {}, records: {
@@ -292,7 +292,7 @@ describe("Special Offers V2 targets", () => {
       "offers.card.placeholderIcon": { "venue-no-image": { normal: { iconColor: "#334455", iconBackgroundColor: "#CCDDEE" } } },
       "offers.card.chevron": { "venue-no-image": { normal: { iconColor: "#556677", iconBackgroundColor: "#EECCAA" } } },
     } } as never;
-    const { container } = render(inPreview(<PublicStyleScope overrides={overrides} eventId="event-v2"><PublicOffersPage subdomain="preview" previewData={{ event, offers }} /></PublicStyleScope>, "/offers"));
+    const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, v2_style_config: overrides }, offers }} />, "/offers"));
     const target = (id: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${id}@venue-no-image"]`);
     expect(target("offers.card.badge")?.style.backgroundColor).toBe("#AABBCC");
     expect(target("offers.card.badge")?.style.getPropertyValue("--item-icon-color")).toBe("#010203");
