@@ -277,7 +277,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
       className="min-h-screen pb-12"
     >
       <LiveActivityBar subdomain={subdomain} />
-      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} venueLabels={resolveVenueLabels(state.brand ?? {})} /></div>
+      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} venueLabels={resolveVenueLabels(state.brand ?? {})} activeOverride="venues" brandingSelection={Boolean(previewData)} /></div>
       <div className="mx-auto max-w-md">
         <div
           className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/9]"

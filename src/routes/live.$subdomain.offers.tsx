@@ -168,6 +168,8 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
         logoUrl={logoUrl}
         eventId={event?.event_id ?? null}
         venueLabels={labels}
+        activeOverride="offers"
+        brandingSelection={Boolean(previewData)}
       />
       <div className="mx-auto max-w-md">
         <div className="mt-4">

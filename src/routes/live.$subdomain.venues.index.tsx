@@ -278,6 +278,8 @@ export function PublicVenuesListPage({
         logoUrl={logoUrl}
         eventId={event?.event_id ?? null}
         venueLabels={labels}
+        activeOverride="venues"
+        brandingSelection={Boolean(previewData)}
       />
       <div className="mx-auto max-w-md px-4">
         <div className="mt-4">
