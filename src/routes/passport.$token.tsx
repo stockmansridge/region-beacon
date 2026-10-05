@@ -646,7 +646,7 @@ export function PassportPreview({
                   <RingConfetti celebrationKey={`${token}:stamps-${stampedCount}`} />
                 ) : null}
 
-                <svg
+                <PublicStyleTarget id="passport.progress.ring"><svg
                   width={ringSize}
                   height={ringSize}
                   viewBox={`0 0 ${ringSize} ${ringSize}`}
@@ -657,7 +657,7 @@ export function PassportPreview({
                     cy={ringSize / 2}
                     r={ringRadius}
                     fill="none"
-                    stroke="var(--event-card-border)"
+                    stroke="var(--item-progress-track, var(--event-card-border))"
                     strokeWidth={ringStroke}
                   />
                   <circle
@@ -665,15 +665,15 @@ export function PassportPreview({
                     cy={ringSize / 2}
                     r={ringRadius}
                     fill="none"
-                    stroke="var(--event-button-primary-bg)"
+                    stroke="var(--item-progress-fill, var(--event-button-primary-bg))"
                     strokeWidth={ringStroke}
                     strokeLinecap="round"
                     strokeDasharray={`${ringDash} ${ringCirc}`}
                     transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
                   />
-                </svg>
+                </svg></PublicStyleTarget>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span
+                  <PublicStyleTarget id="passport.progress.number"><span
                     className="font-trail-serif text-2xl font-semibold leading-none"
                     style={{ color: "var(--event-card-heading)" }}
                   >
@@ -686,7 +686,7 @@ export function PassportPreview({
                         /{totalVenues}
                       </span>
                     ) : null}
-                  </span>
+                  </span></PublicStyleTarget>
                 </div>
               </div>
               <div
@@ -1125,7 +1125,7 @@ function StampCell({ venue, hasBonus = false }: { venue: PassportStampVenue; has
           : `${venue.venue_name ?? "Venue"} — not visited yet`
       }
     >
-      <div
+      <PublicStyleTarget id="passport.stamp.tile" recordId={venue.venue_id}><div
         className={`relative flex h-20 w-20 items-center justify-center rounded-full transition-transform group-hover:scale-[1.04] group-focus-visible:ring-2 group-focus-visible:ring-offset-2 ${
           stamped ? "" : ""
         }`}
@@ -1161,7 +1161,7 @@ function StampCell({ venue, hasBonus = false }: { venue: PassportStampVenue; has
         )}
 
         {stamped ? (
-          <div className="flex flex-col items-center justify-center leading-none">
+          <PublicStyleTarget id="passport.stamp.status" recordId={venue.venue_id}><div className="flex flex-col items-center justify-center leading-none">
             <span
               aria-hidden
               className="font-trail-serif text-2xl font-bold"
@@ -1179,25 +1179,25 @@ function StampCell({ venue, hasBonus = false }: { venue: PassportStampVenue; has
             >
               Visited
             </span>
-          </div>
+          </div></PublicStyleTarget>
         ) : (
-          <span
+          <PublicStyleTarget id="passport.stamp.status" recordId={venue.venue_id}><span
             aria-hidden
             className="text-[9px] font-semibold uppercase tracking-[0.18em]"
             style={{ color: "var(--event-card-muted)", opacity: 0.85 }}
           >
             Empty
-          </span>
+          </span></PublicStyleTarget>
         )}
-      </div>
-      <div
+      </div></PublicStyleTarget>
+      <PublicStyleTarget id="passport.stamp.label" recordId={venue.venue_id}><div
         className="mt-2 line-clamp-2 text-[12px] font-semibold leading-tight"
         style={{
           color: stamped ? "var(--event-card-heading)" : "var(--event-card-muted)",
         }}
       >
         {venue.venue_name ?? "Venue"}
-      </div>
+      </div></PublicStyleTarget>
       {stamped && when && (
         <div
           className="mt-0.5 text-[10px]"

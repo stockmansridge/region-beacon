@@ -1,3 +1,4 @@
+import { usePublicStyleTarget } from "@/components/public-style-scope";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -973,6 +974,8 @@ function AwardCard({
   isPopular: boolean;
 }) {
   const status = deriveStatus(award, hasPassport);
+  // V2 only: an explicit fill override replaces the gradient; V1 sees no value.
+  const progressFill = (usePublicStyleTarget("prizes.card.progress", { recordId: award.id }).style as Record<string, string | undefined>)["--item-progress-fill"];
   const progress = Math.max(
     0,
     Math.min(
@@ -1049,7 +1052,7 @@ function AwardCard({
               </span>
               <span>{progress}%</span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--event-card-border,var(--event-border,#E6DCC7))]/60">
+            <PublicStyleTarget id="prizes.card.progress" recordId={award.id}><div className="h-2 w-full overflow-hidden rounded-full bg-[var(--item-progress-track,var(--event-card-border,var(--event-border,#E6DCC7)))]/60">
               <div
                 className={
                   "h-full rounded-full transition-all " +
@@ -1057,9 +1060,9 @@ function AwardCard({
                     ? "bg-gradient-to-r from-emerald-400 to-emerald-600"
                     : "bg-gradient-to-r from-[var(--event-accent,#C7A96B)] to-[var(--event-primary,#1F3D2B)]")
                 }
-                style={{ width: `${progress}%` }}
+                style={{ width: `${progress}%`, ...(progressFill ? { backgroundImage: "none", backgroundColor: progressFill } : {}) }}
               />
-            </div>
+            </div></PublicStyleTarget>
           </div>
         )}
 
@@ -1124,14 +1127,14 @@ function StatusBadge({ status }: { status: CardStatus }) {
   };
   const { label, cls } = map[status];
   return (
-    <span
+    <PublicStyleTarget id="prizes.card.badge"><span
       className={
         "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide " +
         cls
       }
     >
       {label}
-    </span>
+    </span></PublicStyleTarget>
   );
 }
 

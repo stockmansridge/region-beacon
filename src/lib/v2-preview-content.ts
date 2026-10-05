@@ -23,6 +23,8 @@ export type V2PreviewContent = {
   awards: PublicEventAward[];
   legal: LegalRow | null;
   eventMapPath: string | null;
+  /** The immutable public event row exactly as the live pages receive it. */
+  event: Record<string, unknown> | null;
 };
 
 type Rpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
@@ -30,7 +32,7 @@ const rpc = (fn: string, args: Record<string, unknown>) =>
   (supabase.rpc.bind(supabase) as unknown as Rpc)(fn, args).then((r) => r, () => ({ data: null, error: true }));
 
 export async function loadV2PreviewContent(subdomain: string | null, eventId: string): Promise<V2PreviewContent> {
-  if (!subdomain) return { live: false, faq: [], awards: [], legal: null, eventMapPath: null };
+  if (!subdomain) return { live: false, faq: [], awards: [], legal: null, eventMapPath: null, event: null };
   const host = tenantHost(subdomain);
   const [evt, faq, legal, awards] = await Promise.all([
     rpc("get_public_event_by_domain", { _hostname: host }),
@@ -41,13 +43,14 @@ export async function loadV2PreviewContent(subdomain: string | null, eventId: st
   const evtRow = (Array.isArray(evt.data) ? evt.data[0] : null) as { event_id?: string; event_map_path?: string | null } | null;
   // Ownership: only accept host content that resolves to THIS event.
   const live = Boolean(evtRow && evtRow.event_id === eventId);
-  if (!live) return { live: false, faq: [], awards: [], legal: null, eventMapPath: null };
+  if (!live) return { live: false, faq: [], awards: [], legal: null, eventMapPath: null, event: null };
   return {
     live,
     faq: (Array.isArray(faq.data) ? faq.data : []) as PublicFaqEntry[],
     awards: (Array.isArray(awards.data) ? awards.data : []) as PublicEventAward[],
     legal: ((Array.isArray(legal.data) ? legal.data[0] : null) ?? null) as LegalRow | null,
     eventMapPath: evtRow?.event_map_path ?? null,
+    event: evtRow as Record<string, unknown>,
   };
 }
 

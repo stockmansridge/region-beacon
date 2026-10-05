@@ -292,8 +292,7 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
         const tier = r.tier;
         const tc = tierColor(tier);
         return (
-          <li
-            key={`${r.rank}-${r.display_name}-${i}`}
+          <PublicStyleTarget key={`${r.rank}-${r.display_name}-${i}`} id="leaderboard.row"><li
             className="flex items-center gap-4 rounded-2xl border border-[var(--event-card-border)] bg-[var(--event-card-bg)] px-4 py-3 shadow-sm"
           >
             <RankBadge rank={r.rank ?? i + 1} />
@@ -319,26 +318,26 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
             </div>
             <div className="text-right">
               {points !== null && (
-                <div className="text-lg font-semibold text-[var(--event-link)]">
+                <PublicStyleTarget id="leaderboard.row.points"><div className="text-lg font-semibold text-[var(--event-link)]">
                   {points}
                   <span className="ml-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
                     pts
                   </span>
-                </div>
+                </div></PublicStyleTarget>
               )}
               {stamps !== null && (
-                <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
+                <PublicStyleTarget id="leaderboard.row.stamps"><div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
                   {stamps} {stamps === 1 ? "stamp" : "stamps"}
-                </div>
+                </div></PublicStyleTarget>
               )}
               {(r.venue_points !== null || r.bonus_points !== null) &&
                 (r.venue_points ?? 0) + (r.bonus_points ?? 0) > 0 && (
-                  <div className="mt-0.5 text-[10px] text-[var(--event-card-muted)]">
+                  <PublicStyleTarget id="leaderboard.row.meta"><div className="mt-0.5 text-[10px] text-[var(--event-card-muted)]">
                     {r.venue_points ?? 0} venue · {r.bonus_points ?? 0} bonus
-                  </div>
+                  </div></PublicStyleTarget>
                 )}
             </div>
-          </li>
+          </li></PublicStyleTarget>
         );
       })}
     </ul>
@@ -357,12 +356,12 @@ function RankBadge({ rank }: { rank: number }) {
         ? "var(--event-accent)"
         : "var(--event-card-heading)";
   return (
-    <div
+    <PublicStyleTarget id="leaderboard.rank"><div
       className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-[var(--event-page-bg)]"
       style={{ backgroundColor: bg }}
     >
       {rank}
-    </div>
+    </div></PublicStyleTarget>
   );
 }
 

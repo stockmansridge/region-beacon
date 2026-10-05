@@ -97,13 +97,16 @@ describe("Event-scoped custom font aliases", () => {
     expect(eventScopedCustomFontFamily("Brand", "e1")).toBe(eventScopedCustomFontFamily("brand", "e1"));
   });
   it("item inline style and state CSS use the same registered alias", () => {
-    const doc = { version: 1, items: { "offers.card.heading": { normal: { fontFamily: "My Upload" }, hover: { fontFamily: "My Upload" } } } } as any;
+    const doc = { version: 1, items: { "venues.card.directions": { normal: { fontFamily: "My Upload" }, states: { hover: { fontFamily: "Hover Upload" } } } } } as any;
     const alias = eventScopedCustomFontFamily("My Upload", "e1");
-    const inline = String(publicStyleTarget(doc, "offers.card.heading", { eventId: "e1" }).style.fontFamily);
-    expect(inline).toContain(alias);
+    const hoverAlias = eventScopedCustomFontFamily("Hover Upload", "e1");
+    const inline = String(publicStyleTarget(doc, "venues.card.directions", { eventId: "e1" }).style.fontFamily);
     expect(inline).toBe(v2FontFamilyValue("My Upload", "e1"));
     const css = publicStyleCss(doc, "s1", "e1");
-    expect(css).toContain(alias);
-    expect(css).not.toContain(eventScopedCustomFontFamily("My Upload", "e2"));
+    const hoverRule = css.split("}").find((rule) => rule.includes(":hover"));
+    expect(hoverRule).toBeDefined();
+    expect(hoverRule).toContain(hoverAlias);
+    expect(inline).toContain(alias);
+    expect(css).not.toContain(eventScopedCustomFontFamily("Hover Upload", "e2"));
   });
 });

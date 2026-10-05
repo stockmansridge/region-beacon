@@ -1,3 +1,5 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
+import { ResultLink, ResultPaletteScope } from "@/components/result-preview";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTenantSubdomain } from "@/lib/tenant-host";
@@ -111,11 +113,50 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
     }, null, 2);
   };
 
+  return (
+    <ScannerView
+      subdomain={subdomain}
+      event={event}
+      eventId={eventId}
+      hasPassport={hasPassport}
+      err={err}
+      manual={manual}
+      onManualChange={setManual}
+      onManualGo={tryManual}
+      copied={copied}
+      onCopySupport={async () => {
+        try {
+          await navigator.clipboard.writeText(buildSupport());
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch { /* ignore */ }
+      }}
+      camera={<QrScanner onDecode={handleDecode} onError={handleError} />}
+    />
+  );
+}
+
+export type ScannerErrState = ErrState;
+
+/** Presentation only: shared by the live scanner and the editor's safe preview (camera placeholder, no handlers). */
+export function ScannerView({ subdomain, event, eventId, hasPassport, err, manual, onManualChange, onManualGo, copied, onCopySupport, camera }: {
+  subdomain: string | null;
+  event: Record<string, unknown> | null;
+  eventId: string | null;
+  hasPassport: boolean | null;
+  err: ErrState;
+  manual: string;
+  onManualChange: (value: string) => void;
+  onManualGo: () => void;
+  copied: boolean;
+  onCopySupport: () => void;
+  camera: React.ReactNode;
+}) {
   const evt = event ?? {};
   const g = <T,>(k: string) => (evt[k] as T | null | undefined) ?? null;
 
   return (
-    <EventPaletteScope
+    <ResultPaletteScope
       paletteKey={g<string>("palette_key")}
       backgroundKey={g<string>("page_background_key")}
       pageBackgroundColor={g<string>("page_background_color")}
@@ -148,7 +189,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
     >
       <div className="px-4">
         <PublicEventNav
-          subdomain={subdomain}
+          subdomain={subdomain ?? "preview"}
           eventId={eventId}
           eventName={g<string>("name")}
           primaryColor={g<string>("primary_color")}
@@ -157,26 +198,26 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
         />
       </div>
       <div className="mx-auto max-w-md px-4 pt-4">
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+        <PublicStyleTarget id="scan.heading"><h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
           Scan venue QR
-        </h1>
-        <p className="mt-2 text-sm text-[var(--event-body,#3D372C)]">
+        </h1></PublicStyleTarget>
+        <PublicStyleTarget id="scan.body"><p className="mt-2 text-sm text-[var(--event-body,#3D372C)]">
           Point your camera at the QR code on display at the venue to collect your stamp.
-        </p>
+        </p></PublicStyleTarget>
 
         {hasPassport === false && eventId && (
           <div className="mt-4 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm text-[var(--event-body,#3D372C)]">
             You'll need a passport before you can collect stamps.
-            <Link
+            <ResultLink
               to="/join"
               className="ml-2 font-semibold text-[var(--event-primary,#1F3D2B)] underline underline-offset-4"
             >
               Start your passport →
-            </Link>
+            </ResultLink>
           </div>
         )}
 
-        <div className="mt-5">
+        <PublicStyleTarget id="scan.camera"><div className="mt-5">
           {err.kind === "permission" || err.kind === "unsupported" ? (
             <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-5 text-sm text-[var(--event-body,#3D372C)]">
               <p className="font-semibold text-[var(--event-primary,#1F3D2B)]">
@@ -187,27 +228,27 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
                   ? "You can use your phone's Camera app to scan the venue QR code instead."
                   : "Try opening this page in Safari or Chrome on your phone, or use your phone's Camera app to scan the venue QR code."}
               </p>
-              <Link
+              <ResultLink
                 to="/venues"
                 className="mt-4 inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] underline-offset-4 hover:underline"
               >
                 ← Back to venues
-              </Link>
+              </ResultLink>
             </div>
           ) : (
-            <QrScanner onDecode={handleDecode} onError={handleError} />
+            camera
           )}
-        </div>
+        </div></PublicStyleTarget>
 
         {err.kind === "invalid" && (
-          <div className="mt-3 rounded-xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-2 text-xs text-[var(--event-body,#3D372C)]">
+          <PublicStyleTarget id="scan.error"><div className="mt-3 rounded-xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-2 text-xs text-[var(--event-body,#3D372C)]">
             {err.message}
-          </div>
+          </div></PublicStyleTarget>
         )}
         {err.kind === "error" && (
-          <div className="mt-3 rounded-xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-2 text-xs text-[var(--event-body,#3D372C)]">
+          <PublicStyleTarget id="scan.error"><div className="mt-3 rounded-xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-2 text-xs text-[var(--event-body,#3D372C)]">
             Scanner error. {err.message}
-          </div>
+          </div></PublicStyleTarget>
         )}
 
         <details className="mt-5 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-xs text-[var(--event-body,#3D372C)]">
@@ -219,33 +260,28 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
             <input
               type="text"
               value={manual}
-              onChange={(e) => setManual(e.target.value)}
+              onChange={(e) => onManualChange(e.target.value)}
               placeholder="https://…/checkin/<token>"
               className="w-full rounded-lg border border-[var(--event-border,#E6DCC7)] bg-white px-3 py-2 text-sm text-[var(--event-body,#3D372C)]"
             />
-            <button
+            <PublicStyleTarget id="scan.control"><button
               type="button"
-              onClick={tryManual}
+              onClick={onManualGo}
               className="rounded-full bg-[var(--event-primary,#1F3D2B)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-card-bg,#FBF5E8)]"
             >
               Go
-            </button>
-            <button
+            </button></PublicStyleTarget>
+            <PublicStyleTarget id="scan.control"><button
               type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(buildSupport());
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                } catch { /* ignore */ }
-              }}
+              onClick={onCopySupport}
               className="ml-2 rounded-full border border-[var(--event-primary,#1F3D2B)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--event-primary,#1F3D2B)]"
             >
               {copied ? "Copied" : "Copy support details"}
-            </button>
+            </button></PublicStyleTarget>
           </div>
         </details>
       </div>
-    </EventPaletteScope>
+    </ResultPaletteScope>
   );
 }
+

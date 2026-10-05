@@ -1,3 +1,4 @@
+import { isValidElement } from "react";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -199,7 +200,9 @@ function paletteProps(event: JoinPreviewEvent) {
 
 
 
-export function LiveJoinPage({ subdomain, previewEvent }: { subdomain: string; previewEvent?: JoinPreviewEvent }) {
+export type JoinPreviewState = "new" | "returning" | "error" | "success";
+
+export function LiveJoinPage({ subdomain, previewEvent, previewState = "new" }: { subdomain: string; previewEvent?: JoinPreviewEvent; previewState?: JoinPreviewState }) {
 
   const [state, setState] = useState<LoadState>(() => previewEvent ? { kind: "ready", event: previewEvent } : { kind: "loading" });
 
@@ -288,7 +291,7 @@ export function LiveJoinPage({ subdomain, previewEvent }: { subdomain: string; p
       />
     );
 
-  return <JoinForm event={state.event} subdomain={subdomain} preview={Boolean(previewEvent)} />;
+  return <JoinForm key={previewEvent ? previewState : "live"} event={state.event} subdomain={subdomain} preview={Boolean(previewEvent)} previewState={previewEvent ? previewState : undefined} />;
 }
 
 type SavedPassport = {
@@ -327,7 +330,7 @@ function consumeReturnTo(eventId: string): string | null {
   }
 }
 
-function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEvent; subdomain: string; preview?: boolean }) {
+function JoinForm({ event, subdomain, preview = false, previewState }: { event: JoinPreviewEvent; subdomain: string; preview?: boolean; previewState?: JoinPreviewState }) {
   const sendPassportEmailFn = useServerFn(sendPassportEmail);
   const primary = event.primary_color ?? "#1F3D2B";
   const accent = event.accent_color ?? "#B5572A";
@@ -341,16 +344,17 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
     sms_opt_in: false,
     accept_terms: false,
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  // Preview-only sample states: nothing is submitted, stored or validated remotely.
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>(() => previewState === "error" ? { full_name: "Please enter your name.", email: "Enter a valid email address." } as Partial<Record<keyof FormState, string>> : {});
   const [submitting, setSubmitting] = useState(false);
   const [topError, setTopError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
-  const [success, setSuccess] = useState<{ token: string; passport_id: string } | null>(null);
+  const [success, setSuccess] = useState<{ token: string; passport_id: string } | null>(() => previewState === "success" ? { token: "preview", passport_id: "preview" } : null);
   /** Set when signup completed but a consent write could not be saved. */
   const [consentWarning, setConsentWarning] = useState<string | null>(null);
   const [showRegisterAgain, setShowRegisterAgain] = useState(false);
   const [saved, setSaved] = useState<SavedPassport | null>(() =>
-    preview ? null : readSavedPassport(event.event_id),
+    preview ? (previewState === "returning" ? { access_token: "preview", event_id: event.event_id } : null) : readSavedPassport(event.event_id),
   );
   const [savedValidating, setSavedValidating] = useState<boolean>(() =>
     preview ? false : Boolean(readSavedPassport(event.event_id)?.access_token),
@@ -734,7 +738,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
 
 
 
-        {!savedValidating && (!saved?.access_token || showRegisterAgain) && <form
+        {!savedValidating && (!saved?.access_token || showRegisterAgain) && <PublicStyleTarget id="join.form.surface"><form
           onSubmit={onSubmit}
           className="rounded-3xl border p-5 shadow-sm"
           style={{
@@ -770,6 +774,8 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
           )}
 
           <Field
+            fieldKey="full_name"
+
             label="Full name"
             required={settings.requireName}
             optional={!settings.requireName}
@@ -787,6 +793,8 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             }
           />
           <Field
+            fieldKey="email"
+
             label="Email"
             required
             error={errors.email}
@@ -803,6 +811,8 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             }
           />
           <Field
+            fieldKey="mobile"
+
             label="Mobile"
             required={settings.requireMobile}
             optional={!settings.requireMobile}
@@ -821,6 +831,8 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             }
           />
           <Field
+            fieldKey="postcode"
+
             label="Postcode"
             required={settings.requirePostcode}
             optional={!settings.requirePostcode}
@@ -839,7 +851,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             }
           />
 
-          <label
+          <PublicStyleTarget id="join.form.consent" recordId={"marketing"}><label
             className="mt-3 flex items-start gap-3 text-sm"
             style={{ color: "var(--event-card-text)" }}
           >
@@ -863,11 +875,11 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
                 Association. You can unsubscribe at any time.
               </span>
             </span>
-          </label>
+          </label></PublicStyleTarget>
 
 
 
-          <label
+          <PublicStyleTarget id="join.form.consent" recordId={"terms"}><label
             className="mt-3 flex items-start gap-3 text-sm"
             style={{ color: "var(--event-card-text)" }}
           >
@@ -904,7 +916,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
               </PublicLink></PublicStyleTarget>
               .
             </span>
-          </label>
+          </label></PublicStyleTarget>
           {errors.accept_terms && (
             <p className="mt-1 text-xs font-medium" style={{ color: "#7A2E13" }}>
               {errors.accept_terms}
@@ -929,7 +941,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
           >
             No app download required
           </p></PublicStyleTarget>
-        </form>}
+        </form></PublicStyleTarget>}
         {showDiag && debugInfo && (
           <div className="mt-4">
             <DiagnosticPanel
@@ -970,12 +982,14 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
 }
 
 function Field({
+  fieldKey,
   label,
   required,
   optional,
   error,
   input,
 }: {
+  fieldKey: string;
   label: string;
   required?: boolean;
   optional?: boolean;
@@ -984,7 +998,7 @@ function Field({
 }) {
   return (
     <div className="mb-3">
-      <label
+      <PublicStyleTarget id="join.form.label" recordId={fieldKey}><label
         className="mb-1 flex items-center justify-between text-xs font-medium uppercase tracking-[0.16em]"
         style={{ color: "var(--event-card-muted)" }}
       >
@@ -999,12 +1013,12 @@ function Field({
             Optional
           </span>
         )}
-      </label>
-      {input}
+      </label></PublicStyleTarget>
+      {isValidElement(input) ? <PublicStyleTarget id="join.form.field" recordId={fieldKey}>{input as React.ReactElement<{ style?: React.CSSProperties }>}</PublicStyleTarget> : input}
       {error && (
-        <p className="mt-1 text-xs font-medium" style={{ color: "#7A2E13" }}>
+        <PublicStyleTarget id="join.form.error" recordId={fieldKey}><p className="mt-1 text-xs font-medium" style={{ color: "#7A2E13" }}>
           {error}
-        </p>
+        </p></PublicStyleTarget>
       )}
     </div>
   );

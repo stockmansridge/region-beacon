@@ -1,3 +1,5 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
+import { ResultLink, ResultPaletteScope, useResultPreview } from "@/components/result-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -42,7 +44,7 @@ type FailureDiagnostics = {
   error: SupabaseLikeError | null;
 };
 
-type Outcome =
+export type Outcome =
   | { kind: "loading" }
   | {
       kind: "stamped";
@@ -344,12 +346,13 @@ function CheckinPage() {
   return <CheckinView outcome={outcome} qrToken={qrToken} />;
 }
 
-function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }) {
-  const subdomain = getSubdomain();
+export function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }) {
+  const preview = useResultPreview();
+  const subdomain = preview ? null : getSubdomain();
   const branding = useEventBrandingKeys(subdomain);
   return (
-    <EventPaletteScope {...brandingScopeProps(branding)} className="min-h-screen">
-      {subdomain && <LiveActivityBar subdomain={subdomain} />}
+    <ResultPaletteScope {...brandingScopeProps(branding)} className="min-h-screen">
+      {!preview && subdomain && <LiveActivityBar subdomain={subdomain} />}
       {outcome.kind === "loading" && (
         <div className="flex min-h-screen items-center justify-center text-sm text-[var(--event-page-muted)]">
           Recording your stamp…
@@ -365,11 +368,11 @@ function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }
       {outcome.kind !== "loading" && outcome.kind !== "stamped" && (
         <CheckinFailureCard outcome={outcome} qrToken={qrToken} />
       )}
-    </EventPaletteScope>
+    </ResultPaletteScope>
   );
 }
 
-function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { kind: "stamped" }> }) {
+export function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { kind: "stamped" }> }) {
   const venueLabel = outcome.venueName ?? "this venue";
   const title = outcome.isNew ? "Check-in successful" : "Already checked in";
   const kicker = outcome.isNew ? "Stamp Collected" : "Already Collected";
@@ -382,7 +385,7 @@ function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { kind: "st
   return (
     <>
       <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(0,0,0,0.45)]">
-        <div
+        <PublicStyleTarget id="checkin.result.surface"><div
           className="relative h-[420px] w-full"
           style={{
             background:
@@ -411,43 +414,44 @@ function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { kind: "st
             >
               {kicker}
             </div>
-            <h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
+            <PublicStyleTarget id="checkin.result.heading"><h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
               {title}
-            </h1>
-            <p className="mt-3 text-base text-[var(--event-primary-fg)]/90">
+            </h1></PublicStyleTarget>
+            <PublicStyleTarget id="checkin.result.body"><p className="mt-3 text-base text-[var(--event-primary-fg)]/90">
               {pointsLine}
-            </p>
+            </p></PublicStyleTarget>
             {outcome.isNew && (
               <p className="mt-2 text-sm text-[var(--event-primary-fg)]/80">
                 Your passport has been updated.
               </p>
             )}
           </div>
-        </div>
+        </div></PublicStyleTarget>
       </section>
 
       <div className="mt-5 space-y-2.5">
-        <Link
+        <PublicStyleTarget id="checkin.result.button"><ResultLink
           to="/passport/$token"
           params={{ token: outcome.passportToken }}
           className="flex h-12 w-full items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
         >
           View my passport
-        </Link>
+        </ResultLink></PublicStyleTarget>
       </div>
     </>
   );
 }
 
-function CheckinFailureCard({
+export function CheckinFailureCard({
   outcome,
   qrToken,
 }: {
   outcome: Exclude<Outcome, { kind: "loading" } | { kind: "stamped" }>;
   qrToken: string;
 }) {
+  const preview = useResultPreview();
   const subdomain =
-    outcome.kind === "no_passport_for_event" ? outcome.subdomain : getSubdomain();
+    outcome.kind === "no_passport_for_event" ? outcome.subdomain : preview ? null : getSubdomain();
   const diag = outcome.diag;
   const otherPassports =
     outcome.kind === "no_passport_for_event" ? outcome.otherPassports : [];
@@ -514,6 +518,7 @@ function CheckinFailureCard({
 
   const [copied, setCopied] = useState(false);
   async function copySupport() {
+    if (preview) return; // editor preview never touches the clipboard
     try {
       await navigator.clipboard.writeText(supportReport);
       setCopied(true);
@@ -531,8 +536,8 @@ function CheckinFailureCard({
     <div className="flex min-h-screen items-center justify-center px-6 py-10">
       <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--event-card-border)] bg-[var(--event-card-bg)] p-8 text-center shadow-sm">
         <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[var(--event-card-heading)]/10" />
-        <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-card-heading)]">{title}</h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--event-card-text)]">{body}</p>
+        <PublicStyleTarget id="checkin.failure.heading"><h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-card-heading)]">{title}</h1></PublicStyleTarget>
+        <PublicStyleTarget id="checkin.failure.body"><p className="mt-3 text-sm leading-relaxed text-[var(--event-card-text)]">{body}</p></PublicStyleTarget>
 
         <div className="mt-6 flex flex-col gap-2">
           {outcome.kind === "no_passport_for_event" ? (
@@ -550,13 +555,13 @@ function CheckinFailureCard({
                 Back to trail home
               </a>
               {otherPassportToken && (
-                <Link
+                <PublicStyleTarget id="checkin.failure.button"><ResultLink
                   to="/passport/$token"
                   params={{ token: otherPassportToken }}
                   className="inline-flex h-10 items-center justify-center rounded-full bg-transparent text-xs font-medium tracking-wide text-[var(--event-link)] underline underline-offset-2"
                 >
                   Open saved passport from another trail
-                </Link>
+                </ResultLink></PublicStyleTarget>
               )}
             </>
           ) : (
@@ -575,14 +580,14 @@ function CheckinFailureCard({
               </a>
             </>
           )}
-          <button
+          <PublicStyleTarget id="checkin.failure.button"><button
             type="button"
             onClick={copySupport}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--event-card-border)] bg-transparent text-xs font-medium tracking-wide text-[var(--event-card-muted)] hover:bg-[var(--event-card-border)]/30"
           >
             <Copy className="h-3.5 w-3.5" />
             {copied ? "Copied support details" : "Copy support details"}
-          </button>
+          </button></PublicStyleTarget>
         </div>
 
         <div className="mt-6 flex justify-start">
