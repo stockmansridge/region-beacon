@@ -1,4 +1,4 @@
-import { ChevronDown, Info } from "lucide-react";
+import { ChevronDown, Info, Monitor, Smartphone, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,8 +11,10 @@ import {
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { PageHeader } from "@/components/placeholder";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -66,6 +68,7 @@ import {
 } from "@/lib/event-brand-kits";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
+  validateSearch: z.object({ editor: z.enum(["v2"]).optional() }),
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
   component: BrandingEditor,
   codeSplitGroupings: [],
@@ -344,6 +347,7 @@ function brandingToForm(b: Branding | null): Form {
 
 function BrandingEditor() {
   const { eventId } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
@@ -363,6 +367,13 @@ function BrandingEditor() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<"classic" | "v2">(
+    search.editor === "v2" ? "v2" : "classic",
+  );
+
+  useEffect(() => {
+    setEditorMode(search.editor === "v2" ? "v2" : "classic");
+  }, [search.editor]);
 
   // Uploaded (custom) fonts for this event.
   const [customFonts, setCustomFonts] = useState<EventCustomFont[]>([]);
