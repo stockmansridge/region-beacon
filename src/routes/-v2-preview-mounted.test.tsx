@@ -42,6 +42,7 @@ import { PassportPreview, type PassportRow } from "./passport.$token";
 import { EMPTY_PASSPORT_STAMP_STATE } from "@/lib/passport-stamps";
 import { PublicOffersPage, type EventRow as OffersEventRow, type OfferVenue } from "./live.$subdomain.offers";
 import { PublicLeaderboardPage, type LeaderboardRow } from "./live.$subdomain.leaderboard";
+import { PublicTrailTabs } from "@/components/public-trail-tabs";
 
 const V1_EVENT = {
   event_id: "event-v1", name: "Legacy Trail", palette_key: null, page_background_key: null,
@@ -460,6 +461,43 @@ describe("PublicEventNav override precedence", () => {
     expect(prizes.style.color).toBe("#0E0E0E");
     expect(css).toContain(':where([data-nav-tab="current"]){color:#BB0003!important');
     expect(css).toContain(':where([data-nav-tab="inactive"]){color:#AA0001!important');
+  });
+});
+
+describe("V2 Venues / Offers toggle", () => {
+  it("uses the real shared component with selectable surface and independent current/unselected items", () => {
+    const doc = { version: 1, items: {
+      "shared.trailTabs.surface": { normal: { backgroundColor: "#101112", borderColor: "#202122" } },
+      "shared.trailTabs.tab": { normal: { color: "#303132", backgroundColor: "#404142", borderColor: "#505152", fontSize: 13, fontWeight: 500 } },
+      "shared.trailTabs.currentTab": { normal: { color: "#F0F1F2", backgroundColor: "#606162", borderColor: "#707172", fontSize: 14, fontWeight: 700 } },
+    }, records: { "shared.trailTabs.tab": { offers: { normal: { color: "#808182" } } } }, trailTabs: { labels: { venues: "Trail Stops", offers: "Local Deals" } } } as never;
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PublicTrailTabs active="venues" venueLabelPlural="Cellars" /></PublicStyleScope>, "/venues"));
+    const surface = container.querySelector<HTMLElement>('[data-event-style="shared.trailTabs.surface"]')!;
+    const venues = container.querySelector<HTMLElement>('[data-brand-instance="shared.trailTabs.currentTab@venues"]')!;
+    const offers = container.querySelector<HTMLElement>('[data-brand-instance="shared.trailTabs.tab@offers"]')!;
+    expect(surface.style.backgroundColor).toBe("#101112");
+    expect(venues.textContent).toBe("Trail Stops");
+    expect(venues.getAttribute("aria-current")).toBe("page");
+    expect(venues.style.backgroundColor).toBe("#606162");
+    expect(offers.textContent).toBe("Local Deals");
+    expect(offers.style.color).toBe("#808182");
+    cleanup();
+    const switched = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PublicTrailTabs active="offers" venueLabelPlural="Cellars" /></PublicStyleScope>, "/offers"));
+    expect(switched.container.querySelector('[data-brand-instance="shared.trailTabs.currentTab@offers"]')?.getAttribute("aria-current")).toBe("page");
+    expect(switched.container.querySelector('[data-brand-instance="shared.trailTabs.tab@venues"]')).not.toBeNull();
+  });
+
+  it("buffers multiword toggle labels and commits on blur", async () => {
+    const { TrailTabLabelField } = await import("./admin.events.$eventId_.branding");
+    const commit = vi.fn();
+    const { container } = render(<TrailTabLabelField value="" placeholder="Venues" disabled={false} commit={commit} />);
+    const input = container.querySelector("input")!;
+    fireEvent.change(input, { target: { value: "Trail " } });
+    expect(input.value).toBe("Trail ");
+    fireEvent.change(input, { target: { value: "Trail Stops " } });
+    expect(commit).not.toHaveBeenCalled();
+    fireEvent.blur(input);
+    expect(commit).toHaveBeenCalledWith("Trail Stops");
   });
 });
 
