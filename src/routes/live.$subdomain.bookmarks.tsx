@@ -1,4 +1,5 @@
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { usePublicStyleEnabled } from "@/components/public-style-scope";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Bookmark, ChevronRight, Tag } from "lucide-react";
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/live/$subdomain/bookmarks")({
 });
 
 export function PublicBookmarksPage({ subdomain, previewData }: { subdomain: string; previewData?: { branding: EventBrandingKeys; eventId: string; enabled: boolean; rows: BookmarkRow[] } }) {
+  const v2 = usePublicStyleEnabled();
   const loadedBranding = useEventBrandingKeys(previewData ? null : subdomain);
   const branding = previewData?.branding ?? loadedBranding;
   const [eventId, setEventId] = useState<string | null>(previewData?.eventId ?? null);
