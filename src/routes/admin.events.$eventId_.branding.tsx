@@ -2500,7 +2500,7 @@ function VisualBrandingEditor({
   };
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-muted/40">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/40">
       <div className="relative z-[80] shrink-0 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-3">
           <div>
@@ -2520,11 +2520,13 @@ function VisualBrandingEditor({
           </div>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-      {!canEdit && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">View-only access. You can inspect settings, but cannot change or save them.</div></div>}
-      {(saveError || saveSuccess) && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
-      <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[230px_minmax(420px,1fr)_360px]">
-        <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-4 lg:max-h-[calc(100%-2rem)] lg:overflow-y-auto">
+      <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
+      <div className="shrink-0">
+        {!canEdit && <div className="mx-auto mt-3 max-w-[1800px] px-4"><div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">View-only access. You can inspect settings, but cannot change or save them.</div></div>}
+        {(saveError || saveSuccess) && <div className="mx-auto mt-3 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
+      </div>
+      <div className="mx-auto grid h-full min-h-0 w-full max-w-[1800px] grid-cols-[minmax(190px,230px)_minmax(390px,1fr)_minmax(300px,360px)] gap-4 overflow-x-auto overscroll-x-contain p-4">
+        <nav aria-label="Branding areas" className="min-h-0 overflow-y-auto overscroll-y-contain rounded-md border bg-background p-3">
           <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{previewPage === "home" ? "Landing / home" : previewPage === "venue" ? "Venue detail" : previewPage}</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {(() => {
@@ -2540,9 +2542,10 @@ function VisualBrandingEditor({
           </div>
         </nav>
 
-        <section className="min-w-0 rounded-md border bg-background p-3">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Showing: {previewSource === "draft" ? "V2 draft (unsaved edits)" : previewSource === "saved" ? "Saved V2 configuration" : `Live template (${liveIsV2 ? "V2" : "V1"}, read-only)`}</span> · <span className="font-semibold text-foreground">Visitors currently see: {branding?.public_template_version === "v2" ? "V2" : "V1 (existing template)"}</span>{branding?.public_template_version !== "v2" ? " — differences from the live site are expected until V2 is activated." : "."} Public actions are disabled.</p></div>
+        <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-md border bg-background p-3">
+          <div className="mb-3 min-w-0 overflow-x-auto overscroll-x-contain">
+            <div className="flex min-w-max items-center gap-3">
+            <div className="w-72 shrink-0"><h2 className="font-semibold">Real page preview</h2><p className="truncate text-xs text-muted-foreground" title={`Showing ${previewSource}; visitors see ${branding?.public_template_version === "v2" ? "V2" : "V1"}`}><span className="font-semibold text-foreground">Showing: {previewSource === "draft" ? "V2 draft" : previewSource === "saved" ? "Saved V2" : `Live ${liveIsV2 ? "V2" : "V1"}`}</span> · Visitors see {branding?.public_template_version === "v2" ? "V2" : "V1"}</p></div>
             <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
               <SelectTrigger className="w-44" aria-label="Page"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="terms">Terms</SelectItem><SelectItem value="privacy">Privacy</SelectItem><SelectItem value="legal">Terms / Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem><SelectItem value="scan">Scan (camera off)</SelectItem><SelectItem value="checkin">Check-in result</SelectItem><SelectItem value="bonus">Bonus result</SelectItem><SelectItem value="tasting">Tasting result</SelectItem></SelectContent>
@@ -2575,8 +2578,9 @@ function VisualBrandingEditor({
               <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview" aria-pressed={previewWidth === "mobile"}><Smartphone className="h-4 w-4" /></Button>
               <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview" aria-pressed={previewWidth === "desktop"}><Monitor className="h-4 w-4" /></Button>
             </div>
+            </div>
           </div>
-          <div className="overflow-x-auto rounded-md bg-muted p-3">
+          <div className="min-h-0 overflow-hidden rounded-md bg-muted p-3">
             <PreviewFrame width={previewWidth === "mobile" ? 390 : 1280} onDocument={setFrameDoc}>
               <div
                 className="v2-brand-preview"
@@ -2596,7 +2600,7 @@ function VisualBrandingEditor({
           </div>
         </section>
 
-        <aside className="rounded-md border bg-background p-4 lg:sticky lg:top-4 lg:max-h-[calc(100%-2rem)] lg:overflow-y-auto">
+        <aside className="min-h-0 overflow-y-auto overscroll-y-contain rounded-md border bg-background p-4">
           {!roleMeta && !itemMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an item from the navigator.</p></div></div> : null}
           {itemMeta ? <ItemStyleInspector
             item={itemMeta} values={(styleState === "normal" ? override?.normal : override?.states?.[styleState]) ?? {}} hasOverride={Boolean(override)}
@@ -2705,13 +2709,14 @@ function PreviewFrame({ width, onDocument, children }: { width: number; onDocume
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // The iframe keeps its true viewport width (390px or desktop) so the public
-  // page's media queries match a real device; the admin column only scales it.
+  // page's media queries match a real device; the admin column scales it to
+  // both the available width and height without changing that viewport.
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
   useEffect(() => {
     const box = boxRef.current;
     if (!box || typeof ResizeObserver === "undefined") return;
-    const update = () => setScale(Math.min(1, box.clientWidth / width));
+    const update = () => setScale(Math.min(1, box.clientWidth / width, box.clientHeight / 760));
     update();
     const ro = new ResizeObserver(update);
     ro.observe(box);
@@ -2719,15 +2724,17 @@ function PreviewFrame({ width, onDocument, children }: { width: number; onDocume
   }, [width]);
   const height = 760;
   return (
-    <div ref={boxRef} className="w-full overflow-hidden" style={{ height: height * scale }}>
-      <iframe
-        ref={ref}
-        title="Customer page preview"
-        data-testid="v2-preview-frame"
-        data-viewport-width={width}
-        className="block rounded-md border bg-background shadow-sm"
-        style={{ width, height, transform: `scale(${scale})`, transformOrigin: "top left", marginLeft: scale < 1 ? 0 : `calc((100% - ${width}px) / 2)` }}
-      />
+    <div ref={boxRef} className="flex h-full min-h-0 w-full items-start justify-center overflow-hidden">
+      <div className="relative shrink-0" style={{ width: width * scale, height: height * scale }}>
+        <iframe
+          ref={ref}
+          title="Customer page preview"
+          data-testid="v2-preview-frame"
+          data-viewport-width={width}
+          className="absolute left-0 top-0 block rounded-md border bg-background shadow-sm"
+          style={{ width, height, transform: `scale(${scale})`, transformOrigin: "top left" }}
+        />
+      </div>
       {body ? createPortal(children, body) : null}
     </div>
   );
