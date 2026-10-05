@@ -312,11 +312,9 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
               {venue.name.slice(0, 1).toUpperCase()}
             </div>
           )}
-          <div className="absolute left-3 top-3">
-            <PublicBackLink context="venue" to="/venues" label="Back" legacy="public"
+          <PublicBackLink context="venue" to="/venues" label="Back" legacy="public"
               legacyClassName="absolute left-3 top-3 rounded-full bg-[var(--event-card-bg,#FBF5E8)]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--event-primary,#1F3D2B)] shadow"
-              v2ClassName="inline-flex items-center gap-1.5 rounded-full bg-[var(--event-card-bg,#FBF5E8)]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] shadow underline-offset-4 hover:underline focus-visible:underline" />
-          </div>
+              v2ClassName="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--event-card-bg,#FBF5E8)]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] shadow underline-offset-4 hover:underline focus-visible:underline" />
         </div>
 
         <div className="px-4">
