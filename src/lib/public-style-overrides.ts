@@ -441,7 +441,9 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
     }
     for (const [state, properties] of Object.entries(item.states ?? {})) {
       if (!properties) continue;
-      const pseudo = state === "focus" ? ":focus-visible" : state === "disabled" ? ":is(:disabled,[aria-disabled=\"true\"])" : `:${state}`;
+      const native = state === "focus" ? ":focus-visible" : state === "disabled" ? ':disabled,[aria-disabled="true"]' : `:${state}`;
+      // [data-preview-state] lets the editor force an appearance for visual checking; never set on live pages.
+      const pseudo = `:is(${native},[data-preview-state="${state}"])`;
       const body = declaration(properties, kind);
       if (body) rules.push(`${scoped}${pseudo}{${body}}`);
       // State icon rules carry the pseudo-class, so they out-rank the normal svg rule.
