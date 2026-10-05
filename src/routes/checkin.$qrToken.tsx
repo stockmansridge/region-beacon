@@ -1,4 +1,6 @@
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { useResultCopy } from "@/components/result-copy";
+import { usePublicStyleEnabled } from "@/components/public-style-scope";
 import { ResultAnchor, ResultLink, ResultPaletteScope, useResultBranding, useResultPreview } from "@/components/result-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -373,6 +375,8 @@ export function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: s
 }
 
 export function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { kind: "stamped" }> }) {
+  const v2 = usePublicStyleEnabled();
+  const resultCopy = useResultCopy();
   const venueLabel = outcome.venueName ?? "this venue";
   const title = outcome.isNew ? "Check-in successful" : "Already checked in";
   const kicker = outcome.isNew ? "Stamp Collected" : "Already Collected";
@@ -435,8 +439,17 @@ export function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { ki
           params={{ token: outcome.passportToken }}
           className="flex h-12 w-full items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
         >
-          View my passport
+          {resultCopy("checkin.result.button")}
         </ResultLink></PublicStyleTarget>
+        {/* V2 only: same "Back to event" action as the Bonus/Tasting results. V1 unchanged. */}
+        {v2 && (
+          <PublicStyleTarget id="checkin.result.backButton"><ResultAnchor
+            href="/"
+            className="flex h-11 w-full items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
+          >
+            {resultCopy("checkin.result.backButton")}
+          </ResultAnchor></PublicStyleTarget>
+        )}
       </div>
     </>
   );
