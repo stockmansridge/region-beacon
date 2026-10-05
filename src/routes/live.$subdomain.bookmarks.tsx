@@ -121,29 +121,44 @@ export function PublicBookmarksPage({ subdomain, previewData }: { subdomain: str
                     params={{ venueId: r.venue_id }}
                     className="flex items-center gap-3 rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-3 shadow-sm transition hover:shadow-md"
                   >
-                    <span className="grid h-12 w-12 flex-shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--event-page-bg,#F6EFE2)]">
-                      {thumb ? (
-                        <img src={thumb} alt="" className="h-full w-full object-cover" />
-                      ) : r.kind === "offer" ? (
-                        <Tag className="h-5 w-5 opacity-60" />
-                      ) : (
-                        <Bookmark className="h-5 w-5 opacity-60" />
-                      )}
-                    </span>
+                    {v2 ? (
+                      <PublicStyleTarget id="bookmarks.card.thumb" recordId={r.venue_id}><span
+                        className="grid h-12 w-12 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-transparent"
+                        style={{ backgroundColor: "var(--item-icon-bg, var(--event-page-bg,#F6EFE2))" }}
+                      >
+                        {thumb ? (
+                          <img src={thumb} alt="" className="h-full w-full object-cover" />
+                        ) : r.kind === "offer" ? (
+                          <Tag className="h-5 w-5 opacity-60" />
+                        ) : (
+                          <Bookmark className="h-5 w-5 opacity-60" />
+                        )}
+                      </span></PublicStyleTarget>
+                    ) : (
+                      <span className="grid h-12 w-12 flex-shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--event-page-bg,#F6EFE2)]">
+                        {thumb ? (
+                          <img src={thumb} alt="" className="h-full w-full object-cover" />
+                        ) : r.kind === "offer" ? (
+                          <Tag className="h-5 w-5 opacity-60" />
+                        ) : (
+                          <Bookmark className="h-5 w-5 opacity-60" />
+                        )}
+                      </span>
+                    )}
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+                      <PublicStyleTarget id="bookmarks.card.type" recordId={r.venue_id}><span className="block truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
                         {r.kind === "offer" ? "Offer" : "Venue"}
-                      </span>
-                      <span className="block truncate text-[15px] font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
+                      </span></PublicStyleTarget>
+                      <PublicStyleTarget id="bookmarks.card.name" recordId={r.venue_id}><span className="block truncate text-[15px] font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
                         {r.venue_name ?? "Saved item"}
-                      </span>
+                      </span></PublicStyleTarget>
                       {r.kind === "offer" && offerTitle ? (
-                        <span className="block truncate text-[12.5px] text-[var(--event-card-text,var(--event-body,#3D372C))]">
+                        <PublicStyleTarget id="bookmarks.card.offer" recordId={r.venue_id}><span className="block truncate text-[12.5px] text-[var(--event-card-text,var(--event-body,#3D372C))]">
                           {offerTitle}
-                        </span>
+                        </span></PublicStyleTarget>
                       ) : null}
                     </span>
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-50" />
+                    <PublicStyleTarget id="bookmarks.card.chevron" recordId={r.venue_id}><span className="inline-flex flex-shrink-0"><ChevronRight className="h-4 w-4 opacity-50" /></span></PublicStyleTarget>
                   </PublicLink></PublicStyleTarget>
                 </li>
               );
