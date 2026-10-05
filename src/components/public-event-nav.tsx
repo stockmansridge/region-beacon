@@ -229,6 +229,7 @@ export function PublicEventNav({
               {...navigationItem}
               type="button"
               onClick={async () => {
+                if (isPreview) return; // editor preview: never open the device share sheet or clipboard
                 // Share only the public event root — never the current URL,
                 // which on /passport/$token would leak the private token.
                 const url =

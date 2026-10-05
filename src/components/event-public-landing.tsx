@@ -795,6 +795,7 @@ export function EventPublicLanding({
               title="Share button"
               type="button"
               onClick={async () => {
+                if (isEditorPreview) return; // editor preview: no share sheet / clipboard
                 const url = `https://${subdomain ?? event.public_slug}.getstampd.com.au`;
                 const subject = `Come join me at ${event.name}`;
                 const text = `Come join me at ${event.name} on GetStampd — ${url}`;
