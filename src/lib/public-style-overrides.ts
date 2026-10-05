@@ -69,6 +69,7 @@ export const PUBLIC_V2_THEME_KEYS = [
   "nav_active_fg_color", "hero_bg_color", "hero_fg_color", "hero_accent_color",
   "hero_body_color", "hero_overlay_color", "hero_overlay_opacity",
   "welcome_copy", "logo_shape", "logo_backdrop", "logo_backdrop_color",
+  "cover_focal_x", "cover_focal_y",
 ] as const;
 
 export type PublicV2ThemeKey = (typeof PUBLIC_V2_THEME_KEYS)[number];
@@ -213,6 +214,7 @@ function cleanTheme(raw: unknown): PublicV2Theme | undefined {
     else if (key === "welcome_copy" && typeof value === "string" && value.length <= 1000) theme[key] = value;
     else if (key === "logo_shape" && (value === "square" || value === "circle")) theme[key] = value;
     else if (key === "logo_backdrop" && (value === "transparent" || value === "color")) theme[key] = value;
+    else if ((key === "cover_focal_x" || key === "cover_focal_y") && typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100) theme[key] = value;
   }
   return Object.keys(theme).length > 0 ? theme : undefined;
 }

@@ -490,6 +490,29 @@ function BrandingEditor() {
     ? JSON.stringify(form) !== JSON.stringify(brandingToForm(bundle.branding))
     : false;
 
+  const v2ConfigForDraft = () => {
+    const baseline = brandingToForm(bundle?.branding ?? null);
+    const theme = { ...(form.style_overrides.theme ?? {}) } as Record<string, string | number | null>;
+    const keys: Array<PublicV2ThemeKey & keyof Form> = [
+      "font_family", "heading_font_family", "default_emotive_font_family", "welcome_copy",
+      "primary_color", "accent_color", "link_color", "page_background_color", "page_heading_color",
+      "page_body_color", "page_muted_color", "border_color", "card_background_color", "card_heading_color",
+      "card_body_color", "card_muted_color", "card_border_color", "button_primary_bg", "button_primary_fg",
+      "button_secondary_bg", "button_secondary_fg", "nav_background_color", "nav_fg_color", "nav_muted_color",
+      "nav_active_fg_color", "hero_bg_color", "hero_fg_color", "hero_accent_color", "hero_body_color",
+      "hero_overlay_color", "hero_overlay_opacity", "logo_shape", "logo_backdrop", "logo_backdrop_color",
+      "cover_focal_x", "cover_focal_y",
+    ];
+    for (const key of keys) {
+      if (form[key] === baseline[key]) continue;
+      const raw = form[key];
+      if (key === "hero_overlay_opacity" || key === "cover_focal_x" || key === "cover_focal_y") {
+        theme[key] = String(raw).trim() ? Number(raw) : null;
+      } else theme[key] = typeof raw === "string" && raw !== "" ? raw : null;
+    }
+    return parsePublicStyleOverrides({ ...form.style_overrides, theme });
+  };
+
   useEffect(() => {
     if (!hasUnsavedChanges) return;
     const warnBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -770,7 +793,7 @@ function BrandingEditor() {
         args: Record<string, unknown>,
       ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
         "save_event_v2_branding",
-        { _agency_id: agencyId, _event_id: bundle.event.id, _config: form.style_overrides, _activate: false },
+        { _agency_id: agencyId, _event_id: bundle.event.id, _config: v2ConfigForDraft(), _activate: false },
       );
       const confirmed = data?.[0];
       if (error || !confirmed?.v2_style_config) {
