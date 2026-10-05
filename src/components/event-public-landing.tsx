@@ -21,6 +21,7 @@ import { PublicLink, PublicNavProvider, type PublicNavMode } from "@/components/
 import { resolvePublicLandingCopy } from "@/lib/public-landing-copy";
 import { PublicStyleScope } from "@/components/public-style-scope";
 import type { PublicStyleOverrideDocument } from "@/lib/public-style-overrides";
+import type { PublicTemplateVersion } from "@/lib/public-style-overrides";
 import {
   resolveEventLogoStyle,
   eventLogoBoxStyle,
@@ -176,13 +177,16 @@ export function EventPublicLanding({
    */
   mode = "live",
   previewNotice,
+  templateVersion = "v1",
 }: {
   subdomain: string | null;
   event: PublicEventData;
   venues: PublicVenueData[];
   mode?: PublicNavMode;
   previewNotice?: React.ReactNode;
+  templateVersion?: PublicTemplateVersion;
 }) {
+  const isV2 = templateVersion === "v2";
   const canRegister = Boolean(event.current_terms_version_id);
   const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
@@ -194,10 +198,10 @@ export function EventPublicLanding({
       new URLSearchParams(window.location.search).get("preview") === "1");
   const [previewDismissed, setPreviewDismissed] = useState(false);
   const brandRole = (role: string) => mode === "preview" ? { "data-brand-role": role } : {};
-  const itemRole = (id: string) => ({
+  const itemRole = (id: string) => isV2 ? ({
     "data-event-style": id,
     ...(mode === "preview" ? { "data-brand-role": id, "data-brand-instance": id } : {}),
-  });
+  }) : {};
 
   // Once a returning visitor has a verified passport for this event, the
   // Passport page is their home — redirect them there instead of rendering
@@ -278,7 +282,7 @@ export function EventPublicLanding({
 
   return (
     <PublicNavProvider mode={mode} subdomain={subdomain} preservePreviewAppearance={mode === "preview"}>
-      <PublicStyleScope overrides={event.style_overrides}>
+      <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2}>
       <EventPaletteScope
         paletteKey={event.palette_key ?? null}
         backgroundKey={event.page_background_key ?? null}

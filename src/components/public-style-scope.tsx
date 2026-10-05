@@ -18,16 +18,18 @@ export function usePublicStyleTarget(
 
 export function PublicStyleScope({
   overrides,
+  enabled = true,
   children,
 }: {
   overrides?: PublicStyleOverrideDocument | null;
+  enabled?: boolean;
   children: ReactNode;
 }) {
-  const document = parsePublicStyleOverrides(overrides);
+  const document = enabled ? parsePublicStyleOverrides(overrides) : parsePublicStyleOverrides(null);
   const css = publicStyleCss(document);
   return (
     <PublicStyleContext.Provider value={document}>
-      <div data-public-style-version={document.version}>
+      <div {...(enabled ? { "data-public-style-version": document.version } : {})}>
         {css ? <style>{css}</style> : null}
         {children}
       </div>
