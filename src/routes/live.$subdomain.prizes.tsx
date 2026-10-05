@@ -9,7 +9,7 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { useCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
@@ -34,6 +34,7 @@ type EventInfo = { event_id: string | null; event_name: string | null };
 function useEventInfo(subdomain: string): EventInfo {
   const [info, setInfo] = useState<EventInfo>({ event_id: null, event_name: null });
   useEffect(() => {
+    if (!subdomain) { setInfo({ event_id: null, event_name: null }); return; }
     let cancelled = false;
     (async () => {
       const host = tenantHost(subdomain);
@@ -61,6 +62,7 @@ type RecentCheckin = {
 function useRecentActivity(subdomain: string) {
   const [rows, setRows] = useState<RecentCheckin[]>([]);
   useEffect(() => {
+    if (!subdomain) { setRows([]); return; }
     let cancelled = false;
     const host = tenantHost(subdomain);
     async function load() {
@@ -244,23 +246,30 @@ function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: numb
 export function AwardsPage({
   subdomain,
   initialTab = "prizes",
+  previewData,
 }: {
   subdomain: string;
   initialTab?: "prizes" | "bonus";
+  previewData?: { branding: EventBrandingKeys; eventInfo: EventInfo; awards: PublicEventAward[]; bonuses?: BonusEntry[]; recentCheckins?: RecentCheckin[]; hasPassport?: boolean };
 }) {
-  const branding = useEventBrandingKeys(subdomain);
-  const eventInfo = useEventInfo(subdomain);
-  const passport = useCurrentEventPassport(eventInfo.event_id);
-  const [awards, setAwards] = useState<PublicEventAward[] | null>(null);
+  const loadedBranding = useEventBrandingKeys(previewData ? null : subdomain);
+  const branding = previewData?.branding ?? loadedBranding;
+  const loadedEventInfo = useEventInfo(previewData ? "" : subdomain);
+  const eventInfo = previewData?.eventInfo ?? loadedEventInfo;
+  const passport = useCurrentEventPassport(previewData ? null : eventInfo.event_id);
+  const [awards, setAwards] = useState<PublicEventAward[] | null>(previewData?.awards ?? null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"prizes" | "bonus">(initialTab);
-  const recentCheckins = useRecentActivity(subdomain);
-  const { rows: bonuses, error: bonusesError } = usePublicBonuses(subdomain, eventInfo.event_id);
+  const loadedRecentCheckins = useRecentActivity(previewData ? "" : subdomain);
+  const recentCheckins = previewData?.recentCheckins ?? loadedRecentCheckins;
+  const loadedBonuses = usePublicBonuses(subdomain, previewData ? null : eventInfo.event_id);
+  const { rows: bonuses, error: bonusesError } = previewData ? { rows: previewData.bonuses ?? [], error: null } : loadedBonuses;
   const [sortMode, setSortMode] = useState<SortMode>("az");
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (previewData) { setAwards(previewData.awards); setError(null); return; }
     if (!eventInfo.event_id) return;
     let cancelled = false;
     (async () => {
@@ -301,9 +310,9 @@ export function AwardsPage({
     return () => {
       cancelled = true;
     };
-  }, [eventInfo.event_id, passport.passportHref]);
+  }, [eventInfo.event_id, passport.passportHref, previewData]);
 
-  const hasPassport = !!passport.passportHref;
+  const hasPassport = previewData?.hasPassport ?? !!passport.passportHref;
   const myEntries = useMemo(
     () => (awards ?? []).filter((a) => a.is_eligible),
     [awards],
@@ -329,6 +338,7 @@ export function AwardsPage({
   }, [bonuses, sortMode, userLoc]);
 
   function requestProximity() {
+    if (previewData) { setGeoError("Location is disabled in preview."); return; }
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setGeoError("Location not available on this device.");
       return;
@@ -386,7 +396,7 @@ export function AwardsPage({
       {...brandingScopeProps(branding)}
       className="min-h-screen px-4 pb-4"
     >
-      <LiveActivityBar subdomain={subdomain} />
+      {!previewData && <LiveActivityBar subdomain={subdomain} />}
       <div className="mx-auto max-w-5xl">
         <PublicEventNav
           subdomain={subdomain}
