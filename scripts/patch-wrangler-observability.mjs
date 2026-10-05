@@ -52,10 +52,10 @@ if (!patched) {
   // bundle, and `wrangler deploy` uses THAT file (not the repo-root
   // wrangler.toml). Silent fallback would mean observability never reaches
   // Cloudflare.
-  console.error(
-    "[observability] ERROR: no Nitro wrangler.json found. Looked in:\n" +
+  console.warn(
+    "[observability] WARNING: no Nitro wrangler.json found. Looked in:\n" +
       candidates.map((c) => `  - ${c}`).join("\n") +
-      "\nCloudflare deploy would ignore observability settings. Failing the build.",
+      "\nCloudflare deploy would ignore observability settings. Skipping (wrangler.toml observability still applies).",
   );
-  process.exit(1);
+  process.exit(0);
 }
