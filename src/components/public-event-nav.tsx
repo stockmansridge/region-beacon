@@ -360,6 +360,7 @@ export function PublicEventNav({
               selectable={brandingSelection}
               navMuted={navMuted}
               navActiveFg={navActiveFg}
+              venuesPlural={venueLabels.plural}
             />
           )) : <>
           <li className="h-full min-w-0">
