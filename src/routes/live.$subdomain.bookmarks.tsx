@@ -4,13 +4,13 @@ import { Bookmark, ChevronRight, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PublicLink } from "@/components/public-nav-context";
-import { usePassportBookmarks } from "@/lib/use-passport-bookmarks";
+import { usePassportBookmarks, type BookmarkRow } from "@/lib/use-passport-bookmarks";
 import { PoweredByGetStampd } from "@/components/brand";
 
 export const Route = createFileRoute("/live/$subdomain/bookmarks")({

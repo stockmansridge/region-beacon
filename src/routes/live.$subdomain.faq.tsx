@@ -6,8 +6,8 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
-import { useEventFaqByDomain } from "@/lib/use-event-faq";
+import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
+import { useEventFaqByDomain, type PublicFaqEntry } from "@/lib/use-event-faq";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { LinkifyText } from "@/components/linkify-text";
 
