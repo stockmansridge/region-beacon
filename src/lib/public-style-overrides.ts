@@ -201,20 +201,42 @@ export function emptyPublicStyleOverrides(): PublicStyleOverrideDocument {
   return { version: PUBLIC_STYLE_DOCUMENT_VERSION, items: {} };
 }
 
-function cleanTheme(raw: unknown): PublicV2Theme | undefined {
+type ThemeKeyKind = "colour" | "percent" | "font" | "copy" | "logoShape" | "logoBackdrop";
+/** Explicit per-key kind map — every PUBLIC_V2_THEME_KEYS entry must be listed. */
+export const PUBLIC_V2_THEME_KEY_KINDS: Record<PublicV2ThemeKey, ThemeKeyKind> = {
+  font_family: "font", heading_font_family: "font", default_emotive_font_family: "font",
+  primary_color: "colour", accent_color: "colour", link_color: "colour", page_background_color: "colour",
+  page_heading_color: "colour", page_body_color: "colour", page_muted_color: "colour", border_color: "colour",
+  card_background_color: "colour", card_heading_color: "colour", card_body_color: "colour", card_muted_color: "colour",
+  card_border_color: "colour", button_primary_bg: "colour", button_primary_fg: "colour", button_secondary_bg: "colour",
+  button_secondary_fg: "colour", nav_background_color: "colour", nav_fg_color: "colour", nav_muted_color: "colour",
+  nav_active_fg_color: "colour", hero_bg_color: "colour", hero_fg_color: "colour", hero_accent_color: "colour",
+  hero_body_color: "colour", hero_overlay_color: "colour", hero_overlay_opacity: "percent",
+  welcome_copy: "copy", logo_shape: "logoShape", logo_backdrop: "logoBackdrop", logo_backdrop_color: "colour",
+  cover_focal_x: "percent", cover_focal_y: "percent",
+};
+
+function cleanThemeValue(key: PublicV2ThemeKey, value: unknown): { ok: true; value: string | number | null } | { ok: false } {
+  if (value === null) return { ok: true, value: null };
+  switch (PUBLIC_V2_THEME_KEY_KINDS[key]) {
+    case "colour": return typeof value === "string" && HEX.test(value) ? { ok: true, value: value.toUpperCase() } : { ok: false };
+    case "percent": return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100 ? { ok: true, value } : { ok: false };
+    case "font": return typeof value === "string" && FONT.test(value.trim()) ? { ok: true, value: value.trim() } : { ok: false };
+    case "copy": return typeof value === "string" && value.length <= 1000 ? { ok: true, value } : { ok: false };
+    case "logoShape": return value === "square" || value === "circle" ? { ok: true, value } : { ok: false };
+    case "logoBackdrop": return value === "transparent" || value === "color" ? { ok: true, value } : { ok: false };
+  }
+}
+
+function cleanTheme(raw: unknown, errors?: string[]): PublicV2Theme | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
   const source = raw as Record<string, unknown>;
   const theme: PublicV2Theme = {};
   for (const key of PUBLIC_V2_THEME_KEYS) {
-    const value = source[key];
-    if (value === null) theme[key] = null;
-    else if (key === "hero_overlay_opacity" && typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100) theme[key] = value;
-    else if (key.endsWith("_color") && typeof value === "string" && HEX.test(value)) theme[key] = value.toUpperCase();
-    else if (key.endsWith("font_family") && typeof value === "string" && FONT.test(value.trim())) theme[key] = value.trim();
-    else if (key === "welcome_copy" && typeof value === "string" && value.length <= 1000) theme[key] = value;
-    else if (key === "logo_shape" && (value === "square" || value === "circle")) theme[key] = value;
-    else if (key === "logo_backdrop" && (value === "transparent" || value === "color")) theme[key] = value;
-    else if ((key === "cover_focal_x" || key === "cover_focal_y") && typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100) theme[key] = value;
+    if (!(key in source) || source[key] === undefined) continue;
+    const result = cleanThemeValue(key, source[key]);
+    if (result.ok) theme[key] = result.value;
+    else errors?.push(`theme.${key} has an invalid value`);
   }
   return Object.keys(theme).length > 0 ? theme : undefined;
 }
@@ -245,27 +267,29 @@ function cleanProperty(property: PublicStyleProperty, raw: unknown): string | nu
   return null;
 }
 
-function cleanProperties(definition: PublicStyleElementDefinition, raw: unknown): PublicStyleProperties {
+function cleanProperties(definition: PublicStyleElementDefinition, raw: unknown, errors?: string[], path = definition.id): PublicStyleProperties {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const source = raw as Record<string, unknown>;
   const result: PublicStyleProperties = {};
   for (const property of definition.properties) {
+    if (source[property] === undefined || source[property] === null) continue;
     const value = cleanProperty(property, source[property]);
     if (value !== null) result[property] = value;
+    else errors?.push(`${path}.${property} has an invalid value`);
   }
   return result;
 }
 
-function cleanItem(definition: PublicStyleElementDefinition, raw: unknown): PublicStyleItemOverride | null {
+function cleanItem(definition: PublicStyleElementDefinition, raw: unknown, errors?: string[]): PublicStyleItemOverride | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const source = raw as Record<string, unknown>;
-  const normal = cleanProperties(definition, source.normal);
+  const normal = cleanProperties(definition, source.normal, errors);
   const states: PublicStyleItemOverride["states"] = {};
   const sourceStates = source.states && typeof source.states === "object" && !Array.isArray(source.states)
     ? source.states as Record<string, unknown>
     : {};
   for (const state of definition.states ?? []) {
-    const cleaned = cleanProperties(definition, sourceStates[state]);
+    const cleaned = cleanProperties(definition, sourceStates[state], errors, `${definition.id}:${state}`);
     if (Object.keys(cleaned).length > 0) states[state] = cleaned;
   }
   if (Object.keys(normal).length === 0 && Object.keys(states).length === 0) return null;
@@ -275,7 +299,14 @@ function cleanItem(definition: PublicStyleElementDefinition, raw: unknown): Publ
   };
 }
 
-export function parsePublicStyleOverrides(raw: unknown): PublicStyleOverrideDocument {
+/** Parse and report every rejected value so a save can refuse instead of silently dropping input. */
+export function validatePublicStyleOverrides(raw: unknown): { document: PublicStyleOverrideDocument; errors: string[] } {
+  const errors: string[] = [];
+  const document = parsePublicStyleOverrides(raw, errors);
+  return { document, errors };
+}
+
+export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): PublicStyleOverrideDocument {
   const empty = emptyPublicStyleOverrides();
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return empty;
   const source = raw as Record<string, unknown>;
@@ -287,7 +318,7 @@ export function parsePublicStyleOverrides(raw: unknown): PublicStyleOverrideDocu
   for (const [id, value] of Object.entries(rawItems)) {
     const definition = DEFINITIONS.get(id);
     if (!definition) continue;
-    const item = cleanItem(definition, value);
+    const item = cleanItem(definition, value, errors);
     if (item) items[id] = item;
   }
   const records: NonNullable<PublicStyleOverrideDocument["records"]> = {};
@@ -299,11 +330,11 @@ export function parsePublicStyleOverrides(raw: unknown): PublicStyleOverrideDocu
     if (!definition?.repeat || !values || typeof values !== "object" || Array.isArray(values)) continue;
     for (const [recordId, value] of Object.entries(values as Record<string, unknown>)) {
       if (!RECORD_ID.test(recordId)) continue;
-      const item = cleanItem(definition, value);
+      const item = cleanItem(definition, value, errors);
       if (item) (records[id] ??= {})[recordId] = item;
     }
   }
-  const theme = cleanTheme(source.theme);
+  const theme = cleanTheme(source.theme, errors);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
@@ -316,17 +347,26 @@ export function publicStyleDefinition(id: string): PublicStyleElementDefinition 
   return DEFINITIONS.get(id) ?? null;
 }
 
+/** Merged resolution: item default, then this record's override on top (per property and per state). */
 export function publicStyleItem(
   document: PublicStyleOverrideDocument | null | undefined,
   id: string,
   recordId?: string | null,
 ): PublicStyleItemOverride | null {
   const parsed = parsePublicStyleOverrides(document);
-  if (recordId && parsed.records?.[id]?.[recordId]) return parsed.records[id][recordId];
-  return parsed.items[id] ?? null;
+  const base = parsed.items[id];
+  const record = recordId ? parsed.records?.[id]?.[recordId] : undefined;
+  if (!record) return base ?? null;
+  if (!base) return record;
+  const states: PublicStyleItemOverride["states"] = { ...(base.states ?? {}) };
+  for (const [state, values] of Object.entries(record.states ?? {})) {
+    states[state as keyof typeof states] = { ...(states[state as keyof typeof states] ?? {}), ...values };
+  }
+  return { normal: { ...(base.normal ?? {}), ...(record.normal ?? {}) }, states };
 }
 
-function standardStyle(properties: PublicStyleProperties | undefined): CSSProperties {
+/** Element-level CSS. Icon colour never paints the element text; icon background only paints icon surfaces. */
+function standardStyle(properties: PublicStyleProperties | undefined, kind?: PublicStyleElementDefinition["kind"]): CSSProperties {
   if (!properties) return {};
   return {
     ...(properties.color ? { color: String(properties.color) } : {}),
@@ -339,9 +379,17 @@ function standardStyle(properties: PublicStyleProperties | undefined): CSSProper
     ...(typeof properties.lineHeight === "number" ? { lineHeight: properties.lineHeight } : {}),
     ...(properties.textAlign ? { textAlign: properties.textAlign as CSSProperties["textAlign"] } : {}),
     ...(typeof properties.opacity === "number" ? { opacity: properties.opacity } : {}),
-    ...(properties.iconColor ? { color: String(properties.iconColor) } : {}),
-    ...(properties.iconBackgroundColor ? { backgroundColor: String(properties.iconBackgroundColor) } : {}),
+    ...(kind === "icon" && properties.iconBackgroundColor ? { backgroundColor: String(properties.iconBackgroundColor) } : {}),
   };
+}
+
+function variableStyle(properties: PublicStyleProperties | undefined): Record<string, string> {
+  const vars: Record<string, string> = {};
+  if (properties?.progressTrackColor) vars["--item-progress-track"] = String(properties.progressTrackColor);
+  if (properties?.progressFillColor) vars["--item-progress-fill"] = String(properties.progressFillColor);
+  if (properties?.iconColor) vars["--item-icon-color"] = String(properties.iconColor);
+  if (properties?.iconBackgroundColor) vars["--item-icon-bg"] = String(properties.iconBackgroundColor);
+  return vars;
 }
 
 export function publicStyleTarget(
@@ -357,48 +405,53 @@ export function publicStyleTarget(
 } {
   const item = publicStyleItem(document, id, options?.recordId);
   const normal = item?.normal;
-  const variables: CSSProperties = {
-    ...(normal?.progressTrackColor ? { ["--item-progress-track" as string]: normal.progressTrackColor } : {}),
-    ...(normal?.progressFillColor ? { ["--item-progress-fill" as string]: normal.progressFillColor } : {}),
-    ...(normal?.iconColor ? { ["--item-icon-color" as string]: normal.iconColor } : {}),
-    ...(normal?.iconBackgroundColor ? { ["--item-icon-bg" as string]: normal.iconBackgroundColor } : {}),
-  };
   return {
     "data-event-style": id,
     ...(options?.recordId ? { "data-event-record": options.recordId } : {}),
-    ...(options?.selectable ? { "data-brand-role": id, "data-brand-instance": options.recordId ?? id } : {}),
-    style: { ...standardStyle(normal), ...variables },
+    ...(options?.selectable ? { "data-brand-role": id, "data-brand-instance": options.recordId ? `${id}@${options.recordId}` : id } : {}),
+    style: { ...standardStyle(normal, DEFINITIONS.get(id)?.kind), ...variableStyle(normal) } as CSSProperties,
   };
 }
 
-export function publicStyleCss(document: PublicStyleOverrideDocument | null | undefined): string {
+const CSS_SCOPE = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * Item CSS, confined to ONE scope root (`[data-public-style-root="<scope>"]`)
+ * so two event scopes in one document never affect each other.
+ */
+export function publicStyleCss(document: PublicStyleOverrideDocument | null | undefined, scope?: string): string {
   const parsed = parsePublicStyleOverrides(document);
+  const root = scope && CSS_SCOPE.test(scope) ? `[data-public-style-root="${scope}"] ` : "";
   const rules: string[] = [];
-  const declaration = (properties: PublicStyleProperties) => {
-    const style = standardStyle(properties) as Record<string, string | number | undefined>;
+  const declaration = (properties: PublicStyleProperties, kind?: PublicStyleElementDefinition["kind"]) => {
+    const style = standardStyle(properties, kind) as Record<string, string | number | undefined>;
     const pairs = Object.entries(style).map(([key, value]) => {
       const cssKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       return `${cssKey}:${typeof value === "number" && key === "fontSize" ? `${value}px` : value}!important`;
     });
-    if (properties.progressTrackColor) pairs.push(`--item-progress-track:${properties.progressTrackColor}`);
-    if (properties.progressFillColor) pairs.push(`--item-progress-fill:${properties.progressFillColor}`);
-    if (properties.iconColor) pairs.push(`--item-icon-color:${properties.iconColor}`);
-    if (properties.iconBackgroundColor) pairs.push(`--item-icon-bg:${properties.iconBackgroundColor}`);
+    for (const [key, value] of Object.entries(variableStyle(properties))) pairs.push(`${key}:${value}!important`);
     return pairs.join(";");
   };
-  const add = (selector: string, item: PublicStyleItemOverride) => {
+  const add = (selector: string, item: PublicStyleItemOverride, kind?: PublicStyleElementDefinition["kind"]) => {
+    const scoped = `${root}${selector}`;
     if (item.normal) {
-      rules.push(`${selector}{${declaration(item.normal)}}`);
-      if (item.normal.iconColor) rules.push(`${selector} svg{color:${item.normal.iconColor}!important;stroke:${item.normal.iconColor}!important}`);
+      const body = declaration(item.normal, kind);
+      if (body) rules.push(`${scoped}{${body}}`);
+      if (item.normal.iconColor) rules.push(`${scoped} svg{color:${item.normal.iconColor}!important}`);
     }
     for (const [state, properties] of Object.entries(item.states ?? {})) {
-      if (properties) rules.push(`${selector}:${state}{${declaration(properties)}}`);
+      if (!properties) continue;
+      const pseudo = state === "focus" ? ":focus-visible" : state === "disabled" ? ":is(:disabled,[aria-disabled=\"true\"])" : `:${state}`;
+      const body = declaration(properties, kind);
+      if (body) rules.push(`${scoped}${pseudo}{${body}}`);
+      // State icon rules carry the pseudo-class, so they out-rank the normal svg rule.
+      if (properties.iconColor) rules.push(`${scoped}${pseudo} svg{color:${properties.iconColor}!important}`);
     }
   };
-  for (const [id, item] of Object.entries(parsed.items)) add(`[data-event-style="${id}"]`, item);
+  for (const [id, item] of Object.entries(parsed.items)) add(`[data-event-style="${id}"]`, item, DEFINITIONS.get(id)?.kind);
   for (const [id, records] of Object.entries(parsed.records ?? {})) {
     for (const [recordId, item] of Object.entries(records)) {
-      add(`[data-event-style="${id}"][data-event-record="${recordId}"]`, item);
+      add(`[data-event-style="${id}"][data-event-record="${recordId}"]`, item, DEFINITIONS.get(id)?.kind);
     }
   }
   return rules.join("\n");
