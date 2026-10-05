@@ -79,7 +79,7 @@ describe("Legal page (real component)", () => {
     const html = renderToStaticMarkup(
       <PublicNavProvider mode="preview" subdomain="preview">
         <PublicStyleScope eventId="event-a" overrides={{ version: 1, items: { "legal.heading": { normal: { color: "#123456" } } } } as any}>
-          <CombinedLegalPage subdomain="preview" initialOpen="both" previewData={{ branding: {} as any, row: row as any }} />
+          <CombinedLegalPage subdomain="preview" initialOpen="both" previewData={{ branding: { ready: true } as any, row: row as any }} />
         </PublicStyleScope>
       </PublicNavProvider>,
     );
