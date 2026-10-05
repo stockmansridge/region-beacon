@@ -10,11 +10,8 @@ import {
   isMissingBrandingColumnError,
   type EventBrandingRow,
 } from "@/lib/event-branding-theme";
-import {
-  EventPublicLanding,
-  type PublicEventData,
-  type PublicVenueData,
-} from "@/components/event-public-landing";
+import { type PublicEventData, type PublicVenueData } from "@/components/event-public-landing";
+import { PublicEventTemplate } from "@/components/public-event-template";
 
 /**
  * Admin draft full preview.
@@ -285,7 +282,8 @@ function EventPreview() {
       hero_overlay_color: branding?.hero_overlay_color ?? null,
       hero_overlay_opacity: branding?.hero_overlay_opacity ?? null,
       brand_kit_key: branding?.brand_kit_key ?? null,
-      style_overrides: branding?.style_overrides ?? null,
+      public_template_version: branding?.public_template_version ?? null,
+      v2_style_config: branding?.v2_style_config ?? null,
     } satisfies PublicEventData;
 
     // Same palette derivation the public loader applies to the RPC row.
@@ -387,7 +385,7 @@ function EventPreview() {
   );
 
   return (
-    <EventPublicLanding
+    <PublicEventTemplate
       subdomain={activeSubdomain}
       event={publicEvent}
       venues={venues}

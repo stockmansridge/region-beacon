@@ -19,10 +19,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import {
-  EventPublicLanding,
   type PublicEventData,
   type PublicVenueData,
 } from "@/components/event-public-landing";
+import { PublicEventTemplate } from "@/components/public-event-template";
 import {
   DEFAULT_VENUE_LABEL_PLURAL,
   DEFAULT_VENUE_LABEL_SINGULAR,
@@ -74,6 +74,7 @@ import {
   type PublicStyleElementDefinition,
   type PublicStyleOverrideDocument,
   type PublicStyleProperty,
+  type PublicV2ThemeKey,
 } from "@/lib/public-style-overrides";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
@@ -162,7 +163,8 @@ type Branding = {
   // Retained but no longer editable from the admin UI
   palette_key: string | null;
   page_background_key: string | null;
-  style_overrides?: PublicStyleOverrideDocument | null;
+  public_template_version?: string | null;
+  v2_style_config?: PublicStyleOverrideDocument | null;
 };
 
 type Domain = {
@@ -440,7 +442,7 @@ function brandingToForm(b: Branding | null): Form {
     custom_link_label: b.custom_link_label ?? "",
     custom_link_url: b.custom_link_url ?? "",
     custom_link_enabled: Boolean(b.custom_link_enabled),
-    style_overrides: parsePublicStyleOverrides(b.style_overrides),
+    style_overrides: parsePublicStyleOverrides(b.v2_style_config),
   };
 }
 
@@ -556,6 +558,12 @@ function BrandingEditor() {
   function editColour<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((f) => {
       const next = { ...f, [key]: value };
+      if (editorMode === "v2" && typeof value === "string") {
+        next.style_overrides = parsePublicStyleOverrides({
+          ...f.style_overrides,
+          theme: { ...(f.style_overrides.theme ?? {}), [key as PublicV2ThemeKey]: value || null },
+        });
+      }
       if (COLOUR_FORM_KEYS.includes(key) && f.brand_kit_key && f.brand_kit_key !== "custom") {
         next.brand_kit_key = "custom";
       }
@@ -737,6 +745,30 @@ function BrandingEditor() {
 
 
 
+    if (editorMode === "v2") {
+      setSaving(true);
+      const { data, error } = await (supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
+        "save_event_v2_branding",
+        { _agency_id: agencyId, _event_id: bundle.event.id, _config: form.style_overrides, _activate: false },
+      );
+      const confirmed = data?.[0];
+      if (error || !confirmed?.v2_style_config) {
+        setSaving(false);
+        setSaveError(`V2 branding could not be saved. ${error?.message ?? "Persistence is unavailable; your draft is still open."}`);
+        return;
+      }
+      const savedConfig = parsePublicStyleOverrides(confirmed.v2_style_config);
+      setBundle((current) => current ? { ...current, branding: { ...(current.branding ?? EMPTY_FORM), v2_style_config: savedConfig, public_template_version: confirmed.public_template_version } as Branding, hasBranding: true } : current);
+      setForm((current) => ({ ...current, style_overrides: savedConfig }));
+      setSaving(false);
+      setSaveSuccess("V2 draft saved. The live event template was not changed.");
+      if (opts?.returnAfter) navigate({ to: "/admin/events/$eventId", params: { eventId } });
+      return;
+    }
+
     // Field-level validation.
     const trim = (s: string) => s.trim();
     const hexCheck = (label: string, v: string): string | null =>
@@ -893,7 +925,6 @@ function BrandingEditor() {
       // on the public page, especially when the organiser selects Custom.
       palette_key: brandKitKey === "custom" ? "custom" : brandKitKey ? null : (branding?.palette_key ?? null),
       page_background_key: brandKitKey ? null : (branding?.page_background_key ?? null),
-      style_overrides: form.style_overrides,
     };
 
     const { data: existing } = await supabase
@@ -972,7 +1003,6 @@ function BrandingEditor() {
     while (writeErr && guard < 12) {
       const col = unknownColumn(writeErr.message ?? "");
       if (!col || dropped.has(col)) break;
-      if (col === "style_overrides") break;
       console.warn("[branding-save] dropping unknown column and retrying", { col });
       dropped.add(col);
       missingCols.add(col);
@@ -1206,6 +1236,8 @@ function BrandingEditor() {
     card_body_color: orNullHex(form.card_body_color),
     card_muted_color: orNullHex(form.card_muted_color),
     style_overrides: form.style_overrides,
+    public_template_version: branding?.public_template_version ?? null,
+    v2_style_config: form.style_overrides,
   };
 
   const selectedKit = getBrandKit(form.brand_kit_key);
@@ -1813,12 +1845,13 @@ function BrandingEditor() {
                   aria-label="Customer landing page preview"
                 >
                   <div className="max-h-[70vh] overflow-y-auto">
-                    <EventPublicLanding
+                    <PublicEventTemplate
                       key={previewEvent.event_id}
                       subdomain={null}
                       event={previewEvent}
                       venues={venues}
                       mode="preview"
+                      forceTemplate="v1"
                     />
                   </div>
                 </div>
@@ -1978,6 +2011,23 @@ function VisualBrandingEditor({
     });
   };
 
+  const activateV2 = async () => {
+    if (!canEdit || saving || !agencyId) return;
+    if (!window.confirm("Use the V2 public template for this event? This activates only this event and saves this V2 configuration atomically.")) return;
+    const { data, error } = await (supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
+      "save_event_v2_branding",
+      { _agency_id: agencyId, _event_id: eventId, _config: form.style_overrides, _activate: true },
+    );
+    if (error || data?.[0]?.public_template_version !== "v2") {
+      toast.error(`V2 was not activated. ${error?.message ?? "No confirmed response was returned."}`);
+      return;
+    }
+    toast.success("V2 is now live for this event only.");
+  };
+
   const handlePreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target);
   };
@@ -2028,6 +2078,7 @@ function VisualBrandingEditor({
             <Button type="button" variant="outline" onClick={onBack}>Back to existing editor</Button>
             <Button type="button" variant="outline" onClick={onExit}>Back to event</Button>
             {canEdit && <Button type="button" variant="outline" onClick={onSave} disabled={saving}>Save</Button>}
+            {canEdit && branding?.public_template_version !== "v2" && <Button type="button" variant="outline" onClick={activateV2} disabled={saving}>Use V2 for this event</Button>}
             {canEdit && <Button type="button" onClick={onSaveAndReturn} disabled={saving}>Save and return</Button>}
           </div>
         </div>
@@ -2075,7 +2126,7 @@ function VisualBrandingEditor({
             >
               <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview [data-brand-role="${hoveredRole ?? "__none"}"]{outline-color:color-mix(in srgb,var(--primary) 55%,transparent)}.v2-brand-preview [data-brand-role="${selectedRole ?? "__none"}"]{outline:3px solid var(--primary);outline-offset:-3px}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}`}</style>
               <div className="max-h-[calc(100vh-13rem)] overflow-y-auto">
-                <EventPublicLanding subdomain={null} event={previewEvent} venues={venues} mode="preview" />
+                <PublicEventTemplate subdomain={null} event={{ ...previewEvent, v2_style_config: form.style_overrides }} venues={venues} mode="preview" forceTemplate="v2" />
               </div>
             </div>
           </div>
