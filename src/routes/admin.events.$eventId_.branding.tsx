@@ -811,6 +811,69 @@ function BrandingEditor() {
     setV2Form(brandingToV2Form(nextBranding));
   }
 
+  type V2SaveResult =
+    | { ok: true; confirmed: { public_template_version: string; v2_style_config: PublicStyleOverrideDocument } }
+    | { ok: false; message: string };
+
+  /**
+   * Persist the V2 config atomically via the save_event_v2_branding RPC.
+   * If the RPC is not installed yet (schema-cache miss), fall back to a direct
+   * RLS-governed event_branding update with a confirmed read-back. If the V2
+   * columns are missing too, report persistence as unavailable and keep the draft.
+   */
+  async function saveV2Branding(config: PublicStyleOverrideDocument, activate: boolean): Promise<V2SaveResult> {
+    if (!bundle || !agencyId) return { ok: false, message: "The event is still loading." };
+    const rpc = supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string; code?: string } | null }>;
+    const { data, error } = await rpc("save_event_v2_branding", {
+      _agency_id: agencyId,
+      _event_id: bundle.event.id,
+      _config: config,
+      _activate: activate,
+    });
+    const confirmed = data?.[0];
+    if (!error && confirmed?.v2_style_config) return { ok: true, confirmed };
+
+    const missingRpc = !!error && (error.code === "PGRST202" || /schema cache|could not find the function/i.test(error.message));
+    if (!missingRpc) {
+      return { ok: false, message: error?.message ?? "Persistence is unavailable; your draft is still open." };
+    }
+
+    // Fallback: direct update through the existing table permissions.
+    const updatePayload: Record<string, unknown> = { v2_style_config: config };
+    if (activate) updatePayload.public_template_version = "v2";
+    const { data: rows, error: updateError } = await (supabase.from("event_branding") as unknown as {
+      update: (payload: Record<string, unknown>) => {
+        eq: (col: string, val: string) => {
+          eq: (col: string, val: string) => {
+            select: (cols: string) => Promise<{ data: Array<{ public_template_version: string | null; v2_style_config: PublicStyleOverrideDocument | null }> | null; error: { message: string; code?: string } | null }>;
+          };
+        };
+      };
+    }).update(updatePayload).eq("agency_id", agencyId).eq("event_id", bundle.event.id)
+      .select("public_template_version, v2_style_config");
+
+    const row = rows?.[0];
+    if (updateError || !row?.v2_style_config) {
+      const missingColumns = !!updateError && (updateError.code === "42703" || /column .* does not exist|schema cache/i.test(updateError.message));
+      return {
+        ok: false,
+        message: missingColumns
+          ? "The V2 database changes have not been applied to this environment yet, so V2 branding cannot be saved here. Your draft is still open and nothing was written."
+          : updateError?.message ?? "Persistence is unavailable; your draft is still open.",
+      };
+    }
+    return {
+      ok: true,
+      confirmed: {
+        public_template_version: row.public_template_version === "v2" ? "v2" : "v1",
+        v2_style_config: row.v2_style_config,
+      },
+    };
+  }
+
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
     // Clear previous messages so repeated identical results still re-toast.
