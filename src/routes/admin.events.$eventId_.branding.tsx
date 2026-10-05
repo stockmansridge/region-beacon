@@ -2035,7 +2035,18 @@ function VisualBrandingEditor({
       {(saveError || saveSuccess) && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
       <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[210px_minmax(420px,1fr)_350px]">
         <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Choose an area</div>
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Page</div>
+          <Select value={stylePage} onValueChange={setStylePage}>
+            <SelectTrigger className="mb-3"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Array.from(new Set(PUBLIC_STYLE_ELEMENTS.map((item) => item.page))).map((page) => <SelectItem key={page} value={page}>{page === "home" ? "Landing / home" : page.charAt(0).toUpperCase() + page.slice(1)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">This page</div>
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
+            {PUBLIC_STYLE_ELEMENTS.filter((item) => item.page === stylePage).map((item) => <button key={item.id} type="button" onClick={() => setSelectedRole(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+          </div>
+          <div className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Shared theme</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => setSelectedRole(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
@@ -2070,7 +2081,7 @@ function VisualBrandingEditor({
         </section>
 
         <aside className="rounded-md border bg-background p-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          {!roleMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an area from the navigator.</p></div></div> : <>
+          {!roleMeta && !itemMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an area from the navigator.</p></div></div> : itemMeta ? <ItemStyleInspector item={itemMeta} document={form.style_overrides} state={styleState} setState={setStyleState} setProperty={setItemProperty} reset={() => updateStyleDocument((document) => ({ ...document, items: Object.fromEntries(Object.entries(document.items).filter(([id]) => id !== itemMeta.id)) }))} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0} disabled={!canEdit || saving} clear={() => setSelectedRole(null)} /> : roleMeta ? <>
             <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description}</p></div><Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
             <div className="mt-5 space-y-5">
               {selectedRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || saving} />}
@@ -2081,11 +2092,42 @@ function VisualBrandingEditor({
               {roleMeta.fields.map((field) => <div key={field} className="space-y-2"><ColorRoleRow label={COLOUR_LABELS[field]} fieldName={field} helper={roleMeta.description} resolved={resolvedFor(field)} value={form[field]} onChange={(value) => { editColour(field, value); if (HEX_RE.test(value)) setRecentColours((current) => [value.toUpperCase(), ...current.filter((item) => item !== value.toUpperCase())].slice(0, 6)); }} disabled={!canEdit || saving} warnings={fieldWarnings(field)} />{quickColours.length > 0 && <div className="flex flex-wrap gap-1" aria-label={`Quick colours for ${COLOUR_LABELS[field]}`}>{quickColours.map((colour) => <button key={colour} type="button" title={colour} aria-label={`Use ${colour}`} disabled={!canEdit || saving} onClick={() => editColour(field, colour)} className="h-6 w-6 rounded-sm border focus-visible:ring-2 focus-visible:ring-ring" style={{ backgroundColor: colour }} />)}</div>}</div>)}
               {selectedRole === "hero" || selectedRole === "cover" ? <HeroOverlayCard colorValue={form.hero_overlay_color} opacityValue={form.hero_overlay_opacity} primaryFallback={form.primary_color || theme.primary} disabled={!canEdit || saving} onColorChange={(value) => editColour("hero_overlay_color", value)} onOpacityChange={(value) => setForm((current) => ({ ...current, hero_overlay_opacity: value }))} /> : null}
             </div>
-          </>}
+          </> : null}
         </aside>
       </div>
     </div>
   );
+}
+
+const PROPERTY_LABELS: Record<PublicStyleProperty, string> = {
+  color: "Text colour", backgroundColor: "Background", borderColor: "Border colour",
+  iconColor: "Icon colour", iconBackgroundColor: "Icon background", progressTrackColor: "Track colour",
+  progressFillColor: "Fill colour", fontFamily: "Font family", fontSize: "Font size",
+  fontWeight: "Font weight", lineHeight: "Line height", textAlign: "Alignment", opacity: "Opacity",
+  backgroundGradient: "Gradient",
+};
+
+function ItemStyleInspector({ item, document, state, setState, setProperty, reset, undo, redo, canUndo, canRedo, disabled, clear }: {
+  item: (typeof PUBLIC_STYLE_ELEMENTS)[number]; document: PublicStyleOverrideDocument;
+  state: "normal" | "hover" | "focus" | "active" | "disabled";
+  setState: (state: "normal" | "hover" | "focus" | "active" | "disabled") => void;
+  setProperty: (property: PublicStyleProperty, value: string | number | null) => void;
+  reset: () => void; undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean; disabled: boolean; clear: () => void;
+}) {
+  const saved = document.items[item.id];
+  const values = state === "normal" ? saved?.normal ?? {} : saved?.states?.[state] ?? {};
+  const colourProperties = item.properties.filter((property) => property.endsWith("Color") || property === "color");
+  const hasTypography = item.properties.includes("fontFamily");
+  return <>
+    <div className="flex items-start justify-between gap-3"><div><div className="text-xs font-semibold uppercase text-muted-foreground">This item</div><h2 className="text-lg font-semibold">{item.label}</h2><p className="mt-1 text-sm text-muted-foreground">Changes only this named item. Existing Theme and Brand Kit values remain the fallback.</p></div><Button type="button" size="icon" variant="ghost" onClick={clear} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
+    <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !saved}>Reset this item</Button></div>
+    {item.states?.length ? <Field label="Appearance"><Select value={state} onValueChange={(value) => setState(value as typeof state)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
+    <div className="mt-5 space-y-4">
+      {colourProperties.map((property) => <div key={property} className="space-y-2"><label className="text-sm font-medium">{PROPERTY_LABELS[property]}</label><div className="flex gap-2"><input type="color" value={typeof values[property] === "string" && HEX_RE.test(String(values[property])) ? String(values[property]) : "#000000"} disabled={disabled} onChange={(event) => setProperty(property, event.target.value.toUpperCase())} className="h-10 w-12 rounded border bg-background p-1" /><input value={values[property] == null ? "" : String(values[property])} placeholder="Use default" disabled={disabled} onChange={(event) => setProperty(property, event.target.value)} className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 font-mono text-sm" /><Button type="button" variant="ghost" size="sm" disabled={disabled || values[property] == null} onClick={() => setProperty(property, null)}>Use default</Button></div></div>)}
+      {item.properties.includes("backgroundGradient") ? <Field label="Gradient"><input value={String(values.backgroundGradient ?? "")} placeholder="Use default" disabled={disabled} onChange={(event) => setProperty("backgroundGradient", event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm" /></Field> : null}
+      {hasTypography ? <><Field label="Font family"><Select value={String(values.fontFamily ?? "default")} onValueChange={(value) => setProperty("fontFamily", value === "default" ? null : value)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Use default</SelectItem>{EVENT_FONTS.map((font) => <SelectItem key={font.value} value={font.value}>{font.label}</SelectItem>)}</SelectContent></Select></Field><div className="grid grid-cols-2 gap-3"><Field label="Font size"><input type="number" min={8} max={96} value={values.fontSize ?? ""} placeholder="Default" disabled={disabled} onChange={(event) => setProperty("fontSize", event.target.value ? Number(event.target.value) : null)} className="h-10 w-full rounded-md border bg-background px-3" /></Field><Field label="Weight"><Select value={String(values.fontWeight ?? "default")} onValueChange={(value) => setProperty("fontWeight", value === "default" ? null : Number(value))} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Default</SelectItem>{[400,500,600,700].map((weight) => <SelectItem key={weight} value={String(weight)}>{weight}</SelectItem>)}</SelectContent></Select></Field><Field label="Line height"><input type="number" min={0.8} max={2.5} step={0.1} value={values.lineHeight ?? ""} placeholder="Default" disabled={disabled} onChange={(event) => setProperty("lineHeight", event.target.value ? Number(event.target.value) : null)} className="h-10 w-full rounded-md border bg-background px-3" /></Field><Field label="Alignment"><Select value={String(values.textAlign ?? "default")} onValueChange={(value) => setProperty("textAlign", value === "default" ? null : value)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Default</SelectItem>{["left","center","right"].map((align) => <SelectItem key={align} value={align}>{align}</SelectItem>)}</SelectContent></Select></Field></div></> : null}
+    </div>
+  </>;
 }
 
 
