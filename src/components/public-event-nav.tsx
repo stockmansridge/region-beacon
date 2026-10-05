@@ -1,3 +1,4 @@
+import { mergeStyleOverride } from "@/lib/public-style-overrides";
 import { useLocation } from "@tanstack/react-router";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import {

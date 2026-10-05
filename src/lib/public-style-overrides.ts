@@ -98,9 +98,9 @@ const INPUT = ["backgroundColor", "color", "borderColor", "fontFamily", "fontSiz
 const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
-  { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation surface", kind: "surface", properties: SURFACE },
-  { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation item", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
-  { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active navigation item", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
+  { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
+  { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
+  { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.drawer", page: "shared", section: "Navigation", label: "Menu drawer", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.surface", page: "shared", section: "Announcements", label: "Announcement bar", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.text", page: "shared", section: "Announcements", label: "Announcement text", kind: "text", properties: TEXT },
