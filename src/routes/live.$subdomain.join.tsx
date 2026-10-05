@@ -33,7 +33,7 @@ type ResolveRow = {
   requires_auth: boolean;
 };
 
-type PublicEvent = {
+export type JoinPreviewEvent = {
   event_id: string;
   name: string;
   public_slug: string;
@@ -85,8 +85,8 @@ type PublicEvent = {
 type LoadState =
   | { kind: "loading" }
   | { kind: "not_live" }
-  | { kind: "terms_missing"; event: PublicEvent }
-  | { kind: "ready"; event: PublicEvent };
+  | { kind: "terms_missing"; event: JoinPreviewEvent }
+  | { kind: "ready"; event: JoinPreviewEvent };
 
 type FormState = {
   full_name: string;
@@ -198,7 +198,7 @@ function paletteProps(event: PublicEvent) {
 
 
 
-export function LiveJoinPage({ subdomain, previewEvent }: { subdomain: string; previewEvent?: PublicEvent }) {
+export function LiveJoinPage({ subdomain, previewEvent }: { subdomain: string; previewEvent?: JoinPreviewEvent }) {
 
   const [state, setState] = useState<LoadState>(() => previewEvent ? { kind: "ready", event: previewEvent } : { kind: "loading" });
 
@@ -225,7 +225,7 @@ export function LiveJoinPage({ subdomain, previewEvent }: { subdomain: string; p
         loadPublicV2Branding(host),
       ]);
       if (cancelled) return;
-      const evtRaw = ((evtData?.[0] ?? null) as PublicEvent | null);
+      const evtRaw = ((evtData?.[0] ?? null) as JoinPreviewEvent | null);
       const evt = evtRaw ? applyPaletteToEvent({ ...evtRaw, ...v2 }) : null;
       if (evtErr || !evt) {
         setState({ kind: "not_live" });
@@ -326,7 +326,7 @@ function consumeReturnTo(eventId: string): string | null {
   }
 }
 
-function JoinForm({ event, subdomain, preview = false }: { event: PublicEvent; subdomain: string; preview?: boolean }) {
+function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEvent; subdomain: string; preview?: boolean }) {
   const sendPassportEmailFn = useServerFn(sendPassportEmail);
   const primary = event.primary_color ?? "#1F3D2B";
   const accent = event.accent_color ?? "#B5572A";

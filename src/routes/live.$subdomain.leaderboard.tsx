@@ -17,7 +17,7 @@ export const Route = createFileRoute("/live/$subdomain/leaderboard")({
 });
 
 
-type LeaderboardRow = {
+export type LeaderboardRow = {
   rank: number | null;
   display_name: string | null;
   stamps: number | null;
