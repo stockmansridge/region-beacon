@@ -230,20 +230,24 @@ function HeroCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Desktop: three cards per row, highlight current */}
-      <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3">
-        {SLIDES.map((s, i) => (
-          <SlideCard
-            key={s.title}
-            slide={s}
-            active={i === index}
-            className={
-              SLIDES.length % 3 === 1 && i === SLIDES.length - 1
-                ? "lg:col-start-2"
-                : undefined
-            }
-          />
-        ))}
+      {/* Tablet/desktop: 2 or 3 visible slots; the strip slides through all cards */}
+      <div className="hidden overflow-hidden md:block">
+        <div
+          className="flex gap-6 transition-transform duration-700 ease-out [--per:2] lg:[--per:3]"
+          style={{
+            transform: `translateX(calc(-${index} * ((100% - (var(--per) - 1) * 1.5rem) / var(--per) + 1.5rem)))`,
+          }}
+        >
+          {[...SLIDES, ...SLIDES.slice(0, 2)].map((s, i) => (
+            <div
+              key={`${s.title}-${i}`}
+              className="shrink-0"
+              style={{ width: "calc((100% - (var(--per) - 1) * 1.5rem) / var(--per))" }}
+            >
+              <SlideCard slide={s} active={i === index} />
+            </div>
+          ))}
+        </div>
       </div>
       {/* Mobile: single card */}
       <div className="overflow-hidden md:hidden">
