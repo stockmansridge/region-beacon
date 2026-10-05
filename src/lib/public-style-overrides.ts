@@ -104,6 +104,7 @@ export type PublicStyleElementDefinition = {
   properties: readonly PublicStyleProperty[];
   states?: readonly Exclude<PublicStyleState, "normal">[];
   repeat?: "venue" | "award" | "template";
+  recordIds?: readonly string[];
   similarGroup?: string;
 };
 
@@ -115,6 +116,9 @@ const ICON = ["iconColor", "iconBackgroundColor", "borderColor"] as const;
 const PROGRESS = ["progressTrackColor", "progressFillColor"] as const;
 const INPUT = ["backgroundColor", "color", "borderColor", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
 const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
+const LEADERBOARD_RANK_SLOTS = ["first", "second", "third", "other"] as const;
+const LEADERBOARD_TIER_SLOTS = ["explorer", "gold", "silver", "bronze", "complete", "other"] as const;
+const LEADERBOARD_COMPLETION_SLOTS = ["completed"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
   { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
@@ -164,9 +168,10 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "passport.progress.number", page: "passport", section: "Progress", label: "Progress number", kind: "text", properties: TEXT },
   { id: "passport.stamp.tile", page: "passport", section: "Stamps", label: "Venue stamp", kind: "surface", properties: SURFACE, repeat: "venue" },
   { id: "passport.stamp.status", page: "passport", section: "Stamps", label: "Stamp status (Visited / Empty)", kind: "text", properties: TEXT, repeat: "venue" },
-  { id: "leaderboard.row.points", page: "leaderboard", section: "Leaderboard", label: "Points", kind: "text", properties: TEXT, repeat: "template" },
-  { id: "leaderboard.row.stamps", page: "leaderboard", section: "Leaderboard", label: "Stamps count", kind: "text", properties: TEXT, repeat: "template" },
-  { id: "leaderboard.row.meta", page: "leaderboard", section: "Leaderboard", label: "Venue / bonus breakdown", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "leaderboard.row.points", page: "leaderboard", section: "Person cards", label: "Points number", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
+  { id: "leaderboard.row.pointsUnit", page: "leaderboard", section: "Person cards", label: "Points unit", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
+  { id: "leaderboard.row.stamps", page: "leaderboard", section: "Person cards", label: "Stamps count", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
+  { id: "leaderboard.row.meta", page: "leaderboard", section: "Person cards", label: "Venue / bonus breakdown", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
   { id: "passport.stamp.label", page: "passport", section: "Stamps", label: "Venue stamp label", kind: "text", properties: TEXT, repeat: "venue" },
   { id: "passport.stamps.surface", page: "passport", section: "Stamps", label: "Stamp collection card", kind: "surface", properties: SURFACE },
 
@@ -209,8 +214,13 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "map.marker", page: "map", section: "Map", label: "Map pin", kind: "icon", properties: ["iconColor", "iconBackgroundColor"], states: ["active"], repeat: "venue" },
   { id: "map.list.card", page: "map", section: "Venue list", label: "Map venue card", kind: "surface", properties: SURFACE, repeat: "venue" },
   { id: "leaderboard.heading", page: "leaderboard", section: "Leaderboard", label: "Leaderboard heading", kind: "text", properties: TEXT },
-  { id: "leaderboard.row", page: "leaderboard", section: "Leaderboard", label: "Leaderboard row", kind: "surface", properties: SURFACE, repeat: "template" },
-  { id: "leaderboard.rank", page: "leaderboard", section: "Leaderboard", label: "Rank number", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "leaderboard.row", page: "leaderboard", section: "Person cards", label: "Person card", kind: "surface", properties: SURFACE, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
+  { id: "leaderboard.rank.surface", page: "leaderboard", section: "Person cards", label: "Rank badge background", kind: "surface", properties: SURFACE, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
+  { id: "leaderboard.rank", page: "leaderboard", section: "Person cards", label: "Rank number", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
+  { id: "leaderboard.tier.surface", page: "leaderboard", section: "Person cards", label: "Tier badge background", kind: "surface", properties: SURFACE, repeat: "template", recordIds: LEADERBOARD_TIER_SLOTS },
+  { id: "leaderboard.tier.text", page: "leaderboard", section: "Person cards", label: "Tier badge text", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_TIER_SLOTS },
+  { id: "leaderboard.completed.surface", page: "leaderboard", section: "Person cards", label: "Completed badge background", kind: "surface", properties: SURFACE, repeat: "template", recordIds: LEADERBOARD_COMPLETION_SLOTS },
+  { id: "leaderboard.completed.text", page: "leaderboard", section: "Person cards", label: "Completed badge text", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_COMPLETION_SLOTS },
   { id: "faq.item.surface", page: "faq", section: "Questions", label: "FAQ item", kind: "surface", properties: SURFACE, repeat: "template" },
   { id: "faq.item.question", page: "faq", section: "Questions", label: "FAQ question", kind: "text", properties: TEXT, repeat: "template" },
   { id: "faq.item.answer", page: "faq", section: "Questions", label: "FAQ answer", kind: "text", properties: TEXT, repeat: "template" },
@@ -260,7 +270,7 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "leaderboard.page.intro", page: "leaderboard", section: "Page", label: "Leaderboard intro", kind: "text", properties: TEXT },
   { id: "leaderboard.empty.heading", page: "leaderboard", section: "Empty state", label: "Empty heading", kind: "text", properties: TEXT },
   { id: "leaderboard.empty.body", page: "leaderboard", section: "Empty state", label: "Empty message", kind: "text", properties: TEXT },
-  { id: "leaderboard.row.name", page: "leaderboard", section: "Leaderboard", label: "Visitor name", kind: "text", properties: TEXT, repeat: "template" },
+  { id: "leaderboard.row.name", page: "leaderboard", section: "Person cards", label: "Visitor name", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
   { id: "leaderboard.footnote", page: "leaderboard", section: "Leaderboard", label: "Footnote", kind: "text", properties: TEXT },
   { id: "bookmarks.page.heading", page: "bookmarks", section: "Page", label: "Bookmarks heading", kind: "text", properties: TEXT },
   { id: "bookmarks.page.intro", page: "bookmarks", section: "Page", label: "Bookmarks intro", kind: "text", properties: TEXT },
@@ -526,7 +536,7 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
     const definition = DEFINITIONS.get(id);
     if (!definition?.repeat || !values || typeof values !== "object" || Array.isArray(values)) continue;
     for (const [recordId, value] of Object.entries(values as Record<string, unknown>)) {
-      if (!RECORD_ID.test(recordId)) continue;
+      if (!RECORD_ID.test(recordId) || (definition.recordIds && !definition.recordIds.includes(recordId))) continue;
       const item = cleanItem(definition, value, errors);
       if (item) (records[id] ??= {})[recordId] = item;
     }

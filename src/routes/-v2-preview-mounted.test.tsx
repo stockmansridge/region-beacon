@@ -41,6 +41,7 @@ import { formToPreviewEvent } from "./admin.events.$eventId_.branding";
 import { PassportPreview, type PassportRow } from "./passport.$token";
 import { EMPTY_PASSPORT_STAMP_STATE } from "@/lib/passport-stamps";
 import { PublicOffersPage, type EventRow as OffersEventRow, type OfferVenue } from "./live.$subdomain.offers";
+import { PublicLeaderboardPage, type LeaderboardRow } from "./live.$subdomain.leaderboard";
 
 const V1_EVENT = {
   event_id: "event-v1", name: "Legacy Trail", palette_key: null, page_background_key: null,
@@ -308,6 +309,48 @@ describe("Special Offers V2 targets", () => {
   it("does not emit selectable offer targets for V1", () => {
     const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, public_template_version: null }, offers }} />, "/offers"));
     expect(container.querySelector("[data-brand-role^='offers.card.']")).toBeNull();
+  });
+});
+
+describe("Leaderboard V2 person-card targets", () => {
+  const rows = [
+    { rank: 1, display_name: "Unchanged Person", stamps: 3, points: 30, venue_points: 25, bonus_points: 5, visit_count: 3, tier: "Explorer", is_completed: true, is_enabled: true, event_found: true },
+    { rank: 2, display_name: "Other Person", stamps: 2, points: 20, venue_points: 20, bonus_points: 0, visit_count: 2, tier: "Silver", is_completed: false, is_enabled: true, event_found: true },
+  ] as LeaderboardRow[];
+  const branding = (eventId: string, overrides: unknown, version: "v1" | "v2" = "v2") => ({
+    paletteKey: null, backgroundKey: null, primaryColor: null, accentColor: null, pageBackgroundColor: null, cardBackgroundColor: null, textColor: null, mutedTextColor: null, cardTextColor: null, cardMutedTextColor: null, borderColor: null, primaryTextColor: null, navBackgroundColor: null, brandKitKey: null, linkColor: null, cardBorderColor: null, buttonPrimaryBg: null, buttonPrimaryFg: null, buttonSecondaryBg: null, buttonSecondaryFg: null, navFgColor: null, navMutedColor: null, navActiveFgColor: null, heroBgColor: null, heroFgColor: null, heroAccentColor: null, heroBodyColor: null, heroOverlayColor: null, heroOverlayOpacity: null, pageHeadingColor: null, pageBodyColor: null, pageMutedColor: null, cardHeadingColor: null, cardBodyColor: null, cardMutedColor: null, logoPath: null, coverPath: null, coverFocalX: null, coverFocalY: null, fontFamily: null, headingFontFamily: null, eventId, templateVersion: version, styleOverrides: overrides as never, ready: true,
+  });
+
+  it("selects and styles rank, tier, completed and points leaves by safe template slot", () => {
+    const doc = { version: 1, items: { "leaderboard.rank": { normal: { color: "#101112" } } }, records: {
+      "leaderboard.rank.surface": { first: { normal: { backgroundColor: "#202122", borderColor: "#303132" } } },
+      "leaderboard.rank": { first: { normal: { fontSize: 19, fontWeight: 700 } } },
+      "leaderboard.tier.surface": { explorer: { normal: { backgroundColor: "#404142", borderColor: "#505152" } } },
+      "leaderboard.tier.text": { explorer: { normal: { color: "#606162", fontSize: 12 } } },
+      "leaderboard.completed.surface": { completed: { normal: { backgroundColor: "#707172" } } },
+      "leaderboard.completed.text": { completed: { normal: { color: "#808182" } } },
+      "leaderboard.row.pointsUnit": { first: { normal: { color: "#909192", fontSize: 14 } } },
+    } } as never;
+    const { container } = render(inPreview(<PublicLeaderboardPage subdomain="preview" previewData={{ branding: branding("event-a", doc), eventId: "event-a", rows }} />, "/leaderboard"));
+    const get = (instance: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${instance}"]`)!;
+    expect(get("leaderboard.rank.surface@first").style.backgroundColor).toBe("#202122");
+    expect(get("leaderboard.rank@first").style.fontSize).toBe("19px");
+    expect(get("leaderboard.rank@first").style.color).toBe("#101112");
+    expect(get("leaderboard.tier.surface@explorer").style.backgroundColor).toBe("#404142");
+    expect(get("leaderboard.tier.text@explorer").style.color).toBe("#606162");
+    expect(get("leaderboard.completed.surface@completed").style.backgroundColor).toBe("#707172");
+    expect(get("leaderboard.completed.text@completed").style.color).toBe("#808182");
+    expect(get("leaderboard.row.pointsUnit@first").style.color).toBe("#909192");
+    expect(container.textContent).toContain("Unchanged Person");
+    expect(get("leaderboard.rank.surface@second").style.backgroundColor).not.toBe("#202122");
+  });
+
+  it("keeps V1 unmarked and ignores another event's V2 document", () => {
+    const foreign = { version: 1, records: { "leaderboard.tier.surface": { explorer: { normal: { backgroundColor: "#123456" } } } }, items: {} };
+    const { container } = render(inPreview(<PublicLeaderboardPage subdomain="preview" previewData={{ branding: branding("event-b", foreign, "v1"), eventId: "event-b", rows }} />, "/leaderboard"));
+    expect(container.querySelector("[data-brand-role^='leaderboard.']")).toBeNull();
+    expect(container.innerHTML).not.toContain("#123456");
+    expect(container.textContent).toContain("Unchanged Person");
   });
 });
 
