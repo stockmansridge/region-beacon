@@ -278,7 +278,7 @@ export function PublicVenuesListPage({
 
         <div className="mb-5 mt-6 px-1">
           <h1
-            className="text-[28px] font-semibold leading-tight"
+            className="font-event-heading text-[28px] font-semibold leading-tight"
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
               fontFamily: "var(--event-font, inherit)",
@@ -353,13 +353,13 @@ export function PublicVenuesListPage({
                         visited={visited}
                       />
                       <div className="flex min-w-0 flex-col gap-1.5 p-3">
-                        <p className="font-trail-serif text-[16px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)] break-words">
+                        <p className="font-event-heading text-[16px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))] break-words">
                           {v.name ?? "Unnamed"}
                         </p>
                         {effectiveSort === "nearest" && (
                           <p
                             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-                            style={{ color: "var(--event-muted,#8A7E66)" }}
+                            style={{ color: "var(--event-card-muted,var(--event-muted,#8A7E66))" }}
                           >
                             {distanceM != null
                               ? `${formatDistance(distanceM)} away`
@@ -367,7 +367,7 @@ export function PublicVenuesListPage({
                           </p>
                         )}
                         {v.description && (
-                          <p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-text,#3D372C)] sm:line-clamp-4">
+                          <p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-text,#3D372C))] sm:line-clamp-4">
                             {v.description}
                           </p>
                         )}

@@ -17,6 +17,8 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
 import { Star, Users, Check, Circle, Sparkles, Camera } from "lucide-react";
 import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "@/lib/event-fonts";
+import { loadPublicV2Branding } from "@/lib/use-event-palette";
+import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
@@ -46,7 +48,7 @@ type VenueRow = {
   order_index: number | null;
 };
 
-type EventBrand = {
+type EventBrand = PublicBrandingEvent & {
   event_id?: string;
   name?: string;
   logo_path?: string | null;
@@ -114,7 +116,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
       setState({ kind: "loading" });
       const host = tenantHost(subdomain);
 
-      const [{ data, error }, { data: evtData }, extrasRes] = await Promise.all([
+      const [{ data, error }, { data: evtData }, extrasRes, v2] = await Promise.all([
         supabase.rpc("get_public_venue_by_domain", { _hostname: host, _venue_id: venueId }),
         supabase.rpc("get_public_event_by_domain", { _hostname: host }),
         Promise.resolve(
@@ -131,6 +133,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
             { _hostname: host, _venue_id: venueId },
           ),
         ).then((r) => r, () => ({ data: null, error: null })),
+        loadPublicV2Branding(host),
 
       ]);
 
@@ -145,7 +148,8 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
         setState({ kind: "not_found" });
         return;
       }
-      const evt = (evtData?.[0] ?? null) as EventBrand | null;
+      const rawEvent = (evtData?.[0] ?? null) as EventBrand | null;
+      const evt = rawEvent ? { ...rawEvent, ...v2 } : null;
       setState({
         kind: "ready",
         venue: row,
@@ -258,20 +262,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
   return (
     <EventPaletteScope
-      paletteKey={state.brand?.palette_key ?? null}
-      backgroundKey={state.brand?.page_background_key ?? null}
-      pageBackgroundColor={state.brand?.page_background_color ?? null}
-      cardBackgroundColor={state.brand?.card_background_color ?? null}
-      primaryColor={state.brand?.primary_color ?? null}
-      accentColor={state.brand?.accent_color ?? null}
-      textColor={state.brand?.text_color ?? null}
-      mutedTextColor={state.brand?.muted_text_color ?? null}
-      cardTextColor={state.brand?.card_text_color ?? null}
-      cardMutedTextColor={state.brand?.card_muted_text_color ?? null}
-      borderColor={state.brand?.border_color ?? null}
-      primaryTextColor={state.brand?.primary_text_color ?? null}
-      fontFamily={state.brand?.font_family ?? null}
-      headingFontFamily={state.brand?.heading_font_family ?? null}
+      {...(state.brand ? publicEventScopeProps(state.brand) : { paletteKey: null })}
       className="min-h-screen pb-12"
     >
       <LiveActivityBar subdomain={subdomain} />
@@ -325,7 +316,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           </div>
 
           <div className="mt-4 flex items-start justify-between gap-3">
-            <h1 className="font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+            <h1 className="font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]">
               {venue.name}
             </h1>
             {extras && extras.points_value > 0 && (
@@ -372,7 +363,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
               className="mt-4 whitespace-pre-line text-2xl leading-snug"
               style={{
                 fontFamily: emotiveStack,
-                color: "var(--event-primary,#1F3D2B)",
+                color: "var(--event-page-heading,var(--event-primary,#1F3D2B))",
               }}
             >
               {extras.emotive_text}
@@ -380,7 +371,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
           )}
 
           {venue.description && (
-            <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-text,#3D372C)]">
+            <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-page-text,var(--event-text,#3D372C))]">
               {venue.description}
             </p>
           )}

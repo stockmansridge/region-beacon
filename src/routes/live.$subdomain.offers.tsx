@@ -170,7 +170,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
 
         <div className="mb-5 mt-6 px-1">
           <h1
-            className="text-[28px] font-semibold leading-tight"
+            className="font-event-heading text-[28px] font-semibold leading-tight"
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
               fontFamily: "var(--event-font, inherit)",
@@ -233,7 +233,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
                       <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
                         {v.name ?? "Venue"}
                       </p>
-                      <p className="mt-1 line-clamp-2 font-trail-serif text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
+                      <p className="mt-1 line-clamp-2 font-event-heading text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
                         {offerTitle}
                       </p>
                       {offerBody && (
