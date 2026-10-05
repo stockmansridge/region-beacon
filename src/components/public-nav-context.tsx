@@ -41,6 +41,8 @@ type PublicNavContextValue = {
   disabledTitle: string;
   preservePreviewAppearance: boolean;
   onPreviewNavigate?: (to: string, params?: Record<string, string | undefined>) => void;
+  activePath?: string;
+  previewFeatures?: { hasFaq: boolean; hasMap: boolean; hasAwards: boolean; venueLabels?: { singular: string; plural: string } };
 };
 
 const PublicNavContext = createContext<PublicNavContextValue>({
@@ -56,6 +58,8 @@ export function PublicNavProvider({
   disabledTitle = "Publish the event with a public address to open this page",
   preservePreviewAppearance = false,
   onPreviewNavigate,
+  activePath,
+  previewFeatures,
   children,
 }: {
   mode: PublicNavMode;
@@ -64,9 +68,12 @@ export function PublicNavProvider({
   preservePreviewAppearance?: boolean;
   children: ReactNode;
   onPreviewNavigate?: (to: string, params?: Record<string, string | undefined>) => void;
+  activePath?: string;
+  previewFeatures?: PublicNavContextValue["previewFeatures"];
 }) {
+  const parent = useContext(PublicNavContext);
   return (
-    <PublicNavContext.Provider value={{ mode, subdomain, disabledTitle, preservePreviewAppearance, onPreviewNavigate }}>
+    <PublicNavContext.Provider value={{ mode, subdomain, disabledTitle, preservePreviewAppearance, onPreviewNavigate: onPreviewNavigate ?? parent.onPreviewNavigate, activePath: activePath ?? parent.activePath, previewFeatures: previewFeatures ?? parent.previewFeatures }}>
       {children}
     </PublicNavContext.Provider>
   );

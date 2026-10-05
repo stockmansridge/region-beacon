@@ -7,7 +7,7 @@ import {
   getPaletteOrDefault,
 } from "@/lib/event-palettes";
 import { buildGoogleFontsHref, isSupportedEventFont } from "@/lib/event-fonts";
-import { ensureCustomFontFaces } from "@/lib/event-custom-fonts";
+import { ensureCustomFontFaces, eventScopedCustomFontFamily } from "@/lib/event-custom-fonts";
 import { PublicStyleScope } from "@/components/public-style-scope";
 import type { PublicStyleOverrideDocument, PublicTemplateVersion } from "@/lib/public-style-overrides";
 
@@ -119,6 +119,12 @@ export function EventPaletteScope({
   className?: string;
   applyBackground?: boolean;
 }) {
+  const scopedFont = templateVersion === "v2" && eventId && fontFamily && !isSupportedEventFont(fontFamily)
+    ? `'${eventScopedCustomFontFamily(fontFamily.split(",")[0].replace(/['"]/g, "").trim(), eventId)}', ui-sans-serif, system-ui, sans-serif`
+    : fontFamily;
+  const scopedHeadingFont = templateVersion === "v2" && eventId && headingFontFamily && !isSupportedEventFont(headingFontFamily)
+    ? `'${eventScopedCustomFontFamily(headingFontFamily.split(",")[0].replace(/['"]/g, "").trim(), eventId)}', ui-sans-serif, system-ui, sans-serif`
+    : headingFontFamily;
   const hasCustomPalette =
     paletteKey === "custom" ||
     (!paletteKey && (primaryColor || accentColor));
@@ -278,11 +284,11 @@ export function EventPaletteScope({
             ["--event-hero-overlay-strong" as any]: `color-mix(in srgb, ${theme.heroBg} ${heroOverlayOpacity}%, transparent)`,
           }
         : {}),
-    ...(fontFamily
-      ? { fontFamily, ["--event-font" as any]: fontFamily }
+    ...(scopedFont
+      ? { fontFamily: scopedFont, ["--event-font" as any]: scopedFont }
       : {}),
-    ...(headingFontFamily
-      ? { ["--event-heading-font" as any]: headingFontFamily }
+    ...(scopedHeadingFont
+      ? { ["--event-heading-font" as any]: scopedHeadingFont }
       : {}),
   };
   const content = (
