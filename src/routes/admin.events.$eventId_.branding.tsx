@@ -2466,6 +2466,7 @@ function VisualBrandingEditor({
     passport: [["partial", "Some stamps"], ["empty", "No stamps yet"], ["complete", "All stamps"]],
     prizes: [["unlocked", "Has passport"], ["locked", "No passport yet"]],
     offers: [["published", "Published images"], ["no_image", "No image (sample)"]],
+    leaderboard: [["showcase", "Ranks and badges"], ["explorer", "Explorer tier"], ["completed", "Completed badge"]],
     ...RESULT_PAGE_STATES,
   };
   const pageStates = PAGE_STATES[previewPage] ?? [];
@@ -2512,7 +2513,16 @@ function VisualBrandingEditor({
     if (previewPage === "join") return <LiveJoinPage subdomain="preview" previewEvent={draftEvent as JoinPreviewEvent} previewState={pageState as JoinPreviewState} />;
     if (previewPage === "prizes") return <AwardsPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, awards: awardEntries, bonuses: [], recentCheckins: [], hasPassport: pageState !== "locked" }} />;
     if (previewPage === "map") return <PublicTrailMapPage subdomain="preview" previewData={{ branding: fixtureBranding, event: { ...draftEvent, event_id: event.id, name: event.name } as MapEventRow, venues: listVenues.map((venue) => ({ ...venue, event_found: true })) }} />;
-    if (previewPage === "leaderboard") return <PublicLeaderboardPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, rows: !populated ? [] : [{ rank: 1, display_name: "Sample visitor (editor only)", stamps: 3, points: 30, venue_points: 30, bonus_points: 0, visit_count: 3, tier: "Explorer", is_completed: false, is_enabled: true, event_found: true }] }} />;
+    if (previewPage === "leaderboard") {
+      const sampleRows = [
+        { rank: 1, display_name: "Sample Explorer", stamps: 3, points: 30, venue_points: 30, bonus_points: 0, visit_count: 3, tier: "Explorer", is_completed: pageState === "completed", is_enabled: true, event_found: true },
+        { rank: 2, display_name: "Sample Silver", stamps: 5, points: 24, venue_points: 20, bonus_points: 4, visit_count: 5, tier: "Silver", is_completed: true, is_enabled: true, event_found: true },
+        { rank: 3, display_name: "Sample Bronze", stamps: 2, points: 18, venue_points: 18, bonus_points: 0, visit_count: 2, tier: "Bronze", is_completed: false, is_enabled: true, event_found: true },
+        { rank: 4, display_name: "Sample Visitor", stamps: 1, points: 8, venue_points: 8, bonus_points: 0, visit_count: 1, tier: null, is_completed: false, is_enabled: true, event_found: true },
+      ];
+      const rows = pageState === "explorer" ? sampleRows.slice(0, 1) : pageState === "completed" ? sampleRows.slice(0, 2) : sampleRows;
+      return <PublicLeaderboardPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, rows: populated ? rows : [] }} />;
+    }
     if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: faqEntries }} />;
     if (previewPage === "bookmarks") return <PublicBookmarksPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, enabled: true, rows: !populated ? [] : listVenues.slice(0, 2).filter((venue) => venue.venue_id).map((venue) => ({ kind: venue.offer_summary ? "offer" as const : "venue" as const, venue_id: venue.venue_id!, venue_name: venue.name, logo_path: venue.logo_path, cover_path: venue.cover_path, offer_summary: venue.offer_summary, created_at: new Date(0).toISOString() })) }} />;
     if (["terms", "privacy", "legal"].includes(previewPage)) return <CombinedLegalPage subdomain="preview" initialOpen={previewPage === "terms" ? "terms" : previewPage === "privacy" ? "privacy" : "both"} previewData={{ branding: fixtureBranding, row: publicContent?.legal ?? { event_id: event.id, event_name: event.name, legal_source: "local_text", terms_title: "Terms", terms_body: "Sample terms for preview.", terms_url: null, privacy_title: "Privacy", privacy_body: "Sample privacy information for preview.", privacy_url: null, terms_version: null, privacy_version: null, effective_at: null } as LegalRow }} />;

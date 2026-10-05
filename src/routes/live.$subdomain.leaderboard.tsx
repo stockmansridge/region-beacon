@@ -204,7 +204,7 @@ export function PublicLeaderboardPage({ subdomain, previewData }: { subdomain: s
         )}
 
         {state.kind === "ready" && state.rows.length > 0 && (
-          <LeaderboardList rows={state.rows} />
+          <LeaderboardList rows={state.rows} v2={branding.templateVersion === "v2"} />
         )}
 
         <PrivacyNote />
@@ -283,7 +283,19 @@ function tierColor(tier: string | null): { bg: string; fg: string } {
   return { bg: "var(--event-card-border)", fg: "var(--event-card-text)" };
 }
 
-function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
+function rankSlot(rank: number): "first" | "second" | "third" | "other" {
+  if (rank === 1) return "first";
+  if (rank === 2) return "second";
+  if (rank === 3) return "third";
+  return "other";
+}
+
+function tierSlot(tier: string | null): "explorer" | "gold" | "silver" | "bronze" | "complete" | "other" {
+  const value = (tier ?? "").toLowerCase();
+  return value === "explorer" || value === "gold" || value === "silver" || value === "bronze" || value === "complete" ? value : "other";
+}
+
+function LeaderboardList({ rows, v2 }: { rows: LeaderboardRow[]; v2: boolean }) {
   return (
     <ul className="space-y-2">
       {rows.map((r, i) => {
@@ -291,48 +303,50 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
         const points = r.points ?? null;
         const tier = r.tier;
         const tc = tierColor(tier);
+        const slot = rankSlot(r.rank ?? i + 1);
+        const tierTemplateSlot = tierSlot(tier);
         return (
-          <PublicStyleTarget key={`${r.rank}-${r.display_name}-${i}`} id="leaderboard.row"><li
+          <PublicStyleTarget key={`rank-${r.rank ?? i + 1}`} id="leaderboard.row" recordId={slot}><li
             className="flex items-center gap-4 rounded-2xl border border-[var(--event-card-border)] bg-[var(--event-card-bg)] px-4 py-3 shadow-sm"
           >
-            <RankBadge rank={r.rank ?? i + 1} />
+            <RankBadge rank={r.rank ?? i + 1} v2={v2} />
             <div className="min-w-0 flex-1">
-              <PublicStyleTarget id="leaderboard.row.name"><p className="truncate font-trail-serif text-base font-semibold text-[var(--event-card-heading)]">
+              <PublicStyleTarget id="leaderboard.row.name" recordId={slot}><p className="truncate font-trail-serif text-base font-semibold text-[var(--event-card-heading)]">
                 {r.display_name ?? "Guest"}
               </p></PublicStyleTarget>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 {tier && (
-                  <span
-                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                  <PublicStyleTarget id="leaderboard.tier.surface" recordId={tierTemplateSlot}><span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 ${v2 ? "box-border border border-transparent" : ""}`}
                     style={{ backgroundColor: tc.bg, color: tc.fg }}
                   >
-                    {tier}
-                  </span>
+                    <PublicStyleTarget id="leaderboard.tier.text" recordId={tierTemplateSlot}><span className="text-[10px] font-semibold uppercase tracking-[0.18em]">{tier}</span></PublicStyleTarget>
+                  </span></PublicStyleTarget>
                 )}
                 {r.is_completed && (
-                  <span className="inline-flex items-center rounded-full bg-[var(--event-card-heading)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-card-heading)]">
-                    Completed
-                  </span>
+                  <PublicStyleTarget id="leaderboard.completed.surface" recordId="completed"><span className={`inline-flex items-center rounded-full bg-[var(--event-card-heading)]/10 px-2 py-0.5 ${v2 ? "box-border border border-transparent" : ""}`}>
+                    <PublicStyleTarget id="leaderboard.completed.text" recordId="completed"><span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--event-card-heading)]">Completed</span></PublicStyleTarget>
+                  </span></PublicStyleTarget>
                 )}
               </div>
             </div>
             <div className="text-right">
               {points !== null && (
-                <PublicStyleTarget id="leaderboard.row.points"><div className="text-lg font-semibold text-[var(--event-link)]">
+                <PublicStyleTarget id="leaderboard.row.points" recordId={slot}><div className="text-lg font-semibold text-[var(--event-link)]">
                   {points}
-                  <span className="ml-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
+                  <PublicStyleTarget id="leaderboard.row.pointsUnit" recordId={slot}><span className="ml-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
                     pts
-                  </span>
+                  </span></PublicStyleTarget>
                 </div></PublicStyleTarget>
               )}
               {stamps !== null && (
-                <PublicStyleTarget id="leaderboard.row.stamps"><div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
+                <PublicStyleTarget id="leaderboard.row.stamps" recordId={slot}><div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--event-card-muted)]">
                   {stamps} {stamps === 1 ? "stamp" : "stamps"}
                 </div></PublicStyleTarget>
               )}
               {(r.venue_points !== null || r.bonus_points !== null) &&
                 (r.venue_points ?? 0) + (r.bonus_points ?? 0) > 0 && (
-                  <PublicStyleTarget id="leaderboard.row.meta"><div className="mt-0.5 text-[10px] text-[var(--event-card-muted)]">
+                  <PublicStyleTarget id="leaderboard.row.meta" recordId={slot}><div className="mt-0.5 text-[10px] text-[var(--event-card-muted)]">
                     {r.venue_points ?? 0} venue · {r.bonus_points ?? 0} bonus
                   </div></PublicStyleTarget>
                 )}
@@ -344,7 +358,7 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
   );
 }
 
-function RankBadge({ rank }: { rank: number }) {
+function RankBadge({ rank, v2 }: { rank: number; v2: boolean }) {
   const gold = rank === 1;
   const silver = rank === 2;
   const bronze = rank === 3;
@@ -356,11 +370,11 @@ function RankBadge({ rank }: { rank: number }) {
         ? "var(--event-accent)"
         : "var(--event-card-heading)";
   return (
-    <PublicStyleTarget id="leaderboard.rank"><div
-      className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-[var(--event-page-bg)]"
+    <PublicStyleTarget id="leaderboard.rank.surface" recordId={rankSlot(rank)}><div
+      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${v2 ? "box-border border border-transparent" : ""}`}
       style={{ backgroundColor: bg }}
     >
-      {rank}
+      <PublicStyleTarget id="leaderboard.rank" recordId={rankSlot(rank)}><span className="text-sm font-bold text-[var(--event-page-bg)]">{rank}</span></PublicStyleTarget>
     </div></PublicStyleTarget>
   );
 }
