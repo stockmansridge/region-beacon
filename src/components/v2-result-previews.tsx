@@ -22,7 +22,8 @@ export const RESULT_PAGE_STATES: Record<ResultPreviewPage, Array<[string, string
 
 const SAMPLE = "Sample (editor only)";
 const diag = { stage: "preview", rpc: null, current_event_id: null, saved_passport_event_ids: [], saved_passport_count: 0, localStorage_key_attempted: null, passport_attempted: false, return_to_stored: false, error: null };
-const claim = (name: string) => ({ success: true, already_collected: false, event_id: null, bonus_code_id: null, bonus_code_name: name, tasting_qr_id: null, tasting_qr_label: name, venue_id: null, venue_name: SAMPLE, points_awarded: 5, total_points: 35, venue_points: 30, bonus_points: 5, message: null });
+const claim = (name: string) => ({  // label and venue are distinct fields: never reuse the venue sample as the code/tasting name
+ success: true, already_collected: false, event_id: null, bonus_code_id: null, bonus_code_name: name, tasting_qr_id: null, tasting_qr_label: name, venue_id: null, venue_name: SAMPLE, points_awarded: 5, total_points: 35, venue_points: 30, bonus_points: 5, message: null });
 
 function checkinOutcome(state: string, venueName: string | null): CheckinOutcome {
   if (state === "stamped" || state === "repeat") return { kind: "stamped", venueName: venueName ?? SAMPLE, passportToken: "preview", isNew: state === "stamped", pointsAwarded: state === "stamped" ? 10 : 0, pointsAlreadyAwarded: state === "repeat", totalPoints: 30 };
@@ -30,12 +31,12 @@ function checkinOutcome(state: string, venueName: string | null): CheckinOutcome
   return { kind: state as "qr_invalid" | "event_not_live", diag };
 }
 function bonusOutcome(state: string): BonusOutcome {
-  if (state === "claimed" || state === "already") return { kind: state, row: { ...claim(SAMPLE), already_collected: state === "already" } as never, passportToken: "preview" };
+  if (state === "claimed" || state === "already") return { kind: state, row: { ...claim("Sample bonus code"), already_collected: state === "already" } as never, passportToken: "preview" };
   if (state === "no_passport") return { kind: "no_passport", subdomain: null };
   return { kind: "inactive", message: "This bonus code is not active (sample)." };
 }
 function tastingOutcome(state: string): TastingOutcome {
-  if (state === "claimed" || state === "already") return { kind: state, row: { ...claim(SAMPLE), already_collected: state === "already" } as never, passportToken: "preview" };
+  if (state === "claimed" || state === "already") return { kind: state, row: { ...claim("Sample tasting"), already_collected: state === "already" } as never, passportToken: "preview" };
   if (state === "no_passport") return { kind: "no_passport", subdomain: null };
   return { kind: "unavailable", message: "This tasting is not available right now (sample)." };
 }

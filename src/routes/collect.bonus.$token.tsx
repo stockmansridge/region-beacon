@@ -1,4 +1,5 @@
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { useResultCopy } from "@/components/result-copy";
 import { ResultAnchor, ResultLink, ResultPaletteScope, useResultBranding, useResultPreview } from "@/components/result-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -187,6 +188,7 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
     : { paletteKey: branding.paletteKey, backgroundKey: branding.backgroundKey };
   const resultPrimary = isV2 ? "var(--event-primary)" : PRIMARY;
   const resultAccent = isV2 ? "var(--event-accent)" : GOLD;
+  const resultCopy = useResultCopy();
 
   if (outcome.kind === "loading") {
     return (
@@ -254,14 +256,14 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
               className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
               style={{ backgroundColor: resultPrimary }}
             >
-              View my passport
+              {resultCopy("bonus.result.button")}
             </ResultLink></PublicStyleTarget>
-            <ResultAnchor
+            <PublicStyleTarget id="bonus.result.backButton"><ResultAnchor
               href="/"
               className="flex h-11 w-full items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
               >
-              Back to event
-            </ResultAnchor>
+              {resultCopy("bonus.result.backButton")}
+            </ResultAnchor></PublicStyleTarget>
           </div>
         </div>
       </ResultPaletteScope>
