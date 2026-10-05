@@ -574,7 +574,7 @@ export function PassportPreview({
             /></PublicStyleTarget>
           ) : null}
           <PublicStyleTarget id="passport.hero.overlay"><div
-            className="absolute inset-0"
+            className={`absolute inset-0${preview ? " pointer-events-none" : ""}`}
             style={{
               background:
                 "linear-gradient(180deg, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 0%, var(--event-hero-overlay, rgba(0,0,0,0.2)) 40%, var(--event-hero-overlay-strong, rgba(0,0,0,0.65)) 100%)",

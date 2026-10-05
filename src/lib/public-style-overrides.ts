@@ -291,7 +291,7 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "leaderboard.row.meta", page: "leaderboard", section: "Person cards", label: "Venue / bonus breakdown", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
   { id: "passport.stamp.label", page: "passport", section: "Stamps", label: "Venue stamp label", kind: "text", properties: TEXT, repeat: "venue" },
   { id: "passport.stamps.surface", page: "passport", section: "Stamps", label: "Stamp collection card", kind: "surface", properties: SURFACE },
-  { id: "passport.hero.surface", page: "passport", section: "Hero", label: "Passport hero background", kind: "surface", properties: SURFACE },
+  { id: "passport.hero.surface", page: "passport", section: "Hero", label: "Passport hero background", kind: "surface", properties: ["backgroundColor", "borderColor", "backgroundGradient"] },
   { id: "passport.progress.bar", page: "passport", section: "Progress", label: "Trail progress bar", kind: "progress", properties: PROGRESS },
   { id: "passport.progress.percent", page: "passport", section: "Progress", label: "Percent complete", kind: "text", properties: TEXT },
   { id: "passport.summary.visitedLabel", page: "passport", section: "Progress", label: "Visited label", kind: "text", properties: TEXT },
