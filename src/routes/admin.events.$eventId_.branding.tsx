@@ -1,3 +1,4 @@
+import { V2ResultPreview, RESULT_PAGE_STATES, type ResultPreviewPage } from "@/components/v2-result-previews";
 import { ChevronDown, Info, Monitor, Redo2, Smartphone, Undo2, X } from "lucide-react";
 import { loadV2PreviewContent, loadV2PreviewVenueExtras, previewHasMap, type V2PreviewContent, type V2PreviewVenueExtras } from "@/lib/v2-preview-content";
 import {
@@ -2177,7 +2178,7 @@ function VisualBrandingEditor({
     observer.observe(body, { childList: true, subtree: true });
     return () => { observer.disconnect(); cancelAnimationFrame(raf); };
   }, [frameDoc]);
-  const [previewPage, setPreviewPage] = useState<"home" | "join" | "passport" | "venues" | "venue" | "offers" | "prizes" | "map" | "leaderboard" | "faq" | "terms" | "privacy" | "legal" | "bookmarks">("home");
+  const [previewPage, setPreviewPage] = useState<"home" | "join" | "passport" | "venues" | "venue" | "offers" | "prizes" | "map" | "leaderboard" | "faq" | "terms" | "privacy" | "legal" | "bookmarks" | ResultPreviewPage>("home");
   const [previewSource, setPreviewSource] = useState<"draft" | "saved" | "live">("draft");
   const [previewInteraction, setPreviewInteraction] = useState<"select" | "navigate">("select");
   const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
@@ -2436,6 +2437,7 @@ function VisualBrandingEditor({
     join: [["new", "New visitor"], ["returning", "Returning visitor"], ["error", "Form errors"], ["success", "Registered (success)"]],
     passport: [["partial", "Some stamps"], ["empty", "No stamps yet"], ["complete", "All stamps"]],
     prizes: [["unlocked", "Has passport"], ["locked", "No passport yet"]],
+    ...RESULT_PAGE_STATES,
   };
   const pageStates = PAGE_STATES[previewPage] ?? [];
   const pageState = pageStates.find(([key]) => key === pageStateChoice[previewPage])?.[0] ?? pageStates[0]?.[0] ?? "";
@@ -2472,6 +2474,7 @@ function VisualBrandingEditor({
     if (previewPage === "venues") return <PublicVenuesListPage subdomain="preview" previewData={{ event: draftEvent as never, venues: listVenues }} />;
     if (previewPage === "offers") return <PublicOffersPage subdomain="preview" previewData={{ event: draftEvent as never, offers: listVenues.filter((venue) => venue.offer_summary).map((venue) => ({ ...venue, offer_summary: venue.offer_summary! })) as OfferVenue[] }} />;
     if (previewPage === "venue" && selectedVenue?.venue_id) return <PublicVenueDetailPage subdomain="preview" venueId={selectedVenue.venue_id} previewData={{ event: draftEvent, venue: selectedVenue as DetailVenueRow, extras: venueExtras }} />;
+    if (previewPage === "scan" || previewPage === "checkin" || previewPage === "bonus" || previewPage === "tasting") return <V2ResultPreview page={previewPage} state={pageState} event={{ ...draftEvent, event_id: event.id, name: event.name }} venueName={selectedVenue?.name ?? null} />;
     if (previewPage === "join") return <LiveJoinPage subdomain="preview" previewEvent={draftEvent as JoinPreviewEvent} previewState={pageState as JoinPreviewState} />;
     if (previewPage === "prizes") return <AwardsPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, awards: awardEntries, bonuses: [], recentCheckins: [], hasPassport: pageState !== "locked" }} />;
     if (previewPage === "map") return <PublicTrailMapPage subdomain="preview" previewData={{ branding: fixtureBranding, event: { ...draftEvent, event_id: event.id, name: event.name } as MapEventRow, venues: listVenues.map((venue) => ({ ...venue, event_found: true })) }} />;
@@ -2534,7 +2537,7 @@ function VisualBrandingEditor({
             <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Showing: {previewSource === "draft" ? "V2 draft (unsaved edits)" : previewSource === "saved" ? "Saved V2 configuration" : `Live template (${liveIsV2 ? "V2" : "V1"}, read-only)`}</span> · <span className="font-semibold text-foreground">Visitors currently see: {branding?.public_template_version === "v2" ? "V2" : "V1 (existing template)"}</span>{branding?.public_template_version !== "v2" ? " — differences from the live site are expected until V2 is activated." : "."} Public actions are disabled.</p></div>
             <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
               <SelectTrigger className="w-44" aria-label="Page"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="terms">Terms</SelectItem><SelectItem value="privacy">Privacy</SelectItem><SelectItem value="legal">Terms / Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem></SelectContent>
+              <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="terms">Terms</SelectItem><SelectItem value="privacy">Privacy</SelectItem><SelectItem value="legal">Terms / Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem><SelectItem value="scan">Scan (camera off)</SelectItem><SelectItem value="checkin">Check-in result</SelectItem><SelectItem value="bonus">Bonus result</SelectItem><SelectItem value="tasting">Tasting result</SelectItem></SelectContent>
             </Select>
             <Select value={previewSource} onValueChange={(value) => setPreviewSource(value as typeof previewSource)}>
               <SelectTrigger className="w-44" aria-label="Preview source"><SelectValue /></SelectTrigger>
