@@ -881,6 +881,7 @@ export function EventPublicLanding({
               primaryColor={event.primary_color}
               accentColor={event.accent_color}
               canRegister={canRegister}
+              preview={isEditorPreview}
             />
 
             <div className="mb-4 flex flex-col items-center gap-3 text-center">
