@@ -2461,37 +2461,42 @@ function CustomFontUploader({
 function SemanticPreview({ venueLabelPlural, className = "" }: { venueLabelPlural: string; className?: string }) {
   return (
     <div className={`mt-4 space-y-3 rounded-[12px] p-3 ${className}`}
+      data-brand-hint="Page background · Page border"
       style={{ backgroundColor: "var(--event-page-bg)", border: "1px solid var(--event-border)" }}>
-      <div className="text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-page-muted)" }}>
+      <div data-brand-hint="Page muted text" className="text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-page-muted)" }}>
         Semantic tokens preview
       </div>
       <div>
-        <h4 className="text-base font-semibold" style={{ color: "var(--event-page-fg)" }}>Sample heading</h4>
-        <p className="text-sm" style={{ color: "var(--event-page-fg)" }}>This body paragraph uses the page text colour.</p>
-        <p className="text-xs" style={{ color: "var(--event-page-muted)" }}>This is muted helper text.</p>
+        <h4 data-brand-hint="Page heading colour" className="text-base font-semibold" style={{ color: "var(--event-page-heading)" }}>Sample heading</h4>
+        <p data-brand-hint="Page body text colour" className="text-sm" style={{ color: "var(--event-page-text)" }}>This body paragraph uses the page body text colour.</p>
+        <p data-brand-hint="Page muted text" className="text-xs" style={{ color: "var(--event-page-muted)" }}>This is muted helper text.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="inline-flex h-9 items-center rounded-[10px] px-3 text-xs font-semibold"
+          data-brand-hint="Primary button background · Primary button text"
           style={{ backgroundColor: "var(--event-button-primary-bg)", color: "var(--event-button-primary-fg)" }}>
           Primary button
         </button>
         <button type="button" className="inline-flex h-9 items-center rounded-[10px] border px-3 text-xs font-semibold"
+          data-brand-hint="Secondary button background · Secondary button text · Card border"
           style={{ backgroundColor: "var(--event-button-secondary-bg)", color: "var(--event-button-secondary-fg)", borderColor: "var(--event-card-border)" }}>
           Secondary button
         </button>
       </div>
       <div className="rounded-[10px] p-3"
+        data-brand-hint="Card background · Card border"
         style={{ backgroundColor: "var(--event-card-bg)", border: "1px solid var(--event-card-border)" }}>
-        <div className="text-sm font-semibold" style={{ color: "var(--event-card-fg)" }}>Sample card</div>
-        <div className="text-xs" style={{ color: "var(--event-card-muted)" }}>
+        <div data-brand-hint="Card heading colour" className="text-sm font-semibold" style={{ color: "var(--event-card-heading)" }}>Sample card</div>
+        <div data-brand-hint="Card muted text" className="text-xs" style={{ color: "var(--event-card-muted)" }}>
           Sample {venueLabelPlural.toLowerCase().replace(/s$/, "")} address goes here.
         </div>
       </div>
       <div className="grid grid-cols-3 gap-1 rounded-[10px] px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.12em]"
+        data-brand-hint="Navigation background · Navigation text / icons"
         style={{ background: "var(--event-nav-bg)", color: "var(--event-nav-muted)" }}>
-        <span className="text-center" style={{ color: "var(--event-nav-fg)" }}>Home</span>
-        <span className="text-center" style={{ color: "var(--event-nav-active-fg)" }}>Map</span>
-        <span className="text-center">More</span>
+        <span data-brand-hint="Navigation text / icons" className="text-center" style={{ color: "var(--event-nav-fg)" }}>Home</span>
+        <span data-brand-hint="Navigation active text / icons" className="text-center" style={{ color: "var(--event-nav-active-fg)" }}>Map</span>
+        <span data-brand-hint="Navigation muted text / icons" className="text-center">More</span>
       </div>
     </div>
   );
@@ -2610,11 +2615,89 @@ function AssetUploader({
 // pointer events so `title` tooltips fire, and shows a dashed outline on hover.
 // ============================================================================
 function BrandHoverProbe({ children }: { children: React.ReactNode }) {
-  // Elements inside the preview are annotated with `data-brand-hint` and
-  // `title` attributes; we just inject a scoped CSS rule that highlights any
-  // such element on hover. The native `title` attribute shows the field(s).
+  const [activeHint, setActiveHint] = useState<string | null>(null);
+
+  const inferHint = (element: HTMLElement, root: HTMLElement): string | null => {
+    const elementStyle = getComputedStyle(element);
+    const rootStyle = getComputedStyle(root);
+    const normalise = (value: string) => value.replace(/\s+/g, "").toLowerCase();
+    const matches = (actual: string, token: string) => {
+      const value = rootStyle.getPropertyValue(token).trim();
+      if (!value) return false;
+      const swatch = document.createElement("span");
+      swatch.style.color = value;
+      swatch.style.display = "none";
+      root.appendChild(swatch);
+      const resolved = getComputedStyle(swatch).color;
+      swatch.remove();
+      return normalise(actual) === normalise(resolved);
+    };
+    const labels: string[] = [];
+    const add = (label: string) => {
+      if (!labels.includes(label)) labels.push(label);
+    };
+
+    const backgroundRoles = [
+      ["--event-card-bg", "Card background"],
+      ["--event-button-primary-bg", "Primary button background"],
+      ["--event-button-secondary-bg", "Secondary button background"],
+      ["--event-nav-bg", "Navigation background"],
+      ["--event-hero-bg", "Hero background"],
+      ["--event-page-bg", "Page background"],
+    ] as const;
+    const textRoles = [
+      ["--event-card-heading", "Card heading colour"],
+      ["--event-card-text", "Card body text colour"],
+      ["--event-card-muted", "Card muted text colour"],
+      ["--event-button-primary-fg", "Primary button text"],
+      ["--event-button-secondary-fg", "Secondary button text"],
+      ["--event-nav-active-fg", "Navigation active text / icons"],
+      ["--event-nav-muted", "Navigation muted text / icons"],
+      ["--event-nav-fg", "Navigation text / icons"],
+      ["--event-hero-accent", "Hero accent colour"],
+      ["--event-hero-body", "Welcome copy colour"],
+      ["--event-hero-fg", "Event heading colour"],
+      ["--event-link", "Link colour"],
+      ["--event-page-heading", "Page heading colour"],
+      ["--event-page-text", "Page body text colour"],
+      ["--event-page-muted", "Page muted text colour"],
+    ] as const;
+    const borderRoles = [
+      ["--event-card-border", "Card border colour"],
+      ["--event-border", "Page border colour"],
+    ] as const;
+
+    backgroundRoles.forEach(([token, label]) => {
+      if (elementStyle.backgroundColor !== "rgba(0, 0, 0, 0)" && matches(elementStyle.backgroundColor, token)) add(label);
+    });
+    textRoles.forEach(([token, label]) => {
+      if (matches(elementStyle.color, token)) add(label);
+    });
+    borderRoles.forEach(([token, label]) => {
+      if (elementStyle.borderTopStyle !== "none" && matches(elementStyle.borderTopColor, token)) add(label);
+    });
+
+    return labels.length > 0 ? labels.join(" · ") : null;
+  };
+
+  const handlePointerOver = (event: React.PointerEvent<HTMLDivElement>) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) return;
+    const explicit = target.closest<HTMLElement>("[data-brand-hint]");
+    const inferred = inferHint(target, event.currentTarget);
+    setActiveHint(
+      explicit === target
+        ? explicit.dataset.brandHint ?? inferred
+        : inferred ?? explicit?.dataset.brandHint ?? null,
+    );
+  };
+
   return (
-    <div className="brand-hover-probe relative">
+    <div
+      className="brand-hover-probe relative"
+      onPointerOver={handlePointerOver}
+      onPointerLeave={() => setActiveHint(null)}
+    >
       <style>{`
         .brand-hover-probe [data-brand-hint] {
           transition: outline-color 120ms ease, background-color 120ms ease;
@@ -2629,6 +2712,14 @@ function BrandHoverProbe({ children }: { children: React.ReactNode }) {
         }
       `}</style>
       {children}
+      {activeHint ? (
+        <div
+          role="status"
+          className="pointer-events-none sticky bottom-3 z-[70] mx-auto -mt-10 w-fit max-w-[calc(100%-1.5rem)] rounded-md bg-[#111827] px-3 py-2 text-center text-xs font-semibold leading-4 text-white shadow-lg"
+        >
+          {activeHint}
+        </div>
+      ) : null}
     </div>
   );
 }
