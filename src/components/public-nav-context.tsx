@@ -40,6 +40,7 @@ type PublicNavContextValue = {
   /** Tooltip shown on inert links in preview mode. */
   disabledTitle: string;
   preservePreviewAppearance: boolean;
+  onPreviewNavigate?: (to: string, params?: Record<string, string | undefined>) => void;
 };
 
 const PublicNavContext = createContext<PublicNavContextValue>({
@@ -54,6 +55,7 @@ export function PublicNavProvider({
   subdomain,
   disabledTitle = "Publish the event with a public address to open this page",
   preservePreviewAppearance = false,
+  onPreviewNavigate,
   children,
 }: {
   mode: PublicNavMode;
@@ -61,9 +63,10 @@ export function PublicNavProvider({
   disabledTitle?: string;
   preservePreviewAppearance?: boolean;
   children: ReactNode;
+  onPreviewNavigate?: (to: string, params?: Record<string, string | undefined>) => void;
 }) {
   return (
-    <PublicNavContext.Provider value={{ mode, subdomain, disabledTitle, preservePreviewAppearance }}>
+    <PublicNavContext.Provider value={{ mode, subdomain, disabledTitle, preservePreviewAppearance, onPreviewNavigate }}>
       {children}
     </PublicNavContext.Provider>
   );
@@ -174,7 +177,7 @@ export function PublicLink({
   children: ReactNode;
   onClick?: () => void;
 } & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "onClick">) {
-  const { mode, subdomain, disabledTitle, preservePreviewAppearance } = usePublicNav();
+  const { mode, subdomain, disabledTitle, preservePreviewAppearance, onPreviewNavigate } = usePublicNav();
   const base = useEventNavBase();
 
   if (mode === "live") {
@@ -189,6 +192,13 @@ export function PublicLink({
   }
 
   const href = previewPathFor(subdomain, to, params);
+  if (onPreviewNavigate) {
+    return (
+      <a href={href ?? "#"} onClick={(event) => { event.preventDefault(); onClick?.(); onPreviewNavigate(to, params); }} {...rest}>
+        {children}
+      </a>
+    );
+  }
   if (!href) {
     return (
       <span

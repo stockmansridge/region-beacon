@@ -18,6 +18,7 @@ import { PublicTrailTabs } from "@/components/public-trail-tabs";
 import { tenantHost } from "@/lib/domains";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
+import { PublicStyleTarget } from "@/components/public-style-target";
 
 export const Route = createFileRoute("/live/$subdomain/offers")({
   head: () => ({ meta: [{ title: "Offers" }] }),
@@ -166,6 +167,9 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
         accentColor={event?.accent_color}
         logoUrl={logoUrl}
         eventId={event?.event_id ?? null}
+        venueLabels={labels}
+        activeOverride="offers"
+        brandingSelection={Boolean(previewData)}
       />
       <div className="mx-auto max-w-md">
         <div className="mt-4">
@@ -217,7 +221,7 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
               );
               return (
                 <li key={vid} className="relative">
-                  <PublicLink
+                  <PublicStyleTarget id="offers.card.surface" recordId={vid}><PublicLink
                     to="/venues/$venueId"
                     params={{ venueId: vid }}
                     className="group relative flex items-stretch gap-4 overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 pr-16 shadow-sm transition hover:border-[var(--event-link,var(--event-primary,#1F3D2B))]/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-link,var(--event-primary,#1F3D2B))]"
@@ -274,7 +278,7 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
                     >
                       <ChevronRight className="h-5 w-5" />
                     </span>
-                  </PublicLink>
+                  </PublicLink></PublicStyleTarget>
                   <div className="absolute right-2 top-2 z-10">
                     <BookmarkButton
                       eventId={event?.event_id ?? null}

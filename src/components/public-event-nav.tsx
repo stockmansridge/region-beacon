@@ -32,6 +32,8 @@ import { useEventHasAwards } from "@/lib/use-event-has-awards";
 import { useEventVenueLabels } from "@/lib/use-event-venue-labels";
 import { useEventCustomLink } from "@/lib/use-event-custom-link";
 import { usePageViewTracking } from "@/lib/use-page-view-tracking";
+import { usePublicStyleTarget } from "@/components/public-style-scope";
+import type { VenueLabels } from "@/lib/venue-labels";
 
 type ActiveTarget =
   | "home"
@@ -66,6 +68,7 @@ export function PublicEventNav({
   transparentHeader = false,
   hideAnnouncementBar = false,
   brandingSelection = false,
+  venueLabels: venueLabelsOverride,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -93,8 +96,13 @@ export function PublicEventNav({
   hideAnnouncementBar?: boolean;
   /** Adds inert semantic selection markers only inside the admin V2 preview. */
   brandingSelection?: boolean;
+  /** Resolved event labels; preview supplies these to avoid public network reads. */
+  venueLabels?: VenueLabels;
 }) {
-  const brandRole = (role: string) => brandingSelection ? { "data-brand-role": role } : {};
+  const navigationSurface = usePublicStyleTarget("shared.navigation.surface", { selectable: brandingSelection });
+  const navigationItem = usePublicStyleTarget("shared.navigation.item", { selectable: brandingSelection });
+  const navigationActiveItem = usePublicStyleTarget("shared.navigation.activeItem", { selectable: brandingSelection });
+  const navigationDrawer = usePublicStyleTarget("shared.navigation.drawer", { selectable: brandingSelection });
   // Header / bottom-nav / drawer surfaces consume the nav tokens so they
   // can be themed independently of buttons. Tokens fall back to the
   // primary colour when no nav background has been configured, which
@@ -119,7 +127,8 @@ export function PublicEventNav({
   const hasFaq = faqState.kind === "ok" && faqState.entries.length > 0;
   const { hasMap } = useEventHasMap(subdomain);
   const { hasAwards } = useEventHasAwards(subdomain);
-  const venueLabels = useEventVenueLabels(subdomain);
+  const fetchedVenueLabels = useEventVenueLabels(venueLabelsOverride ? null : subdomain);
+  const venueLabels = venueLabelsOverride ?? fetchedVenueLabels;
   const customLink = useEventCustomLink(subdomain);
 
   // Anonymous page-view counting for Analytics. Runs on every public event
@@ -159,7 +168,7 @@ export function PublicEventNav({
       )}
       {/* Sticky app-style header */}
       <header
-        {...brandRole("navigation")}
+        {...navigationSurface}
         data-brand-hint="Navigation background · Navigation text / icons"
         title="Top navigation — Navigation background · Navigation text / icons"
         className={
@@ -180,7 +189,7 @@ export function PublicEventNav({
           style={{ color: navFg }}
         >
           <button
-            {...brandRole("navigation")}
+            {...navigationItem}
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
@@ -200,7 +209,7 @@ export function PublicEventNav({
             className="mx-auto flex h-10 max-w-[70%] items-center justify-center"
           >
             <span
-              {...brandRole("navigation")}
+              {...navigationItem}
               className="truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"
               style={{ color: navFg }}
             >
@@ -210,7 +219,7 @@ export function PublicEventNav({
 
           <div className="ml-auto flex items-center gap-1">
             <button
-              {...brandRole("navigation")}
+              {...navigationItem}
               type="button"
               onClick={async () => {
                 // Share only the public event root — never the current URL,
@@ -294,6 +303,7 @@ export function PublicEventNav({
           logoUrl={logoUrl ?? null}
           venueLabelPlural={venueLabels.plural}
           customLink={customLink}
+          styleTarget={navigationDrawer}
         />
       )}
 
@@ -310,7 +320,7 @@ export function PublicEventNav({
         aria-hidden={false}
       >
       <nav
-        {...brandRole("navigation")}
+        {...navigationSurface}
         aria-label="Primary"
         data-brand-hint="Navigation background · Navigation muted text / icons · Navigation active text / icons"
         title="Bottom navigation — Navigation background · Navigation muted text / icons · Navigation active text / icons"
@@ -330,7 +340,7 @@ export function PublicEventNav({
           <li className="h-full min-w-0">
             {passportHref ? (
               <a
-                {...brandRole(isActive("passport") ? "navActive" : "navMuted")}
+                {...(isActive("passport") ? navigationActiveItem : navigationItem)}
                 href={passportTarget}
                 aria-label={passportLabel}
                 aria-current={isActive("passport") ? "page" : undefined}
@@ -341,7 +351,7 @@ export function PublicEventNav({
               </a>
             ) : (
               <PublicLink
-                {...brandRole(isActive("passport") ? "navActive" : "navMuted")}
+                {...(isActive("passport") ? navigationActiveItem : navigationItem)}
                 to="/join"
                 aria-label={passportLabel}
                 aria-current={isActive("passport") ? "page" : undefined}
@@ -355,7 +365,7 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             <PublicLink
-              {...brandRole(isActive("prizes") ? "navActive" : "navMuted")}
+              {...(isActive("prizes") ? navigationActiveItem : navigationItem)}
               to="/prizes"
               aria-current={isActive("prizes") ? "page" : undefined}
               className={bottomItemClass}
@@ -367,7 +377,7 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             <PublicLink
-              {...brandRole(isActive("venues") ? "navActive" : "navMuted")}
+              {...(isActive("venues") ? navigationActiveItem : navigationItem)}
               to="/venues"
               aria-current={isActive("venues") ? "page" : undefined}
               className={bottomItemClass}
@@ -375,15 +385,14 @@ export function PublicEventNav({
             >
               <BottomItemContent
                 icon={<MapPin className="h-5 w-5" />}
-                label="Cellar"
-                subLabel="DOORS"
+                label={venueLabels.plural}
               />
             </PublicLink>
           </li>
 
           <li className="h-full min-w-0">
             <PublicLink
-              {...brandRole(isActive("offers") ? "navActive" : "navMuted")}
+              {...(isActive("offers") ? navigationActiveItem : navigationItem)}
               to="/offers"
               aria-current={isActive("offers") ? "page" : undefined}
               className={bottomItemClass}
@@ -395,7 +404,7 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             <button
-              {...brandRole(menuOpen ? "navActive" : "navMuted")}
+              {...(menuOpen ? navigationActiveItem : navigationItem)}
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="More"
@@ -471,6 +480,7 @@ function MenuDrawer({
   logoUrl,
   venueLabelPlural,
   customLink,
+  styleTarget,
 }: {
   onClose: () => void;
   navBg: string;
@@ -487,6 +497,7 @@ function MenuDrawer({
   logoUrl: string | null;
   venueLabelPlural: string;
   customLink: { label: string; url: string } | null;
+  styleTarget: ReturnType<typeof usePublicStyleTarget>;
 }) {
   const rowClass =
     "flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition hover:bg-white/10 active:bg-white/15";
@@ -500,6 +511,7 @@ function MenuDrawer({
     >
       <div className="absolute inset-0 bg-black/50 animate-in fade-in" />
       <aside
+        {...styleTarget}
         className="absolute inset-y-0 left-0 flex h-full w-[82%] max-w-sm flex-col shadow-2xl animate-in slide-in-from-left"
         style={{
           background: navBg,

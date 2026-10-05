@@ -10,6 +10,7 @@ import {
   resolvePublicTemplateVersion,
   validatePublicStyleOverrides,
 } from "./public-style-overrides";
+import { publicEventScopeProps } from "@/components/public-event-branding-scope";
 
 describe("V2 theme round-trip (finding 5)", () => {
   it("keeps all four button bg/fg keys alongside *_color keys", () => {
@@ -106,5 +107,24 @@ describe("record merge and validation", () => {
     expect(resolvePublicTemplateVersion("v3")).toBe("v1");
     expect(resolvePublicTemplateVersion(null)).toBe("v1");
     expect(resolvePublicTemplateVersion("v2")).toBe("v2");
+  });
+});
+
+describe("canonical public V1/V2 boundary", () => {
+  it("carries event identity and V2 overrides through the shared scope mapper", () => {
+    const config = parsePublicStyleOverrides({ version: 1, items: { "shared.navigation.surface": { normal: { backgroundColor: "#123456" } } } });
+    const props = publicEventScopeProps({ event_id: "event-a", public_template_version: "v2", v2_style_config: config } as never);
+    expect(props.eventId).toBe("event-a");
+    expect(props.templateVersion).toBe("v2");
+    expect(props.styleOverrides).toEqual(config);
+  });
+
+  it("keeps missing and unknown versions on V1 without item overrides", () => {
+    const config = parsePublicStyleOverrides({ version: 1, items: { "shared.navigation.surface": { normal: { backgroundColor: "#123456" } } } });
+    for (const version of [null, "future"]) {
+      const props = publicEventScopeProps({ event_id: "event-v1", public_template_version: version, v2_style_config: config } as never);
+      expect(props.templateVersion).toBe("v1");
+      expect(props.styleOverrides).toBeNull();
+    }
   });
 });

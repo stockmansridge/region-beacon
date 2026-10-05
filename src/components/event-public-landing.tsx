@@ -193,6 +193,7 @@ export function EventPublicLanding({
   previewNotice,
   templateVersion = "v1",
   brandingScoped = false,
+  onPreviewNavigate,
 }: {
   subdomain: string | null;
   event: PublicEventData;
@@ -201,6 +202,7 @@ export function EventPublicLanding({
   previewNotice?: React.ReactNode;
   templateVersion?: PublicTemplateVersion;
   brandingScoped?: boolean;
+  onPreviewNavigate?: (to: string, params?: Record<string, string | undefined>) => void;
 }) {
   const isV2 = templateVersion === "v2";
   const canRegister = Boolean(event.current_terms_version_id);
@@ -299,7 +301,7 @@ export function EventPublicLanding({
   const celebrationScope = subdomain ?? event.event_id;
 
   return (
-    <PublicNavProvider mode={mode} subdomain={subdomain} preservePreviewAppearance={mode === "preview"}>
+    <PublicNavProvider mode={mode} subdomain={subdomain} preservePreviewAppearance={mode === "preview"} onPreviewNavigate={onPreviewNavigate}>
       {brandingScoped ? (
         <LandingContent />
       ) : <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2} eventId={event.event_id}>

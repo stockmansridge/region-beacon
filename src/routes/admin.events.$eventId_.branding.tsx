@@ -27,6 +27,7 @@ import { PublicEventTemplate } from "@/components/public-event-template";
 import { PublicVenuesListPage, type VenueRow as ListVenueRow } from "@/routes/live.$subdomain.venues.index";
 import { PublicVenueDetailPage, type VenueRow as DetailVenueRow } from "@/routes/live.$subdomain.venues.$venueId";
 import { PublicOffersPage, type OfferVenue } from "@/routes/live.$subdomain.offers";
+import { PublicNavProvider } from "@/components/public-nav-context";
 import type { PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import {
   DEFAULT_VENUE_LABEL_PLURAL,
@@ -2132,6 +2133,8 @@ function VisualBrandingEditor({
   const [activating, setActivating] = useState(false);
   const [frameDoc, setFrameDoc] = useState<Document | null>(null);
   const [previewPage, setPreviewPage] = useState<"home" | "venues" | "venue" | "offers">("home");
+  const [previewSource, setPreviewSource] = useState<"draft" | "saved">("draft");
+  const [previewInteraction, setPreviewInteraction] = useState<"select" | "navigate">("select");
   const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
   const busy = saving || activating;
   const sharedRole = selectedRole && selectedRole in VISUAL_ROLE_META ? selectedRole as VisualBrandRole : null;
@@ -2347,7 +2350,7 @@ function VisualBrandingEditor({
 
   const override = itemMeta ? currentOverride(parsePublicStyleOverrides(form.style_overrides)) : undefined;
   const wiredPages = new Set<string>(PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => item.page));
-  const draftEvent = { ...previewEvent, public_template_version: "v2", v2_style_config: previewConfig } as PublicBrandingEvent;
+  const draftEvent = { ...previewEvent, public_template_version: "v2", v2_style_config: previewSource === "draft" ? previewConfig : parsePublicStyleOverrides(branding?.v2_style_config) } as PublicBrandingEvent;
   const listVenues: ListVenueRow[] = venues.map((venue) => ({
     venue_id: venue.venue_id, name: venue.name, description: venue.description ?? null,
     address: venue.address ?? null, website_url: venue.website_url ?? null, phone: venue.phone ?? null, logo_path: venue.logo_path ?? null,
@@ -2356,11 +2359,20 @@ function VisualBrandingEditor({
     points_value: venue.points_value ?? null, order_index: venue.order_index ?? null, event_found: true,
   }));
   const selectedVenue = listVenues.find((venue) => venue.venue_id === selectedRecord) ?? listVenues[0] ?? null;
+  const navigatePreview = (to: string, params?: Record<string, string | undefined>) => {
+    if (to === "/") setPreviewPage("home");
+    else if (to === "/venues/$venueId" || /^\/venues\/[^/]+$/.test(to)) {
+      const record = params?.venueId ?? to.split("/").at(-1);
+      if (record) setSelectedRecord(record);
+      setPreviewPage("venue");
+    } else if (to === "/venues") setPreviewPage("venues");
+    else if (to === "/offers") setPreviewPage("offers");
+  };
   const renderPreviewPage = () => {
     if (previewPage === "venues") return <PublicVenuesListPage subdomain="preview" previewData={{ event: draftEvent as never, venues: listVenues }} />;
     if (previewPage === "offers") return <PublicOffersPage subdomain="preview" previewData={{ event: draftEvent as never, offers: listVenues.filter((venue) => venue.offer_summary).map((venue) => ({ ...venue, offer_summary: venue.offer_summary! })) as OfferVenue[] }} />;
     if (previewPage === "venue" && selectedVenue?.venue_id) return <PublicVenueDetailPage subdomain="preview" venueId={selectedVenue.venue_id} previewData={{ event: draftEvent, venue: selectedVenue as DetailVenueRow }} />;
-    return <PublicEventTemplate subdomain={null} event={draftEvent} venues={venues} mode="preview" forceTemplate="v2" />;
+    return <PublicEventTemplate subdomain={null} event={draftEvent} venues={venues} mode="preview" forceTemplate="v2" onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined} />;
   };
 
   return (
@@ -2390,7 +2402,7 @@ function VisualBrandingEditor({
         <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
           <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{previewPage === "home" ? "Landing / home" : previewPage === "venue" ? "Venue detail" : previewPage}</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
-            {PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+            {PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id) && (item.page === previewPage || item.page === "shared")).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
           <div className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Shared theme</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
@@ -2401,11 +2413,19 @@ function VisualBrandingEditor({
 
         <section className="min-w-0 rounded-md border bg-background p-3">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">V2 draft · live template {branding?.public_template_version === "v2" ? "V2" : "V1"}. Public actions are disabled.</p></div>
+            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">{previewSource === "draft" ? "Unsaved V2 draft" : "Saved V2 configuration"} · live template {branding?.public_template_version === "v2" ? "V2" : "V1"}. Public actions are disabled.</p></div>
             <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
               <SelectTrigger className="w-44" aria-label="Page"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem></SelectContent>
             </Select>
+            <Select value={previewSource} onValueChange={(value) => setPreviewSource(value as typeof previewSource)}>
+              <SelectTrigger className="w-44" aria-label="Preview source"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="draft">V2 draft</SelectItem><SelectItem value="saved">Saved V2 config</SelectItem></SelectContent>
+            </Select>
+            <div className="inline-flex rounded-md border p-1" aria-label="Preview interaction">
+              <Button type="button" size="sm" variant={previewInteraction === "select" ? "default" : "ghost"} onClick={() => setPreviewInteraction("select")}>Select / Edit</Button>
+              <Button type="button" size="sm" variant={previewInteraction === "navigate" ? "default" : "ghost"} onClick={() => setPreviewInteraction("navigate")}>Navigate</Button>
+            </div>
             <div className="inline-flex rounded-md border p-1" aria-label="Preview width">
               <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview" aria-pressed={previewWidth === "mobile"}><Smartphone className="h-4 w-4" /></Button>
               <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview" aria-pressed={previewWidth === "desktop"}><Monitor className="h-4 w-4" /></Button>
@@ -2415,7 +2435,7 @@ function VisualBrandingEditor({
             <PreviewFrame width={previewWidth === "mobile" ? 390 : 1280} onDocument={setFrameDoc}>
               <div
                 className="v2-brand-preview"
-                onClickCapture={(event) => { event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target); }}
+                onClickCapture={(event) => { if (previewInteraction === "select") { event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target); } }}
                 onAuxClickCapture={(event) => event.preventDefault()}
                 onSubmitCapture={(event) => event.preventDefault()}
                 onKeyDownCapture={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target); } }}
@@ -2423,7 +2443,9 @@ function VisualBrandingEditor({
                 onPointerLeave={() => setHoveredInstance(null)}
               >
                 <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}${hoveredInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(hoveredInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(hoveredInstance)}"]:not([data-brand-instance]){outline-color:color-mix(in srgb,#2563EB 60%,transparent)}` : ""}${selectedInstance ? `.v2-brand-preview [data-brand-instance="${cssAttr(selectedInstance)}"],.v2-brand-preview [data-brand-role="${cssAttr(selectedInstance)}"]:not([data-brand-instance]){outline:3px solid #2563EB!important;outline-offset:-3px}` : ""}`}</style>
-                {renderPreviewPage()}
+                <PublicNavProvider mode="preview" subdomain={null} preservePreviewAppearance onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined}>
+                  {renderPreviewPage()}
+                </PublicNavProvider>
               </div>
             </PreviewFrame>
           </div>
@@ -2463,12 +2485,15 @@ function VisualBrandingEditor({
 
 /** Items whose real public component carries a V2 marker on the home page today. */
 const V2_WIRED_ITEMS = new Set<string>([
+  "shared.navigation.surface", "shared.navigation.item", "shared.navigation.activeItem", "shared.navigation.drawer",
   "home.page.surface", "home.hero.surface", "home.hero.image", "home.hero.cover", "home.hero.logo", "home.hero.welcomeLabel",
   "home.hero.heading", "home.hero.welcomeCopy", "home.summary.surface", "home.summary.ring",
   "home.primaryCta", "home.shareButton", "home.prizesButton", "home.venuesButton",
   "home.bonusPromo.surface", "home.bonusPromo.icon", "home.bonusPromo.heading", "home.bonusPromo.body",
   "home.nextPrize.surface", "home.nextPrize.icon", "home.nextPrize.heading", "home.nextPrize.progress",
   "home.collect.surface", "home.collect.heading", "home.collect.cta", "home.stamps.tile", "home.stamps.label",
+  "venues.page.heading", "venues.card.surface", "venues.card.heading", "venues.card.meta",
+  "venue.actions.directions", "venue.actions.website", "offers.card.surface",
 ]);
 const PUBLIC_STYLE_PAGES_PENDING = ["passport", "join", "venues", "venue", "offers", "prizes", "map", "leaderboard", "faq", "legal", "scan", "checkin", "bonus", "tasting", "shared navigation"];
 

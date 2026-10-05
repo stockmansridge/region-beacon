@@ -76,52 +76,8 @@ export function PublicEventBrandingScope({
   className?: string;
   forceV2?: boolean;
 }) {
-  const { event, isV2 } = resolvePublicBrandingEvent(source, forceV2);
+  const props = publicEventScopeProps(source, forceV2);
   return (
-    <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2} eventId={event.event_id}>
-      <EventPaletteScope
-        paletteKey={event.palette_key ?? null}
-        backgroundKey={event.page_background_key ?? null}
-        primaryColor={event.primary_color ?? null}
-        accentColor={event.accent_color ?? null}
-        pageBackgroundColor={event.page_background_color ?? null}
-        cardBackgroundColor={event.card_background_color ?? null}
-        textColor={event.text_color ?? null}
-        mutedTextColor={event.muted_text_color ?? null}
-        cardTextColor={event.card_text_color ?? null}
-        cardMutedTextColor={event.card_muted_text_color ?? null}
-        borderColor={event.border_color ?? null}
-        primaryTextColor={event.primary_text_color ?? null}
-        navBackgroundColor={event.nav_background_color ?? null}
-        brandKitKey={event.brand_kit_key ?? null}
-        linkColor={event.link_color ?? null}
-        cardBorderColor={event.card_border_color ?? null}
-        buttonPrimaryBg={event.button_primary_bg ?? null}
-        buttonPrimaryFg={event.button_primary_fg ?? null}
-        buttonSecondaryBg={event.button_secondary_bg ?? null}
-        buttonSecondaryFg={event.button_secondary_fg ?? null}
-        navFgColor={event.nav_fg_color ?? null}
-        navMutedColor={event.nav_muted_color ?? null}
-        navActiveFgColor={event.nav_active_fg_color ?? null}
-        heroBgColor={event.hero_bg_color ?? null}
-        heroFgColor={event.hero_fg_color ?? null}
-        heroAccentColor={event.hero_accent_color ?? null}
-        heroBodyColor={event.hero_body_color ?? null}
-        heroOverlayColor={event.hero_overlay_color ?? null}
-        heroOverlayOpacity={event.hero_overlay_opacity ?? null}
-        pageHeadingColor={isV2 ? event.page_heading_color ?? null : null}
-        pageBodyColor={isV2 ? event.page_body_color ?? null : null}
-        pageMutedColor={isV2 ? event.page_muted_color ?? null : null}
-        cardHeadingColor={isV2 ? event.card_heading_color ?? null : null}
-        cardBodyColor={isV2 ? event.card_body_color ?? null : null}
-        cardMutedColor={isV2 ? event.card_muted_color ?? null : null}
-        fontFamily={event.font_family ?? null}
-        headingFontFamily={event.heading_font_family ?? null}
-        eventId={event.event_id}
-        className={className}
-      >
-        {children}
-      </EventPaletteScope>
-    </PublicStyleScope>
+    <EventPaletteScope {...props} className={className}>{children}</EventPaletteScope>
   );
 }
