@@ -292,7 +292,15 @@ function HeroCarousel() {
   );
 }
 
-function SlideCard({ slide, active }: { slide: (typeof SLIDES)[number]; active: boolean }) {
+function SlideCard({
+  slide,
+  active,
+  className,
+}: {
+  slide: (typeof SLIDES)[number];
+  active: boolean;
+  className?: string;
+}) {
   const Icon = slide.icon;
   return (
     <div
