@@ -445,6 +445,18 @@ function brandingToForm(b: Branding | null): Form {
     custom_link_enabled: Boolean(b.custom_link_enabled),
     style_overrides: v2,
   };
+  return base;
+}
+
+/**
+ * V2 draft form: the V1 values as the inherited starting point, with this
+ * event's stored V2 theme layered on top. Kept in a SEPARATE state from the
+ * classic (V1) form so V2 values can never be saved into V1 columns.
+ */
+function brandingToV2Form(b: Branding | null): Form {
+  const base = brandingToForm(b);
+  if (!b) return base;
+  const v2 = base.style_overrides;
   for (const [key, value] of Object.entries(v2.theme ?? {})) {
     if (key in base && key !== "style_overrides" && value != null) {
       (base as unknown as Record<string, unknown>)[key] = String(value);
@@ -470,7 +482,9 @@ function BrandingEditor() {
   // showing only "Could not load this event".
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [form, setForm] = useState<Form>(EMPTY_FORM);
+  // Two independent drafts: classic edits V1 columns, V2 edits only v2_style_config.
+  const [v1Form, setV1Form] = useState<Form>(EMPTY_FORM);
+  const [v2Form, setV2Form] = useState<Form>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
@@ -486,13 +500,20 @@ function BrandingEditor() {
     setEditorMode(search.editor === "v2" ? "v2" : "classic");
   }, [search.editor]);
 
-  const hasUnsavedChanges = bundle
-    ? JSON.stringify(form) !== JSON.stringify(brandingToForm(bundle.branding))
-    : false;
+  // Every handler below operates on the ACTIVE draft for the current mode.
+  const form = editorMode === "v2" ? v2Form : v1Form;
+  const setForm = editorMode === "v2" ? setV2Form : setV1Form;
+
+  const v1Dirty = bundle ? JSON.stringify(v1Form) !== JSON.stringify(brandingToForm(bundle.branding)) : false;
+  const v2Dirty = bundle ? JSON.stringify(v2Form) !== JSON.stringify(brandingToV2Form(bundle.branding)) : false;
+  const hasUnsavedChanges = v1Dirty || v2Dirty;
 
   const v2ConfigForDraft = () => {
+    // Diff the V2 draft against the V1 values it inherits from: only real
+    // differences become V2 theme overrides; equal values inherit again.
     const baseline = brandingToForm(bundle?.branding ?? null);
-    const theme = { ...(form.style_overrides.theme ?? {}) } as Record<string, string | number | null>;
+    const draft = v2Form;
+    const theme = {} as Record<string, string | number | null>;
     const keys: Array<PublicV2ThemeKey & keyof Form> = [
       "font_family", "heading_font_family", "default_emotive_font_family", "welcome_copy",
       "primary_color", "accent_color", "link_color", "page_background_color", "page_heading_color",
@@ -504,13 +525,13 @@ function BrandingEditor() {
       "cover_focal_x", "cover_focal_y",
     ];
     for (const key of keys) {
-      if (form[key] === baseline[key]) continue;
-      const raw = form[key];
+      if (draft[key] === baseline[key]) continue;
+      const raw = draft[key];
       if (key === "hero_overlay_opacity" || key === "cover_focal_x" || key === "cover_focal_y") {
         theme[key] = String(raw).trim() ? Number(raw) : null;
       } else theme[key] = typeof raw === "string" && raw !== "" ? raw : null;
     }
-    return parsePublicStyleOverrides({ ...form.style_overrides, theme });
+    return parsePublicStyleOverrides({ ...draft.style_overrides, theme });
   };
 
   useEffect(() => {
@@ -745,7 +766,8 @@ function BrandingEditor() {
         })),
         hasBranding: Boolean(brandingRes.data),
       });
-      setForm(brandingToForm(branding));
+      setV1Form(brandingToForm(branding));
+      setV2Form(brandingToV2Form(branding));
       setState("ready");
     })();
     return () => { cancelled = true; };
@@ -777,6 +799,14 @@ function BrandingEditor() {
     document.head.appendChild(link);
   }, []);
 
+  /** Adopt a confirmed V2 read-back as the new baseline for BOTH drafts' comparisons. */
+  function applyConfirmedV2(confirmed: { public_template_version: string; v2_style_config: PublicStyleOverrideDocument }) {
+    const savedConfig = parsePublicStyleOverrides(confirmed.v2_style_config);
+    const nextBranding = { ...(bundle?.branding ?? {}), v2_style_config: savedConfig, public_template_version: confirmed.public_template_version } as Branding;
+    setBundle((current) => current ? { ...current, branding: nextBranding, hasBranding: true } : current);
+    setV2Form(brandingToV2Form(nextBranding));
+  }
+
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
     // Clear previous messages so repeated identical results still re-toast.
@@ -787,6 +817,11 @@ function BrandingEditor() {
 
 
     if (editorMode === "v2") {
+      const checked = validatePublicStyleOverrides(v2ConfigForDraft());
+      if (checked.errors.length) {
+        setSaveError(`V2 branding was not saved: ${checked.errors.join("; ")}.`);
+        return;
+      }
       setSaving(true);
       const { data, error } = await (supabase.rpc as unknown as (
         fn: string,
@@ -801,11 +836,11 @@ function BrandingEditor() {
         setSaveError(`V2 branding could not be saved. ${error?.message ?? "Persistence is unavailable; your draft is still open."}`);
         return;
       }
-      const savedConfig = parsePublicStyleOverrides(confirmed.v2_style_config);
-      setBundle((current) => current ? { ...current, branding: { ...(current.branding ?? {}), v2_style_config: savedConfig, public_template_version: confirmed.public_template_version } as Branding, hasBranding: true } : current);
-      setForm((current) => ({ ...current, style_overrides: savedConfig }));
+      applyConfirmedV2(confirmed);
       setSaving(false);
-      setSaveSuccess("V2 draft saved. The live event template was not changed.");
+      setSaveSuccess(confirmed.public_template_version === "v2"
+        ? "Saved. This event already uses V2, so its live pages now show these changes."
+        : "V2 draft saved. This event's live pages still use the existing template.");
       if (opts?.returnAfter) navigate({ to: "/admin/events/$eventId", params: { eventId } });
       return;
     }
@@ -1081,7 +1116,9 @@ function BrandingEditor() {
     }
 
     setBundle((b) => (b ? { ...b, branding: savedRow!, hasBranding: true } : b));
-    setForm(brandingToForm(savedRow));
+    setV1Form(brandingToForm(savedRow));
+    // Classic save never touches V2 storage; keep an in-progress V2 draft.
+    if (!v2Dirty) setV2Form(brandingToV2Form({ ...savedRow, v2_style_config: bundle.branding?.v2_style_config ?? null, public_template_version: bundle.branding?.public_template_version ?? null } as Branding));
     setSaving(false);
     setSaveSuccess("Branding saved.");
     if (opts?.returnAfter) {
@@ -1356,6 +1393,8 @@ function BrandingEditor() {
           return removeAsset(kind, kind === "logo" ? branding?.logo_path ?? null : branding?.cover_path ?? null);
         }}
         v2ConfigForDraft={v2ConfigForDraft}
+        v1Form={v1Form}
+        onV2Activated={applyConfirmedV2}
       />
     );
   }
