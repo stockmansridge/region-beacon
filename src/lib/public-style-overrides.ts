@@ -77,7 +77,28 @@ export type PublicStyleOverrideDocument = {
   records?: Record<string, Record<string, PublicStyleItemOverride>>;
   theme?: PublicV2Theme;
   navigation?: PublicNavigationConfig;
+  backLinks?: PublicBackLinkConfig;
 };
+
+/** Stable back-link contexts. Destinations are fixed in code; only the label is configurable. */
+export const PUBLIC_BACK_LINK_CONTEXTS = ["legal", "faq", "prizes", "leaderboard", "join", "join-complete", "venue", "passport-missing"] as const;
+export type PublicBackLinkContext = (typeof PUBLIC_BACK_LINK_CONTEXTS)[number];
+export type PublicBackLinkLabelKey = PublicBackLinkContext | "default";
+export type PublicBackLinkConfig = { labels: Partial<Record<PublicBackLinkLabelKey, string>> };
+export const PUBLIC_BACK_LINK_LABEL_MAX = 40;
+
+/** Plain-text label only: no markup, control characters or overlong values. */
+export function cleanPublicBackLinkLabel(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.replace(/[\u0000-\u001F\u007F<>]/g, "").replace(/\s+/g, " ").trim();
+  return value && value.length <= PUBLIC_BACK_LINK_LABEL_MAX ? value : null;
+}
+
+/** Context label > shared label > original copy. */
+export function publicBackLinkLabel(document: PublicStyleOverrideDocument | null | undefined, context: PublicBackLinkContext, fallback: string): string {
+  const labels = document?.backLinks?.labels;
+  return labels?.[context] ?? labels?.default ?? fallback;
+}
 
 export const PUBLIC_V2_THEME_KEYS = [
   "font_family", "heading_font_family", "default_emotive_font_family",
@@ -119,12 +140,14 @@ const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
 const LEADERBOARD_RANK_SLOTS = ["first", "second", "third", "other"] as const;
 const LEADERBOARD_TIER_SLOTS = ["explorer", "gold", "silver", "bronze", "complete", "other"] as const;
 const LEADERBOARD_COMPLETION_SLOTS = ["completed"] as const;
+const LEGAL_SECTION_SLOTS = ["terms", "privacy"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
   { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
   { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.tabItem", page: "shared", section: "Navigation", label: "Bottom menu item", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, repeat: "template", similarGroup: "navigation-items" },
+  { id: "shared.backLink", page: "shared", section: "Back links", label: "Back link", kind: "text", properties: ["color", "iconColor", "fontFamily", "fontSize", "fontWeight", "lineHeight"], states: ["hover", "focus", "active"], repeat: "template", recordIds: PUBLIC_BACK_LINK_CONTEXTS },
   { id: "shared.navigation.drawer", page: "shared", section: "Navigation", label: "Menu drawer", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.surface", page: "shared", section: "Announcements", label: "Announcement bar", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.text", page: "shared", section: "Announcements", label: "Announcement text", kind: "text", properties: TEXT },
@@ -281,8 +304,11 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "bookmarks.empty.cta", page: "bookmarks", section: "Empty state", label: "Browse button", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "legal.eyebrow", page: "legal", section: "Content", label: "Legal eyebrow", kind: "text", properties: TEXT },
   { id: "legal.meta", page: "legal", section: "Content", label: "Legal version / link text", kind: "text", properties: TEXT, repeat: "template" },
-  { id: "legal.section.surface", page: "legal", section: "Sections", label: "Legal section card", kind: "surface", properties: SURFACE, repeat: "template" },
-  { id: "legal.section.toggle", page: "legal", section: "Sections", label: "Legal section heading button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
+  { id: "legal.section.surface", page: "legal", section: "Sections", label: "Legal section card", kind: "surface", properties: SURFACE, repeat: "template", recordIds: LEGAL_SECTION_SLOTS },
+  { id: "legal.section.toggle", page: "legal", section: "Sections", label: "Legal section heading button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template", recordIds: LEGAL_SECTION_SLOTS },
+  { id: "legal.document.body", page: "legal", section: "Document", label: "Legal document text", kind: "text", properties: TEXT, repeat: "template", recordIds: LEGAL_SECTION_SLOTS },
+  { id: "legal.document.heading", page: "legal", section: "Document", label: "Legal document headings", kind: "text", properties: TEXT, repeat: "template", recordIds: LEGAL_SECTION_SLOTS },
+  { id: "legal.document.link", page: "legal", section: "Document", label: "Open external document button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template", recordIds: LEGAL_SECTION_SLOTS },
   { id: "join.page.heading", page: "join", section: "Page", label: "Join heading", kind: "text", properties: TEXT },
   { id: "join.page.intro", page: "join", section: "Page", label: "Join intro", kind: "text", properties: TEXT },
   { id: "join.page.notice", page: "join", section: "Page", label: "Already-registered notice", kind: "text", properties: TEXT },
@@ -543,13 +569,33 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
   }
   const theme = cleanTheme(source.theme, errors);
   const navigation = cleanNavigation(source.navigation, errors);
+  const backLinks = cleanBackLinks(source.backLinks, errors);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
     ...(Object.keys(records).length > 0 ? { records } : {}),
     ...(theme ? { theme } : {}),
     ...(navigation ? { navigation } : {}),
+    ...(backLinks ? { backLinks } : {}),
   };
+}
+
+function cleanBackLinks(raw: unknown, errors?: string[]): PublicBackLinkConfig | undefined {
+  if (raw === undefined) return undefined;
+  const labelsRaw = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as { labels?: unknown }).labels : undefined;
+  if (!labelsRaw || typeof labelsRaw !== "object" || Array.isArray(labelsRaw)) {
+    errors?.push("backLinks.labels must be an object");
+    return undefined;
+  }
+  const allowed = new Set<string>(["default", ...PUBLIC_BACK_LINK_CONTEXTS]);
+  const labels: PublicBackLinkConfig["labels"] = {};
+  for (const [key, value] of Object.entries(labelsRaw as Record<string, unknown>)) {
+    if (!allowed.has(key)) { errors?.push(`backLinks.labels.${key} is not a known back link`); continue; }
+    const cleaned = cleanPublicBackLinkLabel(value);
+    if (cleaned === null) { errors?.push(`backLinks.labels.${key} is invalid`); continue; }
+    labels[key as PublicBackLinkLabelKey] = cleaned;
+  }
+  return Object.keys(labels).length > 0 ? { labels } : undefined;
 }
 
 export function publicStyleDefinition(id: string): PublicStyleElementDefinition | null {
