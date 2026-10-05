@@ -1086,9 +1086,6 @@ function BrandingEditor() {
   }
 
   const { event, branding, venues } = bundle;
-  // Full preview always renders the last SAVED branding, so surface unsaved edits.
-  const hasUnsavedChanges =
-    JSON.stringify(form) !== JSON.stringify(brandingToForm(branding));
 
   const venueLabels = resolveVenueLabels({
     venue_label_singular: form.venue_label_singular,
@@ -1199,6 +1196,77 @@ function BrandingEditor() {
     : selectedKit
       ? selectedKit.label
       : "No kit selected — using legacy palette";
+
+  const confirmImmediateAssetAction = () => {
+    if (!hasUnsavedChanges) return true;
+    toast.warning("Save or discard your form changes before changing an image or uploaded font.", {
+      duration: 9000,
+      closeButton: true,
+    });
+    return false;
+  };
+
+  if (editorMode === "v2") {
+    return (
+      <VisualBrandingEditor
+        event={event}
+        eventId={eventId}
+        primaryDomain={primaryDomain}
+        previewEvent={previewEvent}
+        venues={venues}
+        form={form}
+        setForm={setForm}
+        editColour={editColour}
+        theme={themeForPreview}
+        selectedRole={selectedRole}
+        setSelectedRole={setSelectedRole}
+        previewWidth={previewWidth}
+        setPreviewWidth={setPreviewWidth}
+        recentColours={recentColours}
+        setRecentColours={setRecentColours}
+        canEdit={canEdit}
+        saving={saving}
+        saveError={validationError ?? saveError}
+        saveSuccess={saveSuccess}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onSave={() => onSave()}
+        onSaveAndReturn={() => onSave({ returnAfter: true })}
+        onBack={() => changeEditorMode("classic")}
+        onExit={() => {
+          if (!hasUnsavedChanges || window.confirm("Discard your unsaved branding changes and return to the event?")) {
+            navigate({ to: "/admin/events/$eventId", params: { eventId } });
+          }
+        }}
+        selectedKit={selectedKit}
+        applyBrandKit={applyBrandKit}
+        selectCustomBrandKit={selectCustomBrandKit}
+        clearBrandKit={() => setForm({ ...EMPTY_FORM,
+          font_family: form.font_family,
+          heading_font_family: form.heading_font_family,
+          welcome_copy: form.welcome_copy,
+          terms_url: form.terms_url,
+          venue_label_singular: form.venue_label_singular,
+          venue_label_plural: form.venue_label_plural,
+          hero_overlay_opacity: form.hero_overlay_opacity,
+        })}
+        customFonts={customFonts}
+        branding={branding}
+        agencyId={agencyId}
+        confirmImmediateAssetAction={confirmImmediateAssetAction}
+        onAssetUpload={async (kind, file) => {
+          if (!confirmImmediateAssetAction()) return "Save or discard form changes first.";
+          if (!agencyId) return "Select an organisation before uploading.";
+          const res = await uploadEventAsset({ agencyId, eventId: event.id, kind, file });
+          if (!res.ok) return res.error;
+          return persistAssetPath(kind, res.path, kind === "logo" ? branding?.logo_path ?? null : branding?.cover_path ?? null);
+        }}
+        onAssetRemove={(kind) => {
+          if (!confirmImmediateAssetAction()) return Promise.resolve("Save or discard form changes first.");
+          return removeAsset(kind, kind === "logo" ? branding?.logo_path ?? null : branding?.cover_path ?? null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5 p-6">
