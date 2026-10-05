@@ -13,7 +13,7 @@ import { PassportStampGrid } from "@/components/passport-stamp-grid";
 import { NextRewardCard } from "@/components/next-reward-card";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
 import { WhatsHappeningCard, type HappeningPayload } from "@/components/whats-happening-card";
-import { listPublicAwards, type PublicEventAward } from "@/lib/event-awards";
+import type { PublicEventAward } from "@/lib/event-awards";
 
 const SAMPLE_PREVIEW_AWARD = {
   id: "preview-sample-award",
@@ -229,27 +229,17 @@ export function EventPublicLanding({
   const venueLabels = resolveVenueLabels(event);
   const firstName = useFirstNameFromPassportHref(isEditorPreview ? null : passportHref);
   const homeData = usePassportHomeData(isEditorPreview ? null : event.event_id);
-  // Editor preview samples. Awards come from the event's real public award
-  // list (read-only, no passport); a labelled sample is used only when the
-  // event has none, so every block stays visible and editable.
-  const [realAwards, setRealAwards] = useState<PublicEventAward[] | null>(null);
-  useEffect(() => {
-    if (!isEditorPreview || !event.event_id) return;
-    let cancelled = false;
-    listPublicAwards(event.event_id, null)
-      .then((rows) => { if (!cancelled) setRealAwards(rows); })
-      .catch(() => { if (!cancelled) setRealAwards([]); });
-    return () => { cancelled = true; };
-  }, [isEditorPreview, event.event_id]);
+  // Editor preview samples. The preview makes no network calls (enforced by
+  // the mounted preview checks), so a clearly labelled sample prize is used.
   const previewAwards = useMemo<PublicEventAward[]>(() => {
-    const base = realAwards && realAwards.length > 0 ? realAwards : [SAMPLE_PREVIEW_AWARD];
+    const base = [SAMPLE_PREVIEW_AWARD];
     // Show a partially-complete progress bar so track and fill are both editable.
     return base.map((a) => {
       const req = Math.max(1, a.points_required || 1);
       const have = Math.floor(req * 0.6);
       return { ...a, passport_points: have, points_remaining: req - have, is_eligible: false };
     });
-  }, [realAwards]);
+  }, []);
   const previewHappening = useMemo<HappeningPayload>(() => {
     const now = Date.now();
     const venueName = venues[0]?.name ?? "Sample venue";
