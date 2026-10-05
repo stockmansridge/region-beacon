@@ -632,7 +632,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
             );
             // V1 keeps the original single CTA (mt-6, no extra copy); the
             // collect panel exists only in V2.
-            if (!styleV2) return cta(false);
+            if (!v2) return cta(false);
             return (
               <PublicStyleTarget id="venue.collect.surface" recordId={venueId}><div className="mt-6 rounded-2xl border p-3">
                 <PublicStyleTarget id="venue.collect.heading" recordId={venueId}><div className="mb-2 text-center text-sm font-semibold">Collect your points</div></PublicStyleTarget>
