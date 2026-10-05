@@ -181,7 +181,7 @@ function PassportPage() {
       ) : state.kind === "not_found" ? (
         <PassportNotFound token={token} diagnostics={state.diagnostics} branding={branding} />
       ) : state.kind === "ready" ? (
-        <PassportView
+        <PassportPreview
           passport={state.passport}
           eventName={state.eventName}
           stamps={state.stamps}
@@ -381,6 +381,7 @@ export function PassportPreview({
   token,
   subdomain,
   branding,
+  awards,
 }: {
   passport: PassportRow;
   eventName: string | null;
@@ -715,7 +716,7 @@ export function PassportPreview({
                 </div>
               </div>
               <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3 text-center">
-                {awards == null ? (
+                {resolvedAwards == null ? (
                   <>
                     <div
                       className="font-trail-serif text-2xl font-semibold leading-none"
@@ -736,7 +737,7 @@ export function PassportPreview({
                       loading…
                     </div>
                   </>
-                ) : awards.length === 0 ? (
+                ) : resolvedAwards.length === 0 ? (
                   <>
                     <div className="flex items-center gap-1.5">
                       <span aria-hidden className="text-base leading-none">✨</span>
@@ -862,7 +863,7 @@ export function PassportPreview({
         </div>
 
         {/* Rewards — sourced from configured event_awards. Hidden when none. */}
-        <RewardsSection awards={awards} nextAward={nextAward} />
+        <RewardsSection awards={resolvedAwards} nextAward={nextAward} />
 
 
 
