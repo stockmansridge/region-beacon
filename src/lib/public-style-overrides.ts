@@ -572,7 +572,11 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
       if (!properties) continue;
       const native = state === "focus" ? ":focus-visible" : state === "disabled" ? ':disabled,[aria-disabled="true"]' : `:${state}`;
       // [data-preview-state] lets the editor force an appearance for visual checking; never set on live pages.
-      const pseudo = `:is(${native},[data-preview-state="${state}"])`;
+      const forcedStates = [`[data-preview-state="${state}"]`];
+      // Real selected map pins use the same advertised active state as the
+      // inspector, while default and visited pins retain their resolved state.
+      if (id === "map.marker" && state === "active") forcedStates.push('[data-marker-state="selected"]');
+      const pseudo = `:is(${native},${forcedStates.join(",")})`;
       const body = declaration(properties, kind, id);
       if (body) rules.push(`${scoped}${pseudo}{${body}}`);
       // State icon rules carry the pseudo-class, so they out-rank the normal svg rule.

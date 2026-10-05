@@ -192,7 +192,14 @@ describe("Map pin resolver (shared by MapKit annotations and preview marker)", (
     expect(annotation).toEqual({ color: "#555555", glyphColor: "#333333" });
     applyMapMarkerSelection(annotation, normal, false);
     expect(annotation).toEqual({ color: "#111111", glyphColor: "#222222" });
-    const { container } = render(<PublicStyleScope overrides={doc} eventId="e"><MapMarkerGlyph style={normal} recordId="venue-a" /></PublicStyleScope>);
+    const visited = resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-a", visited: true, hasPassport: true });
+    const { container } = render(
+      <PublicStyleScope overrides={doc} eventId="e">
+        <MapMarkerGlyph style={normal} recordId="venue-a" />
+        <MapMarkerGlyph style={normal} recordId="venue-selected" selected />
+        <MapMarkerGlyph style={visited} recordId="venue-visited" />
+      </PublicStyleScope>,
+    );
     const target = container.querySelector<HTMLElement>('[data-brand-role="map.marker"]')!;
     const paint = target.querySelector<HTMLElement>("[data-marker-paint]")!;
     expect(target.dataset.brandInstance).toBe("map.marker@venue-a");
@@ -208,6 +215,20 @@ describe("Map pin resolver (shared by MapKit annotations and preview marker)", (
     expect(getComputedStyle(target).getPropertyValue("--item-icon-color").trim()).toBe("#333333");
     delete target.dataset.previewState;
     expect(getComputedStyle(target).getPropertyValue("--item-icon-bg").trim()).toBe("#111111");
+    const selectedTarget = container.querySelector<HTMLElement>('[data-event-record="venue-selected"]')!;
+    const selectedPaint = selectedTarget.querySelector<HTMLElement>("[data-marker-paint]")!;
+    expect(selectedTarget.dataset.markerState).toBe("selected");
+    expect(getComputedStyle(selectedTarget).getPropertyValue("--item-icon-bg").trim()).toBe("#555555");
+    expect(getComputedStyle(selectedTarget).getPropertyValue("--item-icon-color").trim()).toBe("#333333");
+    expect(selectedPaint.style.backgroundColor).toBe("var(--item-icon-bg, #555555)");
+    expect(selectedPaint.style.color).toBe("var(--item-icon-color, #333333)");
+    const visitedTarget = container.querySelector<HTMLElement>('[data-event-record="venue-visited"]')!;
+    const visitedPaint = visitedTarget.querySelector<HTMLElement>("[data-marker-paint]")!;
+    expect(visitedTarget.dataset.markerState).toBe("visited");
+    expect(getComputedStyle(visitedTarget).getPropertyValue("--item-icon-bg").trim()).toBe("#111111");
+    expect(getComputedStyle(visitedTarget).getPropertyValue("--item-icon-color").trim()).toBe("#222222");
+    expect(visitedPaint.style.backgroundColor).toBe("var(--item-icon-bg, #111111)");
+    expect(visitedPaint.style.color).toBe("var(--item-icon-color, #222222)");
     const v1 = render(<PublicStyleScope enabled={false} overrides={doc} eventId="e"><MapMarkerGlyph style={normal} recordId="venue-a" /></PublicStyleScope>);
     expect(v1.container.querySelector("[data-event-style], [data-brand-role]")).toBeNull();
   });
