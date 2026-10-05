@@ -3920,7 +3920,7 @@ function CustomFontUploader({
                 type="checkbox"
                 checked={confirmed}
                 disabled={busy}
-                onChange={(e) => setConfirmed(e.target.checked)}
+                onChange={(e) => { setConfirmed(e.target.checked); if (e.target.checked) setError(null); }}
                 className="mt-[2px] h-4 w-4 rounded border-[#D9E2EF]"
               />
               <span>
@@ -3931,12 +3931,16 @@ function CustomFontUploader({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={!canUpload || busy || !confirmed || familyName.trim().length < 2}
+                disabled={!canUpload || busy}
                 onClick={async () => {
-                  if (!file) return;
+                  if (!file) { setError("Choose a font file first."); return; }
+                  if (familyName.trim().length < 2) { setError("Give the font a name (at least 2 characters)."); return; }
+                  if (!confirmed) { setError("Tick the box above to confirm you're allowed to use this font, then press Upload font again."); return; }
                   setBusy(true);
                   setError(null);
-                  const res = await onUpload(file, familyName);
+                  let res: { ok: true } | { ok: false; error: string };
+                  try { res = await onUpload(file, familyName); }
+                  catch (err) { res = { ok: false, error: err instanceof Error ? err.message : "Upload failed. Please try again." }; }
                   setBusy(false);
                   if (res.ok) reset();
                   else setError(res.error);
