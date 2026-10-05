@@ -529,11 +529,15 @@ export function publicStyleTarget(
 } {
   const item = publicStyleItem(document, id, options?.recordId);
   const normal = item?.normal;
+  const style = { ...standardStyle(normal, DEFINITIONS.get(id)?.kind, options?.eventId), ...variableStyle(normal) } as CSSProperties;
+  // Map pins paint on their inner marker node from these variables. Keeping the
+  // target wrapper transparent avoids a duplicate disc while preserving selection metadata.
+  if (id === "map.marker") delete style.backgroundColor;
   return {
     "data-event-style": id,
     ...(options?.recordId ? { "data-event-record": options.recordId } : {}),
     ...(options?.selectable ? { "data-brand-role": id, "data-brand-instance": options.recordId ? `${id}@${options.recordId}` : id } : {}),
-    style: { ...standardStyle(normal, DEFINITIONS.get(id)?.kind, options?.eventId), ...variableStyle(normal) } as CSSProperties,
+    style,
   };
 }
 
@@ -547,8 +551,9 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
   const parsed = parsePublicStyleOverrides(document);
   const root = scope && CSS_SCOPE.test(scope) ? `[data-public-style-root="${scope}"] ` : "";
   const rules: string[] = [];
-  const declaration = (properties: PublicStyleProperties, kind?: PublicStyleElementDefinition["kind"]) => {
+  const declaration = (properties: PublicStyleProperties, kind?: PublicStyleElementDefinition["kind"], id?: string) => {
     const style = standardStyle(properties, kind, eventId) as Record<string, string | number | undefined>;
+    if (id === "map.marker") delete style.backgroundColor;
     const pairs = Object.entries(style).map(([key, value]) => {
       const cssKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       return `${cssKey}:${typeof value === "number" && key === "fontSize" ? `${value}px` : value}!important`;
@@ -556,10 +561,10 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
     for (const [key, value] of Object.entries(variableStyle(properties))) pairs.push(`${key}:${value}!important`);
     return pairs.join(";");
   };
-  const add = (selector: string, item: PublicStyleItemOverride, kind?: PublicStyleElementDefinition["kind"]) => {
+  const add = (selector: string, item: PublicStyleItemOverride, kind?: PublicStyleElementDefinition["kind"], id?: string) => {
     const scoped = `${root}${selector}`;
     if (item.normal) {
-      const body = declaration(item.normal, kind);
+      const body = declaration(item.normal, kind, id);
       if (body) rules.push(`${scoped}{${body}}`);
       if (item.normal.iconColor) rules.push(`${scoped} svg{color:${item.normal.iconColor}!important}`);
     }
@@ -568,16 +573,16 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
       const native = state === "focus" ? ":focus-visible" : state === "disabled" ? ':disabled,[aria-disabled="true"]' : `:${state}`;
       // [data-preview-state] lets the editor force an appearance for visual checking; never set on live pages.
       const pseudo = `:is(${native},[data-preview-state="${state}"])`;
-      const body = declaration(properties, kind);
+      const body = declaration(properties, kind, id);
       if (body) rules.push(`${scoped}${pseudo}{${body}}`);
       // State icon rules carry the pseudo-class, so they out-rank the normal svg rule.
       if (properties.iconColor) rules.push(`${scoped}${pseudo} svg{color:${properties.iconColor}!important}`);
     }
   };
-  for (const [id, item] of Object.entries(parsed.items)) add(`[data-event-style="${id}"]`, item, DEFINITIONS.get(id)?.kind);
+  for (const [id, item] of Object.entries(parsed.items)) add(`[data-event-style="${id}"]`, item, DEFINITIONS.get(id)?.kind, id);
   for (const [id, records] of Object.entries(parsed.records ?? {})) {
     for (const [recordId, item] of Object.entries(records)) {
-      add(`[data-event-style="${id}"][data-event-record="${recordId}"]`, item, DEFINITIONS.get(id)?.kind);
+      add(`[data-event-style="${id}"][data-event-record="${recordId}"]`, item, DEFINITIONS.get(id)?.kind, id);
     }
   }
   return rules.join("\n");
