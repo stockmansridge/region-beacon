@@ -230,6 +230,90 @@ type Form = {
   custom_link_enabled: boolean;
 };
 
+type VisualBrandRole =
+  | "brand"
+  | "fonts"
+  | "logo"
+  | "cover"
+  | "hero"
+  | "heroHeading"
+  | "welcome"
+  | "page"
+  | "pageHeading"
+  | "pageBody"
+  | "pageMuted"
+  | "cards"
+  | "cardHeading"
+  | "cardBody"
+  | "cardMuted"
+  | "primaryButtons"
+  | "secondaryButtons"
+  | "navigation"
+  | "navActive"
+  | "navMuted"
+  | "links";
+
+type ColourField = Extract<keyof Form,
+  | "primary_color" | "accent_color" | "link_color"
+  | "page_background_color" | "page_heading_color" | "page_body_color" | "page_muted_color" | "border_color"
+  | "card_background_color" | "card_heading_color" | "card_body_color" | "card_muted_color" | "card_border_color"
+  | "button_primary_bg" | "button_primary_fg" | "button_secondary_bg" | "button_secondary_fg"
+  | "nav_background_color" | "nav_fg_color" | "nav_muted_color" | "nav_active_fg_color"
+  | "hero_bg_color" | "hero_fg_color" | "hero_accent_color" | "hero_body_color" | "hero_overlay_color"
+  | "logo_backdrop_color"
+>;
+
+const VISUAL_ROLE_META: Record<VisualBrandRole, {
+  label: string;
+  description: string;
+  fields: ColourField[];
+}> = {
+  brand: { label: "Brand colours", description: "Shared brand defaults used across public pages and posters.", fields: ["primary_color", "accent_color"] },
+  fonts: { label: "Fonts", description: "Heading and body fonts are shared across the event’s public experience.", fields: [] },
+  logo: { label: "Logo", description: "Image changes save immediately. Shape and backdrop settings save with the form.", fields: ["logo_backdrop_color"] },
+  cover: { label: "Hero / Cover", description: "Image changes save immediately. Position and overlay settings save with the form.", fields: ["hero_bg_color", "hero_overlay_color"] },
+  hero: { label: "Hero / Cover", description: "Applies to the hero surface, cover overlay and accent label.", fields: ["hero_bg_color", "hero_accent_color", "hero_overlay_color"] },
+  heroHeading: { label: "Event heading", description: "Applies to the event heading. The heading font is shared across event headings.", fields: ["hero_fg_color"] },
+  welcome: { label: "Welcome message", description: "Edits the existing welcome message and its colour. The body font is shared globally.", fields: ["hero_body_color"] },
+  page: { label: "Page", description: "Applies to the public page surface and its dividers.", fields: ["page_background_color", "border_color"] },
+  pageHeading: { label: "Page headings", description: "Applies to all headings displayed on the page surface.", fields: ["page_heading_color"] },
+  pageBody: { label: "Page body", description: "Applies to standard copy displayed on the page surface.", fields: ["page_body_color"] },
+  pageMuted: { label: "Page muted text", description: "Applies to helper text and metadata on the page surface.", fields: ["page_muted_color"] },
+  cards: { label: "Cards", description: "Applies to all card surfaces and borders.", fields: ["card_background_color", "card_border_color"] },
+  cardHeading: { label: "Card headings", description: "Applies to headings and key values inside all cards.", fields: ["card_heading_color"] },
+  cardBody: { label: "Card body", description: "Applies to standard copy inside all cards.", fields: ["card_body_color"] },
+  cardMuted: { label: "Card muted text", description: "Applies to card metadata, captions and progress labels.", fields: ["card_muted_color"] },
+  primaryButtons: { label: "Primary buttons", description: "Applies to all primary buttons and progress accents.", fields: ["button_primary_bg", "button_primary_fg"] },
+  secondaryButtons: { label: "Secondary buttons", description: "Applies to all secondary button surfaces and text.", fields: ["button_secondary_bg", "button_secondary_fg"] },
+  navigation: { label: "Navigation", description: "Applies to the top bar, bottom menu and menu drawer.", fields: ["nav_background_color", "nav_fg_color"] },
+  navActive: { label: "Active navigation", description: "Applies to the currently selected navigation item.", fields: ["nav_active_fg_color"] },
+  navMuted: { label: "Muted navigation", description: "Applies to inactive and subtle navigation items.", fields: ["nav_muted_color"] },
+  links: { label: "Links", description: "Applies to text links across the public event pages.", fields: ["link_color"] },
+};
+
+const VISUAL_NAV: Array<{ label: string; role: VisualBrandRole }> = [
+  { label: "Brand Kit", role: "brand" }, { label: "Brand colours", role: "brand" },
+  { label: "Fonts", role: "fonts" }, { label: "Logo", role: "logo" },
+  { label: "Hero / Cover", role: "cover" }, { label: "Event heading", role: "heroHeading" },
+  { label: "Welcome message", role: "welcome" }, { label: "Page", role: "page" },
+  { label: "Cards", role: "cards" }, { label: "Primary buttons", role: "primaryButtons" },
+  { label: "Secondary buttons", role: "secondaryButtons" }, { label: "Navigation", role: "navigation" },
+  { label: "Links", role: "links" },
+];
+
+const COLOUR_LABELS: Record<ColourField, string> = {
+  primary_color: "Primary colour", accent_color: "Accent colour", link_color: "Link colour",
+  page_background_color: "Page background", page_heading_color: "Page heading", page_body_color: "Page body",
+  page_muted_color: "Page muted text", border_color: "Page border", card_background_color: "Card background",
+  card_heading_color: "Card heading", card_body_color: "Card body", card_muted_color: "Card muted text",
+  card_border_color: "Card border", button_primary_bg: "Primary button background", button_primary_fg: "Primary button text",
+  button_secondary_bg: "Secondary button background", button_secondary_fg: "Secondary button text",
+  nav_background_color: "Navigation background", nav_fg_color: "Navigation text", nav_muted_color: "Navigation muted",
+  nav_active_fg_color: "Navigation active", hero_bg_color: "Hero background", hero_fg_color: "Event heading",
+  hero_accent_color: "Hero accent", hero_body_color: "Welcome message", hero_overlay_color: "Hero overlay",
+  logo_backdrop_color: "Logo backdrop",
+};
+
 const EMPTY_FORM: Form = {
   font_family: "",
   heading_font_family: "",
