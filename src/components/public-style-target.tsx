@@ -14,12 +14,17 @@ export function PublicStyleTarget({
 }) {
   const target = usePublicStyleTarget(id, { recordId, selectable: true });
   const replacesBackgroundImage = Boolean(target.style.backgroundColor) && !target.style.backgroundImage;
+  const childStyle = { ...children.props.style };
+  if (replacesBackgroundImage) {
+    delete childStyle.background;
+    delete childStyle.backgroundImage;
+  }
   return cloneElement(children, {
     ...target,
     style: {
-      ...children.props.style,
-      ...(replacesBackgroundImage ? { background: undefined, backgroundImage: "none" } : {}),
+      ...childStyle,
       ...target.style,
+      ...(replacesBackgroundImage ? { backgroundImage: "none" } : {}),
     },
   });
 }
