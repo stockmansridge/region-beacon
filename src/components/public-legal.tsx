@@ -9,6 +9,8 @@ import { tenantHost } from "@/lib/domains";
 import { LegalBody } from "@/components/legal-body";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
+import { usePublicNav } from "@/components/public-nav-context";
+import { usePublicStyleEnabled } from "@/components/public-style-scope";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
@@ -261,26 +263,41 @@ function legalSectionFromRow(
 function LegalAccordionCard({
   header,
   section,
+  sectionId,
   defaultOpen,
 }: {
   header: string;
   section: LegalSectionContent;
+  sectionId: "terms" | "privacy";
   defaultOpen?: boolean;
 }) {
+  const v2 = usePublicStyleEnabled();
+  const { mode } = usePublicNav();
   const [open, setOpen] = useState(Boolean(defaultOpen));
-  return (
-    <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm">
-      <PublicStyleTarget id="legal.section.toggle"><button
+  // Switching between Terms / Privacy / combined must re-sync the expanded card.
+  useEffect(() => { setOpen(Boolean(defaultOpen)); }, [defaultOpen]);
+  const surface = (
+    <div
+      className={v2 ? "rounded-2xl border shadow-sm" : "rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm"}
+      style={v2 ? { borderColor: "var(--event-border, #E6DCC7)", backgroundColor: "var(--event-card-bg, #FBF5E8)" } : undefined}
+      data-legal-card={sectionId}
+    >
+      <PublicStyleTarget id="legal.section.toggle" recordId={v2 ? sectionId : undefined}><button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+        className={v2
+          ? "flex w-full items-center justify-between gap-3 px-5 py-4 text-left font-trail-serif text-lg font-semibold"
+          : "flex w-full items-center justify-between gap-3 px-5 py-4 text-left"}
+        style={v2 ? { color: "var(--event-primary, #1F3D2B)" } : undefined}
       >
-        <span className="font-trail-serif text-lg font-semibold text-[var(--event-primary,#1F3D2B)]">
+        {/* V2: heading text and chevron inherit the button's colour/typography. */}
+        <span className={v2 ? undefined : "font-trail-serif text-lg font-semibold text-[var(--event-primary,#1F3D2B)]"}>
           {header}
         </span>
         <ChevronDown
-          className={`h-5 w-5 shrink-0 text-[var(--event-primary,#1F3D2B)] transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-5 w-5 shrink-0 ${v2 ? "" : "text-[var(--event-primary,#1F3D2B)] "}transition-transform ${open ? "rotate-180" : ""}`}
+          style={v2 ? { color: "var(--item-icon-color, currentColor)" } : undefined}
           aria-hidden
         />
       </button></PublicStyleTarget>
@@ -289,11 +306,11 @@ function LegalAccordionCard({
           {section.kind === "local" ? (
             <>
               {section.version && (
-                <PublicStyleTarget id="legal.meta"><p className="mb-3 text-[11px] text-[var(--event-muted,#8A7E66)]">
+                <PublicStyleTarget id="legal.meta" recordId={v2 ? sectionId : undefined}><p className="mb-3 text-[11px] text-[var(--event-muted,#8A7E66)]">
                   Version {section.version}
                 </p></PublicStyleTarget>
               )}
-              <LegalBody body={section.body} />
+              <LegalBody body={section.body} section={sectionId} />
             </>
           ) : section.kind === "external" ? (
             <div>
@@ -301,15 +318,29 @@ function LegalAccordionCard({
                 This document is published by the event organiser on an external
                 site.
               </p></PublicStyleTarget>
-              <a
-                href={section.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex h-10 items-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-4 text-sm font-semibold text-[var(--event-page-bg,#F6EFE2)] shadow"
-              >
-                Open {section.title.toLowerCase()} ↗
-              </a>
-              <PublicStyleTarget id="legal.meta"><p className="mt-3 break-all text-[11px] text-[var(--event-muted,#8A7E66)]">
+              {v2 ? (
+                <PublicStyleTarget id="legal.document.link" recordId={sectionId}><a
+                  href={section.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={mode === "live" ? undefined : (event) => event.preventDefault()}
+                  aria-disabled={mode === "live" ? undefined : true}
+                  className="mt-4 inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold shadow underline-offset-4 hover:underline focus-visible:underline"
+                  style={{ backgroundColor: "var(--event-primary, #1F3D2B)", color: "var(--event-page-bg, #F6EFE2)" }}
+                >
+                  Open {section.title.toLowerCase()} ↗
+                </a></PublicStyleTarget>
+              ) : (
+                <a
+                  href={section.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex h-10 items-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-4 text-sm font-semibold text-[var(--event-page-bg,#F6EFE2)] shadow"
+                >
+                  Open {section.title.toLowerCase()} ↗
+                </a>
+              )}
+              <PublicStyleTarget id="legal.meta" recordId={v2 ? sectionId : undefined}><p className="mt-3 break-all text-[11px] text-[var(--event-muted,#8A7E66)]">
                 {section.url}
               </p></PublicStyleTarget>
             </div>
@@ -322,6 +353,7 @@ function LegalAccordionCard({
       )}
     </div>
   );
+  return v2 ? <PublicStyleTarget id="legal.section.surface" recordId={sectionId}>{surface}</PublicStyleTarget> : surface;
 }
 
 export function CombinedLegalPage({
@@ -390,11 +422,13 @@ export function CombinedLegalPage({
         <LegalAccordionCard
           header="Terms & Conditions"
           section={terms}
+          sectionId="terms"
           defaultOpen={termsOpen}
         />
         <LegalAccordionCard
           header="Privacy Policy"
           section={privacy}
+          sectionId="privacy"
           defaultOpen={privacyOpen}
         />
       </div>
