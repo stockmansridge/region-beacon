@@ -469,6 +469,7 @@ export function PassportPreview({
 
 
   async function copySupportDetails() {
+    if (preview) return;
     const eventId = passport.event_id;
     let savedPassportFound = false;
     if (eventId && typeof localStorage !== "undefined") {
@@ -903,6 +904,7 @@ export function PassportPreview({
           <PublicStyleTarget id="passport.actions.copyLink"><button
             type="button"
             onClick={async () => {
+              if (preview) return;
               try {
                 await navigator.clipboard.writeText(passportUrl);
                 setLinkCopied(true);
