@@ -1496,6 +1496,27 @@ function BrandingEditor() {
         venues={venues}
         form={form}
         setForm={setForm}
+        onFontUpload={async (file: File, familyName: string) => {
+          if (!agencyId) return { ok: false as const, error: "No agency selected." };
+          const res = await uploadEventCustomFont({ agencyId, eventId: event.id, familyName, file });
+          if (res.ok) {
+            setCustomFonts((prev) => [...prev, res.font].sort((a, b) => a.family_name.localeCompare(b.family_name)));
+            toast.success(`“${res.font.family_name}” uploaded. Pick it above, then Save.`);
+          }
+          return res;
+        }}
+        onFontDelete={async (font: EventCustomFont) => {
+          const res = await deleteEventCustomFont(font);
+          if (!res.ok) { toast.error(res.error, { duration: 10000, closeButton: true }); return; }
+          setCustomFonts((prev) => prev.filter((f) => f.id !== font.id));
+          setForm((prev) => ({
+            ...prev,
+            font_family: prev.font_family === font.family_name ? "" : prev.font_family,
+            heading_font_family: prev.heading_font_family === font.family_name ? "" : prev.heading_font_family,
+            default_emotive_font_family: prev.default_emotive_font_family === font.family_name ? "" : prev.default_emotive_font_family,
+          }));
+          toast.success(`“${font.family_name}” removed. Save to apply.`);
+        }}
         editColour={editColour}
         theme={themeForPreview}
         selectedRole={selectedRole}
@@ -2158,7 +2179,7 @@ function VisualBrandingEditor({
   canEdit, saving, saveError, saveSuccess, hasUnsavedChanges, onSave, onSaveAndReturn,
   onBack, onExit, selectedKit, applyBrandKit, selectCustomBrandKit, clearBrandKit,
   customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove, v2ConfigForDraft,
-  v1Form, onV2Activated, saveV2Branding,
+  v1Form, onV2Activated, saveV2Branding, onFontUpload, onFontDelete,
 }: {
   event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
   venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
@@ -2172,6 +2193,8 @@ function VisualBrandingEditor({
   selectedKit: BrandKit | null; applyBrandKit: (kit: BrandKit) => void; selectCustomBrandKit: () => void;
   clearBrandKit: () => void; customFonts: EventCustomFont[]; branding: Branding | null; agencyId: string | null;
   confirmImmediateAssetAction: () => boolean;
+  onFontUpload: (file: File, familyName: string) => Promise<{ ok: true; font: EventCustomFont } | { ok: false; error: string }>;
+  onFontDelete: (font: EventCustomFont) => Promise<void>;
   onAssetUpload: (kind: EventAssetKind, file: File) => Promise<string | null>;
   onAssetRemove: (kind: EventAssetKind) => Promise<string | null>;
   v2ConfigForDraft: () => PublicStyleOverrideDocument;
@@ -2783,7 +2806,7 @@ function VisualBrandingEditor({
             <div className="flex items-start justify-between gap-3"><div>{itemMeta ? <div className="text-xs font-semibold uppercase text-muted-foreground">Shared settings for this area</div> : null}<h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description} {itemMeta ? "These affect every item that uses them." : ""}</p></div>{!itemMeta ? <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button> : null}</div>
             <div className="mt-5 space-y-5">
               {panelRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || busy || comparisonReadOnly} />}
-              {panelRole === "fonts" || panelRole === "heroHeading" || panelRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || busy || comparisonReadOnly} eventName={event.name} customFonts={customFonts} canUpload={false} onUpload={async () => ({ ok: false as const, error: "Use the existing editor to manage uploaded fonts." })} onDelete={async () => {}} /> : null}
+              {panelRole === "fonts" || panelRole === "heroHeading" || panelRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || busy || comparisonReadOnly} eventName={event.name} customFonts={customFonts} canUpload={canEdit && !!agencyId && !comparisonReadOnly} onUpload={onFontUpload} onDelete={onFontDelete} /> : null}
               {panelRole === "welcome" && <Field label="Welcome message">
                 <div className="mb-1 text-xs text-muted-foreground">Source: <span className="font-medium text-foreground">{welcomeSource}</span></div>
                 <textarea aria-label="Welcome message" value={form.welcome_copy.trim() ? form.welcome_copy : effectiveWelcome} maxLength={1000} disabled={!canEdit || busy || comparisonReadOnly} onChange={(event) => setForm((current) => ({ ...current, welcome_copy: event.target.value }))} className="min-h-28 w-full rounded-md border bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring" />
