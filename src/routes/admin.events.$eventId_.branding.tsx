@@ -2623,6 +2623,7 @@ function VisualBrandingEditor({
 
 /** Items whose real public component carries a V2 marker (kept in sync with PublicStyleTarget / role() call sites). */
 const V2_WIRED_ITEMS = new Set<string>([
+  "bonus.failure.body","bonus.failure.heading","bonus.result.body","bonus.result.button","bonus.result.heading","bonus.result.surface","checkin.failure.body","checkin.failure.button","checkin.failure.heading","checkin.result.body","checkin.result.button","checkin.result.heading","checkin.result.surface","scan.body","scan.camera","scan.control","scan.error","scan.heading","tasting.failure.body","tasting.failure.heading","tasting.result.body","tasting.result.button","tasting.result.heading","tasting.result.surface",
   "bookmarks.card", "bookmarks.empty.body", "bookmarks.empty.cta", "bookmarks.empty.heading", "bookmarks.page.heading",
   "bookmarks.page.intro", "faq.item.answer", "faq.item.question", "faq.item.toggle", "faq.page.eyebrow",
   "faq.page.heading", "faq.state.message", "home.bonusPromo.body", "home.bonusPromo.heading", "home.bonusPromo.icon",
