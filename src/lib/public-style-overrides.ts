@@ -173,7 +173,7 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "prizes.card.progress", page: "prizes", section: "Prize cards", label: "Prize progress", kind: "progress", properties: PROGRESS, repeat: "award" },
 
   { id: "map.controls.item", page: "map", section: "Controls", label: "Map control", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
-  { id: "map.marker", page: "map", section: "Map", label: "Map marker", kind: "icon", properties: ICON, repeat: "venue" },
+  { id: "map.marker", page: "map", section: "Map", label: "Map pin", kind: "icon", properties: ["iconColor", "iconBackgroundColor"], states: ["active"], repeat: "venue" },
   { id: "map.list.card", page: "map", section: "Venue list", label: "Map venue card", kind: "surface", properties: SURFACE, repeat: "venue" },
   { id: "leaderboard.heading", page: "leaderboard", section: "Leaderboard", label: "Leaderboard heading", kind: "text", properties: TEXT },
   { id: "leaderboard.row", page: "leaderboard", section: "Leaderboard", label: "Leaderboard row", kind: "surface", properties: SURFACE, repeat: "template" },
