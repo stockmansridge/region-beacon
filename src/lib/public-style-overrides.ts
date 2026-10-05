@@ -68,6 +68,7 @@ export const PUBLIC_V2_THEME_KEYS = [
   "button_secondary_fg", "nav_background_color", "nav_fg_color", "nav_muted_color",
   "nav_active_fg_color", "hero_bg_color", "hero_fg_color", "hero_accent_color",
   "hero_body_color", "hero_overlay_color", "hero_overlay_opacity",
+  "welcome_copy", "logo_shape", "logo_backdrop", "logo_backdrop_color",
 ] as const;
 
 export type PublicV2ThemeKey = (typeof PUBLIC_V2_THEME_KEYS)[number];
@@ -209,6 +210,9 @@ function cleanTheme(raw: unknown): PublicV2Theme | undefined {
     else if (key === "hero_overlay_opacity" && typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100) theme[key] = value;
     else if (key.endsWith("_color") && typeof value === "string" && HEX.test(value)) theme[key] = value.toUpperCase();
     else if (key.endsWith("font_family") && typeof value === "string" && FONT.test(value.trim())) theme[key] = value.trim();
+    else if (key === "welcome_copy" && typeof value === "string" && value.length <= 1000) theme[key] = value;
+    else if (key === "logo_shape" && (value === "square" || value === "circle")) theme[key] = value;
+    else if (key === "logo_backdrop" && (value === "transparent" || value === "color")) theme[key] = value;
   }
   return Object.keys(theme).length > 0 ? theme : undefined;
 }
@@ -297,11 +301,12 @@ export function parsePublicStyleOverrides(raw: unknown): PublicStyleOverrideDocu
       if (item) (records[id] ??= {})[recordId] = item;
     }
   }
+  const theme = cleanTheme(source.theme);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
     ...(Object.keys(records).length > 0 ? { records } : {}),
-    ...(cleanTheme(source.theme) ? { theme: cleanTheme(source.theme) } : {}),
+    ...(theme ? { theme } : {}),
   };
 }
 

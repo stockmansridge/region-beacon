@@ -1,6 +1,8 @@
 # Project architecture rules
 
 - Public passport item styling uses the versioned registry and allowlisted resolver in `src/lib/public-style-overrides.ts`; never add arbitrary CSS or selector persistence.
-- `event_branding.style_overrides` is a sparse optional layer over existing theme fields, so rows without overrides must retain their current rendering.
+- V1 is the unchanged default renderer. V2 uses `event_branding.v2_style_config` only when that event's `public_template_version` is explicitly `v2`.
+- Editor mode and the V2 document's schema version are not template selection. Opening or saving a V2 draft must never activate it.
+- Branding ownership and every query/write are scoped by both `agency_id` and `event_id`; never use a slug as authoritative ownership.
 - Public page previews must render the real public components; controlled preview state may supply safe fixtures but must not duplicate page markup.
 - Repeated public records use stable database IDs for style identity; private visitor activity uses non-identifying template slots.

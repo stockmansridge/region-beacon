@@ -396,7 +396,8 @@ const SELECT_COLS_FALLBACK = EVENT_BRANDING_SELECT_FALLBACK;
 
 function brandingToForm(b: Branding | null): Form {
   if (!b) return EMPTY_FORM;
-  return {
+  const v2 = parsePublicStyleOverrides(b.v2_style_config);
+  const base: Form = {
     font_family: b.font_family ?? "",
     heading_font_family: b.heading_font_family ?? "",
     default_emotive_font_family: b.default_emotive_font_family ?? "",
@@ -442,8 +443,14 @@ function brandingToForm(b: Branding | null): Form {
     custom_link_label: b.custom_link_label ?? "",
     custom_link_url: b.custom_link_url ?? "",
     custom_link_enabled: Boolean(b.custom_link_enabled),
-    style_overrides: parsePublicStyleOverrides(b.v2_style_config),
+    style_overrides: v2,
   };
+  for (const [key, value] of Object.entries(v2.theme ?? {})) {
+    if (key in base && key !== "style_overrides" && value != null) {
+      (base as unknown as Record<string, unknown>)[key] = String(value);
+    }
+  }
+  return base;
 }
 
 function BrandingEditor() {
@@ -573,8 +580,8 @@ function BrandingEditor() {
 
   /** Apply a Brand Kit — overwrites every colour field. */
   function applyBrandKit(kit: BrandKit) {
-    setForm((f) => ({
-      ...f,
+    setForm((f) => {
+      const colours = {
       brand_kit_key: kit.key,
       primary_color: kit.colors.primary_color,
       accent_color: kit.colors.accent_color,
@@ -601,8 +608,19 @@ function BrandingEditor() {
       hero_fg_color: kit.colors.hero_fg_color,
       hero_accent_color: kit.colors.hero_accent_color,
       // Kits have no dedicated hero body colour yet: inherit the hero foreground.
-      hero_body_color: kit.colors.hero_fg_color,
-    }));
+        hero_body_color: kit.colors.hero_fg_color,
+      };
+      return {
+        ...f,
+        ...colours,
+        ...(editorMode === "v2" ? {
+          style_overrides: parsePublicStyleOverrides({
+            ...f.style_overrides,
+            theme: { ...(f.style_overrides.theme ?? {}), ...colours },
+          }),
+        } : {}),
+      };
+    });
   }
 
   /** Select Custom without changing the current colours. */
@@ -761,7 +779,7 @@ function BrandingEditor() {
         return;
       }
       const savedConfig = parsePublicStyleOverrides(confirmed.v2_style_config);
-      setBundle((current) => current ? { ...current, branding: { ...(current.branding ?? EMPTY_FORM), v2_style_config: savedConfig, public_template_version: confirmed.public_template_version } as Branding, hasBranding: true } : current);
+      setBundle((current) => current ? { ...current, branding: { ...(current.branding ?? {}), v2_style_config: savedConfig, public_template_version: confirmed.public_template_version } as Branding, hasBranding: true } : current);
       setForm((current) => ({ ...current, style_overrides: savedConfig }));
       setSaving(false);
       setSaveSuccess("V2 draft saved. The live event template was not changed.");
