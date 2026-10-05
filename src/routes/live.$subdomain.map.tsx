@@ -1,4 +1,4 @@
-import { resolveMapMarkerStyle, type MapMarkerStyle } from "@/lib/map-marker-style";
+import { applyMapMarkerSelection, mapMarkerAnnotationOptions, resolveMapMarkerStyle, type MapMarkerStyle } from "@/lib/map-marker-style";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -370,13 +370,16 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
       const visited = hasPassport && visitedIds.has(v.venue_id);
       const coord = new mapkit.Coordinate(v.lat as number, v.lng as number);
       const pin = resolveMapMarkerStyle(markerInput(v.venue_id, visited));
-      const annotation = new mapkit.MarkerAnnotation(coord, {
-        title: v.name ?? "Venue",
-        color: pin.color,
-        glyphText: pin.glyphText,
-        ...(branding.templateVersion === "v2" ? { glyphColor: pin.glyphColor, selectedGlyphColor: pin.selectedGlyphColor } : {}),
+      const annotation = new mapkit.MarkerAnnotation(coord, branding.templateVersion === "v2"
+        ? mapMarkerAnnotationOptions(pin, v.name ?? "Venue")
+        : { title: v.name ?? "Venue", color: pin.color, glyphText: pin.glyphText });
+      annotation.addEventListener("select", () => {
+        if (branding.templateVersion === "v2") applyMapMarkerSelection(annotation, pin, true);
+        setSelected(v);
       });
-      annotation.addEventListener("select", () => setSelected(v));
+      annotation.addEventListener("deselect", () => {
+        if (branding.templateVersion === "v2") applyMapMarkerSelection(annotation, pin, false);
+      });
       fresh.push(annotation);
       annotationsRef.current.set(v.venue_id, annotation);
     }
@@ -904,7 +907,7 @@ function MapFallbackList({
             >
               <span className="flex items-center gap-2 font-semibold">
                 {v.venue_id && (() => { const pin = markerStyle(v.venue_id); return (
-                  <PublicStyleTarget id="map.marker" recordId={v.venue_id}><span data-marker-color={pin.color} className="grid h-7 w-7 place-items-center rounded-full text-xs" style={{ backgroundColor: pin.color, color: pin.glyphColor }} aria-hidden>{pin.glyphText || "●"}</span></PublicStyleTarget>
+                  <MapMarkerGlyph style={pin} />
                 ); })()}
                 {v.name}
               </span>
@@ -918,6 +921,19 @@ function MapFallbackList({
         ))}
       </ul>
     </div>
+  );
+}
+
+/** Safe app-owned marker presentation used by preview/fallback rendering. */
+export function MapMarkerGlyph({ style, selected = false }: { style: MapMarkerStyle; selected?: boolean }) {
+  const color = selected ? style.selectedColor : style.color;
+  const glyphColor = selected ? style.selectedGlyphColor : style.glyphColor;
+  return (
+    <span data-event-style="map.marker" data-marker-color={color} data-marker-state={selected ? "selected" : style.glyphText ? "visited" : "default"}>
+      <span className="grid h-7 w-7 place-items-center rounded-full text-xs" style={{ backgroundColor: color, color: glyphColor }} aria-hidden>
+        {style.glyphText || "●"}
+      </span>
+    </span>
   );
 }
 
