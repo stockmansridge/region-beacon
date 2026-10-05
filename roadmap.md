@@ -16,3 +16,4 @@
 - [x] Add focused real-component fixture parity tests and reconcile the public styling audit with actual evidence.
 - [x] Shared V2 back-link style, per-context overrides and event-scoped plain-text labels (destinations fixed).
 - [x] Legal heading/chevron/surface/document text/headings/external button targets with terms/privacy slots.
+- [x] Bookmarks leaf/thumbnail/arrow targets; V1 venue CTA restored; current-page bottom-menu colours; buffered menu names; passport progress/stamp card/text targets.
