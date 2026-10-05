@@ -65,7 +65,6 @@ describe("independent text / icon / background (finding 6)", () => {
     const css = publicStyleCss(doc, "scopeA");
     expect(css).toContain('[data-public-style-root="scopeA"] [data-event-style="home.shareButton"] svg{color:#FF0000!important}');
     expect(css).toMatch(/:is\(:hover,\[data-preview-state="hover"\]\) svg\{color:#00AAFF!important\}/);
-    expect(css).not.toMatch(/\{[^}]*color:#FF0000[^}]*\}/.source.includes("x") ? /x^/ : /x^/);
     // Normal block must not set `color` to the icon colour.
     const normalBlock = css.split("\n").find((rule) => rule.startsWith('[data-public-style-root="scopeA"] [data-event-style="home.shareButton"]{'));
     expect(normalBlock).toContain("color:#111111!important");
