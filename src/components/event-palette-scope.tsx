@@ -55,6 +55,8 @@ export function EventPaletteScope({
   heroFgColor,
   heroAccentColor,
   heroBodyColor,
+  heroOverlayColor,
+  heroOverlayOpacity,
   // Phase D Pass 2 — heading/body/muted split (all optional, all fall back).
   pageHeadingColor,
   pageBodyColor,
@@ -95,6 +97,8 @@ export function EventPaletteScope({
   heroFgColor?: string | null;
   heroAccentColor?: string | null;
   heroBodyColor?: string | null;
+  heroOverlayColor?: string | null;
+  heroOverlayOpacity?: number | null;
   pageHeadingColor?: string | null;
   pageBodyColor?: string | null;
   pageMutedColor?: string | null;
@@ -250,6 +254,17 @@ export function EventPaletteScope({
   const style: React.CSSProperties = {
     ...themeCssVars(theme),
     ...bgStyle,
+    ...(heroOverlayColor && HEX_RE.test(heroOverlayColor)
+      ? {
+          ["--event-hero-overlay" as any]: `color-mix(in srgb, ${heroOverlayColor} ${heroOverlayOpacity ?? 50}%, transparent)`,
+          ["--event-hero-overlay-strong" as any]: `color-mix(in srgb, ${heroOverlayColor} ${heroOverlayOpacity ?? 50}%, transparent)`,
+        }
+      : heroOverlayOpacity != null
+        ? {
+            ["--event-hero-overlay" as any]: `color-mix(in srgb, ${theme.heroBg} ${heroOverlayOpacity}%, transparent)`,
+            ["--event-hero-overlay-strong" as any]: `color-mix(in srgb, ${theme.heroBg} ${heroOverlayOpacity}%, transparent)`,
+          }
+        : {}),
     ...(fontFamily
       ? { fontFamily, ["--event-font" as any]: fontFamily }
       : {}),
