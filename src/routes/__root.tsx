@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { HostRouter } from "@/components/host-router";
 import { Toaster } from "@/components/ui/sonner";
@@ -34,9 +35,32 @@ function NotFoundComponent() {
   );
 }
 
+/**
+ * After a new release, a page left open (e.g. a saved passport) still references the
+ * previous build's code files. Client-side navigation then fails to fetch them and the
+ * page errors. Recover with ONE full reload of the requested URL (fresh build); a
+ * per-URL session guard prevents reload loops if the failure is real.
+ */
+const CHUNK_ERROR = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Loading chunk|Unable to preload CSS/i;
+export function isStaleBuildError(error: unknown): boolean {
+  const message = error instanceof Error ? `${error.name} ${error.message}` : String(error ?? "");
+  return CHUNK_ERROR.test(message);
+}
+function reloadOnceForStaleBuild(): boolean {
+  if (typeof window === "undefined") return false;
+  const key = `stale-build-reload:${window.location.pathname}${window.location.search}`;
+  try {
+    if (window.sessionStorage.getItem(key)) return false;
+    window.sessionStorage.setItem(key, "1");
+  } catch { /* storage blocked: still try one reload */ }
+  window.location.reload();
+  return true;
+}
+
 function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  useEffect(() => { if (isStaleBuildError(error)) reloadOnceForStaleBuild(); }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -136,6 +160,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    const onPreloadError = (event: Event) => { if (reloadOnceForStaleBuild()) event.preventDefault(); };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
