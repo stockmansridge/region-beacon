@@ -204,6 +204,8 @@ export function EventPublicLanding({
     "data-event-style": id,
     ...(mode === "preview" ? { "data-brand-role": id, "data-brand-instance": id } : {}),
   }) : {};
+  // V2 uses the stable item ID; V1 keeps its shared preview role unchanged.
+  const role = (shared: string, id: string) => isV2 ? itemRole(id) : brandRole(shared);
 
   // Once a returning visitor has a verified passport for this event, the
   // Passport page is their home — redirect them there instead of rendering
@@ -383,7 +385,7 @@ export function EventPublicLanding({
           </div>
 
           <section
-            {...brandRole("hero")}
+            {...role("hero", "home.hero.surface")}
             data-brand-hint="Hero background · Cover image · Hero overlay colour · Hero overlay opacity"
             title="Hero — Hero background · Cover image · Hero overlay colour · Hero overlay opacity"
             className="relative w-full overflow-hidden"
@@ -406,6 +408,8 @@ export function EventPublicLanding({
               />
             ) : null}
             <div
+              {...(isV2 ? itemRole("home.hero.cover") : {})}
+              data-brand-hint="Cover tint overlay"
               className="absolute inset-0"
               style={{
                 background:
@@ -418,7 +422,7 @@ export function EventPublicLanding({
                   used to sit in the top bar. */}
               {logoUrl ? (
                 <div
-                  {...brandRole("logo")}
+                  {...role("logo", "home.hero.logo")}
                   data-brand-hint="Event logo · Logo shape · Logo backdrop · Logo backdrop colour"
                   title="Event logo — Event logo · Logo shape · Logo backdrop · Logo backdrop colour"
                   className="mb-4 flex justify-center"
@@ -443,7 +447,7 @@ export function EventPublicLanding({
                 Welcome
               </p>
               <h1
-                {...brandRole("heroHeading")}
+                {...role("heroHeading", "home.hero.heading")}
                 data-brand-hint="hero_fg_color"
                 title="Event heading — Event heading colour (--event-hero-fg)"
                 className="font-event-heading mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
@@ -480,7 +484,7 @@ export function EventPublicLanding({
                   embedded branding preview). */}
               {landingCopy ? (
                 <p
-                  {...brandRole("welcome")}
+                  {...role("welcome", "home.hero.welcomeCopy")}
                   data-brand-hint="hero_body_color"
                   title="Welcome copy — Welcome copy colour (--event-hero-body)"
                   className="mt-3 whitespace-pre-line text-sm leading-relaxed sm:text-[15px]"
@@ -497,7 +501,7 @@ export function EventPublicLanding({
         </div>
 
         <main
-          {...brandRole("page")}
+          {...role("page", "home.page.surface")}
           data-brand-hint="Page background"
           title="Page surface — Page background"
           className="mx-auto w-full max-w-md px-4 pb-24"
