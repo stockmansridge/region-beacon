@@ -293,7 +293,7 @@ describe("Passport V2 hero paint layers", () => {
   };
   it("defaults keep the legacy tint; image 100% + overlay 0 shows an unwashed photo with normal text", () => {
     const base = mount({});
-    expect(base.overlay.style.background).toContain("linear-gradient");
+    expect(base.overlay.getAttribute("style")).toContain("linear-gradient");
     const clean = mount({ "passport.hero.image": { normal: { opacity: 1 } }, "passport.hero.overlay": { normal: { opacity: 0 } } });
     expect(clean.image.style.opacity).toBe("1");
     expect(clean.overlay.style.opacity).toBe("0");
@@ -307,13 +307,13 @@ describe("Passport V2 hero paint layers", () => {
     const t = mount({ "passport.hero.overlay": { normal: { backgroundColor: "transparent" } } });
     expect(t.overlay.style.backgroundColor).toBe("transparent");
     expect(t.overlay.style.backgroundImage).toBe("none");
-    expect(t.overlay.style.background).not.toContain("linear-gradient");
+    expect(t.overlay.getAttribute("style")).not.toContain("linear-gradient");
     const css = psoCss(parsePSO({ version: 1, items: { "passport.hero.overlay": { normal: { backgroundColor: "transparent" } } } }), "s");
     expect(css).toContain("background-color:transparent!important");
     expect(css).toContain("background-image:none!important");
     expect(parsePSO({ version: 1, items: { "passport.hero.heading": { normal: { color: "transparent" } } } }).items["passport.hero.heading"]).toBeUndefined();
     const reset = mount({});
-    expect(reset.overlay.style.background).toContain("linear-gradient");
+    expect(reset.overlay.getAttribute("style")).toContain("linear-gradient");
   });
 });
 
