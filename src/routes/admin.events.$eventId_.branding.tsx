@@ -823,7 +823,7 @@ function BrandingEditor() {
    */
   async function saveV2Branding(config: PublicStyleOverrideDocument, activate: boolean): Promise<V2SaveResult> {
     if (!bundle || !agencyId) return { ok: false, message: "The event is still loading." };
-    const rpc = supabase.rpc as unknown as (
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
       fn: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string; code?: string } | null }>;
@@ -890,14 +890,19 @@ function BrandingEditor() {
         return;
       }
       setSaving(true);
-      const result = await saveV2Branding(checked.document, false);
-      if (!result.ok) {
+      let result: V2SaveResult;
+      try {
+        result = await saveV2Branding(checked.document, false);
+        if (result.ok) applyConfirmedV2(result.confirmed);
+      } catch (error) {
+        result = { ok: false, message: error instanceof Error ? error.message : "Unexpected error; your draft is still open." };
+      } finally {
         setSaving(false);
+      }
+      if (!result.ok) {
         setSaveError(`V2 branding could not be saved. ${result.message}`);
         return;
       }
-      applyConfirmedV2(result.confirmed);
-      setSaving(false);
       setSaveSuccess(result.confirmed.public_template_version === "v2"
         ? "Saved. This event already uses V2, so its live pages now show these changes."
         : "V2 draft saved. This event's live pages still use the existing template.");
