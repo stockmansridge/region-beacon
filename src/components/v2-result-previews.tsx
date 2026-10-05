@@ -43,7 +43,7 @@ const noop = () => {};
 
 export function V2ResultPreview({ page, state, event, venueName }: { page: ResultPreviewPage; state: string; event: Record<string, unknown>; venueName: string | null }) {
   return (
-    <PublicEventBrandingScope event={event as PublicBrandingEvent} forceV2>
+    <PublicEventBrandingScope event={event as PublicBrandingEvent}>
       <ResultPreviewProvider>
         {page === "checkin" && <CheckinView outcome={checkinOutcome(state, venueName)} qrToken="preview" />}
         {page === "bonus" && <BonusView outcome={bonusOutcome(state)} />}
