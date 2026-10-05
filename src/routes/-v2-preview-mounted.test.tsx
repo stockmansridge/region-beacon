@@ -145,7 +145,7 @@ describe("Version-specific result profiles", () => {
     const { container } = render(inPreview(<V2ResultPreview page="bonus" state="claimed" event={V2_EVENT} venueName={null} />));
     expect(varOf(container, "--event-primary")).toBe("#0a0b0c");
     const heading = container.querySelector<HTMLElement>('[data-event-style="bonus.result.heading"]')!;
-    expect(heading.style.color.toLowerCase()).toMatch(/#AA0001|rgb\(170, 0, 1\)/);
+    expect(heading.style.color.toLowerCase()).toMatch(/#aa0001|rgb\(170, 0, 1\)/);
     expect(container.querySelector<HTMLElement>('[data-event-style="bonus.result.body"]')!.style.color).toBe("");
   });
   it("Public V1 Bonus view (no preview) uses the exact legacy gradient too", () => {
