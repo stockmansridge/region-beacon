@@ -14,7 +14,7 @@ const { rpc, from, routerNavigate } = vi.hoisted(() => ({
   from: vi.fn(() => { throw new Error("no table access in preview"); }),
   routerNavigate: vi.fn(),
 }));
-vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc, from, storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: "" } }) }) }, auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } } }));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc, from, storage: { from: () => ({ getPublicUrl: (path: string) => ({ data: { publicUrl: path ? `https://assets.example/${path}` : "" } }) }) }, auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } } }));
 vi.mock("@tanstack/react-start", async () => ({ ...(await vi.importActual<object>("@tanstack/react-start")), useServerFn: () => vi.fn(async () => { throw new Error("server fn in preview"); }) }));
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof import("@tanstack/react-router")>("@tanstack/react-router");
