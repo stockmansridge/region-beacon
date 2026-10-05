@@ -581,3 +581,20 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
   }
   return rules.join("\n");
 }
+
+/**
+ * One default-then-override merge for components that supply their own default
+ * style. Item overrides always win. A solid colour override clears any default
+ * `background` shorthand / gradient; a gradient override keeps a solid fallback
+ * only when one was explicitly overridden. With no override (V1, or no V2 item
+ * entry) the defaults are returned unchanged.
+ */
+export function mergeStyleOverride(defaults: CSSProperties, override: CSSProperties | undefined): CSSProperties {
+  if (!override || Object.keys(override).length === 0) return defaults;
+  const base: CSSProperties = { ...defaults };
+  if (override.backgroundColor || override.backgroundImage || override.background) {
+    delete base.background;
+    delete base.backgroundImage;
+  }
+  return { ...base, ...override };
+}

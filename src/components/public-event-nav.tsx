@@ -182,14 +182,13 @@ export function PublicEventNav({
             ? "sticky top-0 z-40 -mx-4"
             : "sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
         }
-        style={{
-          ...navigationSurface.style,
+        style={mergeStyleOverride({
           background: transparentHeader ? "transparent" : navBg,
           borderColor: transparentHeader
             ? "transparent"
             : "color-mix(in oklab, white 12%, transparent)",
           paddingTop: "env(safe-area-inset-top)",
-        }}
+        }, navigationSurface.style)}
       >
         <div
           className="mx-auto grid h-14 max-w-2xl grid-cols-[44px_1fr_auto] items-center px-3"
@@ -218,7 +217,7 @@ export function PublicEventNav({
             <span
               {...navigationItem}
               className="truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"
-              style={{ ...navigationItem.style, color: navFg }}
+              style={mergeStyleOverride({ color: navFg }, navigationItem.style)}
             >
               {eventName ?? "Event"}
             </span>
@@ -333,12 +332,12 @@ export function PublicEventNav({
         data-brand-hint="Navigation background · Navigation muted text / icons · Navigation active text / icons"
         title="Bottom navigation — Navigation background · Navigation muted text / icons · Navigation active text / icons"
         className="pointer-events-auto absolute inset-x-0 bottom-0 border-t"
-        style={{
+        style={mergeStyleOverride({
           paddingBottom: "env(safe-area-inset-bottom)",
           background: navBg,
           borderColor: "color-mix(in oklab, white 10%, transparent)",
           color: navFg,
-        }}
+        }, navigationSurface.style)}
       >
         <ul
           className="mx-auto grid h-16 max-w-md"
@@ -353,7 +352,7 @@ export function PublicEventNav({
                 aria-label={passportLabel}
                 aria-current={isActive("passport") ? "page" : undefined}
                 className={bottomItemClass}
-                style={{ ...(isActive("passport") ? navigationActiveItem.style : navigationItem.style), color: isActive("passport") ? navActiveFg : navMuted }}
+                style={mergeStyleOverride({ color: isActive("passport") ? navActiveFg : navMuted }, isActive("passport") ? navigationActiveItem.style : navigationItem.style)}
               >
                 <BottomItemContent icon={<Stamp className="h-5 w-5" />} label="Passport" />
               </a>
@@ -364,7 +363,7 @@ export function PublicEventNav({
                 aria-label={passportLabel}
                 aria-current={isActive("passport") ? "page" : undefined}
                 className={bottomItemClass}
-                style={{ ...(isActive("passport") ? navigationActiveItem.style : navigationItem.style), color: isActive("passport") ? navActiveFg : navMuted }}
+                style={mergeStyleOverride({ color: isActive("passport") ? navActiveFg : navMuted }, isActive("passport") ? navigationActiveItem.style : navigationItem.style)}
               >
                 <BottomItemContent icon={<Stamp className="h-5 w-5" />} label="Passport" />
               </PublicLink>
@@ -377,7 +376,7 @@ export function PublicEventNav({
               to="/prizes"
               aria-current={isActive("prizes") ? "page" : undefined}
               className={bottomItemClass}
-              style={{ ...(isActive("prizes") ? navigationActiveItem.style : navigationItem.style), color: isActive("prizes") ? navActiveFg : navMuted }}
+              style={mergeStyleOverride({ color: isActive("prizes") ? navActiveFg : navMuted }, isActive("prizes") ? navigationActiveItem.style : navigationItem.style)}
             >
               <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Prizes" />
             </PublicLink>
@@ -389,7 +388,7 @@ export function PublicEventNav({
               to="/venues"
               aria-current={isActive("venues") ? "page" : undefined}
               className={bottomItemClass}
-              style={{ ...(isActive("venues") ? navigationActiveItem.style : navigationItem.style), color: isActive("venues") ? navActiveFg : navMuted }}
+              style={mergeStyleOverride({ color: isActive("venues") ? navActiveFg : navMuted }, isActive("venues") ? navigationActiveItem.style : navigationItem.style)}
             >
               <BottomItemContent
                 icon={<MapPin className="h-5 w-5" />}
@@ -404,7 +403,7 @@ export function PublicEventNav({
               to="/offers"
               aria-current={isActive("offers") ? "page" : undefined}
               className={bottomItemClass}
-              style={{ ...(isActive("offers") ? navigationActiveItem.style : navigationItem.style), color: isActive("offers") ? navActiveFg : navMuted }}
+              style={mergeStyleOverride({ color: isActive("offers") ? navActiveFg : navMuted }, isActive("offers") ? navigationActiveItem.style : navigationItem.style)}
             >
               <BottomItemContent icon={<Tag className="h-5 w-5" />} label="Offers" />
             </PublicLink>
@@ -417,7 +416,7 @@ export function PublicEventNav({
               onClick={() => setMenuOpen(true)}
               aria-label="More"
               className={bottomItemClass}
-              style={{ ...(menuOpen ? navigationActiveItem.style : navigationItem.style), color: menuOpen ? navActiveFg : navMuted }}
+              style={mergeStyleOverride({ color: menuOpen ? navActiveFg : navMuted }, menuOpen ? navigationActiveItem.style : navigationItem.style)}
             >
               <BottomItemContent icon={<MoreHorizontal className="h-5 w-5" />} label="More" />
             </button>
@@ -445,7 +444,7 @@ export function PublicEventNav({
  * padding, no margins/transforms, colour is the only thing that changes when active.
  */
 const bottomItemClass =
-  "flex h-full w-full appearance-none flex-col items-center justify-center border-0 bg-transparent p-0 m-0 font-semibold uppercase tracking-[0.12em] transition-colors";
+  "flex h-full w-full appearance-none flex-col items-center justify-center border-0 bg-transparent p-0 m-0 text-[10px] leading-4 font-semibold uppercase tracking-[0.12em] transition-colors";
 
 function BottomItemContent({
   icon,
@@ -458,11 +457,11 @@ function BottomItemContent({
 }) {
   return (
     <>
-      <span className="flex h-6 w-6 items-center justify-center">{icon}</span>
+      <span className="flex h-6 w-6 items-center justify-center" style={{ color: "var(--item-icon-color, currentColor)" }}>{icon}</span>
       <span className="flex flex-col items-center">
-        <span className="h-4 text-[10px] leading-4 whitespace-nowrap">{label}</span>
+        <span className="min-h-4 whitespace-nowrap">{label}</span>
         {subLabel ? (
-          <span className="h-4 text-[10px] leading-4 whitespace-nowrap">{subLabel}</span>
+          <span className="min-h-4 whitespace-nowrap">{subLabel}</span>
         ) : (
           <span className="h-4" aria-hidden="true" />
         )}
@@ -521,12 +520,12 @@ function MenuDrawer({
       <aside
         {...styleTarget}
         className="absolute inset-y-0 left-0 flex h-full w-[82%] max-w-sm flex-col shadow-2xl animate-in slide-in-from-left"
-        style={{
+        style={mergeStyleOverride({
           background: navBg,
           color: navFg,
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",
-        }}
+        }, styleTarget.style)}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 pb-2 pt-3">
