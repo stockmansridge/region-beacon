@@ -2615,11 +2615,85 @@ function AssetUploader({
 // pointer events so `title` tooltips fire, and shows a dashed outline on hover.
 // ============================================================================
 function BrandHoverProbe({ children }: { children: React.ReactNode }) {
-  // Elements inside the preview are annotated with `data-brand-hint` and
-  // `title` attributes; we just inject a scoped CSS rule that highlights any
-  // such element on hover. The native `title` attribute shows the field(s).
+  const [activeHint, setActiveHint] = useState<string | null>(null);
+
+  const inferHint = (element: HTMLElement, root: HTMLElement): string | null => {
+    const elementStyle = getComputedStyle(element);
+    const rootStyle = getComputedStyle(root);
+    const normalise = (value: string) => value.replace(/\s+/g, "").toLowerCase();
+    const matches = (actual: string, token: string) => {
+      const value = rootStyle.getPropertyValue(token).trim();
+      if (!value) return false;
+      const swatch = document.createElement("span");
+      swatch.style.color = value;
+      swatch.style.display = "none";
+      root.appendChild(swatch);
+      const resolved = getComputedStyle(swatch).color;
+      swatch.remove();
+      return normalise(actual) === normalise(resolved);
+    };
+    const labels: string[] = [];
+    const add = (label: string) => {
+      if (!labels.includes(label)) labels.push(label);
+    };
+
+    const backgroundRoles = [
+      ["--event-card-bg", "Card background"],
+      ["--event-button-primary-bg", "Primary button background"],
+      ["--event-button-secondary-bg", "Secondary button background"],
+      ["--event-nav-bg", "Navigation background"],
+      ["--event-hero-bg", "Hero background"],
+      ["--event-page-bg", "Page background"],
+    ] as const;
+    const textRoles = [
+      ["--event-card-heading", "Card heading colour"],
+      ["--event-card-body", "Card body text colour"],
+      ["--event-card-muted", "Card muted text colour"],
+      ["--event-button-primary-fg", "Primary button text"],
+      ["--event-button-secondary-fg", "Secondary button text"],
+      ["--event-nav-active-fg", "Navigation active text / icons"],
+      ["--event-nav-muted", "Navigation muted text / icons"],
+      ["--event-nav-fg", "Navigation text / icons"],
+      ["--event-hero-accent", "Hero accent colour"],
+      ["--event-hero-body", "Welcome copy colour"],
+      ["--event-hero-fg", "Event heading colour"],
+      ["--event-link", "Link colour"],
+      ["--event-page-heading", "Page heading colour"],
+      ["--event-page-body", "Page body text colour"],
+      ["--event-page-muted", "Page muted text colour"],
+    ] as const;
+    const borderRoles = [
+      ["--event-card-border", "Card border colour"],
+      ["--event-border", "Page border colour"],
+    ] as const;
+
+    backgroundRoles.forEach(([token, label]) => {
+      if (elementStyle.backgroundColor !== "rgba(0, 0, 0, 0)" && matches(elementStyle.backgroundColor, token)) add(label);
+    });
+    textRoles.forEach(([token, label]) => {
+      if (matches(elementStyle.color, token)) add(label);
+    });
+    borderRoles.forEach(([token, label]) => {
+      if (elementStyle.borderTopStyle !== "none" && matches(elementStyle.borderTopColor, token)) add(label);
+    });
+
+    return labels.length > 0 ? labels.join(" · ") : null;
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) return;
+    const explicit = target.closest<HTMLElement>("[data-brand-hint]");
+    const inferred = inferHint(target, event.currentTarget);
+    setActiveHint(inferred ?? explicit?.dataset.brandHint ?? null);
+  };
+
   return (
-    <div className="brand-hover-probe relative">
+    <div
+      className="brand-hover-probe relative"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={() => setActiveHint(null)}
+    >
       <style>{`
         .brand-hover-probe [data-brand-hint] {
           transition: outline-color 120ms ease, background-color 120ms ease;
@@ -2634,6 +2708,14 @@ function BrandHoverProbe({ children }: { children: React.ReactNode }) {
         }
       `}</style>
       {children}
+      {activeHint ? (
+        <div
+          role="status"
+          className="pointer-events-none sticky bottom-3 z-[70] mx-auto -mt-10 w-fit max-w-[calc(100%-1.5rem)] rounded-md bg-[#111827] px-3 py-2 text-center text-xs font-semibold leading-4 text-white shadow-lg"
+        >
+          {activeHint}
+        </div>
+      ) : null}
     </div>
   );
 }
