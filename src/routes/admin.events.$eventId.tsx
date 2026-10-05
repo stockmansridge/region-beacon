@@ -6335,20 +6335,49 @@ function PublicAddressCard({
     if (editAvailability.kind !== "available") return;
     setSavingEdit(true);
     setEditError(null);
-    const { error } = await supabase
-      .from("event_domains")
-      .update({ public_subdomain: editNormalized })
-      .eq("id", subdomainRow.id)
-      .eq("agency_id", agencyId)
-      .eq("event_id", eventId);
+    // Preferred path: server-side RPC (bypasses the RLS that silently blocks
+    // direct updates). Falls back to a direct update that must confirm the
+    // row actually changed — never report success on a 0-row update.
+    const rpc = await supabase.rpc("change_event_subdomain" as never, {
+      _event_id: eventId,
+      _subdomain: editNormalized,
+    } as never);
+    let failMsg: string | null = null;
+    let taken = false;
+    const rpcMissing =
+      rpc.error &&
+      (rpc.error.code === "PGRST202" || /could not find the function/i.test(rpc.error.message ?? ""));
+    if (rpc.error && !rpcMissing) {
+      failMsg = rpc.error.message ?? "Could not update public address.";
+    } else if (!rpc.error) {
+      const res = (rpc.data ?? null) as { ok?: boolean; reason?: string; message?: string; subdomain?: string } | null;
+      if (!res?.ok || res.subdomain !== editNormalized) {
+        failMsg = res?.message ?? "Could not update public address.";
+        taken = res?.reason === "taken";
+      }
+    } else {
+      const { data: rows, error } = await supabase
+        .from("event_domains")
+        .update({ public_subdomain: editNormalized })
+        .eq("id", subdomainRow.id)
+        .eq("agency_id", agencyId)
+        .eq("event_id", eventId)
+        .select("id, public_subdomain");
+      if (error) {
+        failMsg = error.message ?? "Could not update public address.";
+        taken = /duplicate|unique/i.test(failMsg);
+      } else if (!rows || rows.length === 0 || rows[0].public_subdomain !== editNormalized) {
+        failMsg =
+          "The address change wasn't saved — your account isn't permitted to change it directly. The 'change_event_subdomain' database update needs to be applied.";
+      }
+    }
     setSavingEdit(false);
-    if (error) {
-      const msg = error.message ?? "Could not update public address.";
-      if (/duplicate|unique/i.test(msg)) {
+    if (failMsg) {
+      if (taken) {
         setEditError("That public address is already in use. Please choose another.");
         setEditAvailability({ kind: "taken" });
       } else {
-        setEditError(`Could not update public address: ${msg}`);
+        setEditError(failMsg);
       }
       return;
     }
