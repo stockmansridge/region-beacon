@@ -615,7 +615,7 @@ export function PassportPreview({
               Let’s explore {eventName ?? "the trail"}.
             </p></PublicStyleTarget>
           </div>
-        </section>
+        </section></PublicStyleTarget>
       </div>
 
       <PublicStyleTarget id="passport.page.surface"><main

@@ -152,6 +152,7 @@ const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
 const LEADERBOARD_RANK_SLOTS = ["first", "second", "third", "other"] as const;
 const LEADERBOARD_TIER_SLOTS = ["explorer", "gold", "silver", "bronze", "complete", "other"] as const;
 const LEADERBOARD_COMPLETION_SLOTS = ["completed"] as const;
+const PASSPORT_NEXT_REWARD_SLOTS = ["loading", "none", "remaining", "ready", "complete"] as const;
 const LEGAL_SECTION_SLOTS = ["terms", "privacy"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
@@ -210,6 +211,19 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "leaderboard.row.meta", page: "leaderboard", section: "Person cards", label: "Venue / bonus breakdown", kind: "text", properties: TEXT, repeat: "template", recordIds: LEADERBOARD_RANK_SLOTS },
   { id: "passport.stamp.label", page: "passport", section: "Stamps", label: "Venue stamp label", kind: "text", properties: TEXT, repeat: "venue" },
   { id: "passport.stamps.surface", page: "passport", section: "Stamps", label: "Stamp collection card", kind: "surface", properties: SURFACE },
+  { id: "passport.hero.surface", page: "passport", section: "Hero", label: "Passport hero background", kind: "surface", properties: SURFACE },
+  { id: "passport.progress.bar", page: "passport", section: "Progress", label: "Trail progress bar", kind: "progress", properties: PROGRESS },
+  { id: "passport.progress.percent", page: "passport", section: "Progress", label: "Percent complete", kind: "text", properties: TEXT },
+  { id: "passport.summary.visitedLabel", page: "passport", section: "Progress", label: "Visited label", kind: "text", properties: TEXT },
+  { id: "passport.summary.points", page: "passport", section: "Progress", label: "Points number", kind: "text", properties: TEXT },
+  { id: "passport.summary.pointsLabel", page: "passport", section: "Progress", label: "Points earned label", kind: "text", properties: TEXT },
+  { id: "passport.summary.nextValue", page: "passport", section: "Progress", label: "Next reward headline", kind: "text", properties: TEXT, repeat: "template", recordIds: PASSPORT_NEXT_REWARD_SLOTS },
+  { id: "passport.summary.nextLabel", page: "passport", section: "Progress", label: "Next reward label", kind: "text", properties: TEXT, repeat: "template", recordIds: PASSPORT_NEXT_REWARD_SLOTS },
+  { id: "passport.summary.nextBody", page: "passport", section: "Progress", label: "Current reward text", kind: "text", properties: TEXT, repeat: "template", recordIds: PASSPORT_NEXT_REWARD_SLOTS },
+  { id: "passport.stamps.hint", page: "passport", section: "Stamps", label: "Tap for details hint", kind: "text", properties: TEXT },
+  { id: "passport.holder.label", page: "passport", section: "Passport holder", label: "Passport holder label", kind: "text", properties: TEXT },
+  { id: "passport.holder.name", page: "passport", section: "Passport holder", label: "Holder name", kind: "text", properties: TEXT },
+  { id: "passport.holder.email", page: "passport", section: "Passport holder", label: "Holder email", kind: "text", properties: TEXT },
 
   { id: "join.page.surface", page: "join", section: "Page", label: "Join page", kind: "surface", properties: SURFACE },
   { id: "join.form.surface", page: "join", section: "Form", label: "Registration form", kind: "surface", properties: SURFACE },
