@@ -1,5 +1,11 @@
 import { PublicBackLink } from "@/components/public-back-link";
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { usePublicStyleEnabled } from "@/components/public-style-scope";
+
+/** Chooses V2 or legacy markup from the nearest style scope. */
+function V2Switch({ v2, v1 }: { v2: React.ReactNode; v1: React.ReactNode }) {
+  return <>{usePublicStyleEnabled() ? v2 : v1}</>;
+}
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -742,14 +748,14 @@ export function PassportPreview({
                   </>
                 ) : resolvedAwards.length === 0 ? (
                   <>
-                    {v2 ? (
+                    <V2Switch
+                    v2={<>
                     <PublicStyleTarget id="passport.summary.nextValue" recordId="none"><div className="flex items-center gap-1.5 font-trail-serif text-sm font-semibold leading-tight" style={{ color: "var(--event-card-heading)" }}>
                       <span aria-hidden className="text-base leading-none">✨</span>
                       {/* Inherits the line's colour/typography in V2. */}
                       <span>More prizes ahead</span>
-                    </div></PublicStyleTarget>
-                    ) : (
-                    <PublicStyleTarget id="passport.summary.nextValue" recordId="none"><div className="flex items-center gap-1.5">
+                    </div></PublicStyleTarget></>}
+                    v1={<>                    <PublicStyleTarget id="passport.summary.nextValue" recordId="none"><div className="flex items-center gap-1.5">
                       <span aria-hidden className="text-base leading-none">✨</span>
                       <span
                         className="font-trail-serif text-sm font-semibold leading-tight"
@@ -757,8 +763,8 @@ export function PassportPreview({
                       >
                         More prizes ahead
                       </span>
-                    </div></PublicStyleTarget>
-                    )}
+                    </div></PublicStyleTarget></>}
+                    />
                     <PublicStyleTarget id="passport.summary.nextLabel" recordId="none"><div
                       className="text-[10px] font-medium uppercase tracking-[0.18em]"
                       style={{ color: "var(--event-card-muted)" }}
@@ -814,14 +820,14 @@ export function PassportPreview({
                   </>
                 ) : (
                   <>
-                    {v2 ? (
+                    <V2Switch
+                    v2={<>
                     <PublicStyleTarget id="passport.summary.nextValue" recordId="complete"><div className="flex items-center gap-1.5 font-trail-serif text-sm font-semibold leading-tight" style={{ color: "var(--event-card-heading)" }}>
                       <span aria-hidden className="text-base leading-none">🎉</span>
                       {/* Inherits the line's colour/typography in V2. */}
                       <span>All prizes unlocked</span>
-                    </div></PublicStyleTarget>
-                    ) : (
-                    <PublicStyleTarget id="passport.summary.nextValue" recordId="complete"><div className="flex items-center gap-1.5">
+                    </div></PublicStyleTarget></>}
+                    v1={<>                    <PublicStyleTarget id="passport.summary.nextValue" recordId="complete"><div className="flex items-center gap-1.5">
                       <span aria-hidden className="text-base leading-none">🎉</span>
                       <span
                         className="font-trail-serif text-sm font-semibold leading-tight"
@@ -829,8 +835,8 @@ export function PassportPreview({
                       >
                         All prizes unlocked
                       </span>
-                    </div></PublicStyleTarget>
-                    )}
+                    </div></PublicStyleTarget></>}
+                    />
                     <PublicStyleTarget id="passport.summary.nextLabel" recordId="complete"><div
                       className="text-[10px] font-medium uppercase tracking-[0.18em]"
                       style={{ color: "var(--event-card-muted)" }}
