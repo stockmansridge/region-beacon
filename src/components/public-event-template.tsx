@@ -14,7 +14,8 @@ export type PublicEventTemplateData = PublicEventData & {
 
 export function applyV2Theme(event: PublicEventTemplateData): PublicEventTemplateData {
   const config = parsePublicStyleOverrides(event.v2_style_config);
-  return { ...event, ...config.theme, style_overrides: config };
+  // The allowlisted parser above has already validated value types per key.
+  return { ...event, ...config.theme, style_overrides: config } as PublicEventTemplateData;
 }
 
 export function PublicEventTemplate({
