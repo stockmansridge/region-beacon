@@ -160,7 +160,7 @@ describe("Typed leaf controls", () => {
   });
 
   it("keeps award badge record overrides on the selected award", () => {
-    const doc = { version: 1, items: { "prizes.card.badge": { normal: { color: "#111111" } } }, records: { "prizes.card.badge": { "award-a": { normal: { color: "#AA0000" } } } } } } as const;
+    const doc = { version: 1, items: { "prizes.card.badge": { normal: { color: "#111111" } } }, records: { "prizes.card.badge": { "award-a": { normal: { color: "#AA0000" } } } } } as const;
     expect(publicStyleTarget(doc, "prizes.card.badge", { recordId: "award-a" }).style.color).toBe("#AA0000");
     expect(publicStyleTarget(doc, "prizes.card.badge", { recordId: "award-b" }).style.color).toBe("#111111");
   });
