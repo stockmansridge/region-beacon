@@ -14,7 +14,7 @@ const { rpc, from, routerNavigate } = vi.hoisted(() => ({
   from: vi.fn(() => { throw new Error("no table access in preview"); }),
   routerNavigate: vi.fn(),
 }));
-vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc, from, storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: "" } }) }) }, auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } } }));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc, from, storage: { from: () => ({ getPublicUrl: (path: string) => ({ data: { publicUrl: path ? `https://assets.example/${path}` : "" } }) }) }, auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } } }));
 vi.mock("@tanstack/react-start", async () => ({ ...(await vi.importActual<object>("@tanstack/react-start")), useServerFn: () => vi.fn(async () => { throw new Error("server fn in preview"); }) }));
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof import("@tanstack/react-router")>("@tanstack/react-router");
@@ -40,6 +40,7 @@ import { EventPublicLanding } from "@/components/event-public-landing";
 import { formToPreviewEvent } from "./admin.events.$eventId_.branding";
 import { PassportPreview, type PassportRow } from "./passport.$token";
 import { EMPTY_PASSPORT_STAMP_STATE } from "@/lib/passport-stamps";
+import { PublicOffersPage, type EventRow as OffersEventRow, type OfferVenue } from "./live.$subdomain.offers";
 
 const V1_EVENT = {
   event_id: "event-v1", name: "Legacy Trail", palette_key: null, page_background_key: null,
@@ -274,6 +275,39 @@ describe("Passport V2 preview composition", () => {
     expect(container.textContent).toContain("0");
     await clickEverything(container);
     expectNoSideEffects();
+  });
+});
+
+describe("Special Offers V2 targets", () => {
+  const offers = [
+    { venue_id: "venue-no-image", name: "No Image", offer_summary: "A gift", cover_path: null, logo_path: null, offer_display_icon: "gift", offer_display_colour: "#112233", offer_display_foreground_colour: "#F1F2F3", event_found: true },
+    { venue_id: "venue-image", name: "Has Image", offer_summary: "A second gift", cover_path: "cover.jpg", logo_path: null, offer_display_icon: "gift", offer_display_colour: null, offer_display_foreground_colour: null, event_found: true },
+  ] as OfferVenue[];
+  const event = { ...V2_EVENT, name: "Trail" } as unknown as OffersEventRow;
+
+  it("selects and paints each no-image icon node independently while preserving badge defaults", () => {
+    const overrides = { version: 1, items: {}, records: {
+      "offers.card.badge": { "venue-no-image": { normal: { iconColor: "#010203", iconBackgroundColor: "#AABBCC", borderColor: "#102030" } } },
+      "offers.card.placeholder": { "venue-no-image": { normal: { backgroundColor: "#DDEEFF", borderColor: "#203040" } } },
+      "offers.card.placeholderIcon": { "venue-no-image": { normal: { iconColor: "#334455", iconBackgroundColor: "#CCDDEE" } } },
+      "offers.card.chevron": { "venue-no-image": { normal: { iconColor: "#556677", iconBackgroundColor: "#EECCAA" } } },
+    } } as never;
+    const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, v2_style_config: overrides }, offers }} />, "/offers"));
+    const target = (id: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${id}@venue-no-image"]`);
+    expect(target("offers.card.badge")?.style.backgroundColor).toBe("#AABBCC");
+    expect(target("offers.card.badge")?.style.getPropertyValue("--item-icon-color")).toBe("#010203");
+    expect(target("offers.card.placeholder")?.style.backgroundColor).toBe("#DDEEFF");
+    expect(target("offers.card.placeholderIcon")?.style.backgroundColor).toBe("#CCDDEE");
+    expect(target("offers.card.placeholderIcon")?.style.getPropertyValue("--item-icon-color")).toBe("#334455");
+    expect(target("offers.card.chevron")?.style.backgroundColor).toBe("#EECCAA");
+    expect(target("offers.card.chevron")?.style.getPropertyValue("--item-icon-color")).toBe("#556677");
+    expect(container.querySelector('[data-brand-instance="offers.card.image@venue-image"]')).not.toBeNull();
+    expect(container.querySelector('[data-brand-instance="offers.card.placeholder@venue-image"]')).toBeNull();
+  });
+
+  it("does not emit selectable offer targets for V1", () => {
+    const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, public_template_version: null }, offers }} />, "/offers"));
+    expect(container.querySelector("[data-brand-role^='offers.card.']")).toBeNull();
   });
 });
 
