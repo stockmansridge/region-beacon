@@ -180,9 +180,12 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
   const preview = useResultPreview();
   const subdomain = preview ? null : getSubdomain();
   const branding = useEventBrandingKeys(subdomain);
+  const isV2 = preview || branding.templateVersion === "v2";
   const scopeProps = branding.templateVersion === "v2"
     ? brandingScopeProps(branding)
     : { paletteKey: branding.paletteKey, backgroundKey: branding.backgroundKey };
+  const resultPrimary = isV2 ? "var(--event-primary)" : PRIMARY;
+  const resultAccent = isV2 ? "var(--event-accent)" : GOLD;
 
   if (outcome.kind === "loading") {
     return (
@@ -208,22 +211,22 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
           <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
             <PublicStyleTarget id="bonus.result.surface"><div
               className="relative h-[420px] w-full"
-              style={{ background: `linear-gradient(160deg, ${PRIMARY} 0%, #14271C 100%)` }}
+              style={{ background: `linear-gradient(160deg, ${resultPrimary} 0%, color-mix(in oklab, ${resultPrimary} 70%, black) 100%)` }}
             >
               <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-page-bg,#F6EFE2)]">
                 <PublicStyleTarget id="bonus.result.icon"><div
                   className="flex h-20 w-20 items-center justify-center rounded-full border-2"
                   style={{
-                    borderColor: GOLD,
-                    backgroundColor: `${PRIMARY}E6`,
-                    boxShadow: `0 0 0 6px ${GOLD}22`,
+                    borderColor: resultAccent,
+                    backgroundColor: isV2 ? "color-mix(in oklab, var(--event-primary) 88%, transparent)" : `${PRIMARY}E6`,
+                    boxShadow: isV2 ? "0 0 0 6px color-mix(in oklab, var(--event-accent) 18%, transparent)" : `0 0 0 6px ${GOLD}22`,
                   }}
                 >
-                  <Sparkles className="h-9 w-9" style={{ color: GOLD }} />
+                  <Sparkles className="h-9 w-9" style={{ color: resultAccent }} />
                 </div></PublicStyleTarget>
                 <PublicStyleTarget id="bonus.result.kicker"><div
                   className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em]"
-                  style={{ color: GOLD }}
+                  style={{ color: resultAccent }}
                 >
                   {kicker}
                 </div></PublicStyleTarget>
@@ -236,7 +239,7 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
                   </p>
                 )}
                 <PublicStyleTarget id="bonus.result.body"><p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">{body}</p></PublicStyleTarget>
-                <PublicStyleTarget id="bonus.result.status"><p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
+                <PublicStyleTarget id="bonus.result.status"><p className="mt-2 text-sm font-semibold" style={{ color: resultAccent }}>
                   Your total points: {outcome.row.total_points}
                 </p></PublicStyleTarget>
               </div>
@@ -248,7 +251,7 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
               to="/passport/$token"
               params={{ token: outcome.passportToken }}
               className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
-              style={{ backgroundColor: PRIMARY }}
+              style={{ backgroundColor: resultPrimary }}
             >
               View my passport
             </ResultLink></PublicStyleTarget>
@@ -292,17 +295,17 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
 
   if (outcome.kind === "no_passport") {
     return (
-      <FailureCard
+      <ResultPaletteScope {...scopeProps} className="min-h-screen"><FailureCard
         title="Passport required"
         body="You need to join this event before you can claim bonus points. Tap below to register — we'll bring you back here to claim."
         actionLabel="Create passport for this event"
         actionHref={outcome.subdomain ? "/join" : "/"}
-      />
+      /></ResultPaletteScope>
     );
   }
 
   const { title, body } = copy[outcome.kind];
-  return <FailureCard title={title} body={body} actionLabel="Back to event" actionHref="/" />;
+  return <ResultPaletteScope {...scopeProps} className="min-h-screen"><FailureCard title={title} body={body} actionLabel="Back to event" actionHref="/" /></ResultPaletteScope>;
 }
 
 export function FailureCard({

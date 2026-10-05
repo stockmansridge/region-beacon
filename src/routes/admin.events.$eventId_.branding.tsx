@@ -2537,7 +2537,6 @@ function VisualBrandingEditor({
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => selectFromNavigator(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
-          {(() => { const pg = ["terms", "privacy"].includes(previewPage) ? "legal" : previewPage; const missing = PUBLIC_STYLE_ELEMENTS.filter((item) => item.page === pg && !V2_WIRED_ITEMS.has(item.id)); return missing.length ? <p className="mt-4 rounded-md bg-muted p-2 text-xs text-muted-foreground">Not yet editable on this page: {missing.map((item) => item.label).join(", ")}.</p> : null; })()}
         </nav>
 
         <section className="min-w-0 rounded-md border bg-background p-3">
