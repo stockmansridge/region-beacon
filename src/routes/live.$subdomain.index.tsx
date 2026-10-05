@@ -101,6 +101,17 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
         e.logo_backdrop_color = logoStyleRow.logo_backdrop_color ?? null;
       }
 
+      // Item-level public styling is exposed through a narrow companion RPC.
+      // Older databases fail soft to the existing theme with no overrides.
+      const styleRes = await supabase.rpc(
+        "get_public_event_style_overrides" as never,
+        { _hostname: host } as never,
+      );
+      if (cancelled) return;
+      if (styleRes.data && typeof styleRes.data === "object") {
+        evt.style_overrides = styleRes.data as PublicEventData["style_overrides"];
+      }
+
       const { data: venueData } = await supabase.rpc("get_public_event_venues", {
         _event_id: evt.event_id,
       });
