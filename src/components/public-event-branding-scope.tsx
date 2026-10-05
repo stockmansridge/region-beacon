@@ -1,11 +1,22 @@
 import type { ReactNode } from "react";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { PublicStyleScope } from "@/components/public-style-scope";
+import type { PublicEventData } from "@/components/event-public-landing";
 import {
-  applyV2Theme,
-  type PublicEventTemplateData,
-} from "@/components/public-event-template";
-import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
+  parsePublicStyleOverrides,
+  resolvePublicTemplateVersion,
+  type PublicStyleOverrideDocument,
+} from "@/lib/public-style-overrides";
+
+export type PublicBrandingEvent = PublicEventData & {
+  public_template_version?: string | null;
+  v2_style_config?: PublicStyleOverrideDocument | null;
+};
+
+export function applyV2Theme(event: PublicBrandingEvent): PublicBrandingEvent {
+  const config = parsePublicStyleOverrides(event.v2_style_config);
+  return { ...event, ...config.theme, style_overrides: config } as PublicBrandingEvent;
+}
 
 /**
  * The single V1/V2 boundary for public event pages.
@@ -13,9 +24,9 @@ import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
  * sparse theme and item overrides, including the six split text roles.
  */
 export function resolvePublicBrandingEvent(
-  event: PublicEventTemplateData,
+  event: PublicBrandingEvent,
   forceV2 = false,
-): { event: PublicEventTemplateData; isV2: boolean } {
+): { event: PublicBrandingEvent; isV2: boolean } {
   const isV2 = forceV2 || resolvePublicTemplateVersion(event.public_template_version) === "v2";
   return {
     event: isV2 ? applyV2Theme(event) : { ...event, style_overrides: null },
@@ -29,14 +40,14 @@ export function PublicEventBrandingScope({
   className,
   forceV2 = false,
 }: {
-  event: PublicEventTemplateData;
+  event: PublicBrandingEvent;
   children: ReactNode;
   className?: string;
   forceV2?: boolean;
 }) {
   const { event, isV2 } = resolvePublicBrandingEvent(source, forceV2);
   return (
-    <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2}>
+    <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2} eventId={event.event_id}>
       <EventPaletteScope
         paletteKey={event.palette_key ?? null}
         backgroundKey={event.page_background_key ?? null}
