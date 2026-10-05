@@ -330,7 +330,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
           </div>
 
           <div className="mt-4 flex items-start justify-between gap-3">
-            <PublicStyleTarget id="venues.card.heading" recordId={venueId}><h1 className={v2 ? "font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]" : "font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]"}>
+            <PublicStyleTarget id="venue.page.heading" recordId={venueId}><h1 className={v2 ? "font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]" : "font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]"}>
               {venue.name}
             </h1></PublicStyleTarget>
             {extras && extras.points_value > 0 && (
