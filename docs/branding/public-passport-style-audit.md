@@ -43,10 +43,10 @@ This audit is the coverage contract for the V2 visual editor. The typed source o
 | Leaderboard: loading/empty/list/current row | `leaderboard.heading`, `.row`, `.rank` | `live.$subdomain.leaderboard` | semantic vars and rank decoration | heading/row/rank template slots | Real safe fixture preview; item wiring pending |
 | FAQ: empty/collapsed/expanded | `faq.item.surface`, `.question`, `.answer` | `live.$subdomain.faq` | semantic vars in public route; admin component has admin-only raw colours | surface/question/answer/expanded state | Real safe fixture preview; item wiring pending |
 | Terms/privacy | `legal.heading`, `legal.body` | public legal routes/components | semantic page/card vars | heading/body/link typography | Real safe fixture preview; item wiring pending |
-| Scan and scanner states | `scan.control` | `scan`, `QrScanner` | semantic vars plus browser camera UI | app-owned controls/status only | Real safe fixture preview; item wiring pending |
-| Check-in result: success/repeat/error/no passport | `checkin.result.*` | `checkin.$qrToken` | semantic vars | result surface/text/actions | Real safe fixture preview; item wiring pending |
-| Bonus result: claimed/repeat/inactive/error | `bonus.result.*` | `collect.bonus.$token` | hard-coded green/gold gradient and constants | gradient, icon, text, totals, actions | Registered; hard-coded replacement pending |
-| Tasting result: claimed/repeat/unavailable/error | `tasting.result.*` | `tasting.$qrToken` | hard-coded green/gold gradient and constants | gradient, icon, text, totals, actions | Registered; hard-coded replacement pending |
+| Scan and scanner states | `scan.heading`, `.body`, `.camera`, `.error`, `.control` | `scan`, `ScannerView` | canonical V2 scope; V1 remains legacy | app-owned controls/status only | Same presentation view previewed with inert handlers and camera placeholder |
+| Check-in result: success/repeat/error/no passport | `checkin.result.*`, `checkin.failure.*` | `CheckinView` / `StampedCheckinView` / `CheckinFailureCard` | canonical V2 scope; V1 remains legacy | surface, icon, kicker, heading/body/status/actions | Same presentation views; success and failure states wired |
+| Bonus result: claimed/repeat/inactive/error | `bonus.result.*`, `bonus.failure.*` | `BonusView` / `FailureCard` | canonical V2 scope; legacy fixed theme retained for V1 | surface, icon, kicker, heading/body/status/actions | Same presentation views; solid item background suppresses default gradient |
+| Tasting result: claimed/repeat/unavailable/error | `tasting.result.*`, `tasting.failure.*` | `TastingView` / `FailureCard` | canonical V2 scope; legacy fixed theme retained for V1 | surface, icon, kicker, heading/body/status/actions | Same presentation views; solid item background suppresses default gradient |
 | Legacy `/t/:agency/e/:event` landing | home IDs after migration | `TrailLanding` via legacy tenant route | reduced palette mapping | same home registry where equivalent | Audited; not selectable; migration pending |
 | Clean tenant-host routes | same IDs as `/live/$subdomain` | thin top-level route wrappers | delegated real components | identical to canonical route | Home and route-family delegates share their real components; browser route matrix pending |
 
@@ -101,11 +101,15 @@ Evidence legend: **UNIT** = focused resolver regression; **SRC** = source review
 | 9 Draft separation | Separate V1 form and V2 form; V2 values never enter the classic form; V2 config = V2 draft diffed against V1 | — | | SRC |
 | 10 Save/activation | Busy state covers save + activation; activation validates, updates baseline from read-back; message distinguishes inactive draft vs already-live V2; Ctrl/Cmd+Z / Shift+Z / Y, Escape | — | | SRC; authenticated save/activation UNVERIFIED |
 
-### Remaining after multi-page implementation pass
-- Browser runtime checks (mobile nav scroll anchoring, overlay computed alpha, Share independence, typography loading, two scopes mounted together, V1 baseline) remain unverified in this sandbox.
-- Home, Join, Passport, Venues, Venue detail, Offers, Prizes, Map, Leaderboard, FAQ, Terms, Privacy, combined Legal and Bookmarks use real-component previews with controlled fixtures. Scan, Check-in, Bonus and Tasting remain the authorised follow-up.
-- Existing hook-based Passport, Check-in, Bookmarks, Prizes, Map, Leaderboard, FAQ and legal pages carry V2 `templateVersion` and `styleOverrides`; Join now uses the canonical version-aware scope. Scan, Bonus and Tasting still need canonical scope and presentational extraction.
-- Real persistence/read-back, new-session reload, Event A/B/C/D isolation, and authenticated save remain unverified here; SQL state is not assumed.
+### Focused parity repair evidence (2026-10-05)
+- Result previews mount the canonical version-aware event scope around the actual shared Scan, Check-in, Bonus and Tasting presentation views. Preview fixtures do not mount claim/redeem controllers or the real camera.
+- Bonus/Tasting public controllers resolve the complete V2 branding bag only when the event is explicitly V2; their legacy palette/background-only branch and fixed result colours remain for V1.
+- Result surface solid overrides explicitly remove the built-in gradient. Icon, kicker, status, heading, body and action targets are independent.
+- Live comparison is built from the immutable raw public event row and actual saved template selection/config. Saved and Live controls are read-only; only V2 Draft can mutate editor state.
+- Home preview disables passport resolution, visitor storage reads, announcements, prize-unlock polling and visitor-only cards. Public live behaviour is unchanged.
+- Join inputs expose independent background/border/text/font controls. Venue sort styling targets the visible control. Prize badges carry stable award IDs. The safe map fallback uses the app-owned marker target with stable venue IDs.
+- Focused automated evidence covers V1 Offers isolation, V2 per-record Offers, legal text independence, event-scoped fonts including hover state, V2 result success/failure scope, solid-over-gradient behavior, V1 result isolation, typed join input controls and award-record targeting.
+- Browser layout and authenticated persistence remain unverified in this pass; no production writes, activation, claims, scans, publishing or SQL were performed.
 
 ## Multi-page implementation evidence (2026-10-05)
 
