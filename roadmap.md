@@ -14,3 +14,5 @@
 - [x] Complete canonical V2 public resolution for supported routes while preserving the explicit V1 boundary.
 - [x] Namespace same-named V2 custom fonts by event and verify resolver isolation.
 - [x] Add focused real-component fixture parity tests and reconcile the public styling audit with actual evidence.
+- [x] Shared V2 back-link style, per-context overrides and event-scoped plain-text labels (destinations fixed).
+- [x] Legal heading/chevron/surface/document text/headings/external button targets with terms/privacy slots.
