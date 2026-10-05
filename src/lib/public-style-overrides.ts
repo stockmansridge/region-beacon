@@ -91,7 +91,21 @@ export type PublicStyleOverrideDocument = {
   navigation?: PublicNavigationConfig;
   backLinks?: PublicBackLinkConfig;
   header?: PublicHeaderConfig;
+  trailTabs?: PublicTrailTabsConfig;
 };
+
+export const PUBLIC_TRAIL_TAB_IDS = ["venues", "offers"] as const;
+export type PublicTrailTabId = (typeof PUBLIC_TRAIL_TAB_IDS)[number];
+export type PublicTrailTabsConfig = { labels: Partial<Record<PublicTrailTabId, string>> };
+export const PUBLIC_TRAIL_TAB_LABEL_MAX = 24;
+export function cleanPublicTrailTabLabel(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.replace(/[\u0000-\u001F\u007F<>]/g, "").replace(/\s+/g, " ").trim();
+  return value && value.length <= PUBLIC_TRAIL_TAB_LABEL_MAX ? value : null;
+}
+export function publicTrailTabLabel(document: PublicStyleOverrideDocument | null | undefined, id: PublicTrailTabId, venueLabelPlural: string): string {
+  return document?.trailTabs?.labels[id] ?? (id === "venues" ? venueLabelPlural : "Offers");
+}
 
 /** Event-scoped header display text + layout. Never renames the event itself. */
 export type PublicHeaderConfig = { title?: string; titleWrap?: boolean };
@@ -196,6 +210,9 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "shared.announcement.text", page: "shared", section: "Announcements", label: "Announcement text", kind: "text", properties: TEXT },
   { id: "shared.activity.surface", page: "shared", section: "Activity", label: "Activity notification", kind: "surface", properties: SURFACE },
   { id: "shared.footer.text", page: "shared", section: "Footer", label: "Powered by text", kind: "text", properties: TEXT },
+  { id: "shared.trailTabs.surface", page: "shared", section: "Venues / Offers toggle", label: "Toggle background", kind: "surface", properties: ["backgroundColor", "borderColor"] },
+  { id: "shared.trailTabs.tab", page: "shared", section: "Venues / Offers toggle", label: "Unselected toggle item", kind: "button", properties: BUTTON, states: ["hover", "focus", "active"], repeat: "template", recordIds: PUBLIC_TRAIL_TAB_IDS },
+  { id: "shared.trailTabs.currentTab", page: "shared", section: "Venues / Offers toggle", label: "Selected / current-page toggle item", kind: "button", properties: BUTTON, states: ["hover", "focus", "active"], repeat: "template", recordIds: PUBLIC_TRAIL_TAB_IDS },
 
   { id: "home.hero.surface", page: "home", section: "Hero", label: "Hero background", kind: "surface", properties: ["backgroundColor", "borderColor", "backgroundGradient"] },
   { id: "home.hero.image", page: "home", section: "Hero", label: "Hero image", kind: "surface", properties: ["opacity"] },
@@ -649,6 +666,7 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
   const navigation = cleanNavigation(source.navigation, errors);
   const backLinks = cleanBackLinks(source.backLinks, errors);
   const header = cleanHeader(source.header, errors);
+  const trailTabs = cleanTrailTabs(source.trailTabs, errors);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
@@ -657,7 +675,26 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
     ...(navigation ? { navigation } : {}),
     ...(backLinks ? { backLinks } : {}),
     ...(header ? { header } : {}),
+    ...(trailTabs ? { trailTabs } : {}),
   };
+}
+
+function cleanTrailTabs(raw: unknown, errors?: string[]): PublicTrailTabsConfig | undefined {
+  if (raw === undefined) return undefined;
+  const labelsRaw = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as { labels?: unknown }).labels : undefined;
+  if (!labelsRaw || typeof labelsRaw !== "object" || Array.isArray(labelsRaw)) {
+    errors?.push("trailTabs.labels must be an object");
+    return undefined;
+  }
+  const allowed = new Set<string>(PUBLIC_TRAIL_TAB_IDS);
+  const labels: PublicTrailTabsConfig["labels"] = {};
+  for (const [key, value] of Object.entries(labelsRaw as Record<string, unknown>)) {
+    if (!allowed.has(key)) { errors?.push(`trailTabs.labels.${key} is not a known toggle item`); continue; }
+    const cleaned = cleanPublicTrailTabLabel(value);
+    if (cleaned === null) { errors?.push(`trailTabs.labels.${key} is invalid`); continue; }
+    labels[key as PublicTrailTabId] = cleaned;
+  }
+  return Object.keys(labels).length > 0 ? { labels } : undefined;
 }
 
 function cleanBackLinks(raw: unknown, errors?: string[]): PublicBackLinkConfig | undefined {

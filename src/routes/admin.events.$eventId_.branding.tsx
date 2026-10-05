@@ -108,6 +108,11 @@ import {
   type PublicStyleOverrideDocument,
   type PublicStyleProperty,
   type PublicNavIconId,
+  PUBLIC_TRAIL_TAB_IDS,
+  PUBLIC_TRAIL_TAB_LABEL_MAX,
+  cleanPublicTrailTabLabel,
+  publicTrailTabLabel,
+  type PublicTrailTabId,
   type PublicV2ThemeKey,
 } from "@/lib/public-style-overrides";
 
@@ -2318,6 +2323,9 @@ function VisualBrandingEditor({
   const selectNavigationTarget = (role: "shared.navigation.tabItem" | "shared.navigation.currentTab", id: string) => {
     setSelectedRole(role as EditorSelection); setSelectedRecord(id); setRecordScope("record"); setStyleState("normal");
   };
+  const selectTrailTabTarget = (role: "shared.trailTabs.tab" | "shared.trailTabs.currentTab", id: PublicTrailTabId) => {
+    setSelectedRole(role as EditorSelection); setSelectedRecord(id); setRecordScope("record"); setStyleState("normal");
+  };
   const moveNavigationItem = (id: string, direction: -1 | 1) => {
     const index = navItems.findIndex((item) => item.id === id);
     const target = index + direction;
@@ -2595,7 +2603,7 @@ function VisualBrandingEditor({
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {(() => {
               const pg = previewPage;
-              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || ["shared.navigation.drawer", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab"].includes(item.id)));
+              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || ["shared.navigation.drawer", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab", ...(["venues", "offers"].includes(pg) ? ["shared.trailTabs.surface", "shared.trailTabs.tab", "shared.trailTabs.currentTab"] : [])].includes(item.id)));
               const sections = [...new Set(items.map((item) => `${item.page === "shared" ? "Shared" : ""}${item.page === "shared" ? " · " : ""}${item.section}`))];
               return sections.map((section) => <div key={section} className="col-span-full"><div className="mb-1 mt-2 text-[11px] font-semibold text-muted-foreground">{section}</div><div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">{items.filter((item) => `${item.page === "shared" ? "Shared · " : ""}${item.section}` === section).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}</div></div>);
             })()}
@@ -2686,6 +2694,21 @@ function VisualBrandingEditor({
             rename={(id, label) => updateNavigationItem(id, { label })}
             changeIcon={(id, icon) => updateNavigationItem(id, { icon })}
             move={moveNavigationItem}
+          /> : null}
+          {itemMeta && ["shared.trailTabs.surface", "shared.trailTabs.tab", "shared.trailTabs.currentTab"].includes(itemMeta.id) ? <TrailTabsInspector
+            selectedId={(PUBLIC_TRAIL_TAB_IDS as readonly string[]).includes(selectedRecord ?? "") ? selectedRecord as PublicTrailTabId : null}
+            mode={itemMeta.id === "shared.trailTabs.currentTab" ? "current" : itemMeta.id === "shared.trailTabs.tab" ? "inactive" : null}
+            venueLabelPlural={previewLabels.plural}
+            labels={form.style_overrides.trailTabs?.labels ?? {}}
+            disabled={!canEdit || busy || comparisonReadOnly}
+            select={(id, mode) => selectTrailTabTarget(mode === "current" ? "shared.trailTabs.currentTab" : "shared.trailTabs.tab", id)}
+            setLabel={(id, value) => updateStyleDocument((next) => {
+              const labels = { ...(next.trailTabs?.labels ?? {}) };
+              const cleaned = value === null ? null : cleanPublicTrailTabLabel(value);
+              if (cleaned === null) delete labels[id]; else labels[id] = cleaned;
+              const { trailTabs: _old, ...rest } = next;
+              return Object.keys(labels).length ? { ...rest, trailTabs: { labels } } : rest;
+            })}
           /> : null}
           {itemMeta?.id === "shared.navigation.title" ? <HeaderTitleInspector
             eventName={event?.name ?? ""} header={form.style_overrides.header ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
