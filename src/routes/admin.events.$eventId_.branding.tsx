@@ -111,6 +111,10 @@ import {
   PUBLIC_TRAIL_TAB_IDS,
   PUBLIC_TRAIL_TAB_LABEL_MAX,
   cleanPublicTrailTabLabel,
+  cleanPublicCopy,
+  isPublicCopyKey,
+  PUBLIC_COPY_DEFAULTS,
+  PUBLIC_COPY_MAX,
   publicTrailTabLabel,
   type PublicTrailTabId,
   type PublicV2ThemeKey,
@@ -2710,6 +2714,18 @@ function VisualBrandingEditor({
               return Object.keys(labels).length ? { ...rest, trailTabs: { labels } } : rest;
             })}
           /> : null}
+          {itemMeta && isPublicCopyKey(itemMeta.id) ? (() => {
+            const key = itemMeta.id;
+            const current = form.style_overrides.copy?.labels[key] ?? "";
+            return <CopyTextField key={`${key}:${current}`} value={current} placeholder={PUBLIC_COPY_DEFAULTS[key]} disabled={!canEdit || busy || comparisonReadOnly}
+              commit={(value) => updateStyleDocument((next) => {
+                const labels = { ...(next.copy?.labels ?? {}) };
+                const cleaned = value === null ? null : cleanPublicCopy(value);
+                if (cleaned === null) delete labels[key]; else labels[key] = cleaned;
+                const { copy: _old, ...rest } = next;
+                return Object.keys(labels).length ? { ...rest, copy: { labels } } : rest;
+              })} />;
+          })() : null}
           {itemMeta?.id === "shared.navigation.title" ? <HeaderTitleInspector
             eventName={event?.name ?? ""} header={form.style_overrides.header ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
             update={(patch) => updateStyleDocument((next) => {
@@ -2807,6 +2823,24 @@ function TrailTabsInspector({ selectedId, mode, venueLabelPlural, labels, disabl
     </div>
     <TrailTabLabelField key={`${selected}:${labels[selected] ?? ""}`} value={labels[selected] ?? ""} placeholder={fallback} disabled={disabled} commit={(value) => setLabel(selected, value)} />
   </div>;
+}
+
+/** Display wording for a fixed text leaf; buffered, committed on blur/Enter, empty resets. */
+export function CopyTextField({ value, placeholder, disabled, commit }: { value: string; placeholder: string; disabled: boolean; commit: (label: string | null) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setDraft(value); setError(null); }, [value]);
+  const apply = () => {
+    if (!draft.trim()) { setError(null); if (value) commit(null); return; }
+    const cleaned = cleanPublicCopy(draft);
+    if (!cleaned) { setError(`Use 1–${PUBLIC_COPY_MAX} characters, no < or >.`); return; }
+    setError(null);
+    if (cleaned !== value) commit(cleaned); else setDraft(cleaned);
+  };
+  return <Field label="Wording">
+    <textarea rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={draft} placeholder={placeholder} maxLength={PUBLIC_COPY_MAX} disabled={disabled} aria-invalid={Boolean(error)} onChange={(event) => { setDraft(event.target.value); setError(null); }} onBlur={apply} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); apply(); event.currentTarget.blur(); } else if (event.key === "Escape") { event.preventDefault(); setDraft(value); setError(null); event.currentTarget.blur(); } }} />
+    {error ? <p role="alert" className="mt-1 text-xs text-destructive">{error}</p> : <p className="mt-1 text-xs text-muted-foreground">Empty uses the original wording.</p>}
+  </Field>;
 }
 
 /** Buffered while typing so spaces do not get trimmed until blur or Enter. */

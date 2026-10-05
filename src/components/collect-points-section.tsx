@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { readStoredPassportForEvent } from "@/lib/use-current-event-passport";
-import { usePublicStyleTarget } from "@/components/public-style-scope";
+import { usePublicStyleTarget, usePublicStyleDocument } from "@/components/public-style-scope";
+import { publicCopy } from "@/lib/public-style-overrides";
 
 type Progress = {
   passport_id: string;
@@ -37,6 +38,10 @@ export function CollectPointsSection({
   const surfaceStyle = usePublicStyleTarget("home.collect.surface", { selectable: true });
   const headingStyle = usePublicStyleTarget("home.collect.heading", { selectable: true });
   const ctaStyle = usePublicStyleTarget("home.collect.cta", { selectable: true });
+  const eyebrowStyle = usePublicStyleTarget("home.collect.eyebrow", { selectable: true });
+  const bodyStyle = usePublicStyleTarget("home.collect.body", { selectable: true });
+  const promptStyle = usePublicStyleTarget("home.collect.prompt", { selectable: true });
+  const styleDoc = usePublicStyleDocument();
   const primary = primaryColor ?? "#1F3D2B";
   const accent = accentColor ?? "#C9A24A";
   const [state, setState] = useState<State>({ kind: "loading" });
@@ -75,10 +80,11 @@ export function CollectPointsSection({
   return (
     <section {...surfaceStyle} style={surfaceStyle.style} className="mx-auto mt-8 w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm">
       <div
+        {...eyebrowStyle}
         className="text-[10px] font-semibold uppercase tracking-[0.32em]"
-        style={{ color: accent }}
+        style={{ color: accent, ...eyebrowStyle.style }}
       >
-        Collect points
+        {publicCopy(styleDoc, "home.collect.eyebrow")}
       </div>
       <h2
         {...headingStyle}
@@ -87,9 +93,8 @@ export function CollectPointsSection({
       >
         Scan to earn points
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
-        Scan venue QR codes to collect passport stamps and earn points. Look out
-        for bonus codes around the event for extra points.
+      <p {...bodyStyle} style={bodyStyle.style} className="mt-2 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">
+        {publicCopy(styleDoc, "home.collect.body")}
       </p>
 
       {state.kind === "loading" && (
@@ -100,8 +105,8 @@ export function CollectPointsSection({
 
       {state.kind === "no_passport" && (
         <div className="mt-4 space-y-3">
-          <p className="text-sm text-[var(--event-body,#3D372C)]">
-            Start collecting by scanning a venue or bonus QR code.
+          <p {...promptStyle} style={promptStyle.style} className="text-sm text-[var(--event-body,#3D372C)]">
+            {publicCopy(styleDoc, "home.collect.prompt")}
           </p>
           {canRegister && (
             <PublicLink

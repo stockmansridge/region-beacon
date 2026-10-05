@@ -92,7 +92,29 @@ export type PublicStyleOverrideDocument = {
   backLinks?: PublicBackLinkConfig;
   header?: PublicHeaderConfig;
   trailTabs?: PublicTrailTabsConfig;
+  copy?: PublicCopyConfig;
 };
+
+/** Event-scoped display wording for fixed text leaves. Actions/destinations never change. */
+export const PUBLIC_COPY_DEFAULTS = {
+  "home.collect.eyebrow": "Collect points",
+  "home.collect.body": "Scan venue QR codes to collect passport stamps and earn points. Look out for bonus codes around the event for extra points.",
+  "home.collect.prompt": "Start collecting by scanning a venue or bonus QR code.",
+} as const;
+export type PublicCopyKey = keyof typeof PUBLIC_COPY_DEFAULTS;
+export type PublicCopyConfig = { labels: Partial<Record<PublicCopyKey, string>> };
+export const PUBLIC_COPY_MAX = 300;
+export function isPublicCopyKey(id: unknown): id is PublicCopyKey {
+  return typeof id === "string" && Object.prototype.hasOwnProperty.call(PUBLIC_COPY_DEFAULTS, id);
+}
+export function cleanPublicCopy(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.replace(/[\u0000-\u001F\u007F<>]/g, "").replace(/\s+/g, " ").trim();
+  return value && value.length <= PUBLIC_COPY_MAX ? value : null;
+}
+export function publicCopy(document: PublicStyleOverrideDocument | null | undefined, key: PublicCopyKey): string {
+  return document?.copy?.labels[key] ?? PUBLIC_COPY_DEFAULTS[key];
+}
 
 export const PUBLIC_TRAIL_TAB_IDS = ["venues", "offers"] as const;
 export type PublicTrailTabId = (typeof PUBLIC_TRAIL_TAB_IDS)[number];
@@ -242,6 +264,9 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "home.nextPrize.progress", page: "home", section: "Next prize", label: "Next prize progress", kind: "progress", properties: PROGRESS },
   { id: "home.collect.surface", page: "home", section: "Collect points", label: "Collect points card", kind: "surface", properties: SURFACE },
   { id: "home.collect.heading", page: "home", section: "Collect points", label: "Collect points heading", kind: "text", properties: TEXT },
+  { id: "home.collect.eyebrow", page: "home", section: "Collect points", label: "Collect points label", kind: "text", properties: TEXT },
+  { id: "home.collect.body", page: "home", section: "Collect points", label: "Collect points description", kind: "text", properties: TEXT },
+  { id: "home.collect.prompt", page: "home", section: "Collect points", label: "Start collecting message", kind: "text", properties: TEXT },
   { id: "home.collect.cta", page: "home", section: "Collect points", label: "Create passport button", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "home.stamps.tile", page: "home", section: "Stamp collection", label: "Venue stamp", kind: "surface", properties: SURFACE, repeat: "venue" },
   { id: "home.stamps.label", page: "home", section: "Stamp collection", label: "Venue stamp label", kind: "text", properties: TEXT, repeat: "venue" },
@@ -670,6 +695,7 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
   const backLinks = cleanBackLinks(source.backLinks, errors);
   const header = cleanHeader(source.header, errors);
   const trailTabs = cleanTrailTabs(source.trailTabs, errors);
+  const copy = cleanCopy(source.copy, errors);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
@@ -679,7 +705,22 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
     ...(backLinks ? { backLinks } : {}),
     ...(header ? { header } : {}),
     ...(trailTabs ? { trailTabs } : {}),
+    ...(copy ? { copy } : {}),
   };
+}
+
+function cleanCopy(raw: unknown, errors?: string[]): PublicCopyConfig | undefined {
+  if (raw === undefined) return undefined;
+  const labelsRaw = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as { labels?: unknown }).labels : undefined;
+  if (!labelsRaw || typeof labelsRaw !== "object" || Array.isArray(labelsRaw)) { errors?.push("copy.labels must be an object"); return undefined; }
+  const labels: PublicCopyConfig["labels"] = {};
+  for (const [key, value] of Object.entries(labelsRaw as Record<string, unknown>)) {
+    if (!isPublicCopyKey(key)) { errors?.push(`copy.labels.${key} is not a known text item`); continue; }
+    const cleaned = cleanPublicCopy(value);
+    if (cleaned === null) { errors?.push(`copy.labels.${key} is invalid`); continue; }
+    labels[key] = cleaned;
+  }
+  return Object.keys(labels).length > 0 ? { labels } : undefined;
 }
 
 function cleanTrailTabs(raw: unknown, errors?: string[]): PublicTrailTabsConfig | undefined {
