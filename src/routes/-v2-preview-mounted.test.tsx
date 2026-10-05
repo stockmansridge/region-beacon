@@ -496,7 +496,7 @@ describe("f034e969 follow-up repairs", () => {
       { kind: "offer", venue_id: "venue-b", venue_name: "Cellar", logo_path: null, cover_path: null, offer_summary: "Free tasting\nMore", created_at: "" },
     ] as never;
     const doc = { version: 1, items: { "bookmarks.card.name": { normal: { color: "#111111" } } }, records: { "bookmarks.card.offer": { "venue-b": { normal: { color: "#222222", fontSize: 15 } } }, "bookmarks.card.thumb": { "venue-a": { normal: { iconBackgroundColor: "#333333" } } } } } as never;
-    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PublicBookmarksPage subdomain="preview" previewData={{ branding: { ...branding, styleOverrides: doc }, eventId: "event-v2", enabled: true, rows }} /></PublicStyleScope>, "/bookmarks"));
+    const { container } = render(inPreview(<PublicBookmarksPage subdomain="preview" previewData={{ branding: { ...branding, styleOverrides: doc }, eventId: "event-v2", enabled: true, rows }} />, "/bookmarks"));
     const inst = (id: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${id}"]`);
     expect(inst("bookmarks.card.type@venue-a")?.textContent).toBe("Venue");
     expect(inst("bookmarks.card.type@venue-b")?.textContent).toBe("Offer");
@@ -504,6 +504,7 @@ describe("f034e969 follow-up repairs", () => {
     expect(inst("bookmarks.card.offer@venue-b")?.style.color).toBe("#222222");
     expect(inst("bookmarks.card.offer@venue-a")).toBeNull();
     expect(inst("bookmarks.card.thumb@venue-a")?.style.backgroundColor).toBe("#333333");
+    expect(inst("bookmarks.card.thumb@venue-b")).not.toBeNull();
     expect(inst("bookmarks.card.chevron@venue-b")?.querySelector("svg")).not.toBeNull();
     cleanup();
     const v1 = render(inPreview(<PublicBookmarksPage subdomain="preview" previewData={{ branding: { ...branding, templateVersion: "v1" }, eventId: "event-v1", enabled: true, rows }} />, "/bookmarks"));
