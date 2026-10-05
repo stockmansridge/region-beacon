@@ -2445,7 +2445,7 @@ function VisualBrandingEditor({
     if (previewPage === "map") return <PublicTrailMapPage subdomain="preview" previewData={{ branding: fixtureBranding, event: { ...draftEvent, event_id: event.id, name: event.name } as MapEventRow, venues: listVenues.map((venue) => ({ ...venue, event_found: true })) }} />;
     if (previewPage === "leaderboard") return <PublicLeaderboardPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, rows: !populated ? [] : [{ rank: 1, display_name: "Sample visitor (editor only)", stamps: 3, points: 30, venue_points: 30, bonus_points: 0, visit_count: 3, tier: "Explorer", is_completed: false, is_enabled: true, event_found: true }] }} />;
     if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: faqEntries }} />;
-    if (previewPage === "bookmarks") return <PublicBookmarksPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, enabled: true, rows: [] }} />;
+    if (previewPage === "bookmarks") return <PublicBookmarksPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, enabled: true, rows: !populated ? [] : listVenues.slice(0, 2).filter((venue) => venue.venue_id).map((venue) => ({ kind: venue.offer_summary ? "offer" as const : "venue" as const, venue_id: venue.venue_id!, venue_name: venue.name, logo_path: venue.logo_path, cover_path: venue.cover_path, offer_summary: venue.offer_summary, created_at: new Date(0).toISOString() })) }} />;
     if (["terms", "privacy", "legal"].includes(previewPage)) return <CombinedLegalPage subdomain="preview" initialOpen={previewPage === "terms" ? "terms" : previewPage === "privacy" ? "privacy" : "both"} previewData={{ branding: fixtureBranding, row: publicContent?.legal ?? { event_id: event.id, event_name: event.name, legal_source: "local_text", terms_title: "Terms", terms_body: "Sample terms for preview.", terms_url: null, privacy_title: "Privacy", privacy_body: "Sample privacy information for preview.", privacy_url: null, terms_version: null, privacy_version: null, effective_at: null } as LegalRow }} />;
     if (previewPage === "passport") {
       const passport = { passport_id: "preview-passport", event_id: event.id, status: "active", completed_at: null, leaderboard_opt_out: false, email: "preview@example.invalid", full_name: "Sample Visitor", first_name: "Sample", last_name: "Visitor", mobile: null, postcode: null, marketing_opt_in: false, checkin_count: 1 } as PassportRow;
@@ -2503,6 +2503,16 @@ function VisualBrandingEditor({
               <SelectTrigger className="w-44" aria-label="Preview source"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="draft">V2 draft</SelectItem><SelectItem value="saved">Saved V2 config</SelectItem></SelectContent>
             </Select>
+            <Select value={sampleState} onValueChange={(value) => setSampleState(value as typeof sampleState)}>
+              <SelectTrigger className="w-40" aria-label="Sample state"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="populated">Populated state</SelectItem><SelectItem value="empty">Empty state</SelectItem></SelectContent>
+            </Select>
+            {listVenues.length > 0 && ["venue", "venues", "offers", "map", "passport", "home"].includes(previewPage) && (
+              <Select value={selectedVenue?.venue_id ?? ""} onValueChange={(value) => { setSelectedRecord(value); setRecordScope("record"); }}>
+                <SelectTrigger className="w-48" aria-label="Record"><SelectValue placeholder={`Choose ${previewLabels.singular.toLowerCase()}`} /></SelectTrigger>
+                <SelectContent>{listVenues.filter((venue) => venue.venue_id).map((venue) => <SelectItem key={venue.venue_id!} value={venue.venue_id!}>{venue.name ?? "Untitled"}</SelectItem>)}</SelectContent>
+              </Select>
+            )}
             <div className="inline-flex rounded-md border p-1" aria-label="Preview interaction">
               <Button type="button" size="sm" variant={previewInteraction === "select" ? "default" : "ghost"} onClick={() => setPreviewInteraction("select")}>Select / Edit</Button>
               <Button type="button" size="sm" variant={previewInteraction === "navigate" ? "default" : "ghost"} onClick={() => setPreviewInteraction("navigate")}>Navigate</Button>
