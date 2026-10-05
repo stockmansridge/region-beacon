@@ -20,7 +20,8 @@ import { PublicOffersPage } from "./live.$subdomain.offers";
 import { CombinedLegalPage } from "@/components/public-legal";
 import { PublicStyleScope } from "@/components/public-style-scope";
 import { eventScopedCustomFontFamily, v2FontFamilyValue } from "@/lib/event-font-alias";
-import { publicStyleCss, publicStyleTarget } from "@/lib/public-style-overrides";
+import { publicStyleCss, publicStyleDefinition, publicStyleTarget } from "@/lib/public-style-overrides";
+import { V2ResultPreview } from "@/components/v2-result-previews";
 
 const baseEvent = {
   event_id: "event-a",
@@ -108,5 +109,59 @@ describe("Event-scoped custom font aliases", () => {
     expect(hoverRule).toContain(hoverAlias);
     expect(inline).toContain(alias);
     expect(css).not.toContain(eventScopedCustomFontFamily("Hover Upload", "e2"));
+  });
+});
+
+describe("Result previews use the real V2 presentation scope", () => {
+  const resultEvent = {
+    ...baseEvent,
+    public_template_version: "v2",
+    v2_style_config: {
+      version: 1,
+      items: {
+        "bonus.result.surface": { normal: { backgroundColor: "#102030" } },
+        "bonus.result.heading": { normal: { color: "#F1E2D3" } },
+        "bonus.result.icon": { normal: { iconColor: "#11AA22", iconBackgroundColor: "#334455" } },
+        "bonus.failure.heading": { normal: { color: "#CC2244" } },
+      },
+    },
+  };
+
+  it("applies success styles and lets a solid surface replace the built-in gradient", () => {
+    const html = renderToStaticMarkup(<PublicNavProvider mode="preview" subdomain={null}><V2ResultPreview page="bonus" state="claimed" event={resultEvent} venueName={null} /></PublicNavProvider>);
+    expect(attrsFor(html, "bonus.result.surface")[0]?.toLowerCase()).toContain("background-color:#102030");
+    expect(attrsFor(html, "bonus.result.surface")[0]?.toLowerCase()).toContain("background-image:none");
+    expect(attrsFor(html, "bonus.result.heading")[0]?.toLowerCase()).toContain("#f1e2d3");
+    expect(attrsFor(html, "bonus.result.icon")[0]?.toLowerCase()).toContain("#334455");
+    expect(html).toContain('data-public-style-version="1"');
+  });
+
+  it("applies failure styles through the same scope without mounting a claim controller", () => {
+    const html = renderToStaticMarkup(<PublicNavProvider mode="preview" subdomain={null}><V2ResultPreview page="bonus" state="inactive" event={resultEvent} venueName={null} /></PublicNavProvider>);
+    expect(attrsFor(html, "bonus.failure.heading")[0]?.toLowerCase()).toContain("#cc2244");
+    expect(html).toContain("Bonus code inactive");
+  });
+
+  it("keeps V1 result output outside a V2 item scope", () => {
+    const html = renderToStaticMarkup(<PublicNavProvider mode="preview" subdomain={null}><V2ResultPreview page="bonus" state="claimed" event={{ ...resultEvent, public_template_version: null }} venueName={null} /></PublicNavProvider>);
+    expect(html).not.toContain("data-public-style-version");
+    expect(html).not.toContain("#102030");
+  });
+});
+
+describe("Typed leaf controls", () => {
+  it("keeps join input text and surface properties independent", () => {
+    const definition = publicStyleDefinition("join.form.field");
+    expect(definition?.kind).toBe("text");
+    expect(definition?.properties).toEqual(expect.arrayContaining(["backgroundColor", "borderColor", "color", "fontFamily", "fontSize"]));
+    const target = publicStyleTarget({ version: 1, items: { "join.form.field": { normal: { backgroundColor: "#112233", color: "#DDEEFF" } } } }, "join.form.field");
+    expect(target.style.backgroundColor).toBe("#112233");
+    expect(target.style.color).toBe("#DDEEFF");
+  });
+
+  it("keeps award badge record overrides on the selected award", () => {
+    const doc = { version: 1, items: { "prizes.card.badge": { normal: { color: "#111111" } } }, records: { "prizes.card.badge": { "award-a": { normal: { color: "#AA0000" } } } } } } as const;
+    expect(publicStyleTarget(doc, "prizes.card.badge", { recordId: "award-a" }).style.color).toBe("#AA0000");
+    expect(publicStyleTarget(doc, "prizes.card.badge", { recordId: "award-b" }).style.color).toBe("#111111");
   });
 });
