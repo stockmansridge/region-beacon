@@ -2,6 +2,7 @@ import { PublicLink } from "@/components/public-nav-context";
 
 import { Gift } from "lucide-react";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
+import { usePublicStyleTarget } from "@/components/public-style-scope";
 
 /**
  * Surfaces the next configured award the visitor is working toward.
@@ -9,6 +10,10 @@ import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-dat
  * Bronze/Silver/Gold tiers.
  */
 export function NextRewardCard({ eventId }: { eventId: string | null }) {
+  const cardStyle = usePublicStyleTarget("home.nextPrize.surface", { selectable: true });
+  const iconStyle = usePublicStyleTarget("home.nextPrize.icon", { selectable: true });
+  const headingStyle = usePublicStyleTarget("home.nextPrize.heading", { selectable: true });
+  const progressStyle = usePublicStyleTarget("home.nextPrize.progress", { selectable: true });
   const data = usePassportHomeData(eventId);
   if (data.loading) return null;
   const next = pickNextReward(data.awards) ?? data.awards[0];
@@ -23,28 +28,30 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
   return (
     <section className="px-4">
       <PublicLink
+        {...cardStyle}
         to="/prizes"
         className="block rounded-3xl border p-4 shadow-sm transition hover:shadow-md"
-        style={{
+        style={{ ...cardStyle.style,
           borderColor: "var(--event-card-border)",
           backgroundColor: "var(--event-card-bg)",
         }}
       >
         <div className="flex items-start gap-3">
           <div
+            {...iconStyle}
             className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
-            style={{
-              backgroundColor: "var(--event-hero-accent, var(--event-accent))",
-              color:
-                "var(--event-button-primary-fg, var(--event-primary-fg))",
+            style={{ ...iconStyle.style,
+              backgroundColor: "var(--item-icon-bg, var(--event-hero-accent, var(--event-accent)))",
+              color: "var(--item-icon-color, var(--event-button-primary-fg, var(--event-primary-fg)))",
             }}
           >
             <Gift className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
             <p
+              {...headingStyle}
               className="text-[10px] font-semibold uppercase tracking-[0.28em]"
-              style={{ color: "var(--event-card-muted)" }}
+              style={{ color: "var(--event-card-muted)", ...headingStyle.style }}
             >
               Next prize
             </p>
@@ -67,10 +74,11 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
 
         <div className="mt-3">
           <div
+            {...progressStyle}
             className="h-2 w-full overflow-hidden rounded-full"
-            style={{
+            style={{ ...progressStyle.style,
               backgroundColor:
-                "color-mix(in srgb, var(--event-card-border) 80%, transparent)",
+                "var(--item-progress-track, color-mix(in srgb, var(--event-card-border) 80%, transparent))",
             }}
           >
             <div
@@ -78,7 +86,7 @@ export function NextRewardCard({ eventId }: { eventId: string | null }) {
               style={{
                 width: `${pct}%`,
                 backgroundColor:
-                  "var(--event-hero-accent, var(--event-accent))",
+                  "var(--item-progress-fill, var(--event-hero-accent, var(--event-accent)))",
               }}
             />
           </div>

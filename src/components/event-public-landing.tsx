@@ -19,6 +19,8 @@ import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 import { PublicLink, PublicNavProvider, type PublicNavMode } from "@/components/public-nav-context";
 import { resolvePublicLandingCopy } from "@/lib/public-landing-copy";
+import { PublicStyleScope, usePublicStyleTarget } from "@/components/public-style-scope";
+import type { PublicStyleOverrideDocument } from "@/lib/public-style-overrides";
 import {
   resolveEventLogoStyle,
   eventLogoBoxStyle,
@@ -104,6 +106,7 @@ export type PublicEventData = {
   card_heading_color?: string | null;
   card_body_color?: string | null;
   card_muted_color?: string | null;
+  style_overrides?: PublicStyleOverrideDocument | null;
 };
 
 /**
@@ -270,7 +273,8 @@ export function EventPublicLanding({
   const celebrationScope = subdomain ?? event.event_id;
 
   return (
-    <PublicNavProvider mode={mode} subdomain={subdomain}>
+    <PublicNavProvider mode={mode} subdomain={subdomain} preservePreviewAppearance={mode === "preview"}>
+      <PublicStyleScope overrides={event.style_overrides}>
       <EventPaletteScope
         paletteKey={event.palette_key ?? null}
         backgroundKey={event.page_background_key ?? null}
@@ -862,6 +866,7 @@ export function EventPublicLanding({
           </div>
         </main>
       </EventPaletteScope>
+      </PublicStyleScope>
     </PublicNavProvider>
   );
 }

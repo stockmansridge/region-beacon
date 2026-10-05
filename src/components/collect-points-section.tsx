@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { readStoredPassportForEvent } from "@/lib/use-current-event-passport";
+import { usePublicStyleTarget } from "@/components/public-style-scope";
 
 type Progress = {
   passport_id: string;
@@ -30,6 +31,9 @@ export function CollectPointsSection({
   accentColor?: string | null;
   canRegister: boolean;
 }) {
+  const surfaceStyle = usePublicStyleTarget("home.collect.surface", { selectable: true });
+  const headingStyle = usePublicStyleTarget("home.collect.heading", { selectable: true });
+  const ctaStyle = usePublicStyleTarget("home.collect.cta", { selectable: true });
   const primary = primaryColor ?? "#1F3D2B";
   const accent = accentColor ?? "#C9A24A";
   const [state, setState] = useState<State>({ kind: "loading" });
@@ -65,7 +69,7 @@ export function CollectPointsSection({
   }, [eventId]);
 
   return (
-    <section className="mx-auto mt-8 w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm">
+    <section {...surfaceStyle} style={surfaceStyle.style} className="mx-auto mt-8 w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm">
       <div
         className="text-[10px] font-semibold uppercase tracking-[0.32em]"
         style={{ color: accent }}
@@ -73,8 +77,9 @@ export function CollectPointsSection({
         Collect points
       </div>
       <h2
+        {...headingStyle}
         className="font-trail-serif mt-1 text-xl font-semibold"
-        style={{ color: primary }}
+        style={{ color: primary, ...headingStyle.style }}
       >
         Scan to earn points
       </h2>
@@ -96,9 +101,10 @@ export function CollectPointsSection({
           </p>
           {canRegister && (
             <PublicLink
+              {...ctaStyle}
               to="/join"
               className="grid h-11 w-full place-items-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
-              style={{ backgroundColor: primary }}
+              style={{ backgroundColor: "var(--event-button-primary-bg)", color: "var(--event-button-primary-fg)", ...ctaStyle.style }}
             >
               Create your passport
             </PublicLink>

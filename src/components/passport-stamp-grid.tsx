@@ -6,6 +6,7 @@ import type { PassportStampVenue } from "@/lib/passport-stamps";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { usePassportHomeData } from "@/lib/use-passport-home-data";
 import { supabase } from "@/integrations/supabase/client";
+import { usePublicStyleTarget } from "@/components/public-style-scope";
 
 /**
  * Mobile-app style passport stamp grid. Renders one tile per participating
@@ -112,6 +113,9 @@ function StampTile({
   dimmed: boolean;
   hasBonus: boolean;
 }) {
+  const stableVenueId = venue.venue_id && !String(venue.venue_id).startsWith("placeholder-") ? String(venue.venue_id) : null;
+  const tileStyle = usePublicStyleTarget("home.stamps.tile", { recordId: stableVenueId, selectable: true });
+  const labelStyle = usePublicStyleTarget("home.stamps.label", { recordId: stableVenueId, selectable: true });
   const stamped = venue.is_stamped;
   const logoUrl = getVenueAssetPublicUrl(venue.venue_logo_path);
   const name = venue.venue_name ?? "Venue";
@@ -126,13 +130,14 @@ function StampTile({
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div
+        {...tileStyle}
         aria-label={stamped ? `${name} — stamped` : `${name} — not yet stamped`}
         className={[
           "relative grid aspect-square w-full place-items-center overflow-hidden rounded-full border-2 transition",
           stamped ? "shadow-sm" : "border-dashed",
           dimmed ? "opacity-60" : "",
         ].join(" ")}
-        style={{
+        style={{ ...tileStyle.style,
           borderColor: stamped
             ? "var(--event-pin, var(--event-accent))"
             : "var(--event-card-border)",
@@ -200,9 +205,10 @@ function StampTile({
         )}
       </div>
       <span
+        {...labelStyle}
         title={name}
         className="line-clamp-1 w-full text-center text-[10px] font-medium"
-        style={{ color: "var(--event-page-heading)" }}
+        style={{ color: "var(--event-page-heading)", ...labelStyle.style }}
       >
         {name}
       </span>

@@ -9,6 +9,7 @@
  * CSS variables, so the same event looked like a legacy default theme.
  */
 import { getEventFont } from "@/lib/event-fonts";
+import type { PublicStyleOverrideDocument } from "@/lib/public-style-overrides";
 
 /** Columns present on every deployment. */
 export const EVENT_BRANDING_SELECT_BASE = [
@@ -35,6 +36,7 @@ export const EVENT_BRANDING_SELECT_OPTIONAL = [
   "cover_focal_x", "cover_focal_y",
   "logo_shape", "logo_backdrop", "logo_backdrop_color",
   "custom_link_label", "custom_link_url", "custom_link_enabled",
+  "style_overrides",
 ] as const;
 
 export const EVENT_BRANDING_SELECT = [
@@ -46,7 +48,7 @@ export const EVENT_BRANDING_SELECT_FALLBACK = EVENT_BRANDING_SELECT_BASE.join(",
 
 /** True when a failed select is caused by a column missing in production. */
 export function isMissingBrandingColumnError(message: string | null | undefined): boolean {
-  return /(custom_link_label|custom_link_url|custom_link_enabled|logo_shape|logo_backdrop|logo_backdrop_color|cover_focal_x|cover_focal_y|hero_body_color|brand_kit_key|brand_kit_version|hero_overlay|page_heading_color|card_heading_color|button_primary_bg|nav_fg_color|hero_bg_color|link_color|page_background_color|card_background_color|palette_key|page_background_key)/i.test(
+  return /(style_overrides|custom_link_label|custom_link_url|custom_link_enabled|logo_shape|logo_backdrop|logo_backdrop_color|cover_focal_x|cover_focal_y|hero_body_color|brand_kit_key|brand_kit_version|hero_overlay|page_heading_color|card_heading_color|button_primary_bg|nav_fg_color|hero_bg_color|link_color|page_background_color|card_background_color|palette_key|page_background_key)/i.test(
     message ?? "",
   );
 }
@@ -105,6 +107,7 @@ export type EventBrandingRow = {
   custom_link_label?: string | null;
   custom_link_url?: string | null;
   custom_link_enabled?: boolean | null;
+  style_overrides?: PublicStyleOverrideDocument | null;
 };
 
 /** Resolve a stored font_family value to a usable CSS font stack. */
@@ -132,11 +135,17 @@ export function brandingToScopeProps(b: EventBrandingRow | null | undefined) {
     pageBackgroundColor: b?.page_background_color ?? null,
     textColor: b?.page_heading_color ?? b?.text_color ?? null,
     mutedTextColor: b?.page_muted_color ?? b?.muted_text_color ?? null,
+    pageHeadingColor: b?.page_heading_color ?? null,
+    pageBodyColor: b?.page_body_color ?? null,
+    pageMutedColor: b?.page_muted_color ?? null,
     borderColor: b?.border_color ?? null,
 
     cardBackgroundColor: b?.card_background_color ?? null,
     cardTextColor: b?.card_heading_color ?? b?.card_text_color ?? null,
     cardMutedTextColor: b?.card_muted_color ?? b?.card_muted_text_color ?? null,
+    cardHeadingColor: b?.card_heading_color ?? null,
+    cardBodyColor: b?.card_body_color ?? null,
+    cardMutedColor: b?.card_muted_color ?? null,
     cardBorderColor: b?.card_border_color ?? null,
 
     primaryTextColor: b?.button_primary_fg ?? b?.primary_text_color ?? null,
