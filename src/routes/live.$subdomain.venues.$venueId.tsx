@@ -234,7 +234,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
     link.dataset.eventFont = href;
     document.head.appendChild(link);
   }, [extras?.emotive_text, emotiveFontValue]);
-  const v2 = resolvePublicTemplateVersion(state.brand?.public_template_version) === "v2";
+  const v2 = resolvePublicTemplateVersion(state.kind === "ready" ? state.brand?.public_template_version : null) === "v2";
   const emotiveStack =
     getEventFont(emotiveFontValue)?.stack ?? "'Caveat', 'Segoe Script', cursive";
 
