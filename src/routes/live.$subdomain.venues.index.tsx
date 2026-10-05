@@ -299,12 +299,12 @@ export function PublicVenuesListPage({
           >
             {labels.plural}
           </h1></PublicStyleTarget>
-          <p
+          <PublicStyleTarget id="venues.page.intro"><p
             className="mt-2 text-[13.5px] leading-relaxed"
             style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
           >
             Explore every stop on the trail and collect your stamps.
-          </p>
+          </p></PublicStyleTarget>
         </div>
 
         <div className="mt-4">
@@ -370,14 +370,14 @@ export function PublicVenuesListPage({
                           {v.name ?? "Unnamed"}
                         </p></PublicStyleTarget>
                         {effectiveSort === "nearest" && (
-                          <p
+                          <PublicStyleTarget id="venues.card.distance" recordId={vid}><p
                             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
                             style={{ color: v2 ? "var(--event-card-muted,var(--event-muted,#8A7E66))" : "var(--event-muted,#8A7E66)" }}
                           >
                             {distanceM != null
                               ? `${formatDistance(distanceM)} away`
                               : "Distance unavailable"}
-                          </p>
+                          </p></PublicStyleTarget>
                         )}
                         {v.description && (
                           <PublicStyleTarget id="venues.card.meta" recordId={vid}><p className={v2 ? "line-clamp-5 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-text,#3D372C))] sm:line-clamp-4" : "line-clamp-5 text-[12.5px] leading-snug text-[var(--event-text,#3D372C)] sm:line-clamp-4"}>
@@ -412,7 +412,7 @@ export function PublicVenuesListPage({
                     {(directionsUrl || showPoints) && (
                       <div className="flex items-center justify-between gap-2 border-t border-[var(--event-border,#E6DCC7)] px-3 py-2.5">
                         {directionsUrl ? (
-                          <a
+                          <PublicStyleTarget id="venues.card.directions" recordId={vid}><a
                             href={directionsUrl}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -420,7 +420,7 @@ export function PublicVenuesListPage({
                           >
                             <Navigation className="h-3.5 w-3.5" aria-hidden />
                             Get directions
-                          </a>
+                          </a></PublicStyleTarget>
                         ) : (
                           <span />
                         )}

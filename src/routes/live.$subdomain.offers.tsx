@@ -179,7 +179,7 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
         </div>
 
         <div className="mb-5 mt-6 px-1">
-          <h1
+          <PublicStyleTarget id="offers.page.heading"><h1
             className={v2 ? "font-event-heading text-[28px] font-semibold leading-tight" : "text-[28px] font-semibold leading-tight"}
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
@@ -187,13 +187,13 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
             }}
           >
             Special Offers
-          </h1>
-          <p
+          </h1></PublicStyleTarget>
+          <PublicStyleTarget id="offers.page.intro"><p
             className="mt-2 text-[13.5px] leading-relaxed"
             style={{ color: "var(--event-page-muted, var(--event-muted, #8A7E66))" }}
           >
             Visit the {labels.plural.toLowerCase()} to unlock these offers.
-          </p>
+          </p></PublicStyleTarget>
         </div>
 
         {offers.length === 0 ? (
@@ -240,16 +240,16 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
 
                     {/* Content (middle) */}
                     <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
-                      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+                      <PublicStyleTarget id="offers.card.venue" recordId={vid}><p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
                         {v.name ?? "Venue"}
-                      </p>
-                      <p className={`mt-1 line-clamp-2 ${v2 ? "font-event-heading" : "font-trail-serif"} text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]`}>
+                      </p></PublicStyleTarget>
+                      <PublicStyleTarget id="offers.card.heading" recordId={vid}><p className={`mt-1 line-clamp-2 ${v2 ? "font-event-heading" : "font-trail-serif"} text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]`}>
                         {offerTitle}
-                      </p>
+                      </p></PublicStyleTarget>
                       {offerBody && (
-                        <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-body,#3D372C))]">
+                        <PublicStyleTarget id="offers.card.body" recordId={vid}><p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-body,#3D372C))]">
                           {offerBody}
-                        </p>
+                        </p></PublicStyleTarget>
                       )}
                     </div>
 

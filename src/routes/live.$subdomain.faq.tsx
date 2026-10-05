@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,16 +98,16 @@ export function FaqPage({ subdomain, previewData }: { subdomain: string; preview
 
         <div className="mt-4 rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm sm:p-10">
           {eventInfo.event_name && (
-            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+            <PublicStyleTarget id="faq.page.eyebrow"><p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
               {eventInfo.event_name}
-            </p>
+            </p></PublicStyleTarget>
           )}
-          <h1
+          <PublicStyleTarget id="faq.page.heading"><h1
             className="mt-1 text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]"
             style={{ fontFamily: "var(--event-font, inherit)" }}
           >
             FAQ / Info
-          </h1>
+          </h1></PublicStyleTarget>
 
 
           <div className="mt-6 space-y-6">
@@ -114,14 +115,14 @@ export function FaqPage({ subdomain, previewData }: { subdomain: string; preview
               <p className="text-sm text-[var(--event-muted,#8A7E66)]">Loading…</p>
             )}
             {faq.kind === "error" && (
-              <p className="text-sm text-[var(--event-muted,#8A7E66)]">
+              <PublicStyleTarget id="faq.state.message"><p className="text-sm text-[var(--event-muted,#8A7E66)]">
                 Could not load FAQ entries right now.
-              </p>
+              </p></PublicStyleTarget>
             )}
             {faq.kind === "ok" && faq.entries.length === 0 && (
-              <p className="text-sm text-[var(--event-muted,#8A7E66)]">
+              <PublicStyleTarget id="faq.state.message"><p className="text-sm text-[var(--event-muted,#8A7E66)]">
                 No FAQ entries have been published for this event yet.
-              </p>
+              </p></PublicStyleTarget>
             )}
             {faq.kind === "ok" && faq.entries.length > 0 && (
               <>
@@ -173,16 +174,16 @@ function FaqAccordion({ entries }: { entries: FaqEntry[] }) {
             key={key}
             className="overflow-hidden rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)]"
           >
-            <button
+            <PublicStyleTarget id="faq.item.toggle"><button
               type="button"
               onClick={() => setOpenKey((prev) => (prev === key ? null : key))}
               aria-expanded={isOpen}
               aria-controls={panelId}
               className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)] focus-visible:ring-offset-2"
             >
-              <span className="font-bold text-[var(--event-primary,#1F3D2B)] text-base sm:text-lg">
+              <PublicStyleTarget id="faq.item.question"><span className="font-bold text-[var(--event-primary,#1F3D2B)] text-base sm:text-lg">
                 {entry.question}
-              </span>
+              </span></PublicStyleTarget>
               <span
                 aria-hidden="true"
                 className={
@@ -192,14 +193,14 @@ function FaqAccordion({ entries }: { entries: FaqEntry[] }) {
               >
                 ⌄
               </span>
-            </button>
+            </button></PublicStyleTarget>
             {isOpen && (
-              <div
+              <PublicStyleTarget id="faq.item.answer"><div
                 id={panelId}
                 className="px-4 pb-4 -mt-1 text-sm leading-relaxed text-[var(--event-body,#3D372C)] whitespace-pre-line"
               >
                 <LinkifyText text={entry.answer} />
-              </div>
+              </div></PublicStyleTarget>
             )}
           </li>
         );

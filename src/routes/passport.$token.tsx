@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -574,14 +575,14 @@ export function PassportPreview({
             }}
           />
           <div className="relative mx-auto flex min-h-[320px] max-w-md flex-col justify-end px-5 pb-16 pt-24 sm:min-h-[360px]">
-            <p
+            <PublicStyleTarget id="passport.hero.eyebrow"><p
               className="text-[10px] font-semibold uppercase tracking-[0.32em]"
               style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
             >
               My Passport
-            </p>
+            </p></PublicStyleTarget>
             {passport.first_name?.trim() ? (
-              <h1
+              <PublicStyleTarget id="passport.hero.heading"><h1
                 className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
                 style={{
                   color: "var(--event-hero-fg, var(--event-primary-fg))",
@@ -590,9 +591,9 @@ export function PassportPreview({
                 }}
               >
                 Hi {passport.first_name.trim()}! <span aria-hidden>👋</span>
-              </h1>
+              </h1></PublicStyleTarget>
             ) : (
-              <h1
+              <PublicStyleTarget id="passport.hero.heading"><h1
                 className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
                 style={{
                   color: "var(--event-hero-fg, var(--event-primary-fg))",
@@ -601,9 +602,9 @@ export function PassportPreview({
                 }}
               >
                 Hi {greetingName}! <span aria-hidden>👋</span>
-              </h1>
+              </h1></PublicStyleTarget>
             )}
-            <p
+            <PublicStyleTarget id="passport.hero.body"><p
               className="mt-1 text-sm sm:text-base"
               style={{
                 color: "var(--event-hero-fg, var(--event-primary-fg))",
@@ -612,7 +613,7 @@ export function PassportPreview({
               }}
             >
               Let’s explore {eventName ?? "the trail"}.
-            </p>
+            </p></PublicStyleTarget>
           </div>
         </section>
       </div>
@@ -898,7 +899,7 @@ export function PassportPreview({
               {passport.email}
             </div>
           )}
-          <button
+          <PublicStyleTarget id="passport.actions.copyLink"><button
             type="button"
             onClick={async () => {
               try {
@@ -917,11 +918,11 @@ export function PassportPreview({
             }}
           >
             {linkCopied ? "Link copied" : "Copy passport link"}
-          </button>
+          </button></PublicStyleTarget>
         </section>
 
 
-        <button
+        <PublicStyleTarget id="passport.actions.support"><button
           type="button"
           onClick={copySupportDetails}
           className="mt-5 h-9 w-full rounded-full border text-xs font-semibold tracking-wide"
@@ -932,7 +933,7 @@ export function PassportPreview({
           }}
         >
           {supportCopied ? "Copied support details" : "Copy support details"}
-        </button>
+        </button></PublicStyleTarget>
 
         <div className="mt-6 flex justify-center">
           <PoweredByGetStampd variant="trail" />
@@ -959,12 +960,12 @@ function TrailProgressInline({
   return (
     <>
       <div className="flex items-baseline justify-between gap-3">
-        <h2
+        <PublicStyleTarget id="passport.progress.heading"><h2
           className="font-trail-serif text-base font-semibold"
           style={{ color: "var(--event-card-heading)" }}
         >
           Trail Progress
-        </h2>
+        </h2></PublicStyleTarget>
         <span
           className="text-[11px] font-bold uppercase tracking-[0.18em]"
           style={{ color: "var(--event-card-muted)" }}
@@ -984,14 +985,14 @@ function TrailProgressInline({
           }}
         />
       </div>
-      <p
+      <PublicStyleTarget id="passport.progress.body"><p
         className="mt-2 text-[12px]"
         style={{ color: "var(--event-card-text)" }}
       >
         {remaining === 0
           ? "Trail complete — nicely done! 🎉"
           : `Only ${remaining} ${remaining === 1 ? labelPlural.toLowerCase().replace(/s$/, "") : labelPlural.toLowerCase()} to go!`}
-      </p>
+      </p></PublicStyleTarget>
     </>
   );
 }
@@ -1025,12 +1026,12 @@ function StampGrid({
           >
             No {labelPlural.toLowerCase()} configured
           </div>
-          <p
+          <PublicStyleTarget id="passport.stamps.empty"><p
             className="mt-2 text-sm"
             style={{ color: "var(--event-card-text)" }}
           >
             The event organiser hasn't published any {labelPlural.toLowerCase()} yet.
-          </p>
+          </p></PublicStyleTarget>
         </div>
       </section>
     );
@@ -1040,18 +1041,18 @@ function StampGrid({
     <section className="mt-6">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
-          <h2
+          <PublicStyleTarget id="passport.stamps.heading"><h2
             className="font-trail-serif text-lg font-semibold"
             style={{ color: "var(--event-page-heading)" }}
           >
             Your Passport
-          </h2>
-          <p
+          </h2></PublicStyleTarget>
+          <PublicStyleTarget id="passport.stamps.intro"><p
             className="mt-0.5 text-[12px]"
             style={{ color: "var(--event-page-muted)" }}
           >
             Collect stamps as you visit each stop.
-          </p>
+          </p></PublicStyleTarget>
         </div>
         <span
           className="shrink-0 text-[10px] font-medium uppercase tracking-[0.22em]"
@@ -1242,18 +1243,18 @@ function RewardsSection({
     <section className="mt-5">
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
-          <h2
+          <PublicStyleTarget id="passport.rewards.heading"><h2
             className="font-trail-serif text-lg font-semibold"
             style={{ color: "var(--event-page-heading)" }}
           >
             Prizes
-          </h2>
-          <p
+          </h2></PublicStyleTarget>
+          <PublicStyleTarget id="passport.rewards.intro"><p
             className="mt-0.5 text-[12px]"
             style={{ color: "var(--event-page-muted)" }}
           >
             {headingCopy}
-          </p>
+          </p></PublicStyleTarget>
         </div>
         <Link
           to="/prizes"
@@ -1303,12 +1304,12 @@ function AwardRow({ award }: { award: PublicEventAward }) {
             {award.title}
           </div>
           {award.description && (
-            <p
+            <PublicStyleTarget id="passport.award.body" recordId={award.id}><p
               className="mt-1 text-[12.5px] leading-snug"
               style={{ color: "var(--event-card-text)" }}
             >
               {award.description}
-            </p>
+            </p></PublicStyleTarget>
           )}
           <div
             className="mt-1.5 text-[11px]"

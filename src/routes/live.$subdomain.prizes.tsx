@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles, Trophy, Users, Calendar, PartyPopper, Zap, ArrowUpDown, MapPin, AtSign, Hash } from "lucide-react";
@@ -535,7 +536,7 @@ export function AwardsPage({
 
 function SortPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
+    <PublicStyleTarget id="prizes.sort.item"><button
       type="button"
       onClick={onClick}
       className={
@@ -546,7 +547,7 @@ function SortPill({ active, onClick, children }: { active: boolean; onClick: () 
       }
     >
       {children}
-    </button>
+    </button></PublicStyleTarget>
   );
 }
 
@@ -575,7 +576,7 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
   const showLogo = !!logoUrl && !logoBroken;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm sm:p-5">
+    <PublicStyleTarget id="prizes.bonus.surface"><div className="overflow-hidden rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-4 shadow-sm sm:p-5">
       <div className="flex items-start gap-3">
         <div
           className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl"
@@ -601,17 +602,17 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <h3 className="text-base font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
+            <PublicStyleTarget id="prizes.bonus.heading"><h3 className="text-base font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
               {bonus.name}
-            </h3>
+            </h3></PublicStyleTarget>
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--event-primary,#1F3D2B)] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[var(--event-primary-fg,#FFF)]">
               +{bonus.points_value} pts
             </span>
           </div>
           {bonus.description && (
-            <p className="mt-1 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
+            <PublicStyleTarget id="prizes.bonus.body"><p className="mt-1 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
               {bonus.description}
-            </p>
+            </p></PublicStyleTarget>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
             <span className="inline-flex items-center gap-1">
@@ -635,9 +636,9 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
             )}
           </div>
           {bonus.scope === "per_venue" && bonus.venues.length > 1 && (
-            <p className="mt-2 text-[12px] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+            <PublicStyleTarget id="prizes.bonus.meta"><p className="mt-2 text-[12px] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
               At: {bonus.venues.map((v) => v.name).join(" · ")}
-            </p>
+            </p></PublicStyleTarget>
           )}
           {isSocial && (bonus.social_location || bonus.social_hashtags) && (
             <div className="mt-2 flex flex-wrap gap-2 text-[12px] text-[var(--event-card-text,var(--event-body,#3D372C))]">
@@ -660,7 +661,7 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
           )}
         </div>
       </div>
-    </div>
+    </div></PublicStyleTarget>
   );
 }
 
@@ -674,7 +675,7 @@ function TabButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <PublicStyleTarget id="prizes.tabs.item"><button
       type="button"
       onClick={onClick}
       className={
@@ -685,7 +686,7 @@ function TabButton({
       }
     >
       {children}
-    </button>
+    </button></PublicStyleTarget>
   );
 }
 
@@ -735,7 +736,7 @@ function CelebrationHero({
                 🎁
               </div>
             </div>
-            <h1
+            <PublicStyleTarget id="prizes.hero.heading"><h1
               className="mt-2 text-[2.6rem] leading-none sm:text-[3.4rem]"
               style={{
                 fontFamily: funFont,
@@ -745,11 +746,11 @@ function CelebrationHero({
               }}
             >
               You&rsquo;re In the Draw!
-            </h1>
-            <p className="mx-auto mt-3 max-w-md text-sm sm:text-base text-[var(--event-page-text,var(--event-text,#3D372C))]">
+            </h1></PublicStyleTarget>
+            <PublicStyleTarget id="prizes.hero.body"><p className="mx-auto mt-3 max-w-md text-sm sm:text-base text-[var(--event-page-text,var(--event-text,#3D372C))]">
               Complete challenges to earn more points and increase your chances
               to win.
-            </p>
+            </p></PublicStyleTarget>
             <div
               className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] shadow-sm"
               style={{
@@ -768,7 +769,7 @@ function CelebrationHero({
                 🎁
               </div>
             </div>
-            <h1
+            <PublicStyleTarget id="prizes.hero.heading"><h1
               className="mt-2 text-[2.4rem] leading-none sm:text-[3rem]"
               style={{
                 fontFamily: funFont,
@@ -778,11 +779,11 @@ function CelebrationHero({
               }}
             >
               Prizes to be won
-            </h1>
-            <p className="mx-auto mt-3 max-w-md text-sm sm:text-base text-[var(--event-page-text,var(--event-text,#3D372C))]">
+            </h1></PublicStyleTarget>
+            <PublicStyleTarget id="prizes.hero.body"><p className="mx-auto mt-3 max-w-md text-sm sm:text-base text-[var(--event-page-text,var(--event-text,#3D372C))]">
               Earn points by checking in at venues to unlock prizes and enter
               prize draws.
-            </p>
+            </p></PublicStyleTarget>
           </>
         )}
       </div>
@@ -987,7 +988,7 @@ function AwardCard({
       : `${award.eligible_count} ${award.eligible_count === 1 ? "person" : "people"} in this draw`;
 
   return (
-    <div
+    <PublicStyleTarget id="prizes.card.surface" recordId={award.id}><div
       className={
         "relative overflow-hidden rounded-2xl border bg-[var(--event-card-bg,#FBF5E8)] shadow-sm transition-shadow hover:shadow-md " +
         (status === "eligible"
@@ -1020,9 +1021,9 @@ function AwardCard({
 
       <div className="p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h2 className="text-lg font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
+          <PublicStyleTarget id="prizes.card.heading" recordId={award.id}><h2 className="text-lg font-semibold text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
             {award.title}
-          </h2>
+          </h2></PublicStyleTarget>
           {status === "eligible" ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow">
               <PartyPopper className="h-3 w-3" /> You're in!
@@ -1033,9 +1034,9 @@ function AwardCard({
         </div>
 
         {award.description && (
-          <p className="mt-1.5 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
+          <PublicStyleTarget id="prizes.card.body" recordId={award.id}><p className="mt-1.5 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
             {award.description}
-          </p>
+          </p></PublicStyleTarget>
         )}
 
         {/* Progress bar */}
@@ -1063,14 +1064,14 @@ function AwardCard({
         )}
 
         {award.requires_all_locations && (
-          <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
+          <PublicStyleTarget id="prizes.card.meta" recordId={award.id}><p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
             + Visit all locations required
-          </p>
+          </p></PublicStyleTarget>
         )}
 
-        <p className="mt-3 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
+        <PublicStyleTarget id="prizes.card.body" recordId={award.id}><p className="mt-3 text-sm text-[var(--event-card-text,var(--event-body,#3D372C))]">
           <StatusMessage award={award} status={status} hasPassport={hasPassport} />
-        </p>
+        </p></PublicStyleTarget>
 
         {/* Footer meta */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--event-card-border,var(--event-border,#E6DCC7))]/70 pt-3 text-xs text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
@@ -1082,7 +1083,7 @@ function AwardCard({
           </span>
         </div>
       </div>
-    </div>
+    </div></PublicStyleTarget>
   );
 }
 

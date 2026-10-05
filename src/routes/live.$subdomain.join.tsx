@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -624,7 +625,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
           >
             Start your passport
           </div>
-          <h1
+          <PublicStyleTarget id="join.page.heading"><h1
             className="mt-1 text-3xl font-semibold"
             style={{
               color: "var(--event-page-heading)",
@@ -632,13 +633,13 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             }}
           >
             {event.name}
-          </h1>
-          <p
+          </h1></PublicStyleTarget>
+          <PublicStyleTarget id="join.page.intro"><p
             className="mt-2 text-sm"
             style={{ color: "var(--event-page-muted)" }}
           >
             No app download required. Takes under a minute.
-          </p>
+          </p></PublicStyleTarget>
         </div>
 
 
@@ -669,17 +670,17 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             >
               Welcome back
             </div>
-            <h2
+            <PublicStyleTarget id="join.returning.heading"><h2
               className="font-trail-serif mt-1 text-xl font-semibold"
               style={{ color: "var(--event-card-heading)" }}
             >
               You already have a passport for this trail
-            </h2>
-            <p className="mt-2 text-sm" style={{ color: "var(--event-card-text)" }}>
+            </h2></PublicStyleTarget>
+            <PublicStyleTarget id="join.returning.body"><p className="mt-2 text-sm" style={{ color: "var(--event-card-text)" }}>
               We found a passport saved on this device. Continue where you left
               off, or register again to issue a new passport link (your older
               link will stop working).
-            </p>
+            </p></PublicStyleTarget>
             <div className="mt-4 flex flex-col gap-2">
               <Link
                 to="/passport/$token"
@@ -692,7 +693,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
               >
                 Continue to passport
               </Link>
-              <button
+              <PublicStyleTarget id="join.returning.registerAgain"><button
                 type="button"
                 onClick={() => setShowRegisterAgain(true)}
                 className="h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
@@ -703,7 +704,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
                 }}
               >
                 Register again / replace passport
-              </button>
+              </button></PublicStyleTarget>
             </div>
           </section>
         )}
@@ -722,13 +723,13 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
         )}
 
         {!savedValidating && (!saved?.access_token || showRegisterAgain) && (
-          <p
+          <PublicStyleTarget id="join.page.notice"><p
             className="mb-3 text-center text-[11px]"
             style={{ color: "var(--event-page-muted)" }}
           >
             Already registered? Enter the same email below — we'll issue a new
             passport link and any older link will stop working.
-          </p>
+          </p></PublicStyleTarget>
         )}
 
 
@@ -882,7 +883,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             />
             <span>
               I accept the{" "}
-              <PublicLink
+              <PublicStyleTarget id="join.form.link"><PublicLink
                 to="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -890,9 +891,9 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
                 style={{ color: "var(--event-link)" }}
               >
                 terms
-              </PublicLink>{" "}
+              </PublicLink></PublicStyleTarget>{" "}
               and{" "}
-              <PublicLink
+              <PublicStyleTarget id="join.form.link"><PublicLink
                 to="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -900,7 +901,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
                 style={{ color: "var(--event-link)" }}
               >
                 privacy policy
-              </PublicLink>
+              </PublicLink></PublicStyleTarget>
               .
             </span>
           </label>
@@ -910,7 +911,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             </p>
           )}
 
-          <button
+          <PublicStyleTarget id="join.form.submit"><button
             type="submit"
             disabled={submitting}
             className="mt-5 h-12 w-full rounded-full text-sm font-semibold tracking-wide shadow disabled:opacity-60"
@@ -920,14 +921,14 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
             }}
           >
             {submitting ? "Creating passport…" : "Create my passport"}
-          </button>
+          </button></PublicStyleTarget>
 
-          <p
+          <PublicStyleTarget id="join.form.footnote"><p
             className="mt-3 text-center text-[11px] uppercase tracking-[0.22em]"
             style={{ color: "var(--event-card-muted)" }}
           >
             No app download required
-          </p>
+          </p></PublicStyleTarget>
         </form>}
         {showDiag && debugInfo && (
           <div className="mt-4">
@@ -1109,7 +1110,7 @@ function SuccessScreen({
           >
             Welcome to the trail
           </div>
-          <h1
+          <PublicStyleTarget id="join.success.heading"><h1
             className="mt-2 text-2xl font-semibold"
             style={{
               color: "var(--event-card-heading)",
@@ -1117,14 +1118,14 @@ function SuccessScreen({
             }}
           >
             Your passport is ready
-          </h1>
-          <p
+          </h1></PublicStyleTarget>
+          <PublicStyleTarget id="join.success.body"><p
             className="mt-3 text-sm leading-relaxed"
             style={{ color: "var(--event-card-text)" }}
           >
             Your private passport link is below. Save it — it's the only way
             back into your passport on a new device.
-          </p>
+          </p></PublicStyleTarget>
           <div
             className="mt-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
             style={{
@@ -1173,7 +1174,7 @@ function SuccessScreen({
           >
             Open my passport
           </Link>
-          <button
+          <PublicStyleTarget id="join.success.button"><button
             type="button"
             onClick={copy}
             className="mt-2 h-11 w-full rounded-full border text-sm font-semibold tracking-wide"
@@ -1184,8 +1185,8 @@ function SuccessScreen({
             }}
           >
             {copied ? "Copied!" : "Copy passport link"}
-          </button>
-          <button
+          </button></PublicStyleTarget>
+          <PublicStyleTarget id="join.success.button"><button
             type="button"
             onClick={resend}
             disabled={resendState === "sending"}
@@ -1199,7 +1200,7 @@ function SuccessScreen({
                 : resendState === "error"
                   ? `Couldn't send${resendMsg ? ` (${resendMsg})` : ""} — tap to retry`
                   : "Didn't get the email? Resend"}
-          </button>
+          </button></PublicStyleTarget>
 
           <div
             className="mt-4 rounded-xl border px-3 py-2 text-left text-xs"
@@ -1263,7 +1264,7 @@ function InfoScreen({
             backgroundColor: "var(--event-card-bg)",
           }}
         >
-          <h1
+          <PublicStyleTarget id="join.state.heading"><h1
             className="text-2xl font-semibold"
             style={{
               color: "var(--event-card-heading)",
@@ -1271,13 +1272,13 @@ function InfoScreen({
             }}
           >
             {title}
-          </h1>
-          <p
+          </h1></PublicStyleTarget>
+          <PublicStyleTarget id="join.state.message"><p
             className="mt-3 text-sm leading-relaxed"
             style={{ color: "var(--event-card-text)" }}
           >
             {message}
-          </p>
+          </p></PublicStyleTarget>
         </div>
       </div>
     </EventPaletteScope>

@@ -1,3 +1,4 @@
+import { PublicStyleTarget } from "@/components/public-style-target";
 // Shared loader/state for the public /live/$subdomain/{terms,privacy} pages.
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -131,13 +132,13 @@ export function PublicLegalShell({
 export function NotAvailable({ subdomain }: { subdomain: string }) {
   return (
     <PublicLegalShell subdomain={subdomain}>
-      <h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+      <PublicStyleTarget id="legal.heading"><h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
         Not available
-      </h1>
-      <p className="mt-3 text-sm text-[var(--event-body,#3D372C)]">
+      </h1></PublicStyleTarget>
+      <PublicStyleTarget id="legal.body"><p className="mt-3 text-sm text-[var(--event-body,#3D372C)]">
         This page isn&apos;t available right now. The event may not be live yet,
         or legal pages have not been configured.
-      </p>
+      </p></PublicStyleTarget>
     </PublicLegalShell>
   );
 }
@@ -159,15 +160,15 @@ export function ExternalLinkOnly({
   return (
     <PublicLegalShell subdomain={subdomain} eventName={eventName} eventId={eventId}>
 
-      <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+      <PublicStyleTarget id="legal.eyebrow"><p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
         {eventName}
-      </p>
-      <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+      </p></PublicStyleTarget>
+      <PublicStyleTarget id="legal.heading"><h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
         {title}
-      </h1>
-      <p className="mt-4 text-sm text-[var(--event-body,#3D372C)]">
+      </h1></PublicStyleTarget>
+      <PublicStyleTarget id="legal.body"><p className="mt-4 text-sm text-[var(--event-body,#3D372C)]">
         This document is published by the event organiser on an external site.
-      </p>
+      </p></PublicStyleTarget>
       <a
         href={url}
         target="_blank"
@@ -176,7 +177,7 @@ export function ExternalLinkOnly({
       >
         Open {title.toLowerCase()} ↗
       </a>
-      <p className="mt-3 break-all text-[11px] text-[var(--event-muted,#8A7E66)]">{url}</p>
+      <PublicStyleTarget id="legal.meta"><p className="mt-3 break-all text-[11px] text-[var(--event-muted,#8A7E66)]">{url}</p></PublicStyleTarget>
     </PublicLegalShell>
   );
 }
@@ -202,18 +203,18 @@ export function LocalLegalPage({
   return (
     <PublicLegalShell subdomain={subdomain} eventName={eventName} eventId={eventId}>
 
-      <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+      <PublicStyleTarget id="legal.eyebrow"><p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
         {eventName}
-      </p>
-      <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+      </p></PublicStyleTarget>
+      <PublicStyleTarget id="legal.heading"><h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
         {title}
-      </h1>
+      </h1></PublicStyleTarget>
       {(version || effective) && (
-        <p className="mt-2 text-[11px] text-[var(--event-muted,#8A7E66)]">
+        <PublicStyleTarget id="legal.meta"><p className="mt-2 text-[11px] text-[var(--event-muted,#8A7E66)]">
           {version ? `Version ${version}` : null}
           {version && effective ? " · " : null}
           {effective ? `Effective ${effective.toLocaleDateString()}` : null}
-        </p>
+        </p></PublicStyleTarget>
       )}
       <div className="mt-6">
         <LegalBody body={body} />
@@ -272,7 +273,7 @@ function LegalAccordionCard({
   const [open, setOpen] = useState(Boolean(defaultOpen));
   return (
     <div className="rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm">
-      <button
+      <PublicStyleTarget id="legal.section.toggle"><button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -285,24 +286,24 @@ function LegalAccordionCard({
           className={`h-5 w-5 shrink-0 text-[var(--event-primary,#1F3D2B)] transition-transform ${open ? "rotate-180" : ""}`}
           aria-hidden
         />
-      </button>
+      </button></PublicStyleTarget>
       {open && (
         <div className="border-t border-[var(--event-border,#E6DCC7)] px-5 py-5">
           {section.kind === "local" ? (
             <>
               {section.version && (
-                <p className="mb-3 text-[11px] text-[var(--event-muted,#8A7E66)]">
+                <PublicStyleTarget id="legal.meta"><p className="mb-3 text-[11px] text-[var(--event-muted,#8A7E66)]">
                   Version {section.version}
-                </p>
+                </p></PublicStyleTarget>
               )}
               <LegalBody body={section.body} />
             </>
           ) : section.kind === "external" ? (
             <div>
-              <p className="text-sm text-[var(--event-body,#3D372C)]">
+              <PublicStyleTarget id="legal.body"><p className="text-sm text-[var(--event-body,#3D372C)]">
                 This document is published by the event organiser on an external
                 site.
-              </p>
+              </p></PublicStyleTarget>
               <a
                 href={section.url}
                 target="_blank"
@@ -311,14 +312,14 @@ function LegalAccordionCard({
               >
                 Open {section.title.toLowerCase()} ↗
               </a>
-              <p className="mt-3 break-all text-[11px] text-[var(--event-muted,#8A7E66)]">
+              <PublicStyleTarget id="legal.meta"><p className="mt-3 break-all text-[11px] text-[var(--event-muted,#8A7E66)]">
                 {section.url}
-              </p>
+              </p></PublicStyleTarget>
             </div>
           ) : (
-            <p className="text-sm text-[var(--event-muted,#8A7E66)]">
+            <PublicStyleTarget id="legal.body"><p className="text-sm text-[var(--event-muted,#8A7E66)]">
               Not available for this event.
-            </p>
+            </p></PublicStyleTarget>
           )}
         </div>
       )}
@@ -379,15 +380,15 @@ export function CombinedLegalPage({
       eventId={row.event_id}
       branding={branding}
     >
-      <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
+      <PublicStyleTarget id="legal.eyebrow"><p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
         {row.event_name}
-      </p>
-      <h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
+      </p></PublicStyleTarget>
+      <PublicStyleTarget id="legal.heading"><h1 className="mt-1 font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]">
         Terms & Privacy
-      </h1>
-      <p className="mt-3 text-sm text-[var(--event-body,#3D372C)]">
+      </h1></PublicStyleTarget>
+      <PublicStyleTarget id="legal.body"><p className="mt-3 text-sm text-[var(--event-body,#3D372C)]">
         Review the event terms and privacy information.
-      </p>
+      </p></PublicStyleTarget>
       <div className="mt-6 space-y-3">
         <LegalAccordionCard
           header="Terms & Conditions"

@@ -366,14 +366,14 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
           {visited.kind === "no_passport" && (
             <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-3 py-1 text-[11px] font-medium text-[var(--event-text,#3D372C)]">
               <span>Create a passport to track visited venues</span>
-              <PublicLink to="/join" className="font-semibold text-[var(--event-primary,#1F3D2B)] underline underline-offset-2">
+              <PublicStyleTarget id="venue.page.join"><PublicLink to="/join" className="font-semibold text-[var(--event-primary,#1F3D2B)] underline underline-offset-2">
                 Start
-              </PublicLink>
+              </PublicLink></PublicStyleTarget>
             </div>
           )}
 
           {extras?.emotive_text && (
-            <p
+            <PublicStyleTarget id="venue.page.emotive" recordId={venueId}><p
               className="mt-4 whitespace-pre-line text-2xl leading-snug"
               style={{
                 fontFamily: emotiveStack,
@@ -381,13 +381,13 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
               }}
             >
               {extras.emotive_text}
-            </p>
+            </p></PublicStyleTarget>
           )}
 
           {venue.description && (
-            <p className={v2 ? "mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-page-text,var(--event-text,#3D372C))]" : "mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-text,#3D372C)]"}>
+            <PublicStyleTarget id="venue.page.body" recordId={venueId}><p className={v2 ? "mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-page-text,var(--event-text,#3D372C))]" : "mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-text,#3D372C)]"}>
               {venue.description}
-            </p>
+            </p></PublicStyleTarget>
           )}
 
 
@@ -411,9 +411,9 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
                     Offer
                   </div>
-                  <p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-text,#3D372C)]">
+                  <PublicStyleTarget id="venue.offer.body" recordId={venueId}><p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed text-[var(--event-text,#3D372C)]">
                     {venue.offer_summary}
-                  </p>
+                  </p></PublicStyleTarget>
                 </div>
               </div>
             );
@@ -459,30 +459,30 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
                       <Users className="h-5 w-5" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h3
+                      <PublicStyleTarget id="venue.bonus.heading"><h3
                         className="font-trail-serif text-[16px] font-semibold leading-snug"
                         style={{ color: "var(--event-primary,#1F3D2B)" }}
                       >
                         {challenge.name}
-                      </h3>
-                      <p
+                      </h3></PublicStyleTarget>
+                      <PublicStyleTarget id="venue.bonus.meta"><p
                         className="mt-0.5 text-[13px]"
                         style={{ color: "var(--event-muted,#8A7E66)" }}
                       >
                         {challenge.kind === "social"
                           ? "Share on socials"
                           : `Earn +${challenge.points_value} bonus points`}
-                      </p>
+                      </p></PublicStyleTarget>
                     </div>
                   </div>
 
                   {challenge.description && (
-                    <p
+                    <PublicStyleTarget id="venue.bonus.body"><p
                       className="mt-3 whitespace-pre-line text-[14px] leading-relaxed"
                       style={{ color: "var(--event-text,#3D372C)" }}
                     >
                       {challenge.description}
-                    </p>
+                    </p></PublicStyleTarget>
                   )}
 
                   {challenge.kind === "social" &&
@@ -593,13 +593,13 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
               </a></PublicStyleTarget>
             )}
             {venue.phone && (
-              <a
+              <PublicStyleTarget id="venue.actions.phone" recordId={venueId}><a
                 href={`tel:${venue.phone.replace(/\s+/g, "")}`}
                 className="flex items-center justify-between rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm font-medium text-[var(--event-primary,#1F3D2B)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/40"
               >
                 <span>Call {venue.phone}</span>
                 <span aria-hidden>›</span>
-              </a>
+              </a></PublicStyleTarget>
             )}
           </div>
 
