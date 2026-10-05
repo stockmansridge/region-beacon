@@ -34,7 +34,7 @@ import { ScannerView } from "./scan";
 import { BonusView } from "./collect.bonus.$token";
 import { VenueSortControl } from "@/components/venue-sort-control";
 import { PublicStyleScope } from "@/components/public-style-scope";
-import { parsePublicStyleOverrides as parsePSO, publicStyleCss as psoCss } from "@/lib/public-style-overrides";
+import { clearPublicStyleRecordPropertyConflicts, parsePublicStyleOverrides as parsePSO, publicStyleCss as psoCss, publicStyleRecordPropertyConflicts } from "@/lib/public-style-overrides";
 import { applyMapMarkerSelection, mapMarkerAnnotationOptions, resolveMapMarkerStyle } from "@/lib/map-marker-style";
 import { MapMarkerGlyph } from "./live.$subdomain.map";
 import { EventPublicLanding } from "@/components/event-public-landing";
@@ -840,5 +840,37 @@ describe("Result page bottom buttons", () => {
     cleanup();
     const t = render(inPreview(<V2ResultPreview page="tasting" state="claimed" event={ev} venueName={null} />));
     expect(t.queryAllByText("Sample (editor only)").length).toBe(1);
+  });
+});
+
+describe("Venue detail directions shared and per-venue colours", () => {
+  const venue = (id: string, name: string) => ({ venue_id: id, name, description: null, offer_summary: null, offer_display_icon: null, offer_display_colour: null, offer_display_foreground_colour: null, address: `${id} Main Road`, website_url: null, phone: null, logo_path: null, cover_path: null, lat: null, lng: null, order_index: 0 });
+
+  it("shows the shared text colour on two records, preserves an independent record override, then deliberately applies the shared colour to all", async () => {
+    const { PublicVenueDetailPage } = await import("./live.$subdomain.venues.$venueId");
+    const initial = { version: 1, items: { "venue.actions.directions": { normal: { color: "#112233", iconColor: "#778899", backgroundColor: "#EEEEEE" } } }, records: { "venue.actions.directions": { "venue-b": { normal: { color: "#445566", borderColor: "#AABBCC" } } } } } as never;
+    expect(publicStyleRecordPropertyConflicts(initial, "venue.actions.directions", "normal", "color")).toEqual(["venue-b"]);
+    const renderPair = (doc: any) => render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><><PublicVenueDetailPage subdomain="preview" venueId="venue-a" previewData={{ event: { event_id: "event-v2", name: "Trail", public_template_version: "v2", v2_style_config: doc } as never, venue: venue("venue-a", "A") }} /><PublicVenueDetailPage subdomain="preview" venueId="venue-b" previewData={{ event: { event_id: "event-v2", name: "Trail", public_template_version: "v2", v2_style_config: doc } as never, venue: venue("venue-b", "B") }} /></></PublicStyleScope>, "/venues/venue-a"));
+    const before = renderPair(initial);
+    const buttons = Array.from(before.container.querySelectorAll<HTMLElement>('[data-event-style="venue.actions.directions"]'));
+    expect(buttons.map((button) => button.style.color)).toEqual(["#112233", "#445566"]);
+    expect(buttons[0].querySelector<HTMLElement>("span[aria-hidden]")?.style.color).toContain("--item-icon-color");
+    cleanup();
+    const applied = clearPublicStyleRecordPropertyConflicts(initial, "venue.actions.directions", "normal", "color");
+    expect(applied.records?.["venue.actions.directions"]?.["venue-b"]?.normal).toEqual({ borderColor: "#AABBCC" });
+    const after = renderPair(applied);
+    expect(Array.from(after.container.querySelectorAll<HTMLElement>('[data-event-style="venue.actions.directions"]')).map((button) => button.style.color)).toEqual(["#112233", "#112233"]);
+  });
+
+  it("warns when Every venue is masked and offers an explicit colour-only apply action", async () => {
+    const { ItemStyleInspector } = await import("./admin.events.$eventId_.branding");
+    const clear = vi.fn();
+    const item = (await import("@/lib/public-style-overrides")).PUBLIC_STYLE_ELEMENTS.find((entry) => entry.id === "venue.actions.directions");
+    expect(item).toBeDefined();
+    if (!item) return;
+    const screen = render(<ItemStyleInspector item={item} values={{ color: "#112233" }} hasOverride inherited={{}} state="normal" setState={vi.fn()} setProperty={vi.fn()} reset={vi.fn()} undo={vi.fn()} redo={vi.fn()} canUndo={false} canRedo={false} disabled={false} clear={vi.fn()} quickColours={[]} customFonts={[]} record={{ id: "venue-a", scope: "type", setScope: vi.fn() }} recordPropertyConflicts={(property) => property === "color" ? ["venue-b"] : []} clearRecordPropertyConflicts={clear} />);
+    expect(screen.getByText(/venue-specific text colour setting is still taking priority/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Apply chosen colour to all venues" }));
+    expect(clear).toHaveBeenCalledWith("color");
   });
 });

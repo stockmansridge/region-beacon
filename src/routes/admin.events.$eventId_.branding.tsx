@@ -103,6 +103,7 @@ import {
   resolvePublicTemplateVersion,
   validatePublicStyleOverrides,
   publicStylePropertyValue,
+  publicStyleRecordPropertyConflicts,
   type PublicStyleElementId,
   type PublicStyleElementDefinition,
   type PublicStyleOverrideDocument,
@@ -111,6 +112,7 @@ import {
   PUBLIC_TRAIL_TAB_IDS,
   PUBLIC_TRAIL_TAB_LABEL_MAX,
   cleanPublicTrailTabLabel,
+  clearPublicStyleRecordPropertyConflicts,
   cleanPublicCopy,
   publicStyleAllowsTransparent,
   isPublicCopyKey,
@@ -2316,6 +2318,11 @@ function VisualBrandingEditor({
     });
   };
 
+  const clearRecordPropertyConflicts = (property: PublicStyleProperty) => {
+    if (!itemMeta) return;
+    updateStyleDocument((next) => clearPublicStyleRecordPropertyConflicts(next, itemMeta.id, styleState, property));
+  };
+
   const navItems = form.style_overrides.navigation?.items ?? DEFAULT_PUBLIC_NAVIGATION.items;
   const updateNavigation = (items: typeof navItems) => updateStyleDocument((next) => ({ ...next, navigation: { items: [...items] } }));
   const updateNavigationItem = (id: string, patch: { label?: string | null; icon?: PublicNavIconId }) =>
@@ -2693,6 +2700,8 @@ function VisualBrandingEditor({
             reset={resetItem} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0}
             disabled={!canEdit || busy || comparisonReadOnly} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
             record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope, label: itemMeta.id === "shared.navigation.tabItem" || itemMeta.id === "shared.navigation.currentTab" ? "menu item" : undefined } : null}
+            recordPropertyConflicts={(property) => publicStyleRecordPropertyConflicts(form.style_overrides, itemMeta.id, styleState, property)}
+            clearRecordPropertyConflicts={clearRecordPropertyConflicts}
           /> : null}
           {itemMeta && ["shared.navigation.surface", "shared.navigation.item", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab"].includes(itemMeta.id) ? <NavigationMenuInspector
             items={navItems} selectedId={selectedRecord} disabled={!canEdit || busy || comparisonReadOnly}
@@ -3093,7 +3102,7 @@ const PROPERTY_LABELS: Record<PublicStyleProperty, string> = {
   backgroundGradient: "Gradient",
 };
 
-function ItemStyleInspector({ item, values, hasOverride, inherited, state, setState, setProperty, reset, undo, redo, canUndo, canRedo, disabled, clear, quickColours, customFonts, record }: {
+export function ItemStyleInspector({ item, values, hasOverride, inherited, state, setState, setProperty, reset, undo, redo, canUndo, canRedo, disabled, clear, quickColours, customFonts, record, recordPropertyConflicts, clearRecordPropertyConflicts }: {
   item: PublicStyleElementDefinition; values: Partial<Record<PublicStyleProperty, string | number>>; hasOverride: boolean;
   inherited: Partial<Record<PublicStyleProperty, string>>;
   state: PublicStyleState; setState: (state: PublicStyleState) => void;
@@ -3101,6 +3110,8 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
   reset: () => void; undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean; disabled: boolean; clear: () => void;
   quickColours: QuickColour[]; customFonts: EventCustomFont[];
   record: { id: string; scope: "record" | "type"; setScope: (scope: "record" | "type") => void; label?: string } | null;
+  recordPropertyConflicts?: (property: PublicStyleProperty) => string[];
+  clearRecordPropertyConflicts?: (property: PublicStyleProperty) => void;
 }) {
   const colourProperties = item.properties.filter((property) => property.endsWith("Color") || property === "color");
   const hasTypography = item.properties.includes("fontFamily");
@@ -3114,7 +3125,11 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
     <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !hasOverride}>Reset this item</Button></div>
     {item.states?.length ? <Field label="Appearance (shown in the preview)"><Select value={state} onValueChange={(value) => setState(value as PublicStyleState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
     <div className="mt-5 space-y-4">
-      {colourProperties.map((property) => <ColourControl key={property} label={PROPERTY_LABELS[property]} value={values[property] as string | undefined} inherited={inherited[property] ?? ""} quickColours={quickColours} disabled={disabled} allowTransparent={publicStyleAllowsTransparent(property)} onCommit={(value) => setProperty(property, value)} />)}
+      {colourProperties.map((property) => {
+        const conflicts = record?.scope === "type" ? recordPropertyConflicts?.(property) ?? [] : [];
+        const chosen = values[property] as string | undefined;
+        return <ColourControl key={property} label={PROPERTY_LABELS[property]} value={chosen} inherited={inherited[property] ?? ""} quickColours={quickColours} disabled={disabled} allowTransparent={publicStyleAllowsTransparent(property)} onCommit={(value) => setProperty(property, value)} warning={conflicts.length ? <div className="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900"><p>{conflicts.length} venue-specific {PROPERTY_LABELS[property].toLowerCase()} {conflicts.length === 1 ? "setting is" : "settings are"} still taking priority.</p><Button type="button" variant="outline" size="sm" className="mt-2" disabled={disabled || !chosen} onClick={() => clearRecordPropertyConflicts?.(property)}>Apply chosen colour to all venues</Button><p className="mt-1 text-[11px]">Only conflicting {PROPERTY_LABELS[property].toLowerCase()} values will be cleared. Other venue-specific styles stay unchanged.</p></div> : null} />;
+      })}
       {item.properties.includes("opacity") ? <Field label={item.id === "home.hero.cover" ? "Tint layer opacity" : "Opacity"}>
         <div className="flex items-center gap-3">
           <input type="range" aria-label="Opacity" min={0} max={100} step={1} value={opacityPercent ?? Number(inherited.opacity ?? 100)} disabled={disabled} onChange={(event) => setProperty("opacity", Number(event.target.value) / 100)} className="flex-1" />

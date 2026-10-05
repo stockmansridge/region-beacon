@@ -809,6 +809,59 @@ export function publicStyleItem(
   return { normal: { ...(base.normal ?? {}), ...(record.normal ?? {}) }, states };
 }
 
+/** Record IDs whose per-record value currently wins over the shared type default. */
+export function publicStyleRecordPropertyConflicts(
+  document: PublicStyleOverrideDocument | null | undefined,
+  id: string,
+  state: PublicStyleState,
+  property: PublicStyleProperty,
+): string[] {
+  const parsed = parsePublicStyleOverrides(document);
+  const records = parsed.records?.[id] ?? {};
+  return Object.entries(records)
+    .filter(([, item]) => {
+      const values = state === "normal" ? item.normal : item.states?.[state];
+      return values?.[property] !== undefined;
+    })
+    .map(([recordId]) => recordId);
+}
+
+/**
+ * Let a deliberate “apply to every record” action remove only the selected
+ * property's record-level values. Other properties and states are preserved.
+ */
+export function clearPublicStyleRecordPropertyConflicts(
+  document: PublicStyleOverrideDocument,
+  id: string,
+  state: PublicStyleState,
+  property: PublicStyleProperty,
+): PublicStyleOverrideDocument {
+  const next = structuredClone(parsePublicStyleOverrides(document));
+  const records = { ...(next.records ?? {}) };
+  const forItem = { ...(records[id] ?? {}) };
+  for (const [recordId, source] of Object.entries(forItem)) {
+    const item = structuredClone(source);
+    if (state === "normal") {
+      const normal = { ...(item.normal ?? {}) };
+      delete normal[property];
+      item.normal = Object.keys(normal).length ? normal : undefined;
+    } else {
+      const states = { ...(item.states ?? {}) };
+      const values = { ...(states[state] ?? {}) };
+      delete values[property];
+      if (Object.keys(values).length) states[state] = values;
+      else delete states[state];
+      item.states = Object.keys(states).length ? states : undefined;
+    }
+    if (item.normal || item.states) forItem[recordId] = item;
+    else delete forItem[recordId];
+  }
+  if (Object.keys(forItem).length) records[id] = forItem;
+  else delete records[id];
+  next.records = Object.keys(records).length ? records : undefined;
+  return next;
+}
+
 /** Element-level CSS. Icon colour never paints the element text; icon background only paints icon surfaces. */
 function standardStyle(properties: PublicStyleProperties | undefined, kind?: PublicStyleElementDefinition["kind"], eventId?: string | null): CSSProperties {
   if (!properties) return {};
