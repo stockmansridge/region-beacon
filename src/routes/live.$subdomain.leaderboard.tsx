@@ -271,12 +271,17 @@ function EmptyState({ title, body }: { title: string; body: string }) {
   );
 }
 
-function tierColor(tier: string | null): { bg: string; fg: string } {
+// Original V1 leaderboard bronze from the first leaderboard renderer and the
+// tier introduction (git c6eec787 / e58af3cd). V2 keeps this semantic bronze
+// independent of an event's accent while explicit V2 target overrides still win.
+const V1_LEADERBOARD_BRONZE = "#B5572A";
+
+function tierColor(tier: string | null, v2: boolean): { bg: string; fg: string } {
   const t = (tier ?? "").toLowerCase();
   if (t === "complete") return { bg: "var(--event-page-heading, var(--event-primary, #1F3D2B))", fg: "var(--event-page-bg)" };
   if (t === "gold") return { bg: "#C9A24A", fg: "#1F1A12" };
   if (t === "silver") return { bg: "#B8B0A0", fg: "#1F1A12" };
-  if (t === "bronze") return { bg: "var(--event-accent)", fg: "var(--event-page-bg)" };
+  if (t === "bronze") return { bg: v2 ? V1_LEADERBOARD_BRONZE : "var(--event-accent)", fg: "var(--event-page-bg)" };
   return { bg: "var(--event-card-border)", fg: "var(--event-card-text)" };
 }
 
@@ -299,7 +304,7 @@ function LeaderboardList({ rows, v2 }: { rows: LeaderboardRow[]; v2: boolean }) 
         const stamps = r.stamps ?? r.visit_count ?? null;
         const points = r.points ?? null;
         const tier = r.tier;
-        const tc = tierColor(tier);
+        const tc = tierColor(tier, v2);
         const slot = rankSlot(r.rank ?? i + 1);
         const tierTemplateSlot = tierSlot(tier);
         return (
@@ -364,7 +369,7 @@ function RankBadge({ rank, v2 }: { rank: number; v2: boolean }) {
     : silver
       ? "#B8B0A0"
       : bronze
-        ? "var(--event-accent)"
+        ? v2 ? V1_LEADERBOARD_BRONZE : "var(--event-accent)"
         : "var(--event-card-heading)";
   return (
     <PublicStyleTarget id="leaderboard.rank.surface" recordId={rankSlot(rank)}><div
