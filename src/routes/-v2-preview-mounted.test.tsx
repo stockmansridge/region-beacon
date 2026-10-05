@@ -9,11 +9,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, fireEvent, act } from "@testing-library/react";
 
-const rpc = vi.fn(async () => ({ data: null, error: null }));
-const from = vi.fn(() => { throw new Error("no table access in preview"); });
+const { rpc, from, routerNavigate } = vi.hoisted(() => ({
+  rpc: vi.fn(async () => ({ data: null, error: null })),
+  from: vi.fn(() => { throw new Error("no table access in preview"); }),
+  routerNavigate: vi.fn(),
+}));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc, from, storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: "" } }) }) }, auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } } }));
 vi.mock("@tanstack/react-start", async () => ({ ...(await vi.importActual<object>("@tanstack/react-start")), useServerFn: () => vi.fn(async () => { throw new Error("server fn in preview"); }) }));
-const routerNavigate = vi.fn();
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof import("@tanstack/react-router")>("@tanstack/react-router");
   return {
