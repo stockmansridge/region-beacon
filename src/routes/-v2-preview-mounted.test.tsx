@@ -804,16 +804,19 @@ describe("header title + top spacing", () => {
 
 describe("Prizes V2 section toggle", () => {
   it("surface/current/unselected targets follow the active tab; labels are V2-only", async () => {
-    const { PublicPrizesPage } = await import("./live.$subdomain.prizes");
+    const { AwardsPage } = await import("./live.$subdomain.prizes");
+    const { resolveEventBrandingKeys } = await import("@/lib/use-event-palette");
     const doc = { version: 1, items: { "prizes.tabs.surface": { normal: { backgroundColor: "transparent", borderColor: "#111111" } }, "prizes.tabs.currentItem": { normal: { backgroundColor: "#222222" } } },
       records: { "prizes.tabs.item": { bonus: { normal: { color: "#333333" } } } }, copy: { labels: { "prizes.tabs.bonus": "Extras" } } };
-    const P = PublicPrizesPage as unknown as React.FC<Record<string, unknown>>;
-    const pd = { branding: {}, eventInfo: { event_id: "e1", name: "T" }, awards: [], bonuses: [] };
-    const { container, getByText } = render(inPreview(<PublicStyleScope eventId="e1" document={doc as never} enabled><P subdomain="preview" previewData={pd} /></PublicStyleScope>, "/prizes"));
+    const branding = resolveEventBrandingKeys({ ...V2_EVENT } as never, { public_template_version: "v2", v2_style_config: doc as never });
+    const { container, getByText } = render(inPreview(<AwardsPage subdomain="preview" previewData={{ branding, eventInfo: { event_id: "e1", event_name: "T" } as never, awards: [], bonuses: [], recentCheckins: [], hasPassport: true }} />, "/prizes"));
     const t = (i: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${i}"]`);
     expect(t("prizes.tabs.surface")?.style.backgroundColor).toBe("transparent");
     expect(t("prizes.tabs.currentItem@prizes")?.style.backgroundColor).toBe("rgb(34, 34, 34)");
     expect(t("prizes.tabs.item@bonus")?.style.color).toBe("rgb(51, 51, 51)");
     expect(getByText("Extras")).toBeTruthy();
+    fireEvent.click(getByText("Extras"));
+    expect(t("prizes.tabs.currentItem@bonus")).not.toBeNull();
+    expect(t("prizes.tabs.item@prizes")).not.toBeNull();
   });
 });
