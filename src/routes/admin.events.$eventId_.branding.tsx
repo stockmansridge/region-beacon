@@ -2483,7 +2483,7 @@ function VisualBrandingEditor({
         <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-4 lg:max-h-[calc(100%-2rem)] lg:overflow-y-auto">
           <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{previewPage === "home" ? "Landing / home" : previewPage === "venue" ? "Venue detail" : previewPage}</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
-            {PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id) && (item.page === previewPage || item.page === "shared")).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+            {PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id) && (item.page === (["terms", "privacy"].includes(previewPage) ? "legal" : previewPage) || item.page === "shared")).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
           <div className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Shared theme</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
@@ -2575,17 +2575,32 @@ function VisualBrandingEditor({
   );
 }
 
-/** Items whose real public component carries a V2 marker on the home page today. */
+/** Items whose real public component carries a V2 marker (kept in sync with PublicStyleTarget / role() call sites). */
 const V2_WIRED_ITEMS = new Set<string>([
-  "shared.navigation.surface", "shared.navigation.item", "shared.navigation.activeItem", "shared.navigation.drawer",
-  "home.page.surface", "home.hero.surface", "home.hero.image", "home.hero.cover", "home.hero.logo", "home.hero.welcomeLabel",
-  "home.hero.heading", "home.hero.welcomeCopy", "home.summary.surface", "home.summary.ring",
-  "home.primaryCta", "home.shareButton", "home.prizesButton", "home.venuesButton",
-  "home.bonusPromo.surface", "home.bonusPromo.icon", "home.bonusPromo.heading", "home.bonusPromo.body",
-  "home.nextPrize.surface", "home.nextPrize.icon", "home.nextPrize.heading", "home.nextPrize.progress",
-  "home.collect.surface", "home.collect.heading", "home.collect.cta", "home.stamps.tile", "home.stamps.label",
-  "venues.page.heading", "venues.card.surface", "venues.card.heading", "venues.card.meta",
-  "venue.actions.directions", "venue.actions.website", "offers.card.surface",
+  "bookmarks.card", "bookmarks.empty.body", "bookmarks.empty.cta", "bookmarks.empty.heading", "bookmarks.page.heading",
+  "bookmarks.page.intro", "faq.item.answer", "faq.item.question", "faq.item.toggle", "faq.page.eyebrow",
+  "faq.page.heading", "faq.state.message", "home.bonusPromo.body", "home.bonusPromo.heading", "home.bonusPromo.icon",
+  "home.bonusPromo.surface", "home.collect.cta", "home.collect.heading", "home.collect.surface", "home.hero.heading",
+  "home.hero.logo", "home.hero.surface", "home.hero.welcomeCopy", "home.nextPrize.heading", "home.nextPrize.icon",
+  "home.nextPrize.progress", "home.nextPrize.surface", "home.page.surface", "home.stamps.label", "home.stamps.tile",
+  "join.form.footnote", "join.form.link", "join.form.submit", "join.page.heading", "join.page.intro",
+  "join.page.notice", "join.returning.body", "join.returning.heading", "join.returning.registerAgain", "join.state.heading",
+  "join.state.message", "join.success.body", "join.success.button", "join.success.heading", "leaderboard.empty.body",
+  "leaderboard.empty.heading", "leaderboard.footnote", "leaderboard.heading", "leaderboard.page.eyebrow", "leaderboard.page.intro",
+  "leaderboard.row.name", "legal.body", "legal.eyebrow", "legal.heading", "legal.meta",
+  "legal.section.toggle", "map.card.body", "map.card.close", "map.card.directions", "map.card.heading",
+  "map.controls.item", "map.list.card", "map.page.count", "map.page.heading", "map.page.join",
+  "map.unmapped.label", "map.unmapped.link", "offers.card.body", "offers.card.heading", "offers.card.surface",
+  "offers.card.venue", "offers.page.heading", "offers.page.intro", "passport.actions.copyLink", "passport.actions.support",
+  "passport.award.body", "passport.hero.body", "passport.hero.eyebrow", "passport.hero.heading", "passport.progress.body",
+  "passport.progress.heading", "passport.rewards.heading", "passport.rewards.intro", "passport.stamps.empty", "passport.stamps.heading",
+  "passport.stamps.intro", "prizes.bonus.body", "prizes.bonus.heading", "prizes.bonus.meta", "prizes.bonus.surface",
+  "prizes.card.body", "prizes.card.heading", "prizes.card.meta", "prizes.card.surface", "prizes.hero.body",
+  "prizes.hero.heading", "prizes.sort.item", "prizes.tabs.item", "shared.navigation.activeItem", "shared.navigation.drawer",
+  "shared.navigation.item", "shared.navigation.surface", "venue.actions.directions", "venue.actions.phone", "venue.actions.website",
+  "venue.bonus.body", "venue.bonus.heading", "venue.bonus.meta", "venue.offer.body", "venue.page.body",
+  "venue.page.emotive", "venue.page.heading", "venue.page.join", "venues.card.directions", "venues.card.distance",
+  "venues.card.heading", "venues.card.meta", "venues.card.surface", "venues.page.heading", "venues.page.intro",
 ]);
 const PUBLIC_STYLE_PAGES_PENDING = ["passport", "join", "venues", "venue", "offers", "prizes", "map", "leaderboard", "faq", "legal", "scan", "checkin", "bonus", "tasting", "shared navigation"];
 
