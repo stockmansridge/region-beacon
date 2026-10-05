@@ -333,6 +333,7 @@ describe("Leaderboard V2 person-card targets", () => {
     } } as never;
     const { container } = render(inPreview(<PublicLeaderboardPage subdomain="preview" previewData={{ branding: branding("event-a", doc), eventId: "event-a", rows }} />, "/leaderboard"));
     const get = (instance: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${instance}"]`)!;
+    console.log(get("leaderboard.rank.surface@first")?.outerHTML, container.querySelector("[data-public-style-root]")?.innerHTML.slice(0, 600));
     expect(get("leaderboard.rank.surface@first").style.backgroundColor).toBe("#202122");
     expect(get("leaderboard.rank@first").style.fontSize).toBe("19px");
     expect(get("leaderboard.rank@first").style.color).toBe("#101112");
