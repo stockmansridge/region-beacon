@@ -2674,7 +2674,7 @@ function VisualBrandingEditor({
             inherited={inherited} state={styleState} setState={setStyleState} setProperty={(property, value) => { setItemProperty(property, value); if (typeof value === "string") rememberColour(value); }}
             reset={resetItem} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0}
             disabled={!canEdit || busy || comparisonReadOnly} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
-            record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope, label: itemMeta.id === "shared.navigation.tabItem" ? "menu item" : undefined } : null}
+            record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope, label: itemMeta.id === "shared.navigation.tabItem" || itemMeta.id === "shared.navigation.currentTab" ? "menu item" : undefined } : null}
           /> : null}
           {itemMeta && ["shared.navigation.surface", "shared.navigation.item", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab"].includes(itemMeta.id) ? <NavigationMenuInspector
             items={navItems} selectedId={selectedRecord} disabled={!canEdit || busy || comparisonReadOnly}
