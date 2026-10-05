@@ -1,5 +1,6 @@
 import { PublicBackLink } from "@/components/public-back-link";
-import { usePublicStyleTarget } from "@/components/public-style-scope";
+import { usePublicStyleDocument, usePublicStyleEnabled, usePublicStyleTarget } from "@/components/public-style-scope";
+import { publicCopy, PUBLIC_COPY_DEFAULTS, type PublicPrizeTabId } from "@/lib/public-style-overrides";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -416,14 +417,10 @@ export function AwardsPage({
           legacyClassName="inline-flex items-center text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-link,var(--event-primary,#1F3D2B))] underline-offset-4 hover:underline" />
 
         {/* Tabs */}
-        <div className="mt-4 flex rounded-full border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-1 text-sm font-semibold uppercase tracking-[0.16em]">
-          <TabButton active={tab === "prizes"} onClick={() => setTab("prizes")}>
-            Prizes
-          </TabButton>
-          <TabButton active={tab === "bonus"} onClick={() => setTab("bonus")}>
-            Bonus Points
-          </TabButton>
-        </div>
+        <PublicStyleTarget id="prizes.tabs.surface"><div className="mt-4 flex rounded-full border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] p-1 text-sm font-semibold uppercase tracking-[0.16em]">
+          <TabButton tabId="prizes" active={tab === "prizes"} onClick={() => setTab("prizes")} />
+          <TabButton tabId="bonus" active={tab === "bonus"} onClick={() => setTab("bonus")} />
+        </div></PublicStyleTarget>
 
         {tab === "prizes" && (
           <>
@@ -544,7 +541,7 @@ function SortPill({ active, onClick, children }: { active: boolean; onClick: () 
           : "border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] text-[var(--event-card-muted,var(--event-muted,#8A7E66))] hover:text-[var(--event-primary,#1F3D2B)]")
       }
     >
-      {children}
+      {label}
     </button></PublicStyleTarget>
   );
 }
@@ -664,20 +661,25 @@ function BonusCard({ bonus, userLoc, eventLogoUrl }: { bonus: BonusEntry; userLo
 }
 
 function TabButton({
+  tabId,
   active,
   onClick,
-  children,
 }: {
+  tabId: PublicPrizeTabId;
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
 }) {
+  const v2 = usePublicStyleEnabled();
+  const styleDocument = usePublicStyleDocument();
+  // V1 keeps the exact legacy wording; V2 may use event-scoped allowlisted labels.
+  const label = v2 ? publicCopy(styleDocument, `prizes.tabs.${tabId}`) : PUBLIC_COPY_DEFAULTS[`prizes.tabs.${tabId}`];
   return (
-    <PublicStyleTarget id="prizes.tabs.item"><button
+    <PublicStyleTarget id={active ? "prizes.tabs.currentItem" : "prizes.tabs.item"} recordId={tabId}><button
       type="button"
       onClick={onClick}
+      aria-pressed={v2 ? active : undefined}
       className={
-        "flex-1 rounded-full px-4 py-2 text-xs transition-colors " +
+        "flex-1 rounded-full px-4 py-2 text-xs transition-colors " + (v2 ? "box-border border border-transparent " : "") +
         (active
           ? "bg-[var(--event-primary,#1F3D2B)] text-[var(--event-primary-fg,#FFF)] shadow-sm"
           : "text-[var(--event-card-muted,var(--event-muted,#8A7E66))] hover:text-[var(--event-primary,#1F3D2B)]")
