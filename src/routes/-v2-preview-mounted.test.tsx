@@ -34,6 +34,7 @@ import { ScannerView } from "./scan";
 import { BonusView } from "./collect.bonus.$token";
 import { VenueSortControl } from "@/components/venue-sort-control";
 import { PublicStyleScope } from "@/components/public-style-scope";
+import { parsePublicStyleOverrides as parsePSO, publicStyleCss as psoCss } from "@/lib/public-style-overrides";
 import { applyMapMarkerSelection, mapMarkerAnnotationOptions, resolveMapMarkerStyle } from "@/lib/map-marker-style";
 import { MapMarkerGlyph } from "./live.$subdomain.map";
 import { EventPublicLanding } from "@/components/event-public-landing";
@@ -277,6 +278,42 @@ describe("Passport V2 preview composition", () => {
     expect(container.textContent).toContain("0");
     await clickEverything(container);
     expectNoSideEffects();
+  });
+});
+
+describe("Passport V2 hero paint layers", () => {
+  const passport = { passport_id: "preview", event_id: "event-v2", first_name: "Sample", full_name: "Sample Visitor", checkin_count: 1 } as PassportRow;
+  const mount = (items: Record<string, unknown>) => {
+    const doc = parsePSO(JSON.parse(JSON.stringify({ version: 1, items })));
+    // Washed-out legacy condition: light hero colour + explicit legacy overlay at 50%.
+    const branding = { eventId: "event-v2", templateVersion: "v2" as const, styleOverrides: doc, ready: true, coverPath: "cover.jpg", heroBgColor: "#F6EFE2", heroOverlayColor: "#FFFFFF", heroOverlayOpacity: 50 } as any;
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PassportPreview passport={passport} eventName="Trail" stamps={{ ...EMPTY_PASSPORT_STAMP_STATE, status: "ok" }} token="preview" subdomain="preview" branding={branding} awards={[]} preview /></PublicStyleScope>, "/passport/preview"));
+    const q = (id: string) => container.querySelector<HTMLElement>(`[data-event-style="${id}"]`)!;
+    return { image: q("passport.hero.image"), overlay: q("passport.hero.overlay"), surface: q("passport.hero.surface"), heading: q("passport.hero.heading") };
+  };
+  it("defaults keep the legacy tint; image 100% + overlay 0 shows an unwashed photo with normal text", () => {
+    const base = mount({});
+    expect(base.overlay.style.background).toContain("linear-gradient");
+    const clean = mount({ "passport.hero.image": { normal: { opacity: 1 } }, "passport.hero.overlay": { normal: { opacity: 0 } } });
+    expect(clean.image.style.opacity).toBe("1");
+    expect(clean.overlay.style.opacity).toBe("0");
+    expect(clean.surface.style.opacity).toBe("");
+    expect(clean.heading.style.opacity).toBe("");
+    // Nothing else paints between the photo and the text.
+    const layers = Array.from(clean.surface.children).filter((n) => n !== clean.image && n !== clean.overlay);
+    for (const n of layers) expect((n as HTMLElement).style.background || (n as HTMLElement).style.backgroundColor).toBeFalsy();
+  });
+  it("explicit Transparent survives parse/save round trip and removes the default gradient; Reset restores it", () => {
+    const t = mount({ "passport.hero.overlay": { normal: { backgroundColor: "transparent" } } });
+    expect(t.overlay.style.backgroundColor).toBe("transparent");
+    expect(t.overlay.style.backgroundImage).toBe("none");
+    expect(t.overlay.style.background).not.toContain("linear-gradient");
+    const css = psoCss(parsePSO({ version: 1, items: { "passport.hero.overlay": { normal: { backgroundColor: "transparent" } } } }), "s");
+    expect(css).toContain("background-color:transparent!important");
+    expect(css).toContain("background-image:none!important");
+    expect(parsePSO({ version: 1, items: { "passport.hero.heading": { normal: { color: "transparent" } } } }).items["passport.hero.heading"]).toBeUndefined();
+    const reset = mount({});
+    expect(reset.overlay.style.background).toContain("linear-gradient");
   });
 });
 
