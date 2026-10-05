@@ -254,7 +254,7 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
                     </div>
 
                     {/* Image thumb (right) */}
-                    <div className="hidden h-16 w-16 flex-shrink-0 self-center overflow-hidden rounded-xl sm:block">
+                    <div className="hidden h-16 w-16 flex-shrink-0 self-center overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10 sm:block">
                       {thumb ? (
                         <PublicStyleTarget id="offers.card.image" recordId={vid}><img
                           src={thumb}
