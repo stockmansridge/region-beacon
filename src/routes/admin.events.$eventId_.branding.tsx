@@ -890,22 +890,15 @@ function BrandingEditor() {
         return;
       }
       setSaving(true);
-      const { data, error } = await (supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
-        "save_event_v2_branding",
-        { _agency_id: agencyId, _event_id: bundle.event.id, _config: v2ConfigForDraft(), _activate: false },
-      );
-      const confirmed = data?.[0];
-      if (error || !confirmed?.v2_style_config) {
+      const result = await saveV2Branding(checked.document, false);
+      if (!result.ok) {
         setSaving(false);
-        setSaveError(`V2 branding could not be saved. ${error?.message ?? "Persistence is unavailable; your draft is still open."}`);
+        setSaveError(`V2 branding could not be saved. ${result.message}`);
         return;
       }
-      applyConfirmedV2(confirmed);
+      applyConfirmedV2(result.confirmed);
       setSaving(false);
-      setSaveSuccess(confirmed.public_template_version === "v2"
+      setSaveSuccess(result.confirmed.public_template_version === "v2"
         ? "Saved. This event already uses V2, so its live pages now show these changes."
         : "V2 draft saved. This event's live pages still use the existing template.");
       if (opts?.returnAfter) navigate({ to: "/admin/events/$eventId", params: { eventId } });
