@@ -2468,7 +2468,7 @@ function SemanticPreview({ venueLabelPlural, className = "" }: { venueLabelPlura
       </div>
       <div>
         <h4 data-brand-hint="Page heading colour" className="text-base font-semibold" style={{ color: "var(--event-page-heading)" }}>Sample heading</h4>
-        <p data-brand-hint="Page body text colour" className="text-sm" style={{ color: "var(--event-page-body)" }}>This body paragraph uses the page body text colour.</p>
+        <p data-brand-hint="Page body text colour" className="text-sm" style={{ color: "var(--event-page-text)" }}>This body paragraph uses the page body text colour.</p>
         <p data-brand-hint="Page muted text" className="text-xs" style={{ color: "var(--event-page-muted)" }}>This is muted helper text.</p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -2680,7 +2680,7 @@ function BrandHoverProbe({ children }: { children: React.ReactNode }) {
     return labels.length > 0 ? labels.join(" · ") : null;
   };
 
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerOver = (event: React.PointerEvent<HTMLDivElement>) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (!target) return;
     const explicit = target.closest<HTMLElement>("[data-brand-hint]");
@@ -2695,7 +2695,7 @@ function BrandHoverProbe({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="brand-hover-probe relative"
-      onPointerMove={handlePointerMove}
+      onPointerOver={handlePointerOver}
       onPointerLeave={() => setActiveHint(null)}
     >
       <style>{`
