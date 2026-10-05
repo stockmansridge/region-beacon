@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
+import { usePublicStyleTarget } from "@/components/public-style-scope";
 
 type CheckinRow = {
   first_name: string;
@@ -23,7 +24,7 @@ type PrizeUnlockRow = {
   happened_at: string;
 };
 
-type HappeningPayload = {
+export type HappeningPayload = {
   recent_checkins: CheckinRow[];
   explorers_today: number;
   recent_bonus: BonusRow[];
@@ -34,6 +35,8 @@ type WhatsHappeningCardProps = {
   subdomain?: string | null;
   hostname?: string | null;
   fallbackCheckins?: CheckinRow[];
+  /** Editor preview only: render this safe sample and make no network calls. */
+  previewData?: HappeningPayload | null;
 };
 
 const POLL_MS = 30_000;
@@ -120,10 +123,18 @@ export function WhatsHappeningCard({
   subdomain,
   hostname,
   fallbackCheckins,
+  previewData,
 }: WhatsHappeningCardProps) {
-  const [data, setData] = useState<HappeningPayload | null>(null);
+  const [data, setData] = useState<HappeningPayload | null>(previewData ?? null);
+  const surfaceStyle = usePublicStyleTarget("home.happening.surface", { selectable: true });
+  const headingStyle = usePublicStyleTarget("home.happening.heading", { selectable: true });
+  const bodyStyle = usePublicStyleTarget("home.happening.body", { selectable: true });
 
   useEffect(() => {
+    if (previewData) {
+      setData(previewData);
+      return;
+    }
     let cancelled = false;
     const fallbackRows = fallbackCheckins ?? [];
     const host = subdomain
@@ -190,7 +201,7 @@ export function WhatsHappeningCard({
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [subdomain, hostname, fallbackCheckins]);
+  }, [subdomain, hostname, fallbackCheckins, previewData]);
 
   const isLoading = !data;
 
@@ -208,18 +219,22 @@ export function WhatsHappeningCard({
   return (
     <section>
       <div
+        {...surfaceStyle}
         className="rounded-3xl border p-5 shadow-sm"
         style={{
           borderColor: "var(--event-card-border)",
           backgroundColor: "var(--event-card-bg)",
+          ...surfaceStyle.style,
         }}
       >
         <div className="flex items-center justify-between">
           <h3
+            {...headingStyle}
             className="text-[16px] font-bold"
             style={{
               color: "var(--event-card-heading)",
               fontFamily: "var(--event-font)",
+              ...headingStyle.style,
             }}
           >
             What's Happening Now
@@ -251,8 +266,9 @@ export function WhatsHappeningCard({
               <span aria-hidden className="text-xl leading-none">🎉</span>
               <div className="min-w-0 flex-1">
                 <p
+                  {...bodyStyle}
                   className="text-[14px] leading-snug"
-                  style={{ color: "var(--event-card-text)" }}
+                  style={{ color: "var(--event-card-text)", ...bodyStyle.style }}
                 >
                   <span
                     className="font-semibold"
@@ -286,8 +302,9 @@ export function WhatsHappeningCard({
                 <span aria-hidden className="text-xl leading-none">🔥</span>
                 <div className="min-w-0 flex-1">
                   <p
+                    {...bodyStyle}
                     className="text-[14px] leading-snug"
-                    style={{ color: "var(--event-card-text)" }}
+                    style={{ color: "var(--event-card-text)", ...bodyStyle.style }}
                   >
                     <span
                       className="font-semibold"
@@ -319,8 +336,9 @@ export function WhatsHappeningCard({
               <span aria-hidden className="text-xl leading-none">🍷</span>
               <div className="min-w-0 flex-1">
                 <p
+                  {...bodyStyle}
                   className="text-[14px] leading-snug"
-                  style={{ color: "var(--event-card-text)" }}
+                  style={{ color: "var(--event-card-text)", ...bodyStyle.style }}
                 >
                   <span
                     className="font-semibold"
@@ -345,8 +363,9 @@ export function WhatsHappeningCard({
               <span aria-hidden className="text-xl leading-none">⭐</span>
               <div className="min-w-0 flex-1">
                 <p
+                  {...bodyStyle}
                   className="text-[14px] leading-snug"
-                  style={{ color: "var(--event-card-text)" }}
+                  style={{ color: "var(--event-card-text)", ...bodyStyle.style }}
                 >
                   Someone found a{" "}
                   <span
