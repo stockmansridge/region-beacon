@@ -356,6 +356,54 @@ describe("Special Offers V2 targets", () => {
     }
   });
 
+  it("deliberately applies shared badge and placeholder icon colours across conflicting records without removing unrelated styles", () => {
+    const initial = { version: 1, items: {
+      "offers.card.badge": { normal: { iconColor: "#101112", iconBackgroundColor: "#202122", borderColor: "#303132" } },
+      "offers.card.placeholderIcon": { normal: { iconColor: "#404142", iconBackgroundColor: "#505152", borderColor: "#606162" } },
+    }, records: {
+      "offers.card.badge": { "venue-image": { normal: { iconColor: "#AAAAAA", iconBackgroundColor: "#BBBBBB", borderColor: "#CCCCCC", opacity: 0.7 } } },
+      "offers.card.placeholderIcon": { "venue-image": { normal: { iconColor: "#DDDDDD", iconBackgroundColor: "#EEEEEE", borderColor: "#FFFFFF" } } },
+    } } as never;
+    for (const id of ["offers.card.badge", "offers.card.placeholderIcon"] as const) {
+      for (const property of ["iconColor", "iconBackgroundColor", "borderColor"] as const) {
+        expect(publicStyleRecordPropertyConflicts(initial, id, "normal", property)).toEqual(["venue-image"]);
+      }
+    }
+    let applied = initial;
+    for (const id of ["offers.card.badge", "offers.card.placeholderIcon"] as const) {
+      for (const property of ["iconColor", "iconBackgroundColor", "borderColor"] as const) {
+        applied = clearPublicStyleRecordPropertyConflicts(applied, id, "normal", property) as typeof initial;
+      }
+    }
+    const roundTrip = parsePSO(JSON.parse(JSON.stringify(applied)));
+    expect(roundTrip.records?.["offers.card.badge"]?.["venue-image"]?.normal).toEqual({ opacity: 0.7 });
+    expect(roundTrip.records?.["offers.card.placeholderIcon"]).toBeUndefined();
+    const noImages = offers.map((offer) => ({ ...offer, cover_path: null, logo_path: null }));
+    const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, v2_style_config: roundTrip }, offers: noImages }} />, "/offers"));
+    for (const venueId of ["venue-no-image", "venue-image"]) {
+      const badge = container.querySelector<HTMLElement>(`[data-brand-instance="offers.card.badge@${venueId}"]`);
+      const placeholder = container.querySelector<HTMLElement>(`[data-brand-instance="offers.card.placeholderIcon@${venueId}"]`);
+      expect(badge?.style.getPropertyValue("--item-icon-color")).toBe("#101112");
+      expect(badge?.style.backgroundColor).toBe("#202122");
+      expect(badge?.style.borderColor).toBe("#303132");
+      expect(placeholder?.style.getPropertyValue("--item-icon-color")).toBe("#404142");
+      expect(placeholder?.style.backgroundColor).toBe("#505152");
+      expect(placeholder?.style.borderColor).toBe("#606162");
+    }
+  });
+
+  it("shows the Offers Every venue conflict and invokes the shared colour-only action", async () => {
+    const { ItemStyleInspector } = await import("./admin.events.$eventId_.branding");
+    const item = (await import("@/lib/public-style-overrides")).PUBLIC_STYLE_ELEMENTS.find((entry) => entry.id === "offers.card.badge");
+    expect(item).toBeDefined();
+    if (!item) return;
+    const clear = vi.fn();
+    const screen = render(<ItemStyleInspector item={item} values={{ iconColor: "#101112" }} hasOverride inherited={{}} state="normal" setState={vi.fn()} setProperty={vi.fn()} reset={vi.fn()} undo={vi.fn()} redo={vi.fn()} canUndo={false} canRedo={false} disabled={false} clear={vi.fn()} quickColours={[]} customFonts={[]} record={{ id: "venue-no-image", scope: "type", setScope: vi.fn() }} recordPropertyConflicts={(property) => property === "iconColor" ? ["venue-image"] : []} clearRecordPropertyConflicts={clear} />);
+    expect(screen.getByText(/venue-specific icon colour setting is still taking priority/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Apply this colour to every venue" }));
+    expect(clear).toHaveBeenCalledWith("iconColor");
+  });
+
   it("does not emit selectable offer targets for V1", () => {
     const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, public_template_version: null }, offers }} />, "/offers"));
     expect(container.querySelector("[data-brand-role^='offers.card.']")).toBeNull();
@@ -870,7 +918,7 @@ describe("Venue detail directions shared and per-venue colours", () => {
     if (!item) return;
     const screen = render(<ItemStyleInspector item={item} values={{ color: "#112233" }} hasOverride inherited={{}} state="normal" setState={vi.fn()} setProperty={vi.fn()} reset={vi.fn()} undo={vi.fn()} redo={vi.fn()} canUndo={false} canRedo={false} disabled={false} clear={vi.fn()} quickColours={[]} customFonts={[]} record={{ id: "venue-a", scope: "type", setScope: vi.fn() }} recordPropertyConflicts={(property) => property === "color" ? ["venue-b"] : []} clearRecordPropertyConflicts={clear} />);
     expect(screen.getByText(/venue-specific text colour setting is still taking priority/i)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Apply chosen colour to all venues" }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply this colour to every venue" }));
     expect(clear).toHaveBeenCalledWith("color");
   });
 });
