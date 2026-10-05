@@ -100,7 +100,7 @@ type BonusChallenge = {
   social_hashtags?: string | null;
 };
 
-export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { subdomain: string; venueId: string; previewData?: { event: EventBrand; venue: VenueRow } }) {
+export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { subdomain: string; venueId: string; previewData?: { event: EventBrand; venue: VenueRow; extras?: { emotive_text: string | null; emotive_font_family: string | null; default_emotive_font_family: string | null; points_value: number } | null } }) {
   const [state, setState] = useState<State>(() => previewData ? {
     kind: "ready", venue: previewData.venue, eventId: previewData.event.event_id ?? null,
     eventName: previewData.event.name ?? null, eventLogoPath: previewData.event.logo_path ?? null, brand: previewData.event,
@@ -121,6 +121,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
       setState({ kind: "ready", venue: previewData.venue, eventId: previewData.event.event_id ?? null, eventName: previewData.event.name ?? null, eventLogoPath: previewData.event.logo_path ?? null, brand: previewData.event });
       setVisited({ kind: "not_visited" });
       setBonusChallenges([]);
+      setExtras(previewData.extras ?? null);
       return;
     }
     let cancelled = false;
