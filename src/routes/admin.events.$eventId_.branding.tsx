@@ -2751,6 +2751,17 @@ function NavigationMenuInspector({ items, selectedId, disabled, select, rename, 
 }
 
 /** Buffered while typing (spaces allowed); validated and committed on blur / Enter. Empty resets to the inherited name. */
+/** Scope copy for repeated targets: venue/prize records vs non-identifying template slots. */
+export function recordScopeCopy(item: { repeat?: string; label: string }, record: { id: string; label?: string }): { one: string; all: string } {
+  if (record.label) return { one: `This ${record.label} only`, all: `Every ${record.label} (type default)` };
+  if (item.repeat === "award") return { one: "This prize only", all: "Every prize (type default)" };
+  if (item.repeat === "template") {
+    const slot = record.id.replace(/[_-]+/g, " ");
+    return { one: `Only the “${slot}” version`, all: `All versions of ${item.label.toLowerCase()} (type default)` };
+  }
+  return { one: "This venue only", all: "Every venue (type default)" };
+}
+
 export function NavLabelField({ value, placeholder, disabled, commit }: { value: string; placeholder: string; disabled: boolean; commit: (label: string | null) => void }) {
   const [draft, setDraft] = useState(value);
   const [error, setError] = useState<string | null>(null);
@@ -2964,7 +2975,7 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
   const opacityPercent = typeof values.opacity === "number" ? Math.round(values.opacity * 100) : null;
   return <>
     <div className="flex items-start justify-between gap-3"><div><div className="text-xs font-semibold uppercase text-muted-foreground">{record?.scope === "type" ? "All items of this type" : "This item"}</div><h2 className="text-lg font-semibold">{item.label}</h2><p className="mt-1 text-sm text-muted-foreground">Changes only this named item{record?.scope === "record" ? " for this one record" : ""}. Theme and Brand Kit values remain the fallback.</p></div><Button type="button" size="icon" variant="ghost" onClick={clear} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
-    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">This one only</SelectItem><SelectItem value="type">Every {record.label ?? (item.repeat === "award" ? "prize" : "venue")} (type default)</SelectItem></SelectContent></Select></Field> : null}
+    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">{recordScopeCopy(item, record).one}</SelectItem><SelectItem value="type">{recordScopeCopy(item, record).all}</SelectItem></SelectContent></Select></Field> : null}
     <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !hasOverride}>Reset this item</Button></div>
     {item.states?.length ? <Field label="Appearance (shown in the preview)"><Select value={state} onValueChange={(value) => setState(value as PublicStyleState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
     <div className="mt-5 space-y-4">
