@@ -8,7 +8,7 @@ import { LegalBody } from "@/components/legal-body";
 import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 
@@ -64,14 +64,17 @@ export function PublicLegalShell({
   eventId,
   activeOverride,
   children,
+  branding: brandingOverride,
 }: {
   subdomain: string;
   eventName?: string | null;
   eventId?: string | null;
   activeOverride?: "home" | "join" | "venues" | "leaderboard";
   children: React.ReactNode;
+  branding?: EventBrandingKeys;
 }) {
-  const b = useEventBrandingKeys(subdomain);
+  const loadedBranding = useEventBrandingKeys(brandingOverride ? null : subdomain);
+  const b = brandingOverride ?? loadedBranding;
 
   // Hold the page back until branding has resolved to prevent the default
   // GetStampd theme from flashing for a frame.
@@ -326,12 +329,16 @@ function LegalAccordionCard({
 export function CombinedLegalPage({
   subdomain,
   initialOpen,
+  previewData,
 }: {
   subdomain: string;
   initialOpen?: "terms" | "privacy" | "both";
+  previewData?: { branding: EventBrandingKeys; row: LegalRow };
 }) {
-  const state = useLegal(subdomain);
-  const branding = useEventBrandingKeys(subdomain);
+  const loadedState = useLegal(previewData ? "" : subdomain);
+  const loadedBranding = useEventBrandingKeys(previewData ? null : subdomain);
+  const state = previewData ? { kind: "ok" as const, row: previewData.row } : loadedState;
+  const branding = previewData?.branding ?? loadedBranding;
 
   // Hold the page back until branding has resolved to prevent the default
   // GetStampd theme from flashing for a frame.
@@ -370,6 +377,7 @@ export function CombinedLegalPage({
       subdomain={subdomain}
       eventName={row.event_name}
       eventId={row.event_id}
+      branding={branding}
     >
       <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--event-muted,#8A7E66)]">
         {row.event_name}

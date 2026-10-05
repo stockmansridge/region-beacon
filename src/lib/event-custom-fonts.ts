@@ -51,6 +51,12 @@ export function customFontStack(family: string): string {
   return `'${family.replace(/'/g, "")}', ui-sans-serif, system-ui, sans-serif`;
 }
 
+export function eventScopedCustomFontFamily(family: string, eventId: string): string {
+  const safeEvent = eventId.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 48);
+  const safeFamily = family.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 32);
+  return `gs-${safeEvent}-${safeFamily}`;
+}
+
 export function extOf(filename: string): string {
   const m = /\.([A-Za-z0-9]+)$/.exec(filename.trim());
   return (m?.[1] ?? "").toLowerCase();
@@ -119,15 +125,15 @@ async function findCustomFontByFamily(family: string, eventId?: string): Promise
 
 const registered = new Set<string>();
 
-export function injectFontFace(family: string, url: string, format: string) {
+export function injectFontFace(family: string, url: string, format: string, cssFamily = family) {
   if (typeof document === "undefined") return;
-  const key = `${family.toLowerCase()}|${url}`;
+  const key = `${cssFamily.toLowerCase()}|${url}`;
   if (registered.has(key)) return;
   registered.add(key);
   const fmt = CSS_FORMAT[(format as CustomFontFormat)] ?? "woff2";
   const style = document.createElement("style");
-  style.dataset.customFont = family;
-  style.textContent = `@font-face{font-family:'${family.replace(/'/g, "")}';src:url('${url}') format('${fmt}');font-weight:100 900;font-display:swap;}`;
+  style.dataset.customFont = cssFamily;
+  style.textContent = `@font-face{font-family:'${cssFamily.replace(/'/g, "")}';src:url('${url}') format('${fmt}');font-weight:100 900;font-display:swap;}`;
   document.head.appendChild(style);
 }
 
@@ -160,7 +166,7 @@ export async function ensureCustomFontFaces(
       const row = await promise;
       if (!row) return;
       const url = getCustomFontUrl(row.storage_path);
-      if (url) injectFontFace(row.family_name, url, row.file_format);
+      if (url) injectFontFace(row.family_name, url, row.file_format, eventId ? eventScopedCustomFontFamily(row.family_name, eventId) : row.family_name);
     }),
   );
 }

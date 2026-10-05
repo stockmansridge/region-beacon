@@ -6,8 +6,8 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
-import { useEventFaqByDomain } from "@/lib/use-event-faq";
+import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
+import { useEventFaqByDomain, type PublicFaqEntry } from "@/lib/use-event-faq";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { LinkifyText } from "@/components/linkify-text";
 
@@ -46,10 +46,13 @@ function useEventInfo(subdomain: string): EventInfo {
   return info;
 }
 
-export function FaqPage({ subdomain }: { subdomain: string }) {
-  const branding = useEventBrandingKeys(subdomain);
-  const eventInfo = useEventInfo(subdomain);
-  const faq = useEventFaqByDomain(subdomain);
+export function FaqPage({ subdomain, previewData }: { subdomain: string; previewData?: { branding: EventBrandingKeys; eventInfo: { event_id: string | null; event_name: string | null }; entries: PublicFaqEntry[] } }) {
+  const loadedBranding = useEventBrandingKeys(previewData ? null : subdomain);
+  const loadedEventInfo = useEventInfo(previewData ? "" : subdomain);
+  const loadedFaq = useEventFaqByDomain(previewData ? null : subdomain);
+  const branding = previewData?.branding ?? loadedBranding;
+  const eventInfo = previewData?.eventInfo ?? loadedEventInfo;
+  const faq = previewData ? { kind: "ok" as const, entries: previewData.entries } : loadedFaq;
 
   // Hold the page back until branding has resolved to prevent the default
   // GetStampd theme from flashing for a frame.
@@ -72,7 +75,7 @@ export function FaqPage({ subdomain }: { subdomain: string }) {
       {...brandingScopeProps(branding)}
       className="min-h-screen px-4 pb-4"
     >
-      <LiveActivityBar subdomain={subdomain} />
+      {!previewData && <LiveActivityBar subdomain={subdomain} />}
       <div className="mx-auto max-w-5xl">
         <PublicEventNav
           subdomain={subdomain}

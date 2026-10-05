@@ -10,6 +10,7 @@ import {
   type PublicStyleOverrideDocument,
   type PublicTemplateVersion,
 } from "@/lib/public-style-overrides";
+import { resolvePublicBrandingEvent, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 
 export type EventBrandingKeys = {
   eventId: string | null;
@@ -183,6 +184,65 @@ export async function loadPublicV2Branding(host: string): Promise<{
   }
 }
 
+type PublicBrandingRow = Record<string, unknown> & PublicBrandingEvent;
+
+/** Canonical row-to-scope mapping used by every hook-driven public route. */
+export function resolveEventBrandingKeys(
+  source: PublicBrandingRow | null,
+  v2: { public_template_version: PublicTemplateVersion; v2_style_config: PublicStyleOverrideDocument | null },
+): EventBrandingKeys {
+  if (!source) return { ...EMPTY, ready: true };
+  const { event: row, isV2 } = resolvePublicBrandingEvent({
+    ...source,
+    public_template_version: v2.public_template_version,
+    v2_style_config: v2.v2_style_config,
+  });
+  return {
+    eventId: row.event_id ?? null,
+    paletteKey: row.palette_key ?? null,
+    backgroundKey: row.page_background_key ?? null,
+    primaryColor: row.primary_color ?? null,
+    accentColor: row.accent_color ?? null,
+    pageBackgroundColor: row.page_background_color ?? null,
+    cardBackgroundColor: row.card_background_color ?? null,
+    textColor: row.text_color ?? null,
+    mutedTextColor: row.muted_text_color ?? null,
+    cardTextColor: row.card_text_color ?? null,
+    cardMutedTextColor: row.card_muted_text_color ?? null,
+    borderColor: row.border_color ?? null,
+    primaryTextColor: row.primary_text_color ?? null,
+    navBackgroundColor: row.nav_background_color ?? null,
+    brandKitKey: row.brand_kit_key ?? null,
+    linkColor: row.link_color ?? null,
+    cardBorderColor: row.card_border_color ?? null,
+    buttonPrimaryBg: row.button_primary_bg ?? null,
+    buttonPrimaryFg: row.button_primary_fg ?? null,
+    buttonSecondaryBg: row.button_secondary_bg ?? null,
+    buttonSecondaryFg: row.button_secondary_fg ?? null,
+    navFgColor: row.nav_fg_color ?? null,
+    navMutedColor: row.nav_muted_color ?? null,
+    navActiveFgColor: row.nav_active_fg_color ?? null,
+    heroBgColor: row.hero_bg_color ?? null,
+    heroFgColor: row.hero_fg_color ?? null,
+    heroAccentColor: row.hero_accent_color ?? null,
+    pageHeadingColor: isV2 ? row.page_heading_color ?? null : null,
+    pageBodyColor: isV2 ? row.page_body_color ?? null : null,
+    pageMutedColor: isV2 ? row.page_muted_color ?? null : null,
+    cardHeadingColor: isV2 ? row.card_heading_color ?? null : null,
+    cardBodyColor: isV2 ? row.card_body_color ?? null : null,
+    cardMutedColor: isV2 ? row.card_muted_color ?? null : null,
+    logoPath: row.logo_path ?? null,
+    coverPath: row.cover_path ?? null,
+    coverFocalX: typeof row.cover_focal_x === "number" ? row.cover_focal_x : null,
+    coverFocalY: typeof row.cover_focal_y === "number" ? row.cover_focal_y : null,
+    fontFamily: row.font_family ?? null,
+    headingFontFamily: row.heading_font_family ?? null,
+    templateVersion: isV2 ? "v2" : "v1",
+    styleOverrides: isV2 ? v2.v2_style_config : null,
+    ready: true,
+  };
+}
+
 export function useEventBrandingKeys(
   subdomain: string | null | undefined,
 ): EventBrandingKeys {
@@ -243,50 +303,7 @@ export function useEventBrandingKeys(
           heading_font_family?: string | null;
           event_id?: string | null;
         } | null;
-        setKeys({
-          eventId: row?.event_id ?? null,
-          paletteKey: row?.palette_key ?? null,
-          backgroundKey: row?.page_background_key ?? null,
-          primaryColor: row?.primary_color ?? null,
-          accentColor: row?.accent_color ?? null,
-          pageBackgroundColor: row?.page_background_color ?? null,
-          cardBackgroundColor: row?.card_background_color ?? null,
-          textColor: row?.text_color ?? null,
-          mutedTextColor: row?.muted_text_color ?? null,
-          cardTextColor: row?.card_text_color ?? null,
-          cardMutedTextColor: row?.card_muted_text_color ?? null,
-          borderColor: row?.border_color ?? null,
-          primaryTextColor: row?.primary_text_color ?? null,
-          navBackgroundColor: row?.nav_background_color ?? null,
-          brandKitKey: row?.brand_kit_key ?? null,
-          linkColor: row?.link_color ?? null,
-          cardBorderColor: row?.card_border_color ?? null,
-          buttonPrimaryBg: row?.button_primary_bg ?? null,
-          buttonPrimaryFg: row?.button_primary_fg ?? null,
-          buttonSecondaryBg: row?.button_secondary_bg ?? null,
-          buttonSecondaryFg: row?.button_secondary_fg ?? null,
-          navFgColor: row?.nav_fg_color ?? null,
-          navMutedColor: row?.nav_muted_color ?? null,
-          navActiveFgColor: row?.nav_active_fg_color ?? null,
-          heroBgColor: row?.hero_bg_color ?? null,
-          heroFgColor: row?.hero_fg_color ?? null,
-          heroAccentColor: row?.hero_accent_color ?? null,
-          pageHeadingColor: row?.page_heading_color ?? null,
-          pageBodyColor: row?.page_body_color ?? null,
-          pageMutedColor: row?.page_muted_color ?? null,
-          cardHeadingColor: row?.card_heading_color ?? null,
-          cardBodyColor: row?.card_body_color ?? null,
-          cardMutedColor: row?.card_muted_color ?? null,
-          logoPath: row?.logo_path ?? null,
-          coverPath: row?.cover_path ?? null,
-          coverFocalX: typeof row?.cover_focal_x === "number" ? row.cover_focal_x : null,
-          coverFocalY: typeof row?.cover_focal_y === "number" ? row.cover_focal_y : null,
-          fontFamily: row?.font_family ?? null,
-          headingFontFamily: row?.heading_font_family ?? null,
-          templateVersion: v2.public_template_version,
-          styleOverrides: v2.v2_style_config,
-          ready: true,
-        });
+        setKeys(resolveEventBrandingKeys(row as PublicBrandingRow | null, v2));
       } catch {
         if (!cancelled) setKeys({ ...EMPTY, ready: true });
       }

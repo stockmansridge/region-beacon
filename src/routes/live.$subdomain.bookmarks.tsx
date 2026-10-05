@@ -4,13 +4,13 @@ import { Bookmark, ChevronRight, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PublicLink } from "@/components/public-nav-context";
-import { usePassportBookmarks } from "@/lib/use-passport-bookmarks";
+import { usePassportBookmarks, type BookmarkRow } from "@/lib/use-passport-bookmarks";
 import { PoweredByGetStampd } from "@/components/brand";
 
 export const Route = createFileRoute("/live/$subdomain/bookmarks")({
@@ -26,11 +26,13 @@ export const Route = createFileRoute("/live/$subdomain/bookmarks")({
   },
 });
 
-export function PublicBookmarksPage({ subdomain }: { subdomain: string }) {
-  const branding = useEventBrandingKeys(subdomain);
-  const [eventId, setEventId] = useState<string | null>(null);
+export function PublicBookmarksPage({ subdomain, previewData }: { subdomain: string; previewData?: { branding: EventBrandingKeys; eventId: string; enabled: boolean; rows: BookmarkRow[] } }) {
+  const loadedBranding = useEventBrandingKeys(previewData ? null : subdomain);
+  const branding = previewData?.branding ?? loadedBranding;
+  const [eventId, setEventId] = useState<string | null>(previewData?.eventId ?? null);
 
   useEffect(() => {
+    if (previewData) { setEventId(previewData.eventId); return; }
     let cancelled = false;
     (async () => {
       const { data } = await supabase.rpc("resolve_event_by_host", {
@@ -42,9 +44,10 @@ export function PublicBookmarksPage({ subdomain }: { subdomain: string }) {
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewData]);
 
-  const { enabled, rows } = usePassportBookmarks(eventId);
+  const loadedBookmarks = usePassportBookmarks(previewData ? null : eventId);
+  const { enabled, rows } = previewData ?? loadedBookmarks;
 
   if (!branding.ready) {
     return (
@@ -65,7 +68,7 @@ export function PublicBookmarksPage({ subdomain }: { subdomain: string }) {
       {...brandingScopeProps(branding)}
       className="min-h-screen px-4 pb-10"
     >
-      <LiveActivityBar subdomain={subdomain} />
+      {!previewData && <LiveActivityBar subdomain={subdomain} />}
       <PublicEventNav
         subdomain={subdomain}
         eventId={eventId}

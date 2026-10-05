@@ -19,6 +19,7 @@ import { matchRootDomain, tenantHost } from "@/lib/domains";
 import {
   brandingScopeProps,
   useEventBrandingKeys,
+  type EventBrandingKeys,
 } from "@/lib/use-event-palette";
 import {
   EMPTY_CURRENT_EVENT_PASSPORT,
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/live/$subdomain/map")({
   },
 });
 
-type VenueRow = {
+export type MapVenueRow = {
   venue_id: string | null;
   name: string | null;
   description: string | null;
@@ -51,7 +52,7 @@ type VenueRow = {
   event_found: boolean | null;
 };
 
-type EventRow = {
+export type MapEventRow = {
   event_id: string;
   name: string;
   primary_color: string | null;
@@ -101,22 +102,23 @@ const INITIAL_DIAG: MapDiagnostics = {
   appleErrorMessage: null,
 };
 
-export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
-  const branding = useEventBrandingKeys(subdomain);
+export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: string; previewData?: { branding: EventBrandingKeys; event: MapEventRow; venues: MapVenueRow[]; visitedIds?: Set<string> } }) {
+  const loadedBranding = useEventBrandingKeys(previewData ? null : subdomain);
+  const branding = previewData?.branding ?? loadedBranding;
   const fetchToken = useServerFn(getMapkitToken);
-  const [event, setEvent] = useState<EventRow | null>(null);
-  const [venues, setVenues] = useState<VenueRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mapError, setMapError] = useState<string | null>(null);
+  const [event, setEvent] = useState<MapEventRow | null>(previewData?.event ?? null);
+  const [venues, setVenues] = useState<MapVenueRow[]>(previewData?.venues ?? []);
+  const [loading, setLoading] = useState(!previewData);
+  const [mapError, setMapError] = useState<string | null>(previewData ? "Interactive map is disabled in preview." : null);
   const [mapDiag, setMapDiag] = useState<MapDiagnostics>(INITIAL_DIAG);
-  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
+  const [visitedIds, setVisitedIds] = useState<Set<string>>(previewData?.visitedIds ?? new Set());
   const [passportState, setPassportState] = useState<CurrentEventPassportResult>(EMPTY_CURRENT_EVENT_PASSPORT);
   const [stampState, setStampState] = useState<PassportStampState>(EMPTY_PASSPORT_STAMP_STATE);
   const [filter, setFilter] = useState<Filter>("all");
-  const [selected, setSelected] = useState<VenueRow | null>(null);
+  const [selected, setSelected] = useState<MapVenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const hasPassport = passportState.hasPassport;
-  const bookmarks = usePassportBookmarks(event?.event_id ?? null);
+  const bookmarks = usePassportBookmarks(previewData ? null : event?.event_id ?? null);
   const bookmarkedVenueIds = useMemo(
     () => new Set(bookmarks.rows.map((r) => r.venue_id)),
     [bookmarks.rows],
@@ -128,6 +130,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
   // Load event + venues
   useEffect(() => {
+    if (previewData) { setEvent(previewData.event); setVenues(previewData.venues); setVisitedIds(previewData.visitedIds ?? new Set()); setLoading(false); setMapError("Interactive map is disabled in preview."); return; }
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -137,11 +140,11 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
         supabase.rpc("get_public_event_by_domain", { _hostname: host }),
       ]);
       if (cancelled) return;
-      const rows = ((venueData ?? []) as VenueRow[]).filter(
+      const rows = ((venueData ?? []) as MapVenueRow[]).filter(
         (r) => r.event_found !== false && r.venue_id,
       );
       setVenues(rows);
-      const evtRaw = ((evtData?.[0] ?? null) as EventRow | null);
+      const evtRaw = ((evtData?.[0] ?? null) as MapEventRow | null);
       const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
       setEvent(evt);
       setLoading(false);
@@ -158,7 +161,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewData]);
 
   // PostgREST serialises numeric(9,6) as strings, so coerce defensively and
   // store the normalised numbers on each row for downstream use.
@@ -191,6 +194,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
 
   // Init MapKit
   useEffect(() => {
+    if (previewData) return;
     if (loading) return;
     if (geoVenues.length === 0) return;
     let cancelled = false;
@@ -331,7 +335,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, geoVenues.length === 0]);
+  }, [loading, geoVenues.length === 0, previewData]);
 
   // Update annotations on filter / data change
   useEffect(() => {
@@ -468,7 +472,7 @@ export function PublicTrailMapPage({ subdomain }: { subdomain: string }) {
       {...brandingScopeProps(branding)}
       className="min-h-screen px-4 pb-6"
     >
-      <LiveActivityBar subdomain={subdomain} />
+      {!previewData && <LiveActivityBar subdomain={subdomain} />}
       <PublicEventNav
         subdomain={subdomain}
         eventName={event?.name}
@@ -691,7 +695,7 @@ function SelectedVenueCard({
   accent,
   onClose,
 }: {
-  venue: VenueRow;
+  venue: MapVenueRow;
   visited: boolean;
   primary: string;
   accent: string;
@@ -828,7 +832,7 @@ function MapFallbackList({
   errorMessage,
   buildReport,
 }: {
-  venues: VenueRow[];
+  venues: MapVenueRow[];
   primary: string;
   errorMessage: string;
   buildReport: () => string;

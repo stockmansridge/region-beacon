@@ -5,7 +5,7 @@ import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
-import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 
 export const Route = createFileRoute("/live/$subdomain/leaderboard")({
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/live/$subdomain/leaderboard")({
 });
 
 
-type LeaderboardRow = {
+export type LeaderboardRow = {
   rank: number | null;
   display_name: string | null;
   stamps: number | null;
@@ -49,14 +49,16 @@ type State =
   | { kind: "disabled" }
   | { kind: "ready"; rows: LeaderboardRow[] };
 
-export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
-  const [eventId, setEventId] = useState<string | null>(null);
-  const branding = useEventBrandingKeys(subdomain);
+export function PublicLeaderboardPage({ subdomain, previewData }: { subdomain: string; previewData?: { branding: EventBrandingKeys; eventId: string; rows: LeaderboardRow[] } }) {
+  const [state, setState] = useState<State>(() => previewData ? { kind: "ready", rows: previewData.rows } : { kind: "loading" });
+  const [eventId, setEventId] = useState<string | null>(previewData?.eventId ?? null);
+  const loadedBranding = useEventBrandingKeys(previewData ? null : subdomain);
+  const branding = previewData?.branding ?? loadedBranding;
   // paletteKey/backgroundKey now flow via brandingScopeProps below.
 
 
   useEffect(() => {
+    if (previewData) { setEventId(previewData.eventId); return; }
     let cancelled = false;
     (async () => {
       const host = tenantHost(subdomain);
@@ -69,9 +71,10 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewData]);
 
   useEffect(() => {
+    if (previewData) { setState({ kind: "ready", rows: previewData.rows }); return; }
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
@@ -135,7 +138,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewData]);
 
   // Hold the page back until branding has resolved. Rendering the nav /
   // header before the event palette arrives makes the default GetStampd
@@ -157,7 +160,7 @@ export function PublicLeaderboardPage({ subdomain }: { subdomain: string }) {
 
   return (
     <EventPaletteScope {...brandingScopeProps(branding)} className="min-h-screen px-4 pb-8 sm:pb-12">
-      <LiveActivityBar subdomain={subdomain} />
+      {!previewData && <LiveActivityBar subdomain={subdomain} />}
       <PublicEventNav
         subdomain={subdomain}
         eventId={eventId}

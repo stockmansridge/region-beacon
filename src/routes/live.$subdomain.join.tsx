@@ -33,7 +33,7 @@ type ResolveRow = {
   requires_auth: boolean;
 };
 
-type PublicEvent = {
+export type JoinPreviewEvent = {
   event_id: string;
   name: string;
   public_slug: string;
@@ -85,8 +85,8 @@ type PublicEvent = {
 type LoadState =
   | { kind: "loading" }
   | { kind: "not_live" }
-  | { kind: "terms_missing"; event: PublicEvent }
-  | { kind: "ready"; event: PublicEvent };
+  | { kind: "terms_missing"; event: JoinPreviewEvent }
+  | { kind: "ready"; event: JoinPreviewEvent };
 
 type FormState = {
   full_name: string;
@@ -198,11 +198,12 @@ function paletteProps(event: PublicEvent) {
 
 
 
-export function LiveJoinPage({ subdomain }: { subdomain: string }) {
+export function LiveJoinPage({ subdomain, previewEvent }: { subdomain: string; previewEvent?: JoinPreviewEvent }) {
 
-  const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const [state, setState] = useState<LoadState>(() => previewEvent ? { kind: "ready", event: previewEvent } : { kind: "loading" });
 
   useEffect(() => {
+    if (previewEvent) { setState({ kind: "ready", event: previewEvent }); return; }
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
@@ -224,7 +225,7 @@ export function LiveJoinPage({ subdomain }: { subdomain: string }) {
         loadPublicV2Branding(host),
       ]);
       if (cancelled) return;
-      const evtRaw = ((evtData?.[0] ?? null) as PublicEvent | null);
+      const evtRaw = ((evtData?.[0] ?? null) as JoinPreviewEvent | null);
       const evt = evtRaw ? applyPaletteToEvent({ ...evtRaw, ...v2 }) : null;
       if (evtErr || !evt) {
         setState({ kind: "not_live" });
@@ -266,7 +267,7 @@ export function LiveJoinPage({ subdomain }: { subdomain: string }) {
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewEvent]);
 
   if (state.kind === "loading") {
     return (
@@ -286,7 +287,7 @@ export function LiveJoinPage({ subdomain }: { subdomain: string }) {
       />
     );
 
-  return <JoinForm event={state.event} subdomain={subdomain} />;
+  return <JoinForm event={state.event} subdomain={subdomain} preview={Boolean(previewEvent)} />;
 }
 
 type SavedPassport = {
@@ -325,7 +326,7 @@ function consumeReturnTo(eventId: string): string | null {
   }
 }
 
-function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string }) {
+function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEvent; subdomain: string; preview?: boolean }) {
   const sendPassportEmailFn = useServerFn(sendPassportEmail);
   const primary = event.primary_color ?? "#1F3D2B";
   const accent = event.accent_color ?? "#B5572A";
@@ -348,10 +349,10 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   const [consentWarning, setConsentWarning] = useState<string | null>(null);
   const [showRegisterAgain, setShowRegisterAgain] = useState(false);
   const [saved, setSaved] = useState<SavedPassport | null>(() =>
-    readSavedPassport(event.event_id),
+    preview ? null : readSavedPassport(event.event_id),
   );
   const [savedValidating, setSavedValidating] = useState<boolean>(() =>
-    Boolean(readSavedPassport(event.event_id)?.access_token),
+    preview ? false : Boolean(readSavedPassport(event.event_id)?.access_token),
   );
   const [staleNotice, setStaleNotice] = useState<string | null>(null);
   const { isPlatformAdmin } = useAdminAccess();
@@ -362,6 +363,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   // If invalid/replaced, clear only this event's saved passport and let the
   // visitor register again. Never block them on a stale link.
   useEffect(() => {
+    if (preview) { setSavedValidating(false); return; }
     let cancelled = false;
     const token = saved?.access_token;
     if (!token) {
@@ -393,7 +395,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
     };
     // Only validate once on mount per event.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [event.event_id]);
+  }, [event.event_id, preview]);
 
   const locale = useMemo(
     () => (typeof navigator !== "undefined" ? navigator.language : null),
@@ -407,6 +409,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (preview) return;
     setTopError(null);
     setDebugInfo(null);
 
@@ -587,7 +590,7 @@ function JoinForm({ event, subdomain }: { event: PublicEvent; subdomain: string 
   }
 
   return (
-    <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
+    <EventPaletteScope {...publicEventScopeProps(event)} className="min-h-screen">
       <div className="px-4 pt-2">
       </div>
       <PublicEventNav

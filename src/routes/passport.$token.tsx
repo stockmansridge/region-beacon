@@ -33,7 +33,7 @@ export const Route = createFileRoute("/passport/$token")({
   component: PassportPage,
 });
 
-type PassportRow = {
+export type PassportRow = {
   passport_id: string;
   event_id: string | null;
   status: string | null;
@@ -374,7 +374,7 @@ function PassportNotFound({
   );
 }
 
-function PassportView({
+export function PassportPreview({
   passport,
   eventName,
   stamps,
@@ -388,6 +388,7 @@ function PassportView({
   token: string;
   subdomain: string | null;
   branding: EventBrandingKeys;
+  awards?: PublicEventAward[];
 }) {
   const [supportCopied, setSupportCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -408,8 +409,9 @@ function PassportView({
 
   // Awards — lifted from RewardsSection so the summary tile can show
   // tier / next-reward status using the same source of truth.
-  const [awards, setAwards] = useState<PublicEventAward[] | null>(null);
+  const [loadedAwards, setAwards] = useState<PublicEventAward[] | null>(awards ?? null);
   useEffect(() => {
+    if (awards) { setAwards(awards); return; }
     if (!passport.event_id) {
       setAwards([]);
       return;
@@ -426,16 +428,17 @@ function PassportView({
     return () => {
       cancelled = true;
     };
-  }, [passport.event_id, passport.passport_id]);
+  }, [passport.event_id, passport.passport_id, awards]);
+  const resolvedAwards = awards ?? loadedAwards;
 
   // Points: same heuristic as use-passport-home-data — passport_points is
   // computed server-side and identical across awards rows.
   const pointsEarned: number | null =
-    awards && awards.length > 0
-      ? (awards.find((a) => typeof a.passport_points === "number")?.passport_points ?? null)
+    resolvedAwards && resolvedAwards.length > 0
+      ? (resolvedAwards.find((a) => typeof a.passport_points === "number")?.passport_points ?? null)
       : null;
-  const unlockedAwards = awards?.filter((a) => a.is_eligible) ?? [];
-  const nextAward = awards ? pickNextReward(awards) : null;
+  const unlockedAwards = resolvedAwards?.filter((a) => a.is_eligible) ?? [];
+  const nextAward = resolvedAwards ? pickNextReward(resolvedAwards) : null;
   const heroImageUrl = getEventAssetPublicUrl(branding.coverPath);
   const heroLogoUrl = getEventAssetPublicUrl(branding.logoPath);
   const activityFallbackCheckins = useMemo(

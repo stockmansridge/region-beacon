@@ -4,6 +4,7 @@ import {
   PublicLink,
   buildEventHref,
   eventNavBaseFromPathname,
+  usePublicNav,
 } from "@/components/public-nav-context";
 
 import { useState } from "react";
@@ -99,6 +100,8 @@ export function PublicEventNav({
   /** Resolved event labels; preview supplies these to avoid public network reads. */
   venueLabels?: VenueLabels;
 }) {
+  const previewNav = usePublicNav();
+  const isPreview = previewNav.mode === "preview";
   const navigationSurface = usePublicStyleTarget("shared.navigation.surface", { selectable: brandingSelection });
   const navigationItem = usePublicStyleTarget("shared.navigation.item", { selectable: brandingSelection });
   const navigationActiveItem = usePublicStyleTarget("shared.navigation.activeItem", { selectable: brandingSelection });
@@ -117,23 +120,25 @@ export function PublicEventNav({
   // /live/<subdomain> base stripped, so it works identically on a tenant host
   // and inside the admin preview context.
   const navBase = eventNavBaseFromPathname(location.pathname);
-  const pathname = navBase
+  const pathname = previewNav.activePath ?? (navBase
     ? location.pathname.slice(navBase.length) || "/"
-    : location.pathname;
-  const { passportHref: derivedPassportHref } = useCurrentEventPassport(eventId);
+    : location.pathname);
+  const { passportHref: derivedPassportHref } = useCurrentEventPassport(isPreview ? null : eventId);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
   const [menuOpen, setMenuOpen] = useState(false);
-  const faqState = useEventFaqByDomain(subdomain);
-  const hasFaq = faqState.kind === "ok" && faqState.entries.length > 0;
-  const { hasMap } = useEventHasMap(subdomain);
-  const { hasAwards } = useEventHasAwards(subdomain);
-  const fetchedVenueLabels = useEventVenueLabels(venueLabelsOverride ? null : subdomain);
-  const venueLabels = venueLabelsOverride ?? fetchedVenueLabels;
-  const customLink = useEventCustomLink(subdomain);
+  const faqState = useEventFaqByDomain(isPreview ? null : subdomain);
+  const hasFaq = previewNav.previewFeatures?.hasFaq ?? (faqState.kind === "ok" && faqState.entries.length > 0);
+  const { hasMap: loadedHasMap } = useEventHasMap(isPreview ? null : subdomain);
+  const { hasAwards: loadedHasAwards } = useEventHasAwards(isPreview ? null : subdomain);
+  const hasMap = previewNav.previewFeatures?.hasMap ?? loadedHasMap;
+  const hasAwards = previewNav.previewFeatures?.hasAwards ?? loadedHasAwards;
+  const fetchedVenueLabels = useEventVenueLabels(venueLabelsOverride || previewNav.previewFeatures?.venueLabels ? null : subdomain);
+  const venueLabels = venueLabelsOverride ?? previewNav.previewFeatures?.venueLabels ?? fetchedVenueLabels;
+  const customLink = useEventCustomLink(isPreview ? null : subdomain);
 
   // Anonymous page-view counting for Analytics. Runs on every public event
   // page because the nav is rendered on all of them.
-  usePageViewTracking(eventId, pathname);
+  usePageViewTracking(isPreview ? null : eventId, pathname);
 
   const normalisedOverride: ActiveTarget | undefined =
     activeOverride === "join" ? "passport" : (activeOverride as ActiveTarget | undefined);
@@ -161,7 +166,7 @@ export function PublicEventNav({
 
   return (
     <>
-      {!hideAnnouncementBar && (
+      {!hideAnnouncementBar && !isPreview && (
         <div className="-mx-4">
           <PublicAnnouncementBar subdomain={subdomain} navBg={navBg} navFg={navFg} />
         </div>
@@ -177,6 +182,7 @@ export function PublicEventNav({
             : "sticky top-0 z-40 -mx-4 mb-5 border-b backdrop-blur"
         }
         style={{
+          ...navigationSurface.style,
           background: transparentHeader ? "transparent" : navBg,
           borderColor: transparentHeader
             ? "transparent"
@@ -211,7 +217,7 @@ export function PublicEventNav({
             <span
               {...navigationItem}
               className="truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"
-              style={{ color: navFg }}
+              style={{ ...navigationItem.style, color: navFg }}
             >
               {eventName ?? "Event"}
             </span>
@@ -345,7 +351,7 @@ export function PublicEventNav({
                 aria-label={passportLabel}
                 aria-current={isActive("passport") ? "page" : undefined}
                 className={bottomItemClass}
-                style={{ color: isActive("passport") ? navActiveFg : navMuted }}
+                style={{ ...(isActive("passport") ? navigationActiveItem.style : navigationItem.style), color: isActive("passport") ? navActiveFg : navMuted }}
               >
                 <BottomItemContent icon={<Stamp className="h-5 w-5" />} label="Passport" />
               </a>
@@ -356,7 +362,7 @@ export function PublicEventNav({
                 aria-label={passportLabel}
                 aria-current={isActive("passport") ? "page" : undefined}
                 className={bottomItemClass}
-                style={{ color: isActive("passport") ? navActiveFg : navMuted }}
+                style={{ ...(isActive("passport") ? navigationActiveItem.style : navigationItem.style), color: isActive("passport") ? navActiveFg : navMuted }}
               >
                 <BottomItemContent icon={<Stamp className="h-5 w-5" />} label="Passport" />
               </PublicLink>
@@ -369,7 +375,7 @@ export function PublicEventNav({
               to="/prizes"
               aria-current={isActive("prizes") ? "page" : undefined}
               className={bottomItemClass}
-              style={{ color: isActive("prizes") ? navActiveFg : navMuted }}
+              style={{ ...(isActive("prizes") ? navigationActiveItem.style : navigationItem.style), color: isActive("prizes") ? navActiveFg : navMuted }}
             >
               <BottomItemContent icon={<Trophy className="h-5 w-5" />} label="Prizes" />
             </PublicLink>
@@ -381,7 +387,7 @@ export function PublicEventNav({
               to="/venues"
               aria-current={isActive("venues") ? "page" : undefined}
               className={bottomItemClass}
-              style={{ color: isActive("venues") ? navActiveFg : navMuted }}
+              style={{ ...(isActive("venues") ? navigationActiveItem.style : navigationItem.style), color: isActive("venues") ? navActiveFg : navMuted }}
             >
               <BottomItemContent
                 icon={<MapPin className="h-5 w-5" />}
@@ -396,7 +402,7 @@ export function PublicEventNav({
               to="/offers"
               aria-current={isActive("offers") ? "page" : undefined}
               className={bottomItemClass}
-              style={{ color: isActive("offers") ? navActiveFg : navMuted }}
+              style={{ ...(isActive("offers") ? navigationActiveItem.style : navigationItem.style), color: isActive("offers") ? navActiveFg : navMuted }}
             >
               <BottomItemContent icon={<Tag className="h-5 w-5" />} label="Offers" />
             </PublicLink>
@@ -409,7 +415,7 @@ export function PublicEventNav({
               onClick={() => setMenuOpen(true)}
               aria-label="More"
               className={bottomItemClass}
-              style={{ color: menuOpen ? navActiveFg : navMuted }}
+              style={{ ...(menuOpen ? navigationActiveItem.style : navigationItem.style), color: menuOpen ? navActiveFg : navMuted }}
             >
               <BottomItemContent icon={<MoreHorizontal className="h-5 w-5" />} label="More" />
             </button>
