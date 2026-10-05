@@ -2366,7 +2366,7 @@ function VisualBrandingEditor({
   };
 
   // Welcome copy: show the EFFECTIVE text and where it comes from, without writing anything on open.
-  const welcomeOverride = form.welcome_copy !== v1Form.welcome_copy;
+  const welcomeOverride = form.welcome_copy !== brandingToForm(branding).welcome_copy;
   const effectiveWelcome = resolvePublicLandingCopy({ welcomeCopy: form.welcome_copy, description: previewEvent.description ?? null }) ?? "";
   const welcomeSource = form.welcome_copy.trim()
     ? (welcomeOverride ? "V2 welcome message for this event" : "Existing welcome message (inherited)")
