@@ -362,6 +362,7 @@ export function EventPublicLanding({
               activeOverride="home"
               transparentHeader
               hideAnnouncementBar
+              brandingSelection={mode === "preview"}
             />
           </div>
 

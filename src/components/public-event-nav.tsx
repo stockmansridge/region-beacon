@@ -65,6 +65,7 @@ export function PublicEventNav({
   eventId,
   transparentHeader = false,
   hideAnnouncementBar = false,
+  brandingSelection = false,
 }: {
   subdomain: string;
   eventName?: string | null;
@@ -90,7 +91,10 @@ export function PublicEventNav({
    * normal flow above it by the caller.
    */
   hideAnnouncementBar?: boolean;
+  /** Adds inert semantic selection markers only inside the admin V2 preview. */
+  brandingSelection?: boolean;
 }) {
+  const brandRole = (role: string) => brandingSelection ? { "data-brand-role": role } : {};
   // Header / bottom-nav / drawer surfaces consume the nav tokens so they
   // can be themed independently of buttons. Tokens fall back to the
   // primary colour when no nav background has been configured, which
@@ -155,6 +159,7 @@ export function PublicEventNav({
       )}
       {/* Sticky app-style header */}
       <header
+        {...brandRole("navigation")}
         data-brand-hint="Navigation background · Navigation text / icons"
         title="Top navigation — Navigation background · Navigation text / icons"
         className={
@@ -175,6 +180,7 @@ export function PublicEventNav({
           style={{ color: navFg }}
         >
           <button
+            {...brandRole("navigation")}
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
@@ -194,6 +200,7 @@ export function PublicEventNav({
             className="mx-auto flex h-10 max-w-[70%] items-center justify-center"
           >
             <span
+              {...brandRole("navigation")}
               className="truncate text-center text-[14px] font-semibold uppercase tracking-[0.22em]"
               style={{ color: navFg }}
             >
@@ -203,6 +210,7 @@ export function PublicEventNav({
 
           <div className="ml-auto flex items-center gap-1">
             <button
+              {...brandRole("navigation")}
               type="button"
               onClick={async () => {
                 // Share only the public event root — never the current URL,
@@ -302,6 +310,7 @@ export function PublicEventNav({
         aria-hidden={false}
       >
       <nav
+        {...brandRole("navigation")}
         aria-label="Primary"
         data-brand-hint="Navigation background · Navigation muted text / icons · Navigation active text / icons"
         title="Bottom navigation — Navigation background · Navigation muted text / icons · Navigation active text / icons"
@@ -321,6 +330,7 @@ export function PublicEventNav({
           <li className="h-full min-w-0">
             {passportHref ? (
               <a
+                {...brandRole(isActive("passport") ? "navActive" : "navMuted")}
                 href={passportTarget}
                 aria-label={passportLabel}
                 aria-current={isActive("passport") ? "page" : undefined}
@@ -331,6 +341,7 @@ export function PublicEventNav({
               </a>
             ) : (
               <PublicLink
+                {...brandRole(isActive("passport") ? "navActive" : "navMuted")}
                 to="/join"
                 aria-label={passportLabel}
                 aria-current={isActive("passport") ? "page" : undefined}
@@ -344,6 +355,7 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             <PublicLink
+              {...brandRole(isActive("prizes") ? "navActive" : "navMuted")}
               to="/prizes"
               aria-current={isActive("prizes") ? "page" : undefined}
               className={bottomItemClass}
@@ -355,6 +367,7 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             <PublicLink
+              {...brandRole(isActive("venues") ? "navActive" : "navMuted")}
               to="/venues"
               aria-current={isActive("venues") ? "page" : undefined}
               className={bottomItemClass}
@@ -370,6 +383,7 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             <PublicLink
+              {...brandRole(isActive("offers") ? "navActive" : "navMuted")}
               to="/offers"
               aria-current={isActive("offers") ? "page" : undefined}
               className={bottomItemClass}
@@ -381,6 +395,7 @@ export function PublicEventNav({
 
           <li className="h-full min-w-0">
             <button
+              {...brandRole(menuOpen ? "navActive" : "navMuted")}
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="More"
