@@ -1455,6 +1455,7 @@ function BrandingEditor() {
         v2ConfigForDraft={v2ConfigForDraft}
         v1Form={v1Form}
         onV2Activated={applyConfirmedV2}
+        saveV2Branding={saveV2Branding}
       />
     );
   }
@@ -2065,7 +2066,7 @@ function VisualBrandingEditor({
   canEdit, saving, saveError, saveSuccess, hasUnsavedChanges, onSave, onSaveAndReturn,
   onBack, onExit, selectedKit, applyBrandKit, selectCustomBrandKit, clearBrandKit,
   customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove, v2ConfigForDraft,
-  v1Form, onV2Activated,
+  v1Form, onV2Activated, saveV2Branding,
 }: {
   event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
   venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
@@ -2084,6 +2085,10 @@ function VisualBrandingEditor({
   v2ConfigForDraft: () => PublicStyleOverrideDocument;
   v1Form: Form;
   onV2Activated: (confirmed: { public_template_version: string; v2_style_config: PublicStyleOverrideDocument }) => void;
+  saveV2Branding: (config: PublicStyleOverrideDocument, activate: boolean) => Promise<
+    | { ok: true; confirmed: { public_template_version: string; v2_style_config: PublicStyleOverrideDocument } }
+    | { ok: false; message: string }
+  >;
 }) {
   const [hoveredInstance, setHoveredInstance] = useState<string | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<string | null>(null);
