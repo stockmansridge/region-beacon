@@ -133,7 +133,7 @@ export function PublicEventNav({
   const { hasAwards: loadedHasAwards } = useEventHasAwards(isPreview ? null : subdomain);
   const hasMap = previewNav.previewFeatures?.hasMap ?? loadedHasMap;
   const hasAwards = previewNav.previewFeatures?.hasAwards ?? loadedHasAwards;
-  const fetchedVenueLabels = useEventVenueLabels(venueLabelsOverride || previewNav.previewFeatures?.venueLabels ? null : subdomain);
+  const fetchedVenueLabels = useEventVenueLabels(isPreview || venueLabelsOverride || previewNav.previewFeatures?.venueLabels ? null : subdomain);
   const venueLabels = venueLabelsOverride ?? previewNav.previewFeatures?.venueLabels ?? fetchedVenueLabels;
   const customLink = useEventCustomLink(isPreview ? null : subdomain);
 
