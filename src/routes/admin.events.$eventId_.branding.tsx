@@ -2246,19 +2246,12 @@ function VisualBrandingEditor({
     if (!window.confirm("Use the V2 public template for this event? This activates only this event and saves this V2 configuration atomically.")) return;
     setActivating(true);
     try {
-      const { data, error } = await (supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
-        "save_event_v2_branding",
-        { _agency_id: agencyId, _event_id: eventId, _config: checked.document, _activate: true },
-      );
-      const confirmed = data?.[0];
-      if (error || confirmed?.public_template_version !== "v2" || !confirmed.v2_style_config) {
-        toast.error(`V2 was not activated. ${error?.message ?? "No confirmed response was returned."}`);
+      const result = await saveV2Branding(checked.document, true);
+      if (!result.ok || result.confirmed.public_template_version !== "v2") {
+        toast.error(`V2 was not activated. ${result.ok ? "No confirmed response was returned." : result.message}`);
         return;
       }
-      onV2Activated(confirmed);
+      onV2Activated(result.confirmed);
       toast.success("V2 is now live for this event only.");
     } catch (error) {
       toast.error(`V2 was not activated. ${error instanceof Error ? error.message : "Unexpected error."}`);
