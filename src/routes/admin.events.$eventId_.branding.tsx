@@ -1355,6 +1355,7 @@ function BrandingEditor() {
           if (!confirmImmediateAssetAction()) return Promise.resolve("Save or discard form changes first.");
           return removeAsset(kind, kind === "logo" ? branding?.logo_path ?? null : branding?.cover_path ?? null);
         }}
+        v2ConfigForDraft={v2ConfigForDraft}
       />
     );
   }
@@ -1964,7 +1965,7 @@ function VisualBrandingEditor({
   selectedRole, setSelectedRole, previewWidth, setPreviewWidth, recentColours, setRecentColours,
   canEdit, saving, saveError, saveSuccess, hasUnsavedChanges, onSave, onSaveAndReturn,
   onBack, onExit, selectedKit, applyBrandKit, selectCustomBrandKit, clearBrandKit,
-  customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove,
+  customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove, v2ConfigForDraft,
 }: {
   event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
   venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
@@ -1980,6 +1981,7 @@ function VisualBrandingEditor({
   confirmImmediateAssetAction: () => boolean;
   onAssetUpload: (kind: EventAssetKind, file: File) => Promise<string | null>;
   onAssetRemove: (kind: EventAssetKind) => Promise<string | null>;
+  v2ConfigForDraft: () => PublicStyleOverrideDocument;
 }) {
   const [hoveredRole, setHoveredRole] = useState<EditorSelection | null>(null);
   const [stylePage, setStylePage] = useState("home");
@@ -2060,7 +2062,7 @@ function VisualBrandingEditor({
       args: Record<string, unknown>,
     ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
       "save_event_v2_branding",
-      { _agency_id: agencyId, _event_id: eventId, _config: form.style_overrides, _activate: true },
+      { _agency_id: agencyId, _event_id: eventId, _config: v2ConfigForDraft(), _activate: true },
     );
     if (error || data?.[0]?.public_template_version !== "v2") {
       toast.error(`V2 was not activated. ${error?.message ?? "No confirmed response was returned."}`);
@@ -2167,7 +2169,7 @@ function VisualBrandingEditor({
             >
               <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview [data-brand-role="${hoveredRole ?? "__none"}"]{outline-color:color-mix(in srgb,var(--primary) 55%,transparent)}.v2-brand-preview [data-brand-role="${selectedRole ?? "__none"}"]{outline:3px solid var(--primary);outline-offset:-3px}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}`}</style>
               <div className="max-h-[calc(100vh-13rem)] overflow-y-auto">
-                <PublicEventTemplate subdomain={null} event={{ ...previewEvent, v2_style_config: form.style_overrides }} venues={venues} mode="preview" forceTemplate="v2" />
+                <PublicEventTemplate subdomain={null} event={{ ...previewEvent, v2_style_config: v2ConfigForDraft() }} venues={venues} mode="preview" forceTemplate="v2" />
               </div>
             </div>
           </div>
