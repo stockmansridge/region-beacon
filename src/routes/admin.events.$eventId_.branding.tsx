@@ -2647,7 +2647,7 @@ function BrandHoverProbe({ children }: { children: React.ReactNode }) {
     ] as const;
     const textRoles = [
       ["--event-card-heading", "Card heading colour"],
-      ["--event-card-body", "Card body text colour"],
+      ["--event-card-text", "Card body text colour"],
       ["--event-card-muted", "Card muted text colour"],
       ["--event-button-primary-fg", "Primary button text"],
       ["--event-button-secondary-fg", "Secondary button text"],
@@ -2659,7 +2659,7 @@ function BrandHoverProbe({ children }: { children: React.ReactNode }) {
       ["--event-hero-fg", "Event heading colour"],
       ["--event-link", "Link colour"],
       ["--event-page-heading", "Page heading colour"],
-      ["--event-page-body", "Page body text colour"],
+      ["--event-page-text", "Page body text colour"],
       ["--event-page-muted", "Page muted text colour"],
     ] as const;
     const borderRoles = [
@@ -2685,7 +2685,11 @@ function BrandHoverProbe({ children }: { children: React.ReactNode }) {
     if (!target) return;
     const explicit = target.closest<HTMLElement>("[data-brand-hint]");
     const inferred = inferHint(target, event.currentTarget);
-    setActiveHint(inferred ?? explicit?.dataset.brandHint ?? null);
+    setActiveHint(
+      explicit === target
+        ? explicit.dataset.brandHint ?? inferred
+        : inferred ?? explicit?.dataset.brandHint ?? null,
+    );
   };
 
   return (
