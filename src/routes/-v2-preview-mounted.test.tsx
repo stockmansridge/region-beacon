@@ -35,6 +35,8 @@ import { BonusView } from "./collect.bonus.$token";
 import { VenueSortControl } from "@/components/venue-sort-control";
 import { PublicStyleScope } from "@/components/public-style-scope";
 import { resolveMapMarkerStyle } from "@/lib/map-marker-style";
+import { EventPublicLanding } from "@/components/event-public-landing";
+import { formToPreviewEvent } from "./admin.events.$eventId_.branding";
 
 const V1_EVENT = {
   event_id: "event-v1", name: "Legacy Trail", palette_key: null, page_background_key: null,
@@ -186,7 +188,7 @@ describe("Venue sort control typography lands on the visible select", () => {
   it("label override is inherited by the native select (no fixed size/weight class on it)", () => {
     const doc = { version: 1, items: { "venues.controls.sort": { normal: { fontSize: 18, fontWeight: 700 } } } } as never;
     const { container } = render(inPreview(
-      <PublicStyleScope overrides={doc} eventId="e"><VenueSortControl sort={"default" as never} onChange={() => {}} count={2} countLabel="Stops" hasPassport={false} /></PublicStyleScope>,
+      <PublicStyleScope overrides={doc} eventId="e"><VenueSortControl sort={"default" as never} onChange={() => {}} count={2} countLabel="Stops" hasPassport={false} locationError={null} locating={false} /></PublicStyleScope>,
     ));
     const target = container.querySelector<HTMLElement>('[data-event-style="venues.controls.sort"]')!;
     expect(target.style.fontSize).toBe("18px");
@@ -195,5 +197,26 @@ describe("Venue sort control typography lands on the visible select", () => {
     expect(select.style.fontSize).toBe("inherit");
     expect(select.style.fontWeight).toBe("inherit");
     expect(getComputedStyle(select).fontSize).toBe("18px");
+  });
+});
+
+describe("Home + nav preview (mounted)", () => {
+  it("EventPublicLanding in preview mode: no visitor storage, RPC, share/clipboard or router navigation after clicking everything", async () => {
+    const { container } = render(inPreview(
+      <EventPublicLanding subdomain={null} mode="preview" templateVersion="v2" event={{ ...V2_EVENT, public_slug: "trail", description: null } as never} venues={[{ venue_id: "venue-1", name: "Estate", event_found: true } as never]} />,
+    ));
+    await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+    await clickEverything(container);
+    expectNoSideEffects();
+    expect(previewNav).toHaveBeenCalled();
+  });
+});
+
+describe("formToPreviewEvent emotive font", () => {
+  it("draft uses the unsaved form value, not the saved row", () => {
+    const saved = { default_emotive_font_family: "Saved Script" } as never;
+    const form = new Proxy({ default_emotive_font_family: "Draft Script", style_overrides: null } as Record<string, unknown>, { get: (t, k) => (k in t ? t[k as string] : "") }) as never;
+    const out = formToPreviewEvent({ id: "e", name: "E" }, saved, form, { default_emotive_font_family: "Saved Script" });
+    expect(out.default_emotive_font_family).toBe("Draft Script");
   });
 });
