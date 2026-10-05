@@ -55,6 +55,9 @@ export function AdminShell({
     navigate({ to: "/admin/login", replace: true });
   };
   const location = useLocation();
+  const isV2BrandingEditor =
+    /^\/admin\/events\/[^/]+\/branding$/.test(location.pathname) &&
+    new URLSearchParams(location.searchStr).get("editor") === "v2";
 
   useEffect(() => {
     setMobileOpen(false);
@@ -287,8 +290,11 @@ export function AdminShell({
               </button>
             </div>
           ) : null}
-          <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-            <div className="space-y-5"><BuildMarker visible={!!isPlatformAdmin && diagnosticsEnabled} />{children ?? <Outlet />}</div>
+          <main className={isV2BrandingEditor ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7"}>
+            <div className={isV2BrandingEditor ? "grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)]" : "space-y-5"}>
+              <BuildMarker visible={!!isPlatformAdmin && diagnosticsEnabled} />
+              {children ?? <Outlet />}
+            </div>
           </main>
         </div>
       </div>
