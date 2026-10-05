@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import heroWine from "@/assets/hero-wine-trail.jpg";
 import heroMarket from "@/assets/hero-market.jpg";
 import heroGroup from "@/assets/hero-tourism-group.jpg";
+import heroRegion from "@/assets/hero-region-tourism.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -202,6 +203,13 @@ const SLIDES = [
     alt: "Small tourism group exploring a regional attraction together with a guide",
     desc: "Discover together and earn more as a group.",
   },
+  {
+    img: heroRegion,
+    icon: MapPin,
+    title: "Region Tourism",
+    alt: "Heritage main street of a regional town surrounded by rolling hills",
+    desc: "Showcase your whole region and reward every stop.",
+  },
 ];
 
 
@@ -223,7 +231,7 @@ function HeroCarousel() {
       onMouseLeave={() => setPaused(false)}
     >
       {/* Desktop: 3 cards side by side, highlight current */}
-      <div className="hidden gap-6 md:grid md:grid-cols-3">
+      <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4">
         {SLIDES.map((s, i) => (
           <SlideCard key={s.title} slide={s} active={i === index} />
         ))}
