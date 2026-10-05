@@ -83,7 +83,7 @@ describe("Leaderboard page (real components, SSR)", () => {
       "leaderboard.tier.text": { explorer: { normal: { color: "#405060" } } },
       "leaderboard.completed.surface": { completed: { normal: { borderColor: "#708090" } } },
       "leaderboard.row.pointsUnit": { first: { normal: { color: "#90A0B0" } } },
-    } as const, ready: true,
+    } } as const, ready: true,
   };
 
   it("emits selectable non-identifying slots with effective styles and unchanged visitor content", () => {
