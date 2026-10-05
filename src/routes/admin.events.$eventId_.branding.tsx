@@ -1,4 +1,4 @@
-import { ChevronDown, Info, Monitor, Smartphone, X } from "lucide-react";
+import { ChevronDown, Info, Monitor, Redo2, Smartphone, Undo2, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -263,6 +263,8 @@ type VisualBrandRole =
   | "navMuted"
   | "links";
 
+type EditorSelection = VisualBrandRole | PublicStyleElementId;
+
 type ColourField = Extract<keyof Form,
   | "primary_color" | "accent_color" | "link_color"
   | "page_background_color" | "page_heading_color" | "page_body_color" | "page_muted_color" | "border_color"
@@ -466,7 +468,7 @@ function BrandingEditor() {
   const [editorMode, setEditorMode] = useState<"classic" | "v2">(
     search.editor === "v2" ? "v2" : "classic",
   );
-  const [selectedRole, setSelectedRole] = useState<VisualBrandRole | null>(null);
+  const [selectedRole, setSelectedRole] = useState<EditorSelection | null>(null);
   const [previewWidth, setPreviewWidth] = useState<"mobile" | "desktop">("mobile");
   const [recentColours, setRecentColours] = useState<string[]>([]);
 
@@ -1892,8 +1894,8 @@ function VisualBrandingEditor({
   event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
   venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
   editColour: <K extends keyof Form>(key: K, value: Form[K]) => void;
-  theme: ReturnType<typeof resolveEventTheme>; selectedRole: VisualBrandRole | null;
-  setSelectedRole: (role: VisualBrandRole | null) => void; previewWidth: "mobile" | "desktop";
+  theme: ReturnType<typeof resolveEventTheme>; selectedRole: EditorSelection | null;
+  setSelectedRole: (role: EditorSelection | null) => void; previewWidth: "mobile" | "desktop";
   setPreviewWidth: (width: "mobile" | "desktop") => void; recentColours: string[];
   setRecentColours: React.Dispatch<React.SetStateAction<string[]>>; canEdit: boolean; saving: boolean;
   saveError: string | null; saveSuccess: string | null; hasUnsavedChanges: boolean;
@@ -1904,15 +1906,75 @@ function VisualBrandingEditor({
   onAssetUpload: (kind: EventAssetKind, file: File) => Promise<string | null>;
   onAssetRemove: (kind: EventAssetKind) => Promise<string | null>;
 }) {
-  const [hoveredRole, setHoveredRole] = useState<VisualBrandRole | null>(null);
+  const [hoveredRole, setHoveredRole] = useState<EditorSelection | null>(null);
+  const [stylePage, setStylePage] = useState("home");
+  const [styleState, setStyleState] = useState<"normal" | "hover" | "focus" | "active" | "disabled">("normal");
+  const [stylePast, setStylePast] = useState<PublicStyleOverrideDocument[]>([]);
+  const [styleFuture, setStyleFuture] = useState<PublicStyleOverrideDocument[]>([]);
   const previewRef = useRef<HTMLDivElement | null>(null);
-  const roleMeta = selectedRole ? VISUAL_ROLE_META[selectedRole] : null;
+  const sharedRole = selectedRole && selectedRole in VISUAL_ROLE_META ? selectedRole as VisualBrandRole : null;
+  const itemMeta = selectedRole ? PUBLIC_STYLE_ELEMENTS.find((item) => item.id === selectedRole) ?? null : null;
+  const roleMeta = sharedRole ? VISUAL_ROLE_META[sharedRole] : null;
   void primaryDomain; void eventId; void selectedKit; void agencyId;
 
   const selectFromEvent = (target: EventTarget | null) => {
     const element = target instanceof Element ? target.closest<HTMLElement>("[data-brand-role]") : null;
-    const role = element?.dataset.brandRole as VisualBrandRole | undefined;
-    if (role && role in VISUAL_ROLE_META) setSelectedRole(role);
+    const role = element?.dataset.brandRole;
+    if (role && (role in VISUAL_ROLE_META || PUBLIC_STYLE_ELEMENTS.some((item) => item.id === role))) {
+      setSelectedRole(role as EditorSelection);
+    }
+  };
+
+  const updateStyleDocument = (recipe: (draft: PublicStyleOverrideDocument) => PublicStyleOverrideDocument) => {
+    if (!canEdit || saving) return;
+    setForm((current) => {
+      const before = parsePublicStyleOverrides(current.style_overrides);
+      const next = parsePublicStyleOverrides(recipe(before));
+      setStylePast((history) => [...history.slice(-49), before]);
+      setStyleFuture([]);
+      return { ...current, style_overrides: next };
+    });
+  };
+
+  const undoStyle = () => {
+    const previous = stylePast.at(-1);
+    if (!previous) return;
+    setForm((current) => {
+      setStyleFuture((future) => [current.style_overrides, ...future].slice(0, 50));
+      return { ...current, style_overrides: previous };
+    });
+    setStylePast((history) => history.slice(0, -1));
+  };
+
+  const redoStyle = () => {
+    const next = styleFuture[0];
+    if (!next) return;
+    setForm((current) => {
+      setStylePast((history) => [...history.slice(-49), current.style_overrides]);
+      return { ...current, style_overrides: next };
+    });
+    setStyleFuture((future) => future.slice(1));
+  };
+
+  const setItemProperty = (property: PublicStyleProperty, value: string | number | null) => {
+    if (!itemMeta) return;
+    updateStyleDocument((document) => {
+      const next = structuredClone(document);
+      const item = next.items[itemMeta.id] ?? {};
+      if (styleState === "normal") {
+        const normal = { ...(item.normal ?? {}) };
+        if (value === null || value === "") delete normal[property]; else normal[property] = value;
+        item.normal = Object.keys(normal).length ? normal : undefined;
+      } else {
+        const states = { ...(item.states ?? {}) };
+        const stateValues = { ...(states[styleState] ?? {}) };
+        if (value === null || value === "") delete stateValues[property]; else stateValues[property] = value;
+        if (Object.keys(stateValues).length) states[styleState] = stateValues; else delete states[styleState];
+        item.states = Object.keys(states).length ? states : undefined;
+      }
+      if (!item.normal && !item.states) delete next.items[itemMeta.id]; else next.items[itemMeta.id] = item;
+      return next;
+    });
   };
 
   const handlePreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
