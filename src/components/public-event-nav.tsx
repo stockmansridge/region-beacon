@@ -305,8 +305,8 @@ export function PublicEventNav({
           `100dvh` tracks the visible viewport instead so the nav always sits
           just above the browser chrome. */}
       <div
-        className={`public-mobile-nav pointer-events-none fixed inset-x-0 top-0 z-40 ${brandingSelection ? "block" : "md:hidden"}`}
-        style={{ height: brandingSelection ? "100%" : "100dvh" }}
+        className="public-mobile-nav pointer-events-none fixed inset-x-0 top-0 z-40 md:hidden"
+        style={{ height: "100dvh" }}
         aria-hidden={false}
       >
       <nav

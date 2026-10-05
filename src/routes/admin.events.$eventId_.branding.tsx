@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -70,6 +71,8 @@ import {
   PUBLIC_STYLE_ELEMENTS,
   emptyPublicStyleOverrides,
   parsePublicStyleOverrides,
+  validatePublicStyleOverrides,
+  publicStylePropertyValue,
   type PublicStyleElementId,
   type PublicStyleElementDefinition,
   type PublicStyleOverrideDocument,
@@ -458,8 +461,9 @@ function brandingToV2Form(b: Branding | null): Form {
   if (!b) return base;
   const v2 = base.style_overrides;
   for (const [key, value] of Object.entries(v2.theme ?? {})) {
-    if (key in base && key !== "style_overrides" && value != null) {
-      (base as unknown as Record<string, unknown>)[key] = String(value);
+    if (key in base && key !== "style_overrides") {
+      // null = explicit V2 clear; the form models "cleared" as "".
+      (base as unknown as Record<string, unknown>)[key] = value == null ? "" : String(value);
     }
   }
   return base;

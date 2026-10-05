@@ -267,6 +267,11 @@ function cleanProperty(property: PublicStyleProperty, raw: unknown): string | nu
   return null;
 }
 
+/** Validate one property value with the same rules the saved document uses (null = invalid). */
+export function publicStylePropertyValue(property: PublicStyleProperty, raw: unknown): string | number | null {
+  return cleanProperty(property, raw);
+}
+
 function cleanProperties(definition: PublicStyleElementDefinition, raw: unknown, errors?: string[], path = definition.id): PublicStyleProperties {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const source = raw as Record<string, unknown>;
