@@ -1,0 +1,197 @@
+// @vitest-environment happy-dom
+/**
+ * MOUNTED interaction tests (happy-dom + React DOM, not SSR). Real public
+ * components; only the router and the backend client are faked so we can
+ * prove the editor preview makes zero visitor reads/writes, RPCs or device
+ * permission calls while every visible link/button is exercised.
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import React from "react";
+import { render, cleanup, fireEvent, act } from "@testing-library/react";
+
+const rpc = vi.fn(async () => ({ data: null, error: null }));
+const from = vi.fn(() => { throw new Error("no table access in preview"); });
+vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc, from, storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: "" } }) }) }, auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } } }));
+vi.mock("@tanstack/react-start", async () => ({ ...(await vi.importActual<object>("@tanstack/react-start")), useServerFn: () => vi.fn(async () => { throw new Error("server fn in preview"); }) }));
+const routerNavigate = vi.fn();
+vi.mock("@tanstack/react-router", async () => {
+  const actual = await vi.importActual<typeof import("@tanstack/react-router")>("@tanstack/react-router");
+  return {
+    ...actual,
+    useLocation: () => ({ pathname: "/" }),
+    useNavigate: () => routerNavigate,
+    useRouterState: () => ({ location: { pathname: "/" } }),
+    Link: ({ children, to, params: _p, ...rest }: any) => <a data-router-link={String(to)} {...rest}>{children}</a>,
+  };
+});
+
+import { PublicNavProvider } from "@/components/public-nav-context";
+import { PublicEventNav } from "@/components/public-event-nav";
+import { V2ResultPreview, RESULT_PAGE_STATES, type ResultPreviewPage } from "@/components/v2-result-previews";
+import { ScannerView } from "./scan";
+import { BonusView } from "./collect.bonus.$token";
+import { VenueSortControl } from "@/components/venue-sort-control";
+import { PublicStyleScope } from "@/components/public-style-scope";
+import { resolveMapMarkerStyle } from "@/lib/map-marker-style";
+
+const V1_EVENT = {
+  event_id: "event-v1", name: "Legacy Trail", palette_key: null, page_background_key: null,
+  primary_color: "#101010", accent_color: "#202020", text_color: "#303030", nav_background_color: "#404040",
+  public_template_version: null,
+  v2_style_config: { version: 1, theme: { primary_color: "#AA0000" }, items: { "bonus.result.heading": { normal: { color: "#AA0001" } } } },
+};
+const V2_EVENT = {
+  ...V1_EVENT, event_id: "event-v2", public_template_version: "v2",
+  v2_style_config: {
+    version: 1,
+    theme: { primary_color: "#0A0B0C", accent_color: "#0D0E0F" },
+    items: { "scan.page.heading": { normal: { color: "#ABCDEF" } }, "bonus.result.heading": { normal: { color: "#AA0001" } } },
+  },
+};
+
+let spies: Array<ReturnType<typeof vi.fn>> = [];
+const storageCalls: string[] = [];
+function spyDeviceApis() {
+  storageCalls.length = 0;
+  for (const store of [window.localStorage, window.sessionStorage]) {
+    for (const m of ["getItem", "setItem", "removeItem", "clear"] as const) {
+      const orig = store[m].bind(store);
+      vi.spyOn(store, m).mockImplementation(((...a: unknown[]) => { storageCalls.push(`${m}:${String(a[0])}`); return (orig as any)(...a); }) as never);
+    }
+  }
+  const getUserMedia = vi.fn(); const geo = vi.fn(); const share = vi.fn(); const clip = vi.fn(); const notif = vi.fn(); const fetchSpy = vi.fn(async () => new Response("{}"));
+  Object.defineProperty(navigator, "mediaDevices", { value: { getUserMedia }, configurable: true });
+  Object.defineProperty(navigator, "geolocation", { value: { getCurrentPosition: geo, watchPosition: geo }, configurable: true });
+  Object.defineProperty(navigator, "share", { value: share, configurable: true });
+  Object.defineProperty(navigator, "clipboard", { value: { writeText: clip }, configurable: true });
+  (globalThis as any).Notification = Object.assign(function () {}, { requestPermission: notif, permission: "default" });
+  vi.stubGlobal("fetch", fetchSpy);
+  spies = [getUserMedia, geo, share, clip, notif, fetchSpy];
+}
+function expectNoSideEffects() {
+  expect(storageCalls.filter((c) => /gs\.|passport|visitor|token/i.test(c))).toEqual([]);
+  expect(rpc).not.toHaveBeenCalled();
+  expect(from).not.toHaveBeenCalled();
+  for (const s of spies) expect(s).not.toHaveBeenCalled();
+  expect(routerNavigate).not.toHaveBeenCalled();
+}
+async function clickEverything(root: HTMLElement) {
+  for (const el of Array.from(root.querySelectorAll("a,button"))) {
+    await act(async () => { fireEvent.click(el); });
+  }
+}
+const previewNav = vi.fn();
+function inPreview(node: React.ReactNode) {
+  return (
+    <PublicNavProvider mode="preview" subdomain="preview" onPreviewNavigate={previewNav} activePath="/" previewFeatures={{ hasFaq: true, hasMap: true, hasAwards: true }}>
+      {node}
+    </PublicNavProvider>
+  );
+}
+const varOf = (root: HTMLElement, name: string) => {
+  const el = Array.from(root.querySelectorAll<HTMLElement>("[style]")).find((n) => n.style.getPropertyValue(name));
+  return el?.style.getPropertyValue(name).trim().toLowerCase() ?? null;
+};
+
+beforeEach(() => { rpc.mockClear(); from.mockClear(); routerNavigate.mockClear(); previewNav.mockClear(); spyDeviceApis(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+describe("Preview navigation (mounted)", () => {
+  it("PublicEventNav in preview reads no visitor storage, calls no RPC, and keeps every link inside the preview", async () => {
+    const { container } = render(inPreview(<PublicEventNav subdomain="preview" eventId="event-v2" eventName="Trail" />));
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    await clickEverything(container);
+    expectNoSideEffects();
+    expect(container.querySelector("[data-router-link]")).toBeNull();
+  });
+});
+
+describe("Result previews (mounted, every state, every action)", () => {
+  for (const page of Object.keys(RESULT_PAGE_STATES) as ResultPreviewPage[]) {
+    for (const [state] of RESULT_PAGE_STATES[page]) {
+      for (const ev of [V1_EVENT, V2_EVENT]) {
+        it(`${page}/${state} (${ev.public_template_version ?? "v1"}) has zero side effects`, async () => {
+          const { container } = render(inPreview(<V2ResultPreview page={page} state={state} event={ev} venueName="Sample" />));
+          await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+          await clickEverything(container);
+          expectNoSideEffects();
+          expect(container.querySelector("[data-router-link]")).toBeNull();
+          expect(container.querySelector('a[href="/"]:not([data-preview])')?.getAttribute("href") ?? "/").toBeTruthy();
+        });
+      }
+    }
+  }
+});
+
+describe("Version-specific result profiles", () => {
+  it("V1 Bonus preview: exact legacy gradient, palette-only scope (raw event primary NOT applied), no V2 markers", () => {
+    const { container } = render(inPreview(<V2ResultPreview page="bonus" state="claimed" event={V1_EVENT} venueName={null} />));
+    const surface = Array.from(container.querySelectorAll<HTMLElement>("div")).find((d) => d.className.includes("h-[420px]"))!;
+    expect(surface.getAttribute("style")).toContain("linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)");
+    expect(container.querySelector("[data-event-style]")).toBeNull();
+    expect(container.innerHTML.toLowerCase()).not.toContain("#101010");
+    expect(container.innerHTML.toLowerCase()).not.toContain("#aa0001");
+  });
+  it("V1 Check-in preview keeps its historic full prop bag (raw primary applied, V2 theme ignored)", () => {
+    const { container } = render(inPreview(<V2ResultPreview page="checkin" state="stamped" event={V1_EVENT} venueName={null} />));
+    expect(varOf(container, "--event-primary")).toBe("#101010");
+    expect(container.innerHTML.toLowerCase()).not.toContain("#aa0000");
+  });
+  it("V2 Bonus preview applies saved theme + item override on the heading only", () => {
+    const { container } = render(inPreview(<V2ResultPreview page="bonus" state="claimed" event={V2_EVENT} venueName={null} />));
+    expect(varOf(container, "--event-primary")).toBe("#0a0b0c");
+    const heading = container.querySelector<HTMLElement>('[data-event-style="bonus.result.heading"]')!;
+    expect(heading.style.color.toLowerCase()).toMatch(/#aa0001|rgb\(170, 0, 1\)/);
+    expect(container.querySelector<HTMLElement>('[data-event-style="bonus.result.body"]')!.style.color).toBe("");
+  });
+  it("Public V1 Bonus view (no preview) uses the exact legacy gradient too", () => {
+    const { container } = render(<BonusView outcome={{ kind: "claimed", row: { points_awarded: 5, total_points: 9, bonus_code_name: null } as never, passportToken: "t" }} />);
+    expect(container.innerHTML).toContain("linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)");
+  });
+});
+
+describe("Public ScannerView canonical V2 vs exact V1", () => {
+  const props = { subdomain: null, eventId: "e", hasPassport: true, err: { kind: "none" } as never, manual: "", onManualChange() {}, onManualGo() {}, copied: false, onCopySupport() {}, camera: <div /> };
+  it("V1: raw row colours, no V2 theme, no item override", () => {
+    const { container } = render(inPreview(<ScannerView {...props} event={V1_EVENT} />));
+    expect(varOf(container, "--event-primary")).toBe("#101010");
+    expect(container.querySelector("[data-event-style]")).toBeNull();
+  });
+  it("V2: saved theme replaces row colours; item override lands on its target only", () => {
+    const { container } = render(inPreview(<ScannerView {...props} event={V2_EVENT} />));
+    expect(varOf(container, "--event-primary")).toBe("#0a0b0c");
+    expect(container.innerHTML.toLowerCase()).not.toContain("--event-primary: #101010");
+  });
+});
+
+describe("Map pin resolver (shared by MapKit annotations and preview marker)", () => {
+  const doc = { version: 1, items: { "map.marker": { normal: { iconBackgroundColor: "#111111", iconColor: "#222222" }, states: { active: { iconColor: "#333333" } } } }, records: { "map.marker": { "venue-b": { normal: { iconBackgroundColor: "#444444" } } } } } as never;
+  const base = { primary: "#P00000".replace("P", "1"), accent: "#200000", overrides: doc, hasPassport: false, visited: false };
+  it("V1 ignores overrides and returns historic colours", () => {
+    expect(resolveMapMarkerStyle({ ...base, templateVersion: "v1", venueId: "venue-a" })).toEqual({ color: "#200000", glyphColor: "#FFFFFF", selectedGlyphColor: "#FFFFFF", glyphText: "" });
+    expect(resolveMapMarkerStyle({ ...base, templateVersion: "v1", venueId: "venue-a", hasPassport: true }).color).toBe("#8A7E66");
+  });
+  it("V2 default / record / selected / visited states", () => {
+    expect(resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-a" })).toMatchObject({ color: "#111111", glyphColor: "#222222", selectedGlyphColor: "#333333" });
+    expect(resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-b" }).color).toBe("#444444");
+    const visited = resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-a", visited: true, hasPassport: true });
+    expect(visited.color).toBe("#100000");
+    expect(visited.glyphText).toBe("\u2713");
+  });
+});
+
+describe("Venue sort control typography lands on the visible select", () => {
+  it("label override is inherited by the native select (no fixed size/weight class on it)", () => {
+    const doc = { version: 1, items: { "venues.controls.sort": { normal: { fontSize: 18, fontWeight: 700 } } } } as never;
+    const { container } = render(inPreview(
+      <PublicStyleScope overrides={doc} eventId="e"><VenueSortControl sort={"default" as never} onChange={() => {}} count={2} countLabel="Stops" hasPassport={false} /></PublicStyleScope>,
+    ));
+    const target = container.querySelector<HTMLElement>('[data-event-style="venues.controls.sort"]')!;
+    expect(target.style.fontSize).toBe("18px");
+    const select = container.querySelector("select")!;
+    expect(select.className).not.toMatch(/text-\[12px\]|font-semibold/);
+    expect(select.style.fontSize).toBe("inherit");
+    expect(select.style.fontWeight).toBe("inherit");
+    expect(getComputedStyle(select).fontSize).toBe("18px");
+  });
+});
