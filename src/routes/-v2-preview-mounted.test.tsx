@@ -38,6 +38,8 @@ import { applyMapMarkerSelection, mapMarkerAnnotationOptions, resolveMapMarkerSt
 import { MapMarkerGlyph } from "./live.$subdomain.map";
 import { EventPublicLanding } from "@/components/event-public-landing";
 import { formToPreviewEvent } from "./admin.events.$eventId_.branding";
+import { PassportPreview, type PassportRow } from "./passport.$token";
+import { EMPTY_PASSPORT_STAMP_STATE } from "@/lib/passport-stamps";
 
 const V1_EVENT = {
   event_id: "event-v1", name: "Legacy Trail", palette_key: null, page_background_key: null,
@@ -261,6 +263,20 @@ describe("Home + nav preview (mounted)", () => {
   });
 });
 
+describe("Passport V2 preview composition", () => {
+  it("uses the real scoped Passport nodes, bottom menu, and a true zero-stamp state without side effects", async () => {
+    const doc = { version: 1, items: { "passport.page.surface": { normal: { backgroundColor: "#123456" } } } } as never;
+    const passport = { passport_id: "preview", event_id: "event-v2", first_name: "Sample", full_name: "Sample Visitor", checkin_count: 1 } as PassportRow;
+    const branding = { paletteKey: null, backgroundKey: null, primaryColor: null, accentColor: null, pageBackgroundColor: null, cardBackgroundColor: null, textColor: null, mutedTextColor: null, cardTextColor: null, cardMutedTextColor: null, borderColor: null, primaryTextColor: null, navBackgroundColor: null, brandKitKey: null, linkColor: null, cardBorderColor: null, buttonPrimaryBg: null, buttonPrimaryFg: null, buttonSecondaryBg: null, buttonSecondaryFg: null, navFgColor: null, navMutedColor: null, navActiveFgColor: null, heroBgColor: null, heroFgColor: null, heroAccentColor: null, heroBodyColor: null, heroOverlayColor: null, heroOverlayOpacity: null, pageHeadingColor: null, pageBodyColor: null, pageMutedColor: null, cardHeadingColor: null, cardBodyColor: null, cardMutedColor: null, logoPath: null, coverPath: null, coverFocalX: null, coverFocalY: null, fontFamily: null, headingFontFamily: null, eventId: "event-v2", templateVersion: "v2" as const, styleOverrides: doc, ready: true };
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="event-v2"><PassportPreview passport={passport} eventName="Trail" stamps={{ ...EMPTY_PASSPORT_STAMP_STATE, status: "ok" }} token="preview" subdomain="preview" branding={branding} awards={[]} preview /></PublicStyleScope>, "/passport/preview"));
+    expect(container.querySelector<HTMLElement>('[data-event-style="passport.page.surface"]')?.style.backgroundColor).toBe("#123456");
+    expect(container.querySelector('nav[aria-label="Primary"]')).not.toBeNull();
+    expect(container.textContent).toContain("0");
+    await clickEverything(container);
+    expectNoSideEffects();
+  });
+});
+
 describe("formToPreviewEvent emotive font", () => {
   it("draft uses the unsaved form value, not the saved row", () => {
     const saved = { default_emotive_font_family: "Saved Script" } as never;
@@ -333,5 +349,21 @@ describe("PublicEventNav override precedence", () => {
     const aside = document.querySelector<HTMLElement>("aside")!;
     expect(aside.style.backgroundColor).toBe("#778899");
     expect(aside.style.background === "" || aside.style.background.includes("#778899")).toBeTruthy();
+  });
+
+  it("renders event-scoped V2 item labels, order, icons, and active item styles", () => {
+    const configured = { ...doc, navigation: { items: [
+      { id: "venues", label: "Stops", icon: "map" }, { id: "passport", label: "My Pass", icon: "stamp" },
+      { id: "prizes", label: "Rewards", icon: "trophy" }, { id: "offers", label: "Deals", icon: "tag" },
+      { id: "more", label: "Explore", icon: "more" },
+    ] }, records: { "shared.navigation.tabItem": { venues: { normal: { iconColor: "#123456", iconBackgroundColor: "#654321" } } } } } as never;
+    const { container } = render(inPreview(<PublicStyleScope overrides={configured} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" brandingSelection /></PublicStyleScope>, "/venues/venue-a"));
+    const tabs = Array.from(container.querySelectorAll<HTMLElement>("nav[aria-label='Primary'] li > *"));
+    expect(tabs.map((tab) => tab.textContent?.trim())).toEqual(["Stops", "My Pass", "Rewards", "Deals", "Explore"]);
+    const venue = tabs[0];
+    expect(venue.dataset.brandInstance).toBe("shared.navigation.tabItem@venues");
+    expect(venue.getAttribute("aria-current")).toBe("page");
+    expect(venue.style.getPropertyValue("--item-icon-color")).toBe("#123456");
+    expect(venue.style.getPropertyValue("--item-icon-bg")).toBe("#654321");
   });
 });
