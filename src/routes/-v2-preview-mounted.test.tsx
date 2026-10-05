@@ -220,3 +220,52 @@ describe("formToPreviewEvent emotive font", () => {
     expect(out.default_emotive_font_family).toBe("Draft Script");
   });
 });
+
+describe("PublicEventNav override precedence", () => {
+  const doc = { version: 1, items: {
+    "shared.navigation.surface": { normal: { backgroundColor: "#112233", borderColor: "#445566" } },
+    "shared.navigation.item": { normal: { color: "#aa0001", fontSize: 13, iconColor: "#00aa02" } },
+    "shared.navigation.activeItem": { normal: { color: "#bb0003", backgroundColor: "#0000cc" } },
+    "shared.navigation.drawer": { normal: { backgroundColor: "#778899" } },
+  } } as never;
+
+  it("without V2 overrides keeps the exact default nav styles", () => {
+    const { container } = render(inPreview(<PublicEventNav subdomain="preview" eventId="e" eventName="Trail" />));
+    const header = container.querySelector<HTMLElement>("header")!;
+    expect(header.style.background).not.toBe("");
+    expect(header.style.backgroundColor === "" || header.style.backgroundColor === header.style.background).toBeTruthy();
+    const label = Array.from(container.querySelectorAll<HTMLElement>("nav[aria-label='Primary'] li > *")).at(-1)!;
+    expect(label.className).toMatch(/text-\[10px\]/);
+  });
+
+  it("V2 item overrides win on header, bottom bar, drawer, labels and icons", async () => {
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" /></PublicStyleScope>));
+    const header = container.querySelector<HTMLElement>("header")!;
+    const bottom = container.querySelector<HTMLElement>("nav[aria-label='Primary']")!;
+    for (const bar of [header, bottom]) {
+      expect(bar.style.backgroundColor).toBe("rgb(17, 34, 51)");
+      expect(bar.style.background === "" || bar.style.background.includes("17, 34, 51")).toBeTruthy();
+      expect(bar.style.borderColor).toBe("rgb(68, 85, 102)");
+    }
+    const eventName = Array.from(container.querySelectorAll<HTMLElement>("header span")).find((s) => s.textContent === "Trail")!;
+    expect(eventName.style.color).toBe("rgb(170, 0, 1)");
+    const tabs = Array.from(bottom.querySelectorAll<HTMLElement>("li > *"));
+    const active = tabs.filter((t) => t.style.color === "rgb(187, 0, 3)");
+    const inactive = tabs.filter((t) => t.style.color === "rgb(170, 0, 1)");
+    expect(inactive.length).toBeGreaterThan(0);
+    for (const t of inactive) {
+      expect(t.style.fontSize).toBe("13px");
+      const leaf = t.querySelector<HTMLElement>("span.whitespace-nowrap")!;
+      expect(leaf.className).not.toMatch(/text-\[10px\]|leading-4/);
+      expect(getComputedStyle(leaf).fontSize).toBe("13px");
+      expect(t.style.getPropertyValue("--item-icon-color")).toBe("#00aa02");
+      expect(t.querySelector<HTMLElement>("span[style*='--item-icon-color']")).not.toBeNull();
+    }
+    for (const t of active) expect(t.style.backgroundColor).toBe("rgb(0, 0, 204)");
+    const menuButton = container.querySelector<HTMLElement>("button[aria-label='Open menu']")!;
+    await act(async () => { fireEvent.click(menuButton); });
+    const aside = document.querySelector<HTMLElement>("aside")!;
+    expect(aside.style.backgroundColor).toBe("rgb(119, 136, 153)");
+    expect(aside.style.background === "" || aside.style.background.includes("119, 136, 153")).toBeTruthy();
+  });
+});
