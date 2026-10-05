@@ -69,7 +69,7 @@ export function PublicEventNav({
   eventId,
   transparentHeader = false,
   hideAnnouncementBar = false,
-  brandingSelection = false,
+  brandingSelection: brandingSelectionProp = false,
   venueLabels: venueLabelsOverride,
 }: {
   subdomain: string;
@@ -105,6 +105,9 @@ export function PublicEventNav({
   const isPreview = previewNav.mode === "preview";
   const isV2Style = usePublicStyleEnabled();
   const styleDocument = usePublicStyleDocument();
+  // Every V2 preview page gets selectable nav markers from context, even when
+  // the page does not pass brandingSelection explicitly.
+  const brandingSelection = brandingSelectionProp || (isPreview && isV2Style);
   const navigationSurface = usePublicStyleTarget("shared.navigation.surface", { selectable: brandingSelection });
   const navigationItem = usePublicStyleTarget("shared.navigation.item", { selectable: brandingSelection });
   const navigationActiveItem = usePublicStyleTarget("shared.navigation.activeItem", { selectable: brandingSelection });

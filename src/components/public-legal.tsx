@@ -265,17 +265,20 @@ function LegalAccordionCard({
   section,
   sectionId,
   defaultOpen,
+  revealNonce,
 }: {
   header: string;
   section: LegalSectionContent;
   sectionId: "terms" | "privacy";
   defaultOpen?: boolean;
+  revealNonce?: number;
 }) {
   const v2 = usePublicStyleEnabled();
   const { mode } = usePublicNav();
   const [open, setOpen] = useState(Boolean(defaultOpen));
   // Switching between Terms / Privacy / combined must re-sync the expanded card.
   useEffect(() => { setOpen(Boolean(defaultOpen)); }, [defaultOpen]);
+  useEffect(() => { if (revealNonce) setOpen(true); }, [revealNonce]);
   const surface = (
     <div
       className={v2 ? "rounded-2xl border shadow-sm" : "rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] shadow-sm"}
@@ -360,9 +363,12 @@ export function CombinedLegalPage({
   subdomain,
   initialOpen,
   previewData,
+  reveal,
 }: {
   subdomain: string;
   initialOpen?: "terms" | "privacy" | "both";
+  /** Explicit request (preview navigation) to expand a section; a new nonce re-opens it even if collapsed. */
+  reveal?: { section: "terms" | "privacy"; nonce: number } | null;
   previewData?: { branding: EventBrandingKeys; row: LegalRow };
 }) {
   const loadedState = useLegal(previewData ? "" : subdomain);
@@ -424,12 +430,14 @@ export function CombinedLegalPage({
           section={terms}
           sectionId="terms"
           defaultOpen={termsOpen}
+          revealNonce={reveal?.section === "terms" ? reveal.nonce : undefined}
         />
         <LegalAccordionCard
           header="Privacy Policy"
           section={privacy}
           sectionId="privacy"
           defaultOpen={privacyOpen}
+          revealNonce={reveal?.section === "privacy" ? reveal.nonce : undefined}
         />
       </div>
     </PublicLegalShell>

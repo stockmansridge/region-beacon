@@ -2343,10 +2343,11 @@ function VisualBrandingEditor({
   });
 
   // /terms and /privacy both open the single combined legal page; reveal the requested section.
-  const [legalFocus, setLegalFocus] = useState<"terms" | "privacy" | null>(null);
+  // A nonce makes every request (including the same link twice) re-expand and reveal.
+  const [legalFocus, setLegalFocus] = useState<{ section: "terms" | "privacy"; nonce: number } | null>(null);
   useEffect(() => {
     if (previewPage !== "legal" || !legalFocus) return;
-    const id = window.setTimeout(() => frameDoc?.querySelector(`[data-legal-card="${legalFocus}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 60);
+    const id = window.setTimeout(() => frameDoc?.querySelector(`[data-legal-card="${legalFocus.section}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 60);
     return () => window.clearTimeout(id);
   }, [previewPage, legalFocus, frameDoc]);
 
@@ -2530,7 +2531,7 @@ function VisualBrandingEditor({
     else if (to === "/leaderboard") setPreviewPage("leaderboard");
     else if (to === "/faq") setPreviewPage("faq");
     else if (to === "/bookmarks") setPreviewPage("bookmarks");
-    else if (to === "/terms" || to === "/privacy") { setPreviewPage("legal"); setLegalFocus(to === "/terms" ? "terms" : "privacy"); }
+    else if (to === "/terms" || to === "/privacy") { setPreviewPage("legal"); setLegalFocus((prev) => ({ section: to === "/terms" ? "terms" : "privacy", nonce: (prev?.nonce ?? 0) + 1 })); }
     else if (to === "/terms-privacy" || to === "/legal") setPreviewPage("legal");
   };
   const renderPreviewPage = () => {
@@ -2553,7 +2554,7 @@ function VisualBrandingEditor({
     }
     if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: faqEntries }} />;
     if (previewPage === "bookmarks") return <PublicBookmarksPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, enabled: true, rows: !populated ? [] : listVenues.slice(0, 2).filter((venue) => venue.venue_id).map((venue) => ({ kind: venue.offer_summary ? "offer" as const : "venue" as const, venue_id: venue.venue_id!, venue_name: venue.name, logo_path: venue.logo_path, cover_path: venue.cover_path, offer_summary: venue.offer_summary, created_at: new Date(0).toISOString() })) }} />;
-    if (previewPage === "legal") return <CombinedLegalPage subdomain="preview" initialOpen="both" previewData={{ branding: fixtureBranding, row: legalPreviewRow(publicContent?.legal ?? null, event, pageState) }} />;
+    if (previewPage === "legal") return <CombinedLegalPage subdomain="preview" initialOpen="both" reveal={legalFocus} previewData={{ branding: fixtureBranding, row: legalPreviewRow(publicContent?.legal ?? null, event, pageState) }} />;
     if (previewPage === "passport") {
       const passport = { passport_id: "preview-passport", event_id: event.id, status: "active", completed_at: null, leaderboard_opt_out: false, email: "preview@example.invalid", full_name: "Sample Visitor", first_name: "Sample", last_name: "Visitor", mobile: null, postcode: null, marketing_opt_in: false, checkin_count: 1 } as PassportRow;
       const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: previewLabels.singular, venue_label_plural: previewLabels.plural, total_venues: listVenues.length, stamped_count: pageState === "empty" ? 0 : pageState === "complete" ? listVenues.length : 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: pageState === "complete" || (pageState !== "empty" && index === 0), checked_in_at: pageState === "complete" || (pageState !== "empty" && index === 0) ? new Date(0).toISOString() : null })));
@@ -2691,8 +2692,7 @@ function VisualBrandingEditor({
             labels={form.style_overrides.backLinks?.labels ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
             setLabel={(key, value) => updateStyleDocument((next) => {
               const labels = { ...(next.backLinks?.labels ?? {}) };
-              // Keep in-progress spaces while typing; the allowlisted parser trims on save.
-              const cleaned = value === null || cleanPublicBackLinkLabel(value) === null ? null : value.replace(/[\u0000-\u001F\u007F<>]/g, "").slice(0, PUBLIC_BACK_LINK_LABEL_MAX);
+              const cleaned = value === null ? null : cleanPublicBackLinkLabel(value);
               if (cleaned === null) delete labels[key]; else labels[key] = cleaned;
               const { backLinks: _old, ...rest } = next;
               return Object.keys(labels).length ? { ...rest, backLinks: { labels } } : rest;
@@ -2751,9 +2751,21 @@ function NavigationMenuInspector({ items, selectedId, disabled, select, rename, 
 }
 
 /** Buffered while typing (spaces allowed); validated and committed on blur / Enter. Empty resets to the inherited name. */
+/** Scope copy for repeated targets: venue/prize records vs non-identifying template slots. */
+export function recordScopeCopy(item: { repeat?: string; label: string }, record: { id: string; label?: string }): { one: string; all: string } {
+  if (record.label) return { one: `This ${record.label} only`, all: `Every ${record.label} (type default)` };
+  if (item.repeat === "award") return { one: "This prize only", all: "Every prize (type default)" };
+  if (item.repeat === "template") {
+    const slot = record.id.replace(/[_-]+/g, " ");
+    return { one: `Only the “${slot}” version`, all: `All versions of ${item.label.toLowerCase()} (type default)` };
+  }
+  return { one: "This venue only", all: "Every venue (type default)" };
+}
+
 export function NavLabelField({ value, placeholder, disabled, commit }: { value: string; placeholder: string; disabled: boolean; commit: (label: string | null) => void }) {
   const [draft, setDraft] = useState(value);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setDraft(value); setError(null); }, [value]);
   const apply = () => {
     if (!draft.trim()) { setError(null); if (value) commit(null); return; }
     const cleaned = cleanPublicNavLabel(draft);
@@ -2964,7 +2976,7 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
   const opacityPercent = typeof values.opacity === "number" ? Math.round(values.opacity * 100) : null;
   return <>
     <div className="flex items-start justify-between gap-3"><div><div className="text-xs font-semibold uppercase text-muted-foreground">{record?.scope === "type" ? "All items of this type" : "This item"}</div><h2 className="text-lg font-semibold">{item.label}</h2><p className="mt-1 text-sm text-muted-foreground">Changes only this named item{record?.scope === "record" ? " for this one record" : ""}. Theme and Brand Kit values remain the fallback.</p></div><Button type="button" size="icon" variant="ghost" onClick={clear} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
-    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">This one only</SelectItem><SelectItem value="type">Every {record.label ?? (item.repeat === "award" ? "prize" : "venue")} (type default)</SelectItem></SelectContent></Select></Field> : null}
+    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">{recordScopeCopy(item, record).one}</SelectItem><SelectItem value="type">{recordScopeCopy(item, record).all}</SelectItem></SelectContent></Select></Field> : null}
     <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !hasOverride}>Reset this item</Button></div>
     {item.states?.length ? <Field label="Appearance (shown in the preview)"><Select value={state} onValueChange={(value) => setState(value as PublicStyleState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
     <div className="mt-5 space-y-4">
@@ -4152,6 +4164,29 @@ const BACK_LINK_CONTEXT_LABELS: Record<PublicBackLinkContext, string> = {
   "join-complete": "Join — already registered", venue: "Venue detail (to venues)", "passport-missing": "Passport not found",
 };
 
+/** Buffers typing locally; validates and commits on blur/Enter so spaces between words survive. */
+export function BackLinkLabelField({ id, value, disabled, commit }: { id: string; value: string; disabled: boolean; commit: (label: string | null) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setDraft(value); setError(null); }, [value]);
+  const apply = () => {
+    if (!draft.trim()) { setError(null); if (value) commit(null); else setDraft(""); return; }
+    const cleaned = cleanPublicBackLinkLabel(draft);
+    if (!cleaned) { setError(`Use 1–${PUBLIC_BACK_LINK_LABEL_MAX} characters, no < or >.`); return; }
+    setError(null);
+    if (cleaned !== value) commit(cleaned); else setDraft(cleaned);
+  };
+  return <>
+    <div className="flex gap-2">
+      <BackLinkInput id={id} data-label-buffer="" maxLength={PUBLIC_BACK_LINK_LABEL_MAX + 8} disabled={disabled} placeholder="Original wording"
+        value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={apply}
+        onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); } if (event.key === "Escape") { event.stopPropagation(); setDraft(value); setError(null); } }} />
+      <Button type="button" variant="outline" size="sm" disabled={disabled || !value} onClick={() => { setDraft(""); commit(null); }}>Reset</Button>
+    </div>
+    {error ? <p className="text-xs text-destructive">{error}</p> : null}
+  </>;
+}
+
 function BackLinkLabelInspector({ context, labels, disabled, setLabel }: {
   context: PublicBackLinkContext | null;
   labels: Partial<Record<PublicBackLinkLabelKey, string>>;
@@ -4161,11 +4196,7 @@ function BackLinkLabelInspector({ context, labels, disabled, setLabel }: {
   const field = (key: PublicBackLinkLabelKey, title: string, hint: string) => (
     <div className="space-y-1.5">
       <BackLinkFieldLabel htmlFor={`back-label-${key}`}>{title}</BackLinkFieldLabel>
-      <div className="flex gap-2">
-        <BackLinkInput id={`back-label-${key}`} maxLength={PUBLIC_BACK_LINK_LABEL_MAX} disabled={disabled} placeholder="Original wording"
-          value={labels[key] ?? ""} onChange={(event) => setLabel(key, event.target.value.trim() ? event.target.value : null)} />
-        <Button type="button" variant="outline" size="sm" disabled={disabled || !labels[key]} onClick={() => setLabel(key, null)}>Reset</Button>
-      </div>
+      <BackLinkLabelField key={key} id={`back-label-${key}`} value={labels[key] ?? ""} disabled={disabled} commit={(v) => setLabel(key, v)} />
       <p className="text-xs text-muted-foreground">{hint}</p>
     </div>
   );

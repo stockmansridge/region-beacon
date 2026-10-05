@@ -262,10 +262,14 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
                           className="h-full w-full object-cover"
                           loading="lazy"
                         /></PublicStyleTarget>
-                      ) : (
-                        <PublicStyleTarget id="offers.card.placeholder" recordId={vid}><div className={`grid h-full w-full place-items-center bg-[var(--event-primary,#1F3D2B)]/10 ${v2 ? "box-border border border-transparent" : ""}`}>
-                          <PublicStyleTarget id="offers.card.placeholderIcon" recordId={vid}><span className={`grid place-items-center rounded-full text-[var(--event-primary,#1F3D2B)]/40 ${v2 ? "box-border border border-transparent" : ""}`} aria-hidden><OfferIcon className="h-6 w-6" /></span></PublicStyleTarget>
+                      ) : v2 ? (
+                        <PublicStyleTarget id="offers.card.placeholder" recordId={vid}><div className="box-border grid h-full w-full place-items-center border border-transparent bg-transparent">
+                          <PublicStyleTarget id="offers.card.placeholderIcon" recordId={vid}><span className="box-border grid place-items-center rounded-full border border-transparent text-[var(--event-primary,#1F3D2B)]/40" aria-hidden><OfferIcon className="h-6 w-6" /></span></PublicStyleTarget>
                         </div></PublicStyleTarget>
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-[var(--event-primary,#1F3D2B)]/40">
+                          <OfferIcon className="h-6 w-6" />
+                        </div>
                       )}
                     </div>
 

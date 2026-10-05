@@ -533,9 +533,25 @@ export function publicStylePropertyValue(property: PublicStyleProperty, raw: unk
   return cleanProperty(property, raw);
 }
 
+/**
+ * Saved properties from an earlier registry kind, migrated on read to their
+ * current equivalent (only when the current key is not already set).
+ * offers.card.badge was BUTTON (backgroundColor/color) before becoming ICON.
+ */
+const LEGACY_PROPERTY_ALIASES: Partial<Record<string, Partial<Record<PublicStyleProperty, string>>>> = {
+  "offers.card.badge": { iconBackgroundColor: "backgroundColor", iconColor: "color" },
+};
+
 function cleanProperties(definition: PublicStyleElementDefinition, raw: unknown, errors?: string[], path = definition.id): PublicStyleProperties {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const source = raw as Record<string, unknown>;
+  let source = raw as Record<string, unknown>;
+  const aliases = LEGACY_PROPERTY_ALIASES[definition.id];
+  if (aliases) {
+    source = { ...source };
+    for (const [current, legacy] of Object.entries(aliases)) {
+      if ((source[current] === undefined || source[current] === null) && source[legacy as string] != null) source[current] = source[legacy as string];
+    }
+  }
   const result: PublicStyleProperties = {};
   for (const property of definition.properties) {
     if (source[property] === undefined || source[property] === null) continue;
