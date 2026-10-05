@@ -90,6 +90,9 @@ import {
   PUBLIC_STYLE_ELEMENTS,
   DEFAULT_PUBLIC_NAVIGATION,
   PUBLIC_NAV_ICON_IDS,
+  PUBLIC_NAV_LABEL_MAX,
+  cleanPublicNavLabel,
+  publicNavItemLabel,
   PUBLIC_BACK_LINK_CONTEXTS,
   PUBLIC_BACK_LINK_LABEL_MAX,
   cleanPublicBackLinkLabel,
@@ -2303,8 +2306,18 @@ function VisualBrandingEditor({
 
   const navItems = form.style_overrides.navigation?.items ?? DEFAULT_PUBLIC_NAVIGATION.items;
   const updateNavigation = (items: typeof navItems) => updateStyleDocument((next) => ({ ...next, navigation: { items: [...items] } }));
-  const updateNavigationItem = (id: string, patch: { label?: string; icon?: PublicNavIconId }) =>
-    updateNavigation(navItems.map((item) => item.id === id ? { ...item, ...patch } : item));
+  const updateNavigationItem = (id: string, patch: { label?: string | null; icon?: PublicNavIconId }) =>
+    updateNavigation(navItems.map((item) => {
+      if (item.id !== id) return item;
+      const next = { ...item, ...(patch.icon ? { icon: patch.icon } : {}) };
+      if (patch.label === null) delete next.label;
+      else if (patch.label !== undefined) next.label = patch.label;
+      return next;
+    }));
+  const resetNavigationOrder = () => updateNavigation(DEFAULT_PUBLIC_NAVIGATION.items.map((fallback) => navItems.find((item) => item.id === fallback.id) ?? fallback));
+  const selectNavigationTarget = (role: "shared.navigation.tabItem" | "shared.navigation.currentTab", id: string) => {
+    setSelectedRole(role as EditorSelection); setSelectedRecord(id); setRecordScope("record"); setStyleState("normal");
+  };
   const moveNavigationItem = (id: string, direction: -1 | 1) => {
     const index = navItems.findIndex((item) => item.id === id);
     const target = index + direction;
@@ -2581,7 +2594,7 @@ function VisualBrandingEditor({
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {(() => {
               const pg = previewPage;
-              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || item.id === "shared.navigation.drawer"));
+              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || ["shared.navigation.drawer", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab"].includes(item.id)));
               const sections = [...new Set(items.map((item) => `${item.page === "shared" ? "Shared" : ""}${item.page === "shared" ? " · " : ""}${item.section}`))];
               return sections.map((section) => <div key={section} className="col-span-full"><div className="mb-1 mt-2 text-[11px] font-semibold text-muted-foreground">{section}</div><div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">{items.filter((item) => `${item.page === "shared" ? "Shared · " : ""}${item.section}` === section).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}</div></div>);
             })()}
@@ -2663,9 +2676,12 @@ function VisualBrandingEditor({
             disabled={!canEdit || busy || comparisonReadOnly} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
             record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope, label: itemMeta.id === "shared.navigation.tabItem" ? "menu item" : undefined } : null}
           /> : null}
-          {itemMeta && ["shared.navigation.surface", "shared.navigation.item", "shared.navigation.activeItem", "shared.navigation.tabItem"].includes(itemMeta.id) ? <NavigationMenuInspector
+          {itemMeta && ["shared.navigation.surface", "shared.navigation.item", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab"].includes(itemMeta.id) ? <NavigationMenuInspector
             items={navItems} selectedId={selectedRecord} disabled={!canEdit || busy || comparisonReadOnly}
-            select={(id) => { setSelectedRecord(id); setRecordScope("record"); }}
+            venuesPlural={previewLabels.plural}
+            mode={itemMeta.id === "shared.navigation.currentTab" || itemMeta.id === "shared.navigation.activeItem" ? "current" : itemMeta.id === "shared.navigation.tabItem" || itemMeta.id === "shared.navigation.item" ? "inactive" : null}
+            select={(id, mode) => selectNavigationTarget(mode === "current" ? "shared.navigation.currentTab" : "shared.navigation.tabItem", id)}
+            resetOrder={resetNavigationOrder}
             rename={(id, label) => updateNavigationItem(id, { label })}
             changeIcon={(id, icon) => updateNavigationItem(id, { icon })}
             move={moveNavigationItem}
@@ -2706,20 +2722,55 @@ function VisualBrandingEditor({
   );
 }
 
-function NavigationMenuInspector({ items, selectedId, disabled, select, rename, changeIcon, move }: {
+function NavigationMenuInspector({ items, selectedId, disabled, select, rename, changeIcon, move, resetOrder, mode, venuesPlural }: {
   items: typeof DEFAULT_PUBLIC_NAVIGATION.items; selectedId: string | null; disabled: boolean;
-  select: (id: string) => void; rename: (id: string, label: string) => void;
+  select: (id: string, mode: "inactive" | "current") => void; rename: (id: string, label: string | null) => void;
   changeIcon: (id: string, icon: PublicNavIconId) => void; move: (id: string, direction: -1 | 1) => void;
+  resetOrder: () => void; mode: "inactive" | "current" | null; venuesPlural?: string | null;
 }) {
   const selected = items.find((item) => item.id === selectedId) ?? items[0];
   if (!selected) return null;
+  const defaultIcon = DEFAULT_PUBLIC_NAVIGATION.items.find((item) => item.id === selected.id)?.icon ?? selected.icon;
+  const inheritedLabel = publicNavItemLabel({ id: selected.id, icon: selected.icon }, venuesPlural);
+  const orderChanged = items.some((item, index) => DEFAULT_PUBLIC_NAVIGATION.items[index]?.id !== item.id);
   return <div className="mt-5 space-y-4 border-t pt-4">
-    <Field label="Bottom mobile menu item"><Select value={selected.id} onValueChange={select} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{items.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}</SelectContent></Select></Field>
-    <Field label="Display name"><input aria-label="Bottom menu display name" maxLength={24} value={selected.label} disabled={disabled} onChange={(event) => { const label = event.target.value.slice(0, 24); if (label.trim()) rename(selected.id, label); }} className="h-10 w-full rounded-md border bg-background px-3 text-sm" /></Field>
-    <Field label="Icon"><Select value={selected.icon} onValueChange={(value) => changeIcon(selected.id, value as PublicNavIconId)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{PUBLIC_NAV_ICON_IDS.map((icon) => <SelectItem key={icon} value={icon}>{icon.replace(/(^|-)(\w)/g, (_, __, letter: string) => ` ${letter.toUpperCase()}`).trim()}</SelectItem>)}</SelectContent></Select></Field>
-    <div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={disabled || items[0]?.id === selected.id} onClick={() => move(selected.id, -1)}>Move up</Button><Button type="button" variant="outline" size="sm" disabled={disabled || items.at(-1)?.id === selected.id} onClick={() => move(selected.id, 1)}>Move down</Button></div>
+    <Field label="Bottom mobile menu item"><Select value={selected.id} onValueChange={(id) => select(id, mode ?? "inactive")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{items.map((item) => <SelectItem key={item.id} value={item.id}>{publicNavItemLabel(item, venuesPlural)}</SelectItem>)}</SelectContent></Select></Field>
+    <div className="space-y-1.5">
+      <div className="text-sm font-medium">Colours for this item</div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" size="sm" variant={mode === "inactive" ? "default" : "outline"} disabled={disabled} onClick={() => select(selected.id, "inactive")}>Inactive</Button>
+        <Button type="button" size="sm" variant={mode === "current" ? "default" : "outline"} disabled={disabled} onClick={() => select(selected.id, "current")}>Current page</Button>
+      </div>
+      <p className="text-xs text-muted-foreground">Text, icon and icon background controls appear above. Current-page colours show on the page this item opens.</p>
+    </div>
+    <NavLabelField key={`${selected.id}:${selected.label ?? ""}`} value={selected.label ?? ""} placeholder={inheritedLabel} disabled={disabled} commit={(label) => rename(selected.id, label)} />
+    <Field label="Icon"><div className="flex gap-2"><Select value={selected.icon} onValueChange={(value) => changeIcon(selected.id, value as PublicNavIconId)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{PUBLIC_NAV_ICON_IDS.map((icon) => <SelectItem key={icon} value={icon}>{icon.replace(/(^|-)(\w)/g, (_, __, letter: string) => ` ${letter.toUpperCase()}`).trim()}</SelectItem>)}</SelectContent></Select><Button type="button" variant="outline" size="sm" disabled={disabled || selected.icon === defaultIcon} onClick={() => changeIcon(selected.id, defaultIcon)}>Reset</Button></div></Field>
+    <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm" disabled={disabled || items[0]?.id === selected.id} onClick={() => move(selected.id, -1)}>Move up</Button><Button type="button" variant="outline" size="sm" disabled={disabled || items.at(-1)?.id === selected.id} onClick={() => move(selected.id, 1)}>Move down</Button><Button type="button" variant="ghost" size="sm" disabled={disabled || !orderChanged} onClick={resetOrder}>Reset order</Button></div>
     <p className="text-xs text-muted-foreground">Order and names affect display only. Each item keeps its fixed, safe destination.</p>
   </div>;
+}
+
+/** Buffered while typing (spaces allowed); validated and committed on blur / Enter. Empty resets to the inherited name. */
+export function NavLabelField({ value, placeholder, disabled, commit }: { value: string; placeholder: string; disabled: boolean; commit: (label: string | null) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState<string | null>(null);
+  const apply = () => {
+    if (!draft.trim()) { setError(null); if (value) commit(null); return; }
+    const cleaned = cleanPublicNavLabel(draft);
+    if (!cleaned) { setError(`Use 1–${PUBLIC_NAV_LABEL_MAX} characters, no < or >.`); return; }
+    setError(null);
+    if (cleaned !== value) commit(cleaned); else setDraft(cleaned);
+  };
+  return <Field label="Display name">
+    <div className="flex gap-2">
+      <input aria-label="Bottom menu display name" maxLength={PUBLIC_NAV_LABEL_MAX + 8} value={draft} placeholder={placeholder} disabled={disabled}
+        onChange={(event) => setDraft(event.target.value)} onBlur={apply}
+        onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); } if (event.key === "Escape") { event.stopPropagation(); setDraft(value); setError(null); } }}
+        className="h-10 w-full rounded-md border bg-background px-3 text-sm" />
+      <Button type="button" variant="outline" size="sm" disabled={disabled || !value} onClick={() => { setDraft(""); commit(null); }}>Reset</Button>
+    </div>
+    {error ? <p className="mt-1 text-xs text-destructive">{error}</p> : <p className="mt-1 text-xs text-muted-foreground">Leave empty to use “{placeholder}”.</p>}
+  </Field>;
 }
 
 /** Item → the shared Theme panel that also controls it (shown below the item inspector). */
