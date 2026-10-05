@@ -541,7 +541,7 @@ function SortPill({ active, onClick, children }: { active: boolean; onClick: () 
           : "border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-[var(--event-card-bg,#FBF5E8)] text-[var(--event-card-muted,var(--event-muted,#8A7E66))] hover:text-[var(--event-primary,#1F3D2B)]")
       }
     >
-      {label}
+      {children}
     </button></PublicStyleTarget>
   );
 }
@@ -685,7 +685,7 @@ function TabButton({
           : "text-[var(--event-card-muted,var(--event-muted,#8A7E66))] hover:text-[var(--event-primary,#1F3D2B)]")
       }
     >
-      {children}
+      {label}
     </button></PublicStyleTarget>
   );
 }
