@@ -1867,6 +1867,150 @@ function BrandingEditor() {
   );
 }
 
+function VisualBrandingEditor({
+  event, eventId, primaryDomain, previewEvent, venues, form, setForm, editColour, theme,
+  selectedRole, setSelectedRole, previewWidth, setPreviewWidth, recentColours, setRecentColours,
+  canEdit, saving, saveError, saveSuccess, hasUnsavedChanges, onSave, onSaveAndReturn,
+  onBack, onExit, selectedKit, applyBrandKit, selectCustomBrandKit, clearBrandKit,
+  customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove,
+}: {
+  event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
+  venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
+  editColour: <K extends keyof Form>(key: K, value: Form[K]) => void;
+  theme: ReturnType<typeof resolveEventTheme>; selectedRole: VisualBrandRole | null;
+  setSelectedRole: (role: VisualBrandRole | null) => void; previewWidth: "mobile" | "desktop";
+  setPreviewWidth: (width: "mobile" | "desktop") => void; recentColours: string[];
+  setRecentColours: React.Dispatch<React.SetStateAction<string[]>>; canEdit: boolean; saving: boolean;
+  saveError: string | null; saveSuccess: string | null; hasUnsavedChanges: boolean;
+  onSave: () => void; onSaveAndReturn: () => void; onBack: () => void; onExit: () => void;
+  selectedKit: BrandKit | null; applyBrandKit: (kit: BrandKit) => void; selectCustomBrandKit: () => void;
+  clearBrandKit: () => void; customFonts: EventCustomFont[]; branding: Branding | null; agencyId: string | null;
+  confirmImmediateAssetAction: () => boolean;
+  onAssetUpload: (kind: EventAssetKind, file: File) => Promise<string | null>;
+  onAssetRemove: (kind: EventAssetKind) => Promise<string | null>;
+}) {
+  const [hoveredRole, setHoveredRole] = useState<VisualBrandRole | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const roleMeta = selectedRole ? VISUAL_ROLE_META[selectedRole] : null;
+  void primaryDomain; void eventId; void selectedKit; void agencyId;
+
+  const selectFromEvent = (target: EventTarget | null) => {
+    const element = target instanceof Element ? target.closest<HTMLElement>("[data-brand-role]") : null;
+    const role = element?.dataset.brandRole as VisualBrandRole | undefined;
+    if (role && role in VISUAL_ROLE_META) setSelectedRole(role);
+  };
+
+  const handlePreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target);
+  };
+
+  const quickColours = Array.from(new Set([
+    form.primary_color, form.accent_color,
+    ...(selectedKit ? Object.values(selectedKit.colors) : []),
+    ...recentColours,
+  ].filter((value): value is string => HEX_RE.test(value)))).slice(0, 10);
+
+  const resolvedFor = (field: ColourField) => ({
+    primary_color: theme.primary, accent_color: theme.accent, link_color: theme.link,
+    page_background_color: theme.pageBg, page_heading_color: theme.pageHeading, page_body_color: theme.pageBody,
+    page_muted_color: theme.pageMuted, border_color: theme.border, card_background_color: theme.cardBg,
+    card_heading_color: theme.cardHeading, card_body_color: theme.cardBody, card_muted_color: theme.cardMuted,
+    card_border_color: theme.cardBorder, button_primary_bg: theme.buttonPrimaryBg,
+    button_primary_fg: theme.buttonPrimaryFg, button_secondary_bg: theme.buttonSecondaryBg,
+    button_secondary_fg: theme.buttonSecondaryFg, nav_background_color: theme.navBg,
+    nav_fg_color: theme.navText, nav_muted_color: theme.navMuted, nav_active_fg_color: theme.navActiveText,
+    hero_bg_color: theme.heroBg, hero_fg_color: theme.heroFg, hero_accent_color: theme.heroAccent,
+    hero_body_color: theme.heroBody, hero_overlay_color: form.primary_color || theme.primary,
+    logo_backdrop_color: form.logo_backdrop_color || "#FFFFFF",
+  })[field];
+
+  const fieldWarnings = (field: ColourField) => {
+    if (field === "page_heading_color" || field === "page_body_color") return warn(resolvedFor(field), theme.pageBg, "page background");
+    if (field === "page_muted_color") return warn(resolvedFor(field), theme.pageBg, "page background", 3);
+    if (field === "card_heading_color" || field === "card_body_color") return warn(resolvedFor(field), theme.cardBg, "card background");
+    if (field === "card_muted_color") return warn(resolvedFor(field), theme.cardBg, "card background", 3);
+    if (field === "button_primary_fg") return warn(theme.buttonPrimaryFg, theme.buttonPrimaryBg, "primary button");
+    if (field === "button_secondary_fg") return warn(theme.buttonSecondaryFg, theme.buttonSecondaryBg, "secondary button");
+    if (field === "nav_fg_color" || field === "nav_active_fg_color") return warn(resolvedFor(field), theme.navBg, "navigation");
+    return undefined;
+  };
+
+  return (
+    <div className="min-h-screen bg-muted/40">
+      <div className="sticky top-0 z-[80] border-b bg-background/95 px-4 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-semibold uppercase text-muted-foreground">V2 visual branding editor</div>
+            <h1 className="text-lg font-semibold">{event.name}</h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`text-xs font-medium ${saveError ? "text-destructive" : hasUnsavedChanges ? "text-amber-700" : "text-emerald-700"}`}>
+              {saving ? "Saving…" : saveError ? "Save failed" : hasUnsavedChanges ? "Unsaved changes" : saveSuccess ? "Saved" : "All changes saved"}
+            </span>
+            <Button type="button" variant="outline" onClick={onBack}>Back to existing editor</Button>
+            <Button type="button" variant="outline" onClick={onExit}>Back to event</Button>
+            {canEdit && <Button type="button" variant="outline" onClick={onSave} disabled={saving}>Save</Button>}
+            {canEdit && <Button type="button" onClick={onSaveAndReturn} disabled={saving}>Save and return</Button>}
+          </div>
+        </div>
+      </div>
+      {!canEdit && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">View-only access. You can inspect settings, but cannot change or save them.</div></div>}
+      {(saveError || saveSuccess) && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
+      <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[210px_minmax(420px,1fr)_350px]">
+        <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Choose an area</div>
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
+            {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => setSelectedRole(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+          </div>
+        </nav>
+
+        <section className="min-w-0 rounded-md border bg-background p-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">Click anything to edit its shared appearance. Public actions are disabled here.</p></div>
+            <div className="inline-flex rounded-md border p-1" aria-label="Preview width">
+              <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview"><Smartphone className="h-4 w-4" /></Button>
+              <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview"><Monitor className="h-4 w-4" /></Button>
+            </div>
+          </div>
+          <div className="overflow-x-auto rounded-md bg-muted p-3">
+            <div
+              ref={previewRef}
+              className="v2-brand-preview mx-auto overflow-hidden rounded-md border bg-background shadow-sm transition-[width]"
+              style={{ width: previewWidth === "mobile" ? 390 : 1024, maxWidth: "100%" }}
+              onClickCapture={handlePreviewClick}
+              onAuxClickCapture={(event) => event.preventDefault()}
+              onKeyDownCapture={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target); } }}
+              onPointerOver={(event) => { const el = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-brand-role]") : null; setHoveredRole((el?.dataset.brandRole as VisualBrandRole | undefined) ?? null); }}
+              onPointerLeave={() => setHoveredRole(null)}
+              aria-label="Selectable customer landing page preview"
+            >
+              <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview [data-brand-role="${hoveredRole ?? "__none"}"]{outline-color:color-mix(in srgb,var(--primary) 55%,transparent)}.v2-brand-preview [data-brand-role="${selectedRole ?? "__none"}"]{outline:3px solid var(--primary);outline-offset:-3px}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}`}</style>
+              <div className="max-h-[calc(100vh-13rem)] overflow-y-auto">
+                <EventPublicLanding subdomain={null} event={previewEvent} venues={venues} mode="preview" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside className="rounded-md border bg-background p-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          {!roleMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an area from the navigator.</p></div></div> : <>
+            <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description}</p></div><Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
+            <div className="mt-5 space-y-5">
+              {selectedRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || saving} />}
+              {selectedRole === "fonts" || selectedRole === "heroHeading" || selectedRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || saving} eventName={event.name} customFonts={customFonts} canUpload={false} onUpload={async () => ({ ok: false as const, error: "Use the existing editor to manage uploaded fonts." })} onDelete={async () => {}} /> : null}
+              {selectedRole === "welcome" && <Field label="Welcome message"><textarea value={form.welcome_copy} maxLength={1000} disabled={!canEdit || saving} onChange={(event) => setForm((current) => ({ ...current, welcome_copy: event.target.value }))} className="min-h-28 w-full rounded-md border bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring" /><div className="text-right text-xs text-muted-foreground">{form.welcome_copy.length}/1000</div></Field>}
+              {selectedRole === "logo" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="logo" currentPath={branding?.logo_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("logo", file)} onRemove={() => onAssetRemove("logo")} /><Field label="Logo shape"><Select value={form.logo_shape || "square"} onValueChange={(value) => setForm((current) => ({ ...current, logo_shape: value }))} disabled={!canEdit || saving}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="square">Square</SelectItem><SelectItem value="circle">Circle</SelectItem></SelectContent></Select></Field><Field label="Logo backdrop"><Select value={form.logo_backdrop || "transparent"} onValueChange={(value) => setForm((current) => ({ ...current, logo_backdrop: value }))} disabled={!canEdit || saving}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transparent">Transparent</SelectItem><SelectItem value="color">Colour</SelectItem></SelectContent></Select></Field></>}
+              {selectedRole === "cover" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="cover" currentPath={branding?.cover_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("cover", file)} onRemove={() => onAssetRemove("cover")} />{branding?.cover_path && <CoverPositioner imageUrl={getEventAssetPublicUrl(branding.cover_path)} focalX={form.cover_focal_x ? Number(form.cover_focal_x) : 50} focalY={form.cover_focal_y ? Number(form.cover_focal_y) : 50} disabled={!canEdit || saving} onChange={(x, y) => setForm((current) => ({ ...current, cover_focal_x: String(x), cover_focal_y: String(y) }))} />}</>}
+              {roleMeta.fields.map((field) => <div key={field} className="space-y-2"><ColorRoleRow label={COLOUR_LABELS[field]} fieldName={field} helper={roleMeta.description} resolved={resolvedFor(field)} value={form[field]} onChange={(value) => { editColour(field, value); if (HEX_RE.test(value)) setRecentColours((current) => [value.toUpperCase(), ...current.filter((item) => item !== value.toUpperCase())].slice(0, 6)); }} disabled={!canEdit || saving} warnings={fieldWarnings(field)} />{quickColours.length > 0 && <div className="flex flex-wrap gap-1" aria-label={`Quick colours for ${COLOUR_LABELS[field]}`}>{quickColours.map((colour) => <button key={colour} type="button" title={colour} aria-label={`Use ${colour}`} disabled={!canEdit || saving} onClick={() => editColour(field, colour)} className="h-6 w-6 rounded-sm border focus-visible:ring-2 focus-visible:ring-ring" style={{ backgroundColor: colour }} />)}</div>}</div>)}
+              {selectedRole === "hero" || selectedRole === "cover" ? <HeroOverlayCard colorValue={form.hero_overlay_color} opacityValue={form.hero_overlay_opacity} primaryFallback={form.primary_color || theme.primary} disabled={!canEdit || saving} onColorChange={(value) => editColour("hero_overlay_color", value)} onOpacityChange={(value) => setForm((current) => ({ ...current, hero_overlay_opacity: value }))} /> : null}
+            </div>
+          </>}
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 
 // ============================================================================
 // Header — top action bar
