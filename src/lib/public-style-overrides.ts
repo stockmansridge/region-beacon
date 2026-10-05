@@ -108,6 +108,7 @@ export const PUBLIC_COPY_DEFAULTS = {
   "bonus.result.backButton": "Back to event",
   "tasting.result.button": "Back to my passport",
   "tasting.result.backButton": "Back to event",
+  "scan.trouble.button": "Trouble scanning?",
 } as const;
 export type PublicCopyKey = keyof typeof PUBLIC_COPY_DEFAULTS;
 export type PublicCopyConfig = { labels: Partial<Record<PublicCopyKey, string>> };
@@ -497,6 +498,8 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "scan.body", page: "scan", section: "Scanner", label: "Scanner help text", kind: "text", properties: TEXT },
   { id: "scan.camera", page: "scan", section: "Scanner", label: "Camera area", kind: "surface", properties: SURFACE },
   { id: "scan.error", page: "scan", section: "Scanner", label: "Scanner error message", kind: "text", properties: TEXT },
+  { id: "scan.trouble.button", page: "scan", section: "Scanner help", label: "Trouble scanning button", kind: "button", properties: BUTTON, states: INTERACTIVE },
+  { id: "scan.trouble.icon", page: "scan", section: "Scanner help", label: "Trouble scanning arrow", kind: "icon", properties: ICON },
   { id: "scan.control", page: "scan", section: "Scanner", label: "Scanner control", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "checkin.result.surface", page: "checkin", section: "Result", label: "Check-in result", kind: "surface", properties: SURFACE },
   { id: "checkin.result.heading", page: "checkin", section: "Result", label: "Check-in result heading", kind: "text", properties: TEXT },

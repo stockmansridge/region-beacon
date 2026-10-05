@@ -1,5 +1,6 @@
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { ResultLink, ResultPaletteScope } from "@/components/result-preview";
+import { ResultCopy } from "@/components/result-copy";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTenantSubdomain } from "@/lib/tenant-host";
@@ -15,6 +16,7 @@ import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
+import { ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/scan")({
   head: () => ({ meta: [{ title: "Scan venue QR" }] }),
@@ -276,10 +278,19 @@ export function ScannerView({ subdomain, event, eventId, hasPassport, err, manua
           </div></PublicStyleTarget>
         )}
 
-        <details className="mt-5 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-xs text-[var(--event-body,#3D372C)]">
-          <summary className="cursor-pointer font-semibold text-[var(--event-primary,#1F3D2B)]">
-            Trouble scanning?
-          </summary>
+        <details className="group mt-5 rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-xs text-[var(--event-body,#3D372C)]">
+          {v2 ? (
+            <PublicStyleTarget id="scan.trouble.button"><summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg border border-transparent px-2 py-1 font-semibold text-[var(--event-primary,#1F3D2B)]">
+              <ResultCopy k="scan.trouble.button" />
+              <PublicStyleTarget id="scan.trouble.icon"><span className="inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-[var(--item-icon-bg,transparent)] text-[var(--item-icon-color,currentColor)]">
+                <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" />
+              </span></PublicStyleTarget>
+            </summary></PublicStyleTarget>
+          ) : (
+            <summary className="cursor-pointer font-semibold text-[var(--event-primary,#1F3D2B)]">
+              Trouble scanning?
+            </summary>
+          )}
           <div className="mt-3 space-y-2">
             <p>Paste a check-in URL to test:</p>
             <input
