@@ -850,6 +850,7 @@ export function PassportPreview({
           labelSingular={labelSingular}
           labelPlural={labelPlural}
           eventId={passport.event_id}
+          disableBonusLookup={preview}
         />
 
 
@@ -1005,13 +1006,15 @@ function StampGrid({
   labelSingular: _labelSingular,
   labelPlural,
   eventId,
+  disableBonusLookup = false,
 }: {
   venues: PassportStampVenue[];
   labelSingular: string;
   labelPlural: string;
   eventId: string | null;
+  disableBonusLookup?: boolean;
 }) {
-  const bonusVenueIds = useVenuesWithBonus(eventId);
+  const bonusVenueIds = useVenuesWithBonus(disableBonusLookup ? null : eventId);
   if (venues.length === 0) {
     return (
       <section className="mt-5">
