@@ -2158,7 +2158,7 @@ function VisualBrandingEditor({
           <div className="overflow-x-auto rounded-md bg-muted p-3">
             <div
               ref={previewRef}
-              className="v2-brand-preview mx-auto overflow-hidden rounded-md border bg-background shadow-sm transition-[width]"
+              className="v2-brand-preview relative mx-auto overflow-hidden rounded-md border bg-background shadow-sm transition-[width] [transform:translateZ(0)]"
               style={{ width: previewWidth === "mobile" ? 390 : 1024, maxWidth: "100%" }}
               onClickCapture={handlePreviewClick}
               onAuxClickCapture={(event) => event.preventDefault()}

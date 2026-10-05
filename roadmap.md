@@ -5,7 +5,7 @@
 - [x] Prepare review-only additive per-event V2 template/config and atomic activation migrations; none applied.
 - [x] Separate V1 rendering from the event-owned V2 draft and gate V2 activation explicitly.
 - [ ] Complete authenticated save/read-back and rollback verification after draft SQL is reviewed and applied in an isolated environment.
-- [ ] Upgrade V2 with page/state selection, exact instance selection, real responsive previews, and item/type/event scopes. (Page/state controls and exact landing instances started; isolated viewport/type scope remain.)
+- [ ] Upgrade V2 with page/state selection, exact instance selection, real responsive previews, and item/type/event scopes. (Page/state controls, exact landing instances, and the mobile bottom-menu preview started; isolated media-query viewport/type scope remain.)
 - [ ] Wire the resolver and stable element identities through every audited public route and shared component.
 - [ ] Move the six-field mapping correction behind V2 across every route; do not restyle V1 events.
 - [ ] Verify legacy baselines, editing isolation, states, responsive layouts, permissions, failed saves, and persistence where available.
