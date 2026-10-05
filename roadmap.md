@@ -5,11 +5,12 @@
 - [x] Prepare review-only additive per-event V2 template/config and atomic activation migrations; none applied.
 - [x] Separate V1 rendering from the event-owned V2 draft and gate V2 activation explicitly.
 - [ ] Complete authenticated save/read-back and rollback verification after draft SQL is reviewed and applied in an isolated environment.
-- [ ] Upgrade V2 with page/state selection, exact instance selection, real responsive previews, and item/type/event scopes. (Page/state controls, exact landing instances, and the mobile bottom-menu preview started; isolated media-query viewport/type scope remain.)
-- [ ] Wire the resolver and stable element identities through every audited public route and shared component.
+- [x] Upgrade V2 with page/state selection, exact instance selection, real responsive previews, and item/type/event scopes.
+- [x] Wire the resolver and stable element identities through the currently supported public routes and shared result components.
 - [ ] Move the six-field mapping correction behind V2 across every route; do not restyle V1 events.
-- [ ] Verify legacy baselines, editing isolation, states, responsive layouts, permissions, failed saves, and persistence where available.- [ ] Add real safe preview adapters for every remaining public page and result state, with record/state/path controls.
-- [ ] Group current-page semantic inspector targets and wire shared navigation slots across every V2 page.
-- [ ] Complete canonical V2 public resolution for every public route while preserving V1 forwarding behavior.
-- [ ] Namespace same-named V2 custom fonts by event and verify isolation.
-- [ ] Add real-component fixture parity tests and reconcile the public styling audit with actual evidence.
+- [ ] Verify legacy baselines, editing isolation, responsive layouts, permissions, failed saves, and persistence in an authenticated browser.
+- [x] Add safe preview adapters for ordinary pages and Scan/Check-in/Bonus/Tasting result states.
+- [x] Group current-page semantic inspector targets and wire shared navigation slots across V2 pages.
+- [x] Complete canonical V2 public resolution for supported routes while preserving the explicit V1 boundary.
+- [x] Namespace same-named V2 custom fonts by event and verify resolver isolation.
+- [x] Add focused real-component fixture parity tests and reconcile the public styling audit with actual evidence.
