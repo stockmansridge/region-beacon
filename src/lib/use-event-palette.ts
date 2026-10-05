@@ -169,8 +169,9 @@ export async function loadPublicV2Branding(host: string): Promise<{
       name: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: unknown; error: unknown }>)("get_public_event_v2_branding", { _hostname: host });
-    const row = result.data && typeof result.data === "object"
-      ? result.data as { public_template_version?: unknown; v2_style_config?: unknown }
+    const payload = Array.isArray(result.data) ? result.data[0] : result.data;
+    const row = payload && typeof payload === "object"
+      ? payload as { public_template_version?: unknown; v2_style_config?: unknown }
       : null;
     const version = resolvePublicTemplateVersion(row?.public_template_version);
     return {

@@ -127,6 +127,18 @@ export type PublicVenueData = {
   name: string;
   address: string | null;
   order_index: number | null;
+  description?: string | null;
+  website_url?: string | null;
+  phone?: string | null;
+  logo_path?: string | null;
+  cover_path?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  offer_summary?: string | null;
+  offer_display_icon?: string | null;
+  offer_display_colour?: string | null;
+  offer_display_foreground_colour?: string | null;
+  points_value?: number | null;
 };
 
 function useFirstNameFromPassportHref(passportHref: string | null): string | null {

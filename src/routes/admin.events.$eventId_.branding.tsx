@@ -736,7 +736,7 @@ function BrandingEditor() {
           .order("is_primary", { ascending: false }),
         supabase
           .from("venues")
-          .select("id, name, address, order_index")
+          .select("id, name, description, address, website_url, phone, logo_path, cover_path, lat, lng, offer_summary, offer_display_icon, offer_display_colour, offer_display_foreground_colour, points_value, order_index")
           .eq("event_id", event.id)
           .eq("agency_id", agencyId)
           .is("deleted_at", null)
@@ -764,13 +764,37 @@ function BrandingEditor() {
         venues: ((venuesRes.data ?? []) as Array<{
           id: string;
           name: string;
+          description: string | null;
           address: string | null;
+          website_url: string | null;
+          phone: string | null;
+          logo_path: string | null;
+          cover_path: string | null;
+          lat: number | null;
+          lng: number | null;
+          offer_summary: string | null;
+          offer_display_icon: string | null;
+          offer_display_colour: string | null;
+          offer_display_foreground_colour: string | null;
+          points_value: number | null;
           order_index: number | null;
         }>).map((v) => ({
           venue_id: v.id,
           name: v.name,
           address: v.address,
           order_index: v.order_index,
+          description: v.description,
+          website_url: v.website_url,
+          phone: v.phone,
+          logo_path: v.logo_path,
+          cover_path: v.cover_path,
+          lat: v.lat,
+          lng: v.lng,
+          offer_summary: v.offer_summary,
+          offer_display_icon: v.offer_display_icon,
+          offer_display_colour: v.offer_display_colour,
+          offer_display_foreground_colour: v.offer_display_foreground_colour,
+          points_value: v.points_value,
         })),
         hasBranding: Boolean(brandingRes.data),
       });
@@ -2326,9 +2350,9 @@ function VisualBrandingEditor({
   const draftEvent = { ...previewEvent, public_template_version: "v2", v2_style_config: previewConfig } as PublicBrandingEvent;
   const listVenues: ListVenueRow[] = venues.map((venue) => ({
     venue_id: venue.venue_id, name: venue.name, description: venue.description ?? null,
-    address: venue.address ?? null, website_url: null, phone: null, logo_path: venue.logo_path ?? null,
+    address: venue.address ?? null, website_url: venue.website_url ?? null, phone: venue.phone ?? null, logo_path: venue.logo_path ?? null,
     cover_path: venue.cover_path ?? null, lat: null, lng: null, offer_summary: venue.offer_summary ?? null,
-    offer_display_icon: null, offer_display_colour: null, offer_display_foreground_colour: null,
+    offer_display_icon: venue.offer_display_icon ?? null, offer_display_colour: venue.offer_display_colour ?? null, offer_display_foreground_colour: venue.offer_display_foreground_colour ?? null,
     points_value: venue.points_value ?? null, order_index: venue.order_index ?? null, event_found: true,
   }));
   const selectedVenue = listVenues.find((venue) => venue.venue_id === selectedRecord) ?? listVenues[0] ?? null;
