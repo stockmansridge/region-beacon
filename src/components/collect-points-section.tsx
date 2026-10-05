@@ -70,7 +70,7 @@ export function CollectPointsSection({
     return () => {
       cancelled = true;
     };
-  }, [eventId]);
+  }, [eventId, preview]);
 
   return (
     <section {...surfaceStyle} style={surfaceStyle.style} className="mx-auto mt-8 w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm">
