@@ -290,11 +290,20 @@ export function AdminShell({
               </button>
             </div>
           ) : null}
-          <main className={isV2BrandingEditor ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7"}>
-            <div className={isV2BrandingEditor ? "grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)]" : "space-y-5"}>
-              <BuildMarker visible={!!isPlatformAdmin && diagnosticsEnabled} />
-              {children ?? <Outlet />}
-            </div>
+          <main className={isV2BrandingEditor ? "min-h-0 flex-1 overflow-x-hidden overflow-y-hidden" : "min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7"}>
+            {isV2BrandingEditor ? (
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                <div className="shrink-0">
+                  <BuildMarker visible={!!isPlatformAdmin && diagnosticsEnabled} />
+                </div>
+                <div className="min-h-0 flex-1">{children ?? <Outlet />}</div>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <BuildMarker visible={!!isPlatformAdmin && diagnosticsEnabled} />
+                {children ?? <Outlet />}
+              </div>
+            )}
           </main>
         </div>
       </div>

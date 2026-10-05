@@ -655,11 +655,12 @@ function BrandingEditor() {
   }, [editorMode]);
 
   function changeEditorMode(mode: "classic" | "v2") {
-    setEditorMode(mode);
-    const url = new URL(window.location.href);
-    if (mode === "v2") url.searchParams.set("editor", "v2");
-    else url.searchParams.delete("editor");
-    window.history.replaceState(window.history.state, "", url);
+    navigate({
+      to: "/admin/events/$eventId/branding",
+      params: { eventId },
+      search: mode === "v2" ? { editor: "v2" } : {},
+      replace: true,
+    });
   }
 
   // Uploaded (custom) fonts for this event.
@@ -2525,7 +2526,7 @@ function VisualBrandingEditor({
         {!canEdit && <div className="mx-auto mt-3 max-w-[1800px] px-4"><div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">View-only access. You can inspect settings, but cannot change or save them.</div></div>}
         {(saveError || saveSuccess) && <div className="mx-auto mt-3 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
       </div>
-      <div className="mx-auto grid h-full min-h-0 w-full max-w-[1800px] grid-cols-[minmax(190px,230px)_minmax(390px,1fr)_minmax(300px,360px)] gap-4 overflow-x-auto overscroll-x-contain p-4">
+      <div className="mx-auto grid h-full min-h-0 w-full max-w-[1800px] grid-cols-[minmax(190px,230px)_minmax(390px,1fr)_minmax(300px,360px)] gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain p-4">
         <nav aria-label="Branding areas" className="min-h-0 overflow-y-auto overscroll-y-contain rounded-md border bg-background p-3">
           <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{previewPage === "home" ? "Landing / home" : previewPage === "venue" ? "Venue detail" : previewPage}</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
@@ -2543,13 +2544,20 @@ function VisualBrandingEditor({
         </nav>
 
         <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-md border bg-background p-3">
-          <div className="mb-3 min-w-0 overflow-x-auto overscroll-x-contain">
-            <div className="flex min-w-max items-center gap-3">
-            <div className="w-72 shrink-0"><h2 className="font-semibold">Real page preview</h2><p className="truncate text-xs text-muted-foreground" title={`Showing ${previewSource}; visitors see ${branding?.public_template_version === "v2" ? "V2" : "V1"}`}><span className="font-semibold text-foreground">Showing: {previewSource === "draft" ? "V2 draft" : previewSource === "saved" ? "Saved V2" : `Live ${liveIsV2 ? "V2" : "V1"}`}</span> · Visitors see {branding?.public_template_version === "v2" ? "V2" : "V1"}</p></div>
-            <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
-              <SelectTrigger className="w-44" aria-label="Page"><SelectValue /></SelectTrigger>
+          <div className="mb-3 grid min-w-0 gap-2">
+            <div className="min-w-0"><h2 className="font-semibold">Real page preview</h2><p className="truncate text-xs text-muted-foreground" title={`Showing ${previewSource}; visitors see ${branding?.public_template_version === "v2" ? "V2" : "V1"}`}><span className="font-semibold text-foreground">Showing: {previewSource === "draft" ? "V2 draft" : previewSource === "saved" ? "Saved V2" : `Live ${liveIsV2 ? "V2" : "V1"}`}</span> · Visitors see {branding?.public_template_version === "v2" ? "V2" : "V1"}</p></div>
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+              <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
+              <SelectTrigger className="w-full min-w-0" aria-label="Page"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="terms">Terms</SelectItem><SelectItem value="privacy">Privacy</SelectItem><SelectItem value="legal">Terms / Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem><SelectItem value="scan">Scan (camera off)</SelectItem><SelectItem value="checkin">Check-in result</SelectItem><SelectItem value="bonus">Bonus result</SelectItem><SelectItem value="tasting">Tasting result</SelectItem></SelectContent>
-            </Select>
+              </Select>
+              <div className="inline-flex shrink-0 rounded-md border p-1" aria-label="Preview width">
+                <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview" aria-pressed={previewWidth === "mobile"}><Smartphone className="h-4 w-4" /></Button>
+                <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview" aria-pressed={previewWidth === "desktop"}><Monitor className="h-4 w-4" /></Button>
+              </div>
+            </div>
+            <div className="min-w-0 overflow-x-auto overscroll-x-contain">
+            <div className="flex min-w-max items-center gap-3">
             <Select value={previewSource} onValueChange={(value) => setPreviewSource(value as typeof previewSource)}>
               <SelectTrigger className="w-44" aria-label="Preview source"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="draft">V2 draft</SelectItem><SelectItem value="saved">Saved V2 config</SelectItem><SelectItem value="live">Live template (read-only)</SelectItem></SelectContent>
@@ -2574,9 +2582,6 @@ function VisualBrandingEditor({
               <Button type="button" size="sm" variant={previewInteraction === "select" ? "default" : "ghost"} onClick={() => setPreviewInteraction("select")}>Select / Edit</Button>
               <Button type="button" size="sm" variant={previewInteraction === "navigate" ? "default" : "ghost"} onClick={() => setPreviewInteraction("navigate")}>Navigate</Button>
             </div>
-            <div className="inline-flex rounded-md border p-1" aria-label="Preview width">
-              <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview" aria-pressed={previewWidth === "mobile"}><Smartphone className="h-4 w-4" /></Button>
-              <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview" aria-pressed={previewWidth === "desktop"}><Monitor className="h-4 w-4" /></Button>
             </div>
             </div>
           </div>
