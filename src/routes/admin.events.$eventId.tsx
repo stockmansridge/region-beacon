@@ -3092,13 +3092,21 @@ function EventDetail() {
             <p className="mb-4 text-sm text-muted-foreground">
               Branding is now edited side-by-side with a live preview of the customer landing page.
             </p>
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex flex-wrap justify-end gap-2">
               <Link
                 to="/admin/events/$eventId/branding"
                 params={{ eventId: bundle.event.id }}
                 className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
               >
                 Edit customer landing page
+              </Link>
+              <Link
+                to="/admin/events/$eventId/branding"
+                params={{ eventId: bundle.event.id }}
+                search={{ editor: "v2" }}
+                className="inline-flex h-8 items-center rounded-lg border border-primary bg-background px-3 text-xs font-medium text-primary hover:bg-muted"
+              >
+                V2 Editor
               </Link>
             </div>
             {branding ? (

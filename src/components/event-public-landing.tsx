@@ -190,6 +190,7 @@ export function EventPublicLanding({
     (typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("preview") === "1");
   const [previewDismissed, setPreviewDismissed] = useState(false);
+  const brandRole = (role: string) => mode === "preview" ? { "data-brand-role": role } : {};
 
   // Once a returning visitor has a verified passport for this event, the
   // Passport page is their home — redirect them there instead of rendering
@@ -361,10 +362,12 @@ export function EventPublicLanding({
               activeOverride="home"
               transparentHeader
               hideAnnouncementBar
+              brandingSelection={mode === "preview"}
             />
           </div>
 
           <section
+            {...brandRole("hero")}
             data-brand-hint="Hero background · Cover image · Hero overlay colour · Hero overlay opacity"
             title="Hero — Hero background · Cover image · Hero overlay colour · Hero overlay opacity"
             className="relative w-full overflow-hidden"
@@ -376,6 +379,7 @@ export function EventPublicLanding({
           >
             {heroImageUrl ? (
               <img
+                {...brandRole("cover")}
                 src={heroImageUrl}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
@@ -398,6 +402,7 @@ export function EventPublicLanding({
                   used to sit in the top bar. */}
               {logoUrl ? (
                 <div
+                  {...brandRole("logo")}
                   data-brand-hint="Event logo · Logo shape · Logo backdrop · Logo backdrop colour"
                   title="Event logo — Event logo · Logo shape · Logo backdrop · Logo backdrop colour"
                   className="mb-4 flex justify-center"
@@ -413,6 +418,7 @@ export function EventPublicLanding({
                 </div>
               ) : null}
               <p
+                {...brandRole("hero")}
                 data-brand-hint="hero_accent_color"
                 title="Hero eyebrow — Hero accent colour (--event-hero-accent)"
                 className="text-[10px] font-semibold uppercase tracking-[0.32em]"
@@ -421,6 +427,7 @@ export function EventPublicLanding({
                 Welcome
               </p>
               <h1
+                {...brandRole("heroHeading")}
                 data-brand-hint="hero_fg_color"
                 title="Event heading — Event heading colour (--event-hero-fg)"
                 className="font-event-heading mt-1 text-2xl font-semibold leading-tight sm:text-3xl"
@@ -437,6 +444,7 @@ export function EventPublicLanding({
               </h1>
               {firstName ? (
                 <p
+                  {...brandRole("welcome")}
                   data-brand-hint="hero_body_color"
                   title="Hero supporting text — Welcome copy colour (--event-hero-body)"
                   className="mt-1 text-sm sm:text-base"
@@ -456,6 +464,7 @@ export function EventPublicLanding({
                   embedded branding preview). */}
               {landingCopy ? (
                 <p
+                  {...brandRole("welcome")}
                   data-brand-hint="hero_body_color"
                   title="Welcome copy — Welcome copy colour (--event-hero-body)"
                   className="mt-3 whitespace-pre-line text-sm leading-relaxed sm:text-[15px]"
@@ -472,6 +481,7 @@ export function EventPublicLanding({
         </div>
 
         <main
+          {...brandRole("page")}
           data-brand-hint="Page background"
           title="Page surface — Page background"
           className="mx-auto w-full max-w-md px-4 pb-24"
@@ -484,6 +494,7 @@ export function EventPublicLanding({
 
           {/* Summary card — overlaps the bottom of the hero */}
           <section
+            {...brandRole("cards")}
             data-brand-hint="Card background · Card border · Card heading · Card muted text"
             title="Progress card — Card background · Card border · Card heading · Card muted text"
             className="relative z-10 -mt-14 rounded-3xl border shadow-lg sm:-mt-16"
@@ -513,6 +524,7 @@ export function EventPublicLanding({
                       aria-hidden
                     >
                       <circle
+                        {...brandRole("cards")}
                         cx={ringSize / 2}
                         cy={ringSize / 2}
                         r={ringRadius}
@@ -521,6 +533,7 @@ export function EventPublicLanding({
                         strokeWidth={ringStroke}
                       />
                       <circle
+                        {...brandRole("primaryButtons")}
                         cx={ringSize / 2}
                         cy={ringSize / 2}
                         r={ringRadius}
@@ -534,12 +547,14 @@ export function EventPublicLanding({
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <span
+                        {...brandRole("cardHeading")}
                         className="font-trail-serif text-2xl font-semibold leading-none"
                         style={{ color: "var(--event-card-heading)" }}
                       >
                         {visited}
                         {total > 0 ? (
                           <span
+                            {...brandRole("cardMuted")}
                             className="text-base font-medium"
                             style={{ color: "var(--event-card-muted)" }}
                           >
@@ -552,6 +567,7 @@ export function EventPublicLanding({
                 </div>
 
                 <div
+                  {...brandRole("cardMuted")}
                   className="text-center text-[11px] font-medium uppercase tracking-[0.18em]"
                   style={{ color: "var(--event-card-muted)" }}
                 >
@@ -566,12 +582,14 @@ export function EventPublicLanding({
                   style={{ borderBottom: "1px solid var(--event-card-border)" }}
                 >
                   <div
+                    {...brandRole("cardHeading")}
                     className="font-trail-serif text-2xl font-semibold leading-none"
                     style={{ color: "var(--event-card-heading)" }}
                   >
                     {pointsEarned ?? visited}
                   </div>
                   <div
+                    {...brandRole("cardMuted")}
                     className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                     style={{ color: "var(--event-card-muted)" }}
                   >
@@ -599,12 +617,14 @@ export function EventPublicLanding({
                   const tileInner = (
                     <>
                       <div
+                        {...brandRole("cardHeading")}
                         className="font-trail-serif text-2xl font-semibold leading-none"
                         style={{ color: "var(--event-card-heading)" }}
                       >
                         {bigValue}
                       </div>
                       <div
+                        {...brandRole("cardMuted")}
                         className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]"
                         style={{ color: "var(--event-card-muted)" }}
                       >
@@ -652,6 +672,7 @@ export function EventPublicLanding({
                   style={{ backgroundColor: "var(--event-card-border)" }}
                 >
                   <div
+                  {...brandRole("primaryButtons")}
                     className="h-full rounded-full transition-[width] duration-500"
                     style={{
                       width: `${pct}%`,
@@ -677,6 +698,7 @@ export function EventPublicLanding({
           <div className="mt-5">
             {passportHref ? (
               <a
+                {...brandRole("primaryButtons")}
                 data-brand-hint="Primary button background · Primary button text"
                 title="Primary button — Primary button background · Primary button text"
                 href={passportHref}
@@ -690,6 +712,7 @@ export function EventPublicLanding({
               </a>
             ) : canRegister ? (
               <PublicLink
+                {...brandRole("primaryButtons")}
                 data-brand-hint="Primary button background · Primary button text"
                 title="Primary button — Primary button background · Primary button text"
                 to="/join"
@@ -703,6 +726,7 @@ export function EventPublicLanding({
               </PublicLink>
             ) : (
               <button
+                {...brandRole("primaryButtons")}
                 data-brand-hint="Primary button background · Primary button text"
                 type="button"
                 disabled
@@ -717,6 +741,7 @@ export function EventPublicLanding({
               </button>
             )}
             <button
+              {...brandRole("primaryButtons")}
               data-brand-hint="Primary button background · Page background"
               title="Share button — Primary button background · Page background"
               type="button"
@@ -774,6 +799,7 @@ export function EventPublicLanding({
 
             <section className="flex flex-col gap-3">
               <PublicLink
+                {...brandRole("primaryButtons")}
                 data-brand-hint="Primary button background · Primary button text"
                 title="Primary button — Primary button background · Primary button text"
                 to="/prizes"
@@ -786,6 +812,7 @@ export function EventPublicLanding({
                 View prizes
               </PublicLink>
               <PublicLink
+                {...brandRole("primaryButtons")}
                 data-brand-hint="Primary button background · Primary button text"
                 title="Primary button — Primary button background · Primary button text"
                 to="/venues"
@@ -808,6 +835,7 @@ export function EventPublicLanding({
 
             <div className="mb-4 flex flex-col items-center gap-3 text-center">
               <PublicLink
+                {...brandRole("links")}
                 data-brand-hint="Link colour"
                 title="Page link — Link colour"
                 to="/venues"
@@ -817,6 +845,7 @@ export function EventPublicLanding({
                 View {venueLabels.plural.toLowerCase()} →
               </PublicLink>
               <PublicLink
+                {...brandRole("links")}
                 data-brand-hint="Link colour"
                 title="Page link — Link colour"
                 to="/leaderboard"

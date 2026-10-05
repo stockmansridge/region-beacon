@@ -1,4 +1,4 @@
-import { ChevronDown, Info } from "lucide-react";
+import { ChevronDown, Info, Monitor, Smartphone, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,8 +11,10 @@ import {
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { PageHeader } from "@/components/placeholder";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -66,6 +68,7 @@ import {
 } from "@/lib/event-brand-kits";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
+  validateSearch: z.object({ editor: z.enum(["v2"]).optional() }),
   head: () => ({ meta: [{ title: "Edit customer landing page" }] }),
   component: BrandingEditor,
   codeSplitGroupings: [],
@@ -227,6 +230,90 @@ type Form = {
   custom_link_enabled: boolean;
 };
 
+type VisualBrandRole =
+  | "brand"
+  | "fonts"
+  | "logo"
+  | "cover"
+  | "hero"
+  | "heroHeading"
+  | "welcome"
+  | "page"
+  | "pageHeading"
+  | "pageBody"
+  | "pageMuted"
+  | "cards"
+  | "cardHeading"
+  | "cardBody"
+  | "cardMuted"
+  | "primaryButtons"
+  | "secondaryButtons"
+  | "navigation"
+  | "navActive"
+  | "navMuted"
+  | "links";
+
+type ColourField = Extract<keyof Form,
+  | "primary_color" | "accent_color" | "link_color"
+  | "page_background_color" | "page_heading_color" | "page_body_color" | "page_muted_color" | "border_color"
+  | "card_background_color" | "card_heading_color" | "card_body_color" | "card_muted_color" | "card_border_color"
+  | "button_primary_bg" | "button_primary_fg" | "button_secondary_bg" | "button_secondary_fg"
+  | "nav_background_color" | "nav_fg_color" | "nav_muted_color" | "nav_active_fg_color"
+  | "hero_bg_color" | "hero_fg_color" | "hero_accent_color" | "hero_body_color" | "hero_overlay_color"
+  | "logo_backdrop_color"
+>;
+
+const VISUAL_ROLE_META: Record<VisualBrandRole, {
+  label: string;
+  description: string;
+  fields: ColourField[];
+}> = {
+  brand: { label: "Brand colours", description: "Shared brand defaults used across public pages and posters.", fields: ["primary_color", "accent_color"] },
+  fonts: { label: "Fonts", description: "Heading and body fonts are shared across the event’s public experience.", fields: [] },
+  logo: { label: "Logo", description: "Image changes save immediately. Shape and backdrop settings save with the form.", fields: ["logo_backdrop_color"] },
+  cover: { label: "Hero / Cover", description: "Image changes save immediately. Position and overlay settings save with the form.", fields: ["hero_bg_color", "hero_overlay_color"] },
+  hero: { label: "Hero / Cover", description: "Applies to the hero surface, cover overlay and accent label.", fields: ["hero_bg_color", "hero_accent_color", "hero_overlay_color"] },
+  heroHeading: { label: "Event heading", description: "Applies to the event heading. The heading font is shared across event headings.", fields: ["hero_fg_color"] },
+  welcome: { label: "Welcome message", description: "Edits the existing welcome message and its colour. The body font is shared globally.", fields: ["hero_body_color"] },
+  page: { label: "Page", description: "Applies to the public page surface and its dividers.", fields: ["page_background_color", "border_color"] },
+  pageHeading: { label: "Page headings", description: "Applies to all headings displayed on the page surface.", fields: ["page_heading_color"] },
+  pageBody: { label: "Page body", description: "Applies to standard copy displayed on the page surface.", fields: ["page_body_color"] },
+  pageMuted: { label: "Page muted text", description: "Applies to helper text and metadata on the page surface.", fields: ["page_muted_color"] },
+  cards: { label: "Cards", description: "Applies to all card surfaces and borders.", fields: ["card_background_color", "card_border_color"] },
+  cardHeading: { label: "Card headings", description: "Applies to headings and key values inside all cards.", fields: ["card_heading_color"] },
+  cardBody: { label: "Card body", description: "Applies to standard copy inside all cards.", fields: ["card_body_color"] },
+  cardMuted: { label: "Card muted text", description: "Applies to card metadata, captions and progress labels.", fields: ["card_muted_color"] },
+  primaryButtons: { label: "Primary buttons", description: "Applies to all primary buttons and progress accents.", fields: ["button_primary_bg", "button_primary_fg"] },
+  secondaryButtons: { label: "Secondary buttons", description: "Applies to all secondary button surfaces and text.", fields: ["button_secondary_bg", "button_secondary_fg"] },
+  navigation: { label: "Navigation", description: "Applies to the top bar, bottom menu and menu drawer.", fields: ["nav_background_color", "nav_fg_color"] },
+  navActive: { label: "Active navigation", description: "Applies to the currently selected navigation item.", fields: ["nav_active_fg_color"] },
+  navMuted: { label: "Muted navigation", description: "Applies to inactive and subtle navigation items.", fields: ["nav_muted_color"] },
+  links: { label: "Links", description: "Applies to text links across the public event pages.", fields: ["link_color"] },
+};
+
+const VISUAL_NAV: Array<{ label: string; role: VisualBrandRole }> = [
+  { label: "Brand Kit", role: "brand" }, { label: "Brand colours", role: "brand" },
+  { label: "Fonts", role: "fonts" }, { label: "Logo", role: "logo" },
+  { label: "Hero / Cover", role: "cover" }, { label: "Event heading", role: "heroHeading" },
+  { label: "Welcome message", role: "welcome" }, { label: "Page", role: "page" },
+  { label: "Cards", role: "cards" }, { label: "Primary buttons", role: "primaryButtons" },
+  { label: "Secondary buttons", role: "secondaryButtons" }, { label: "Navigation", role: "navigation" },
+  { label: "Links", role: "links" },
+];
+
+const COLOUR_LABELS: Record<ColourField, string> = {
+  primary_color: "Primary colour", accent_color: "Accent colour", link_color: "Link colour",
+  page_background_color: "Page background", page_heading_color: "Page heading", page_body_color: "Page body",
+  page_muted_color: "Page muted text", border_color: "Page border", card_background_color: "Card background",
+  card_heading_color: "Card heading", card_body_color: "Card body", card_muted_color: "Card muted text",
+  card_border_color: "Card border", button_primary_bg: "Primary button background", button_primary_fg: "Primary button text",
+  button_secondary_bg: "Secondary button background", button_secondary_fg: "Secondary button text",
+  nav_background_color: "Navigation background", nav_fg_color: "Navigation text", nav_muted_color: "Navigation muted",
+  nav_active_fg_color: "Navigation active", hero_bg_color: "Hero background", hero_fg_color: "Event heading",
+  hero_accent_color: "Hero accent", hero_body_color: "Welcome message", hero_overlay_color: "Hero overlay",
+  logo_backdrop_color: "Logo backdrop",
+};
+
 const EMPTY_FORM: Form = {
   font_family: "",
   heading_font_family: "",
@@ -344,6 +431,7 @@ function brandingToForm(b: Branding | null): Form {
 
 function BrandingEditor() {
   const { eventId } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const agency = useAgencyContext();
   const agencyId = agency.selected?.id ?? null;
@@ -363,6 +451,44 @@ function BrandingEditor() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<"classic" | "v2">(
+    search.editor === "v2" ? "v2" : "classic",
+  );
+  const [selectedRole, setSelectedRole] = useState<VisualBrandRole | null>(null);
+  const [previewWidth, setPreviewWidth] = useState<"mobile" | "desktop">("mobile");
+  const [recentColours, setRecentColours] = useState<string[]>([]);
+
+  useEffect(() => {
+    setEditorMode(search.editor === "v2" ? "v2" : "classic");
+  }, [search.editor]);
+
+  const hasUnsavedChanges = bundle
+    ? JSON.stringify(form) !== JSON.stringify(brandingToForm(bundle.branding))
+    : false;
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    if (editorMode !== "v2") return;
+    const clearSelection = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedRole(null);
+    };
+    window.addEventListener("keydown", clearSelection);
+    return () => window.removeEventListener("keydown", clearSelection);
+  }, [editorMode]);
+
+  function changeEditorMode(mode: "classic" | "v2") {
+    setEditorMode(mode);
+    const url = new URL(window.location.href);
+    if (mode === "v2") url.searchParams.set("editor", "v2");
+    else url.searchParams.delete("editor");
+    window.history.replaceState(window.history.state, "", url);
+  }
 
   // Uploaded (custom) fonts for this event.
   const [customFonts, setCustomFonts] = useState<EventCustomFont[]>([]);
@@ -960,9 +1086,6 @@ function BrandingEditor() {
   }
 
   const { event, branding, venues } = bundle;
-  // Full preview always renders the last SAVED branding, so surface unsaved edits.
-  const hasUnsavedChanges =
-    JSON.stringify(form) !== JSON.stringify(brandingToForm(branding));
 
   const venueLabels = resolveVenueLabels({
     venue_label_singular: form.venue_label_singular,
@@ -1073,6 +1196,77 @@ function BrandingEditor() {
     : selectedKit
       ? selectedKit.label
       : "No kit selected — using legacy palette";
+
+  const confirmImmediateAssetAction = () => {
+    if (!hasUnsavedChanges) return true;
+    toast.warning("Save or discard your form changes before changing an image or uploaded font.", {
+      duration: 9000,
+      closeButton: true,
+    });
+    return false;
+  };
+
+  if (editorMode === "v2") {
+    return (
+      <VisualBrandingEditor
+        event={event}
+        eventId={eventId}
+        primaryDomain={primaryDomain}
+        previewEvent={previewEvent}
+        venues={venues}
+        form={form}
+        setForm={setForm}
+        editColour={editColour}
+        theme={themeForPreview}
+        selectedRole={selectedRole}
+        setSelectedRole={setSelectedRole}
+        previewWidth={previewWidth}
+        setPreviewWidth={setPreviewWidth}
+        recentColours={recentColours}
+        setRecentColours={setRecentColours}
+        canEdit={canEdit}
+        saving={saving}
+        saveError={validationError ?? saveError}
+        saveSuccess={saveSuccess}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onSave={() => onSave()}
+        onSaveAndReturn={() => onSave({ returnAfter: true })}
+        onBack={() => changeEditorMode("classic")}
+        onExit={() => {
+          if (!hasUnsavedChanges || window.confirm("Discard your unsaved branding changes and return to the event?")) {
+            navigate({ to: "/admin/events/$eventId", params: { eventId } });
+          }
+        }}
+        selectedKit={selectedKit}
+        applyBrandKit={applyBrandKit}
+        selectCustomBrandKit={selectCustomBrandKit}
+        clearBrandKit={() => setForm({ ...EMPTY_FORM,
+          font_family: form.font_family,
+          heading_font_family: form.heading_font_family,
+          welcome_copy: form.welcome_copy,
+          terms_url: form.terms_url,
+          venue_label_singular: form.venue_label_singular,
+          venue_label_plural: form.venue_label_plural,
+          hero_overlay_opacity: form.hero_overlay_opacity,
+        })}
+        customFonts={customFonts}
+        branding={branding}
+        agencyId={agencyId}
+        confirmImmediateAssetAction={confirmImmediateAssetAction}
+        onAssetUpload={async (kind, file) => {
+          if (!confirmImmediateAssetAction()) return "Save or discard form changes first.";
+          if (!agencyId) return "Select an organisation before uploading.";
+          const res = await uploadEventAsset({ agencyId, eventId: event.id, kind, file });
+          if (!res.ok) return res.error;
+          return persistAssetPath(kind, res.path, kind === "logo" ? branding?.logo_path ?? null : branding?.cover_path ?? null);
+        }}
+        onAssetRemove={(kind) => {
+          if (!confirmImmediateAssetAction()) return Promise.resolve("Save or discard form changes first.");
+          return removeAsset(kind, kind === "logo" ? branding?.logo_path ?? null : branding?.cover_path ?? null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5 p-6">
@@ -1669,6 +1863,150 @@ function BrandingEditor() {
       >
         <span aria-hidden>👁</span> Preview
       </a>
+    </div>
+  );
+}
+
+function VisualBrandingEditor({
+  event, eventId, primaryDomain, previewEvent, venues, form, setForm, editColour, theme,
+  selectedRole, setSelectedRole, previewWidth, setPreviewWidth, recentColours, setRecentColours,
+  canEdit, saving, saveError, saveSuccess, hasUnsavedChanges, onSave, onSaveAndReturn,
+  onBack, onExit, selectedKit, applyBrandKit, selectCustomBrandKit, clearBrandKit,
+  customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove,
+}: {
+  event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
+  venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
+  editColour: <K extends keyof Form>(key: K, value: Form[K]) => void;
+  theme: ReturnType<typeof resolveEventTheme>; selectedRole: VisualBrandRole | null;
+  setSelectedRole: (role: VisualBrandRole | null) => void; previewWidth: "mobile" | "desktop";
+  setPreviewWidth: (width: "mobile" | "desktop") => void; recentColours: string[];
+  setRecentColours: React.Dispatch<React.SetStateAction<string[]>>; canEdit: boolean; saving: boolean;
+  saveError: string | null; saveSuccess: string | null; hasUnsavedChanges: boolean;
+  onSave: () => void; onSaveAndReturn: () => void; onBack: () => void; onExit: () => void;
+  selectedKit: BrandKit | null; applyBrandKit: (kit: BrandKit) => void; selectCustomBrandKit: () => void;
+  clearBrandKit: () => void; customFonts: EventCustomFont[]; branding: Branding | null; agencyId: string | null;
+  confirmImmediateAssetAction: () => boolean;
+  onAssetUpload: (kind: EventAssetKind, file: File) => Promise<string | null>;
+  onAssetRemove: (kind: EventAssetKind) => Promise<string | null>;
+}) {
+  const [hoveredRole, setHoveredRole] = useState<VisualBrandRole | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const roleMeta = selectedRole ? VISUAL_ROLE_META[selectedRole] : null;
+  void primaryDomain; void eventId; void selectedKit; void agencyId;
+
+  const selectFromEvent = (target: EventTarget | null) => {
+    const element = target instanceof Element ? target.closest<HTMLElement>("[data-brand-role]") : null;
+    const role = element?.dataset.brandRole as VisualBrandRole | undefined;
+    if (role && role in VISUAL_ROLE_META) setSelectedRole(role);
+  };
+
+  const handlePreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target);
+  };
+
+  const quickColours = Array.from(new Set([
+    form.primary_color, form.accent_color,
+    ...(selectedKit ? Object.values(selectedKit.colors) : []),
+    ...recentColours,
+  ].filter((value): value is string => HEX_RE.test(value)))).slice(0, 10);
+
+  const resolvedFor = (field: ColourField) => ({
+    primary_color: theme.primary, accent_color: theme.accent, link_color: theme.link,
+    page_background_color: theme.pageBg, page_heading_color: theme.pageHeading, page_body_color: theme.pageText,
+    page_muted_color: theme.pageMuted, border_color: theme.border, card_background_color: theme.cardBg,
+    card_heading_color: theme.cardHeading, card_body_color: theme.cardText, card_muted_color: theme.cardMuted,
+    card_border_color: theme.cardBorder, button_primary_bg: theme.buttonPrimaryBg,
+    button_primary_fg: theme.buttonPrimaryFg, button_secondary_bg: theme.buttonSecondaryBg,
+    button_secondary_fg: theme.buttonSecondaryFg, nav_background_color: theme.navBg,
+    nav_fg_color: theme.navText, nav_muted_color: theme.navMuted, nav_active_fg_color: theme.navActiveText,
+    hero_bg_color: theme.heroBg, hero_fg_color: theme.heroFg, hero_accent_color: theme.heroAccent,
+    hero_body_color: theme.heroBody, hero_overlay_color: form.primary_color || theme.primary,
+    logo_backdrop_color: form.logo_backdrop_color || "#FFFFFF",
+  })[field];
+
+  const fieldWarnings = (field: ColourField) => {
+    if (field === "page_heading_color" || field === "page_body_color") return warn(resolvedFor(field), theme.pageBg, "page background");
+    if (field === "page_muted_color") return warn(resolvedFor(field), theme.pageBg, "page background", 3);
+    if (field === "card_heading_color" || field === "card_body_color") return warn(resolvedFor(field), theme.cardBg, "card background");
+    if (field === "card_muted_color") return warn(resolvedFor(field), theme.cardBg, "card background", 3);
+    if (field === "button_primary_fg") return warn(theme.buttonPrimaryFg, theme.buttonPrimaryBg, "primary button");
+    if (field === "button_secondary_fg") return warn(theme.buttonSecondaryFg, theme.buttonSecondaryBg, "secondary button");
+    if (field === "nav_fg_color" || field === "nav_active_fg_color") return warn(resolvedFor(field), theme.navBg, "navigation");
+    return undefined;
+  };
+
+  return (
+    <div className="min-h-screen bg-muted/40">
+      <div className="sticky top-0 z-[80] border-b bg-background/95 px-4 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-semibold uppercase text-muted-foreground">V2 visual branding editor</div>
+            <h1 className="text-lg font-semibold">{event.name}</h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`text-xs font-medium ${saveError ? "text-destructive" : hasUnsavedChanges ? "text-amber-700" : "text-emerald-700"}`}>
+              {saving ? "Saving…" : saveError ? "Save failed" : hasUnsavedChanges ? "Unsaved changes" : saveSuccess ? "Saved" : "All changes saved"}
+            </span>
+            <Button type="button" variant="outline" onClick={onBack}>Back to existing editor</Button>
+            <Button type="button" variant="outline" onClick={onExit}>Back to event</Button>
+            {canEdit && <Button type="button" variant="outline" onClick={onSave} disabled={saving}>Save</Button>}
+            {canEdit && <Button type="button" onClick={onSaveAndReturn} disabled={saving}>Save and return</Button>}
+          </div>
+        </div>
+      </div>
+      {!canEdit && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">View-only access. You can inspect settings, but cannot change or save them.</div></div>}
+      {(saveError || saveSuccess) && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
+      <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[210px_minmax(420px,1fr)_350px]">
+        <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Choose an area</div>
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
+            {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => setSelectedRole(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+          </div>
+        </nav>
+
+        <section className="min-w-0 rounded-md border bg-background p-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">Click anything to edit its shared appearance. Public actions are disabled here.</p></div>
+            <div className="inline-flex rounded-md border p-1" aria-label="Preview width">
+              <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview"><Smartphone className="h-4 w-4" /></Button>
+              <Button type="button" size="icon" variant={previewWidth === "desktop" ? "default" : "ghost"} onClick={() => setPreviewWidth("desktop")} aria-label="Desktop preview"><Monitor className="h-4 w-4" /></Button>
+            </div>
+          </div>
+          <div className="overflow-x-auto rounded-md bg-muted p-3">
+            <div
+              ref={previewRef}
+              className="v2-brand-preview mx-auto overflow-hidden rounded-md border bg-background shadow-sm transition-[width]"
+              style={{ width: previewWidth === "mobile" ? 390 : 1024, maxWidth: "100%" }}
+              onClickCapture={handlePreviewClick}
+              onAuxClickCapture={(event) => event.preventDefault()}
+              onKeyDownCapture={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target); } }}
+              onPointerOver={(event) => { const el = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-brand-role]") : null; setHoveredRole((el?.dataset.brandRole as VisualBrandRole | undefined) ?? null); }}
+              onPointerLeave={() => setHoveredRole(null)}
+              aria-label="Selectable customer landing page preview"
+            >
+              <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview [data-brand-role="${hoveredRole ?? "__none"}"]{outline-color:color-mix(in srgb,var(--primary) 55%,transparent)}.v2-brand-preview [data-brand-role="${selectedRole ?? "__none"}"]{outline:3px solid var(--primary);outline-offset:-3px}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}`}</style>
+              <div className="max-h-[calc(100vh-13rem)] overflow-y-auto">
+                <EventPublicLanding subdomain={null} event={previewEvent} venues={venues} mode="preview" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside className="rounded-md border bg-background p-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          {!roleMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an area from the navigator.</p></div></div> : <>
+            <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description}</p></div><Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
+            <div className="mt-5 space-y-5">
+              {selectedRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || saving} />}
+              {selectedRole === "fonts" || selectedRole === "heroHeading" || selectedRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || saving} eventName={event.name} customFonts={customFonts} canUpload={false} onUpload={async () => ({ ok: false as const, error: "Use the existing editor to manage uploaded fonts." })} onDelete={async () => {}} /> : null}
+              {selectedRole === "welcome" && <Field label="Welcome message"><textarea value={form.welcome_copy} maxLength={1000} disabled={!canEdit || saving} onChange={(event) => setForm((current) => ({ ...current, welcome_copy: event.target.value }))} className="min-h-28 w-full rounded-md border bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring" /><div className="text-right text-xs text-muted-foreground">{form.welcome_copy.length}/1000</div></Field>}
+              {selectedRole === "logo" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="logo" currentPath={branding?.logo_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("logo", file)} onRemove={() => onAssetRemove("logo")} /><Field label="Logo shape"><Select value={form.logo_shape || "square"} onValueChange={(value) => setForm((current) => ({ ...current, logo_shape: value }))} disabled={!canEdit || saving}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="square">Square</SelectItem><SelectItem value="circle">Circle</SelectItem></SelectContent></Select></Field><Field label="Logo backdrop"><Select value={form.logo_backdrop || "transparent"} onValueChange={(value) => setForm((current) => ({ ...current, logo_backdrop: value }))} disabled={!canEdit || saving}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transparent">Transparent</SelectItem><SelectItem value="color">Colour</SelectItem></SelectContent></Select></Field></>}
+              {selectedRole === "cover" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="cover" currentPath={branding?.cover_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("cover", file)} onRemove={() => onAssetRemove("cover")} />{branding?.cover_path && <CoverPositioner imageUrl={getEventAssetPublicUrl(branding.cover_path)} focalX={form.cover_focal_x ? Number(form.cover_focal_x) : 50} focalY={form.cover_focal_y ? Number(form.cover_focal_y) : 50} disabled={!canEdit || saving} onChange={(x, y) => setForm((current) => ({ ...current, cover_focal_x: String(x), cover_focal_y: String(y) }))} />}</>}
+              {roleMeta.fields.map((field) => <div key={field} className="space-y-2"><ColorRoleRow label={COLOUR_LABELS[field]} fieldName={field} helper={roleMeta.description} resolved={resolvedFor(field)} value={form[field]} onChange={(value) => { editColour(field, value); if (HEX_RE.test(value)) setRecentColours((current) => [value.toUpperCase(), ...current.filter((item) => item !== value.toUpperCase())].slice(0, 6)); }} disabled={!canEdit || saving} warnings={fieldWarnings(field)} />{quickColours.length > 0 && <div className="flex flex-wrap gap-1" aria-label={`Quick colours for ${COLOUR_LABELS[field]}`}>{quickColours.map((colour) => <button key={colour} type="button" title={colour} aria-label={`Use ${colour}`} disabled={!canEdit || saving} onClick={() => editColour(field, colour)} className="h-6 w-6 rounded-sm border focus-visible:ring-2 focus-visible:ring-ring" style={{ backgroundColor: colour }} />)}</div>}</div>)}
+              {selectedRole === "hero" || selectedRole === "cover" ? <HeroOverlayCard colorValue={form.hero_overlay_color} opacityValue={form.hero_overlay_opacity} primaryFallback={form.primary_color || theme.primary} disabled={!canEdit || saving} onColorChange={(value) => editColour("hero_overlay_color", value)} onOpacityChange={(value) => setForm((current) => ({ ...current, hero_overlay_opacity: value }))} /> : null}
+            </div>
+          </>}
+        </aside>
+      </div>
     </div>
   );
 }
