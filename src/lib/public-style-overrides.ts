@@ -94,6 +94,7 @@ const BUTTON = ["backgroundColor", "color", "borderColor", "iconColor", "fontFam
 const SURFACE = ["backgroundColor", "borderColor", "opacity", "backgroundGradient"] as const;
 const ICON = ["iconColor", "iconBackgroundColor", "borderColor"] as const;
 const PROGRESS = ["progressTrackColor", "progressFillColor"] as const;
+const INPUT = ["backgroundColor", "color", "borderColor", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
 const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
@@ -149,7 +150,7 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "join.form.surface", page: "join", section: "Form", label: "Registration form", kind: "surface", properties: SURFACE },
   { id: "join.form.heading", page: "join", section: "Form", label: "Form heading", kind: "text", properties: TEXT },
   { id: "join.form.label", page: "join", section: "Form", label: "Field label", kind: "text", properties: TEXT, repeat: "template" },
-  { id: "join.form.field", page: "join", section: "Form", label: "Form field", kind: "surface", properties: SURFACE, repeat: "template" },
+  { id: "join.form.field", page: "join", section: "Form", label: "Form input", kind: "text", properties: INPUT, states: INTERACTIVE, repeat: "template" },
   { id: "join.form.error", page: "join", section: "Form", label: "Validation message", kind: "text", properties: TEXT, repeat: "template" },
   { id: "join.form.submit", page: "join", section: "Form", label: "Create passport button", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "join.state.message", page: "join", section: "States", label: "Join status message", kind: "text", properties: TEXT, repeat: "template" },

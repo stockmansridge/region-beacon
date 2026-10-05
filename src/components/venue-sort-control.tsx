@@ -39,7 +39,7 @@ export function VenueSortControl({
   const [announce, setAnnounce] = useState<string>("");
 
   return (
-    <PublicStyleTarget id="venues.controls.sort"><div className={className}>
+    <div className={className}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p
           className="text-[12px] font-semibold"
@@ -53,7 +53,7 @@ export function VenueSortControl({
           </span>
         </p>
 
-        <label
+        <PublicStyleTarget id="venues.controls.sort" recordId="sort"><label
           htmlFor={selectId}
           className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[12px] font-semibold"
           style={{
@@ -85,7 +85,7 @@ export function VenueSortControl({
               </option>
             ))}
           </select>
-        </label>
+        </label></PublicStyleTarget>
       </div>
 
       {!hasPassport && (
@@ -110,6 +110,6 @@ export function VenueSortControl({
       <p aria-live="polite" className="sr-only">
         {announce}
       </p>
-    </div></PublicStyleTarget>
+    </div>
   );
 }

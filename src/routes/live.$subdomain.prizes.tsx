@@ -1032,7 +1032,7 @@ function AwardCard({
               <PartyPopper className="h-3 w-3" /> You're in!
             </span>
           ) : (
-            <StatusBadge status={status} />
+            <StatusBadge status={status} awardId={award.id} />
           )}
         </div>
 
@@ -1102,7 +1102,7 @@ function deriveStatus(award: PublicEventAward, hasPassport: boolean): CardStatus
   return "need_points";
 }
 
-function StatusBadge({ status }: { status: CardStatus }) {
+function StatusBadge({ status, awardId }: { status: CardStatus; awardId: string }) {
   const map: Record<CardStatus, { label: string; cls: string }> = {
     eligible: {
       label: "You're in!",
@@ -1127,7 +1127,7 @@ function StatusBadge({ status }: { status: CardStatus }) {
   };
   const { label, cls } = map[status];
   return (
-    <PublicStyleTarget id="prizes.card.badge"><span
+    <PublicStyleTarget id="prizes.card.badge" recordId={awardId}><span
       className={
         "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide " +
         cls

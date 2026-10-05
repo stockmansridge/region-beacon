@@ -131,7 +131,7 @@ export async function resolveCurrentEventPassport(
  * visible label; consumers should only use the returned `passportHref` as
  * an `href` value.
  */
-export function useCurrentEventPassport(eventIdOverride?: string | null): {
+export function useCurrentEventPassport(eventIdOverride?: string | null, enabled = true): {
   passportHref: string | null;
   hasPassport: boolean;
   validationStatus: PassportValidationStatus;
@@ -139,6 +139,10 @@ export function useCurrentEventPassport(eventIdOverride?: string | null): {
   const [state, setState] = useState<CurrentEventPassportResult>(EMPTY_CURRENT_EVENT_PASSPORT);
   useEffect(() => {
     let cancelled = false;
+    if (!enabled) {
+      setState(EMPTY_CURRENT_EVENT_PASSPORT);
+      return () => { cancelled = true; };
+    }
     (async () => {
       const eventId = eventIdOverride ?? (await resolveEventIdFromHost());
       if (cancelled) return;
@@ -149,7 +153,7 @@ export function useCurrentEventPassport(eventIdOverride?: string | null): {
     return () => {
       cancelled = true;
     };
-  }, [eventIdOverride]);
+  }, [eventIdOverride, enabled]);
   return {
     passportHref: state.passportHref,
     hasPassport: state.hasPassport,
