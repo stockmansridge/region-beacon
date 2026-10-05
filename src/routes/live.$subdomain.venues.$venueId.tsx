@@ -21,6 +21,7 @@ import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
 
 
 export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
@@ -232,6 +233,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
     link.dataset.eventFont = href;
     document.head.appendChild(link);
   }, [extras?.emotive_text, emotiveFontValue]);
+  const v2 = resolvePublicTemplateVersion(state.brand?.public_template_version) === "v2";
   const emotiveStack =
     getEventFont(emotiveFontValue)?.stack ?? "'Caveat', 'Segoe Script', cursive";
 
@@ -277,7 +279,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
       className="min-h-screen pb-12"
     >
       {!previewData && <LiveActivityBar subdomain={subdomain} />}
-      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} venueLabels={resolveVenueLabels(state.brand ?? {})} activeOverride="venues" brandingSelection={Boolean(previewData)} /></div>
+      <div className="px-4"><PublicEventNav subdomain={subdomain} eventId={state.eventId} eventName={state.eventName} logoUrl={getEventAssetPublicUrl(state.eventLogoPath)} venueLabels={v2 ? resolveVenueLabels(state.brand ?? {}) : undefined} activeOverride={v2 ? "venues" : undefined} brandingSelection={Boolean(previewData)} /></div>
       <div className="mx-auto max-w-md">
         <div
           className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/9]"
@@ -327,7 +329,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
           </div>
 
           <div className="mt-4 flex items-start justify-between gap-3">
-            <PublicStyleTarget id="venues.card.heading" recordId={venueId}><h1 className="font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]">
+            <PublicStyleTarget id="venues.card.heading" recordId={venueId}><h1 className={v2 ? "font-event-heading text-3xl font-semibold text-[var(--event-page-heading,var(--event-primary,#1F3D2B))]" : "font-trail-serif text-3xl font-semibold text-[var(--event-primary,#1F3D2B)]"}>
               {venue.name}
             </h1></PublicStyleTarget>
             {extras && extras.points_value > 0 && (
@@ -374,7 +376,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
               className="mt-4 whitespace-pre-line text-2xl leading-snug"
               style={{
                 fontFamily: emotiveStack,
-                color: "var(--event-page-heading,var(--event-primary,#1F3D2B))",
+                color: v2 ? "var(--event-page-heading,var(--event-primary,#1F3D2B))" : "var(--event-primary,#1F3D2B)",
               }}
             >
               {extras.emotive_text}
@@ -382,7 +384,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
           )}
 
           {venue.description && (
-            <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-page-text,var(--event-text,#3D372C))]">
+            <p className={v2 ? "mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-page-text,var(--event-text,#3D372C))]" : "mt-4 whitespace-pre-line text-[15px] leading-relaxed text-[var(--event-text,#3D372C)]"}>
               {venue.description}
             </p>
           )}

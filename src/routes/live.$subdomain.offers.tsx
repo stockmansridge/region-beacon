@@ -19,6 +19,7 @@ import { tenantHost } from "@/lib/domains";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
 
 export const Route = createFileRoute("/live/$subdomain/offers")({
   head: () => ({ meta: [{ title: "Offers" }] }),
@@ -151,6 +152,7 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
   }
 
   const { event, offers } = state;
+  const v2 = resolvePublicTemplateVersion(event?.public_template_version) === "v2";
   const labels = resolveVenueLabels(event ?? {});
   const logoUrl = getEventAssetPublicUrl(event?.logo_path ?? null);
 
@@ -167,8 +169,8 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
         accentColor={event?.accent_color}
         logoUrl={logoUrl}
         eventId={event?.event_id ?? null}
-        venueLabels={labels}
-        activeOverride="offers"
+        venueLabels={v2 ? labels : undefined}
+        activeOverride={v2 ? "offers" : undefined}
         brandingSelection={Boolean(previewData)}
       />
       <div className="mx-auto max-w-md">
@@ -178,7 +180,7 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
 
         <div className="mb-5 mt-6 px-1">
           <h1
-            className="font-event-heading text-[28px] font-semibold leading-tight"
+            className={v2 ? "font-event-heading text-[28px] font-semibold leading-tight" : "text-[28px] font-semibold leading-tight"}
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
               fontFamily: "var(--event-font, inherit)",
@@ -241,7 +243,7 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
                       <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--event-card-muted,var(--event-muted,#8A7E66))]">
                         {v.name ?? "Venue"}
                       </p>
-                      <p className="mt-1 line-clamp-2 font-event-heading text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]">
+                      <p className={`mt-1 line-clamp-2 ${v2 ? "font-event-heading" : "font-trail-serif"} text-[17px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))]`}>
                         {offerTitle}
                       </p>
                       {offerBody && (

@@ -22,6 +22,7 @@ import { VenueSortControl } from "@/components/venue-sort-control";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
 import {
   VENUE_SORT_MIN_COUNT,
   buildDistanceMap,
@@ -240,6 +241,8 @@ export function PublicVenuesListPage({
   }
 
   const { event, venues } = state;
+  // V1 keeps its historic classes/props; new semantic roles are V2-only.
+  const v2 = resolvePublicTemplateVersion(event?.public_template_version) === "v2";
   const labels = resolveVenueLabels(event ?? {});
   // A "Nearest" URL from a previous visit is honoured only once we have
   // coordinates; until then the list stays in the default order.
@@ -277,8 +280,8 @@ export function PublicVenuesListPage({
         accentColor={event?.accent_color}
         logoUrl={logoUrl}
         eventId={event?.event_id ?? null}
-        venueLabels={labels}
-        activeOverride="venues"
+        venueLabels={v2 ? labels : undefined}
+        activeOverride={v2 ? "venues" : undefined}
         brandingSelection={Boolean(previewData)}
       />
       <div className="mx-auto max-w-md px-4">
@@ -288,7 +291,7 @@ export function PublicVenuesListPage({
 
         <div className="mb-5 mt-6 px-1">
           <PublicStyleTarget id="venues.page.heading"><h1
-            className="font-event-heading text-[28px] font-semibold leading-tight"
+            className={v2 ? "font-event-heading text-[28px] font-semibold leading-tight" : "text-[28px] font-semibold leading-tight"}
             style={{
               color: "var(--event-page-heading, var(--event-primary, #1F3D2B))",
               fontFamily: "var(--event-font, inherit)",
@@ -363,13 +366,13 @@ export function PublicVenuesListPage({
                         visited={visited}
                       />
                       <div className="flex min-w-0 flex-col gap-1.5 p-3">
-                        <PublicStyleTarget id="venues.card.heading" recordId={vid}><p className="font-event-heading text-[16px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))] break-words">
+                        <PublicStyleTarget id="venues.card.heading" recordId={vid}><p className={v2 ? "font-event-heading text-[16px] font-semibold leading-snug text-[var(--event-card-heading,var(--event-primary,#1F3D2B))] break-words" : "font-trail-serif text-[16px] font-semibold leading-snug text-[var(--event-primary,#1F3D2B)] break-words"}>
                           {v.name ?? "Unnamed"}
                         </p></PublicStyleTarget>
                         {effectiveSort === "nearest" && (
                           <p
                             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-                            style={{ color: "var(--event-card-muted,var(--event-muted,#8A7E66))" }}
+                            style={{ color: v2 ? "var(--event-card-muted,var(--event-muted,#8A7E66))" : "var(--event-muted,#8A7E66)" }}
                           >
                             {distanceM != null
                               ? `${formatDistance(distanceM)} away`
@@ -377,7 +380,7 @@ export function PublicVenuesListPage({
                           </p>
                         )}
                         {v.description && (
-                          <PublicStyleTarget id="venues.card.meta" recordId={vid}><p className="line-clamp-5 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-text,#3D372C))] sm:line-clamp-4">
+                          <PublicStyleTarget id="venues.card.meta" recordId={vid}><p className={v2 ? "line-clamp-5 text-[12.5px] leading-snug text-[var(--event-card-text,var(--event-text,#3D372C))] sm:line-clamp-4" : "line-clamp-5 text-[12.5px] leading-snug text-[var(--event-text,#3D372C)] sm:line-clamp-4"}>
                             {v.description}
                           </p></PublicStyleTarget>
                         )}
