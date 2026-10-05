@@ -21,6 +21,7 @@ import { PublicLink, PublicNavProvider, type PublicNavMode } from "@/components/
 import { resolvePublicLandingCopy } from "@/lib/public-landing-copy";
 import { PublicStyleScope } from "@/components/public-style-scope";
 import type { PublicStyleOverrideDocument } from "@/lib/public-style-overrides";
+import type { PublicTemplateVersion } from "@/lib/public-style-overrides";
 import {
   resolveEventLogoStyle,
   eventLogoBoxStyle,
@@ -107,6 +108,8 @@ export type PublicEventData = {
   card_body_color?: string | null;
   card_muted_color?: string | null;
   style_overrides?: PublicStyleOverrideDocument | null;
+  public_template_version?: string | null;
+  v2_style_config?: PublicStyleOverrideDocument | null;
 };
 
 /**
@@ -176,13 +179,16 @@ export function EventPublicLanding({
    */
   mode = "live",
   previewNotice,
+  templateVersion = "v1",
 }: {
   subdomain: string | null;
   event: PublicEventData;
   venues: PublicVenueData[];
   mode?: PublicNavMode;
   previewNotice?: React.ReactNode;
+  templateVersion?: PublicTemplateVersion;
 }) {
+  const isV2 = templateVersion === "v2";
   const canRegister = Boolean(event.current_terms_version_id);
   const { passportHref } = useCurrentEventPassport(event.event_id);
   const venueLabels = resolveVenueLabels(event);
@@ -194,10 +200,10 @@ export function EventPublicLanding({
       new URLSearchParams(window.location.search).get("preview") === "1");
   const [previewDismissed, setPreviewDismissed] = useState(false);
   const brandRole = (role: string) => mode === "preview" ? { "data-brand-role": role } : {};
-  const itemRole = (id: string) => ({
+  const itemRole = (id: string) => isV2 ? ({
     "data-event-style": id,
     ...(mode === "preview" ? { "data-brand-role": id, "data-brand-instance": id } : {}),
-  });
+  }) : {};
 
   // Once a returning visitor has a verified passport for this event, the
   // Passport page is their home — redirect them there instead of rendering
@@ -278,7 +284,7 @@ export function EventPublicLanding({
 
   return (
     <PublicNavProvider mode={mode} subdomain={subdomain} preservePreviewAppearance={mode === "preview"}>
-      <PublicStyleScope overrides={event.style_overrides}>
+      <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2}>
       <EventPaletteScope
         paletteKey={event.palette_key ?? null}
         backgroundKey={event.page_background_key ?? null}
@@ -307,12 +313,12 @@ export function EventPublicLanding({
         heroFgColor={event.hero_fg_color ?? null}
         heroAccentColor={event.hero_accent_color ?? null}
         heroBodyColor={event.hero_body_color ?? null}
-        pageHeadingColor={event.page_heading_color ?? null}
-        pageBodyColor={event.page_body_color ?? null}
-        pageMutedColor={event.page_muted_color ?? null}
-        cardHeadingColor={event.card_heading_color ?? null}
-        cardBodyColor={event.card_body_color ?? null}
-        cardMutedColor={event.card_muted_color ?? null}
+        pageHeadingColor={isV2 ? event.page_heading_color ?? null : null}
+        pageBodyColor={isV2 ? event.page_body_color ?? null : null}
+        pageMutedColor={isV2 ? event.page_muted_color ?? null : null}
+        cardHeadingColor={isV2 ? event.card_heading_color ?? null : null}
+        cardBodyColor={isV2 ? event.card_body_color ?? null : null}
+        cardMutedColor={isV2 ? event.card_muted_color ?? null : null}
         fontFamily={event.font_family ?? null}
         headingFontFamily={event.heading_font_family ?? null}
         className="min-h-screen"

@@ -4,11 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
-import {
-  EventPublicLanding,
-  type PublicEventData,
-  type PublicVenueData,
-} from "@/components/event-public-landing";
+import { type PublicEventData, type PublicVenueData } from "@/components/event-public-landing";
+import { PublicEventTemplate, type PublicEventTemplateData } from "@/components/public-event-template";
 
 export const Route = createFileRoute("/live/$subdomain/")({
   component: function LivePublicRoute() {
@@ -104,12 +101,16 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
       // Item-level public styling is exposed through a narrow companion RPC.
       // Older databases fail soft to the existing theme with no overrides.
       const styleRes = await supabase.rpc(
-        "get_public_event_style_overrides" as never,
+        "get_public_event_v2_branding" as never,
         { _hostname: host } as never,
       );
       if (cancelled) return;
-      if (styleRes.data && typeof styleRes.data === "object") {
-        evt.style_overrides = styleRes.data as PublicEventData["style_overrides"];
+      const v2 = styleRes.data && typeof styleRes.data === "object"
+        ? styleRes.data as { public_template_version?: string; v2_style_config?: PublicEventData["v2_style_config"] }
+        : null;
+      if (v2) {
+        evt.public_template_version = v2.public_template_version ?? "v1";
+        evt.v2_style_config = v2.v2_style_config ?? null;
       }
 
       const { data: venueData } = await supabase.rpc("get_public_event_venues", {
@@ -141,9 +142,9 @@ export function LivePublicPage({ subdomain }: { subdomain: string }) {
   }
 
   return (
-    <EventPublicLanding
+    <PublicEventTemplate
       subdomain={subdomain}
-      event={state.event}
+      event={state.event as PublicEventTemplateData}
       venues={state.venues}
       mode="live"
     />

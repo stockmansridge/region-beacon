@@ -2,6 +2,14 @@ import type { CSSProperties } from "react";
 
 export const PUBLIC_STYLE_DOCUMENT_VERSION = 1 as const;
 
+export const PUBLIC_TEMPLATE_V1 = "v1" as const;
+export const PUBLIC_TEMPLATE_V2 = "v2" as const;
+export type PublicTemplateVersion = typeof PUBLIC_TEMPLATE_V1 | typeof PUBLIC_TEMPLATE_V2;
+
+export function resolvePublicTemplateVersion(value: unknown): PublicTemplateVersion {
+  return value === PUBLIC_TEMPLATE_V2 ? PUBLIC_TEMPLATE_V2 : PUBLIC_TEMPLATE_V1;
+}
+
 export type PublicStylePage =
   | "home"
   | "passport"
@@ -48,7 +56,24 @@ export type PublicStyleOverrideDocument = {
   version: typeof PUBLIC_STYLE_DOCUMENT_VERSION;
   items: Record<string, PublicStyleItemOverride>;
   records?: Record<string, Record<string, PublicStyleItemOverride>>;
+  theme?: PublicV2Theme;
 };
+
+export const PUBLIC_V2_THEME_KEYS = [
+  "font_family", "heading_font_family", "default_emotive_font_family",
+  "primary_color", "accent_color", "link_color", "page_background_color",
+  "page_heading_color", "page_body_color", "page_muted_color", "border_color",
+  "card_background_color", "card_heading_color", "card_body_color", "card_muted_color",
+  "card_border_color", "button_primary_bg", "button_primary_fg", "button_secondary_bg",
+  "button_secondary_fg", "nav_background_color", "nav_fg_color", "nav_muted_color",
+  "nav_active_fg_color", "hero_bg_color", "hero_fg_color", "hero_accent_color",
+  "hero_body_color", "hero_overlay_color", "hero_overlay_opacity",
+  "welcome_copy", "logo_shape", "logo_backdrop", "logo_backdrop_color",
+  "cover_focal_x", "cover_focal_y",
+] as const;
+
+export type PublicV2ThemeKey = (typeof PUBLIC_V2_THEME_KEYS)[number];
+export type PublicV2Theme = Partial<Record<PublicV2ThemeKey, string | number | null>>;
 
 export type PublicStyleElementDefinition = {
   id: string;
@@ -176,6 +201,24 @@ export function emptyPublicStyleOverrides(): PublicStyleOverrideDocument {
   return { version: PUBLIC_STYLE_DOCUMENT_VERSION, items: {} };
 }
 
+function cleanTheme(raw: unknown): PublicV2Theme | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const source = raw as Record<string, unknown>;
+  const theme: PublicV2Theme = {};
+  for (const key of PUBLIC_V2_THEME_KEYS) {
+    const value = source[key];
+    if (value === null) theme[key] = null;
+    else if (key === "hero_overlay_opacity" && typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100) theme[key] = value;
+    else if (key.endsWith("_color") && typeof value === "string" && HEX.test(value)) theme[key] = value.toUpperCase();
+    else if (key.endsWith("font_family") && typeof value === "string" && FONT.test(value.trim())) theme[key] = value.trim();
+    else if (key === "welcome_copy" && typeof value === "string" && value.length <= 1000) theme[key] = value;
+    else if (key === "logo_shape" && (value === "square" || value === "circle")) theme[key] = value;
+    else if (key === "logo_backdrop" && (value === "transparent" || value === "color")) theme[key] = value;
+    else if ((key === "cover_focal_x" || key === "cover_focal_y") && typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100) theme[key] = value;
+  }
+  return Object.keys(theme).length > 0 ? theme : undefined;
+}
+
 function cleanProperty(property: PublicStyleProperty, raw: unknown): string | number | null {
   if (property.endsWith("Color") || property === "color") {
     return typeof raw === "string" && HEX.test(raw) ? raw.toUpperCase() : null;
@@ -260,10 +303,12 @@ export function parsePublicStyleOverrides(raw: unknown): PublicStyleOverrideDocu
       if (item) (records[id] ??= {})[recordId] = item;
     }
   }
+  const theme = cleanTheme(source.theme);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
     ...(Object.keys(records).length > 0 ? { records } : {}),
+    ...(theme ? { theme } : {}),
   };
 }
 
@@ -304,7 +349,7 @@ export function publicStyleTarget(
   id: PublicStyleElementId,
   options?: { recordId?: string | null; selectable?: boolean },
 ): {
-  "data-event-style": string;
+  "data-event-style"?: string;
   "data-event-record"?: string;
   "data-brand-role"?: string;
   "data-brand-instance"?: string;

@@ -19,10 +19,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { normalizeWebsiteUrl } from "@/lib/normalize-url";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import {
-  EventPublicLanding,
   type PublicEventData,
   type PublicVenueData,
 } from "@/components/event-public-landing";
+import { PublicEventTemplate } from "@/components/public-event-template";
 import {
   DEFAULT_VENUE_LABEL_PLURAL,
   DEFAULT_VENUE_LABEL_SINGULAR,
@@ -74,6 +74,7 @@ import {
   type PublicStyleElementDefinition,
   type PublicStyleOverrideDocument,
   type PublicStyleProperty,
+  type PublicV2ThemeKey,
 } from "@/lib/public-style-overrides";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
@@ -162,7 +163,8 @@ type Branding = {
   // Retained but no longer editable from the admin UI
   palette_key: string | null;
   page_background_key: string | null;
-  style_overrides?: PublicStyleOverrideDocument | null;
+  public_template_version?: string | null;
+  v2_style_config?: PublicStyleOverrideDocument | null;
 };
 
 type Domain = {
@@ -394,7 +396,8 @@ const SELECT_COLS_FALLBACK = EVENT_BRANDING_SELECT_FALLBACK;
 
 function brandingToForm(b: Branding | null): Form {
   if (!b) return EMPTY_FORM;
-  return {
+  const v2 = parsePublicStyleOverrides(b.v2_style_config);
+  const base: Form = {
     font_family: b.font_family ?? "",
     heading_font_family: b.heading_font_family ?? "",
     default_emotive_font_family: b.default_emotive_font_family ?? "",
@@ -440,8 +443,14 @@ function brandingToForm(b: Branding | null): Form {
     custom_link_label: b.custom_link_label ?? "",
     custom_link_url: b.custom_link_url ?? "",
     custom_link_enabled: Boolean(b.custom_link_enabled),
-    style_overrides: parsePublicStyleOverrides(b.style_overrides),
+    style_overrides: v2,
   };
+  for (const [key, value] of Object.entries(v2.theme ?? {})) {
+    if (key in base && key !== "style_overrides" && value != null) {
+      (base as unknown as Record<string, unknown>)[key] = String(value);
+    }
+  }
+  return base;
 }
 
 function BrandingEditor() {
@@ -480,6 +489,29 @@ function BrandingEditor() {
   const hasUnsavedChanges = bundle
     ? JSON.stringify(form) !== JSON.stringify(brandingToForm(bundle.branding))
     : false;
+
+  const v2ConfigForDraft = () => {
+    const baseline = brandingToForm(bundle?.branding ?? null);
+    const theme = { ...(form.style_overrides.theme ?? {}) } as Record<string, string | number | null>;
+    const keys: Array<PublicV2ThemeKey & keyof Form> = [
+      "font_family", "heading_font_family", "default_emotive_font_family", "welcome_copy",
+      "primary_color", "accent_color", "link_color", "page_background_color", "page_heading_color",
+      "page_body_color", "page_muted_color", "border_color", "card_background_color", "card_heading_color",
+      "card_body_color", "card_muted_color", "card_border_color", "button_primary_bg", "button_primary_fg",
+      "button_secondary_bg", "button_secondary_fg", "nav_background_color", "nav_fg_color", "nav_muted_color",
+      "nav_active_fg_color", "hero_bg_color", "hero_fg_color", "hero_accent_color", "hero_body_color",
+      "hero_overlay_color", "hero_overlay_opacity", "logo_shape", "logo_backdrop", "logo_backdrop_color",
+      "cover_focal_x", "cover_focal_y",
+    ];
+    for (const key of keys) {
+      if (form[key] === baseline[key]) continue;
+      const raw = form[key];
+      if (key === "hero_overlay_opacity" || key === "cover_focal_x" || key === "cover_focal_y") {
+        theme[key] = String(raw).trim() ? Number(raw) : null;
+      } else theme[key] = typeof raw === "string" && raw !== "" ? raw : null;
+    }
+    return parsePublicStyleOverrides({ ...form.style_overrides, theme });
+  };
 
   useEffect(() => {
     if (!hasUnsavedChanges) return;
@@ -556,6 +588,12 @@ function BrandingEditor() {
   function editColour<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((f) => {
       const next = { ...f, [key]: value };
+      if (editorMode === "v2" && typeof value === "string") {
+        next.style_overrides = parsePublicStyleOverrides({
+          ...f.style_overrides,
+          theme: { ...(f.style_overrides.theme ?? {}), [key as PublicV2ThemeKey]: value || null },
+        });
+      }
       if (COLOUR_FORM_KEYS.includes(key) && f.brand_kit_key && f.brand_kit_key !== "custom") {
         next.brand_kit_key = "custom";
       }
@@ -565,8 +603,8 @@ function BrandingEditor() {
 
   /** Apply a Brand Kit — overwrites every colour field. */
   function applyBrandKit(kit: BrandKit) {
-    setForm((f) => ({
-      ...f,
+    setForm((f) => {
+      const colours = {
       brand_kit_key: kit.key,
       primary_color: kit.colors.primary_color,
       accent_color: kit.colors.accent_color,
@@ -593,8 +631,19 @@ function BrandingEditor() {
       hero_fg_color: kit.colors.hero_fg_color,
       hero_accent_color: kit.colors.hero_accent_color,
       // Kits have no dedicated hero body colour yet: inherit the hero foreground.
-      hero_body_color: kit.colors.hero_fg_color,
-    }));
+        hero_body_color: kit.colors.hero_fg_color,
+      };
+      return {
+        ...f,
+        ...colours,
+        ...(editorMode === "v2" ? {
+          style_overrides: parsePublicStyleOverrides({
+            ...f.style_overrides,
+            theme: { ...(f.style_overrides.theme ?? {}), ...colours },
+          }),
+        } : {}),
+      };
+    });
   }
 
   /** Select Custom without changing the current colours. */
@@ -736,6 +785,30 @@ function BrandingEditor() {
     setSaveSuccess(null);
 
 
+
+    if (editorMode === "v2") {
+      setSaving(true);
+      const { data, error } = await (supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
+        "save_event_v2_branding",
+        { _agency_id: agencyId, _event_id: bundle.event.id, _config: v2ConfigForDraft(), _activate: false },
+      );
+      const confirmed = data?.[0];
+      if (error || !confirmed?.v2_style_config) {
+        setSaving(false);
+        setSaveError(`V2 branding could not be saved. ${error?.message ?? "Persistence is unavailable; your draft is still open."}`);
+        return;
+      }
+      const savedConfig = parsePublicStyleOverrides(confirmed.v2_style_config);
+      setBundle((current) => current ? { ...current, branding: { ...(current.branding ?? {}), v2_style_config: savedConfig, public_template_version: confirmed.public_template_version } as Branding, hasBranding: true } : current);
+      setForm((current) => ({ ...current, style_overrides: savedConfig }));
+      setSaving(false);
+      setSaveSuccess("V2 draft saved. The live event template was not changed.");
+      if (opts?.returnAfter) navigate({ to: "/admin/events/$eventId", params: { eventId } });
+      return;
+    }
 
     // Field-level validation.
     const trim = (s: string) => s.trim();
@@ -893,7 +966,6 @@ function BrandingEditor() {
       // on the public page, especially when the organiser selects Custom.
       palette_key: brandKitKey === "custom" ? "custom" : brandKitKey ? null : (branding?.palette_key ?? null),
       page_background_key: brandKitKey ? null : (branding?.page_background_key ?? null),
-      style_overrides: form.style_overrides,
     };
 
     const { data: existing } = await supabase
@@ -972,7 +1044,6 @@ function BrandingEditor() {
     while (writeErr && guard < 12) {
       const col = unknownColumn(writeErr.message ?? "");
       if (!col || dropped.has(col)) break;
-      if (col === "style_overrides") break;
       console.warn("[branding-save] dropping unknown column and retrying", { col });
       dropped.add(col);
       missingCols.add(col);
@@ -1206,6 +1277,8 @@ function BrandingEditor() {
     card_body_color: orNullHex(form.card_body_color),
     card_muted_color: orNullHex(form.card_muted_color),
     style_overrides: form.style_overrides,
+    public_template_version: branding?.public_template_version ?? null,
+    v2_style_config: form.style_overrides,
   };
 
   const selectedKit = getBrandKit(form.brand_kit_key);
@@ -1282,6 +1355,7 @@ function BrandingEditor() {
           if (!confirmImmediateAssetAction()) return Promise.resolve("Save or discard form changes first.");
           return removeAsset(kind, kind === "logo" ? branding?.logo_path ?? null : branding?.cover_path ?? null);
         }}
+        v2ConfigForDraft={v2ConfigForDraft}
       />
     );
   }
@@ -1813,12 +1887,13 @@ function BrandingEditor() {
                   aria-label="Customer landing page preview"
                 >
                   <div className="max-h-[70vh] overflow-y-auto">
-                    <EventPublicLanding
+                    <PublicEventTemplate
                       key={previewEvent.event_id}
                       subdomain={null}
                       event={previewEvent}
                       venues={venues}
                       mode="preview"
+                      forceTemplate="v1"
                     />
                   </div>
                 </div>
@@ -1890,7 +1965,7 @@ function VisualBrandingEditor({
   selectedRole, setSelectedRole, previewWidth, setPreviewWidth, recentColours, setRecentColours,
   canEdit, saving, saveError, saveSuccess, hasUnsavedChanges, onSave, onSaveAndReturn,
   onBack, onExit, selectedKit, applyBrandKit, selectCustomBrandKit, clearBrandKit,
-  customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove,
+  customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove, v2ConfigForDraft,
 }: {
   event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
   venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
@@ -1906,6 +1981,7 @@ function VisualBrandingEditor({
   confirmImmediateAssetAction: () => boolean;
   onAssetUpload: (kind: EventAssetKind, file: File) => Promise<string | null>;
   onAssetRemove: (kind: EventAssetKind) => Promise<string | null>;
+  v2ConfigForDraft: () => PublicStyleOverrideDocument;
 }) {
   const [hoveredRole, setHoveredRole] = useState<EditorSelection | null>(null);
   const [stylePage, setStylePage] = useState("home");
@@ -1978,6 +2054,23 @@ function VisualBrandingEditor({
     });
   };
 
+  const activateV2 = async () => {
+    if (!canEdit || saving || !agencyId) return;
+    if (!window.confirm("Use the V2 public template for this event? This activates only this event and saves this V2 configuration atomically.")) return;
+    const { data, error } = await (supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
+      "save_event_v2_branding",
+      { _agency_id: agencyId, _event_id: eventId, _config: v2ConfigForDraft(), _activate: true },
+    );
+    if (error || data?.[0]?.public_template_version !== "v2") {
+      toast.error(`V2 was not activated. ${error?.message ?? "No confirmed response was returned."}`);
+      return;
+    }
+    toast.success("V2 is now live for this event only.");
+  };
+
   const handlePreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault(); event.stopPropagation(); selectFromEvent(event.target);
   };
@@ -2028,6 +2121,7 @@ function VisualBrandingEditor({
             <Button type="button" variant="outline" onClick={onBack}>Back to existing editor</Button>
             <Button type="button" variant="outline" onClick={onExit}>Back to event</Button>
             {canEdit && <Button type="button" variant="outline" onClick={onSave} disabled={saving}>Save</Button>}
+            {canEdit && branding?.public_template_version !== "v2" && <Button type="button" variant="outline" onClick={activateV2} disabled={saving}>Use V2 for this event</Button>}
             {canEdit && <Button type="button" onClick={onSaveAndReturn} disabled={saving}>Save and return</Button>}
           </div>
         </div>
@@ -2075,7 +2169,7 @@ function VisualBrandingEditor({
             >
               <style>{`.v2-brand-preview [data-brand-role]{outline:2px solid transparent;outline-offset:-2px;cursor:crosshair}.v2-brand-preview [data-brand-role="${hoveredRole ?? "__none"}"]{outline-color:color-mix(in srgb,var(--primary) 55%,transparent)}.v2-brand-preview [data-brand-role="${selectedRole ?? "__none"}"]{outline:3px solid var(--primary);outline-offset:-3px}.v2-brand-preview a,.v2-brand-preview button{cursor:crosshair}`}</style>
               <div className="max-h-[calc(100vh-13rem)] overflow-y-auto">
-                <EventPublicLanding subdomain={null} event={previewEvent} venues={venues} mode="preview" />
+                <PublicEventTemplate subdomain={null} event={{ ...previewEvent, v2_style_config: v2ConfigForDraft() }} venues={venues} mode="preview" forceTemplate="v2" />
               </div>
             </div>
           </div>

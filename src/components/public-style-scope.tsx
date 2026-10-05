@@ -7,27 +7,34 @@ import {
   type PublicStyleOverrideDocument,
 } from "@/lib/public-style-overrides";
 
-const PublicStyleContext = createContext<PublicStyleOverrideDocument | null>(null);
+type PublicStyleContextValue = { enabled: boolean; document: PublicStyleOverrideDocument | null };
+const PublicStyleContext = createContext<PublicStyleContextValue>({ enabled: false, document: null });
 
 export function usePublicStyleTarget(
   id: PublicStyleElementId,
   options?: { recordId?: string | null; selectable?: boolean },
 ) {
-  return publicStyleTarget(useContext(PublicStyleContext), id, options);
+  const context = useContext(PublicStyleContext);
+  return context.enabled
+    ? publicStyleTarget(context.document, id, options)
+    : { style: {} };
 }
 
 export function PublicStyleScope({
   overrides,
+  enabled = true,
   children,
 }: {
   overrides?: PublicStyleOverrideDocument | null;
+  enabled?: boolean;
   children: ReactNode;
 }) {
   const document = parsePublicStyleOverrides(overrides);
+  if (!enabled) return children;
   const css = publicStyleCss(document);
   return (
-    <PublicStyleContext.Provider value={document}>
-      <div data-public-style-version={document.version}>
+    <PublicStyleContext.Provider value={{ enabled: true, document }}>
+      <div {...(enabled ? { "data-public-style-version": document.version } : {})}>
         {css ? <style>{css}</style> : null}
         {children}
       </div>

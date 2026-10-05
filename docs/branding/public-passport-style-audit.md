@@ -4,6 +4,16 @@
 
 This audit is the coverage contract for the V2 visual editor. The typed source of truth is `PUBLIC_STYLE_ELEMENTS` in `src/lib/public-style-overrides.ts`. A row marked **Registered** has a stable allowlisted ID; **Wired** means the real public component consumes the resolver; **Previewed** means the V2 page/state picker can render and select it. Production SQL has not been applied.
 
+## Multi-tenant template architecture
+
+- Public templates are central platform code; customers never receive forked page implementations or shared default changes.
+- V1 is the unchanged default. Missing, `NULL`, or unknown template selections resolve to V1 without item CSS.
+- `event_branding.public_template_version` selects V1/V2 for one `(agency_id, event_id)`. It is distinct from editor mode and the config schema version.
+- `event_branding.v2_style_config` stores sparse V2 theme and item/record overrides. Existing V1 columns remain available for rollback.
+- Opening V2 and saving its draft do not activate it. “Use V2 for this event” atomically saves config and selects V2 through an RLS-governed RPC.
+- Public reads first resolve one publishable event, join branding on agency and event IDs, and expose V2 config only when selected.
+- V2 preview is forced locally and performs no activation write. Editor selection, cache and draft identity use the route event ID.
+
 ## Identity and inheritance
 
 - Default scope is **This item**. Type/event scope is always an explicit action.
@@ -38,7 +48,7 @@ This audit is the coverage contract for the V2 visual editor. The typed source o
 | Bonus result: claimed/repeat/inactive/error | `bonus.result.*` | `collect.bonus.$token` | hard-coded green/gold gradient and constants | gradient, icon, text, totals, actions | Registered; hard-coded replacement pending |
 | Tasting result: claimed/repeat/unavailable/error | `tasting.result.*` | `tasting.$qrToken` | hard-coded green/gold gradient and constants | gradient, icon, text, totals, actions | Registered; hard-coded replacement pending |
 | Legacy `/t/:agency/e/:event` landing | home IDs after migration | `TrailLanding` via legacy tenant route | reduced palette mapping | same home registry where equivalent | Audited; not selectable; migration pending |
-| Clean tenant-host routes | same IDs as `/live/$subdomain` | thin top-level route wrappers | delegated real components | identical to canonical route | Covered by delegated component when wired |
+| Clean tenant-host routes | same IDs as `/live/$subdomain` | thin top-level route wrappers | delegated real components | identical to canonical route | Home dispatcher wired; other route families pending |
 
 ## Known propagation corrections
 
@@ -61,7 +71,9 @@ This audit is the coverage contract for the V2 visual editor. The typed source o
 | Check | Status |
 |---|---|
 | Registry rejects unknown IDs/properties, invalid colours, unsafe gradients and out-of-range numeric values | Implemented in resolver; automated coverage pending |
-| Override-free rendering unchanged | Architectural fallback preserved; visual baselines pending |
+| V1 isolation and unknown-version fallback | Implemented for central home renderer; full-route visual baseline pending |
+| Event-scoped V2 save and explicit atomic activation | Prepared in review-only SQL/UI; authenticated runtime pending |
+| Event A/B/C/D isolation and V1 rollback | Source scoping implemented for home; runtime and full-route matrix pending |
 | Welcome / next-prize icon / next-prize fill / passport ring independent | Wiring in progress |
 | Share background/text/border/icon independent | Wiring in progress |
 | Editor preview has no artificial inert-link opacity | Wiring in progress |
