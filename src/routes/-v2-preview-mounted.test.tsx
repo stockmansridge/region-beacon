@@ -617,7 +617,8 @@ describe("final source-review corrections", () => {
     const r = render(page(null));
     const toggle = () => r.container.querySelector<HTMLButtonElement>('[data-legal-card="terms"] button')!;
     expect(toggle().getAttribute("aria-expanded")).toBe("true");
-    fireEvent.click(toggle()); // collapse (select mode may be inert; force via state below if needed)
+    fireEvent.click(toggle());
+    expect(toggle().getAttribute("aria-expanded")).toBe("false");
     r.rerender(page({ section: "terms", nonce: 1 }));
     expect(toggle().getAttribute("aria-expanded")).toBe("true");
     expect(r.container.textContent).toContain("Terms text");
