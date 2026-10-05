@@ -4195,7 +4195,7 @@ function BackLinkLabelInspector({ context, labels, disabled, setLabel }: {
   const field = (key: PublicBackLinkLabelKey, title: string, hint: string) => (
     <div className="space-y-1.5">
       <BackLinkFieldLabel htmlFor={`back-label-${key}`}>{title}</BackLinkFieldLabel>
-      <BackLinkLabelField key={`${key}:${labels[key] ?? ""}`} id={`back-label-${key}`} value={labels[key] ?? ""} disabled={disabled} commit={(v) => setLabel(key, v)} />
+      <BackLinkLabelField key={key} id={`back-label-${key}`} value={labels[key] ?? ""} disabled={disabled} commit={(v) => setLabel(key, v)} />
       <p className="text-xs text-muted-foreground">{hint}</p>
     </div>
   );
