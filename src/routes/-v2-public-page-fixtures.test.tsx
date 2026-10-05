@@ -22,6 +22,7 @@ import { PublicStyleScope } from "@/components/public-style-scope";
 import { eventScopedCustomFontFamily, v2FontFamilyValue } from "@/lib/event-font-alias";
 import { publicStyleCss, publicStyleDefinition, publicStyleTarget } from "@/lib/public-style-overrides";
 import { V2ResultPreview } from "@/components/v2-result-previews";
+import { PublicLeaderboardPage, type LeaderboardRow } from "./live.$subdomain.leaderboard";
 
 const baseEvent = {
   event_id: "event-a",
@@ -71,6 +72,30 @@ describe("Offers page (real components)", () => {
     // Sibling text on the same card keeps its inherited colour.
     for (const body of attrsFor(html, "offers.card.body")) expect(body.toLowerCase()).not.toMatch(/#ab0001|#00cd02/);
     expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+describe("Leaderboard page (real components, SSR)", () => {
+  const rows = [{ rank: 1, display_name: "Visitor-supplied name", stamps: 3, points: 30, venue_points: 25, bonus_points: 5, visit_count: 3, tier: "Explorer", is_completed: true, is_enabled: true, event_found: true }] as LeaderboardRow[];
+  const branding = {
+    paletteKey: null, backgroundKey: null, primaryColor: null, accentColor: null, pageBackgroundColor: null, cardBackgroundColor: null, textColor: null, mutedTextColor: null, cardTextColor: null, cardMutedTextColor: null, borderColor: null, primaryTextColor: null, navBackgroundColor: null, brandKitKey: null, linkColor: null, cardBorderColor: null, buttonPrimaryBg: null, buttonPrimaryFg: null, buttonSecondaryBg: null, buttonSecondaryFg: null, navFgColor: null, navMutedColor: null, navActiveFgColor: null, heroBgColor: null, heroFgColor: null, heroAccentColor: null, heroBodyColor: null, heroOverlayColor: null, heroOverlayOpacity: null, pageHeadingColor: null, pageBodyColor: null, pageMutedColor: null, cardHeadingColor: null, cardBodyColor: null, cardMutedColor: null, logoPath: null, coverPath: null, coverFocalX: null, coverFocalY: null, fontFamily: null, headingFontFamily: null, eventId: "event-a", templateVersion: "v2" as const, styleOverrides: { version: 1, items: {}, records: {
+      "leaderboard.rank.surface": { first: { normal: { backgroundColor: "#102030" } } },
+      "leaderboard.tier.text": { explorer: { normal: { color: "#405060" } } },
+      "leaderboard.completed.surface": { completed: { normal: { borderColor: "#708090" } } },
+      "leaderboard.row.pointsUnit": { first: { normal: { color: "#90A0B0" } } },
+    } }, ready: true,
+  };
+
+  it("emits selectable non-identifying slots with effective styles and unchanged visitor content", () => {
+    const html = renderToStaticMarkup(<PublicNavProvider mode="preview" subdomain="preview" activePath="/leaderboard"><PublicLeaderboardPage subdomain="preview" previewData={{ branding, eventId: "event-a", rows }} /></PublicNavProvider>);
+    expect(html).toContain('data-brand-instance="leaderboard.rank.surface@first"');
+    expect(html).toContain('data-brand-instance="leaderboard.tier.text@explorer"');
+    expect(html).toContain('data-brand-instance="leaderboard.completed.surface@completed"');
+    expect(html).toContain('data-brand-instance="leaderboard.row.pointsUnit@first"');
+    expect(html.toLowerCase()).toContain("#102030");
+    expect(html.toLowerCase()).toContain("#405060");
+    expect(html).toContain("Visitor-supplied name");
+    expect(html).not.toContain("leaderboard.tier.text@Visitor-supplied name");
   });
 });
 

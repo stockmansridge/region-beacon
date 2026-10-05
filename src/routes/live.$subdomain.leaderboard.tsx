@@ -306,7 +306,7 @@ function LeaderboardList({ rows, v2 }: { rows: LeaderboardRow[]; v2: boolean }) 
         const slot = rankSlot(r.rank ?? i + 1);
         const tierTemplateSlot = tierSlot(tier);
         return (
-          <PublicStyleTarget key={`${r.rank}-${r.display_name}-${i}`} id="leaderboard.row" recordId={slot}><li
+          <PublicStyleTarget key={`rank-${r.rank ?? i + 1}`} id="leaderboard.row" recordId={slot}><li
             className="flex items-center gap-4 rounded-2xl border border-[var(--event-card-border)] bg-[var(--event-card-bg)] px-4 py-3 shadow-sm"
           >
             <RankBadge rank={r.rank ?? i + 1} v2={v2} />
