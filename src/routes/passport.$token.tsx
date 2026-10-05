@@ -382,6 +382,7 @@ export function PassportPreview({
   subdomain,
   branding,
   awards,
+  preview = false,
 }: {
   passport: PassportRow;
   eventName: string | null;
@@ -390,6 +391,7 @@ export function PassportPreview({
   subdomain: string | null;
   branding: EventBrandingKeys;
   awards?: PublicEventAward[];
+  preview?: boolean;
 }) {
   const [supportCopied, setSupportCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -517,10 +519,10 @@ export function PassportPreview({
 
   return (
     <>
-      {subdomain && <LiveActivityBar subdomain={subdomain} />}
-      <PrizeUnlockAnnouncer eventId={passport.event_id ?? null} />
+      {subdomain && !preview && <LiveActivityBar subdomain={subdomain} />}
+      {!preview && <PrizeUnlockAnnouncer eventId={passport.event_id ?? null} />}
       {/* Announcement bar in normal flow so it pushes the hero down */}
-      {subdomain && (
+      {subdomain && !preview && (
         <PublicAnnouncementBar
           subdomain={subdomain}
           navBg={`var(--event-nav-bg, ${PRIMARY})`}
@@ -850,16 +852,16 @@ export function PassportPreview({
 
         {/* Bonus points promo */}
         <div className="mt-5">
-          <BonusPointsPromo subdomain={subdomain} />
+          {!preview && <BonusPointsPromo subdomain={subdomain} />}
         </div>
 
         {/* What's happening — live event pulse (directly under stamps) */}
         <div className="mt-5">
-          <WhatsHappeningCard
+          {!preview && <WhatsHappeningCard
             subdomain={subdomain}
             hostname={pageHostname}
             fallbackCheckins={activityFallbackCheckins}
-          />
+          />}
         </div>
 
         {/* Rewards — sourced from configured event_awards. Hidden when none. */}
