@@ -38,7 +38,7 @@ import { PublicBookmarksPage } from "@/routes/live.$subdomain.bookmarks";
 import { CombinedLegalPage, type LegalRow } from "@/components/public-legal";
 import { PassportPreview, type PassportRow } from "@/routes/passport.$token";
 import { normalizePassportStampRows } from "@/lib/passport-stamps";
-import { resolveEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, resolveEventBrandingKeys } from "@/lib/use-event-palette";
 import { PublicNavProvider } from "@/components/public-nav-context";
 import type { PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import {
