@@ -801,3 +801,22 @@ describe("header title + top spacing", () => {
     expect(words.className).toBe("");
   });
 });
+
+describe("Prizes V2 section toggle", () => {
+  it("surface/current/unselected targets follow the active tab; labels are V2-only", async () => {
+    const { AwardsPage } = await import("./live.$subdomain.prizes");
+    const { resolveEventBrandingKeys } = await import("@/lib/use-event-palette");
+    const doc = { version: 1, items: { "prizes.tabs.surface": { normal: { backgroundColor: "transparent", borderColor: "#111111" } }, "prizes.tabs.currentItem": { normal: { backgroundColor: "#222222" } } },
+      records: { "prizes.tabs.item": { bonus: { normal: { color: "#333333" } } } }, copy: { labels: { "prizes.tabs.bonus": "Extras" } } };
+    const branding = resolveEventBrandingKeys({ ...V2_EVENT } as never, { public_template_version: "v2", v2_style_config: doc as never });
+    const { container, getByText } = render(inPreview(<AwardsPage subdomain="preview" previewData={{ branding, eventInfo: { event_id: "e1", event_name: "T" } as never, awards: [], bonuses: [], recentCheckins: [], hasPassport: true }} />, "/prizes"));
+    const t = (i: string) => container.querySelector<HTMLElement>(`[data-brand-instance="${i}"]`);
+    expect(t("prizes.tabs.surface")?.style.backgroundColor).toBe("transparent");
+    expect(t("prizes.tabs.currentItem@prizes")?.style.backgroundColor).toBe("#222222");
+    expect(t("prizes.tabs.item@bonus")?.style.color).toBe("#333333");
+    expect(getByText("Extras")).toBeTruthy();
+    fireEvent.click(getByText("Extras"));
+    expect(t("prizes.tabs.currentItem@bonus")).not.toBeNull();
+    expect(t("prizes.tabs.item@prizes")).not.toBeNull();
+  });
+});

@@ -100,6 +100,8 @@ export const PUBLIC_COPY_DEFAULTS = {
   "home.collect.eyebrow": "Collect points",
   "home.collect.body": "Scan venue QR codes to collect passport stamps and earn points. Look out for bonus codes around the event for extra points.",
   "home.collect.prompt": "Start collecting by scanning a venue or bonus QR code.",
+  "prizes.tabs.prizes": "Prizes",
+  "prizes.tabs.bonus": "Bonus Points",
 } as const;
 export type PublicCopyKey = keyof typeof PUBLIC_COPY_DEFAULTS;
 export type PublicCopyConfig = { labels: Partial<Record<PublicCopyKey, string>> };
@@ -115,6 +117,10 @@ export function cleanPublicCopy(raw: unknown): string | null {
 export function publicCopy(document: PublicStyleOverrideDocument | null | undefined, key: PublicCopyKey): string {
   return document?.copy?.labels[key] ?? PUBLIC_COPY_DEFAULTS[key];
 }
+
+/** Prizes page section toggle: stable tab identities (match the page's tab state values). */
+export const PUBLIC_PRIZE_TAB_IDS = ["prizes", "bonus"] as const;
+export type PublicPrizeTabId = (typeof PUBLIC_PRIZE_TAB_IDS)[number];
 
 export const PUBLIC_TRAIL_TAB_IDS = ["venues", "offers"] as const;
 export type PublicTrailTabId = (typeof PUBLIC_TRAIL_TAB_IDS)[number];
@@ -334,7 +340,9 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "offers.card.placeholder", page: "offers", section: "Offers", label: "No-image background", kind: "surface", properties: SURFACE, repeat: "venue" },
   { id: "offers.card.placeholderIcon", page: "offers", section: "Offers", label: "No-image gift icon", kind: "icon", properties: ICON, repeat: "venue" },
   { id: "offers.card.chevron", page: "offers", section: "Offers", label: "Open-offer arrow", kind: "icon", properties: ICON, repeat: "venue" },
-  { id: "prizes.tabs.item", page: "prizes", section: "Tabs", label: "Prize tab", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
+  { id: "prizes.tabs.surface", page: "prizes", section: "Prizes / Bonus Points toggle", label: "Toggle background", kind: "surface", properties: ["backgroundColor", "borderColor"] },
+  { id: "prizes.tabs.item", page: "prizes", section: "Prizes / Bonus Points toggle", label: "Unselected toggle item", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template", recordIds: PUBLIC_PRIZE_TAB_IDS },
+  { id: "prizes.tabs.currentItem", page: "prizes", section: "Prizes / Bonus Points toggle", label: "Selected toggle item", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template", recordIds: PUBLIC_PRIZE_TAB_IDS },
   { id: "prizes.card.surface", page: "prizes", section: "Prize cards", label: "Prize card", kind: "surface", properties: SURFACE, repeat: "award" },
   { id: "prizes.card.heading", page: "prizes", section: "Prize cards", label: "Prize name", kind: "text", properties: TEXT, repeat: "award" },
   { id: "prizes.card.badge", page: "prizes", section: "Prize cards", label: "Prize status badge", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "award" },
