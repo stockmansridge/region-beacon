@@ -2670,7 +2670,8 @@ function VisualBrandingEditor({
             labels={form.style_overrides.backLinks?.labels ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
             setLabel={(key, value) => updateStyleDocument((next) => {
               const labels = { ...(next.backLinks?.labels ?? {}) };
-              const cleaned = value === null ? null : cleanPublicBackLinkLabel(value);
+              // Keep in-progress spaces while typing; the allowlisted parser trims on save.
+              const cleaned = value === null || cleanPublicBackLinkLabel(value) === null ? null : value.replace(/[\u0000-\u001F\u007F<>]/g, "").slice(0, PUBLIC_BACK_LINK_LABEL_MAX);
               if (cleaned === null) delete labels[key]; else labels[key] = cleaned;
               const { backLinks: _old, ...rest } = next;
               return Object.keys(labels).length ? { ...rest, backLinks: { labels } } : rest;
