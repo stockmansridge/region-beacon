@@ -582,8 +582,13 @@ function cleanNavigation(raw: unknown, errors?: string[]): PublicNavigationConfi
   return { items };
 }
 
+const TRANSPARENT_OK = new Set<string>(["backgroundColor", "iconBackgroundColor"]);
+export function publicStyleAllowsTransparent(property: string): boolean { return TRANSPARENT_OK.has(property); }
+
 function cleanProperty(property: PublicStyleProperty, raw: unknown): string | number | null {
   if (property.endsWith("Color") || property === "color") {
+    // Explicit "transparent" is a real choice for paint layers only (never text/border).
+    if (raw === "transparent" && TRANSPARENT_OK.has(property)) return "transparent";
     return typeof raw === "string" && HEX.test(raw) ? raw.toUpperCase() : null;
   }
   if (property === "backgroundGradient") {
@@ -802,6 +807,9 @@ function standardStyle(properties: PublicStyleProperties | undefined, kind?: Pub
     ...(properties.textAlign ? { textAlign: properties.textAlign as CSSProperties["textAlign"] } : {}),
     ...(typeof properties.opacity === "number" ? { opacity: properties.opacity } : {}),
     ...(kind === "icon" && properties.iconBackgroundColor ? { backgroundColor: String(properties.iconBackgroundColor) } : {}),
+    // A chosen solid/transparent background replaces any default gradient or
+    // image paint (inline or via scoped CSS), so "transparent" truly removes it.
+    ...((properties.backgroundColor || (kind === "icon" && properties.iconBackgroundColor)) && !properties.backgroundGradient ? { backgroundImage: "none" } : {}),
   };
 }
 

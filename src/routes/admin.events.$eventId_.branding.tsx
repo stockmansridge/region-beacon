@@ -112,6 +112,7 @@ import {
   PUBLIC_TRAIL_TAB_LABEL_MAX,
   cleanPublicTrailTabLabel,
   cleanPublicCopy,
+  publicStyleAllowsTransparent,
   isPublicCopyKey,
   PUBLIC_COPY_DEFAULTS,
   PUBLIC_COPY_MAX,
@@ -3012,11 +3013,12 @@ function ColourControl({ label, value, inherited, quickColours, disabled, onComm
   label: string; value: string | null | undefined; inherited: string; quickColours: QuickColour[];
   disabled: boolean; onCommit: (value: string | null) => void; warning?: React.ReactNode; allowTransparent?: boolean;
 }) {
-  const current = value && HEX_RE.test(value) ? value.toUpperCase() : "";
+  const current = allowTransparent && value === "transparent" ? "transparent" : value && HEX_RE.test(value) ? value.toUpperCase() : "";
   const [draft, setDraft] = useState(current);
   useEffect(() => setDraft(current), [current]);
   const effective = current || inherited;
-  const invalid = draft !== "" && draft !== current && !HEX_RE.test(draft);
+  const acceptable = (next: string) => HEX_RE.test(next) || (allowTransparent && next.toLowerCase() === "transparent");
+  const invalid = draft !== "" && draft !== current && !acceptable(draft);
   const checker = "repeating-conic-gradient(#d4d4d8 0% 25%, #ffffff 0% 50%) 50% / 10px 10px";
   return (
     <div className="space-y-1.5">
@@ -3026,14 +3028,14 @@ function ColourControl({ label, value, inherited, quickColours, disabled, onComm
           <input type="color" aria-label={`${label} picker`} value={HEX_RE.test(effective) ? effective : "#FFFFFF"} disabled={disabled} onChange={(event) => onCommit(event.target.value.toUpperCase())} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
         </span>
         <input aria-label={`${label} hex`} value={draft} placeholder={inherited || "Use default"} disabled={disabled}
-          onChange={(event) => { const next = event.target.value.trim(); setDraft(next); if (HEX_RE.test(next)) onCommit(next.toUpperCase()); else if (next === "") onCommit(null); }}
-          onBlur={() => { if (!HEX_RE.test(draft) && draft !== "") setDraft(current); }}
+          onChange={(event) => { const next = event.target.value.trim(); setDraft(next); if (HEX_RE.test(next)) onCommit(next.toUpperCase()); else if (allowTransparent && next.toLowerCase() === "transparent") onCommit("transparent"); else if (next === "") onCommit(null); }}
+          onBlur={() => { if (!acceptable(draft) && draft !== "") setDraft(current); }}
           className={`h-10 min-w-0 flex-1 rounded-md border bg-background px-3 font-mono text-sm ${invalid ? "border-destructive" : ""}`} />
         <Button type="button" variant="ghost" size="sm" disabled={disabled || !current} onClick={() => onCommit(null)}>Use default</Button>
       </div>
-      {invalid ? <p className="text-xs text-destructive">Enter a 6-digit HEX colour such as #1F3D2B.</p> : null}
+      {invalid ? <p className="text-xs text-destructive">Enter a 6-digit HEX colour such as #1F3D2B{allowTransparent ? " or “transparent”" : ""}.</p> : null}
       <div className="flex flex-wrap gap-1" aria-label={`Quick colours for ${label}`}>
-        {allowTransparent ? <button type="button" title="Transparent" aria-label="Use transparent" disabled className="h-6 w-6 rounded-sm border opacity-40" style={{ background: checker }} /> : null}
+        {allowTransparent ? <button type="button" title="Transparent (no colour)" aria-label="Use transparent" aria-pressed={current === "transparent"} disabled={disabled} onClick={() => onCommit("transparent")} className={`h-6 w-6 rounded-sm border focus-visible:ring-2 focus-visible:ring-ring ${current === "transparent" ? "ring-2 ring-primary" : ""}`} style={{ background: checker }} /> : null}
         {quickColours.map((entry) => <button key={`${entry.label}-${entry.colour}`} type="button" title={`${entry.label} ${entry.colour}`} aria-label={`Use ${entry.label} ${entry.colour}`} disabled={disabled} onClick={() => onCommit(entry.colour)} className={`h-6 w-6 rounded-sm border focus-visible:ring-2 focus-visible:ring-ring ${current === entry.colour ? "ring-2 ring-primary" : ""}`} style={{ backgroundColor: entry.colour }} />)}
       </div>
       {warning}
@@ -3091,7 +3093,7 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
     <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !hasOverride}>Reset this item</Button></div>
     {item.states?.length ? <Field label="Appearance (shown in the preview)"><Select value={state} onValueChange={(value) => setState(value as PublicStyleState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
     <div className="mt-5 space-y-4">
-      {colourProperties.map((property) => <ColourControl key={property} label={PROPERTY_LABELS[property]} value={values[property] as string | undefined} inherited={inherited[property] ?? ""} quickColours={quickColours} disabled={disabled} allowTransparent={property === "backgroundColor"} onCommit={(value) => setProperty(property, value)} />)}
+      {colourProperties.map((property) => <ColourControl key={property} label={PROPERTY_LABELS[property]} value={values[property] as string | undefined} inherited={inherited[property] ?? ""} quickColours={quickColours} disabled={disabled} allowTransparent={publicStyleAllowsTransparent(property)} onCommit={(value) => setProperty(property, value)} />)}
       {item.properties.includes("opacity") ? <Field label={item.id === "home.hero.cover" ? "Tint layer opacity" : "Opacity"}>
         <div className="flex items-center gap-3">
           <input type="range" aria-label="Opacity" min={0} max={100} step={1} value={opacityPercent ?? Number(inherited.opacity ?? 100)} disabled={disabled} onChange={(event) => setProperty("opacity", Number(event.target.value) / 100)} className="flex-1" />
