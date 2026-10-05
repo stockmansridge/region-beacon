@@ -108,6 +108,8 @@ export type PublicEventData = {
   card_body_color?: string | null;
   card_muted_color?: string | null;
   style_overrides?: PublicStyleOverrideDocument | null;
+  public_template_version?: string | null;
+  v2_style_config?: PublicStyleOverrideDocument | null;
 };
 
 /**

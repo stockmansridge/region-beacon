@@ -36,7 +36,7 @@ export const EVENT_BRANDING_SELECT_OPTIONAL = [
   "cover_focal_x", "cover_focal_y",
   "logo_shape", "logo_backdrop", "logo_backdrop_color",
   "custom_link_label", "custom_link_url", "custom_link_enabled",
-  "style_overrides",
+  "public_template_version", "v2_style_config",
 ] as const;
 
 export const EVENT_BRANDING_SELECT = [
@@ -48,7 +48,7 @@ export const EVENT_BRANDING_SELECT_FALLBACK = EVENT_BRANDING_SELECT_BASE.join(",
 
 /** True when a failed select is caused by a column missing in production. */
 export function isMissingBrandingColumnError(message: string | null | undefined): boolean {
-  return /(style_overrides|custom_link_label|custom_link_url|custom_link_enabled|logo_shape|logo_backdrop|logo_backdrop_color|cover_focal_x|cover_focal_y|hero_body_color|brand_kit_key|brand_kit_version|hero_overlay|page_heading_color|card_heading_color|button_primary_bg|nav_fg_color|hero_bg_color|link_color|page_background_color|card_background_color|palette_key|page_background_key)/i.test(
+  return /(public_template_version|v2_style_config|custom_link_label|custom_link_url|custom_link_enabled|logo_shape|logo_backdrop|logo_backdrop_color|cover_focal_x|cover_focal_y|hero_body_color|brand_kit_key|brand_kit_version|hero_overlay|page_heading_color|card_heading_color|button_primary_bg|nav_fg_color|hero_bg_color|link_color|page_background_color|card_background_color|palette_key|page_background_key)/i.test(
     message ?? "",
   );
 }
@@ -107,7 +107,8 @@ export type EventBrandingRow = {
   custom_link_label?: string | null;
   custom_link_url?: string | null;
   custom_link_enabled?: boolean | null;
-  style_overrides?: PublicStyleOverrideDocument | null;
+  public_template_version?: string | null;
+  v2_style_config?: PublicStyleOverrideDocument | null;
 };
 
 /** Resolve a stored font_family value to a usable CSS font stack. */
