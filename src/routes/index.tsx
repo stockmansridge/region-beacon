@@ -190,6 +190,13 @@ const SLIDES = [
     desc: "Sip, savour and collect stamps along the way.",
   },
   {
+    img: heroRegion,
+    icon: MapPin,
+    title: "Region Tourism",
+    alt: "Heritage main street of a regional town surrounded by rolling hills",
+    desc: "Showcase your whole region and reward every stop.",
+  },
+  {
     img: heroMarket,
     icon: Star,
     title: "Market Events",
@@ -202,13 +209,6 @@ const SLIDES = [
     title: "Tourism Groups",
     alt: "Small tourism group exploring a regional attraction together with a guide",
     desc: "Discover together and earn more as a group.",
-  },
-  {
-    img: heroRegion,
-    icon: MapPin,
-    title: "Region Tourism",
-    alt: "Heritage main street of a regional town surrounded by rolling hills",
-    desc: "Showcase your whole region and reward every stop.",
   },
 ];
 
@@ -230,10 +230,19 @@ function HeroCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Desktop: 3 cards side by side, highlight current */}
-      <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4">
+      {/* Desktop: three cards per row, highlight current */}
+      <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3">
         {SLIDES.map((s, i) => (
-          <SlideCard key={s.title} slide={s} active={i === index} />
+          <SlideCard
+            key={s.title}
+            slide={s}
+            active={i === index}
+            className={
+              SLIDES.length % 3 === 1 && i === SLIDES.length - 1
+                ? "lg:col-start-2"
+                : undefined
+            }
+          />
         ))}
       </div>
       {/* Mobile: single card */}
@@ -283,13 +292,22 @@ function HeroCarousel() {
   );
 }
 
-function SlideCard({ slide, active }: { slide: (typeof SLIDES)[number]; active: boolean }) {
+function SlideCard({
+  slide,
+  active,
+  className,
+}: {
+  slide: (typeof SLIDES)[number];
+  active: boolean;
+  className?: string;
+}) {
   const Icon = slide.icon;
   return (
     <div
       className={cn(
         "group relative h-[360px] overflow-hidden rounded-3xl shadow-lg transition-all duration-500 sm:h-[420px]",
         active ? "ring-2 ring-[#C8A24A]" : "opacity-90 hover:opacity-100",
+        className,
       )}
     >
       <img
