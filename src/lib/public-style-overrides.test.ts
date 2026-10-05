@@ -68,7 +68,7 @@ describe("independent text / icon / background (finding 6)", () => {
     // Normal block must not set `color` to the icon colour.
     const normalBlock = css.split("\n").find((rule) => rule.startsWith('[data-public-style-root="scopeA"] [data-event-style="home.shareButton"]{'));
     expect(normalBlock).toContain("color:#111111!important");
-    expect(normalBlock).not.toContain("color:#FF0000");
+    expect(normalBlock).not.toMatch(/(^|[;{])color:#FF0000/);
   });
 });
 
