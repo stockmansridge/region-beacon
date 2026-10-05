@@ -18,4 +18,4 @@
 - [x] Legal heading/chevron/surface/document text/headings/external button targets with terms/privacy slots.
 - [x] Bookmarks leaf/thumbnail/arrow targets; V1 venue CTA restored; current-page bottom-menu colours; buffered menu names; passport progress/stamp card/text targets.
 - [x] Final review: offers V1 fallback, badge legacy migration, nav selection via preview context, template-aware record copy, venue QR svg, back-link label buffering, legal reveal on repeat.
-- [ ] Header title target/text/wrap; remove join spacers; passport bold words inherit
+- [x] Header title target/text/wrap; remove join spacers; passport bold words inherit

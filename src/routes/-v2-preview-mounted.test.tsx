@@ -652,10 +652,10 @@ describe("header title + top spacing", () => {
     expect(title.className).toContain("whitespace-normal");
     expect(title.className).not.toContain("truncate");
     const link = title.closest("a")!;
-    expect(link.className).not.toMatch(/max-w-\[70%\]|\bh-10\b/);
+    expect(link.className.split(" ")).not.toContain("h-10"); expect(link.className).not.toContain("max-w-[70%]");
     const row = link.parentElement!;
     expect(row.className).toContain("min-h-14");
-    expect(row.className).not.toMatch(/\bh-14\b/);
+    expect(row.className.split(" ")).not.toContain("h-14");
     expect(r.container.querySelector('button[aria-label="Open menu"]')!.className).toContain("h-10 w-10");
     cleanup();
     const def = renderNav({ version: 1, items: {} });
