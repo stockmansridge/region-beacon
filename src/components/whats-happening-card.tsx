@@ -129,6 +129,18 @@ export function WhatsHappeningCard({
   const surfaceStyle = usePublicStyleTarget("home.happening.surface", { selectable: true });
   const headingStyle = usePublicStyleTarget("home.happening.heading", { selectable: true });
   const bodyStyle = usePublicStyleTarget("home.happening.body", { selectable: true });
+  const highlightStyle = usePublicStyleTarget("home.happening.highlight", { selectable: true });
+  const metaStyle = usePublicStyleTarget("home.happening.meta", { selectable: true });
+  // V2: bold names follow "Activity lines" colour unless given their own.
+  // V1 (no override) keeps the original heading colour.
+  const hl = {
+    ...highlightStyle,
+    style: {
+      color: highlightStyle.style.color ?? (bodyStyle.style.color ? "inherit" : "var(--event-card-heading)"),
+      ...highlightStyle.style,
+    },
+  };
+  const meta = { ...metaStyle, style: { color: "var(--event-card-muted)", ...metaStyle.style } };
 
   useEffect(() => {
     if (previewData) {
@@ -271,23 +283,23 @@ export function WhatsHappeningCard({
                   style={{ color: "var(--event-card-text)", ...bodyStyle.style }}
                 >
                   <span
+                    {...hl}
                     className="font-semibold"
-                    style={{ color: "var(--event-card-heading)" }}
                   >
                     {prizeUnlock.first_name || "Someone"}
                   </span>{" "}
                   just unlocked{" "}
                   <span
+                    {...hl}
                     className="font-semibold"
-                    style={{ color: "var(--event-card-heading)" }}
                   >
                     {prizeUnlock.prize_name}
                   </span>
                   !
                 </p>
                 <p
+                  {...meta}
                   className="mt-0.5 text-[12px]"
-                  style={{ color: "var(--event-card-muted)" }}
                 >
                   {relativeTime(prizeUnlock.happened_at)}
                 </p>
@@ -307,22 +319,22 @@ export function WhatsHappeningCard({
                     style={{ color: "var(--event-card-text)", ...bodyStyle.style }}
                   >
                     <span
+                      {...hl}
                       className="font-semibold"
-                      style={{ color: "var(--event-card-heading)" }}
                     >
                       {joinNames(g.names)}
                     </span>{" "}
                     {multi ? "visited" : "just visited"}{" "}
                     <span
+                      {...hl}
                       className="font-semibold"
-                      style={{ color: "var(--event-card-heading)" }}
                     >
                       {g.venue}
                     </span>
                   </p>
                   <p
+                    {...meta}
                     className="mt-0.5 text-[12px]"
-                    style={{ color: "var(--event-card-muted)" }}
                   >
                     {relativeTime(g.latest)}
                   </p>
@@ -341,16 +353,16 @@ export function WhatsHappeningCard({
                   style={{ color: "var(--event-card-text)", ...bodyStyle.style }}
                 >
                   <span
+                    {...hl}
                     className="font-semibold"
-                    style={{ color: "var(--event-card-heading)" }}
                   >
                     {explorers} {explorers === 1 ? "person is" : "people are"} exploring
                   </span>{" "}
                   the trail today
                 </p>
                 <p
+                  {...meta}
                   className="mt-0.5 text-[12px]"
-                  style={{ color: "var(--event-card-muted)" }}
                 >
                   Join them!
                 </p>
@@ -369,23 +381,23 @@ export function WhatsHappeningCard({
                 >
                   Someone found a{" "}
                   <span
+                    {...hl}
                     className="font-semibold"
-                    style={{ color: "var(--event-card-heading)" }}
                   >
                     hidden bonus
                   </span>{" "}
                   —{" "}
                   <span
+                    {...hl}
                     className="font-semibold"
-                    style={{ color: "var(--event-card-heading)" }}
                   >
                     {bonus.bonus_name}
                   </span>
                   !
                 </p>
                 <p
+                  {...meta}
                   className="mt-0.5 text-[12px]"
-                  style={{ color: "var(--event-card-muted)" }}
                 >
                   {bonus.points_awarded} bonus points awarded
                 </p>
