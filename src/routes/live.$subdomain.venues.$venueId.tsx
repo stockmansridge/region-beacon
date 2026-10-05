@@ -30,7 +30,7 @@ export const Route = createFileRoute("/live/$subdomain/venues/$venueId")({
 });
 
 
-type VenueRow = {
+export type VenueRow = {
   venue_id: string;
   name: string;
   description: string | null;
@@ -48,7 +48,7 @@ type VenueRow = {
   order_index: number | null;
 };
 
-type EventBrand = PublicBrandingEvent & {
+export type EventBrand = PublicBrandingEvent & {
   event_id?: string;
   name?: string;
   logo_path?: string | null;

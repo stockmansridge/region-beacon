@@ -27,7 +27,7 @@ export const Route = createFileRoute("/live/$subdomain/offers")({
   },
 });
 
-type VenueRow = {
+export type VenueRow = {
   venue_id: string | null;
   name: string | null;
   description: string | null;
@@ -44,7 +44,7 @@ type VenueRow = {
   event_found: boolean | null;
 };
 
-type EventRow = PublicBrandingEvent & {
+export type EventRow = PublicBrandingEvent & {
   event_id: string;
   name: string;
   primary_color: string | null;
@@ -81,7 +81,7 @@ type EventRow = PublicBrandingEvent & {
   cover_path?: string | null;
 };
 
-type OfferVenue = VenueRow & { offer_summary: string };
+export type OfferVenue = VenueRow & { offer_summary: string };
 
 type State =
   | { kind: "loading" }
