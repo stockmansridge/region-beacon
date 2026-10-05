@@ -56,7 +56,13 @@ const V2_EVENT = {
   v2_style_config: {
     version: 1,
     theme: { primary_color: "#0A0B0C", accent_color: "#0D0E0F" },
-    items: { "scan.heading": { normal: { color: "#ABCDEF" } }, "bonus.result.heading": { normal: { color: "#AA0001" } } },
+    items: {
+      "scan.heading": { normal: { color: "#ABCDEF" } },
+      "scan.trouble.button": { normal: { color: "#123456", backgroundColor: "transparent", borderColor: "#654321", fontSize: 15, fontWeight: 700 } },
+      "scan.trouble.icon": { normal: { iconColor: "#FEDCBA", iconBackgroundColor: "#112233", borderColor: "#334455" } },
+      "bonus.result.heading": { normal: { color: "#AA0001" } },
+    },
+    copy: { labels: { "scan.trouble.button": "Need scanning help?" } },
   },
 };
 
@@ -174,6 +180,18 @@ describe("Public ScannerView canonical V2 vs exact V1", () => {
     expect(container.innerHTML.toLowerCase()).not.toContain("--event-primary: #101010");
     expect(container.querySelector<HTMLElement>('[data-event-style="scan.heading"]')?.style.color.toLowerCase()).toBe("#abcdef");
     expect(container.querySelector<HTMLElement>('[data-event-style="scan.body"]')?.style.color).toBe("");
+    const trouble = container.querySelector<HTMLElement>('[data-event-style="scan.trouble.button"]');
+    const icon = container.querySelector<HTMLElement>('[data-event-style="scan.trouble.icon"]');
+    expect(trouble?.textContent).toContain("Need scanning help?");
+    expect(trouble?.style.color.toLowerCase()).toBe("#123456");
+    expect(trouble?.style.backgroundColor).toBe("transparent");
+    expect(trouble?.style.borderColor.toLowerCase()).toBe("#654321");
+    expect(trouble?.style.fontSize).toBe("15px");
+    expect(icon?.style.getPropertyValue("--item-icon-color").toLowerCase()).toBe("#fedcba");
+    expect(icon?.style.getPropertyValue("--item-icon-bg").toLowerCase()).toBe("#112233");
+    expect(icon?.style.borderColor.toLowerCase()).toBe("#334455");
+    fireEvent.click(icon as HTMLElement);
+    expect((trouble?.closest("details") as HTMLDetailsElement).open).toBe(true);
   });
 });
 
