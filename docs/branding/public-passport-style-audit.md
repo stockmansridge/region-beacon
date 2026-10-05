@@ -80,3 +80,28 @@ This audit is the coverage contract for the V2 visual editor. The typed source o
 | Save/read-back/new browser session | Blocked until review-only migration is authorised and applied |
 | Full page/state selector and real responsive viewport | Pending |
 | Production SQL / customer actions | Not run by design |
+## Control audit — repair pass (2026-10-05)
+
+Evidence legend: **UNIT** = `src/lib/public-style-overrides.test.ts` (vitest, 13/13 pass); **SRC** = source review + typecheck/build OK; **BLOCKED** = needs a signed-in admin session or the unapplied review-only migration (no session available in this sandbox: browser auth status `no_supabase`).
+
+| Control / finding | Target & property | Fallback | Result | Status |
+|---|---|---|---|---|
+| 1 Responsive preview | Real `PublicEventTemplate` portalled into a same-origin iframe (390 / 1280 px) with mirrored app stylesheets + fonts | — | Media queries, `fixed`, `100dvh` resolve to the frame; nav forced-`block` hack removed so desktop shows desktop nav, mobile shows real bottom menu | SRC; visual check BLOCKED |
+| 2 Overlay opacity | `home.hero.cover` on the tint `div` only, slider 0–100 % → 0–1 | shared `hero_overlay_opacity` | Layer opacity multiplies the shared overlay strength (documented in UI); overlay-only settings no longer skipped by `EventPaletteScope` | UNIT (0/25/50/75/100 serialise); computed-style visual BLOCKED |
+| 3 Colour fields | One `ColourControl` for every colour property (items, states, shared theme) | effective rendered colour read from the frame (`getComputedStyle`), checkerboard for transparent | Labelled quick choices from this event's draft theme, Brand Kit, recent; no fallback black; "Use default" deletes only that property | SRC; BLOCKED for runtime |
+| 4 Welcome copy | Shared welcome panel shown under the `home.hero.welcomeCopy` item | welcome_copy → event description | Shows effective text and its source; nothing written on open; "Use inherited message" restores V1 value; clearing shows description | SRC |
+| 5 Parser data loss | `cleanTheme` explicit per-key kind map | — | All 36 theme keys round-trip; invalid values reported and V2 save/activation refused | UNIT |
+| 6 Icon/text coupling | `iconColor` → svg + `--item-icon-color` only; `iconBackgroundColor` paints only `kind: icon` | — | Text/bg/border/icon independent; state svg rules out-rank normal | UNIT |
+| 7 Input buffers | HEX, gradient, font size, line height keep local drafts; commit only valid values | — | Typing "1" of "12" no longer discarded; inline errors | UNIT (validator); typing BLOCKED |
+| 7 Fonts | Item font list includes uploaded event fonts; item-only fonts loaded by `PublicStyleScope` (preview + public) | inherited family shown | | SRC |
+| 8 Identity | Hero surface, cover tint, logo, heading, welcome copy, page now carry stable V2 item IDs; selection reads `data-brand-instance` (`id@record`) | — | Repeated items: "This one only" (record) vs "Every venue (type default)"; merged resolution type → record per property | UNIT (merge); SRC |
+| 8 Appearance | Hover/focus/active/disabled forced on the selected instance via `data-preview-state` (editor-only attribute) | — | | SRC |
+| 8 Page selector | Removed the page dropdown that only filtered the registry; navigator lists only wired home items and names unwired pages explicitly | — | | SRC |
+| 9 Isolation | CSS prefixed with a unique `[data-public-style-root]` per scope | — | | UNIT |
+| 9 Draft separation | Separate V1 form and V2 form; V2 values never enter the classic form; V2 config = V2 draft diffed against V1 | — | | SRC |
+| 10 Save/activation | Busy state covers save + activation; activation validates, updates baseline from read-back; message distinguishes inactive draft vs already-live V2; Ctrl/Cmd+Z / Shift+Z / Y, Escape | — | | SRC; DB save/activation BLOCKED (migration not applied) |
+
+### Remaining (not done in this pass)
+- Browser runtime checks (mobile nav scroll anchoring, overlay computed alpha, Share independence in DOM, typography loading, two scopes mounted together, V1 baseline screenshot) — BLOCKED: no admin session in this sandbox; no harness route was added to avoid shipping a public test page.
+- Non-home public pages and their states (passport, join, venues, venue, offers, prizes, map, leaderboard, FAQ, legal, scan, check-in, bonus, tasting, shared navigation/drawer) — still not wired or previewable in V2.
+- Real persistence/read-back, new-session reload, Event A/B/C/D isolation — BLOCKED until the review-only SQL is applied in an authorised non-production environment.
