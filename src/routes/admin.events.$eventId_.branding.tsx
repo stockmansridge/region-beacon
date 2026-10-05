@@ -2343,10 +2343,11 @@ function VisualBrandingEditor({
   });
 
   // /terms and /privacy both open the single combined legal page; reveal the requested section.
-  const [legalFocus, setLegalFocus] = useState<"terms" | "privacy" | null>(null);
+  // A nonce makes every request (including the same link twice) re-expand and reveal.
+  const [legalFocus, setLegalFocus] = useState<{ section: "terms" | "privacy"; nonce: number } | null>(null);
   useEffect(() => {
     if (previewPage !== "legal" || !legalFocus) return;
-    const id = window.setTimeout(() => frameDoc?.querySelector(`[data-legal-card="${legalFocus}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 60);
+    const id = window.setTimeout(() => frameDoc?.querySelector(`[data-legal-card="${legalFocus.section}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 60);
     return () => window.clearTimeout(id);
   }, [previewPage, legalFocus, frameDoc]);
 
@@ -2530,7 +2531,7 @@ function VisualBrandingEditor({
     else if (to === "/leaderboard") setPreviewPage("leaderboard");
     else if (to === "/faq") setPreviewPage("faq");
     else if (to === "/bookmarks") setPreviewPage("bookmarks");
-    else if (to === "/terms" || to === "/privacy") { setPreviewPage("legal"); setLegalFocus(to === "/terms" ? "terms" : "privacy"); }
+    else if (to === "/terms" || to === "/privacy") { setPreviewPage("legal"); setLegalFocus((prev) => ({ section: to === "/terms" ? "terms" : "privacy", nonce: (prev?.nonce ?? 0) + 1 })); }
     else if (to === "/terms-privacy" || to === "/legal") setPreviewPage("legal");
   };
   const renderPreviewPage = () => {
@@ -2553,7 +2554,7 @@ function VisualBrandingEditor({
     }
     if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: faqEntries }} />;
     if (previewPage === "bookmarks") return <PublicBookmarksPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, enabled: true, rows: !populated ? [] : listVenues.slice(0, 2).filter((venue) => venue.venue_id).map((venue) => ({ kind: venue.offer_summary ? "offer" as const : "venue" as const, venue_id: venue.venue_id!, venue_name: venue.name, logo_path: venue.logo_path, cover_path: venue.cover_path, offer_summary: venue.offer_summary, created_at: new Date(0).toISOString() })) }} />;
-    if (previewPage === "legal") return <CombinedLegalPage subdomain="preview" initialOpen="both" previewData={{ branding: fixtureBranding, row: legalPreviewRow(publicContent?.legal ?? null, event, pageState) }} />;
+    if (previewPage === "legal") return <CombinedLegalPage subdomain="preview" initialOpen="both" reveal={legalFocus} previewData={{ branding: fixtureBranding, row: legalPreviewRow(publicContent?.legal ?? null, event, pageState) }} />;
     if (previewPage === "passport") {
       const passport = { passport_id: "preview-passport", event_id: event.id, status: "active", completed_at: null, leaderboard_opt_out: false, email: "preview@example.invalid", full_name: "Sample Visitor", first_name: "Sample", last_name: "Visitor", mobile: null, postcode: null, marketing_opt_in: false, checkin_count: 1 } as PassportRow;
       const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: previewLabels.singular, venue_label_plural: previewLabels.plural, total_venues: listVenues.length, stamped_count: pageState === "empty" ? 0 : pageState === "complete" ? listVenues.length : 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: pageState === "complete" || (pageState !== "empty" && index === 0), checked_in_at: pageState === "complete" || (pageState !== "empty" && index === 0) ? new Date(0).toISOString() : null })));
