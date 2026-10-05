@@ -17,6 +17,7 @@ vi.mock('@tanstack/react-router', async () => {
 vi.mock('@/components/public-nav-context', () => ({
   PublicLink: ({ children }: any) => <a>{children}</a>,
   PublicNavProvider: ({ children }: any) => <div>{children}</div>,
+  usePublicNav: () => ({ mode: 'preview', subdomain: null, activePath: '/offers', previewFeatures: { hasFaq: true, hasMap: true, hasAwards: true } }),
 }));
 
 import { PublicOffersPage } from './live.$subdomain.offers';
