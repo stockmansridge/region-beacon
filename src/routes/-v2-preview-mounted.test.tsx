@@ -332,6 +332,20 @@ describe("Special Offers V2 targets", () => {
     expect(container.querySelector('[data-brand-instance="offers.card.placeholder@venue-image"]')).toBeNull();
   });
 
+  it("type default paints every venue; a record override wins only for its venue", () => {
+    const overrides = { version: 1, items: {
+      "offers.card.badge": { normal: { iconColor: "#010203", iconBackgroundColor: "#AABBCC", borderColor: "#102030" } },
+    }, records: { "offers.card.badge": { "venue-image": { normal: { iconBackgroundColor: "#FFEEDD" } } } } } as never;
+    const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, v2_style_config: overrides }, offers }} />, "/offers"));
+    const badge = (v: string) => container.querySelector<HTMLElement>(`[data-brand-instance="offers.card.badge@${v}"]`)!;
+    expect(badge("venue-no-image").style.backgroundColor).toBe("#AABBCC");
+    expect(badge("venue-no-image").style.borderColor).toBe("#102030");
+    expect(badge("venue-no-image").style.getPropertyValue("--item-icon-color")).toBe("#010203");
+    expect(badge("venue-image").style.backgroundColor).toBe("#FFEEDD");
+    expect(badge("venue-image").style.borderColor).toBe("#102030");
+    expect(badge("venue-image").style.getPropertyValue("--item-icon-color")).toBe("#010203");
+  });
+
   it("does not emit selectable offer targets for V1", () => {
     const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, public_template_version: null }, offers }} />, "/offers"));
     expect(container.querySelector("[data-brand-role^='offers.card.']")).toBeNull();
