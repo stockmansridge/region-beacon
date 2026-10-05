@@ -32,7 +32,7 @@ Status key: **Wired + tested** = item styles reach the real node and a focused a
 
 | Page / state | Stable IDs (representative) | Real component | V1 boundary | Status |
 |---|---|---|---|---|
-| Shared navigation (all pages) | `shared.navigation.surface` (top header + bottom bar together), `.item` (header buttons, event name, inactive tabs), `.activeItem` (current tab / open More), `.drawer` | `PublicEventNav` | defaults unchanged when no override (`mergeStyleOverride` returns defaults as-is) | Wired + tested: overrides beat defaults on header, bottom bar and drawer; a solid colour replaces the default background; tab label size inherited by the label text; icon colour reaches the icons; preview makes no storage/RPC/share/clipboard/mailto calls |
+| Shared navigation (all pages) | `shared.navigation.surface` (top header + bottom bar together), `.item` (header buttons, event name, inactive tabs), `.activeItem` (current tab / open More), `.drawer` | `PublicEventNav` | defaults unchanged when no override (`mergeStyleOverride` returns defaults as-is) | Wired + tested: overrides beat defaults on header, bottom bar and drawer; button background, icon colour and icon background are independent; active `/prizes` and inactive targets are both asserted; preview makes no storage/RPC/share/clipboard/mailto calls |
 | Home hero/summary/actions/nested cards/stamps | `home.*` | `EventPublicLanding`, `CollectPointsSection`, `PassportStampGrid` | V1 renderer unchanged | Wired; mounted test: preview clicks every action with zero visitor storage, RPC, share/clipboard or router calls |
 | Passport | `passport.*` | `PassportPreview` | — | Wired; previewed with sample state |
 | Join form | `join.form.field` (input property set: bg/text/border/typography), labels, buttons | `live.$subdomain.join` | `join` V1 profile | Wired (source) |
@@ -40,7 +40,7 @@ Status key: **Wired + tested** = item styles reach the real node and a focused a
 | Venue detail | `venue.*` + `venue_id` | `live.$subdomain.venues.$venueId` | `detail` V1 profile | Wired (source) |
 | Offers | `offers.card.*` + `venue_id` | `live.$subdomain.offers` | `list` V1 profile | Wired + tested (record vs item override) |
 | Prizes | `prizes.*` + `award_id` (badge carries award id) | `live.$subdomain.prizes` | — | Wired (source) |
-| Map | `map.marker` + `venue_id`, `map.list.card`, `map.controls.item` | MapKit annotations + fallback list, via `resolveMapMarkerStyle` | V1: exact historic pin colours, no overrides | Wired + tested (resolver). Preview never loads MapKit, tokens or geolocation |
+| Map | `map.marker` + `venue_id`, `map.list.card`, `map.controls.item` | MapKit annotations + fallback marker, via one marker resolver and selection updater | V1: exact historic pin colours, no overrides | Wired + tested: rendered default/selected/visited fixture and MapKit constructor/selection mappings use the same pin/glyph values. Preview never loads MapKit, tokens or geolocation |
 | Leaderboard, FAQ, Terms/Privacy, Bookmarks | `leaderboard.*`, `faq.*`, `legal.*` | real routes with preview data | — | Wired; legal tested |
 | Scan | `scan.*` | `ScannerView` | V1 reads raw row (exact legacy prop bag); V2 reads the canonical event (saved theme + item overrides) | Wired + tested (V1 raw colours, V2 theme replaces them); mounted zero-side-effect test for every sample state |
 | Check-in result | `checkin.result.*`, `checkin.failure.*` | `CheckinView` | full historic key bag | Wired + tested (V1 uses raw primary, ignores V2 theme) |
@@ -51,7 +51,7 @@ Result previews inject the same resolved branding keys the public controller wou
 
 ## Genuinely unsupported controls
 
-- `map.marker` exposes only pin colour (icon background) and glyph colour, plus a selected-state glyph colour: MapKit marker annotations cannot draw borders, fonts or opacity, so those are not offered. Visited pins keep the theme primary colour and check glyph so "visited" remains distinguishable.
+- `map.marker` exposes pin colour (icon background) and glyph colour for normal and selected states. Visited pins retain the tick and honour an explicit V2 custom pin colour. MapKit marker annotations cannot draw borders, fonts or opacity, so those controls are not offered.
 - Pixels inside uploaded images, QR geometry, OS share/camera/location/autofill UI, third-party basemap content, and marketing/admin/demo pages.
 
 ## Verification ledger (this pass)
@@ -59,7 +59,7 @@ Result previews inject the same resolved branding keys the public controller wou
 | Check | Kind | Result |
 |---|---|---|
 | Typecheck (`tsgo`) | source | Pass |
-| Automated tests: 3 files, 75 tests | 27 SSR/pure + 48 mounted (happy-dom + React DOM, `src/routes/-v2-preview-mounted.test.tsx`) | Pass |
+| Automated tests: focused parity suite | SSR/pure resolver checks plus mounted happy-dom/React DOM interaction and rendered-node checks | Pass |
 | Mounted side-effect tests: nav, Home, 17 result states × V1/V2 | spies on local/session storage, backend RPC/table, fetch, camera, geolocation, share, clipboard, notifications, router | Pass after fixing three leaks they found (nav venue-label lookup, Share button, Home collect/stamp sections) |
 | App build | automatic preview build | OK |
 | Real browser rendering (mobile/desktop) | browser | **Not run**: the editor needs a signed-in admin and no session is available in this environment. Mounted DOM tests are not browser verification |

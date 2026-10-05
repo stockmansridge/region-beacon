@@ -204,7 +204,7 @@ export function PublicEventNav({
             aria-expanded={menuOpen}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
           >
-            <Menu className="h-5 w-5" />
+            <NavigationIcon><Menu className="h-5 w-5" /></NavigationIcon>
           </button>
 
           {/* The logo is NOT shown here. It lives centred over the hero image on
@@ -263,26 +263,28 @@ export function PublicEventNav({
               title="Share"
               className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
             >
-              <Share2 className="h-5 w-5" />
+              <NavigationIcon><Share2 className="h-5 w-5" /></NavigationIcon>
             </button>
             {canRegister || passportHref ? (
               passportHref ? (
                 <a
+                  {...navigationItem}
                   href={passportTarget}
                   aria-label={passportLabel}
                   title={passportLabel}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
                 >
-                  <Stamp className="h-5 w-5" />
+                  <NavigationIcon><Stamp className="h-5 w-5" /></NavigationIcon>
                 </a>
               ) : (
                 <PublicLink
+                  {...navigationItem}
                   to="/join"
                   aria-label={passportLabel}
                   title={passportLabel}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:bg-white/15"
                 >
-                  <Stamp className="h-5 w-5" />
+                  <NavigationIcon><Stamp className="h-5 w-5" /></NavigationIcon>
                 </PublicLink>
               )
             ) : (
@@ -458,7 +460,7 @@ function BottomItemContent({
 }) {
   return (
     <>
-      <span className="flex h-6 w-6 items-center justify-center" style={{ color: "var(--item-icon-color, currentColor)" }}>{icon}</span>
+      <NavigationIcon className="h-6 w-6">{icon}</NavigationIcon>
       <span className="flex flex-col items-center">
         <span className="min-h-4 whitespace-nowrap">{label}</span>
         {subLabel ? (
@@ -468,6 +470,21 @@ function BottomItemContent({
         )}
       </span>
     </>
+  );
+}
+
+function NavigationIcon({ children, className = "h-7 w-7" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span
+      data-navigation-icon
+      className={`inline-flex items-center justify-center rounded-full ${className}`}
+      style={{
+        color: "var(--item-icon-color, currentColor)",
+        backgroundColor: "var(--item-icon-bg, transparent)",
+      }}
+    >
+      {children}
+    </span>
   );
 }
 

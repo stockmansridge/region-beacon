@@ -34,7 +34,8 @@ import { ScannerView } from "./scan";
 import { BonusView } from "./collect.bonus.$token";
 import { VenueSortControl } from "@/components/venue-sort-control";
 import { PublicStyleScope } from "@/components/public-style-scope";
-import { resolveMapMarkerStyle } from "@/lib/map-marker-style";
+import { applyMapMarkerSelection, mapMarkerAnnotationOptions, resolveMapMarkerStyle } from "@/lib/map-marker-style";
+import { MapMarkerGlyph } from "./live.$subdomain.map";
 import { EventPublicLanding } from "@/components/event-public-landing";
 import { formToPreviewEvent } from "./admin.events.$eventId_.branding";
 
@@ -49,7 +50,7 @@ const V2_EVENT = {
   v2_style_config: {
     version: 1,
     theme: { primary_color: "#0A0B0C", accent_color: "#0D0E0F" },
-    items: { "scan.page.heading": { normal: { color: "#ABCDEF" } }, "bonus.result.heading": { normal: { color: "#AA0001" } } },
+    items: { "scan.heading": { normal: { color: "#ABCDEF" } }, "bonus.result.heading": { normal: { color: "#AA0001" } } },
   },
 };
 
@@ -85,9 +86,9 @@ async function clickEverything(root: HTMLElement) {
   }
 }
 const previewNav = vi.fn();
-function inPreview(node: React.ReactNode) {
+function inPreview(node: React.ReactNode, activePath = "/") {
   return (
-    <PublicNavProvider mode="preview" subdomain="preview" onPreviewNavigate={previewNav} activePath="/" previewFeatures={{ hasFaq: true, hasMap: true, hasAwards: true }}>
+    <PublicNavProvider mode="preview" subdomain="preview" onPreviewNavigate={previewNav} activePath={activePath} previewFeatures={{ hasFaq: true, hasMap: true, hasAwards: true }}>
       {node}
     </PublicNavProvider>
   );
@@ -134,7 +135,7 @@ describe("Version-specific result profiles", () => {
     expect(surface.getAttribute("style")).toContain("linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)");
     expect(container.querySelector("[data-event-style]")).toBeNull();
     expect(container.innerHTML.toLowerCase()).not.toContain("#101010");
-    expect(container.innerHTML.toLowerCase()).not.toContain("#AA0001");
+    expect(container.innerHTML.toLowerCase()).not.toContain("#aa0001");
   });
   it("V1 Check-in preview keeps its historic full prop bag (raw primary applied, V2 theme ignored)", () => {
     const { container } = render(inPreview(<V2ResultPreview page="checkin" state="stamped" event={V1_EVENT} venueName={null} />));
@@ -165,22 +166,36 @@ describe("Public ScannerView canonical V2 vs exact V1", () => {
     const { container } = render(inPreview(<ScannerView {...props} event={V2_EVENT} />));
     expect(varOf(container, "--event-primary")).toBe("#0a0b0c");
     expect(container.innerHTML.toLowerCase()).not.toContain("--event-primary: #101010");
+    expect(container.querySelector<HTMLElement>('[data-event-style="scan.heading"]')?.style.color.toLowerCase()).toBe("#abcdef");
+    expect(container.querySelector<HTMLElement>('[data-event-style="scan.body"]')?.style.color).toBe("");
   });
 });
 
 describe("Map pin resolver (shared by MapKit annotations and preview marker)", () => {
-  const doc = { version: 1, items: { "map.marker": { normal: { iconBackgroundColor: "#111111", iconColor: "#222222" }, states: { active: { iconColor: "#333333" } } } }, records: { "map.marker": { "venue-b": { normal: { iconBackgroundColor: "#444444" } } } } } as never;
+  const doc = { version: 1, items: { "map.marker": { normal: { iconBackgroundColor: "#111111", iconColor: "#222222" }, states: { active: { iconColor: "#333333", iconBackgroundColor: "#555555" } } } }, records: { "map.marker": { "venue-b": { normal: { iconBackgroundColor: "#444444" } } } } } as never;
   const base = { primary: "#P00000".replace("P", "1"), accent: "#200000", overrides: doc, hasPassport: false, visited: false };
   it("V1 ignores overrides and returns historic colours", () => {
-    expect(resolveMapMarkerStyle({ ...base, templateVersion: "v1", venueId: "venue-a" })).toEqual({ color: "#200000", glyphColor: "#FFFFFF", selectedGlyphColor: "#FFFFFF", glyphText: "" });
+    expect(resolveMapMarkerStyle({ ...base, templateVersion: "v1", venueId: "venue-a" })).toEqual({ color: "#200000", glyphColor: "#FFFFFF", selectedColor: "#200000", selectedGlyphColor: "#FFFFFF", glyphText: "" });
     expect(resolveMapMarkerStyle({ ...base, templateVersion: "v1", venueId: "venue-a", hasPassport: true }).color).toBe("#8A7E66");
   });
   it("V2 default / record / selected / visited states", () => {
-    expect(resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-a" })).toMatchObject({ color: "#111111", glyphColor: "#222222", selectedGlyphColor: "#333333" });
+    const normal = resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-a" });
+    expect(normal).toMatchObject({ color: "#111111", glyphColor: "#222222", selectedColor: "#555555", selectedGlyphColor: "#333333" });
     expect(resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-b" }).color).toBe("#444444");
     const visited = resolveMapMarkerStyle({ ...base, templateVersion: "v2", venueId: "venue-a", visited: true, hasPassport: true });
-    expect(visited.color).toBe("#100000");
+    expect(visited.color).toBe("#111111");
     expect(visited.glyphText).toBe("\u2713");
+    const options = mapMarkerAnnotationOptions(normal, "Venue");
+    expect(options).toMatchObject({ color: "#111111", glyphColor: "#222222", selectedGlyphColor: "#333333" });
+    const annotation = { color: options.color, glyphColor: options.glyphColor };
+    applyMapMarkerSelection(annotation, normal, true);
+    expect(annotation).toEqual({ color: "#555555", glyphColor: "#333333" });
+    applyMapMarkerSelection(annotation, normal, false);
+    expect(annotation).toEqual({ color: "#111111", glyphColor: "#222222" });
+    const { container } = render(<><MapMarkerGlyph style={normal} /><MapMarkerGlyph style={normal} selected /><MapMarkerGlyph style={visited} /></>);
+    expect(Array.from(container.querySelectorAll<HTMLElement>("[data-marker-color]")).map((el) => [el.dataset.markerState, el.dataset.markerColor])).toEqual([
+      ["default", "#111111"], ["selected", "#555555"], ["visited", "#111111"],
+    ]);
   });
 });
 
@@ -224,8 +239,8 @@ describe("formToPreviewEvent emotive font", () => {
 describe("PublicEventNav override precedence", () => {
   const doc = { version: 1, items: {
     "shared.navigation.surface": { normal: { backgroundColor: "#112233", borderColor: "#445566" } },
-    "shared.navigation.item": { normal: { color: "#AA0001", fontSize: 13, iconColor: "#00AA02" } },
-    "shared.navigation.activeItem": { normal: { color: "#BB0003", backgroundColor: "#0000CC" } },
+    "shared.navigation.item": { normal: { color: "#AA0001", backgroundColor: "#CCAA00", fontSize: 13, iconColor: "#00AA02", iconBackgroundColor: "#00CCDD" } },
+    "shared.navigation.activeItem": { normal: { color: "#BB0003", backgroundColor: "#0000CC", iconColor: "#EE00AA", iconBackgroundColor: "#DDEEFF" } },
     "shared.navigation.drawer": { normal: { backgroundColor: "#778899" } },
   } } as never;
 
@@ -239,7 +254,7 @@ describe("PublicEventNav override precedence", () => {
   });
 
   it("V2 item overrides win on header, bottom bar, drawer, labels and icons", async () => {
-    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" /></PublicStyleScope>));
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" /></PublicStyleScope>, "/prizes"));
     const header = container.querySelector<HTMLElement>("header")!;
     const bottom = container.querySelector<HTMLElement>("nav[aria-label='Primary']")!;
     for (const bar of [header, bottom]) {
@@ -253,15 +268,32 @@ describe("PublicEventNav override precedence", () => {
     const active = tabs.filter((t) => t.style.color === "#BB0003");
     const inactive = tabs.filter((t) => t.style.color === "#AA0001");
     expect(inactive.length).toBeGreaterThan(0);
+    expect(active.length).toBeGreaterThan(0);
     for (const t of inactive) {
       expect(t.style.fontSize).toBe("13px");
       const leaf = t.querySelector<HTMLElement>("span.whitespace-nowrap")!;
       expect(leaf.className).not.toMatch(/text-\[10px\]|leading-4/);
       expect(getComputedStyle(leaf).fontSize).toBe("13px");
       expect(t.style.getPropertyValue("--item-icon-color")).toBe("#00AA02");
-      expect(t.querySelector<HTMLElement>("span[style*='--item-icon-color']")).not.toBeNull();
+      expect(t.style.backgroundColor).toBe("#CCAA00");
+      const icon = t.querySelector<HTMLElement>("[data-navigation-icon]")!;
+      expect(icon.style.color).toContain("--item-icon-color");
+      expect(icon.style.backgroundColor).toContain("--item-icon-bg");
     }
-    for (const t of active) expect(t.style.backgroundColor).toBe("#0000CC");
+    for (const t of active) {
+      expect(t.style.backgroundColor).toBe("#0000CC");
+      const icon = t.querySelector<HTMLElement>("[data-navigation-icon]")!;
+      expect(icon.style.color).toContain("--item-icon-color");
+      expect(icon.style.backgroundColor).toContain("--item-icon-bg");
+    }
+    const headerButton = container.querySelector<HTMLElement>("button[aria-label='Open menu']")!;
+    expect(headerButton.style.backgroundColor).toBe("#CCAA00");
+    expect(headerButton.querySelector<HTMLElement>("[data-navigation-icon]")!.style.backgroundColor).toContain("--item-icon-bg");
+    const generatedCss = Array.from(container.querySelectorAll("style")).map((style) => style.textContent).join("\n");
+    expect(generatedCss).toContain("--item-icon-color:#00AA02!important");
+    expect(generatedCss).toContain("--item-icon-bg:#00CCDD!important");
+    expect(generatedCss).toContain("--item-icon-color:#EE00AA!important");
+    expect(generatedCss).toContain("--item-icon-bg:#DDEEFF!important");
     const menuButton = container.querySelector<HTMLElement>("button[aria-label='Open menu']")!;
     await act(async () => { fireEvent.click(menuButton); });
     const aside = document.querySelector<HTMLElement>("aside")!;
