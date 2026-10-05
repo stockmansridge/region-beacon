@@ -1912,9 +1912,9 @@ function VisualBrandingEditor({
 
   const resolvedFor = (field: ColourField) => ({
     primary_color: theme.primary, accent_color: theme.accent, link_color: theme.link,
-    page_background_color: theme.pageBg, page_heading_color: theme.pageHeading, page_body_color: theme.pageBody,
+    page_background_color: theme.pageBg, page_heading_color: theme.pageHeading, page_body_color: theme.pageText,
     page_muted_color: theme.pageMuted, border_color: theme.border, card_background_color: theme.cardBg,
-    card_heading_color: theme.cardHeading, card_body_color: theme.cardBody, card_muted_color: theme.cardMuted,
+    card_heading_color: theme.cardHeading, card_body_color: theme.cardText, card_muted_color: theme.cardMuted,
     card_border_color: theme.cardBorder, button_primary_bg: theme.buttonPrimaryBg,
     button_primary_fg: theme.buttonPrimaryFg, button_secondary_bg: theme.buttonSecondaryBg,
     button_secondary_fg: theme.buttonSecondaryFg, nav_background_color: theme.navBg,
