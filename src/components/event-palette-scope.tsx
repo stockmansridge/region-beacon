@@ -66,6 +66,7 @@ export function EventPaletteScope({
   cardMutedColor,
   fontFamily,
   headingFontFamily,
+  eventId,
   children,
   className,
   applyBackground = true,
@@ -107,6 +108,7 @@ export function EventPaletteScope({
   cardMutedColor?: string | null;
   fontFamily?: string | null;
   headingFontFamily?: string | null;
+  eventId?: string | null;
   children: ReactNode;
   className?: string;
   applyBackground?: boolean;
@@ -166,8 +168,8 @@ export function EventPaletteScope({
     const custom = [fontFamily, headingFontFamily].filter(
       (v) => v && !isSupportedEventFont(v),
     );
-    if (custom.length > 0) void ensureCustomFontFaces(custom);
-  }, [fontFamily, headingFontFamily]);
+    if (custom.length > 0) void ensureCustomFontFaces(custom, eventId ?? undefined);
+  }, [fontFamily, headingFontFamily, eventId]);
 
 
   if (

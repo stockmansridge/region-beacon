@@ -101,13 +101,13 @@ export async function listEventCustomFonts(eventId: string): Promise<EventCustom
   return ((data ?? []) as unknown as EventCustomFont[]);
 }
 
-async function findCustomFontByFamily(family: string): Promise<EventCustomFont | null> {
-  const { data, error } = await supabase
+async function findCustomFontByFamily(family: string, eventId?: string): Promise<EventCustomFont | null> {
+  let query = supabase
     .from("event_custom_fonts" as any)
     .select("id, event_id, family_name, storage_path, file_format")
-    .ilike("family_name", family.trim())
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .ilike("family_name", family.trim());
+  if (eventId) query = query.eq("event_id", eventId);
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(1);
   if (error) return null;
   const row = (data ?? [])[0] as unknown as EventCustomFont | undefined;
   return row ?? null;
@@ -139,6 +139,7 @@ const lookupCache = new Map<string, Promise<EventCustomFont | null>>();
 
 export async function ensureCustomFontFaces(
   families: Array<string | null | undefined>,
+  eventId?: string,
 ): Promise<void> {
   if (typeof document === "undefined") return;
   const wanted = Array.from(
@@ -150,10 +151,10 @@ export async function ensureCustomFontFaces(
   );
   await Promise.all(
     wanted.map(async (family) => {
-      const key = family.toLowerCase();
+      const key = `${eventId ?? "legacy"}|${family.toLowerCase()}`;
       let promise = lookupCache.get(key);
       if (!promise) {
-        promise = findCustomFontByFamily(family);
+        promise = findCustomFontByFamily(family, eventId);
         lookupCache.set(key, promise);
       }
       const row = await promise;

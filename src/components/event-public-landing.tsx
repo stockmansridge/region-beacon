@@ -180,6 +180,7 @@ export function EventPublicLanding({
   mode = "live",
   previewNotice,
   templateVersion = "v1",
+  brandingScoped = false,
 }: {
   subdomain: string | null;
   event: PublicEventData;
@@ -187,6 +188,7 @@ export function EventPublicLanding({
   mode?: PublicNavMode;
   previewNotice?: React.ReactNode;
   templateVersion?: PublicTemplateVersion;
+  brandingScoped?: boolean;
 }) {
   const isV2 = templateVersion === "v2";
   const canRegister = Boolean(event.current_terms_version_id);
@@ -286,7 +288,9 @@ export function EventPublicLanding({
 
   return (
     <PublicNavProvider mode={mode} subdomain={subdomain} preservePreviewAppearance={mode === "preview"}>
-      <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2}>
+      {brandingScoped ? (
+        <LandingContent />
+      ) : <PublicStyleScope overrides={isV2 ? event.style_overrides : null} enabled={isV2} eventId={event.event_id}>
       <EventPaletteScope
         paletteKey={event.palette_key ?? null}
         backgroundKey={event.page_background_key ?? null}
@@ -325,8 +329,17 @@ export function EventPublicLanding({
         cardMutedColor={isV2 ? event.card_muted_color ?? null : null}
         fontFamily={event.font_family ?? null}
         headingFontFamily={event.heading_font_family ?? null}
+        eventId={event.event_id}
         className="min-h-screen"
       >
+        <LandingContent />
+      </EventPaletteScope>
+      </PublicStyleScope>}
+    </PublicNavProvider>
+  );
+
+  function LandingContent() {
+    return <>
         {subdomain ? <LiveActivityBar subdomain={subdomain} /> : null}
         <PrizeUnlockAnnouncer eventId={event.event_id} />
         {previewNotice}
@@ -882,8 +895,6 @@ export function EventPublicLanding({
             </div>
           </div>
         </main>
-      </EventPaletteScope>
-      </PublicStyleScope>
-    </PublicNavProvider>
-  );
+    </>;
+  }
 }

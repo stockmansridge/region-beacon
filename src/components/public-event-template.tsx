@@ -6,6 +6,7 @@ import {
   type PublicTemplateVersion,
 } from "@/lib/public-style-overrides";
 import type { PublicNavMode } from "@/components/public-nav-context";
+import { PublicEventBrandingScope } from "@/components/public-event-branding-scope";
 
 export type PublicEventTemplateData = PublicEventData & {
   public_template_version?: string | null;
@@ -36,13 +37,16 @@ export function PublicEventTemplate({
   const template = forceTemplate ?? resolvePublicTemplateVersion(event.public_template_version);
   const renderedEvent = template === "v2" ? applyV2Theme(event) : { ...event, style_overrides: null };
   return (
-    <EventPublicLanding
-      subdomain={subdomain}
-      event={renderedEvent}
-      venues={venues}
-      mode={mode}
-      previewNotice={previewNotice}
-      templateVersion={template}
-    />
+    <PublicEventBrandingScope event={event} forceV2={template === "v2"}>
+      <EventPublicLanding
+        subdomain={subdomain}
+        event={renderedEvent}
+        venues={venues}
+        mode={mode}
+        previewNotice={previewNotice}
+        templateVersion={template}
+        brandingScoped
+      />
+    </PublicEventBrandingScope>
   );
 }
