@@ -98,9 +98,9 @@ const INPUT = ["backgroundColor", "color", "borderColor", "fontFamily", "fontSiz
 const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
-  { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation surface", kind: "surface", properties: SURFACE },
-  { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation item", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
-  { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active navigation item", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
+  { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
+  { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
+  { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.drawer", page: "shared", section: "Navigation", label: "Menu drawer", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.surface", page: "shared", section: "Announcements", label: "Announcement bar", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.text", page: "shared", section: "Announcements", label: "Announcement text", kind: "text", properties: TEXT },
@@ -580,4 +580,21 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
     }
   }
   return rules.join("\n");
+}
+
+/**
+ * One default-then-override merge for components that supply their own default
+ * style. Item overrides always win. A solid colour override clears any default
+ * `background` shorthand / gradient; a gradient override keeps a solid fallback
+ * only when one was explicitly overridden. With no override (V1, or no V2 item
+ * entry) the defaults are returned unchanged.
+ */
+export function mergeStyleOverride(defaults: CSSProperties, override: CSSProperties | undefined): CSSProperties {
+  if (!override || Object.keys(override).length === 0) return defaults;
+  const base: CSSProperties = { ...defaults };
+  if (override.backgroundColor || override.backgroundImage || override.background) {
+    delete base.background;
+    delete base.backgroundImage;
+  }
+  return { ...base, ...override };
 }

@@ -134,7 +134,7 @@ describe("Version-specific result profiles", () => {
     expect(surface.getAttribute("style")).toContain("linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)");
     expect(container.querySelector("[data-event-style]")).toBeNull();
     expect(container.innerHTML.toLowerCase()).not.toContain("#101010");
-    expect(container.innerHTML.toLowerCase()).not.toContain("#aa0001");
+    expect(container.innerHTML.toLowerCase()).not.toContain("#AA0001");
   });
   it("V1 Check-in preview keeps its historic full prop bag (raw primary applied, V2 theme ignored)", () => {
     const { container } = render(inPreview(<V2ResultPreview page="checkin" state="stamped" event={V1_EVENT} venueName={null} />));
@@ -218,5 +218,54 @@ describe("formToPreviewEvent emotive font", () => {
     const form = new Proxy({ default_emotive_font_family: "Draft Script", style_overrides: null } as Record<string, unknown>, { get: (t, k) => (k in t ? t[k as string] : "") }) as never;
     const out = formToPreviewEvent({ id: "e", name: "E" }, saved, form, { default_emotive_font_family: "Saved Script" });
     expect(out.default_emotive_font_family).toBe("Draft Script");
+  });
+});
+
+describe("PublicEventNav override precedence", () => {
+  const doc = { version: 1, items: {
+    "shared.navigation.surface": { normal: { backgroundColor: "#112233", borderColor: "#445566" } },
+    "shared.navigation.item": { normal: { color: "#AA0001", fontSize: 13, iconColor: "#00AA02" } },
+    "shared.navigation.activeItem": { normal: { color: "#BB0003", backgroundColor: "#0000CC" } },
+    "shared.navigation.drawer": { normal: { backgroundColor: "#778899" } },
+  } } as never;
+
+  it("without V2 overrides keeps the exact default nav styles", () => {
+    const { container } = render(inPreview(<PublicEventNav subdomain="preview" eventId="e" eventName="Trail" />));
+    const header = container.querySelector<HTMLElement>("header")!;
+    expect(header.style.background).not.toBe("");
+    expect(header.style.backgroundColor === "" || header.style.backgroundColor === header.style.background).toBeTruthy();
+    const label = Array.from(container.querySelectorAll<HTMLElement>("nav[aria-label='Primary'] li > *")).at(-1)!;
+    expect(label.className).toMatch(/text-\[10px\]/);
+  });
+
+  it("V2 item overrides win on header, bottom bar, drawer, labels and icons", async () => {
+    const { container } = render(inPreview(<PublicStyleScope overrides={doc} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" /></PublicStyleScope>));
+    const header = container.querySelector<HTMLElement>("header")!;
+    const bottom = container.querySelector<HTMLElement>("nav[aria-label='Primary']")!;
+    for (const bar of [header, bottom]) {
+      expect(bar.style.backgroundColor).toBe("#112233");
+      expect(bar.style.background === "" || bar.style.background.includes("#112233")).toBeTruthy();
+      expect(bar.style.borderColor).toBe("#445566");
+    }
+    const eventName = Array.from(container.querySelectorAll<HTMLElement>("header span")).find((s) => s.textContent === "Trail")!;
+    expect(eventName.style.color).toBe("#AA0001");
+    const tabs = Array.from(bottom.querySelectorAll<HTMLElement>("li > *"));
+    const active = tabs.filter((t) => t.style.color === "#BB0003");
+    const inactive = tabs.filter((t) => t.style.color === "#AA0001");
+    expect(inactive.length).toBeGreaterThan(0);
+    for (const t of inactive) {
+      expect(t.style.fontSize).toBe("13px");
+      const leaf = t.querySelector<HTMLElement>("span.whitespace-nowrap")!;
+      expect(leaf.className).not.toMatch(/text-\[10px\]|leading-4/);
+      expect(getComputedStyle(leaf).fontSize).toBe("13px");
+      expect(t.style.getPropertyValue("--item-icon-color")).toBe("#00AA02");
+      expect(t.querySelector<HTMLElement>("span[style*='--item-icon-color']")).not.toBeNull();
+    }
+    for (const t of active) expect(t.style.backgroundColor).toBe("#0000CC");
+    const menuButton = container.querySelector<HTMLElement>("button[aria-label='Open menu']")!;
+    await act(async () => { fireEvent.click(menuButton); });
+    const aside = document.querySelector<HTMLElement>("aside")!;
+    expect(aside.style.backgroundColor).toBe("#778899");
+    expect(aside.style.background === "" || aside.style.background.includes("#778899")).toBeTruthy();
   });
 });

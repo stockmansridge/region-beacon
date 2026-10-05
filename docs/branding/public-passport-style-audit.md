@@ -32,7 +32,7 @@ Status key: **Wired + tested** = item styles reach the real node and a focused a
 
 | Page / state | Stable IDs (representative) | Real component | V1 boundary | Status |
 |---|---|---|---|---|
-| Shared navigation (all pages) | `shared.navigation.*` | `PublicEventNav` | historic props per page profile | Wired; mounted test: preview makes no storage/RPC/share calls and every link stays in preview |
+| Shared navigation (all pages) | `shared.navigation.surface` (top header + bottom bar together), `.item` (header buttons, event name, inactive tabs), `.activeItem` (current tab / open More), `.drawer` | `PublicEventNav` | defaults unchanged when no override (`mergeStyleOverride` returns defaults as-is) | Wired + tested: overrides beat defaults on header, bottom bar and drawer; a solid colour replaces the default background; tab label size inherited by the label text; icon colour reaches the icons; preview makes no storage/RPC/share/clipboard/mailto calls |
 | Home hero/summary/actions/nested cards/stamps | `home.*` | `EventPublicLanding`, `CollectPointsSection`, `PassportStampGrid` | V1 renderer unchanged | Wired; mounted test: preview clicks every action with zero visitor storage, RPC, share/clipboard or router calls |
 | Passport | `passport.*` | `PassportPreview` | — | Wired; previewed with sample state |
 | Join form | `join.form.field` (input property set: bg/text/border/typography), labels, buttons | `live.$subdomain.join` | `join` V1 profile | Wired (source) |
@@ -59,7 +59,7 @@ Result previews inject the same resolved branding keys the public controller wou
 | Check | Kind | Result |
 |---|---|---|
 | Typecheck (`tsgo`) | source | Pass |
-| Automated tests: 3 files, 73 tests | 27 SSR/pure + 46 mounted (happy-dom + React DOM, `src/routes/-v2-preview-mounted.test.tsx`) | Pass |
+| Automated tests: 3 files, 75 tests | 27 SSR/pure + 48 mounted (happy-dom + React DOM, `src/routes/-v2-preview-mounted.test.tsx`) | Pass |
 | Mounted side-effect tests: nav, Home, 17 result states × V1/V2 | spies on local/session storage, backend RPC/table, fetch, camera, geolocation, share, clipboard, notifications, router | Pass after fixing three leaks they found (nav venue-label lookup, Share button, Home collect/stamp sections) |
 | App build | automatic preview build | OK |
 | Real browser rendering (mobile/desktop) | browser | **Not run**: the editor needs a signed-in admin and no session is available in this environment. Mounted DOM tests are not browser verification |
