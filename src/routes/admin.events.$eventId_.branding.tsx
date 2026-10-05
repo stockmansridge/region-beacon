@@ -488,7 +488,7 @@ function formToPreviewEvent(
     event_id: event.id,
     name: event.name,
     public_slug: event.public_slug ?? "",
-    description: event.description,
+    description: event.description ?? null,
     starts_at: null,
     ends_at: null,
     timezone: null,

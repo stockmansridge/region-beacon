@@ -70,7 +70,7 @@ export function publicEventScopeProps(source: PublicBrandingEvent, forceV2 = fal
   const keep = new Set<string>(V1_SCOPE_PROFILES[v1Profile]);
   const legacy: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(full)) if (keep.has(key)) legacy[key] = value;
-  return { ...legacy, templateVersion: "v1" as const } as Partial<typeof full> & { templateVersion: "v1" };
+  return { ...legacy, templateVersion: "v1" as const } as Partial<typeof full> & { paletteKey: string | null; templateVersion: "v1" };
 }
 
 function canonicalScopeProps(source: PublicBrandingEvent, forceV2 = false) {
