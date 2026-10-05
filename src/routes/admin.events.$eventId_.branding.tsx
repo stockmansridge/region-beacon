@@ -2040,7 +2040,7 @@ function VisualBrandingEditor({
   const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
   const busy = saving || activating;
   const sharedRole = selectedRole && selectedRole in VISUAL_ROLE_META ? selectedRole as VisualBrandRole : null;
-  const itemMeta = selectedRole ? PUBLIC_STYLE_ELEMENTS.find((item) => item.id === selectedRole) ?? null : null;
+  const itemMeta: PublicStyleElementDefinition | null = selectedRole ? PUBLIC_STYLE_ELEMENTS.find((item) => item.id === selectedRole) ?? null : null;
   const panelRole = sharedRole ?? (itemMeta ? ITEM_SHARED_ROLE[itemMeta.id] ?? null : null);
   const roleMeta = panelRole ? VISUAL_ROLE_META[panelRole] : null;
   const recordTarget = itemMeta?.repeat && selectedRecord && recordScope === "record" ? selectedRecord : null;
@@ -2258,7 +2258,7 @@ function VisualBrandingEditor({
     : (previewEvent.description?.trim() ? "Event description (inherited)" : "No welcome message");
 
   const override = itemMeta ? currentOverride(parsePublicStyleOverrides(form.style_overrides)) : undefined;
-  const wiredPages = new Set(PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => item.page));
+  const wiredPages = new Set<string>(PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => item.page));
 
   return (
     <div className="min-h-screen bg-muted/40">
