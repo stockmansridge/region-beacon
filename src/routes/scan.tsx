@@ -68,7 +68,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
       ]);
       if (cancelled) return;
       const raw = (data?.[0] ?? null) as Record<string, unknown> | null;
-      const evt = raw ? {
+      const evt: Record<string, unknown> | null = raw ? {
         ...(applyPaletteToEvent(raw as never) as unknown as Record<string, unknown>),
         public_template_version: v2.public_template_version,
         v2_style_config: v2.v2_style_config,
