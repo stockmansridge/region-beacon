@@ -71,6 +71,7 @@ import {
   emptyPublicStyleOverrides,
   parsePublicStyleOverrides,
   type PublicStyleElementId,
+  type PublicStyleElementDefinition,
   type PublicStyleOverrideDocument,
   type PublicStyleProperty,
 } from "@/lib/public-style-overrides";
@@ -2108,7 +2109,7 @@ const PROPERTY_LABELS: Record<PublicStyleProperty, string> = {
 };
 
 function ItemStyleInspector({ item, document, state, setState, setProperty, reset, undo, redo, canUndo, canRedo, disabled, clear }: {
-  item: (typeof PUBLIC_STYLE_ELEMENTS)[number]; document: PublicStyleOverrideDocument;
+  item: PublicStyleElementDefinition; document: PublicStyleOverrideDocument;
   state: "normal" | "hover" | "focus" | "active" | "disabled";
   setState: (state: "normal" | "hover" | "focus" | "active" | "disabled") => void;
   setProperty: (property: PublicStyleProperty, value: string | number | null) => void;
