@@ -19,7 +19,7 @@ import { LiveActivityBar } from "@/components/live-activity-bar";
 import { PrizeUnlockAnnouncer } from "@/components/prize-unlock-announcer";
 import { PublicLink, PublicNavProvider, type PublicNavMode } from "@/components/public-nav-context";
 import { resolvePublicLandingCopy } from "@/lib/public-landing-copy";
-import { PublicStyleScope, usePublicStyleTarget } from "@/components/public-style-scope";
+import { PublicStyleScope } from "@/components/public-style-scope";
 import type { PublicStyleOverrideDocument } from "@/lib/public-style-overrides";
 import {
   resolveEventLogoStyle,
@@ -194,6 +194,10 @@ export function EventPublicLanding({
       new URLSearchParams(window.location.search).get("preview") === "1");
   const [previewDismissed, setPreviewDismissed] = useState(false);
   const brandRole = (role: string) => mode === "preview" ? { "data-brand-role": role } : {};
+  const itemRole = (id: string) => ({
+    "data-event-style": id,
+    ...(mode === "preview" ? { "data-brand-role": id, "data-brand-instance": id } : {}),
+  });
 
   // Once a returning visitor has a verified passport for this event, the
   // Passport page is their home — redirect them there instead of rendering
@@ -422,9 +426,9 @@ export function EventPublicLanding({
                 </div>
               ) : null}
               <p
-                {...brandRole("hero")}
-                data-brand-hint="hero_accent_color"
-                title="Hero eyebrow — Hero accent colour (--event-hero-accent)"
+                {...itemRole("home.hero.welcomeLabel")}
+                data-brand-hint="Welcome label"
+                title="Welcome label"
                 className="text-[10px] font-semibold uppercase tracking-[0.32em]"
                 style={{ color: "var(--event-hero-accent, var(--event-hero-fg, var(--event-accent)))" }}
               >
@@ -498,7 +502,7 @@ export function EventPublicLanding({
 
           {/* Summary card — overlaps the bottom of the hero */}
           <section
-            {...brandRole("cards")}
+            {...itemRole("home.summary.surface")}
             data-brand-hint="Card background · Card border · Card heading · Card muted text"
             title="Progress card — Card background · Card border · Card heading · Card muted text"
             className="relative z-10 -mt-14 rounded-3xl border shadow-lg sm:-mt-16"
@@ -528,21 +532,21 @@ export function EventPublicLanding({
                       aria-hidden
                     >
                       <circle
-                        {...brandRole("cards")}
+                        {...itemRole("home.summary.ring")}
                         cx={ringSize / 2}
                         cy={ringSize / 2}
                         r={ringRadius}
                         fill="none"
-                        stroke="var(--event-card-border)"
+                        stroke="var(--item-progress-track, var(--event-card-border))"
                         strokeWidth={ringStroke}
                       />
                       <circle
-                        {...brandRole("primaryButtons")}
+                        {...itemRole("home.summary.ring")}
                         cx={ringSize / 2}
                         cy={ringSize / 2}
                         r={ringRadius}
                         fill="none"
-                        stroke="var(--event-button-primary-bg)"
+                        stroke="var(--item-progress-fill, var(--event-button-primary-bg))"
                         strokeWidth={ringStroke}
                         strokeLinecap="round"
                         strokeDasharray={`${ringDash} ${ringCirc}`}
@@ -702,7 +706,7 @@ export function EventPublicLanding({
           <div className="mt-5">
             {passportHref ? (
               <a
-                {...brandRole("primaryButtons")}
+                {...itemRole("home.primaryCta")}
                 data-brand-hint="Primary button background · Primary button text"
                 title="Primary button — Primary button background · Primary button text"
                 href={passportHref}
@@ -716,7 +720,7 @@ export function EventPublicLanding({
               </a>
             ) : canRegister ? (
               <PublicLink
-                {...brandRole("primaryButtons")}
+                {...itemRole("home.primaryCta")}
                 data-brand-hint="Primary button background · Primary button text"
                 title="Primary button — Primary button background · Primary button text"
                 to="/join"
@@ -730,7 +734,7 @@ export function EventPublicLanding({
               </PublicLink>
             ) : (
               <button
-                {...brandRole("primaryButtons")}
+                {...itemRole("home.primaryCta")}
                 data-brand-hint="Primary button background · Primary button text"
                 type="button"
                 disabled
@@ -745,9 +749,9 @@ export function EventPublicLanding({
               </button>
             )}
             <button
-              {...brandRole("primaryButtons")}
-              data-brand-hint="Primary button background · Page background"
-              title="Share button — Primary button background · Page background"
+              {...itemRole("home.shareButton")}
+              data-brand-hint="Share button background · text · border · icon"
+              title="Share button"
               type="button"
               onClick={async () => {
                 const url = `https://${subdomain ?? event.public_slug}.getstampd.com.au`;
@@ -803,7 +807,7 @@ export function EventPublicLanding({
 
             <section className="flex flex-col gap-3">
               <PublicLink
-                {...brandRole("primaryButtons")}
+                {...itemRole("home.prizesButton")}
                 data-brand-hint="Primary button background · Primary button text"
                 title="Primary button — Primary button background · Primary button text"
                 to="/prizes"
@@ -816,7 +820,7 @@ export function EventPublicLanding({
                 View prizes
               </PublicLink>
               <PublicLink
-                {...brandRole("primaryButtons")}
+                {...itemRole("home.venuesButton")}
                 data-brand-hint="Primary button background · Primary button text"
                 title="Primary button — Primary button background · Primary button text"
                 to="/venues"

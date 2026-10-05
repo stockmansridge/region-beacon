@@ -66,6 +66,14 @@ import {
   type BrandKitKey,
   getBrandKit,
 } from "@/lib/event-brand-kits";
+import {
+  PUBLIC_STYLE_ELEMENTS,
+  emptyPublicStyleOverrides,
+  parsePublicStyleOverrides,
+  type PublicStyleElementId,
+  type PublicStyleOverrideDocument,
+  type PublicStyleProperty,
+} from "@/lib/public-style-overrides";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   validateSearch: z.object({ editor: z.enum(["v2"]).optional() }),
@@ -153,6 +161,7 @@ type Branding = {
   // Retained but no longer editable from the admin UI
   palette_key: string | null;
   page_background_key: string | null;
+  style_overrides?: PublicStyleOverrideDocument | null;
 };
 
 type Domain = {
@@ -228,6 +237,7 @@ type Form = {
   custom_link_label: string;
   custom_link_url: string;
   custom_link_enabled: boolean;
+  style_overrides: PublicStyleOverrideDocument;
 };
 
 type VisualBrandRole =
@@ -359,6 +369,7 @@ const EMPTY_FORM: Form = {
   custom_link_label: "",
   custom_link_url: "",
   custom_link_enabled: false,
+  style_overrides: emptyPublicStyleOverrides(),
 };
 
 /** Form keys that, when edited, should flip brand_kit_key to "custom". */
@@ -426,6 +437,7 @@ function brandingToForm(b: Branding | null): Form {
     custom_link_label: b.custom_link_label ?? "",
     custom_link_url: b.custom_link_url ?? "",
     custom_link_enabled: Boolean(b.custom_link_enabled),
+    style_overrides: parsePublicStyleOverrides(b.style_overrides),
   };
 }
 
@@ -878,6 +890,7 @@ function BrandingEditor() {
       // on the public page, especially when the organiser selects Custom.
       palette_key: brandKitKey === "custom" ? "custom" : brandKitKey ? null : (branding?.palette_key ?? null),
       page_background_key: brandKitKey ? null : (branding?.page_background_key ?? null),
+      style_overrides: form.style_overrides,
     };
 
     const { data: existing } = await supabase
@@ -956,6 +969,7 @@ function BrandingEditor() {
     while (writeErr && guard < 12) {
       const col = unknownColumn(writeErr.message ?? "");
       if (!col || dropped.has(col)) break;
+      if (col === "style_overrides") break;
       console.warn("[branding-save] dropping unknown column and retrying", { col });
       dropped.add(col);
       missingCols.add(col);
@@ -1188,6 +1202,7 @@ function BrandingEditor() {
     card_heading_color: orNullHex(form.card_heading_color),
     card_body_color: orNullHex(form.card_body_color),
     card_muted_color: orNullHex(form.card_muted_color),
+    style_overrides: form.style_overrides,
   };
 
   const selectedKit = getBrandKit(form.brand_kit_key);
