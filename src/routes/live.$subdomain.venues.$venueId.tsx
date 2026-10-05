@@ -15,6 +15,7 @@ import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 import { loadPassportStampState } from "@/lib/passport-stamps";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
+import { resolveVenueLabels } from "@/lib/venue-labels";
 import { Star, Users, Check, Circle, Sparkles, Camera } from "lucide-react";
 import { buildGoogleFontsHref, getEventFont, DEFAULT_EMOTIVE_FONT_VALUE } from "@/lib/event-fonts";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
