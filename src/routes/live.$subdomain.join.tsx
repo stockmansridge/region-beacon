@@ -113,7 +113,7 @@ export const DEFAULT_FIELD_SETTINGS: FieldSettings = {
   requirePostcode: false,
 };
 
-function fieldSettings(event: PublicEvent): FieldSettings {
+function fieldSettings(event: JoinPreviewEvent): FieldSettings {
   return {
     requireName: event.require_name ?? DEFAULT_FIELD_SETTINGS.requireName,
     requireMobile: event.require_mobile ?? DEFAULT_FIELD_SETTINGS.requireMobile,
@@ -192,7 +192,7 @@ function friendlyError(raw: string | undefined): string {
  * surface on this page (form, success, info screens) resolves the
  * exact same theme.
  */
-function paletteProps(event: PublicEvent) {
+function paletteProps(event: JoinPreviewEvent) {
   return publicEventScopeProps(event as unknown as PublicBrandingEvent);
 }
 
@@ -1014,7 +1014,7 @@ function SuccessScreen({
   token,
   subdomain,
 }: {
-  event: PublicEvent;
+  event: JoinPreviewEvent;
   token: string;
   subdomain: string;
 }) {
@@ -1227,7 +1227,7 @@ function InfoScreen({
   message,
   subdomain,
 }: {
-  event: PublicEvent;
+  event: JoinPreviewEvent;
   title: string;
   message: string;
   subdomain: string;
