@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { faqToCsv, parseFaqCsv } from "@/lib/faq-csv";
 
 type FaqEntry = {
   id: string;
@@ -208,6 +209,54 @@ export function EventFaqSection({
     }
   }
 
+  function exportCsv() {
+    const rows = drafts
+      .map((d) => ({ question: d.question.trim(), answer: d.answer.trim() }))
+      .filter((r) => r.question || r.answer);
+    const blob = new Blob([faqToCsv(rows)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `faq-${eventId.slice(0, 8)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importCsv(file: File, mode: "append" | "replace") {
+    const { rows, error } = parseFaqCsv(await file.text());
+    if (error) {
+      toast.error("Could not import FAQ", { description: error });
+      return;
+    }
+    const imported = rows.map((r) => ({
+      key: makeDraftKey(),
+      id: null,
+      question: r.question.slice(0, 500),
+      answer: r.answer.slice(0, 5000),
+    }));
+    setDrafts((prev) => (mode === "replace" ? imported : [...prev, ...imported]));
+    toast.success(`Imported ${imported.length} entries`, {
+      description: "Review them, then press Save changes.",
+    });
+  }
+
+  function pickFile(mode: "append" | "replace") {
+    if (
+      mode === "replace" &&
+      drafts.length > 0 &&
+      !window.confirm("Replace all current FAQ entries with the file's entries? Nothing is saved until you press Save changes.")
+    )
+      return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv,text/csv";
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (f) void importCsv(f, mode);
+    };
+    input.click();
+  }
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-[#475569]">
@@ -331,6 +380,41 @@ export function EventFaqSection({
               </button>
             </div>
           )}
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-[#E2E8F0] pt-3">
+            <span className="text-xs font-medium text-[#64748B]">Spreadsheet (CSV):</span>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={drafts.length === 0}
+              className="inline-flex h-8 items-center rounded-lg border bg-white px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+            >
+              Export
+            </button>
+            {canEdit && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => pickFile("append")}
+                  disabled={saving}
+                  className="inline-flex h-8 items-center rounded-lg border bg-white px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Import &amp; add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => pickFile("replace")}
+                  disabled={saving}
+                  className="inline-flex h-8 items-center rounded-lg border bg-white px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Import &amp; replace
+                </button>
+              </>
+            )}
+            <span className="w-full text-xs text-[#94A3B8]">
+              Columns: question, answer. Imported entries are not saved until you press Save changes.
+            </span>
+          </div>
 
           {(saveError || eventIdSaveError) && (
             <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
