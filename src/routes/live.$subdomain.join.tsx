@@ -6,6 +6,8 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
+import { loadPublicV2Branding } from "@/lib/use-event-palette";
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PoweredByGetStampd } from "@/components/brand";
 import { tenantHost } from "@/lib/domains";
@@ -72,6 +74,8 @@ type PublicEvent = {
   hero_bg_color?: string | null;
   hero_fg_color?: string | null;
   hero_accent_color?: string | null;
+  public_template_version?: string | null;
+  v2_style_config?: PublicBrandingEvent["v2_style_config"];
   require_postcode?: boolean | null;
   /** Event-level participant field settings. Email is always required. */
   require_name?: boolean | null;
@@ -189,35 +193,7 @@ function friendlyError(raw: string | undefined): string {
  * exact same theme.
  */
 function paletteProps(event: PublicEvent) {
-  return {
-    paletteKey: event.palette_key ?? null,
-    backgroundKey: event.page_background_key ?? null,
-    primaryColor: event.primary_color ?? null,
-    accentColor: event.accent_color ?? null,
-    pageBackgroundColor: event.page_background_color ?? null,
-    cardBackgroundColor: event.card_background_color ?? null,
-    textColor: event.text_color ?? null,
-    mutedTextColor: event.muted_text_color ?? null,
-    cardTextColor: event.card_text_color ?? null,
-    cardMutedTextColor: event.card_muted_text_color ?? null,
-    borderColor: event.border_color ?? null,
-    primaryTextColor: event.primary_text_color ?? null,
-    navBackgroundColor: event.nav_background_color ?? null,
-    brandKitKey: event.brand_kit_key ?? null,
-    linkColor: event.link_color ?? null,
-    cardBorderColor: event.card_border_color ?? null,
-    buttonPrimaryBg: event.button_primary_bg ?? null,
-    buttonPrimaryFg: event.button_primary_fg ?? null,
-    buttonSecondaryBg: event.button_secondary_bg ?? null,
-    buttonSecondaryFg: event.button_secondary_fg ?? null,
-    navFgColor: event.nav_fg_color ?? null,
-    navMutedColor: event.nav_muted_color ?? null,
-    navActiveFgColor: event.nav_active_fg_color ?? null,
-    heroBgColor: event.hero_bg_color ?? null,
-    heroFgColor: event.hero_fg_color ?? null,
-    heroAccentColor: event.hero_accent_color ?? null,
-    fontFamily: event.font_family ?? null,
-  };
+  return publicEventScopeProps(event as unknown as PublicBrandingEvent);
 }
 
 
@@ -243,13 +219,13 @@ export function LiveJoinPage({ subdomain }: { subdomain: string }) {
         return;
       }
 
-      const { data: evtData, error: evtErr } = await supabase.rpc(
-        "get_public_event_by_domain",
-        { _hostname: host },
-      );
+      const [{ data: evtData, error: evtErr }, v2] = await Promise.all([
+        supabase.rpc("get_public_event_by_domain", { _hostname: host }),
+        loadPublicV2Branding(host),
+      ]);
       if (cancelled) return;
       const evtRaw = ((evtData?.[0] ?? null) as PublicEvent | null);
-      const evt = evtRaw ? applyPaletteToEvent(evtRaw) : null;
+      const evt = evtRaw ? applyPaletteToEvent({ ...evtRaw, ...v2 }) : null;
       if (evtErr || !evt) {
         setState({ kind: "not_live" });
         return;
