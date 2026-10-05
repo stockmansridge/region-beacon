@@ -193,7 +193,7 @@ function friendlyError(raw: string | undefined): string {
  * exact same theme.
  */
 function paletteProps(event: JoinPreviewEvent) {
-  return publicEventScopeProps(event as unknown as PublicBrandingEvent);
+  return publicEventScopeProps(event as unknown as PublicBrandingEvent, false, "join");
 }
 
 
@@ -590,7 +590,7 @@ function JoinForm({ event, subdomain, preview = false }: { event: JoinPreviewEve
   }
 
   return (
-    <EventPaletteScope {...publicEventScopeProps(event)} className="min-h-screen">
+    <EventPaletteScope {...paletteProps(event)} className="min-h-screen">
       <div className="px-4 pt-2">
       </div>
       <PublicEventNav

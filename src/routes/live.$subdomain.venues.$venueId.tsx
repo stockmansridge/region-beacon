@@ -273,7 +273,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
 
   return (
     <EventPaletteScope
-      {...(state.brand ? publicEventScopeProps(state.brand) : { paletteKey: null })}
+      {...(state.brand ? publicEventScopeProps(state.brand, false, "detail") : { paletteKey: null })}
       className="min-h-screen pb-12"
     >
       {!previewData && <LiveActivityBar subdomain={subdomain} />}

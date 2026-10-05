@@ -266,7 +266,7 @@ export function PublicVenuesListPage({
 
   return (
     <EventPaletteScope
-      {...(event ? publicEventScopeProps(event) : { paletteKey: null })}
+      {...(event ? publicEventScopeProps(event, false, "list") : { paletteKey: null })}
       className="min-h-screen pb-10"
     >
       {!previewData && <LiveActivityBar subdomain={subdomain} />}
