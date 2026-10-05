@@ -904,7 +904,7 @@ function MapFallbackList({
             >
               <span className="flex items-center gap-2 font-semibold">
                 {v.venue_id && (() => { const pin = markerStyle(v.venue_id); return (
-                  <span data-event-style="map.marker" data-event-record={v.venue_id} data-brand-role="map.marker" data-brand-instance={`map.marker@${v.venue_id}`} data-marker-color={pin.color} className="grid h-7 w-7 place-items-center rounded-full text-xs" style={{ backgroundColor: pin.color, color: pin.glyphColor }} aria-hidden>{pin.glyphText || "●"}</span>
+                  <PublicStyleTarget id="map.marker" recordId={v.venue_id}><span data-marker-color={pin.color} className="grid h-7 w-7 place-items-center rounded-full text-xs" style={{ backgroundColor: pin.color, color: pin.glyphColor }} aria-hidden>{pin.glyphText || "●"}</span></PublicStyleTarget>
                 ); })()}
                 {v.name}
               </span>

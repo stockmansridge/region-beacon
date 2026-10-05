@@ -8,7 +8,8 @@ import { BonusView, type Outcome as BonusOutcome } from "@/routes/collect.bonus.
 import { TastingView, type Outcome as TastingOutcome } from "@/routes/tasting.$qrToken";
 import { ScannerView } from "@/routes/scan";
 import { ResultPreviewProvider } from "@/components/result-preview";
-import { PublicEventBrandingScope, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
+import { resolveEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
+import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
 
 export type ResultPreviewPage = "scan" | "checkin" | "bonus" | "tasting";
 
@@ -41,10 +42,18 @@ function tastingOutcome(state: string): TastingOutcome {
 
 const noop = () => {};
 
-export function V2ResultPreview({ page, state, event, venueName }: { page: ResultPreviewPage; state: string; event: Record<string, unknown>; venueName: string | null }) {
+/**
+ * Branding is injected as the SAME resolved keys the public controllers load, so
+ * each view applies its own version-specific palette profile (e.g. V1 Bonus /
+ * Tasting: palette + background keys only; V2: full canonical scope).
+ */
+export function V2ResultPreview({ page, state, event, venueName, branding }: { page: ResultPreviewPage; state: string; event: Record<string, unknown>; venueName: string | null; branding?: EventBrandingKeys }) {
+  const keys = branding ?? resolveEventBrandingKeys(event as never, {
+    public_template_version: resolvePublicTemplateVersion(event.public_template_version),
+    v2_style_config: (event.v2_style_config as never) ?? null,
+  });
   return (
-    <PublicEventBrandingScope event={event as PublicBrandingEvent}>
-      <ResultPreviewProvider>
+      <ResultPreviewProvider branding={keys}>
         {page === "checkin" && <CheckinView outcome={checkinOutcome(state, venueName)} qrToken="preview" />}
         {page === "bonus" && <BonusView outcome={bonusOutcome(state)} />}
         {page === "tasting" && <TastingView outcome={tastingOutcome(state)} />}
@@ -64,6 +73,5 @@ export function V2ResultPreview({ page, state, event, venueName }: { page: Resul
           />
         )}
       </ResultPreviewProvider>
-    </PublicEventBrandingScope>
   );
 }
