@@ -19,3 +19,4 @@
 - [x] Bookmarks leaf/thumbnail/arrow targets; V1 venue CTA restored; current-page bottom-menu colours; buffered menu names; passport progress/stamp card/text targets.
 - [x] Final review: offers V1 fallback, badge legacy migration, nav selection via preview context, template-aware record copy, venue QR svg, back-link label buffering, legal reveal on repeat.
 - [x] Header title target/text/wrap; remove join spacers; passport bold words inherit
+- [x] Add V2 styling and safe labels for the shared Venues / Offers segmented toggle.

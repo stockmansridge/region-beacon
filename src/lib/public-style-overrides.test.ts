@@ -7,6 +7,7 @@ import {
   publicStyleItem,
   publicStylePropertyValue,
   publicStyleTarget,
+  publicTrailTabLabel,
   resolvePublicTemplateVersion,
   validatePublicStyleOverrides,
 } from "./public-style-overrides";
@@ -72,6 +73,32 @@ describe("V2 bottom navigation round-trip", () => {
     ] } });
     expect(checked.errors.length).toBeGreaterThan(0);
     expect(new Set(checked.document.navigation?.items.map((item) => item.id))).toEqual(new Set(["passport", "prizes", "venues", "offers", "more"]));
+  });
+});
+
+describe("V2 Venues / Offers toggle", () => {
+  it("round-trips safe labels and independent unselected/current item styles", () => {
+    const source = { version: 1, items: {
+      "shared.trailTabs.surface": { normal: { backgroundColor: "#112233", borderColor: "#223344" } },
+      "shared.trailTabs.tab": { normal: { color: "#334455", backgroundColor: "#445566", borderColor: "#556677", fontSize: 13, fontWeight: 600 } },
+      "shared.trailTabs.currentTab": { normal: { color: "#FFFFFF", backgroundColor: "#667788", borderColor: "#778899", fontSize: 14, fontWeight: 700 } },
+    }, records: {
+      "shared.trailTabs.tab": { offers: { normal: { color: "#8899AA" } } },
+      "shared.trailTabs.currentTab": { venues: { normal: { backgroundColor: "#99AABB" } } },
+    }, trailTabs: { labels: { venues: "Trail Stops", offers: "Local Deals" } } };
+    const parsed = parsePublicStyleOverrides(source);
+    expect(publicTrailTabLabel(parsed, "venues", "Venues")).toBe("Trail Stops");
+    expect(publicTrailTabLabel(parsed, "offers", "Venues")).toBe("Local Deals");
+    expect(parsed.records?.["shared.trailTabs.tab"]?.offers?.normal?.color).toBe("#8899AA");
+    expect(parsed.records?.["shared.trailTabs.currentTab"]?.venues?.normal?.backgroundColor).toBe("#99AABB");
+    expect(parsePublicStyleOverrides(JSON.parse(JSON.stringify(parsed)))).toEqual(parsed);
+  });
+
+  it("sanitizes labels and rejects unknown item slots", () => {
+    const checked = validatePublicStyleOverrides({ version: 1, items: {}, records: { "shared.trailTabs.tab": { unknown: { normal: { color: "#112233" } } } }, trailTabs: { labels: { venues: "This label is much too long for the toggle", unknown: "Bad" } } });
+    expect(checked.errors.some((error) => error.includes("trailTabs.labels.venues"))).toBe(true);
+    expect(checked.errors.some((error) => error.includes("trailTabs.labels.unknown"))).toBe(true);
+    expect(checked.document.records?.["shared.trailTabs.tab"]?.unknown).toBeUndefined();
   });
 });
 

@@ -108,6 +108,11 @@ import {
   type PublicStyleOverrideDocument,
   type PublicStyleProperty,
   type PublicNavIconId,
+  PUBLIC_TRAIL_TAB_IDS,
+  PUBLIC_TRAIL_TAB_LABEL_MAX,
+  cleanPublicTrailTabLabel,
+  publicTrailTabLabel,
+  type PublicTrailTabId,
   type PublicV2ThemeKey,
 } from "@/lib/public-style-overrides";
 
@@ -2318,6 +2323,9 @@ function VisualBrandingEditor({
   const selectNavigationTarget = (role: "shared.navigation.tabItem" | "shared.navigation.currentTab", id: string) => {
     setSelectedRole(role as EditorSelection); setSelectedRecord(id); setRecordScope("record"); setStyleState("normal");
   };
+  const selectTrailTabTarget = (role: "shared.trailTabs.tab" | "shared.trailTabs.currentTab", id: PublicTrailTabId) => {
+    setSelectedRole(role as EditorSelection); setSelectedRecord(id); setRecordScope("record"); setStyleState("normal");
+  };
   const moveNavigationItem = (id: string, direction: -1 | 1) => {
     const index = navItems.findIndex((item) => item.id === id);
     const target = index + direction;
@@ -2595,7 +2603,7 @@ function VisualBrandingEditor({
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {(() => {
               const pg = previewPage;
-              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || ["shared.navigation.drawer", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab"].includes(item.id)));
+              const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || ["shared.navigation.drawer", "shared.navigation.activeItem", "shared.navigation.tabItem", "shared.navigation.currentTab", ...(["venues", "offers"].includes(pg) ? ["shared.trailTabs.surface", "shared.trailTabs.tab", "shared.trailTabs.currentTab"] : [])].includes(item.id)));
               const sections = [...new Set(items.map((item) => `${item.page === "shared" ? "Shared" : ""}${item.page === "shared" ? " · " : ""}${item.section}`))];
               return sections.map((section) => <div key={section} className="col-span-full"><div className="mb-1 mt-2 text-[11px] font-semibold text-muted-foreground">{section}</div><div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">{items.filter((item) => `${item.page === "shared" ? "Shared · " : ""}${item.section}` === section).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}</div></div>);
             })()}
@@ -2687,6 +2695,21 @@ function VisualBrandingEditor({
             changeIcon={(id, icon) => updateNavigationItem(id, { icon })}
             move={moveNavigationItem}
           /> : null}
+          {itemMeta && ["shared.trailTabs.surface", "shared.trailTabs.tab", "shared.trailTabs.currentTab"].includes(itemMeta.id) ? <TrailTabsInspector
+            selectedId={(PUBLIC_TRAIL_TAB_IDS as readonly string[]).includes(selectedRecord ?? "") ? selectedRecord as PublicTrailTabId : null}
+            mode={itemMeta.id === "shared.trailTabs.currentTab" ? "current" : itemMeta.id === "shared.trailTabs.tab" ? "inactive" : null}
+            venueLabelPlural={previewLabels.plural}
+            labels={form.style_overrides.trailTabs?.labels ?? {}}
+            disabled={!canEdit || busy || comparisonReadOnly}
+            select={(id, mode) => selectTrailTabTarget(mode === "current" ? "shared.trailTabs.currentTab" : "shared.trailTabs.tab", id)}
+            setLabel={(id, value) => updateStyleDocument((next) => {
+              const labels = { ...(next.trailTabs?.labels ?? {}) };
+              const cleaned = value === null ? null : cleanPublicTrailTabLabel(value);
+              if (cleaned === null) delete labels[id]; else labels[id] = cleaned;
+              const { trailTabs: _old, ...rest } = next;
+              return Object.keys(labels).length ? { ...rest, trailTabs: { labels } } : rest;
+            })}
+          /> : null}
           {itemMeta?.id === "shared.navigation.title" ? <HeaderTitleInspector
             eventName={event?.name ?? ""} header={form.style_overrides.header ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
             update={(patch) => updateStyleDocument((next) => {
@@ -2759,6 +2782,49 @@ function NavigationMenuInspector({ items, selectedId, disabled, select, rename, 
     <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm" disabled={disabled || items[0]?.id === selected.id} onClick={() => move(selected.id, -1)}>Move up</Button><Button type="button" variant="outline" size="sm" disabled={disabled || items.at(-1)?.id === selected.id} onClick={() => move(selected.id, 1)}>Move down</Button><Button type="button" variant="ghost" size="sm" disabled={disabled || !orderChanged} onClick={resetOrder}>Reset order</Button></div>
     <p className="text-xs text-muted-foreground">Order and names affect display only. Each item keeps its fixed, safe destination.</p>
   </div>;
+}
+
+function TrailTabsInspector({ selectedId, mode, venueLabelPlural, labels, disabled, select, setLabel }: {
+  selectedId: PublicTrailTabId | null;
+  mode: "inactive" | "current" | null;
+  venueLabelPlural: string;
+  labels: Partial<Record<PublicTrailTabId, string>>;
+  disabled: boolean;
+  select: (id: PublicTrailTabId, mode: "inactive" | "current") => void;
+  setLabel: (id: PublicTrailTabId, value: string | null) => void;
+}) {
+  const selected = selectedId ?? "venues";
+  const fallback = publicTrailTabLabel(null, selected, venueLabelPlural);
+  return <div className="mt-5 space-y-4 border-t pt-4">
+    <Field label="Toggle item"><Select value={selected} onValueChange={(value) => select(value as PublicTrailTabId, mode ?? "inactive")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{PUBLIC_TRAIL_TAB_IDS.map((id) => <SelectItem key={id} value={id}>{publicTrailTabLabel({ version: 1, items: {}, trailTabs: { labels } }, id, venueLabelPlural)}</SelectItem>)}</SelectContent></Select></Field>
+    <div className="space-y-1.5">
+      <div className="text-sm font-medium">Appearance for this item</div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" size="sm" variant={mode === "inactive" ? "default" : "outline"} disabled={disabled} onClick={() => select(selected, "inactive")}>Unselected</Button>
+        <Button type="button" size="sm" variant={mode === "current" ? "default" : "outline"} disabled={disabled} onClick={() => select(selected, "current")}>Selected / current page</Button>
+      </div>
+      <p className="text-xs text-muted-foreground">Text, background and border controls appear above. Selected settings apply only on this item's page.</p>
+    </div>
+    <TrailTabLabelField key={`${selected}:${labels[selected] ?? ""}`} value={labels[selected] ?? ""} placeholder={fallback} disabled={disabled} commit={(value) => setLabel(selected, value)} />
+  </div>;
+}
+
+/** Buffered while typing so spaces do not get trimmed until blur or Enter. */
+export function TrailTabLabelField({ value, placeholder, disabled, commit }: { value: string; placeholder: string; disabled: boolean; commit: (label: string | null) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setDraft(value); setError(null); }, [value]);
+  const apply = () => {
+    if (!draft.trim()) { setError(null); if (value) commit(null); return; }
+    const cleaned = cleanPublicTrailTabLabel(draft);
+    if (!cleaned) { setError(`Use 1–${PUBLIC_TRAIL_TAB_LABEL_MAX} characters, no < or >.`); return; }
+    setError(null);
+    if (cleaned !== value) commit(cleaned); else setDraft(cleaned);
+  };
+  return <Field label="Display name">
+    <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={draft} placeholder={placeholder} maxLength={PUBLIC_TRAIL_TAB_LABEL_MAX} disabled={disabled} aria-invalid={Boolean(error)} onChange={(event) => { setDraft(event.target.value); setError(null); }} onBlur={apply} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); event.currentTarget.blur(); } else if (event.key === "Escape") { event.preventDefault(); setDraft(value); setError(null); event.currentTarget.blur(); } }} />
+    {error ? <p role="alert" className="mt-1 text-xs text-destructive">{error}</p> : <p className="mt-1 text-xs text-muted-foreground">Empty uses “{placeholder}”. The destination never changes.</p>}
+  </Field>;
 }
 
 /** Buffered while typing (spaces allowed); validated and committed on blur / Enter. Empty resets to the inherited name. */
