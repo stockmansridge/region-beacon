@@ -349,7 +349,7 @@ export function publicStyleTarget(
   id: PublicStyleElementId,
   options?: { recordId?: string | null; selectable?: boolean },
 ): {
-  "data-event-style": string;
+  "data-event-style"?: string;
   "data-event-record"?: string;
   "data-brand-role"?: string;
   "data-brand-instance"?: string;
