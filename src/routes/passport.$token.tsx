@@ -1081,7 +1081,7 @@ function StampGrid({
             />
           ))}
         </div>
-      </div>
+      </div></PublicStyleTarget>
       {bonusVenueIds.size > 0 && (
         <div
           className="mt-3 flex items-center justify-center gap-2 text-[11px]"
