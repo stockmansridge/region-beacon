@@ -8,6 +8,8 @@ import {
 } from "@/lib/event-palettes";
 import { buildGoogleFontsHref, isSupportedEventFont } from "@/lib/event-fonts";
 import { ensureCustomFontFaces } from "@/lib/event-custom-fonts";
+import { PublicStyleScope } from "@/components/public-style-scope";
+import type { PublicStyleOverrideDocument, PublicTemplateVersion } from "@/lib/public-style-overrides";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -67,6 +69,8 @@ export function EventPaletteScope({
   fontFamily,
   headingFontFamily,
   eventId,
+  templateVersion = "v1",
+  styleOverrides,
   children,
   className,
   applyBackground = true,
@@ -109,6 +113,8 @@ export function EventPaletteScope({
   fontFamily?: string | null;
   headingFontFamily?: string | null;
   eventId?: string | null;
+  templateVersion?: PublicTemplateVersion;
+  styleOverrides?: PublicStyleOverrideDocument | null;
   children: ReactNode;
   className?: string;
   applyBackground?: boolean;
@@ -276,9 +282,12 @@ export function EventPaletteScope({
       ? { ["--event-heading-font" as any]: headingFontFamily }
       : {}),
   };
-  return (
+  const content = (
     <div className={className} style={style}>
       {children}
     </div>
   );
+  return templateVersion === "v2"
+    ? <PublicStyleScope overrides={styleOverrides} eventId={eventId}>{content}</PublicStyleScope>
+    : content;
 }
