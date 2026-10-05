@@ -115,7 +115,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
   const [passportState, setPassportState] = useState<CurrentEventPassportResult>(EMPTY_CURRENT_EVENT_PASSPORT);
   const [stampState, setStampState] = useState<PassportStampState>(EMPTY_PASSPORT_STAMP_STATE);
   const [filter, setFilter] = useState<Filter>("all");
-  const [selected, setSelected] = useState<VenueRow | null>(null);
+  const [selected, setSelected] = useState<MapVenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const hasPassport = passportState.hasPassport;
   const bookmarks = usePassportBookmarks(previewData ? null : event?.event_id ?? null);
@@ -695,7 +695,7 @@ function SelectedVenueCard({
   accent,
   onClose,
 }: {
-  venue: VenueRow;
+  venue: MapVenueRow;
   visited: boolean;
   primary: string;
   accent: string;
@@ -832,7 +832,7 @@ function MapFallbackList({
   errorMessage,
   buildReport,
 }: {
-  venues: VenueRow[];
+  venues: MapVenueRow[];
   primary: string;
   errorMessage: string;
   buildReport: () => string;
