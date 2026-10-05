@@ -812,7 +812,7 @@ export function publicStyleItem(
 /** Record IDs whose per-record value currently wins over the shared type default. */
 export function publicStyleRecordPropertyConflicts(
   document: PublicStyleOverrideDocument | null | undefined,
-  id: PublicStyleElementId,
+  id: string,
   state: PublicStyleState,
   property: PublicStyleProperty,
 ): string[] {
@@ -832,7 +832,7 @@ export function publicStyleRecordPropertyConflicts(
  */
 export function clearPublicStyleRecordPropertyConflicts(
   document: PublicStyleOverrideDocument,
-  id: PublicStyleElementId,
+  id: string,
   state: PublicStyleState,
   property: PublicStyleProperty,
 ): PublicStyleOverrideDocument {
