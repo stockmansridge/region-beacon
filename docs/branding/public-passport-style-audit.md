@@ -2,7 +2,7 @@
 
 ## Purpose and status
 
-This audit is the coverage contract for the V2 visual editor. The typed source of truth is `PUBLIC_STYLE_ELEMENTS` in `src/lib/public-style-overrides.ts`. A row marked **Registered** has a stable allowlisted ID; **Wired** means the real public component consumes the resolver; **Previewed** means the V2 page/state picker can render and select it. Production SQL has not been applied.
+This audit is the coverage contract for the V2 visual editor. The typed source of truth is `PUBLIC_STYLE_ELEMENTS` in `src/lib/public-style-overrides.ts`. **Registered** means a stable allowlisted ID exists; **Wired** means the real public drawing node consumes it; **Previewed** means the editor renders that same component with safe injected data. No SQL, deployment, activation, or customer-data mutation was performed during this implementation.
 
 ## Multi-tenant template architecture
 
@@ -26,7 +26,7 @@ This audit is the coverage contract for the V2 visual editor. The typed source o
 
 | Page / state | Stable IDs (representative) | Owning real component | Current source before overrides | Controls | Status |
 |---|---|---|---|---|---|
-| Shared navigation: normal/active/open drawer | `shared.navigation.surface`, `.item`, `.activeItem`, `.drawer` | `PublicEventNav` | nav theme vars, colour-mix, opacity | surface, border, label/icon typography and interactive states | Registered; landing markers partially wired |
+| Shared navigation: normal/active/open drawer | `shared.navigation.surface`, `.item`, `.activeItem`, `.drawer` | `PublicEventNav` | nav theme vars, colour-mix, opacity | surface, border, label/icon typography and interactive states | Wired in the shared component; previewed on Home/Venues/Venue/Offers |
 | Announcements, activity, footer | `shared.announcement.*`, `shared.activity.surface`, `shared.footer.text` | `PublicAnnouncementBar`, `LiveActivityBar`, `PoweredByGetStampd` | nav/card vars and opacity | surface/text/icon | Registered; wiring pending |
 | Home hero, empty logo/cover/welcome | `home.hero.surface`, `.cover`, `.logo`, `.welcomeLabel`, `.heading`, `.welcomeCopy` | `EventPublicLanding` | hero vars, image gradient, heading/body fonts | surface/overlay, text typography, backdrop | Registered; key items wired |
 | Home summary: no passport/active/complete | `home.summary.surface`, `.ring`, `.progress` | `EventPublicLanding` | card, button and accent vars | card, track/fill, labels/numbers | Registered; key progress parts wired |
@@ -34,10 +34,10 @@ This audit is the coverage contract for the V2 visual editor. The typed source o
 | Home nested cards: loading/empty/ready | `home.nextPrize.*`, `home.bonusPromo.*`, `home.collect.*` | `NextRewardCard`, `BonusPointsPromo`, `CollectPointsSection` | mixed hero accent, primary, raw props, gradients | surface, text, icon bg/icon, progress track/fill, CTA | Registered; key collision parts wired |
 | Home/passport stamp grid: unstamped/stamped/bonus | `home.stamps.*`, `passport.stamp.*` + `venue_id` | `PassportStampGrid` | card, accent, page vars, state opacity | tile, label, badge/icon by venue or type | Registered; record wiring started |
 | Passport dashboard: loading/invalid/active | `passport.page.surface`, `passport.progress.*`, `passport.stamp.*` | `passport.$token`, `PassportProgressCard`, `PassportStampGrid` | semantic vars plus SVG constants | page/card, progress numbers/ring, stamps, actions | Registered; preview pending |
-| Join: loading/closed/form/error/success/resume | `join.page.surface`, `join.form.*`, `join.state.message` | `live.$subdomain.join` | manually forwarded semantic subset | every label/field/error/button and typography | Registered; wiring/preview pending |
-| Venues: loading/empty/search/sort/filter/list | `venues.page.heading`, `venues.controls.sort`, `venues.card.*` + `venue_id` | `live.$subdomain.venues.index`, `VenueSortControl` | manually forwarded theme plus offer colours | controls, card surfaces/text/badges per type/venue | Registered; wiring/preview pending |
-| Venue detail: actions/bookmark/content | `venue.actions.*`, `venue.bookmark` + `venue_id` | `live.$subdomain.venues.$venueId`, `BookmarkButton` | reduced theme subset and raw saved bookmark yellow | independent action/button/icon states | Registered; wiring/preview pending |
-| Offers: empty/list/bookmarked | `offers.card.*` + `venue_id` | `live.$subdomain.offers` | semantic vars plus offer record colours | surface, text, icon/badge, bookmark | Registered; wiring/preview pending |
+| Join: loading/closed/form/error/success/resume | `join.page.surface`, `join.form.*`, `join.state.message` | `live.$subdomain.join` | canonical version-aware theme scope | every label/field/error/button and typography | V2 theme wired; item targets and safe preview pending |
+| Venues: loading/empty/search/sort/filter/list | `venues.page.heading`, `venues.controls.sort`, `venues.card.*` + `venue_id` | `live.$subdomain.venues.index`, `VenueSortControl` | canonical version-aware theme scope plus offer colours | controls, card surfaces/text/badges per type/venue | Real page previewed; heading/card surface/heading/body wired by stable `venue_id`; sort pending |
+| Venue detail: actions/bookmark/content | `venue.actions.*`, `venue.bookmark` + `venue_id` | `live.$subdomain.venues.$venueId`, `BookmarkButton` | canonical version-aware theme scope | independent action/button/icon states | Real page previewed; heading/directions/website wired by stable `venue_id`; remaining nodes pending |
+| Offers: empty/list/bookmarked | `offers.card.*` + `venue_id` | `live.$subdomain.offers` | canonical version-aware theme scope plus offer record colours | surface, text, icon/badge, bookmark | Real page previewed; card surface wired by stable `venue_id`; badge/bookmark pending |
 | Prizes/rewards: tabs, locked/eligible/claimed/empty | `prizes.tabs.item`, `prizes.card.*` + `award_id` | `live.$subdomain.prizes`, awards components | semantic vars, raw badge/status mixes | tabs, card, badge, progress, CTA states | Registered; wiring/preview pending |
 | Map: permission/error/list/selected marker | `map.controls.item`, `map.marker`, `map.list.card` + `venue_id` | `live.$subdomain.map`, app-owned map components | semantic vars and app marker colours | app controls/markers/cards | Registered; wiring/preview pending |
 | Leaderboard: loading/empty/list/current row | `leaderboard.heading`, `.row`, `.rank` | `live.$subdomain.leaderboard` | semantic vars and rank decoration | heading/row/rank template slots | Registered; wiring/preview pending |
@@ -48,7 +48,7 @@ This audit is the coverage contract for the V2 visual editor. The typed source o
 | Bonus result: claimed/repeat/inactive/error | `bonus.result.*` | `collect.bonus.$token` | hard-coded green/gold gradient and constants | gradient, icon, text, totals, actions | Registered; hard-coded replacement pending |
 | Tasting result: claimed/repeat/unavailable/error | `tasting.result.*` | `tasting.$qrToken` | hard-coded green/gold gradient and constants | gradient, icon, text, totals, actions | Registered; hard-coded replacement pending |
 | Legacy `/t/:agency/e/:event` landing | home IDs after migration | `TrailLanding` via legacy tenant route | reduced palette mapping | same home registry where equivalent | Audited; not selectable; migration pending |
-| Clean tenant-host routes | same IDs as `/live/$subdomain` | thin top-level route wrappers | delegated real components | identical to canonical route | Home dispatcher wired; other route families pending |
+| Clean tenant-host routes | same IDs as `/live/$subdomain` | thin top-level route wrappers | delegated real components | identical to canonical route | Home and route-family delegates share their real components; browser route matrix pending |
 
 ## Known propagation corrections
 
@@ -78,7 +78,7 @@ This audit is the coverage contract for the V2 visual editor. The typed source o
 | Share background/text/border/icon independent | Wiring in progress |
 | Editor preview has no artificial inert-link opacity | Wiring in progress |
 | Save/read-back/new browser session | Blocked until review-only migration is authorised and applied |
-| Full page/state selector and real responsive viewport | Pending |
+| Full page/state selector and real responsive viewport | Real iframe viewport and real Home/Venues/Venue/Offers components implemented; remaining page/state adapters pending |
 | Production SQL / customer actions | Not run by design |
 ## Control audit — repair pass (2026-10-05)
 
@@ -96,15 +96,25 @@ Evidence legend: **UNIT** = `src/lib/public-style-overrides.test.ts` (vitest, 13
 | 7 Fonts | Item font list includes uploaded event fonts; item-only fonts loaded by `PublicStyleScope` (preview + public) | inherited family shown | | SRC |
 | 8 Identity | Hero surface, cover tint, logo, heading, welcome copy, page now carry stable V2 item IDs; selection reads `data-brand-instance` (`id@record`) | — | Repeated items: "This one only" (record) vs "Every venue (type default)"; merged resolution type → record per property | UNIT (merge); SRC |
 | 8 Appearance | Hover/focus/active/disabled forced on the selected instance via `data-preview-state` (editor-only attribute) | — | | SRC |
-| 8 Page selector | Removed the page dropdown that only filtered the registry; navigator lists only wired home items and names unwired pages explicitly | — | | SRC |
+| 8 Page selector | Page selector renders the actual Home/Venues/Venue detail/Offers components with injected event records; Navigate mode switches among these pages without saving | — | Draft survives page/viewport/source switches; real route side effects remain suppressed by injected data and click interception | SRC; browser interaction pending |
 | 9 Isolation | CSS prefixed with a unique `[data-public-style-root]` per scope | — | | UNIT |
 | 9 Draft separation | Separate V1 form and V2 form; V2 values never enter the classic form; V2 config = V2 draft diffed against V1 | — | | SRC |
 | 10 Save/activation | Busy state covers save + activation; activation validates, updates baseline from read-back; message distinguishes inactive draft vs already-live V2; Ctrl/Cmd+Z / Shift+Z / Y, Escape | — | | SRC; DB save/activation BLOCKED (migration not applied) |
 
-### Remaining (not done in this pass)
-- Browser runtime checks (mobile nav scroll anchoring, overlay computed alpha, Share independence in DOM, typography loading, two scopes mounted together, V1 baseline screenshot) — BLOCKED: no admin session in this sandbox; no harness route was added to avoid shipping a public test page.
-- Non-home public pages and their states (passport, join, venues, venue, offers, prizes, map, leaderboard, FAQ, legal, scan, check-in, bonus, tasting, shared navigation/drawer) — still not wired or previewable in V2.
-- Real persistence/read-back, new-session reload, Event A/B/C/D isolation — BLOCKED until the review-only SQL is applied in an authorised non-production environment.
+### Remaining after multi-page implementation pass
+- Browser runtime checks (mobile nav scroll anchoring, overlay computed alpha, Share independence, typography loading, two scopes mounted together, V1 baseline) remain unverified in this sandbox.
+- Home, Venues, Venue detail and Offers now use real-component previews. Passport, Join, Prizes, Map, Leaderboard, FAQ, legal, Bookmarks, Scan, Check-in, Bonus and Tasting still require safe data seams before they can be previewed without public RPCs, storage access, camera/location prompts, or mutation RPCs. They are not claimed complete.
+- Existing hook-based Passport, Check-in, Bookmarks, Prizes, Map, Leaderboard, FAQ and legal pages carry V2 `templateVersion` and `styleOverrides`; Join now uses the canonical version-aware scope. Scan, Bonus and Tasting still need canonical scope and presentational extraction.
+- Real persistence/read-back, new-session reload, Event A/B/C/D isolation, and authenticated save remain unverified here; SQL state is not assumed.
+
+## Multi-page implementation evidence (2026-10-05)
+
+- Public V2 resolution: Home uses `PublicEventBrandingScope`; Venues, Venue detail and Offers merge the narrow public V2 payload then call the same `publicEventScopeProps`; Join now does the same instead of its reduced local mapper. Existing hook-driven routes pass the complete V2 scope bag.
+- Shared navigation: `PublicEventNav` owns `shared.navigation.surface/item/activeItem/drawer` targets, one venue-label resolver, and one mobile/desktop implementation. The four previewed pages mount this component; active destination remains route-derived publicly.
+- Real preview data: venue list/detail/offers accept explicit preview data and skip their public fetch effects. Stable record selection uses `venue_id`; the removed random list key can no longer relocate an override.
+- Preview controls: Page, V2 draft/Saved V2 config, Select/Edit/Navigate and Mobile/Desktop are independent controls. Switching them does not call save or activation.
+- Automated evidence: `src/lib/public-style-overrides.test.ts` passed 13/13, covering parser round-trip, invalid values, independent text/icon/background, scoped CSS, stable record merge, opacity conversion and unknown-version V1 fallback. Compiler harness build passed after these changes.
+- Not yet evidence: no fixture DOM/browser suite could be added without first introducing safe data adapters for every remaining state; parser tests are not represented as visual parity proof.
 
 ## Save-path resilience (2026-10-05, follow-up)
 
