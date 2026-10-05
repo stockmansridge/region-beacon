@@ -8,4 +8,8 @@
 - [ ] Upgrade V2 with page/state selection, exact instance selection, real responsive previews, and item/type/event scopes. (Page/state controls, exact landing instances, and the mobile bottom-menu preview started; isolated media-query viewport/type scope remain.)
 - [ ] Wire the resolver and stable element identities through every audited public route and shared component.
 - [ ] Move the six-field mapping correction behind V2 across every route; do not restyle V1 events.
-- [ ] Verify legacy baselines, editing isolation, states, responsive layouts, permissions, failed saves, and persistence where available.
+- [ ] Verify legacy baselines, editing isolation, states, responsive layouts, permissions, failed saves, and persistence where available.- [ ] Add real safe preview adapters for every remaining public page and result state, with record/state/path controls.
+- [ ] Group current-page semantic inspector targets and wire shared navigation slots across every V2 page.
+- [ ] Complete canonical V2 public resolution for every public route while preserving V1 forwarding behavior.
+- [ ] Namespace same-named V2 custom fonts by event and verify isolation.
+- [ ] Add real-component fixture parity tests and reconcile the public styling audit with actual evidence.
