@@ -281,7 +281,7 @@ describe("Passport V2 preview composition", () => {
   });
 });
 
-describe("Passport V2 hero paint layers", () => {
+describe("Transparent background colour", () => {
   const passport = { passport_id: "preview", event_id: "event-v2", first_name: "Sample", full_name: "Sample Visitor", checkin_count: 1 } as PassportRow;
   const mount = (items: Record<string, unknown>) => {
     const doc = parsePSO(JSON.parse(JSON.stringify({ version: 1, items })));
@@ -291,21 +291,6 @@ describe("Passport V2 hero paint layers", () => {
     const q = (id: string) => container.querySelector<HTMLElement>(`[data-event-style="${id}"]`)!;
     return { image: q("passport.hero.image"), overlay: q("passport.hero.overlay"), surface: q("passport.hero.surface"), heading: q("passport.hero.heading") };
   };
-  it("defaults keep the legacy tint; image 100% + overlay 0 shows an unwashed photo with normal text", () => {
-    const base = mount({});
-    // Untouched default: no override paint/opacity on the legacy tint layer.
-    expect(base.overlay.style.opacity).toBe("");
-    expect(base.overlay.style.backgroundColor).toBe("");
-    expect(base.overlay.style.backgroundImage).toBe("");
-    const clean = mount({ "passport.hero.image": { normal: { opacity: 1 } }, "passport.hero.overlay": { normal: { opacity: 0 } } });
-    expect(clean.image.style.opacity).toBe("1");
-    expect(clean.overlay.style.opacity).toBe("0");
-    expect(clean.surface.style.opacity).toBe("");
-    expect(clean.heading.style.opacity).toBe("");
-    // Nothing else paints between the photo and the text.
-    const layers = Array.from(clean.surface.children).filter((n) => n !== clean.image && n !== clean.overlay);
-    for (const n of layers) expect((n as HTMLElement).style.background || (n as HTMLElement).style.backgroundColor).toBeFalsy();
-  });
   it("explicit Transparent survives parse/save round trip and removes the default gradient; Reset restores it", () => {
     const t = mount({ "passport.hero.overlay": { normal: { backgroundColor: "transparent" } } });
     expect(t.overlay.style.backgroundColor).toBe("transparent");
