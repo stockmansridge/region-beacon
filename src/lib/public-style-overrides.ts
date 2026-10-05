@@ -90,7 +90,7 @@ export type PublicStyleElementDefinition = {
 };
 
 const TEXT = ["color", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
-const BUTTON = ["backgroundColor", "color", "borderColor", "iconColor", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
+const BUTTON = ["backgroundColor", "color", "borderColor", "iconColor", "iconBackgroundColor", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
 const SURFACE = ["backgroundColor", "borderColor", "opacity", "backgroundGradient"] as const;
 const ICON = ["iconColor", "iconBackgroundColor", "borderColor"] as const;
 const PROGRESS = ["progressTrackColor", "progressFillColor"] as const;
