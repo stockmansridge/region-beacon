@@ -2384,7 +2384,6 @@ function VisualBrandingEditor({
     : (previewEvent.description?.trim() ? "Event description (inherited)" : "No welcome message");
 
   const override = itemMeta ? currentOverride(parsePublicStyleOverrides(form.style_overrides)) : undefined;
-  const wiredPages = new Set<string>(PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => item.page));
   const savedConfig = parsePublicStyleOverrides(branding?.v2_style_config);
   // Saved view: immutable saved event + saved branding row through the same complete mapping.
   const savedBaselineEvent = formToPreviewEvent(event, branding, brandingToV2Form(branding));
@@ -2604,7 +2603,6 @@ const V2_WIRED_ITEMS = new Set<string>([
   "venue.page.heading", "venue.page.join", "venues.card.directions", "venues.card.distance", "venues.card.heading",
   "venues.card.meta", "venues.card.surface", "venues.page.heading", "venues.page.intro",
 ]);
-const PUBLIC_STYLE_PAGES_PENDING = ["passport", "join", "venues", "venue", "offers", "prizes", "map", "leaderboard", "faq", "legal", "scan", "checkin", "bonus", "tasting", "shared navigation"];
 
 /** Item → the shared Theme panel that also controls it (shown below the item inspector). */
 const ITEM_SHARED_ROLE: Partial<Record<string, VisualBrandRole>> = {
