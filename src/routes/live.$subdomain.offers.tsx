@@ -230,13 +230,13 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
                     aria-label={`View ${v.name ?? "venue"} offer`}
                   >
                     {/* Offer icon badge (left) */}
-                    <span
-                      className="grid h-14 w-14 flex-shrink-0 place-items-center self-center rounded-full"
+                    <PublicStyleTarget id="offers.card.badge" recordId={vid}><span
+                      className={`grid h-14 w-14 flex-shrink-0 place-items-center self-center rounded-full ${v2 ? "box-border border border-transparent" : ""}`}
                       style={badgeStyle}
                       aria-hidden
                     >
                       <OfferIcon className="h-6 w-6" />
-                    </span>
+                    </span></PublicStyleTarget>
 
                     {/* Content (middle) */}
                     <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
@@ -254,32 +254,32 @@ export function PublicOffersPage({ subdomain, previewData }: { subdomain: string
                     </div>
 
                     {/* Image thumb (right) */}
-                    <div className="hidden h-16 w-16 flex-shrink-0 self-center overflow-hidden rounded-xl bg-[var(--event-primary,#1F3D2B)]/10 sm:block">
+                    <div className="hidden h-16 w-16 flex-shrink-0 self-center overflow-hidden rounded-xl sm:block">
                       {thumb ? (
-                        <img
+                        <PublicStyleTarget id="offers.card.image" recordId={vid}><img
                           src={thumb}
                           alt=""
                           className="h-full w-full object-cover"
                           loading="lazy"
-                        />
+                        /></PublicStyleTarget>
                       ) : (
-                        <div className="grid h-full w-full place-items-center text-[var(--event-primary,#1F3D2B)]/40">
-                          <OfferIcon className="h-6 w-6" />
-                        </div>
+                        <PublicStyleTarget id="offers.card.placeholder" recordId={vid}><div className={`grid h-full w-full place-items-center bg-[var(--event-primary,#1F3D2B)]/10 ${v2 ? "box-border border border-transparent" : ""}`}>
+                          <PublicStyleTarget id="offers.card.placeholderIcon" recordId={vid}><span className={`grid place-items-center rounded-full text-[var(--event-primary,#1F3D2B)]/40 ${v2 ? "box-border border border-transparent" : ""}`} aria-hidden><OfferIcon className="h-6 w-6" /></span></PublicStyleTarget>
+                        </div></PublicStyleTarget>
                       )}
                     </div>
 
                     {/* Strong circular chevron (far right) */}
-                    <span
+                    <PublicStyleTarget id="offers.card.chevron" recordId={vid}><span
                       aria-hidden
-                      className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-full shadow-sm transition group-hover:translate-x-0.5"
+                      className={`absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-full shadow-sm transition group-hover:translate-x-0.5 ${v2 ? "box-border border border-transparent" : ""}`}
                       style={{
                         background: "var(--event-button-primary-bg, var(--event-primary, #1F3D2B))",
                         color: "var(--event-button-primary-fg, var(--event-primary-fg, #F6EFE2))",
                       }}
                     >
                       <ChevronRight className="h-5 w-5" />
-                    </span>
+                    </span></PublicStyleTarget>
                   </PublicLink></PublicStyleTarget>
                   <div className="absolute right-2 top-2 z-10">
                     <BookmarkButton

@@ -194,7 +194,11 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "venue.collect.icon", page: "venue", section: "Collect points", label: "Scan QR icon", kind: "icon", properties: ICON, repeat: "venue" },
 
   { id: "offers.card.surface", page: "offers", section: "Offers", label: "Offer card", kind: "surface", properties: SURFACE, repeat: "venue" },
-  { id: "offers.card.badge", page: "offers", section: "Offers", label: "Offer badge", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
+  { id: "offers.card.badge", page: "offers", section: "Offers", label: "Offer badge icon", kind: "icon", properties: ICON, repeat: "venue" },
+  { id: "offers.card.image", page: "offers", section: "Offers", label: "Offer image", kind: "surface", properties: ["opacity"], repeat: "venue" },
+  { id: "offers.card.placeholder", page: "offers", section: "Offers", label: "No-image background", kind: "surface", properties: SURFACE, repeat: "venue" },
+  { id: "offers.card.placeholderIcon", page: "offers", section: "Offers", label: "No-image gift icon", kind: "icon", properties: ICON, repeat: "venue" },
+  { id: "offers.card.chevron", page: "offers", section: "Offers", label: "Open-offer arrow", kind: "icon", properties: ICON, repeat: "venue" },
   { id: "prizes.tabs.item", page: "prizes", section: "Tabs", label: "Prize tab", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
   { id: "prizes.card.surface", page: "prizes", section: "Prize cards", label: "Prize card", kind: "surface", properties: SURFACE, repeat: "award" },
   { id: "prizes.card.heading", page: "prizes", section: "Prize cards", label: "Prize name", kind: "text", properties: TEXT, repeat: "award" },
