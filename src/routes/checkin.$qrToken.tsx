@@ -393,7 +393,7 @@ export function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { ki
           }}
         >
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-primary-fg)]">
-            <div
+            <PublicStyleTarget id="checkin.result.icon"><div
               className="flex h-20 w-20 items-center justify-center rounded-full border-2"
               style={{
                 borderColor: "var(--event-accent)",
@@ -407,13 +407,13 @@ export function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { ki
                 className="h-9 w-9"
                 style={{ color: "var(--event-accent)" }}
               />
-            </div>
-            <div
+            </div></PublicStyleTarget>
+            <PublicStyleTarget id="checkin.result.kicker"><div
               className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em]"
               style={{ color: "var(--event-accent)" }}
             >
               {kicker}
-            </div>
+            </div></PublicStyleTarget>
             <PublicStyleTarget id="checkin.result.heading"><h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
               {title}
             </h1></PublicStyleTarget>
@@ -421,9 +421,9 @@ export function StampedCheckinView({ outcome }: { outcome: Extract<Outcome, { ki
               {pointsLine}
             </p></PublicStyleTarget>
             {outcome.isNew && (
-              <p className="mt-2 text-sm text-[var(--event-primary-fg)]/80">
+              <PublicStyleTarget id="checkin.result.status"><p className="mt-2 text-sm text-[var(--event-primary-fg)]/80">
                 Your passport has been updated.
-              </p>
+              </p></PublicStyleTarget>
             )}
           </div>
         </div></PublicStyleTarget>

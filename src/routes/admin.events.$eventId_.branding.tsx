@@ -88,6 +88,7 @@ import {
   PUBLIC_STYLE_ELEMENTS,
   emptyPublicStyleOverrides,
   parsePublicStyleOverrides,
+  resolvePublicTemplateVersion,
   validatePublicStyleOverrides,
   publicStylePropertyValue,
   type PublicStyleElementId,
@@ -2412,10 +2413,17 @@ function VisualBrandingEditor({
   const savedBaselineEvent = formToPreviewEvent(event, branding, brandingToV2Form(branding), publicContent?.event ?? null);
   // Live template: the event's actual public row and saved template version, never forced to V2.
   const liveIsV2 = branding?.public_template_version === "v2";
-  const liveEvent = { ...(liveIsV2 ? savedBaselineEvent : formToPreviewEvent(event, branding, brandingToForm(branding), publicContent?.event ?? null)), public_template_version: branding?.public_template_version ?? null, v2_style_config: liveIsV2 ? savedConfig : null } as PublicBrandingEvent;
+  const liveEvent = {
+    ...(publicContent?.event ?? formToPreviewEvent(event, branding, brandingToForm(branding), null)),
+    event_id: event.id,
+    name: event.name,
+    public_template_version: branding?.public_template_version ?? null,
+    v2_style_config: liveIsV2 ? savedConfig : null,
+  } as PublicBrandingEvent;
 
   const draftEvent = (previewSource === "live" ? liveEvent : { ...(previewSource === "draft" ? formToPreviewEvent(event, branding, form, publicContent?.event ?? null) : savedBaselineEvent), public_template_version: "v2", v2_style_config: previewSource === "draft" ? previewConfig : savedConfig }) as PublicBrandingEvent;
-  const fixtureBranding = resolveEventBrandingKeys(draftEvent as never, { public_template_version: "v2", v2_style_config: draftEvent.v2_style_config ?? null });
+  const fixtureBranding = resolveEventBrandingKeys(draftEvent as never, { public_template_version: resolvePublicTemplateVersion(draftEvent.public_template_version), v2_style_config: draftEvent.v2_style_config ?? null });
+  const comparisonReadOnly = previewSource !== "draft";
   const listVenues: ListVenueRow[] = venues.map((venue) => ({
     venue_id: venue.venue_id, name: venue.name, description: venue.description ?? null,
     address: venue.address ?? null, website_url: venue.website_url ?? null, phone: venue.phone ?? null, logo_path: venue.logo_path ?? null,
@@ -2529,7 +2537,6 @@ function VisualBrandingEditor({
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => selectFromNavigator(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
-          {(() => { const pg = ["terms", "privacy"].includes(previewPage) ? "legal" : previewPage; const missing = PUBLIC_STYLE_ELEMENTS.filter((item) => item.page === pg && !V2_WIRED_ITEMS.has(item.id)); return missing.length ? <p className="mt-4 rounded-md bg-muted p-2 text-xs text-muted-foreground">Not yet editable on this page: {missing.map((item) => item.label).join(", ")}.</p> : null; })()}
         </nav>
 
         <section className="min-w-0 rounded-md border bg-background p-3">
@@ -2594,24 +2601,24 @@ function VisualBrandingEditor({
             item={itemMeta} values={(styleState === "normal" ? override?.normal : override?.states?.[styleState]) ?? {}} hasOverride={Boolean(override)}
             inherited={inherited} state={styleState} setState={setStyleState} setProperty={(property, value) => { setItemProperty(property, value); if (typeof value === "string") rememberColour(value); }}
             reset={resetItem} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0}
-            disabled={!canEdit || busy} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
+            disabled={!canEdit || busy || comparisonReadOnly} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
             record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope } : null}
           /> : null}
           {roleMeta && panelRole ? <div className={itemMeta ? "mt-6 border-t pt-4" : ""}>
             <div className="flex items-start justify-between gap-3"><div>{itemMeta ? <div className="text-xs font-semibold uppercase text-muted-foreground">Shared settings for this area</div> : null}<h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description} {itemMeta ? "These affect every item that uses them." : ""}</p></div>{!itemMeta ? <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button> : null}</div>
             <div className="mt-5 space-y-5">
-              {panelRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || busy} />}
-              {panelRole === "fonts" || panelRole === "heroHeading" || panelRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || busy} eventName={event.name} customFonts={customFonts} canUpload={false} onUpload={async () => ({ ok: false as const, error: "Use the existing editor to manage uploaded fonts." })} onDelete={async () => {}} /> : null}
+              {panelRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || busy || comparisonReadOnly} />}
+              {panelRole === "fonts" || panelRole === "heroHeading" || panelRole === "welcome" ? <FontPickers headingValue={form.heading_font_family} bodyValue={form.font_family} emotiveValue={form.default_emotive_font_family} onHeadingChange={(value) => setForm((current) => ({ ...current, heading_font_family: value }))} onBodyChange={(value) => setForm((current) => ({ ...current, font_family: value }))} onEmotiveChange={(value) => setForm((current) => ({ ...current, default_emotive_font_family: value }))} disabled={!canEdit || busy || comparisonReadOnly} eventName={event.name} customFonts={customFonts} canUpload={false} onUpload={async () => ({ ok: false as const, error: "Use the existing editor to manage uploaded fonts." })} onDelete={async () => {}} /> : null}
               {panelRole === "welcome" && <Field label="Welcome message">
                 <div className="mb-1 text-xs text-muted-foreground">Source: <span className="font-medium text-foreground">{welcomeSource}</span></div>
-                <textarea aria-label="Welcome message" value={form.welcome_copy.trim() ? form.welcome_copy : effectiveWelcome} maxLength={1000} disabled={!canEdit || busy} onChange={(event) => setForm((current) => ({ ...current, welcome_copy: event.target.value }))} className="min-h-28 w-full rounded-md border bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring" />
+                <textarea aria-label="Welcome message" value={form.welcome_copy.trim() ? form.welcome_copy : effectiveWelcome} maxLength={1000} disabled={!canEdit || busy || comparisonReadOnly} onChange={(event) => setForm((current) => ({ ...current, welcome_copy: event.target.value }))} className="min-h-28 w-full rounded-md border bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring" />
                 <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Clearing the box shows the event description again.</span><span>{(form.welcome_copy.trim() ? form.welcome_copy : effectiveWelcome).length}/1000</span></div>
-                <Button type="button" variant="ghost" size="sm" disabled={!canEdit || busy || !welcomeOverride} onClick={() => setForm((current) => ({ ...current, welcome_copy: v1Form.welcome_copy }))}>Use inherited message</Button>
+                <Button type="button" variant="ghost" size="sm" disabled={!canEdit || busy || comparisonReadOnly || !welcomeOverride} onClick={() => setForm((current) => ({ ...current, welcome_copy: v1Form.welcome_copy }))}>Use inherited message</Button>
               </Field>}
-              {panelRole === "logo" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="logo" currentPath={branding?.logo_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("logo", file)} onRemove={() => onAssetRemove("logo")} /><Field label="Logo shape"><Select value={form.logo_shape || "square"} onValueChange={(value) => setForm((current) => ({ ...current, logo_shape: value }))} disabled={!canEdit || busy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="square">Square</SelectItem><SelectItem value="circle">Circle</SelectItem></SelectContent></Select></Field><Field label="Logo backdrop"><Select value={form.logo_backdrop || "transparent"} onValueChange={(value) => setForm((current) => ({ ...current, logo_backdrop: value }))} disabled={!canEdit || busy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transparent">Transparent</SelectItem><SelectItem value="color">Colour</SelectItem></SelectContent></Select></Field></>}
-              {panelRole === "cover" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="cover" currentPath={branding?.cover_path ?? null} canEdit={canEdit && !hasUnsavedChanges} embedded onUpload={(file) => onAssetUpload("cover", file)} onRemove={() => onAssetRemove("cover")} />{branding?.cover_path && <CoverPositioner imageUrl={getEventAssetPublicUrl(branding.cover_path)} focalX={form.cover_focal_x ? Number(form.cover_focal_x) : 50} focalY={form.cover_focal_y ? Number(form.cover_focal_y) : 50} disabled={!canEdit || busy} onChange={(x, y) => setForm((current) => ({ ...current, cover_focal_x: String(x), cover_focal_y: String(y) }))} />}</>}
-              {roleMeta.fields.map((field) => <ColourControl key={field} label={COLOUR_LABELS[field]} value={form[field] as string} inherited={resolvedFor(field)} quickColours={quickColours} disabled={!canEdit || busy} warning={fieldWarnings(field)} onCommit={(value) => { editColour(field, (value ?? "") as Form[typeof field]); if (value) rememberColour(value); }} />)}
-              {panelRole === "hero" || panelRole === "cover" ? <HeroOverlayCard colorValue={form.hero_overlay_color} opacityValue={form.hero_overlay_opacity} primaryFallback={form.hero_overlay_color || theme.heroBg} disabled={!canEdit || busy} onColorChange={(value) => editColour("hero_overlay_color", value)} onOpacityChange={(value) => setForm((current) => ({ ...current, hero_overlay_opacity: value }))} /> : null}
+              {panelRole === "logo" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="logo" currentPath={branding?.logo_path ?? null} canEdit={canEdit && !hasUnsavedChanges && !comparisonReadOnly} embedded onUpload={(file) => onAssetUpload("logo", file)} onRemove={() => onAssetRemove("logo")} /><Field label="Logo shape"><Select value={form.logo_shape || "square"} onValueChange={(value) => setForm((current) => ({ ...current, logo_shape: value }))} disabled={!canEdit || busy || comparisonReadOnly}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="square">Square</SelectItem><SelectItem value="circle">Circle</SelectItem></SelectContent></Select></Field><Field label="Logo backdrop"><Select value={form.logo_backdrop || "transparent"} onValueChange={(value) => setForm((current) => ({ ...current, logo_backdrop: value }))} disabled={!canEdit || busy || comparisonReadOnly}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transparent">Transparent</SelectItem><SelectItem value="color">Colour</SelectItem></SelectContent></Select></Field></>}
+              {panelRole === "cover" && <><p className="rounded-md bg-amber-50 p-3 text-xs text-amber-900">Image changes save immediately. Save or discard other form changes first.</p><AssetUploader kind="cover" currentPath={branding?.cover_path ?? null} canEdit={canEdit && !hasUnsavedChanges && !comparisonReadOnly} embedded onUpload={(file) => onAssetUpload("cover", file)} onRemove={() => onAssetRemove("cover")} />{branding?.cover_path && <CoverPositioner imageUrl={getEventAssetPublicUrl(branding.cover_path)} focalX={form.cover_focal_x ? Number(form.cover_focal_x) : 50} focalY={form.cover_focal_y ? Number(form.cover_focal_y) : 50} disabled={!canEdit || busy || comparisonReadOnly} onChange={(x, y) => setForm((current) => ({ ...current, cover_focal_x: String(x), cover_focal_y: String(y) }))} />}</>}
+              {roleMeta.fields.map((field) => <ColourControl key={field} label={COLOUR_LABELS[field]} value={form[field] as string} inherited={resolvedFor(field)} quickColours={quickColours} disabled={!canEdit || busy || comparisonReadOnly} warning={fieldWarnings(field)} onCommit={(value) => { editColour(field, (value ?? "") as Form[typeof field]); if (value) rememberColour(value); }} />)}
+              {panelRole === "hero" || panelRole === "cover" ? <HeroOverlayCard colorValue={form.hero_overlay_color} opacityValue={form.hero_overlay_opacity} primaryFallback={form.hero_overlay_color || theme.heroBg} disabled={!canEdit || busy || comparisonReadOnly} onColorChange={(value) => editColour("hero_overlay_color", value)} onOpacityChange={(value) => setForm((current) => ({ ...current, hero_overlay_opacity: value }))} /> : null}
             </div>
           </div> : null}
         </aside>
@@ -2620,37 +2627,6 @@ function VisualBrandingEditor({
     </div>
   );
 }
-
-/** Items whose real public component carries a V2 marker (kept in sync with PublicStyleTarget / role() call sites). */
-const V2_WIRED_ITEMS = new Set<string>([
-  "bonus.failure.body","bonus.failure.heading","bonus.result.body","bonus.result.button","bonus.result.heading","bonus.result.surface","checkin.failure.body","checkin.failure.button","checkin.failure.heading","checkin.result.body","checkin.result.button","checkin.result.heading","checkin.result.surface","scan.body","scan.camera","scan.control","scan.error","scan.heading","tasting.failure.body","tasting.failure.heading","tasting.result.body","tasting.result.button","tasting.result.heading","tasting.result.surface",
-  "bookmarks.card", "bookmarks.empty.body", "bookmarks.empty.cta", "bookmarks.empty.heading", "bookmarks.page.heading",
-  "bookmarks.page.intro", "faq.item.answer", "faq.item.question", "faq.item.toggle", "faq.page.eyebrow",
-  "faq.page.heading", "faq.state.message", "home.bonusPromo.body", "home.bonusPromo.heading", "home.bonusPromo.icon",
-  "home.bonusPromo.surface", "home.collect.cta", "home.collect.heading", "home.collect.surface", "home.hero.cover",
-  "home.hero.heading", "home.hero.image", "home.hero.logo", "home.hero.surface", "home.hero.welcomeCopy",
-  "home.hero.welcomeLabel", "home.nextPrize.heading", "home.nextPrize.icon", "home.nextPrize.progress", "home.nextPrize.surface",
-  "home.page.surface", "home.primaryCta", "home.prizesButton", "home.shareButton", "home.stamps.label",
-  "home.stamps.tile", "home.summary.ring", "home.summary.surface", "home.venuesButton", "join.form.footnote",
-  "join.form.link", "join.form.submit", "join.page.heading", "join.page.intro", "join.page.notice",
-  "join.returning.body", "join.returning.heading", "join.returning.registerAgain", "join.state.heading", "join.state.message",
-  "join.success.body", "join.success.button", "join.success.heading", "leaderboard.empty.body", "leaderboard.empty.heading",
-  "leaderboard.footnote", "leaderboard.heading", "leaderboard.page.eyebrow", "leaderboard.page.intro", "leaderboard.row.name",
-  "legal.body", "legal.eyebrow", "legal.heading", "legal.meta", "legal.section.toggle",
-  "map.card.body", "map.card.close", "map.card.directions", "map.card.heading", "map.controls.item",
-  "map.list.card", "map.page.count", "map.page.heading", "map.page.join", "map.unmapped.label",
-  "map.unmapped.link", "offers.card.body", "offers.card.heading", "offers.card.surface", "offers.card.venue",
-  "offers.page.heading", "offers.page.intro", "passport.actions.copyLink", "passport.actions.support", "passport.award.body",
-  "passport.hero.body", "passport.hero.eyebrow", "passport.hero.heading", "passport.progress.body", "passport.progress.heading",
-  "passport.rewards.heading", "passport.rewards.intro", "passport.stamps.empty", "passport.stamps.heading", "passport.stamps.intro",
-  "prizes.bonus.body", "prizes.bonus.heading", "prizes.bonus.meta", "prizes.bonus.surface", "prizes.card.body",
-  "prizes.card.heading", "prizes.card.meta", "prizes.card.surface", "prizes.hero.body", "prizes.hero.heading",
-  "prizes.sort.item", "prizes.tabs.item", "shared.navigation.activeItem", "shared.navigation.drawer", "shared.navigation.item",
-  "shared.navigation.surface", "venue.actions.directions", "venue.actions.phone", "venue.actions.website", "venue.bonus.body",
-  "venue.bonus.heading", "venue.bonus.meta", "venue.offer.body", "venue.page.body", "venue.page.emotive",
-  "venue.page.heading", "venue.page.join", "venues.card.directions", "venues.card.distance", "venues.card.heading",
-  "venues.card.meta", "venues.card.surface", "venues.page.heading", "venues.page.intro",
-]);
 
 /** Item → the shared Theme panel that also controls it (shown below the item inspector). */
 const ITEM_SHARED_ROLE: Partial<Record<string, VisualBrandRole>> = {

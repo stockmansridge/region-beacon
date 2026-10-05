@@ -12,6 +12,8 @@ import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
+import { loadPublicV2Branding } from "@/lib/use-event-palette";
+import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
 
 export const Route = createFileRoute("/scan")({
   head: () => ({ meta: [{ title: "Scan venue QR" }] }),
@@ -60,10 +62,17 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
     let cancelled = false;
     (async () => {
       const host = tenantHost(subdomain);
-      const { data } = await supabase.rpc("get_public_event_by_domain", { _hostname: host });
+      const [{ data }, v2] = await Promise.all([
+        supabase.rpc("get_public_event_by_domain", { _hostname: host }),
+        loadPublicV2Branding(host),
+      ]);
       if (cancelled) return;
       const raw = (data?.[0] ?? null) as Record<string, unknown> | null;
-      const evt = raw ? (applyPaletteToEvent(raw as never) as unknown as Record<string, unknown>) : null;
+      const evt: Record<string, unknown> | null = raw ? {
+        ...(applyPaletteToEvent(raw as never) as unknown as Record<string, unknown>),
+        public_template_version: v2.public_template_version,
+        v2_style_config: v2.v2_style_config,
+      } : null;
       const eid = (evt?.event_id as string | undefined) ?? null;
       setEventId(eid);
       setEvent(evt);
@@ -154,6 +163,8 @@ export function ScannerView({ subdomain, event, eventId, hasPassport, err, manua
 }) {
   const evt = event ?? {};
   const g = <T,>(k: string) => (evt[k] as T | null | undefined) ?? null;
+  const templateVersion = resolvePublicTemplateVersion(g<string>("public_template_version"));
+  const v2 = templateVersion === "v2";
 
   return (
     <ResultPaletteScope
@@ -183,8 +194,18 @@ export function ScannerView({ subdomain, event, eventId, hasPassport, err, manua
       heroBgColor={g<string>("hero_bg_color")}
       heroFgColor={g<string>("hero_fg_color")}
       heroAccentColor={g<string>("hero_accent_color")}
+      heroBodyColor={v2 ? g<string>("hero_body_color") : null}
+      pageHeadingColor={v2 ? g<string>("page_heading_color") : null}
+      pageBodyColor={v2 ? g<string>("page_body_color") : null}
+      pageMutedColor={v2 ? g<string>("page_muted_color") : null}
+      cardHeadingColor={v2 ? g<string>("card_heading_color") : null}
+      cardBodyColor={v2 ? g<string>("card_body_color") : null}
+      cardMutedColor={v2 ? g<string>("card_muted_color") : null}
       fontFamily={g<string>("font_family")}
       headingFontFamily={g<string>("heading_font_family")}
+      eventId={eventId}
+      templateVersion={templateVersion}
+      styleOverrides={v2 ? g("v2_style_config") : null}
       className="min-h-screen pb-12"
     >
       <div className="px-4">

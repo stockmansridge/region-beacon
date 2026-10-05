@@ -13,8 +13,13 @@ export function PublicStyleTarget({
   children: ReactElement<{ style?: CSSProperties }>;
 }) {
   const target = usePublicStyleTarget(id, { recordId, selectable: true });
+  const replacesBackgroundImage = Boolean(target.style.backgroundColor) && !target.style.backgroundImage;
   return cloneElement(children, {
     ...target,
-    style: { ...children.props.style, ...target.style },
+    style: {
+      ...children.props.style,
+      ...(replacesBackgroundImage ? { background: undefined, backgroundImage: "none" } : {}),
+      ...target.style,
+    },
   });
 }

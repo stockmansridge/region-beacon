@@ -6,7 +6,8 @@ import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { classifyHost } from "@/components/host-router";
-import { useEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
+import { usePublicStyleEnabled } from "@/components/public-style-scope";
 
 export const Route = createFileRoute("/tasting/$qrToken")({
   head: () => ({ meta: [{ title: "Tasting points — GetStampd" }] }),
@@ -154,8 +155,15 @@ function TastingClaimPage() {
 
 export function TastingView({ outcome }: { outcome: Outcome }) {
   const preview = useResultPreview();
+  const inheritedV2Scope = usePublicStyleEnabled();
   const subdomain = preview ? null : getSubdomain();
-  const { paletteKey, backgroundKey } = useEventBrandingKeys(subdomain);
+  const branding = useEventBrandingKeys(subdomain);
+  const isV2 = inheritedV2Scope || branding.templateVersion === "v2";
+  const scopeProps = branding.templateVersion === "v2"
+    ? brandingScopeProps(branding)
+    : { paletteKey: branding.paletteKey, backgroundKey: branding.backgroundKey };
+  const resultPrimary = isV2 ? "var(--event-primary)" : PRIMARY;
+  const resultAccent = isV2 ? "var(--event-accent)" : GOLD;
 
   if (outcome.kind === "loading") {
     return (
@@ -175,33 +183,32 @@ export function TastingView({ outcome }: { outcome: Outcome }) {
 
     return (
       <ResultPaletteScope
-        paletteKey={paletteKey}
-        backgroundKey={backgroundKey}
+        {...scopeProps}
         className="min-h-screen px-4 py-8"
       >
         <div className="mx-auto w-full max-w-md">
           <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
             <PublicStyleTarget id="tasting.result.surface"><div
               className="relative h-[420px] w-full"
-              style={{ background: `linear-gradient(160deg, ${PRIMARY} 0%, #14271C 100%)` }}
+              style={{ background: `linear-gradient(160deg, ${resultPrimary} 0%, color-mix(in oklab, ${resultPrimary} 70%, black) 100%)` }}
             >
               <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-page-bg,#F6EFE2)]">
-                <div
+                <PublicStyleTarget id="tasting.result.icon"><div
                   className="flex h-20 w-20 items-center justify-center rounded-full border-2"
                   style={{
-                    borderColor: GOLD,
-                    backgroundColor: `${PRIMARY}E6`,
-                    boxShadow: `0 0 0 6px ${GOLD}22`,
+                    borderColor: resultAccent,
+                    backgroundColor: isV2 ? "color-mix(in oklab, var(--event-primary) 88%, transparent)" : `${PRIMARY}E6`,
+                    boxShadow: isV2 ? "0 0 0 6px color-mix(in oklab, var(--event-accent) 18%, transparent)" : `0 0 0 6px ${GOLD}22`,
                   }}
                 >
-                  <Sparkles className="h-9 w-9" style={{ color: GOLD }} />
-                </div>
-                <div
+                  <Sparkles className="h-9 w-9" style={{ color: resultAccent }} />
+                </div></PublicStyleTarget>
+                <PublicStyleTarget id="tasting.result.kicker"><div
                   className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em]"
-                  style={{ color: GOLD }}
+                  style={{ color: resultAccent }}
                 >
                   {kicker}
-                </div>
+                </div></PublicStyleTarget>
                 <PublicStyleTarget id="tasting.result.heading"><h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
                   {title}
                 </h1></PublicStyleTarget>
@@ -216,9 +223,9 @@ export function TastingView({ outcome }: { outcome: Outcome }) {
                   </p>
                 )}
                 <PublicStyleTarget id="tasting.result.body"><p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">{body}</p></PublicStyleTarget>
-                <p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
+                <PublicStyleTarget id="tasting.result.status"><p className="mt-2 text-sm font-semibold" style={{ color: resultAccent }}>
                   Your total points: {outcome.row.total_points}
-                </p>
+                </p></PublicStyleTarget>
               </div>
             </div></PublicStyleTarget>
           </section>
@@ -228,7 +235,7 @@ export function TastingView({ outcome }: { outcome: Outcome }) {
               to="/passport/$token"
               params={{ token: outcome.passportToken }}
               className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
-              style={{ backgroundColor: PRIMARY }}
+              style={{ backgroundColor: resultPrimary }}
             >
               Back to my passport
             </ResultLink></PublicStyleTarget>
@@ -247,12 +254,12 @@ export function TastingView({ outcome }: { outcome: Outcome }) {
 
   if (outcome.kind === "no_passport") {
     return (
-      <FailureCard
+      <ResultPaletteScope {...scopeProps} className="min-h-screen"><FailureCard
         title="Passport required"
         body="You need to join this event before you can claim tasting points. Tap below to register — we'll bring you back here to claim."
         actionLabel="Create passport for this event"
         actionHref={outcome.subdomain ? "/join" : "/"}
-      />
+      /></ResultPaletteScope>
     );
   }
 
@@ -264,7 +271,7 @@ export function TastingView({ outcome }: { outcome: Outcome }) {
         : "This tasting QR is not available.";
 
   return (
-    <FailureCard
+    <ResultPaletteScope {...scopeProps} className="min-h-screen"><FailureCard
       title="This tasting QR is not available"
       body={
         message ||
@@ -272,7 +279,7 @@ export function TastingView({ outcome }: { outcome: Outcome }) {
       }
       actionLabel="Back to event"
       actionHref="/"
-    />
+    /></ResultPaletteScope>
   );
 }
 
@@ -296,12 +303,12 @@ export function FailureCard({
         </h1></PublicStyleTarget>
         <PublicStyleTarget id="tasting.failure.body"><p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{body}</p></PublicStyleTarget>
         <div className="mt-6">
-          <a
+          <PublicStyleTarget id="tasting.failure.button"><a
             href={actionHref}
             className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-6 text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
           >
             {actionLabel}
-          </a>
+          </a></PublicStyleTarget>
         </div>
       </div>
     </div>

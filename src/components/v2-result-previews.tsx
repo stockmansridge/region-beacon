@@ -8,6 +8,7 @@ import { BonusView, type Outcome as BonusOutcome } from "@/routes/collect.bonus.
 import { TastingView, type Outcome as TastingOutcome } from "@/routes/tasting.$qrToken";
 import { ScannerView } from "@/routes/scan";
 import { ResultPreviewProvider } from "@/components/result-preview";
+import { PublicEventBrandingScope, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 
 export type ResultPreviewPage = "scan" | "checkin" | "bonus" | "tasting";
 
@@ -42,25 +43,27 @@ const noop = () => {};
 
 export function V2ResultPreview({ page, state, event, venueName }: { page: ResultPreviewPage; state: string; event: Record<string, unknown>; venueName: string | null }) {
   return (
-    <ResultPreviewProvider>
-      {page === "checkin" && <CheckinView outcome={checkinOutcome(state, venueName)} qrToken="preview" />}
-      {page === "bonus" && <BonusView outcome={bonusOutcome(state)} />}
-      {page === "tasting" && <TastingView outcome={tastingOutcome(state)} />}
-      {page === "scan" && (
-        <ScannerView
-          subdomain={null}
-          event={event}
-          eventId={(event.event_id as string | undefined) ?? (event.id as string | undefined) ?? null}
-          hasPassport={state !== "no_passport"}
-          err={state === "permission" ? { kind: "permission", message: "" } : state === "invalid" ? { kind: "invalid", message: "That QR code is not a GetStampd venue check-in code." } : { kind: "none" }}
-          manual=""
-          onManualChange={noop}
-          onManualGo={noop}
-          copied={false}
-          onCopySupport={noop}
-          camera={<div className="flex aspect-square w-full items-center justify-center rounded-2xl border border-dashed border-[var(--event-border,#E6DCC7)] text-xs text-[var(--event-muted,#7A6F5C)]">Camera preview placeholder — the camera never starts in the editor</div>}
-        />
-      )}
-    </ResultPreviewProvider>
+    <PublicEventBrandingScope event={event as PublicBrandingEvent}>
+      <ResultPreviewProvider>
+        {page === "checkin" && <CheckinView outcome={checkinOutcome(state, venueName)} qrToken="preview" />}
+        {page === "bonus" && <BonusView outcome={bonusOutcome(state)} />}
+        {page === "tasting" && <TastingView outcome={tastingOutcome(state)} />}
+        {page === "scan" && (
+          <ScannerView
+            subdomain={null}
+            event={event}
+            eventId={(event.event_id as string | undefined) ?? (event.id as string | undefined) ?? null}
+            hasPassport={state !== "no_passport"}
+            err={state === "permission" ? { kind: "permission", message: "" } : state === "invalid" ? { kind: "invalid", message: "That QR code is not a GetStampd venue check-in code." } : { kind: "none" }}
+            manual=""
+            onManualChange={noop}
+            onManualGo={noop}
+            copied={false}
+            onCopySupport={noop}
+            camera={<div className="flex aspect-square w-full items-center justify-center rounded-2xl border border-dashed border-[var(--event-border,#E6DCC7)] text-xs text-[var(--event-muted,#7A6F5C)]">Camera preview placeholder — the camera never starts in the editor</div>}
+          />
+        )}
+      </ResultPreviewProvider>
+    </PublicEventBrandingScope>
   );
 }

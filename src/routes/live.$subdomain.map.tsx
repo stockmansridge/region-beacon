@@ -878,14 +878,17 @@ function MapFallbackList({
       )}
       <ul className="space-y-2">
         {venues.map((v) => (
-          <li key={v.venue_id ?? Math.random()}>
+          <li key={v.venue_id ?? v.name ?? "venue"}>
             <PublicLink
               to="/venues/$venueId"
               params={{ venueId: v.venue_id ?? "" }}
               className="block rounded-lg bg-white px-3 py-2 hover:bg-amber-100"
               style={{ color: primary }}
             >
-              <span className="font-semibold">{v.name}</span>
+              <span className="flex items-center gap-2 font-semibold">
+                <PublicStyleTarget id="map.marker" recordId={v.venue_id}><span className="grid h-7 w-7 place-items-center rounded-full border" style={{ backgroundColor: "var(--item-icon-bg, var(--event-accent))", color: "var(--item-icon-color, var(--event-primary-fg))", borderColor: "var(--event-card-border)" }} aria-hidden>●</span></PublicStyleTarget>
+                {v.name}
+              </span>
               {v.address && (
                 <span className="block text-xs text-amber-800/80">
                   {v.address}

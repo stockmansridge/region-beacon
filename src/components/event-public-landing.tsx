@@ -205,11 +205,12 @@ export function EventPublicLanding({
   onPreviewNavigate?: (to: string, params?: Record<string, string | undefined>) => void;
 }) {
   const isV2 = templateVersion === "v2";
+  const isEditorPreview = mode === "preview";
   const canRegister = Boolean(event.current_terms_version_id);
-  const { passportHref } = useCurrentEventPassport(event.event_id);
+  const { passportHref } = useCurrentEventPassport(event.event_id, !isEditorPreview);
   const venueLabels = resolveVenueLabels(event);
-  const firstName = useFirstNameFromPassportHref(passportHref);
-  const homeData = usePassportHomeData(event.event_id);
+  const firstName = useFirstNameFromPassportHref(isEditorPreview ? null : passportHref);
+  const homeData = usePassportHomeData(isEditorPreview ? null : event.event_id);
   const isAdminPreview =
     mode === "preview" ||
     (typeof window !== "undefined" &&
@@ -354,8 +355,8 @@ export function EventPublicLanding({
 
   function renderLandingContent() {
     return <>
-        {subdomain ? <LiveActivityBar subdomain={subdomain} /> : null}
-        <PrizeUnlockAnnouncer eventId={event.event_id} />
+        {subdomain && !isEditorPreview ? <LiveActivityBar subdomain={subdomain} /> : null}
+        {!isEditorPreview ? <PrizeUnlockAnnouncer eventId={event.event_id} /> : null}
         {previewNotice}
         {mode === "live" && isAdminPreview && !previewDismissed && (
           <div
@@ -841,9 +842,9 @@ export function EventPublicLanding({
               venueLabelPlural={venueLabels.plural}
               canRegister={canRegister}
             />
-            <BonusPointsPromo subdomain={subdomain} />
-            <WhatsHappeningCard subdomain={subdomain} />
-            <NextRewardCard eventId={event.event_id} />
+            {!isEditorPreview ? <BonusPointsPromo subdomain={subdomain} /> : null}
+            {!isEditorPreview ? <WhatsHappeningCard subdomain={subdomain} /> : null}
+            {!isEditorPreview ? <NextRewardCard eventId={event.event_id} /> : null}
 
             <section className="flex flex-col gap-3">
               <PublicLink

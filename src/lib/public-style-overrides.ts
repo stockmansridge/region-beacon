@@ -94,6 +94,7 @@ const BUTTON = ["backgroundColor", "color", "borderColor", "iconColor", "fontFam
 const SURFACE = ["backgroundColor", "borderColor", "opacity", "backgroundGradient"] as const;
 const ICON = ["iconColor", "iconBackgroundColor", "borderColor"] as const;
 const PROGRESS = ["progressTrackColor", "progressFillColor"] as const;
+const INPUT = ["backgroundColor", "color", "borderColor", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
 const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
@@ -149,7 +150,7 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "join.form.surface", page: "join", section: "Form", label: "Registration form", kind: "surface", properties: SURFACE },
   { id: "join.form.heading", page: "join", section: "Form", label: "Form heading", kind: "text", properties: TEXT },
   { id: "join.form.label", page: "join", section: "Form", label: "Field label", kind: "text", properties: TEXT, repeat: "template" },
-  { id: "join.form.field", page: "join", section: "Form", label: "Form field", kind: "surface", properties: SURFACE, repeat: "template" },
+  { id: "join.form.field", page: "join", section: "Form", label: "Form input", kind: "text", properties: INPUT, states: INTERACTIVE, repeat: "template" },
   { id: "join.form.error", page: "join", section: "Form", label: "Validation message", kind: "text", properties: TEXT, repeat: "template" },
   { id: "join.form.submit", page: "join", section: "Form", label: "Create passport button", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "join.state.message", page: "join", section: "States", label: "Join status message", kind: "text", properties: TEXT, repeat: "template" },
@@ -266,16 +267,25 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "passport.rewards.intro", page: "passport", section: "Prizes", label: "Prizes intro", kind: "text", properties: TEXT },
   { id: "passport.award.body", page: "passport", section: "Prizes", label: "Prize description", kind: "text", properties: TEXT, repeat: "award" },
   { id: "checkin.result.body", page: "checkin", section: "Result", label: "Check-in result message", kind: "text", properties: TEXT },
+  { id: "checkin.result.icon", page: "checkin", section: "Result", label: "Check-in result icon", kind: "icon", properties: ICON },
+  { id: "checkin.result.kicker", page: "checkin", section: "Result", label: "Check-in result label", kind: "text", properties: TEXT },
+  { id: "checkin.result.status", page: "checkin", section: "Result", label: "Check-in status text", kind: "text", properties: TEXT },
   { id: "checkin.result.button", page: "checkin", section: "Result", label: "Check-in result button", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "checkin.failure.heading", page: "checkin", section: "Problem", label: "Check-in problem heading", kind: "text", properties: TEXT },
   { id: "checkin.failure.body", page: "checkin", section: "Problem", label: "Check-in problem message", kind: "text", properties: TEXT },
   { id: "checkin.failure.button", page: "checkin", section: "Problem", label: "Check-in problem button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
   { id: "bonus.result.body", page: "bonus", section: "Result", label: "Bonus result message", kind: "text", properties: TEXT },
+  { id: "bonus.result.icon", page: "bonus", section: "Result", label: "Bonus result icon", kind: "icon", properties: ICON },
+  { id: "bonus.result.kicker", page: "bonus", section: "Result", label: "Bonus result label", kind: "text", properties: TEXT },
+  { id: "bonus.result.status", page: "bonus", section: "Result", label: "Bonus points total", kind: "text", properties: TEXT },
   { id: "bonus.result.button", page: "bonus", section: "Result", label: "Bonus result button", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "bonus.failure.heading", page: "bonus", section: "Problem", label: "Bonus problem heading", kind: "text", properties: TEXT },
   { id: "bonus.failure.body", page: "bonus", section: "Problem", label: "Bonus problem message", kind: "text", properties: TEXT },
   { id: "bonus.failure.button", page: "bonus", section: "Problem", label: "Bonus problem button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "template" },
   { id: "tasting.result.body", page: "tasting", section: "Result", label: "Tasting result message", kind: "text", properties: TEXT },
+  { id: "tasting.result.icon", page: "tasting", section: "Result", label: "Tasting result icon", kind: "icon", properties: ICON },
+  { id: "tasting.result.kicker", page: "tasting", section: "Result", label: "Tasting result label", kind: "text", properties: TEXT },
+  { id: "tasting.result.status", page: "tasting", section: "Result", label: "Tasting points total", kind: "text", properties: TEXT },
   { id: "tasting.result.button", page: "tasting", section: "Result", label: "Tasting result button", kind: "button", properties: BUTTON, states: INTERACTIVE },
   { id: "tasting.failure.heading", page: "tasting", section: "Problem", label: "Tasting problem heading", kind: "text", properties: TEXT },
   { id: "tasting.failure.body", page: "tasting", section: "Problem", label: "Tasting problem message", kind: "text", properties: TEXT },
