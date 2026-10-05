@@ -90,7 +90,8 @@ export type PublicStyleElementDefinition = {
 };
 
 const TEXT = ["color", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
-const BUTTON = ["backgroundColor", "color", "borderColor", "iconColor", "iconBackgroundColor", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
+const BUTTON = ["backgroundColor", "color", "borderColor", "iconColor", "fontFamily", "fontSize", "fontWeight", "lineHeight", "textAlign"] as const;
+const NAVIGATION_BUTTON = [...BUTTON, "iconBackgroundColor"] as const;
 const SURFACE = ["backgroundColor", "borderColor", "opacity", "backgroundGradient"] as const;
 const ICON = ["iconColor", "iconBackgroundColor", "borderColor"] as const;
 const PROGRESS = ["progressTrackColor", "progressFillColor"] as const;
@@ -99,8 +100,8 @@ const INTERACTIVE = ["hover", "focus", "active", "disabled"] as const;
 
 export const PUBLIC_STYLE_ELEMENTS = [
   { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
-  { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
-  { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
+  { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
+  { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.drawer", page: "shared", section: "Navigation", label: "Menu drawer", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.surface", page: "shared", section: "Announcements", label: "Announcement bar", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.text", page: "shared", section: "Announcements", label: "Announcement text", kind: "text", properties: TEXT },

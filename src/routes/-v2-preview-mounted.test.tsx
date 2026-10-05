@@ -192,10 +192,22 @@ describe("Map pin resolver (shared by MapKit annotations and preview marker)", (
     expect(annotation).toEqual({ color: "#555555", glyphColor: "#333333" });
     applyMapMarkerSelection(annotation, normal, false);
     expect(annotation).toEqual({ color: "#111111", glyphColor: "#222222" });
-    const { container } = render(<><MapMarkerGlyph style={normal} /><MapMarkerGlyph style={normal} selected /><MapMarkerGlyph style={visited} /></>);
-    expect(Array.from(container.querySelectorAll<HTMLElement>("[data-marker-color]")).map((el) => [el.dataset.markerState, el.dataset.markerColor])).toEqual([
-      ["default", "#111111"], ["selected", "#555555"], ["visited", "#111111"],
-    ]);
+    const { container } = render(<PublicStyleScope overrides={doc} eventId="e"><MapMarkerGlyph style={normal} recordId="venue-a" /></PublicStyleScope>);
+    const target = container.querySelector<HTMLElement>('[data-brand-role="map.marker"]')!;
+    const paint = target.querySelector<HTMLElement>("[data-marker-paint]")!;
+    expect(target.dataset.brandInstance).toBe("map.marker@venue-a");
+    expect(target.dataset.eventRecord).toBe("venue-a");
+    expect(target.style.backgroundColor).toBe("#111111");
+    expect(paint.style.backgroundColor).toContain("--item-icon-bg");
+    expect(paint.style.color).toContain("--item-icon-color");
+    target.dataset.previewState = "active";
+    expect(Array.from(container.querySelectorAll("style")).map((node) => node.textContent).join("\n")).toContain('[data-preview-state="active"]');
+    expect(getComputedStyle(target).backgroundColor).toBe("#555555");
+    expect(getComputedStyle(target).getPropertyValue("--item-icon-color").trim()).toBe("#333333");
+    delete target.dataset.previewState;
+    expect(getComputedStyle(target).backgroundColor).toBe("#111111");
+    const v1 = render(<PublicStyleScope enabled={false} overrides={doc} eventId="e"><MapMarkerGlyph style={normal} recordId="venue-a" /></PublicStyleScope>);
+    expect(v1.container.querySelector("[data-event-style], [data-brand-role]")).toBeNull();
   });
 });
 
