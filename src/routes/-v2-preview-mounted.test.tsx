@@ -344,6 +344,16 @@ describe("Special Offers V2 targets", () => {
     expect(badge("venue-image").style.backgroundColor).toBe("#FFEEDD");
     expect(badge("venue-image").style.borderColor).toBe("#102030");
     expect(badge("venue-image").style.getPropertyValue("--item-icon-color")).toBe("#010203");
+    cleanup();
+    const noImg = offers.map((o) => ({ ...o, cover_path: null, logo_path: null }));
+    const shared = { version: 1, items: { "offers.card.placeholderIcon": { normal: { iconColor: "#334455", iconBackgroundColor: "#CCDDEE", borderColor: "#203040" } } }, records: {} } as never;
+    const r2 = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, v2_style_config: shared }, offers: noImg }} />, "/offers"));
+    for (const v of ["venue-no-image", "venue-image"]) {
+      const icon = r2.container.querySelector<HTMLElement>(`[data-brand-instance="offers.card.placeholderIcon@${v}"]`)!;
+      expect(icon.style.backgroundColor).toBe("#CCDDEE");
+      expect(icon.style.borderColor).toBe("#203040");
+      expect(icon.style.getPropertyValue("--item-icon-color")).toBe("#334455");
+    }
   });
 
   it("does not emit selectable offer targets for V1", () => {
