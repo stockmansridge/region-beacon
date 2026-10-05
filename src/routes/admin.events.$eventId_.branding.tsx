@@ -2516,7 +2516,9 @@ function VisualBrandingEditor({
   const pageState = pageStates.find(([key]) => key === pageStateChoice[previewPage])?.[0] ?? pageStates[0]?.[0] ?? "";
   const previewOffers = listVenues.filter((venue) => venue.offer_summary).map((venue) => ({
     ...venue,
-    ...(pageState === "no_image" && venue.venue_id === selectedOffer?.venue_id ? { cover_path: null, logo_path: null } : {}),
+    // "No image" sample state applies to every offer card so "Every venue" edits
+    // to no-image targets are visible on all cards, not only the selected one.
+    ...(pageState === "no_image" ? { cover_path: null, logo_path: null } : {}),
     offer_summary: venue.offer_summary as string,
   })) as OfferVenue[];
   const realFaq = publicContent?.faq ?? [];

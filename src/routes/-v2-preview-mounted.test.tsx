@@ -332,6 +332,30 @@ describe("Special Offers V2 targets", () => {
     expect(container.querySelector('[data-brand-instance="offers.card.placeholder@venue-image"]')).toBeNull();
   });
 
+  it("type default paints every venue; a record override wins only for its venue", () => {
+    const overrides = { version: 1, items: {
+      "offers.card.badge": { normal: { iconColor: "#010203", iconBackgroundColor: "#AABBCC", borderColor: "#102030" } },
+    }, records: { "offers.card.badge": { "venue-image": { normal: { iconBackgroundColor: "#FFEEDD" } } } } } as never;
+    const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, v2_style_config: overrides }, offers }} />, "/offers"));
+    const badge = (v: string) => container.querySelector<HTMLElement>(`[data-brand-instance="offers.card.badge@${v}"]`)!;
+    expect(badge("venue-no-image").style.backgroundColor).toBe("#AABBCC");
+    expect(badge("venue-no-image").style.borderColor).toBe("#102030");
+    expect(badge("venue-no-image").style.getPropertyValue("--item-icon-color")).toBe("#010203");
+    expect(badge("venue-image").style.backgroundColor).toBe("#FFEEDD");
+    expect(badge("venue-image").style.borderColor).toBe("#102030");
+    expect(badge("venue-image").style.getPropertyValue("--item-icon-color")).toBe("#010203");
+    cleanup();
+    const noImg = offers.map((o) => ({ ...o, cover_path: null, logo_path: null }));
+    const shared = { version: 1, items: { "offers.card.placeholderIcon": { normal: { iconColor: "#334455", iconBackgroundColor: "#CCDDEE", borderColor: "#203040" } } }, records: {} } as never;
+    const r2 = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, v2_style_config: shared }, offers: noImg }} />, "/offers"));
+    for (const v of ["venue-no-image", "venue-image"]) {
+      const icon = r2.container.querySelector<HTMLElement>(`[data-brand-instance="offers.card.placeholderIcon@${v}"]`)!;
+      expect(icon.style.backgroundColor).toBe("#CCDDEE");
+      expect(icon.style.borderColor).toBe("#203040");
+      expect(icon.style.getPropertyValue("--item-icon-color")).toBe("#334455");
+    }
+  });
+
   it("does not emit selectable offer targets for V1", () => {
     const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...event, public_template_version: null }, offers }} />, "/offers"));
     expect(container.querySelector("[data-brand-role^='offers.card.']")).toBeNull();
