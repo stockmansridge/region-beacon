@@ -95,7 +95,7 @@ describe("V2 Venues / Offers toggle", () => {
   });
 
   it("sanitizes labels and rejects unknown item slots", () => {
-    const checked = validatePublicStyleOverrides({ version: 1, items: {}, records: { "shared.trailTabs.tab": { unknown: { normal: { color: "#112233" } } } }, trailTabs: { labels: { venues: "<Trail   Stops>", unknown: "Bad" } } });
+    const checked = validatePublicStyleOverrides({ version: 1, items: {}, records: { "shared.trailTabs.tab": { unknown: { normal: { color: "#112233" } } } }, trailTabs: { labels: { venues: "This label is much too long for the toggle", unknown: "Bad" } } });
     expect(checked.errors.some((error) => error.includes("trailTabs.labels.venues"))).toBe(true);
     expect(checked.errors.some((error) => error.includes("trailTabs.labels.unknown"))).toBe(true);
     expect(checked.document.records?.["shared.trailTabs.tab"]?.unknown).toBeUndefined();
