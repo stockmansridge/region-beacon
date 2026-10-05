@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { usePublicStyleTarget } from "@/components/public-style-scope";
 
 /** Compact promo card that links to the Prizes page with the Bonus Points tab open. */
-export function BonusPointsPromo({ subdomain }: { subdomain?: string | null }) {
+export function BonusPointsPromo({ subdomain, preview = false }: { subdomain?: string | null; preview?: boolean }) {
   const surfaceStyle = usePublicStyleTarget("home.bonusPromo.surface", { selectable: true });
   const iconStyle = usePublicStyleTarget("home.bonusPromo.icon", { selectable: true });
   const headingStyle = usePublicStyleTarget("home.bonusPromo.heading", { selectable: true });
@@ -21,6 +21,7 @@ export function BonusPointsPromo({ subdomain }: { subdomain?: string | null }) {
     <AnyLink
       {...linkProps}
       {...surfaceStyle}
+      {...(preview ? { onClick: (e: React.MouseEvent) => e.preventDefault() } : {})}
       style={surfaceStyle.style}
       className="group flex items-center gap-3 rounded-2xl border border-[var(--event-card-border,var(--event-border,#E6DCC7))] bg-gradient-to-br from-[var(--event-primary,#1F3D2B)] to-[var(--event-primary,#1F3D2B)]/85 px-4 py-3 text-[var(--event-primary-fg,#FFF)] shadow-sm transition-transform hover:-translate-y-0.5"
     >

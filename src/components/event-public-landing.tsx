@@ -12,7 +12,25 @@ import { CollectPointsSection } from "@/components/collect-points-section";
 import { PassportStampGrid } from "@/components/passport-stamp-grid";
 import { NextRewardCard } from "@/components/next-reward-card";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
-import { WhatsHappeningCard } from "@/components/whats-happening-card";
+import { WhatsHappeningCard, type HappeningPayload } from "@/components/whats-happening-card";
+import type { PublicEventAward } from "@/lib/event-awards";
+
+const SAMPLE_PREVIEW_AWARD = {
+  id: "preview-sample-award",
+  title: "Sample prize (preview only)",
+  description: "Add prizes in the Prizes tab to show your real next prize here.",
+  image_url: null,
+  points_required: 10,
+  requires_all_locations: false,
+  eligible_count: 0,
+  passport_points: 0,
+  passport_visited_count: 0,
+  event_venue_count: 0,
+  is_eligible: false,
+  points_remaining: 10,
+  needs_all_locations: false,
+  sort_order: 0,
+} as unknown as PublicEventAward;
 import { BonusPointsPromo } from "@/components/bonus-points-promo";
 import { RingConfetti } from "@/components/ring-confetti";
 import { LiveActivityBar } from "@/components/live-activity-bar";
@@ -211,6 +229,29 @@ export function EventPublicLanding({
   const venueLabels = resolveVenueLabels(event);
   const firstName = useFirstNameFromPassportHref(isEditorPreview ? null : passportHref);
   const homeData = usePassportHomeData(isEditorPreview ? null : event.event_id);
+  // Editor preview samples. The preview makes no network calls (enforced by
+  // the mounted preview checks), so a clearly labelled sample prize is used.
+  const previewAwards = useMemo<PublicEventAward[]>(() => {
+    const base = [SAMPLE_PREVIEW_AWARD];
+    // Show a partially-complete progress bar so track and fill are both editable.
+    return base.map((a) => {
+      const req = Math.max(1, a.points_required || 1);
+      const have = Math.floor(req * 0.6);
+      return { ...a, passport_points: have, points_remaining: req - have, is_eligible: false };
+    });
+  }, []);
+  const previewHappening = useMemo<HappeningPayload>(() => {
+    const now = Date.now();
+    const venueName = venues[0]?.name ?? "Sample venue";
+    return {
+      recent_checkins: [
+        { first_name: "Sample visitor", last_initial: null, venue_name: venueName, happened_at: new Date(now - 4 * 60000).toISOString() },
+      ],
+      explorers_today: 3,
+      recent_bonus: [],
+      recent_prize_unlocks: [],
+    };
+  }, [venues]);
   const isAdminPreview =
     mode === "preview" ||
     (typeof window !== "undefined" &&
@@ -843,9 +884,11 @@ export function EventPublicLanding({
               venueLabelPlural={venueLabels.plural}
               canRegister={canRegister}
             />
-            {!isEditorPreview ? <BonusPointsPromo subdomain={subdomain} /> : null}
-            {!isEditorPreview ? <WhatsHappeningCard subdomain={subdomain} /> : null}
-            {!isEditorPreview ? <NextRewardCard eventId={event.event_id} /> : null}
+            {/* Editor preview mounts the same components with safe, read-only
+                sample state (no visitor passport, no polling, no navigation). */}
+            <BonusPointsPromo subdomain={subdomain} preview={isEditorPreview} />
+            <WhatsHappeningCard subdomain={subdomain} previewData={isEditorPreview ? previewHappening : null} />
+            <NextRewardCard eventId={event.event_id} previewAwards={isEditorPreview ? previewAwards : null} />
 
             <section className="flex flex-col gap-3">
               <PublicLink

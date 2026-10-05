@@ -2,6 +2,7 @@ import { PublicLink } from "@/components/public-nav-context";
 
 import { Gift } from "lucide-react";
 import { usePassportHomeData, pickNextReward } from "@/lib/use-passport-home-data";
+import type { PublicEventAward } from "@/lib/event-awards";
 import { usePublicStyleTarget } from "@/components/public-style-scope";
 
 /**
@@ -9,12 +10,22 @@ import { usePublicStyleTarget } from "@/components/public-style-scope";
  * Hidden entirely when no awards are configured — never shows synthetic
  * Bronze/Silver/Gold tiers.
  */
-export function NextRewardCard({ eventId }: { eventId: string | null }) {
+export function NextRewardCard({
+  eventId,
+  previewAwards,
+}: {
+  eventId: string | null;
+  /** Editor preview only: awards to show without loading a visitor passport. */
+  previewAwards?: PublicEventAward[] | null;
+}) {
   const cardStyle = usePublicStyleTarget("home.nextPrize.surface", { selectable: true });
   const iconStyle = usePublicStyleTarget("home.nextPrize.icon", { selectable: true });
   const headingStyle = usePublicStyleTarget("home.nextPrize.heading", { selectable: true });
   const progressStyle = usePublicStyleTarget("home.nextPrize.progress", { selectable: true });
-  const data = usePassportHomeData(eventId);
+  const live = usePassportHomeData(previewAwards ? null : eventId);
+  const data = previewAwards
+    ? { ...live, loading: false, hasPassport: true, awards: previewAwards }
+    : live;
   if (data.loading) return null;
   const next = pickNextReward(data.awards) ?? data.awards[0];
   if (!next) return null;
