@@ -585,7 +585,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
                   className="flex items-center justify-between rounded-2xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] px-4 py-3 text-sm font-medium text-[var(--event-primary,#1F3D2B)] shadow-sm transition hover:border-[var(--event-primary,#1F3D2B)]/40"
                 >
                   <span>Get directions</span>
-                  <span aria-hidden>↗</span>
+                  <span aria-hidden style={{ color: "var(--item-icon-color,currentColor)" }}>↗</span>
                 </a></PublicStyleTarget>
               ) : null;
             })()}
