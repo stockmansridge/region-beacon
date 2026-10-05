@@ -88,10 +88,14 @@ type State =
   | { kind: "not_found" }
   | { kind: "ready"; event: EventRow | null; offers: OfferVenue[] };
 
-export function PublicOffersPage({ subdomain }: { subdomain: string }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
+export function PublicOffersPage({ subdomain, previewData }: { subdomain: string; previewData?: { event: EventRow; offers: OfferVenue[] } }) {
+  const [state, setState] = useState<State>(() => previewData ? { kind: "ready", ...previewData } : { kind: "loading" });
 
   useEffect(() => {
+    if (previewData) {
+      setState({ kind: "ready", ...previewData });
+      return;
+    }
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
@@ -131,7 +135,7 @@ export function PublicOffersPage({ subdomain }: { subdomain: string }) {
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewData]);
 
   if (state.kind === "loading") {
     return (

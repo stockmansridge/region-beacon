@@ -125,13 +125,15 @@ export function PublicVenuesListPage({
   subdomain,
   sort = "az",
   onSortChange,
+  previewData,
 }: {
   subdomain: string;
   /** Display-only sort key (from the route's ?sort= param). */
   sort?: VenueSortKey;
   onSortChange?: (next: VenueSortKey) => void;
+  previewData?: { event: EventRow; venues: VenueRow[] };
 }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
+  const [state, setState] = useState<State>(() => previewData ? { kind: "ready", ...previewData } : { kind: "loading" });
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [hasPassport, setHasPassport] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
@@ -173,6 +175,10 @@ export function PublicVenuesListPage({
   };
 
   useEffect(() => {
+    if (previewData) {
+      setState({ kind: "ready", ...previewData });
+      return;
+    }
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
@@ -218,7 +224,7 @@ export function PublicVenuesListPage({
     return () => {
       cancelled = true;
     };
-  }, [subdomain]);
+  }, [subdomain, previewData]);
 
   if (state.kind === "loading") {
     return (

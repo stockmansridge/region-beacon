@@ -97,8 +97,11 @@ type BonusChallenge = {
   social_hashtags?: string | null;
 };
 
-export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: string; venueId: string }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
+export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { subdomain: string; venueId: string; previewData?: { event: EventBrand; venue: VenueRow } }) {
+  const [state, setState] = useState<State>(() => previewData ? {
+    kind: "ready", venue: previewData.venue, eventId: previewData.event.event_id ?? null,
+    eventName: previewData.event.name ?? null, eventLogoPath: previewData.event.logo_path ?? null, brand: previewData.event,
+  } : { kind: "loading" });
   const [visited, setVisited] = useState<VisitedState>({ kind: "none" });
   const [bonusChallenges, setBonusChallenges] = useState<BonusChallenge[]>([]);
   const [extras, setExtras] = useState<{
@@ -111,6 +114,12 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
 
 
   useEffect(() => {
+    if (previewData) {
+      setState({ kind: "ready", venue: previewData.venue, eventId: previewData.event.event_id ?? null, eventName: previewData.event.name ?? null, eventLogoPath: previewData.event.logo_path ?? null, brand: previewData.event });
+      setVisited({ kind: "not_visited" });
+      setBonusChallenges([]);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setState({ kind: "loading" });
@@ -201,7 +210,7 @@ export function PublicVenueDetailPage({ subdomain, venueId }: { subdomain: strin
     return () => {
       cancelled = true;
     };
-  }, [subdomain, venueId]);
+  }, [subdomain, venueId, previewData]);
 
   // Lazy-load the emotive script font (venue override → event default →
   // platform default). Safe idempotent link injection.
