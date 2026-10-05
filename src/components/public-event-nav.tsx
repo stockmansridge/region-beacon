@@ -33,7 +33,7 @@ import { useEventHasAwards } from "@/lib/use-event-has-awards";
 import { useEventVenueLabels } from "@/lib/use-event-venue-labels";
 import { useEventCustomLink } from "@/lib/use-event-custom-link";
 import { usePageViewTracking } from "@/lib/use-page-view-tracking";
-import { usePublicStyleTarget } from "@/components/public-style-scope";
+import { usePublicStyleEnabled, usePublicStyleTarget } from "@/components/public-style-scope";
 import type { VenueLabels } from "@/lib/venue-labels";
 
 type ActiveTarget =
@@ -102,6 +102,7 @@ export function PublicEventNav({
 }) {
   const previewNav = usePublicNav();
   const isPreview = previewNav.mode === "preview";
+  const isV2Style = usePublicStyleEnabled();
   const navigationSurface = usePublicStyleTarget("shared.navigation.surface", { selectable: brandingSelection });
   const navigationItem = usePublicStyleTarget("shared.navigation.item", { selectable: brandingSelection });
   const navigationActiveItem = usePublicStyleTarget("shared.navigation.activeItem", { selectable: brandingSelection });
@@ -391,7 +392,7 @@ export function PublicEventNav({
             >
               <BottomItemContent
                 icon={<MapPin className="h-5 w-5" />}
-                label={venueLabels.plural}
+                {...(isV2Style ? { label: venueLabels.plural } : { label: "Cellar", subLabel: "DOORS" })}
               />
             </PublicLink>
           </li>

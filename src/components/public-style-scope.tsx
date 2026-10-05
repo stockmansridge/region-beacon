@@ -22,6 +22,11 @@ export function usePublicStyleTarget(
     : { style: {} };
 }
 
+/** True only inside an explicit V2 style scope (V1 pages never see one). */
+export function usePublicStyleEnabled() {
+  return useContext(PublicStyleContext).enabled;
+}
+
 /**
  * V2-only item style scope. Emitted CSS is confined to this instance's unique
  * root attribute so two event scopes in one document cannot affect each other.
