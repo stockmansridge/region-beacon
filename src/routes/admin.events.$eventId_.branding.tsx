@@ -480,12 +480,12 @@ function brandingToForm(b: Branding | null): Form {
  * form) and for the saved baseline (brandingToV2Form(saved branding)), so the
  * saved view can never pick up unsaved edits or miss a field.
  */
-function formToPreviewEvent(
+export function formToPreviewEvent(
   event: { id: string; name: string; public_slug?: string | null; description?: string | null },
   branding: Branding | null,
   form: Form,
   publicBase?: Record<string, unknown> | null,
-): PublicEventData & { public_template_version?: string | null; v2_style_config?: PublicStyleOverrideDocument | null } {
+): PublicEventData & { public_template_version?: string | null; v2_style_config?: PublicStyleOverrideDocument | null; default_emotive_font_family?: string | null } {
   const orNullHex = (v: string) => (v.trim() ? v.trim() : null);
   return {
     ...(publicBase ?? {}),
