@@ -480,7 +480,7 @@ function V2BottomItem({ item, active, passportHref, passportTarget, onMore, sele
   const content = <BottomItemContent icon={NAV_ICONS[item.icon]} label={item.label} />;
   if (item.id === "more") return <li className="h-full min-w-0"><button {...props} type="button" aria-label={item.label} onClick={onMore}>{content}</button></li>;
   if (item.id === "passport" && passportHref) return <li className="h-full min-w-0"><a {...props} href={passportTarget} aria-label={item.label}>{content}</a></li>;
-  const to = item.id === "passport" ? "/join" : `/${item.id}`;
+  const to: string = item.id === "passport" ? "/join" : `/${item.id}`;
   return <li className="h-full min-w-0"><PublicLink {...props} to={to}>{content}</PublicLink></li>;
 }
 

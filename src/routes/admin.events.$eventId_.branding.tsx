@@ -86,6 +86,8 @@ import {
 } from "@/lib/event-brand-kits";
 import {
   PUBLIC_STYLE_ELEMENTS,
+  DEFAULT_PUBLIC_NAVIGATION,
+  PUBLIC_NAV_ICON_IDS,
   emptyPublicStyleOverrides,
   parsePublicStyleOverrides,
   resolvePublicTemplateVersion,
@@ -95,6 +97,7 @@ import {
   type PublicStyleElementDefinition,
   type PublicStyleOverrideDocument,
   type PublicStyleProperty,
+  type PublicNavIconId,
   type PublicV2ThemeKey,
 } from "@/lib/public-style-overrides";
 
@@ -2291,6 +2294,19 @@ function VisualBrandingEditor({
     });
   };
 
+  const navItems = form.style_overrides.navigation?.items ?? DEFAULT_PUBLIC_NAVIGATION.items;
+  const updateNavigation = (items: typeof navItems) => updateStyleDocument((next) => ({ ...next, navigation: { items: [...items] } }));
+  const updateNavigationItem = (id: string, patch: { label?: string; icon?: PublicNavIconId }) =>
+    updateNavigation(navItems.map((item) => item.id === id ? { ...item, ...patch } : item));
+  const moveNavigationItem = (id: string, direction: -1 | 1) => {
+    const index = navItems.findIndex((item) => item.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= navItems.length) return;
+    const next = [...navItems];
+    [next[index], next[target]] = [next[target], next[index]];
+    updateNavigation(next);
+  };
+
   // Keyboard: Ctrl/Cmd+Z undo, Shift+Ctrl/Cmd+Z or Ctrl+Y redo, Escape clears selection.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -2614,6 +2630,13 @@ function VisualBrandingEditor({
             disabled={!canEdit || busy || comparisonReadOnly} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
             record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope } : null}
           /> : null}
+          {itemMeta?.id === "shared.navigation.tabItem" ? <NavigationMenuInspector
+            items={navItems} selectedId={selectedRecord} disabled={!canEdit || busy || comparisonReadOnly}
+            select={(id) => { setSelectedRecord(id); setRecordScope("record"); }}
+            rename={(id, label) => updateNavigationItem(id, { label })}
+            changeIcon={(id, icon) => updateNavigationItem(id, { icon })}
+            move={moveNavigationItem}
+          /> : null}
           {roleMeta && panelRole ? <div className={itemMeta ? "mt-6 border-t pt-4" : ""}>
             <div className="flex items-start justify-between gap-3"><div>{itemMeta ? <div className="text-xs font-semibold uppercase text-muted-foreground">Shared settings for this area</div> : null}<h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description} {itemMeta ? "These affect every item that uses them." : ""}</p></div>{!itemMeta ? <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button> : null}</div>
             <div className="mt-5 space-y-5">
@@ -2636,6 +2659,22 @@ function VisualBrandingEditor({
       </div>
     </div>
   );
+}
+
+function NavigationMenuInspector({ items, selectedId, disabled, select, rename, changeIcon, move }: {
+  items: typeof DEFAULT_PUBLIC_NAVIGATION.items; selectedId: string | null; disabled: boolean;
+  select: (id: string) => void; rename: (id: string, label: string) => void;
+  changeIcon: (id: string, icon: PublicNavIconId) => void; move: (id: string, direction: -1 | 1) => void;
+}) {
+  const selected = items.find((item) => item.id === selectedId) ?? items[0];
+  if (!selected) return null;
+  return <div className="mt-5 space-y-4 border-t pt-4">
+    <Field label="Bottom mobile menu item"><Select value={selected.id} onValueChange={select} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{items.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}</SelectContent></Select></Field>
+    <Field label="Display name"><input aria-label="Bottom menu display name" maxLength={24} value={selected.label} disabled={disabled} onChange={(event) => { const label = event.target.value.slice(0, 24); if (label.trim()) rename(selected.id, label); }} className="h-10 w-full rounded-md border bg-background px-3 text-sm" /></Field>
+    <Field label="Icon"><Select value={selected.icon} onValueChange={(value) => changeIcon(selected.id, value as PublicNavIconId)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{PUBLIC_NAV_ICON_IDS.map((icon) => <SelectItem key={icon} value={icon}>{icon.replace(/(^|-)(\w)/g, (_, __, letter: string) => ` ${letter.toUpperCase()}`).trim()}</SelectItem>)}</SelectContent></Select></Field>
+    <div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={disabled || items[0]?.id === selected.id} onClick={() => move(selected.id, -1)}>Move up</Button><Button type="button" variant="outline" size="sm" disabled={disabled || items.at(-1)?.id === selected.id} onClick={() => move(selected.id, 1)}>Move down</Button></div>
+    <p className="text-xs text-muted-foreground">Order and names affect display only. Each item keeps its fixed, safe destination.</p>
+  </div>;
 }
 
 /** Item → the shared Theme panel that also controls it (shown below the item inspector). */
