@@ -39,27 +39,31 @@ type PublicNavContextValue = {
   subdomain: string | null;
   /** Tooltip shown on inert links in preview mode. */
   disabledTitle: string;
+  preservePreviewAppearance: boolean;
 };
 
 const PublicNavContext = createContext<PublicNavContextValue>({
   mode: "live",
   subdomain: null,
   disabledTitle: "",
+  preservePreviewAppearance: false,
 });
 
 export function PublicNavProvider({
   mode,
   subdomain,
   disabledTitle = "Publish the event with a public address to open this page",
+  preservePreviewAppearance = false,
   children,
 }: {
   mode: PublicNavMode;
   subdomain: string | null;
   disabledTitle?: string;
+  preservePreviewAppearance?: boolean;
   children: ReactNode;
 }) {
   return (
-    <PublicNavContext.Provider value={{ mode, subdomain, disabledTitle }}>
+    <PublicNavContext.Provider value={{ mode, subdomain, disabledTitle, preservePreviewAppearance }}>
       {children}
     </PublicNavContext.Provider>
   );
@@ -170,7 +174,7 @@ export function PublicLink({
   children: ReactNode;
   onClick?: () => void;
 } & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "onClick">) {
-  const { mode, subdomain, disabledTitle } = usePublicNav();
+  const { mode, subdomain, disabledTitle, preservePreviewAppearance } = usePublicNav();
   const base = useEventNavBase();
 
   if (mode === "live") {
@@ -189,7 +193,7 @@ export function PublicLink({
     return (
       <span
         {...rest}
-        style={{ ...rest.style, cursor: "not-allowed", opacity: 0.6 }}
+        style={{ ...rest.style, cursor: "not-allowed", ...(preservePreviewAppearance ? {} : { opacity: 0.6 }) }}
         title={disabledTitle}
         aria-disabled="true"
       >

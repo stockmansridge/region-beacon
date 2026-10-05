@@ -1,4 +1,4 @@
-import type { CSSProperties, HTMLAttributes } from "react";
+import type { CSSProperties } from "react";
 
 export const PUBLIC_STYLE_DOCUMENT_VERSION = 1 as const;
 
@@ -303,7 +303,13 @@ export function publicStyleTarget(
   document: PublicStyleOverrideDocument | null | undefined,
   id: PublicStyleElementId,
   options?: { recordId?: string | null; selectable?: boolean },
-): HTMLAttributes<HTMLElement> {
+): {
+  "data-event-style": string;
+  "data-event-record"?: string;
+  "data-brand-role"?: string;
+  "data-brand-instance"?: string;
+  style: CSSProperties;
+} {
   const item = publicStyleItem(document, id, options?.recordId);
   const normal = item?.normal;
   const variables: CSSProperties = {
@@ -317,14 +323,7 @@ export function publicStyleTarget(
     ...(options?.recordId ? { "data-event-record": options.recordId } : {}),
     ...(options?.selectable ? { "data-brand-role": id, "data-brand-instance": options.recordId ?? id } : {}),
     style: { ...standardStyle(normal), ...variables },
-  } as HTMLAttributes<HTMLElement>;
-}
-
-export function mergePublicStyleTarget(
-  baseStyle: CSSProperties | undefined,
-  target: HTMLAttributes<HTMLElement>,
-): HTMLAttributes<HTMLElement> {
-  return { ...target, style: { ...baseStyle, ...target.style } };
+  };
 }
 
 export function publicStyleCss(document: PublicStyleOverrideDocument | null | undefined): string {
@@ -334,7 +333,7 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
     const style = standardStyle(properties) as Record<string, string | number | undefined>;
     const pairs = Object.entries(style).map(([key, value]) => {
       const cssKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-      return `${cssKey}:${typeof value === "number" && key === "fontSize" ? `${value}px` : value}`;
+      return `${cssKey}:${typeof value === "number" && key === "fontSize" ? `${value}px` : value}!important`;
     });
     if (properties.progressTrackColor) pairs.push(`--item-progress-track:${properties.progressTrackColor}`);
     if (properties.progressFillColor) pairs.push(`--item-progress-fill:${properties.progressFillColor}`);
@@ -343,7 +342,10 @@ export function publicStyleCss(document: PublicStyleOverrideDocument | null | un
     return pairs.join(";");
   };
   const add = (selector: string, item: PublicStyleItemOverride) => {
-    if (item.normal) rules.push(`${selector}{${declaration(item.normal)}}`);
+    if (item.normal) {
+      rules.push(`${selector}{${declaration(item.normal)}}`);
+      if (item.normal.iconColor) rules.push(`${selector} svg{color:${item.normal.iconColor}!important;stroke:${item.normal.iconColor}!important}`);
+    }
     for (const [state, properties] of Object.entries(item.states ?? {})) {
       if (properties) rules.push(`${selector}:${state}{${declaration(properties)}}`);
     }

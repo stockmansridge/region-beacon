@@ -285,6 +285,7 @@ function EventPreview() {
       hero_overlay_color: branding?.hero_overlay_color ?? null,
       hero_overlay_opacity: branding?.hero_overlay_opacity ?? null,
       brand_kit_key: branding?.brand_kit_key ?? null,
+      style_overrides: branding?.style_overrides ?? null,
     } satisfies PublicEventData;
 
     // Same palette derivation the public loader applies to the RPC row.

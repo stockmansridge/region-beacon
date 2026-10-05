@@ -5,11 +5,11 @@ Review-only additive change. Nothing in this directory has been applied.
 ## Apply order
 
 1. Apply `01_event_branding_style_overrides.sql`.
-2. Recreate the current production `get_public_event_by_domain(text)` and `get_public_event_by_agency_and_slug(text,text)` definitions with `style_overrides jsonb` appended to each return table and `b.style_overrides` appended to each SELECT.
-3. Restore `REVOKE ALL FROM public` and `GRANT EXECUTE TO anon, authenticated` on both functions.
+2. Apply `02_public_style_override_reads.sql`. It follows the existing companion-RPC pattern and does not recreate either wide event RPC.
+3. Confirm `REVOKE ALL FROM public` and `GRANT EXECUTE TO anon, authenticated` on both companion functions.
 4. Verify admin update/select under existing event-scoped RLS and anonymous RPC reads for two events.
 
-The RPC definitions are intentionally not copied here until the exact production definitions are confirmed. Existing draft directories contain several historical, mutually overwriting versions; applying a stale full definition would remove newer fields.
+The wide RPC definitions are intentionally not copied or replaced. Existing draft directories contain several historical, mutually overwriting versions; applying a stale definition would remove newer fields.
 
 ## Compatibility
 

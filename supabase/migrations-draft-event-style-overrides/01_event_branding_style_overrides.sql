@@ -7,20 +7,24 @@ begin;
 alter table public.event_branding
   add column if not exists style_overrides jsonb;
 
-alter table public.event_branding
-  drop constraint if exists event_branding_style_overrides_shape;
-
-alter table public.event_branding
-  add constraint event_branding_style_overrides_shape check (
-    style_overrides is null
-    or (
-      jsonb_typeof(style_overrides) = 'object'
-      and style_overrides->>'version' = '1'
-      and jsonb_typeof(style_overrides->'items') = 'object'
-      and (style_overrides->'records' is null or jsonb_typeof(style_overrides->'records') = 'object')
-      and pg_column_size(style_overrides) <= 131072
-    )
-  );
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'event_branding_style_overrides_shape'
+  ) then
+    alter table public.event_branding
+      add constraint event_branding_style_overrides_shape check (
+        style_overrides is null
+        or (
+          jsonb_typeof(style_overrides) = 'object'
+          and style_overrides->>'version' = '1'
+          and jsonb_typeof(style_overrides->'items') = 'object'
+          and (style_overrides->'records' is null or jsonb_typeof(style_overrides->'records') = 'object')
+          and pg_column_size(style_overrides) <= 131072
+        )
+      );
+  end if;
+end $$;
 
 comment on column public.event_branding.style_overrides is
   'Sparse allowlisted public-passport item style overrides. Version 1. NULL preserves existing theme rendering.';

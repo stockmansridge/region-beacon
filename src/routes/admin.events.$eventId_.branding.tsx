@@ -1,4 +1,4 @@
-import { ChevronDown, Info, Monitor, Smartphone, X } from "lucide-react";
+import { ChevronDown, Info, Monitor, Redo2, Smartphone, Undo2, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -66,6 +66,15 @@ import {
   type BrandKitKey,
   getBrandKit,
 } from "@/lib/event-brand-kits";
+import {
+  PUBLIC_STYLE_ELEMENTS,
+  emptyPublicStyleOverrides,
+  parsePublicStyleOverrides,
+  type PublicStyleElementId,
+  type PublicStyleElementDefinition,
+  type PublicStyleOverrideDocument,
+  type PublicStyleProperty,
+} from "@/lib/public-style-overrides";
 
 export const Route = createFileRoute("/admin/events/$eventId_/branding")({
   validateSearch: z.object({ editor: z.enum(["v2"]).optional() }),
@@ -153,6 +162,7 @@ type Branding = {
   // Retained but no longer editable from the admin UI
   palette_key: string | null;
   page_background_key: string | null;
+  style_overrides?: PublicStyleOverrideDocument | null;
 };
 
 type Domain = {
@@ -228,6 +238,7 @@ type Form = {
   custom_link_label: string;
   custom_link_url: string;
   custom_link_enabled: boolean;
+  style_overrides: PublicStyleOverrideDocument;
 };
 
 type VisualBrandRole =
@@ -252,6 +263,8 @@ type VisualBrandRole =
   | "navActive"
   | "navMuted"
   | "links";
+
+type EditorSelection = VisualBrandRole | PublicStyleElementId;
 
 type ColourField = Extract<keyof Form,
   | "primary_color" | "accent_color" | "link_color"
@@ -359,6 +372,7 @@ const EMPTY_FORM: Form = {
   custom_link_label: "",
   custom_link_url: "",
   custom_link_enabled: false,
+  style_overrides: emptyPublicStyleOverrides(),
 };
 
 /** Form keys that, when edited, should flip brand_kit_key to "custom". */
@@ -426,6 +440,7 @@ function brandingToForm(b: Branding | null): Form {
     custom_link_label: b.custom_link_label ?? "",
     custom_link_url: b.custom_link_url ?? "",
     custom_link_enabled: Boolean(b.custom_link_enabled),
+    style_overrides: parsePublicStyleOverrides(b.style_overrides),
   };
 }
 
@@ -454,7 +469,7 @@ function BrandingEditor() {
   const [editorMode, setEditorMode] = useState<"classic" | "v2">(
     search.editor === "v2" ? "v2" : "classic",
   );
-  const [selectedRole, setSelectedRole] = useState<VisualBrandRole | null>(null);
+  const [selectedRole, setSelectedRole] = useState<EditorSelection | null>(null);
   const [previewWidth, setPreviewWidth] = useState<"mobile" | "desktop">("mobile");
   const [recentColours, setRecentColours] = useState<string[]>([]);
 
@@ -878,6 +893,7 @@ function BrandingEditor() {
       // on the public page, especially when the organiser selects Custom.
       palette_key: brandKitKey === "custom" ? "custom" : brandKitKey ? null : (branding?.palette_key ?? null),
       page_background_key: brandKitKey ? null : (branding?.page_background_key ?? null),
+      style_overrides: form.style_overrides,
     };
 
     const { data: existing } = await supabase
@@ -956,6 +972,7 @@ function BrandingEditor() {
     while (writeErr && guard < 12) {
       const col = unknownColumn(writeErr.message ?? "");
       if (!col || dropped.has(col)) break;
+      if (col === "style_overrides") break;
       console.warn("[branding-save] dropping unknown column and retrying", { col });
       dropped.add(col);
       missingCols.add(col);
@@ -1188,6 +1205,7 @@ function BrandingEditor() {
     card_heading_color: orNullHex(form.card_heading_color),
     card_body_color: orNullHex(form.card_body_color),
     card_muted_color: orNullHex(form.card_muted_color),
+    style_overrides: form.style_overrides,
   };
 
   const selectedKit = getBrandKit(form.brand_kit_key);
@@ -1877,8 +1895,8 @@ function VisualBrandingEditor({
   event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
   venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
   editColour: <K extends keyof Form>(key: K, value: Form[K]) => void;
-  theme: ReturnType<typeof resolveEventTheme>; selectedRole: VisualBrandRole | null;
-  setSelectedRole: (role: VisualBrandRole | null) => void; previewWidth: "mobile" | "desktop";
+  theme: ReturnType<typeof resolveEventTheme>; selectedRole: EditorSelection | null;
+  setSelectedRole: (role: EditorSelection | null) => void; previewWidth: "mobile" | "desktop";
   setPreviewWidth: (width: "mobile" | "desktop") => void; recentColours: string[];
   setRecentColours: React.Dispatch<React.SetStateAction<string[]>>; canEdit: boolean; saving: boolean;
   saveError: string | null; saveSuccess: string | null; hasUnsavedChanges: boolean;
@@ -1889,15 +1907,75 @@ function VisualBrandingEditor({
   onAssetUpload: (kind: EventAssetKind, file: File) => Promise<string | null>;
   onAssetRemove: (kind: EventAssetKind) => Promise<string | null>;
 }) {
-  const [hoveredRole, setHoveredRole] = useState<VisualBrandRole | null>(null);
+  const [hoveredRole, setHoveredRole] = useState<EditorSelection | null>(null);
+  const [stylePage, setStylePage] = useState("home");
+  const [styleState, setStyleState] = useState<"normal" | "hover" | "focus" | "active" | "disabled">("normal");
+  const [stylePast, setStylePast] = useState<PublicStyleOverrideDocument[]>([]);
+  const [styleFuture, setStyleFuture] = useState<PublicStyleOverrideDocument[]>([]);
   const previewRef = useRef<HTMLDivElement | null>(null);
-  const roleMeta = selectedRole ? VISUAL_ROLE_META[selectedRole] : null;
+  const sharedRole = selectedRole && selectedRole in VISUAL_ROLE_META ? selectedRole as VisualBrandRole : null;
+  const itemMeta = selectedRole ? PUBLIC_STYLE_ELEMENTS.find((item) => item.id === selectedRole) ?? null : null;
+  const roleMeta = sharedRole ? VISUAL_ROLE_META[sharedRole] : null;
   void primaryDomain; void eventId; void selectedKit; void agencyId;
 
   const selectFromEvent = (target: EventTarget | null) => {
     const element = target instanceof Element ? target.closest<HTMLElement>("[data-brand-role]") : null;
-    const role = element?.dataset.brandRole as VisualBrandRole | undefined;
-    if (role && role in VISUAL_ROLE_META) setSelectedRole(role);
+    const role = element?.dataset.brandRole;
+    if (role && (role in VISUAL_ROLE_META || PUBLIC_STYLE_ELEMENTS.some((item) => item.id === role))) {
+      setSelectedRole(role as EditorSelection);
+    }
+  };
+
+  const updateStyleDocument = (recipe: (draft: PublicStyleOverrideDocument) => PublicStyleOverrideDocument) => {
+    if (!canEdit || saving) return;
+    setForm((current) => {
+      const before = parsePublicStyleOverrides(current.style_overrides);
+      const next = parsePublicStyleOverrides(recipe(before));
+      setStylePast((history) => [...history.slice(-49), before]);
+      setStyleFuture([]);
+      return { ...current, style_overrides: next };
+    });
+  };
+
+  const undoStyle = () => {
+    const previous = stylePast.at(-1);
+    if (!previous) return;
+    setForm((current) => {
+      setStyleFuture((future) => [current.style_overrides, ...future].slice(0, 50));
+      return { ...current, style_overrides: previous };
+    });
+    setStylePast((history) => history.slice(0, -1));
+  };
+
+  const redoStyle = () => {
+    const next = styleFuture[0];
+    if (!next) return;
+    setForm((current) => {
+      setStylePast((history) => [...history.slice(-49), current.style_overrides]);
+      return { ...current, style_overrides: next };
+    });
+    setStyleFuture((future) => future.slice(1));
+  };
+
+  const setItemProperty = (property: PublicStyleProperty, value: string | number | null) => {
+    if (!itemMeta) return;
+    updateStyleDocument((document) => {
+      const next = structuredClone(document);
+      const item = next.items[itemMeta.id] ?? {};
+      if (styleState === "normal") {
+        const normal = { ...(item.normal ?? {}) };
+        if (value === null || value === "") delete normal[property]; else normal[property] = value;
+        item.normal = Object.keys(normal).length ? normal : undefined;
+      } else {
+        const states = { ...(item.states ?? {}) };
+        const stateValues = { ...(states[styleState] ?? {}) };
+        if (value === null || value === "") delete stateValues[property]; else stateValues[property] = value;
+        if (Object.keys(stateValues).length) states[styleState] = stateValues; else delete states[styleState];
+        item.states = Object.keys(states).length ? states : undefined;
+      }
+      if (!item.normal && !item.states) delete next.items[itemMeta.id]; else next.items[itemMeta.id] = item;
+      return next;
+    });
   };
 
   const handlePreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -1958,7 +2036,18 @@ function VisualBrandingEditor({
       {(saveError || saveSuccess) && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
       <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[210px_minmax(420px,1fr)_350px]">
         <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Choose an area</div>
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Page</div>
+          <Select value={stylePage} onValueChange={setStylePage}>
+            <SelectTrigger className="mb-3"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Array.from(new Set(PUBLIC_STYLE_ELEMENTS.map((item) => item.page))).map((page) => <SelectItem key={page} value={page}>{page === "home" ? "Landing / home" : page.charAt(0).toUpperCase() + page.slice(1)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">This page</div>
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
+            {PUBLIC_STYLE_ELEMENTS.filter((item) => item.page === stylePage).map((item) => <button key={item.id} type="button" onClick={() => setSelectedRole(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
+          </div>
+          <div className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Shared theme</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {VISUAL_NAV.map((item) => <button key={item.label} type="button" onClick={() => setSelectedRole(item.role)} aria-pressed={selectedRole === item.role} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.role ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
           </div>
@@ -1993,7 +2082,7 @@ function VisualBrandingEditor({
         </section>
 
         <aside className="rounded-md border bg-background p-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          {!roleMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an area from the navigator.</p></div></div> : <>
+          {!roleMeta && !itemMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an area from the navigator.</p></div></div> : itemMeta ? <ItemStyleInspector item={itemMeta} document={form.style_overrides} state={styleState} setState={setStyleState} setProperty={setItemProperty} reset={() => updateStyleDocument((document) => ({ ...document, items: Object.fromEntries(Object.entries(document.items).filter(([id]) => id !== itemMeta.id)) }))} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0} disabled={!canEdit || saving} clear={() => setSelectedRole(null)} /> : roleMeta ? <>
             <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description}</p></div><Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
             <div className="mt-5 space-y-5">
               {selectedRole === "brand" && <BrandKitSelector value={form.brand_kit_key} onApplyKit={applyBrandKit} onSelectCustom={selectCustomBrandKit} onClear={clearBrandKit} disabled={!canEdit || saving} />}
@@ -2004,11 +2093,42 @@ function VisualBrandingEditor({
               {roleMeta.fields.map((field) => <div key={field} className="space-y-2"><ColorRoleRow label={COLOUR_LABELS[field]} fieldName={field} helper={roleMeta.description} resolved={resolvedFor(field)} value={form[field]} onChange={(value) => { editColour(field, value); if (HEX_RE.test(value)) setRecentColours((current) => [value.toUpperCase(), ...current.filter((item) => item !== value.toUpperCase())].slice(0, 6)); }} disabled={!canEdit || saving} warnings={fieldWarnings(field)} />{quickColours.length > 0 && <div className="flex flex-wrap gap-1" aria-label={`Quick colours for ${COLOUR_LABELS[field]}`}>{quickColours.map((colour) => <button key={colour} type="button" title={colour} aria-label={`Use ${colour}`} disabled={!canEdit || saving} onClick={() => editColour(field, colour)} className="h-6 w-6 rounded-sm border focus-visible:ring-2 focus-visible:ring-ring" style={{ backgroundColor: colour }} />)}</div>}</div>)}
               {selectedRole === "hero" || selectedRole === "cover" ? <HeroOverlayCard colorValue={form.hero_overlay_color} opacityValue={form.hero_overlay_opacity} primaryFallback={form.primary_color || theme.primary} disabled={!canEdit || saving} onColorChange={(value) => editColour("hero_overlay_color", value)} onOpacityChange={(value) => setForm((current) => ({ ...current, hero_overlay_opacity: value }))} /> : null}
             </div>
-          </>}
+          </> : null}
         </aside>
       </div>
     </div>
   );
+}
+
+const PROPERTY_LABELS: Record<PublicStyleProperty, string> = {
+  color: "Text colour", backgroundColor: "Background", borderColor: "Border colour",
+  iconColor: "Icon colour", iconBackgroundColor: "Icon background", progressTrackColor: "Track colour",
+  progressFillColor: "Fill colour", fontFamily: "Font family", fontSize: "Font size",
+  fontWeight: "Font weight", lineHeight: "Line height", textAlign: "Alignment", opacity: "Opacity",
+  backgroundGradient: "Gradient",
+};
+
+function ItemStyleInspector({ item, document, state, setState, setProperty, reset, undo, redo, canUndo, canRedo, disabled, clear }: {
+  item: PublicStyleElementDefinition; document: PublicStyleOverrideDocument;
+  state: "normal" | "hover" | "focus" | "active" | "disabled";
+  setState: (state: "normal" | "hover" | "focus" | "active" | "disabled") => void;
+  setProperty: (property: PublicStyleProperty, value: string | number | null) => void;
+  reset: () => void; undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean; disabled: boolean; clear: () => void;
+}) {
+  const saved = document.items[item.id];
+  const values = state === "normal" ? saved?.normal ?? {} : saved?.states?.[state] ?? {};
+  const colourProperties = item.properties.filter((property) => property.endsWith("Color") || property === "color");
+  const hasTypography = item.properties.includes("fontFamily");
+  return <>
+    <div className="flex items-start justify-between gap-3"><div><div className="text-xs font-semibold uppercase text-muted-foreground">This item</div><h2 className="text-lg font-semibold">{item.label}</h2><p className="mt-1 text-sm text-muted-foreground">Changes only this named item. Existing Theme and Brand Kit values remain the fallback.</p></div><Button type="button" size="icon" variant="ghost" onClick={clear} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
+    <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !saved}>Reset this item</Button></div>
+    {item.states?.length ? <Field label="Appearance"><Select value={state} onValueChange={(value) => setState(value as typeof state)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
+    <div className="mt-5 space-y-4">
+      {colourProperties.map((property) => <div key={property} className="space-y-2"><label className="text-sm font-medium">{PROPERTY_LABELS[property]}</label><div className="flex gap-2"><input type="color" value={typeof values[property] === "string" && HEX_RE.test(String(values[property])) ? String(values[property]) : "#000000"} disabled={disabled} onChange={(event) => setProperty(property, event.target.value.toUpperCase())} className="h-10 w-12 rounded border bg-background p-1" /><input value={values[property] == null ? "" : String(values[property])} placeholder="Use default" disabled={disabled} onChange={(event) => setProperty(property, event.target.value)} className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 font-mono text-sm" /><Button type="button" variant="ghost" size="sm" disabled={disabled || values[property] == null} onClick={() => setProperty(property, null)}>Use default</Button></div></div>)}
+      {item.properties.includes("backgroundGradient") ? <Field label="Gradient"><input value={String(values.backgroundGradient ?? "")} placeholder="Use default" disabled={disabled} onChange={(event) => setProperty("backgroundGradient", event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm" /></Field> : null}
+      {hasTypography ? <><Field label="Font family"><Select value={String(values.fontFamily ?? "default")} onValueChange={(value) => setProperty("fontFamily", value === "default" ? null : value)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Use default</SelectItem>{EVENT_FONTS.map((font) => <SelectItem key={font.value} value={font.value}>{font.label}</SelectItem>)}</SelectContent></Select></Field><div className="grid grid-cols-2 gap-3"><Field label="Font size"><input type="number" min={8} max={96} value={values.fontSize ?? ""} placeholder="Default" disabled={disabled} onChange={(event) => setProperty("fontSize", event.target.value ? Number(event.target.value) : null)} className="h-10 w-full rounded-md border bg-background px-3" /></Field><Field label="Weight"><Select value={String(values.fontWeight ?? "default")} onValueChange={(value) => setProperty("fontWeight", value === "default" ? null : Number(value))} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Default</SelectItem>{[400,500,600,700].map((weight) => <SelectItem key={weight} value={String(weight)}>{weight}</SelectItem>)}</SelectContent></Select></Field><Field label="Line height"><input type="number" min={0.8} max={2.5} step={0.1} value={values.lineHeight ?? ""} placeholder="Default" disabled={disabled} onChange={(event) => setProperty("lineHeight", event.target.value ? Number(event.target.value) : null)} className="h-10 w-full rounded-md border bg-background px-3" /></Field><Field label="Alignment"><Select value={String(values.textAlign ?? "default")} onValueChange={(value) => setProperty("textAlign", value === "default" ? null : value)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Default</SelectItem>{["left","center","right"].map((align) => <SelectItem key={align} value={align}>{align}</SelectItem>)}</SelectContent></Select></Field></div></> : null}
+    </div>
+  </>;
 }
 
 
