@@ -2191,7 +2191,7 @@ function VisualBrandingEditor({
     observer.observe(body, { childList: true, subtree: true });
     return () => { observer.disconnect(); cancelAnimationFrame(raf); };
   }, [frameDoc]);
-  const [previewPage, setPreviewPage] = useState<"home" | "join" | "passport" | "venues" | "venue" | "offers" | "prizes" | "map" | "leaderboard" | "faq" | "terms" | "privacy" | "legal" | "bookmarks" | ResultPreviewPage>("home");
+  const [previewPage, setPreviewPage] = useState<"home" | "join" | "passport" | "venues" | "venue" | "offers" | "prizes" | "map" | "leaderboard" | "faq" | "legal" | "bookmarks" | ResultPreviewPage>("home");
   const [previewSource, setPreviewSource] = useState<"draft" | "saved" | "live">("draft");
   const [previewInteraction, setPreviewInteraction] = useState<"select" | "navigate">("select");
   const [inherited, setInherited] = useState<Partial<Record<PublicStyleProperty, string>>>({});
@@ -2328,6 +2328,14 @@ function VisualBrandingEditor({
     frameDoc?.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("keydown", onKey); frameDoc?.removeEventListener("keydown", onKey); };
   });
+
+  // /terms and /privacy both open the single combined legal page; reveal the requested section.
+  const [legalFocus, setLegalFocus] = useState<"terms" | "privacy" | null>(null);
+  useEffect(() => {
+    if (previewPage !== "legal" || !legalFocus) return;
+    const id = window.setTimeout(() => frameDoc?.querySelector(`[data-legal-card="${legalFocus}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 60);
+    return () => window.clearTimeout(id);
+  }, [previewPage, legalFocus, frameDoc]);
 
   const previewConfig = v2ConfigForDraft();
   const previewKey = JSON.stringify(previewConfig);
@@ -2473,8 +2481,6 @@ function VisualBrandingEditor({
     passport: [["partial", "Some stamps"], ["empty", "No stamps yet"], ["complete", "All stamps"]],
     prizes: [["unlocked", "Has passport"], ["locked", "No passport yet"]],
     offers: [["published", "Published images"], ["no_image", "No image (sample)"]],
-    terms: [["local", "Event text"], ["external", "External document"], ["missing", "Not provided"]],
-    privacy: [["local", "Event text"], ["external", "External document"], ["missing", "Not provided"]],
     legal: [["local", "Event text"], ["external", "External document"], ["missing", "Not provided"]],
     leaderboard: [["showcase", "Ranks and badges"], ["explorer", "Explorer tier"], ["completed", "Completed badge"]],
     ...RESULT_PAGE_STATES,
@@ -2511,8 +2517,7 @@ function VisualBrandingEditor({
     else if (to === "/leaderboard") setPreviewPage("leaderboard");
     else if (to === "/faq") setPreviewPage("faq");
     else if (to === "/bookmarks") setPreviewPage("bookmarks");
-    else if (to === "/terms") setPreviewPage("terms");
-    else if (to === "/privacy") setPreviewPage("privacy");
+    else if (to === "/terms" || to === "/privacy") { setPreviewPage("legal"); setLegalFocus(to === "/terms" ? "terms" : "privacy"); }
     else if (to === "/terms-privacy" || to === "/legal") setPreviewPage("legal");
   };
   const renderPreviewPage = () => {
@@ -2535,7 +2540,7 @@ function VisualBrandingEditor({
     }
     if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: faqEntries }} />;
     if (previewPage === "bookmarks") return <PublicBookmarksPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, enabled: true, rows: !populated ? [] : listVenues.slice(0, 2).filter((venue) => venue.venue_id).map((venue) => ({ kind: venue.offer_summary ? "offer" as const : "venue" as const, venue_id: venue.venue_id!, venue_name: venue.name, logo_path: venue.logo_path, cover_path: venue.cover_path, offer_summary: venue.offer_summary, created_at: new Date(0).toISOString() })) }} />;
-    if (["terms", "privacy", "legal"].includes(previewPage)) return <CombinedLegalPage subdomain="preview" initialOpen={previewPage === "terms" ? "terms" : previewPage === "privacy" ? "privacy" : "both"} previewData={{ branding: fixtureBranding, row: legalPreviewRow(publicContent?.legal ?? null, event, pageState) }} />;
+    if (previewPage === "legal") return <CombinedLegalPage subdomain="preview" initialOpen="both" previewData={{ branding: fixtureBranding, row: legalPreviewRow(publicContent?.legal ?? null, event, pageState) }} />;
     if (previewPage === "passport") {
       const passport = { passport_id: "preview-passport", event_id: event.id, status: "active", completed_at: null, leaderboard_opt_out: false, email: "preview@example.invalid", full_name: "Sample Visitor", first_name: "Sample", last_name: "Visitor", mobile: null, postcode: null, marketing_opt_in: false, checkin_count: 1 } as PassportRow;
       const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: previewLabels.singular, venue_label_plural: previewLabels.plural, total_venues: listVenues.length, stamped_count: pageState === "empty" ? 0 : pageState === "complete" ? listVenues.length : 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: pageState === "complete" || (pageState !== "empty" && index === 0), checked_in_at: pageState === "complete" || (pageState !== "empty" && index === 0) ? new Date(0).toISOString() : null })));
@@ -2575,7 +2580,7 @@ function VisualBrandingEditor({
           <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{previewPage === "home" ? "Landing / home" : previewPage === "venue" ? "Venue detail" : previewPage}</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {(() => {
-              const pg = ["terms", "privacy"].includes(previewPage) ? "legal" : previewPage;
+              const pg = previewPage;
               const items = PUBLIC_STYLE_ELEMENTS.filter((item) => (item.page === pg || item.page === "shared") && (renderedIds.has(item.id) || item.id === "shared.navigation.drawer"));
               const sections = [...new Set(items.map((item) => `${item.page === "shared" ? "Shared" : ""}${item.page === "shared" ? " · " : ""}${item.section}`))];
               return sections.map((section) => <div key={section} className="col-span-full"><div className="mb-1 mt-2 text-[11px] font-semibold text-muted-foreground">{section}</div><div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">{items.filter((item) => `${item.page === "shared" ? "Shared · " : ""}${item.section}` === section).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}</div></div>);
@@ -2593,7 +2598,7 @@ function VisualBrandingEditor({
             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
               <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
               <SelectTrigger className="w-full min-w-0" aria-label="Page"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="terms">Terms</SelectItem><SelectItem value="privacy">Privacy</SelectItem><SelectItem value="legal">Terms / Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem><SelectItem value="scan">Scan (camera off)</SelectItem><SelectItem value="checkin">Check-in result</SelectItem><SelectItem value="bonus">Bonus result</SelectItem><SelectItem value="tasting">Tasting result</SelectItem></SelectContent>
+              <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="legal">Terms &amp; Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem><SelectItem value="scan">Scan (camera off)</SelectItem><SelectItem value="checkin">Check-in result</SelectItem><SelectItem value="bonus">Bonus result</SelectItem><SelectItem value="tasting">Tasting result</SelectItem></SelectContent>
               </Select>
               <div className="inline-flex shrink-0 rounded-md border p-1" aria-label="Preview width">
                 <Button type="button" size="icon" variant={previewWidth === "mobile" ? "default" : "ghost"} onClick={() => setPreviewWidth("mobile")} aria-label="Mobile preview" aria-pressed={previewWidth === "mobile"}><Smartphone className="h-4 w-4" /></Button>
