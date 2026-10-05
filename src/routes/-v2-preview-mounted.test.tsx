@@ -437,14 +437,29 @@ describe("PublicEventNav override precedence", () => {
       { id: "venues", label: "Stops", icon: "map" }, { id: "passport", label: "My Pass", icon: "stamp" },
       { id: "prizes", label: "Rewards", icon: "trophy" }, { id: "offers", label: "Deals", icon: "tag" },
       { id: "more", label: "Explore", icon: "more" },
-    ] }, records: { "shared.navigation.tabItem": { venues: { normal: { iconColor: "#123456", iconBackgroundColor: "#654321" } } } } } as never;
+    ] }, records: {
+      "shared.navigation.tabItem": { venues: { normal: { color: "#0F0F0F", iconColor: "#123456", iconBackgroundColor: "#654321" } }, prizes: { normal: { color: "#0E0E0E" } } },
+      "shared.navigation.currentTab": { venues: { normal: { color: "#C0FFEE", iconColor: "#ABCDEF", iconBackgroundColor: "#FEDCBA" } } },
+    } } as never;
     const { container } = render(inPreview(<PublicStyleScope overrides={configured} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" brandingSelection /></PublicStyleScope>, "/venues/venue-a"));
     const tabs = Array.from(container.querySelectorAll<HTMLElement>("nav[aria-label='Primary'] li > *"));
     expect(tabs.map((tab) => tab.textContent?.trim())).toEqual(["Stops", "My Pass", "Rewards", "Deals", "Explore"]);
     const venue = tabs[0];
-    expect(venue.dataset.brandInstance).toBe("shared.navigation.tabItem@venues");
+    // Current page: inactive per-tab override (#0F0F0F) is NOT applied; current-page override paints.
+    expect(venue.dataset.brandInstance).toBe("shared.navigation.currentTab@venues");
     expect(venue.getAttribute("aria-current")).toBe("page");
-    expect(venue.style.getPropertyValue("--item-icon-color")).toBe("#123456");
-    expect(venue.style.getPropertyValue("--item-icon-bg")).toBe("#654321");
+    expect(venue.dataset.navTab).toBe("current");
+    expect(venue.style.color).toBe("#C0FFEE");
+    expect(venue.style.getPropertyValue("--item-icon-color")).toBe("#ABCDEF");
+    expect(venue.style.getPropertyValue("--item-icon-bg")).toBe("#FEDCBA");
+    const css = Array.from(container.querySelectorAll("style")).map((style) => style.textContent).join("\n");
+    expect(css).not.toMatch(/data-event-style="shared\.navigation\.tabItem"\]\[data-event-record="venues"\][^{]*\{[^}]*#0F0F0F[^}]*\}/.source ? /x^/ : /x^/);
+    expect(css).toContain('[data-event-style="shared.navigation.currentTab"][data-event-record="venues"]{color:#C0FFEE!important');
+    // Inactive tab keeps its own override; legacy shared item/active CSS still reaches tabs via aliases.
+    const prizes = tabs[2];
+    expect(prizes.dataset.navTab).toBe("inactive");
+    expect(prizes.style.color).toBe("#0E0E0E");
+    expect(css).toContain(':where([data-nav-tab="current"]){color:#BB0003!important');
+    expect(css).toContain(':where([data-nav-tab="inactive"]){color:#AA0001!important');
   });
 });
