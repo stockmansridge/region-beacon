@@ -54,11 +54,29 @@ export type PublicStyleItemOverride = {
   states?: Partial<Record<Exclude<PublicStyleState, "normal">, PublicStyleProperties>>;
 };
 
+export const PUBLIC_NAV_ITEM_IDS = ["passport", "prizes", "venues", "offers", "more"] as const;
+export type PublicNavItemId = (typeof PUBLIC_NAV_ITEM_IDS)[number];
+export const PUBLIC_NAV_ICON_IDS = ["stamp", "trophy", "pin", "tag", "more", "home", "map", "leaderboard"] as const;
+export type PublicNavIconId = (typeof PUBLIC_NAV_ICON_IDS)[number];
+export type PublicNavigationItem = { id: PublicNavItemId; label: string; icon: PublicNavIconId };
+export type PublicNavigationConfig = { items: PublicNavigationItem[] };
+
+export const DEFAULT_PUBLIC_NAVIGATION: PublicNavigationConfig = {
+  items: [
+    { id: "passport", label: "Passport", icon: "stamp" },
+    { id: "prizes", label: "Prizes", icon: "trophy" },
+    { id: "venues", label: "Venues", icon: "pin" },
+    { id: "offers", label: "Offers", icon: "tag" },
+    { id: "more", label: "More", icon: "more" },
+  ],
+};
+
 export type PublicStyleOverrideDocument = {
   version: typeof PUBLIC_STYLE_DOCUMENT_VERSION;
   items: Record<string, PublicStyleItemOverride>;
   records?: Record<string, Record<string, PublicStyleItemOverride>>;
   theme?: PublicV2Theme;
+  navigation?: PublicNavigationConfig;
 };
 
 export const PUBLIC_V2_THEME_KEYS = [
@@ -102,6 +120,7 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
   { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
+  { id: "shared.navigation.tabItem", page: "shared", section: "Navigation", label: "Bottom menu item", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, repeat: "template", similarGroup: "navigation-items" },
   { id: "shared.navigation.drawer", page: "shared", section: "Navigation", label: "Menu drawer", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.surface", page: "shared", section: "Announcements", label: "Announcement bar", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.text", page: "shared", section: "Announcements", label: "Announcement text", kind: "text", properties: TEXT },
@@ -360,6 +379,42 @@ function cleanTheme(raw: unknown, errors?: string[]): PublicV2Theme | undefined 
   return Object.keys(theme).length > 0 ? theme : undefined;
 }
 
+function cleanNavigation(raw: unknown, errors?: string[]): PublicNavigationConfig | undefined {
+  if (raw === undefined) return undefined;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    errors?.push("navigation must be an object");
+    return undefined;
+  }
+  const values = (raw as { items?: unknown }).items;
+  if (!Array.isArray(values)) {
+    errors?.push("navigation.items must be an array");
+    return undefined;
+  }
+  const allowedIds = new Set<string>(PUBLIC_NAV_ITEM_IDS);
+  const allowedIcons = new Set<string>(PUBLIC_NAV_ICON_IDS);
+  const seen = new Set<string>();
+  const items: PublicNavigationItem[] = [];
+  for (const [index, rawItem] of values.entries()) {
+    if (!rawItem || typeof rawItem !== "object" || Array.isArray(rawItem)) {
+      errors?.push(`navigation.items.${index} is invalid`); continue;
+    }
+    const item = rawItem as Record<string, unknown>;
+    if (typeof item.id !== "string" || !allowedIds.has(item.id) || seen.has(item.id)) {
+      errors?.push(`navigation.items.${index}.id is invalid or duplicated`); continue;
+    }
+    if (typeof item.label !== "string" || !item.label.trim() || item.label.trim().length > 24) {
+      errors?.push(`navigation.items.${index}.label is invalid`); continue;
+    }
+    if (typeof item.icon !== "string" || !allowedIcons.has(item.icon)) {
+      errors?.push(`navigation.items.${index}.icon is invalid`); continue;
+    }
+    seen.add(item.id);
+    items.push({ id: item.id as PublicNavItemId, label: item.label.trim(), icon: item.icon as PublicNavIconId });
+  }
+  for (const fallback of DEFAULT_PUBLIC_NAVIGATION.items) if (!seen.has(fallback.id)) items.push(fallback);
+  return { items };
+}
+
 function cleanProperty(property: PublicStyleProperty, raw: unknown): string | number | null {
   if (property.endsWith("Color") || property === "color") {
     return typeof raw === "string" && HEX.test(raw) ? raw.toUpperCase() : null;
@@ -459,11 +514,13 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
     }
   }
   const theme = cleanTheme(source.theme, errors);
+  const navigation = cleanNavigation(source.navigation, errors);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
     ...(Object.keys(records).length > 0 ? { records } : {}),
     ...(theme ? { theme } : {}),
+    ...(navigation ? { navigation } : {}),
   };
 }
 

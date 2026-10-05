@@ -27,6 +27,11 @@ export function usePublicStyleEnabled() {
   return useContext(PublicStyleContext).enabled;
 }
 
+/** Parsed V2 document for structural, allowlisted presentation settings. */
+export function usePublicStyleDocument() {
+  return useContext(PublicStyleContext).document;
+}
+
 /**
  * V2-only item style scope. Emitted CSS is confined to this instance's unique
  * root attribute so two event scopes in one document cannot affect each other.

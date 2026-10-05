@@ -1,4 +1,4 @@
-import { mergeStyleOverride } from "@/lib/public-style-overrides";
+import { DEFAULT_PUBLIC_NAVIGATION, mergeStyleOverride, type PublicNavIconId, type PublicNavItemId } from "@/lib/public-style-overrides";
 import { useLocation } from "@tanstack/react-router";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
 import {
@@ -34,7 +34,7 @@ import { useEventHasAwards } from "@/lib/use-event-has-awards";
 import { useEventVenueLabels } from "@/lib/use-event-venue-labels";
 import { useEventCustomLink } from "@/lib/use-event-custom-link";
 import { usePageViewTracking } from "@/lib/use-page-view-tracking";
-import { usePublicStyleEnabled, usePublicStyleTarget } from "@/components/public-style-scope";
+import { usePublicStyleDocument, usePublicStyleEnabled, usePublicStyleTarget } from "@/components/public-style-scope";
 import type { VenueLabels } from "@/lib/venue-labels";
 
 type ActiveTarget =
@@ -104,6 +104,7 @@ export function PublicEventNav({
   const previewNav = usePublicNav();
   const isPreview = previewNav.mode === "preview";
   const isV2Style = usePublicStyleEnabled();
+  const styleDocument = usePublicStyleDocument();
   const navigationSurface = usePublicStyleTarget("shared.navigation.surface", { selectable: brandingSelection });
   const navigationItem = usePublicStyleTarget("shared.navigation.item", { selectable: brandingSelection });
   const navigationActiveItem = usePublicStyleTarget("shared.navigation.activeItem", { selectable: brandingSelection });
@@ -164,6 +165,7 @@ export function PublicEventNav({
   // is a public page and must stay inside the current event context.
   const joinHref = buildEventHref({ to: "/join", base: navBase });
   const passportTarget = passportHref ?? joinHref;
+  const configuredBottomItems = styleDocument?.navigation?.items ?? DEFAULT_PUBLIC_NAVIGATION.items;
 
 
   return (
@@ -347,6 +349,19 @@ export function PublicEventNav({
           style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}
         >
 
+          {isV2Style ? configuredBottomItems.map((item) => (
+            <V2BottomItem
+              key={item.id}
+              item={item}
+              active={item.id === "more" ? menuOpen : isActive(item.id)}
+              passportHref={passportHref}
+              passportTarget={passportTarget}
+              onMore={() => setMenuOpen(true)}
+              selectable={brandingSelection}
+              navMuted={navMuted}
+              navActiveFg={navActiveFg}
+            />
+          )) : <>
           <li className="h-full min-w-0">
             {passportHref ? (
               <a
@@ -424,6 +439,7 @@ export function PublicEventNav({
               <BottomItemContent icon={<MoreHorizontal className="h-5 w-5" />} label="More" />
             </button>
           </li>
+          </>}
         </ul>
       </nav>
       </div>
@@ -439,6 +455,33 @@ export function PublicEventNav({
       ) : null}
     </>
   );
+}
+
+const NAV_ICONS: Record<PublicNavIconId, React.ReactNode> = {
+  stamp: <Stamp className="h-5 w-5" />, trophy: <Trophy className="h-5 w-5" />,
+  pin: <MapPin className="h-5 w-5" />, tag: <Tag className="h-5 w-5" />,
+  more: <MoreHorizontal className="h-5 w-5" />, home: <Home className="h-5 w-5" />,
+  map: <MapIcon className="h-5 w-5" />, leaderboard: <Award className="h-5 w-5" />,
+};
+
+function V2BottomItem({ item, active, passportHref, passportTarget, onMore, selectable, navMuted, navActiveFg }: {
+  item: { id: PublicNavItemId; label: string; icon: PublicNavIconId }; active: boolean;
+  passportHref: string | null; passportTarget: string; onMore: () => void; selectable: boolean;
+  navMuted: string; navActiveFg: string;
+}) {
+  const shared = usePublicStyleTarget(active ? "shared.navigation.activeItem" : "shared.navigation.item");
+  const perItem = usePublicStyleTarget("shared.navigation.tabItem", { recordId: item.id, selectable });
+  const props = {
+    ...perItem,
+    className: bottomItemClass,
+    style: mergeStyleOverride(mergeStyleOverride({ color: active ? navActiveFg : navMuted }, shared.style), perItem.style),
+    "aria-current": active ? "page" as const : undefined,
+  };
+  const content = <BottomItemContent icon={NAV_ICONS[item.icon]} label={item.label} />;
+  if (item.id === "more") return <li className="h-full min-w-0"><button {...props} type="button" aria-label={item.label} onClick={onMore}>{content}</button></li>;
+  if (item.id === "passport" && passportHref) return <li className="h-full min-w-0"><a {...props} href={passportTarget} aria-label={item.label}>{content}</a></li>;
+  const to = item.id === "passport" ? "/join" : `/${item.id}`;
+  return <li className="h-full min-w-0"><PublicLink {...props} to={to}>{content}</PublicLink></li>;
 }
 
 /**

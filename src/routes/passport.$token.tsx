@@ -406,7 +406,7 @@ export function PassportPreview({
   const labelSingular = stamps.labelSingular;
   const labelPlural = stamps.labelPlural;
 
-  const stampedCount = stamps.visitedCount || passport.checkin_count || 0;
+  const stampedCount = preview ? stamps.visitedCount : (stamps.visitedCount || passport.checkin_count || 0);
   const totalVenues = stamps.totalVenueCount;
   const goal = totalVenues > 0 ? totalVenues : Math.max(stampedCount, 1);
   const pct = Math.min(100, Math.round((stampedCount / goal) * 100));
@@ -532,10 +532,10 @@ export function PassportPreview({
       )}
       {/* Full-bleed hero with overlaid header */}
       <div className="relative">
-        {subdomain && (
+        {(subdomain || preview) && (
           <div className="absolute inset-x-0 top-0 z-40 px-4">
             <PublicEventNav
-              subdomain={subdomain}
+              subdomain={subdomain ?? "preview"}
               eventName={eventName ?? "Your passport"}
               primaryColor={PRIMARY}
               accentColor={ACCENT}
@@ -545,6 +545,7 @@ export function PassportPreview({
               eventId={passport.event_id}
               transparentHeader
               hideAnnouncementBar
+              brandingSelection={preview}
             />
           </div>
         )}
@@ -557,7 +558,7 @@ export function PassportPreview({
           }}
         >
           {heroImageUrl ? (
-            <img
+            <PublicStyleTarget id="passport.hero.image"><img
               src={heroImageUrl}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
@@ -565,15 +566,15 @@ export function PassportPreview({
                 objectPosition: focalObjectPosition(branding.coverFocalX, branding.coverFocalY),
               }}
               loading="eager"
-            />
+            /></PublicStyleTarget>
           ) : null}
-          <div
+          <PublicStyleTarget id="passport.hero.overlay"><div
             className="absolute inset-0"
             style={{
               background:
                 "linear-gradient(180deg, var(--event-hero-overlay-strong, rgba(0,0,0,0.55)) 0%, var(--event-hero-overlay, rgba(0,0,0,0.2)) 40%, var(--event-hero-overlay-strong, rgba(0,0,0,0.65)) 100%)",
             }}
-          />
+          /></PublicStyleTarget>
           <div className="relative mx-auto flex min-h-[320px] max-w-md flex-col justify-end px-5 pb-16 pt-24 sm:min-h-[360px]">
             <PublicStyleTarget id="passport.hero.eyebrow"><p
               className="text-[10px] font-semibold uppercase tracking-[0.32em]"
@@ -618,12 +619,12 @@ export function PassportPreview({
         </section>
       </div>
 
-      <main
+      <PublicStyleTarget id="passport.page.surface"><main
         className="mx-auto w-full max-w-md px-4 pb-24"
         style={{ fontFamily: "var(--event-font, inherit)" }}
       >
         {/* Summary card — overlaps the bottom of the hero */}
-        <section
+        <PublicStyleTarget id="passport.summary.surface"><section
           className="relative z-10 -mt-14 rounded-3xl border shadow-lg sm:-mt-16"
           style={{
             borderColor: "var(--event-card-border)",
@@ -838,7 +839,7 @@ export function PassportPreview({
               />
             </div>
           )}
-        </section>
+        </section></PublicStyleTarget>
 
 
 
@@ -872,7 +873,7 @@ export function PassportPreview({
 
 
         {/* Visitor details */}
-        <section
+        <PublicStyleTarget id="passport.holder.surface"><section
           className="mt-5 rounded-3xl border p-5 shadow-sm"
           style={{
             borderColor: "var(--event-card-border)",
@@ -919,7 +920,7 @@ export function PassportPreview({
           >
             {linkCopied ? "Link copied" : "Copy passport link"}
           </button></PublicStyleTarget>
-        </section>
+        </section></PublicStyleTarget>
 
 
         <PublicStyleTarget id="passport.actions.support"><button
@@ -939,7 +940,7 @@ export function PassportPreview({
           <PoweredByGetStampd variant="trail" />
         </div>
 
-      </main>
+      </main></PublicStyleTarget>
     </>
   );
 }
@@ -973,7 +974,7 @@ function TrailProgressInline({
           {pct}% complete
         </span>
       </div>
-      <div
+      <PublicStyleTarget id="passport.stamps.surface"><div
         className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
         style={{ backgroundColor: "var(--event-card-border)" }}
       >
@@ -984,7 +985,7 @@ function TrailProgressInline({
             backgroundColor: "var(--event-button-primary-bg)",
           }}
         />
-      </div>
+      </div></PublicStyleTarget>
       <PublicStyleTarget id="passport.progress.body"><p
         className="mt-2 text-[12px]"
         style={{ color: "var(--event-card-text)" }}
@@ -1282,7 +1283,7 @@ function AwardRow({ award }: { award: PublicEventAward }) {
     ? Math.min(100, Math.round((award.passport_points / award.points_required) * 100))
     : 0;
   return (
-    <li
+    <PublicStyleTarget id="passport.award.surface" recordId={award.id}><li
       className={`rounded-2xl border p-4 shadow-sm ${unlocked ? "" : "border-dashed"}`}
       style={{
         borderColor: "var(--event-card-border)",
@@ -1293,7 +1294,7 @@ function AwardRow({ award }: { award: PublicEventAward }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div
+          <PublicStyleTarget id="passport.award.heading" recordId={award.id}><div
             className="font-trail-serif text-sm font-semibold"
             style={{
               color: unlocked
@@ -1302,7 +1303,7 @@ function AwardRow({ award }: { award: PublicEventAward }) {
             }}
           >
             {award.title}
-          </div>
+          </div></PublicStyleTarget>
           {award.description && (
             <PublicStyleTarget id="passport.award.body" recordId={award.id}><p
               className="mt-1 text-[12.5px] leading-snug"
@@ -1322,7 +1323,7 @@ function AwardRow({ award }: { award: PublicEventAward }) {
               : ""}
           </div>
         </div>
-        <span
+        <PublicStyleTarget id="passport.award.status" recordId={award.id}><span
           className="inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
           style={
             unlocked
@@ -1338,9 +1339,9 @@ function AwardRow({ award }: { award: PublicEventAward }) {
           }
         >
           {unlocked ? "✓ Entered" : "Locked"}
-        </span>
+        </span></PublicStyleTarget>
       </div>
-      <div
+      <PublicStyleTarget id="passport.award.progress" recordId={award.id}><div
         className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
         style={{ backgroundColor: "var(--event-card-border)" }}
       >
@@ -1353,8 +1354,8 @@ function AwardRow({ award }: { award: PublicEventAward }) {
               : "var(--event-accent)",
           }}
         />
-      </div>
-    </li>
+      </div></PublicStyleTarget>
+    </li></PublicStyleTarget>
   );
 }
 
