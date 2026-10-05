@@ -2822,7 +2822,7 @@ export function TrailTabLabelField({ value, placeholder, disabled, commit }: { v
     if (cleaned !== value) commit(cleaned); else setDraft(cleaned);
   };
   return <Field label="Display name">
-    <Input value={draft} placeholder={placeholder} maxLength={PUBLIC_TRAIL_TAB_LABEL_MAX} disabled={disabled} aria-invalid={Boolean(error)} onChange={(event) => { setDraft(event.target.value); setError(null); }} onBlur={apply} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); event.currentTarget.blur(); } else if (event.key === "Escape") { event.preventDefault(); setDraft(value); setError(null); event.currentTarget.blur(); } }} />
+    <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={draft} placeholder={placeholder} maxLength={PUBLIC_TRAIL_TAB_LABEL_MAX} disabled={disabled} aria-invalid={Boolean(error)} onChange={(event) => { setDraft(event.target.value); setError(null); }} onBlur={apply} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); event.currentTarget.blur(); } else if (event.key === "Escape") { event.preventDefault(); setDraft(value); setError(null); event.currentTarget.blur(); } }} />
     {error ? <p role="alert" className="mt-1 text-xs text-destructive">{error}</p> : <p className="mt-1 text-xs text-muted-foreground">Empty uses “{placeholder}”. The destination never changes.</p>}
   </Field>;
 }
