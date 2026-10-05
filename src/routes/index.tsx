@@ -190,6 +190,13 @@ const SLIDES = [
     desc: "Sip, savour and collect stamps along the way.",
   },
   {
+    img: heroRegion,
+    icon: MapPin,
+    title: "Region Tourism",
+    alt: "Heritage main street of a regional town surrounded by rolling hills",
+    desc: "Showcase your whole region and reward every stop.",
+  },
+  {
     img: heroMarket,
     icon: Star,
     title: "Market Events",
@@ -202,13 +209,6 @@ const SLIDES = [
     title: "Tourism Groups",
     alt: "Small tourism group exploring a regional attraction together with a guide",
     desc: "Discover together and earn more as a group.",
-  },
-  {
-    img: heroRegion,
-    icon: MapPin,
-    title: "Region Tourism",
-    alt: "Heritage main street of a regional town surrounded by rolling hills",
-    desc: "Showcase your whole region and reward every stop.",
   },
 ];
 
