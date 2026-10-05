@@ -2690,9 +2690,10 @@ function VisualBrandingEditor({
           {itemMeta?.id === "shared.navigation.title" ? <HeaderTitleInspector
             eventName={event?.name ?? ""} header={form.style_overrides.header ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
             update={(patch) => updateStyleDocument((next) => {
-              const header = { ...(next.header ?? {}), ...patch };
-              if (header.title == null) delete header.title;
-              if (header.titleWrap !== true) delete header.titleWrap;
+              const merged = { ...(next.header ?? {}), ...patch };
+              const header: { title?: string; titleWrap?: boolean } = {};
+              if (merged.title) header.title = merged.title;
+              if (merged.titleWrap === true) header.titleWrap = true;
               const { header: _old, ...rest } = next;
               return Object.keys(header).length ? { ...rest, header } : rest;
             })}
