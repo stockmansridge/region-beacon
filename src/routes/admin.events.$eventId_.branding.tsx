@@ -471,6 +471,85 @@ function brandingToForm(b: Branding | null): Form {
  * event's stored V2 theme layered on top. Kept in a SEPARATE state from the
  * classic (V1) form so V2 values can never be saved into V1 columns.
  */
+/**
+ * The ONE mapping from (immutable event row, saved branding row, form values)
+ * to the public PublicEventData contract. Used for the unsaved draft (current
+ * form) and for the saved baseline (brandingToV2Form(saved branding)), so the
+ * saved view can never pick up unsaved edits or miss a field.
+ */
+function formToPreviewEvent(
+  event: { id: string; name: string; public_slug?: string | null; description?: string | null },
+  branding: Branding | null,
+  form: Form,
+): PublicEventData & { public_template_version?: string | null; v2_style_config?: PublicStyleOverrideDocument | null } {
+  const orNullHex = (v: string) => (v.trim() ? v.trim() : null);
+  return {
+    event_id: event.id,
+    name: event.name,
+    public_slug: event.public_slug ?? "",
+    description: event.description,
+    starts_at: null,
+    ends_at: null,
+    timezone: null,
+    logo_path: branding?.logo_path ?? null,
+    cover_path: branding?.cover_path ?? null,
+    cover_focal_x: form.cover_focal_x.trim() ? Number(form.cover_focal_x) : null,
+    cover_focal_y: form.cover_focal_y.trim() ? Number(form.cover_focal_y) : null,
+    primary_color: orNullHex(form.primary_color),
+    accent_color: orNullHex(form.accent_color),
+    palette_key: null,
+    page_background_key: null,
+    page_background_color: orNullHex(form.page_background_color),
+    card_background_color: orNullHex(form.card_background_color),
+    text_color: orNullHex(form.page_heading_color),
+    muted_text_color: orNullHex(form.page_muted_color),
+    card_text_color: orNullHex(form.card_heading_color),
+    card_muted_text_color: orNullHex(form.card_muted_color),
+    border_color: orNullHex(form.border_color),
+    primary_text_color: orNullHex(form.button_primary_fg),
+    nav_background_color: orNullHex(form.nav_background_color),
+    font_family: getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null),
+    heading_font_family:
+      getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || null),
+    welcome_copy: form.welcome_copy.trim() || null,
+    terms_url: orNullHex(form.terms_url),
+    current_terms_version_id: null,
+    venue_label_singular: form.venue_label_singular || null,
+    venue_label_plural: form.venue_label_plural || null,
+    hero_overlay_color: orNullHex(form.hero_overlay_color),
+    hero_overlay_opacity: form.hero_overlay_opacity.trim()
+      ? Number(form.hero_overlay_opacity)
+      : null,
+    brand_kit_key: form.brand_kit_key || null,
+    link_color: orNullHex(form.link_color),
+    card_border_color: orNullHex(form.card_border_color),
+    button_primary_bg: orNullHex(form.button_primary_bg),
+    button_primary_fg: orNullHex(form.button_primary_fg),
+    button_secondary_bg: orNullHex(form.button_secondary_bg),
+    button_secondary_fg: orNullHex(form.button_secondary_fg),
+    nav_fg_color: orNullHex(form.nav_fg_color),
+    nav_muted_color: orNullHex(form.nav_muted_color),
+    nav_active_fg_color: orNullHex(form.nav_active_fg_color),
+    hero_bg_color: orNullHex(form.hero_bg_color),
+    hero_fg_color: orNullHex(form.hero_fg_color),
+    hero_accent_color: orNullHex(form.hero_accent_color),
+    hero_body_color: orNullHex(form.hero_body_color),
+    logo_shape: orNullHex(form.logo_shape),
+    logo_backdrop: orNullHex(form.logo_backdrop),
+    logo_backdrop_color:
+      form.logo_backdrop === "color" ? orNullHex(form.logo_backdrop_color) : null,
+    page_heading_color: orNullHex(form.page_heading_color),
+    page_body_color: orNullHex(form.page_body_color),
+    page_muted_color: orNullHex(form.page_muted_color),
+    card_heading_color: orNullHex(form.card_heading_color),
+    card_body_color: orNullHex(form.card_body_color),
+    card_muted_color: orNullHex(form.card_muted_color),
+    style_overrides: form.style_overrides,
+    public_template_version: branding?.public_template_version ?? null,
+    v2_style_config: form.style_overrides,
+  };
+}
+
 function brandingToV2Form(b: Branding | null): Form {
   const base = brandingToForm(b);
   if (!b) return base;
@@ -1355,72 +1434,7 @@ function BrandingEditor() {
    * needs the same PublicEventData contract as the live route — saved event
    * content and venues, plus the UNSAVED branding form state.
    */
-  const orNullHex = (v: string) => (v.trim() ? v.trim() : null);
-  const previewEvent: PublicEventData = {
-    event_id: event.id,
-    name: event.name,
-    public_slug: event.public_slug ?? "",
-    description: event.description,
-    starts_at: null,
-    ends_at: null,
-    timezone: null,
-    logo_path: branding?.logo_path ?? null,
-    cover_path: branding?.cover_path ?? null,
-    cover_focal_x: form.cover_focal_x.trim() ? Number(form.cover_focal_x) : null,
-    cover_focal_y: form.cover_focal_y.trim() ? Number(form.cover_focal_y) : null,
-    primary_color: orNullHex(form.primary_color),
-    accent_color: orNullHex(form.accent_color),
-    palette_key: null,
-    page_background_key: null,
-    page_background_color: orNullHex(form.page_background_color),
-    card_background_color: orNullHex(form.card_background_color),
-    text_color: orNullHex(form.page_heading_color),
-    muted_text_color: orNullHex(form.page_muted_color),
-    card_text_color: orNullHex(form.card_heading_color),
-    card_muted_text_color: orNullHex(form.card_muted_color),
-    border_color: orNullHex(form.border_color),
-    primary_text_color: orNullHex(form.button_primary_fg),
-    nav_background_color: orNullHex(form.nav_background_color),
-    font_family: getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null),
-    heading_font_family:
-      getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || null),
-    welcome_copy: form.welcome_copy.trim() || null,
-    terms_url: orNullHex(form.terms_url),
-    current_terms_version_id: null,
-    venue_label_singular: form.venue_label_singular || null,
-    venue_label_plural: form.venue_label_plural || null,
-    hero_overlay_color: orNullHex(form.hero_overlay_color),
-    hero_overlay_opacity: form.hero_overlay_opacity.trim()
-      ? Number(form.hero_overlay_opacity)
-      : null,
-    brand_kit_key: form.brand_kit_key || null,
-    link_color: orNullHex(form.link_color),
-    card_border_color: orNullHex(form.card_border_color),
-    button_primary_bg: orNullHex(form.button_primary_bg),
-    button_primary_fg: orNullHex(form.button_primary_fg),
-    button_secondary_bg: orNullHex(form.button_secondary_bg),
-    button_secondary_fg: orNullHex(form.button_secondary_fg),
-    nav_fg_color: orNullHex(form.nav_fg_color),
-    nav_muted_color: orNullHex(form.nav_muted_color),
-    nav_active_fg_color: orNullHex(form.nav_active_fg_color),
-    hero_bg_color: orNullHex(form.hero_bg_color),
-    hero_fg_color: orNullHex(form.hero_fg_color),
-    hero_accent_color: orNullHex(form.hero_accent_color),
-    hero_body_color: orNullHex(form.hero_body_color),
-    logo_shape: orNullHex(form.logo_shape),
-    logo_backdrop: orNullHex(form.logo_backdrop),
-    logo_backdrop_color:
-      form.logo_backdrop === "color" ? orNullHex(form.logo_backdrop_color) : null,
-    page_heading_color: orNullHex(form.page_heading_color),
-    page_body_color: orNullHex(form.page_body_color),
-    page_muted_color: orNullHex(form.page_muted_color),
-    card_heading_color: orNullHex(form.card_heading_color),
-    card_body_color: orNullHex(form.card_body_color),
-    card_muted_color: orNullHex(form.card_muted_color),
-    style_overrides: form.style_overrides,
-    public_template_version: branding?.public_template_version ?? null,
-    v2_style_config: form.style_overrides,
-  };
+  const previewEvent = formToPreviewEvent(event, branding, form);
 
   const selectedKit = getBrandKit(form.brand_kit_key);
   const kitSubtitle = form.brand_kit_key === "custom"
@@ -2361,22 +2375,9 @@ function VisualBrandingEditor({
   const override = itemMeta ? currentOverride(parsePublicStyleOverrides(form.style_overrides)) : undefined;
   const wiredPages = new Set<string>(PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id)).map((item) => item.page));
   const savedConfig = parsePublicStyleOverrides(branding?.v2_style_config);
-  const savedBaselineEvent = {
-    ...previewEvent,
-    primary_color: v1Form.primary_color || null, accent_color: v1Form.accent_color || null,
-    page_background_color: v1Form.page_background_color || null, card_background_color: v1Form.card_background_color || null,
-    text_color: v1Form.page_heading_color || null, muted_text_color: v1Form.page_muted_color || null,
-    card_text_color: v1Form.card_heading_color || null, card_muted_text_color: v1Form.card_muted_color || null,
-    border_color: v1Form.border_color || null, primary_text_color: v1Form.button_primary_fg || null,
-    nav_background_color: v1Form.nav_background_color || null, font_family: v1Form.font_family || null,
-    heading_font_family: v1Form.heading_font_family || null, welcome_copy: v1Form.welcome_copy || null,
-    link_color: v1Form.link_color || null, card_border_color: v1Form.card_border_color || null,
-    button_primary_bg: v1Form.button_primary_bg || null, button_primary_fg: v1Form.button_primary_fg || null,
-    button_secondary_bg: v1Form.button_secondary_bg || null, button_secondary_fg: v1Form.button_secondary_fg || null,
-    nav_fg_color: v1Form.nav_fg_color || null, nav_muted_color: v1Form.nav_muted_color || null,
-    nav_active_fg_color: v1Form.nav_active_fg_color || null, hero_bg_color: v1Form.hero_bg_color || null,
-    hero_fg_color: v1Form.hero_fg_color || null, hero_accent_color: v1Form.hero_accent_color || null,
-  };
+  // Saved view: immutable saved event + saved branding row through the same complete mapping.
+  const savedBaselineEvent = formToPreviewEvent(event, branding, brandingToV2Form(branding));
+
   const draftEvent = { ...(previewSource === "draft" ? previewEvent : savedBaselineEvent), public_template_version: "v2", v2_style_config: previewSource === "draft" ? previewConfig : savedConfig } as PublicBrandingEvent;
   const fixtureBranding = resolveEventBrandingKeys(draftEvent as never, { public_template_version: "v2", v2_style_config: draftEvent.v2_style_config ?? null });
   const listVenues: ListVenueRow[] = venues.map((venue) => ({
