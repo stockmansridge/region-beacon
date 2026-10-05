@@ -811,6 +811,69 @@ function BrandingEditor() {
     setV2Form(brandingToV2Form(nextBranding));
   }
 
+  type V2SaveResult =
+    | { ok: true; confirmed: { public_template_version: string; v2_style_config: PublicStyleOverrideDocument } }
+    | { ok: false; message: string };
+
+  /**
+   * Persist the V2 config atomically via the save_event_v2_branding RPC.
+   * If the RPC is not installed yet (schema-cache miss), fall back to a direct
+   * RLS-governed event_branding update with a confirmed read-back. If the V2
+   * columns are missing too, report persistence as unavailable and keep the draft.
+   */
+  async function saveV2Branding(config: PublicStyleOverrideDocument, activate: boolean): Promise<V2SaveResult> {
+    if (!bundle || !agencyId) return { ok: false, message: "The event is still loading." };
+    const rpc = supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string; code?: string } | null }>;
+    const { data, error } = await rpc("save_event_v2_branding", {
+      _agency_id: agencyId,
+      _event_id: bundle.event.id,
+      _config: config,
+      _activate: activate,
+    });
+    const confirmed = data?.[0];
+    if (!error && confirmed?.v2_style_config) return { ok: true, confirmed };
+
+    const missingRpc = !!error && (error.code === "PGRST202" || /schema cache|could not find the function/i.test(error.message));
+    if (!missingRpc) {
+      return { ok: false, message: error?.message ?? "Persistence is unavailable; your draft is still open." };
+    }
+
+    // Fallback: direct update through the existing table permissions.
+    const updatePayload: Record<string, unknown> = { v2_style_config: config };
+    if (activate) updatePayload.public_template_version = "v2";
+    const { data: rows, error: updateError } = await (supabase.from("event_branding") as unknown as {
+      update: (payload: Record<string, unknown>) => {
+        eq: (col: string, val: string) => {
+          eq: (col: string, val: string) => {
+            select: (cols: string) => Promise<{ data: Array<{ public_template_version: string | null; v2_style_config: PublicStyleOverrideDocument | null }> | null; error: { message: string; code?: string } | null }>;
+          };
+        };
+      };
+    }).update(updatePayload).eq("agency_id", agencyId).eq("event_id", bundle.event.id)
+      .select("public_template_version, v2_style_config");
+
+    const row = rows?.[0];
+    if (updateError || !row?.v2_style_config) {
+      const missingColumns = !!updateError && (updateError.code === "42703" || /column .* does not exist|schema cache/i.test(updateError.message));
+      return {
+        ok: false,
+        message: missingColumns
+          ? "The V2 database changes have not been applied to this environment yet, so V2 branding cannot be saved here. Your draft is still open and nothing was written."
+          : updateError?.message ?? "Persistence is unavailable; your draft is still open.",
+      };
+    }
+    return {
+      ok: true,
+      confirmed: {
+        public_template_version: row.public_template_version === "v2" ? "v2" : "v1",
+        v2_style_config: row.v2_style_config,
+      },
+    };
+  }
+
   async function onSave(opts?: { returnAfter?: boolean }) {
     if (!bundle || !agencyId || !canEdit) return;
     // Clear previous messages so repeated identical results still re-toast.
@@ -827,22 +890,15 @@ function BrandingEditor() {
         return;
       }
       setSaving(true);
-      const { data, error } = await (supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
-        "save_event_v2_branding",
-        { _agency_id: agencyId, _event_id: bundle.event.id, _config: v2ConfigForDraft(), _activate: false },
-      );
-      const confirmed = data?.[0];
-      if (error || !confirmed?.v2_style_config) {
+      const result = await saveV2Branding(checked.document, false);
+      if (!result.ok) {
         setSaving(false);
-        setSaveError(`V2 branding could not be saved. ${error?.message ?? "Persistence is unavailable; your draft is still open."}`);
+        setSaveError(`V2 branding could not be saved. ${result.message}`);
         return;
       }
-      applyConfirmedV2(confirmed);
+      applyConfirmedV2(result.confirmed);
       setSaving(false);
-      setSaveSuccess(confirmed.public_template_version === "v2"
+      setSaveSuccess(result.confirmed.public_template_version === "v2"
         ? "Saved. This event already uses V2, so its live pages now show these changes."
         : "V2 draft saved. This event's live pages still use the existing template.");
       if (opts?.returnAfter) navigate({ to: "/admin/events/$eventId", params: { eventId } });
@@ -1399,6 +1455,7 @@ function BrandingEditor() {
         v2ConfigForDraft={v2ConfigForDraft}
         v1Form={v1Form}
         onV2Activated={applyConfirmedV2}
+        saveV2Branding={saveV2Branding}
       />
     );
   }
@@ -2009,7 +2066,7 @@ function VisualBrandingEditor({
   canEdit, saving, saveError, saveSuccess, hasUnsavedChanges, onSave, onSaveAndReturn,
   onBack, onExit, selectedKit, applyBrandKit, selectCustomBrandKit, clearBrandKit,
   customFonts, branding, agencyId, confirmImmediateAssetAction, onAssetUpload, onAssetRemove, v2ConfigForDraft,
-  v1Form, onV2Activated,
+  v1Form, onV2Activated, saveV2Branding,
 }: {
   event: EventRow; eventId: string; primaryDomain: Domain | null; previewEvent: PublicEventData;
   venues: PublicVenueData[]; form: Form; setForm: React.Dispatch<React.SetStateAction<Form>>;
@@ -2028,6 +2085,10 @@ function VisualBrandingEditor({
   v2ConfigForDraft: () => PublicStyleOverrideDocument;
   v1Form: Form;
   onV2Activated: (confirmed: { public_template_version: string; v2_style_config: PublicStyleOverrideDocument }) => void;
+  saveV2Branding: (config: PublicStyleOverrideDocument, activate: boolean) => Promise<
+    | { ok: true; confirmed: { public_template_version: string; v2_style_config: PublicStyleOverrideDocument } }
+    | { ok: false; message: string }
+  >;
 }) {
   const [hoveredInstance, setHoveredInstance] = useState<string | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<string | null>(null);
@@ -2190,19 +2251,12 @@ function VisualBrandingEditor({
     if (!window.confirm("Use the V2 public template for this event? This activates only this event and saves this V2 configuration atomically.")) return;
     setActivating(true);
     try {
-      const { data, error } = await (supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: Array<{ public_template_version: string; v2_style_config: PublicStyleOverrideDocument }> | null; error: { message: string } | null }>)(
-        "save_event_v2_branding",
-        { _agency_id: agencyId, _event_id: eventId, _config: checked.document, _activate: true },
-      );
-      const confirmed = data?.[0];
-      if (error || confirmed?.public_template_version !== "v2" || !confirmed.v2_style_config) {
-        toast.error(`V2 was not activated. ${error?.message ?? "No confirmed response was returned."}`);
+      const result = await saveV2Branding(checked.document, true);
+      if (!result.ok || result.confirmed.public_template_version !== "v2") {
+        toast.error(`V2 was not activated. ${result.ok ? "No confirmed response was returned." : result.message}`);
         return;
       }
-      onV2Activated(confirmed);
+      onV2Activated(result.confirmed);
       toast.success("V2 is now live for this event only.");
     } catch (error) {
       toast.error(`V2 was not activated. ${error instanceof Error ? error.message : "Unexpected error."}`);

@@ -105,3 +105,16 @@ Evidence legend: **UNIT** = `src/lib/public-style-overrides.test.ts` (vitest, 13
 - Browser runtime checks (mobile nav scroll anchoring, overlay computed alpha, Share independence in DOM, typography loading, two scopes mounted together, V1 baseline screenshot) — BLOCKED: no admin session in this sandbox; no harness route was added to avoid shipping a public test page.
 - Non-home public pages and their states (passport, join, venues, venue, offers, prizes, map, leaderboard, FAQ, legal, scan, check-in, bonus, tasting, shared navigation/drawer) — still not wired or previewable in V2.
 - Real persistence/read-back, new-session reload, Event A/B/C/D isolation — BLOCKED until the review-only SQL is applied in an authorised non-production environment.
+
+## Save-path resilience (2026-10-05, follow-up)
+
+**Reported failure:** `V2 branding could not be saved. Could not find the function public.save_event_v2_branding(...) in the schema cache` — the review-only migration drafts (01/02/03) had never been applied to the environment's database, so the RPC did not exist.
+
+**Fix (SRC, build OK, tsgo clean, 13/13 unit tests):** `saveV2Branding(config, activate)` in `src/routes/admin.events.$eventId_.branding.tsx` now:
+1. Tries the atomic `save_event_v2_branding` RPC first (preferred path once migration 03 is applied).
+2. On a schema-cache miss (PGRST202 / "could not find the function"), falls back to a direct RLS-governed `event_branding` update of `v2_style_config` (and `public_template_version` only when activating), with a confirmed select read-back before reporting success.
+3. If the V2 columns themselves are missing (migration 01 not applied), reports clearly that the V2 database changes have not been applied, keeps the draft open, and writes nothing — no fake success.
+
+Both Save and "Use V2 for this event" share this helper, so activation can never report live without a confirmed config write.
+
+**Still required outside the codebase:** apply `supabase/migrations-draft-event-style-overrides/01–03` to the target environment. Until at least migration 01 is applied, V2 persistence is BLOCKED there; the editor now says so explicitly instead of failing with a raw schema-cache error.
