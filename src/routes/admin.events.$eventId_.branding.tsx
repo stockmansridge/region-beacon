@@ -2493,8 +2493,8 @@ function VisualBrandingEditor({
         </nav>
 
         <section className="min-w-0 rounded-md border bg-background p-3">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground">{previewSource === "draft" ? "Unsaved V2 draft" : "Saved V2 configuration"} · live template {branding?.public_template_version === "v2" ? "V2" : "V1"}. Public actions are disabled.</p></div>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div><h2 className="font-semibold">Real page preview</h2><p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Showing: {previewSource === "draft" ? "V2 draft (unsaved edits)" : "Saved V2 configuration"}</span> · <span className="font-semibold text-foreground">Visitors currently see: {branding?.public_template_version === "v2" ? "V2" : "V1 (existing template)"}</span>{branding?.public_template_version !== "v2" ? " — differences from the live site are expected until V2 is activated." : "."} Public actions are disabled.</p></div>
             <Select value={previewPage} onValueChange={(value) => setPreviewPage(value as typeof previewPage)}>
               <SelectTrigger className="w-44" aria-label="Page"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="home">Home</SelectItem><SelectItem value="join">Join / Start</SelectItem><SelectItem value="passport">Passport</SelectItem><SelectItem value="venues">Venues / Stops</SelectItem><SelectItem value="venue" disabled={!selectedVenue}>Venue detail</SelectItem><SelectItem value="offers">Offers</SelectItem><SelectItem value="prizes">Prizes</SelectItem><SelectItem value="map">Map</SelectItem><SelectItem value="leaderboard">Leaderboard</SelectItem><SelectItem value="faq">FAQ</SelectItem><SelectItem value="terms">Terms</SelectItem><SelectItem value="privacy">Privacy</SelectItem><SelectItem value="legal">Terms / Privacy</SelectItem><SelectItem value="bookmarks">Bookmarks</SelectItem></SelectContent>
