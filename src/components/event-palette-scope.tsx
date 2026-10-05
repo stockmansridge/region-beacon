@@ -143,7 +143,9 @@ export function EventPaletteScope({
     (pageMutedColor && HEX_RE.test(pageMutedColor)) ||
     (cardHeadingColor && HEX_RE.test(cardHeadingColor)) ||
     (cardBodyColor && HEX_RE.test(cardBodyColor)) ||
-    (cardMutedColor && HEX_RE.test(cardMutedColor));
+    (cardMutedColor && HEX_RE.test(cardMutedColor)) ||
+    (heroOverlayColor && HEX_RE.test(heroOverlayColor)) ||
+    heroOverlayOpacity != null;
 
   // Lazy-load Google Fonts for the body + heading families when the
   // chosen value matches a known EVENT_FONTS entry. Idempotent. Called

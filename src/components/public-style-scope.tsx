@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useId, type ReactNode } from "react";
 import {
   parsePublicStyleOverrides,
   publicStyleCss,
@@ -20,6 +20,11 @@ export function usePublicStyleTarget(
     : { style: {} };
 }
 
+/**
+ * V2-only item style scope. Emitted CSS is confined to this instance's unique
+ * root attribute so two event scopes in one document cannot affect each other.
+ * Disabled (V1) renders children directly with no wrapper.
+ */
 export function PublicStyleScope({
   overrides,
   enabled = true,
@@ -29,12 +34,13 @@ export function PublicStyleScope({
   enabled?: boolean;
   children: ReactNode;
 }) {
+  const scope = `ps${useId().replace(/[^A-Za-z0-9_-]/g, "")}`;
   const document = parsePublicStyleOverrides(overrides);
   if (!enabled) return children;
-  const css = publicStyleCss(document);
+  const css = publicStyleCss(document, scope);
   return (
     <PublicStyleContext.Provider value={{ enabled: true, document }}>
-      <div {...(enabled ? { "data-public-style-version": document.version } : {})}>
+      <div data-public-style-version={document.version} data-public-style-root={scope}>
         {css ? <style>{css}</style> : null}
         {children}
       </div>
