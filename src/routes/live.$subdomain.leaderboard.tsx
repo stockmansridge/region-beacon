@@ -1,3 +1,4 @@
+import { PublicBackLink } from "@/components/public-back-link";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -210,12 +211,8 @@ export function PublicLeaderboardPage({ subdomain, previewData }: { subdomain: s
         <PrivacyNote />
 
         <div className="mt-8 text-center">
-          <Link
-            to="/"
-            className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-link)] underline-offset-4 hover:underline"
-          >
-            ← Back to event
-          </Link>
+          <PublicBackLink context="leaderboard" to="/" label="Back to event" legacy="link"
+            legacyClassName="text-xs font-medium uppercase tracking-[0.22em] text-[var(--event-link)] underline-offset-4 hover:underline" />
         </div>
       </div>
     </EventPaletteScope>

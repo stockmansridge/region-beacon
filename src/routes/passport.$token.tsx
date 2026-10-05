@@ -1,3 +1,4 @@
+import { PublicBackLink } from "@/components/public-back-link";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -339,17 +340,14 @@ function PassportNotFound({
           >
             Register again for this trail
           </a>
-          <a
-            href="/"
-            className="inline-flex h-11 items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide"
-            style={{
+          <PublicBackLink context="passport-missing" to="/" label="Back to trail home" legacy="anchor" legacyArrow={false}
+            legacyClassName="inline-flex h-11 items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide"
+            legacyStyle={{
               borderColor: "var(--event-button-secondary-border)",
               color: "var(--event-button-secondary-fg)",
               backgroundColor: "var(--event-button-secondary-bg)",
             }}
-          >
-            Back to trail home
-          </a>
+            v2ClassName="inline-flex h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--event-button-secondary-border)] bg-[var(--event-button-secondary-bg)] text-sm font-semibold tracking-wide" />
           <button
             type="button"
             onClick={copySupport}
