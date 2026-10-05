@@ -2628,7 +2628,7 @@ function VisualBrandingEditor({
             inherited={inherited} state={styleState} setState={setStyleState} setProperty={(property, value) => { setItemProperty(property, value); if (typeof value === "string") rememberColour(value); }}
             reset={resetItem} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0}
             disabled={!canEdit || busy || comparisonReadOnly} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
-            record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope } : null}
+            record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope, label: itemMeta.id === "shared.navigation.tabItem" ? "menu item" : undefined } : null}
           /> : null}
           {itemMeta?.id === "shared.navigation.tabItem" ? <NavigationMenuInspector
             items={navItems} selectedId={selectedRecord} disabled={!canEdit || busy || comparisonReadOnly}
@@ -2858,7 +2858,7 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
   setProperty: (property: PublicStyleProperty, value: string | number | null) => void;
   reset: () => void; undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean; disabled: boolean; clear: () => void;
   quickColours: QuickColour[]; customFonts: EventCustomFont[];
-  record: { id: string; scope: "record" | "type"; setScope: (scope: "record" | "type") => void } | null;
+  record: { id: string; scope: "record" | "type"; setScope: (scope: "record" | "type") => void; label?: string } | null;
 }) {
   const colourProperties = item.properties.filter((property) => property.endsWith("Color") || property === "color");
   const hasTypography = item.properties.includes("fontFamily");
@@ -2868,7 +2868,7 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
   const opacityPercent = typeof values.opacity === "number" ? Math.round(values.opacity * 100) : null;
   return <>
     <div className="flex items-start justify-between gap-3"><div><div className="text-xs font-semibold uppercase text-muted-foreground">{record?.scope === "type" ? "All items of this type" : "This item"}</div><h2 className="text-lg font-semibold">{item.label}</h2><p className="mt-1 text-sm text-muted-foreground">Changes only this named item{record?.scope === "record" ? " for this one record" : ""}. Theme and Brand Kit values remain the fallback.</p></div><Button type="button" size="icon" variant="ghost" onClick={clear} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
-    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">This one only</SelectItem><SelectItem value="type">Every {item.repeat === "award" ? "prize" : "venue"} (type default)</SelectItem></SelectContent></Select></Field> : null}
+    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">This one only</SelectItem><SelectItem value="type">Every {record.label ?? (item.repeat === "award" ? "prize" : "venue")} (type default)</SelectItem></SelectContent></Select></Field> : null}
     <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !hasOverride}>Reset this item</Button></div>
     {item.states?.length ? <Field label="Appearance (shown in the preview)"><Select value={state} onValueChange={(value) => setState(value as PublicStyleState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
     <div className="mt-5 space-y-4">
