@@ -203,7 +203,7 @@ describe("Map pin resolver (shared by MapKit annotations and preview marker)", (
     expect(paint.style.color).toContain("--item-icon-color");
     target.dataset.previewState = "active";
     expect(Array.from(container.querySelectorAll("style")).map((node) => node.textContent).join("\n")).toContain('[data-preview-state="active"]');
-    expect(getComputedStyle(target).backgroundColor).toBe("transparent");
+    expect(getComputedStyle(target).backgroundColor).toBe("");
     expect(getComputedStyle(target).getPropertyValue("--item-icon-bg").trim()).toBe("#555555");
     expect(getComputedStyle(target).getPropertyValue("--item-icon-color").trim()).toBe("#333333");
     delete target.dataset.previewState;
