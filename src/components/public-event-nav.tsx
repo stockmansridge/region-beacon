@@ -124,7 +124,7 @@ export function PublicEventNav({
   const pathname = previewNav.activePath ?? (navBase
     ? location.pathname.slice(navBase.length) || "/"
     : location.pathname);
-  const { passportHref: derivedPassportHref } = useCurrentEventPassport(isPreview ? null : eventId);
+  const { passportHref: derivedPassportHref } = useCurrentEventPassport(isPreview ? null : eventId, !isPreview);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
   const [menuOpen, setMenuOpen] = useState(false);
   const faqState = useEventFaqByDomain(isPreview ? null : subdomain);

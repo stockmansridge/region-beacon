@@ -1,5 +1,5 @@
 import { PublicStyleTarget } from "@/components/public-style-target";
-import { ResultLink, ResultPaletteScope, useResultPreview } from "@/components/result-preview";
+import { ResultLink, ResultPaletteScope, useResultBranding, useResultPreview } from "@/components/result-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -349,7 +349,7 @@ function CheckinPage() {
 export function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }) {
   const preview = useResultPreview();
   const subdomain = preview ? null : getSubdomain();
-  const branding = useEventBrandingKeys(subdomain);
+  const branding = useResultBranding(subdomain);
   return (
     <ResultPaletteScope {...brandingScopeProps(branding)} className="min-h-screen">
       {!preview && subdomain && <LiveActivityBar subdomain={subdomain} />}
