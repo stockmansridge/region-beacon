@@ -2784,6 +2784,49 @@ function NavigationMenuInspector({ items, selectedId, disabled, select, rename, 
   </div>;
 }
 
+function TrailTabsInspector({ selectedId, mode, venueLabelPlural, labels, disabled, select, setLabel }: {
+  selectedId: PublicTrailTabId | null;
+  mode: "inactive" | "current" | null;
+  venueLabelPlural: string;
+  labels: Partial<Record<PublicTrailTabId, string>>;
+  disabled: boolean;
+  select: (id: PublicTrailTabId, mode: "inactive" | "current") => void;
+  setLabel: (id: PublicTrailTabId, value: string | null) => void;
+}) {
+  const selected = selectedId ?? "venues";
+  const fallback = publicTrailTabLabel(null, selected, venueLabelPlural);
+  return <div className="mt-5 space-y-4 border-t pt-4">
+    <Field label="Toggle item"><Select value={selected} onValueChange={(value) => select(value as PublicTrailTabId, mode ?? "inactive")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{PUBLIC_TRAIL_TAB_IDS.map((id) => <SelectItem key={id} value={id}>{publicTrailTabLabel({ version: 1, items: {}, trailTabs: { labels } }, id, venueLabelPlural)}</SelectItem>)}</SelectContent></Select></Field>
+    <div className="space-y-1.5">
+      <div className="text-sm font-medium">Appearance for this item</div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" size="sm" variant={mode === "inactive" ? "default" : "outline"} disabled={disabled} onClick={() => select(selected, "inactive")}>Unselected</Button>
+        <Button type="button" size="sm" variant={mode === "current" ? "default" : "outline"} disabled={disabled} onClick={() => select(selected, "current")}>Selected / current page</Button>
+      </div>
+      <p className="text-xs text-muted-foreground">Text, background and border controls appear above. Selected settings apply only on this item's page.</p>
+    </div>
+    <TrailTabLabelField key={`${selected}:${labels[selected] ?? ""}`} value={labels[selected] ?? ""} placeholder={fallback} disabled={disabled} commit={(value) => setLabel(selected, value)} />
+  </div>;
+}
+
+/** Buffered while typing so spaces do not get trimmed until blur or Enter. */
+export function TrailTabLabelField({ value, placeholder, disabled, commit }: { value: string; placeholder: string; disabled: boolean; commit: (label: string | null) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setDraft(value); setError(null); }, [value]);
+  const apply = () => {
+    if (!draft.trim()) { setError(null); if (value) commit(null); return; }
+    const cleaned = cleanPublicTrailTabLabel(draft);
+    if (!cleaned) { setError(`Use 1–${PUBLIC_TRAIL_TAB_LABEL_MAX} characters, no < or >.`); return; }
+    setError(null);
+    if (cleaned !== value) commit(cleaned); else setDraft(cleaned);
+  };
+  return <Field label="Display name">
+    <Input value={draft} placeholder={placeholder} maxLength={PUBLIC_TRAIL_TAB_LABEL_MAX} disabled={disabled} aria-invalid={Boolean(error)} onChange={(event) => { setDraft(event.target.value); setError(null); }} onBlur={apply} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); event.currentTarget.blur(); } else if (event.key === "Escape") { event.preventDefault(); setDraft(value); setError(null); event.currentTarget.blur(); } }} />
+    {error ? <p role="alert" className="mt-1 text-xs text-destructive">{error}</p> : <p className="mt-1 text-xs text-muted-foreground">Empty uses “{placeholder}”. The destination never changes.</p>}
+  </Field>;
+}
+
 /** Buffered while typing (spaces allowed); validated and committed on blur / Enter. Empty resets to the inherited name. */
 /** Scope copy for repeated targets: venue/prize records vs non-identifying template slots. */
 export function recordScopeCopy(item: { repeat?: string; label: string }, record: { id: string; label?: string }): { one: string; all: string } {

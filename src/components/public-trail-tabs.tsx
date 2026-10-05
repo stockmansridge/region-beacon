@@ -37,8 +37,7 @@ export function PublicTrailTabs({
       {tabs.map((t) => {
         const isActive = t.key === active;
         return (
-          <PublicStyleTarget id={isActive ? "shared.trailTabs.currentTab" : "shared.trailTabs.tab"} recordId={t.key}><PublicLink
-            key={t.key}
+          <PublicStyleTarget key={t.key} id={isActive ? "shared.trailTabs.currentTab" : "shared.trailTabs.tab"} recordId={t.key}><PublicLink
             to={t.to}
             aria-current={isActive ? "page" : undefined}
             className={
