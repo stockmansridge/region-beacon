@@ -268,6 +268,7 @@ export function PublicEventNav({
             {canRegister || passportHref ? (
               passportHref ? (
                 <a
+                  {...navigationItem}
                   href={passportTarget}
                   aria-label={passportLabel}
                   title={passportLabel}
@@ -277,6 +278,7 @@ export function PublicEventNav({
                 </a>
               ) : (
                 <PublicLink
+                  {...navigationItem}
                   to="/join"
                   aria-label={passportLabel}
                   title={passportLabel}

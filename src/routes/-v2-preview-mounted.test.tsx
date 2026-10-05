@@ -279,17 +279,20 @@ describe("PublicEventNav override precedence", () => {
       const icon = t.querySelector<HTMLElement>("[data-navigation-icon]")!;
       expect(icon.style.color).toContain("--item-icon-color");
       expect(icon.style.backgroundColor).toContain("--item-icon-bg");
-      expect(getComputedStyle(icon).backgroundColor).toBe("#00ccdd");
+      expect(t.style.getPropertyValue("--item-icon-bg")).toBe("#00CCDD");
     }
     for (const t of active) {
       expect(t.style.backgroundColor).toBe("#0000CC");
       const icon = t.querySelector<HTMLElement>("[data-navigation-icon]")!;
-      expect(getComputedStyle(icon).color).toBe("#ee00aa");
-      expect(getComputedStyle(icon).backgroundColor).toBe("#ddeeff");
+      expect(t.style.getPropertyValue("--item-icon-color")).toBe("#EE00AA");
+      expect(t.style.getPropertyValue("--item-icon-bg")).toBe("#DDEEFF");
+      expect(icon.style.color).toContain("--item-icon-color");
+      expect(icon.style.backgroundColor).toContain("--item-icon-bg");
     }
     const headerButton = container.querySelector<HTMLElement>("button[aria-label='Open menu']")!;
     expect(headerButton.style.backgroundColor).toBe("#CCAA00");
-    expect(getComputedStyle(headerButton.querySelector<HTMLElement>("[data-navigation-icon]")!).backgroundColor).toBe("#00ccdd");
+    expect(headerButton.style.getPropertyValue("--item-icon-bg")).toBe("#00CCDD");
+    expect(headerButton.querySelector<HTMLElement>("[data-navigation-icon]")!.style.backgroundColor).toContain("--item-icon-bg");
     const menuButton = container.querySelector<HTMLElement>("button[aria-label='Open menu']")!;
     await act(async () => { fireEvent.click(menuButton); });
     const aside = document.querySelector<HTMLElement>("aside")!;

@@ -907,7 +907,7 @@ function MapFallbackList({
             >
               <span className="flex items-center gap-2 font-semibold">
                 {v.venue_id && (() => { const pin = markerStyle(v.venue_id); return (
-                  <MapMarkerGlyph style={pin} />
+                  <MapMarkerGlyph style={pin} recordId={v.venue_id} />
                 ); })()}
                 {v.name}
               </span>
@@ -925,11 +925,11 @@ function MapFallbackList({
 }
 
 /** Safe app-owned marker presentation used by preview/fallback rendering. */
-export function MapMarkerGlyph({ style, selected = false }: { style: MapMarkerStyle; selected?: boolean }) {
+export function MapMarkerGlyph({ style, selected = false, recordId }: { style: MapMarkerStyle; selected?: boolean; recordId?: string | null }) {
   const color = selected ? style.selectedColor : style.color;
   const glyphColor = selected ? style.selectedGlyphColor : style.glyphColor;
   return (
-    <span data-event-style="map.marker" data-marker-color={color} data-marker-state={selected ? "selected" : style.glyphText ? "visited" : "default"}>
+    <span data-event-style="map.marker" data-event-record={recordId || undefined} data-marker-color={color} data-marker-state={selected ? "selected" : style.glyphText ? "visited" : "default"}>
       <span className="grid h-7 w-7 place-items-center rounded-full text-xs" style={{ backgroundColor: color, color: glyphColor }} aria-hidden>
         {style.glyphText || "●"}
       </span>
