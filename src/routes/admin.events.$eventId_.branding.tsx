@@ -2425,8 +2425,8 @@ function VisualBrandingEditor({
   };
 
   return (
-    <div className="min-h-screen bg-muted/40">
-      <div className="sticky top-0 z-[80] border-b bg-background/95 px-4 py-3 backdrop-blur">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-muted/40">
+      <div className="relative z-[80] shrink-0 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-xs font-semibold uppercase text-muted-foreground">V2 visual branding editor</div>
@@ -2445,10 +2445,11 @@ function VisualBrandingEditor({
           </div>
         </div>
       </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
       {!canEdit && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">View-only access. You can inspect settings, but cannot change or save them.</div></div>}
       {(saveError || saveSuccess) && <div className="mx-auto mt-4 max-w-[1800px] px-4"><div role="status" className={`rounded-md border p-3 text-sm ${saveError ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{saveError ?? saveSuccess}</div></div>}
       <div className="mx-auto grid max-w-[1800px] gap-4 p-4 lg:grid-cols-[230px_minmax(420px,1fr)_360px]">
-        <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <nav aria-label="Branding areas" className="rounded-md border bg-background p-3 lg:sticky lg:top-4 lg:max-h-[calc(100%-2rem)] lg:overflow-y-auto">
           <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{previewPage === "home" ? "Landing / home" : previewPage === "venue" ? "Venue detail" : previewPage}</div>
           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             {PUBLIC_STYLE_ELEMENTS.filter((item) => V2_WIRED_ITEMS.has(item.id) && (item.page === previewPage || item.page === "shared")).map((item) => <button key={item.id} type="button" onClick={() => selectFromNavigator(item.id)} aria-pressed={selectedRole === item.id} className={`rounded-md px-3 py-2 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedRole === item.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{item.label}</button>)}
@@ -2500,7 +2501,7 @@ function VisualBrandingEditor({
           </div>
         </section>
 
-        <aside className="rounded-md border bg-background p-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <aside className="rounded-md border bg-background p-4 lg:sticky lg:top-4 lg:max-h-[calc(100%-2rem)] lg:overflow-y-auto">
           {!roleMeta && !itemMeta ? <div className="grid min-h-56 place-items-center text-center"><div><div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-muted"><Info className="h-5 w-5" /></div><h2 className="font-semibold">Select something to edit</h2><p className="mt-1 text-sm text-muted-foreground">Click an object in the preview or choose an item from the navigator.</p></div></div> : null}
           {itemMeta ? <ItemStyleInspector
             item={itemMeta} values={(styleState === "normal" ? override?.normal : override?.states?.[styleState]) ?? {}} hasOverride={Boolean(override)}
@@ -2527,6 +2528,7 @@ function VisualBrandingEditor({
             </div>
           </div> : null}
         </aside>
+      </div>
       </div>
     </div>
   );
