@@ -865,7 +865,9 @@ describe("Venue detail directions shared and per-venue colours", () => {
   it("warns when Every venue is masked and offers an explicit colour-only apply action", async () => {
     const { ItemStyleInspector } = await import("./admin.events.$eventId_.branding");
     const clear = vi.fn();
-    const item = (await import("@/lib/public-style-overrides")).PUBLIC_STYLE_ELEMENTS.find((entry) => entry.id === "venue.actions.directions")!;
+    const item = (await import("@/lib/public-style-overrides")).PUBLIC_STYLE_ELEMENTS.find((entry) => entry.id === "venue.actions.directions");
+    expect(item).toBeDefined();
+    if (!item) return;
     const screen = render(<ItemStyleInspector item={item} values={{ color: "#112233" }} hasOverride inherited={{}} state="normal" setState={vi.fn()} setProperty={vi.fn()} reset={vi.fn()} undo={vi.fn()} redo={vi.fn()} canUndo={false} canRedo={false} disabled={false} clear={vi.fn()} quickColours={[]} customFonts={[]} record={{ id: "venue-a", scope: "type", setScope: vi.fn() }} recordPropertyConflicts={(property) => property === "color" ? ["venue-b"] : []} clearRecordPropertyConflicts={clear} />);
     expect(screen.getByText(/venue-specific text colour setting is still taking priority/i)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Apply chosen colour to all venues" }));
