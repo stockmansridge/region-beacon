@@ -6341,7 +6341,9 @@ function PublicAddressCard({
     const rpc = await supabase.rpc("change_event_subdomain" as never, {
       _event_id: eventId,
       _subdomain: editNormalized,
+      _domain_id: subdomainRow.id,
     } as never);
+    console.log("[change_event_subdomain]", { data: rpc.data, error: rpc.error });
     let failMsg: string | null = null;
     let taken = false;
     const rpcMissing =
@@ -6351,7 +6353,7 @@ function PublicAddressCard({
       failMsg = rpc.error.message ?? "Could not update public address.";
     } else if (!rpc.error) {
       const res = (rpc.data ?? null) as { ok?: boolean; reason?: string; message?: string; subdomain?: string } | null;
-      if (!res?.ok || res.subdomain !== editNormalized) {
+      if (!res?.ok || String(res.subdomain ?? "").toLowerCase() !== editNormalized) {
         failMsg = res?.message ?? "Could not update public address.";
         taken = res?.reason === "taken";
       }

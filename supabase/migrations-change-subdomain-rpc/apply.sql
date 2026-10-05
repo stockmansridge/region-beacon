@@ -10,13 +10,16 @@
 -- on the event's existing event_subdomain row; status / primary / activation
 -- are untouched. Validation delegates to validate_public_subdomain.
 --
--- Idempotent. Safe to re-run. Rollback: drop function public.change_event_subdomain(uuid, text);
+-- Idempotent. Safe to re-run. Rollback: drop function public.change_event_subdomain(uuid, text, uuid);
 
 set search_path = public;
 
+drop function if exists public.change_event_subdomain(uuid, text);
+
 create or replace function public.change_event_subdomain(
   _event_id uuid,
-  _subdomain text
+  _subdomain text,
+  _domain_id uuid default null
 )
 returns jsonb
 language plpgsql
@@ -57,7 +60,8 @@ begin
   select * into v_row from public.event_domains d
    where d.event_id = _event_id and d.agency_id = v_event.agency_id
      and d.domain_type = 'event_subdomain'
-   order by d.updated_at desc nulls last, d.created_at desc
+     and (_domain_id is null or d.id = _domain_id)
+   order by d.is_primary desc, d.updated_at desc nulls last, d.created_at desc
    limit 1;
   if v_row.id is null then
     return jsonb_build_object('ok', false, 'reason', 'no_subdomain', 'message', 'No public address claimed for this event yet.');
@@ -91,5 +95,8 @@ exception when unique_violation then
 end;
 $$;
 
-revoke all on function public.change_event_subdomain(uuid, text) from public, anon;
-grant execute on function public.change_event_subdomain(uuid, text) to authenticated;
+revoke all on function public.change_event_subdomain(uuid, text, uuid) from public, anon;
+grant execute on function public.change_event_subdomain(uuid, text, uuid) to authenticated;
+
+-- Make the new function visible to the app immediately.
+notify pgrst, 'reload schema';
