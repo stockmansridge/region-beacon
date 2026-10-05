@@ -276,6 +276,7 @@ export function PublicVenuesListPage({
         accentColor={event?.accent_color}
         logoUrl={logoUrl}
         eventId={event?.event_id ?? null}
+        venueLabels={labels}
       />
       <div className="mx-auto max-w-md px-4">
         <div className="mt-4">
