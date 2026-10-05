@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { v2FontFamilyValue } from "@/lib/event-font-alias";
 
 export const PUBLIC_STYLE_DOCUMENT_VERSION = 1 as const;
 
@@ -372,14 +373,14 @@ export function publicStyleItem(
 }
 
 /** Element-level CSS. Icon colour never paints the element text; icon background only paints icon surfaces. */
-function standardStyle(properties: PublicStyleProperties | undefined, kind?: PublicStyleElementDefinition["kind"]): CSSProperties {
+function standardStyle(properties: PublicStyleProperties | undefined, kind?: PublicStyleElementDefinition["kind"], eventId?: string | null): CSSProperties {
   if (!properties) return {};
   return {
     ...(properties.color ? { color: String(properties.color) } : {}),
     ...(properties.backgroundColor ? { backgroundColor: String(properties.backgroundColor) } : {}),
     ...(properties.backgroundGradient ? { backgroundImage: String(properties.backgroundGradient) } : {}),
     ...(properties.borderColor ? { borderColor: String(properties.borderColor) } : {}),
-    ...(properties.fontFamily ? { fontFamily: String(properties.fontFamily) } : {}),
+    ...(properties.fontFamily ? { fontFamily: v2FontFamilyValue(String(properties.fontFamily), eventId) } : {}),
     ...(typeof properties.fontSize === "number" ? { fontSize: properties.fontSize } : {}),
     ...(typeof properties.fontWeight === "number" ? { fontWeight: properties.fontWeight } : {}),
     ...(typeof properties.lineHeight === "number" ? { lineHeight: properties.lineHeight } : {}),
@@ -401,7 +402,7 @@ function variableStyle(properties: PublicStyleProperties | undefined): Record<st
 export function publicStyleTarget(
   document: PublicStyleOverrideDocument | null | undefined,
   id: PublicStyleElementId,
-  options?: { recordId?: string | null; selectable?: boolean },
+  options?: { recordId?: string | null; selectable?: boolean; eventId?: string | null },
 ): {
   "data-event-style"?: string;
   "data-event-record"?: string;
@@ -415,7 +416,7 @@ export function publicStyleTarget(
     "data-event-style": id,
     ...(options?.recordId ? { "data-event-record": options.recordId } : {}),
     ...(options?.selectable ? { "data-brand-role": id, "data-brand-instance": options.recordId ? `${id}@${options.recordId}` : id } : {}),
-    style: { ...standardStyle(normal, DEFINITIONS.get(id)?.kind), ...variableStyle(normal) } as CSSProperties,
+    style: { ...standardStyle(normal, DEFINITIONS.get(id)?.kind, options?.eventId), ...variableStyle(normal) } as CSSProperties,
   };
 }
 
@@ -425,12 +426,12 @@ const CSS_SCOPE = /^[A-Za-z0-9_-]{1,64}$/;
  * Item CSS, confined to ONE scope root (`[data-public-style-root="<scope>"]`)
  * so two event scopes in one document never affect each other.
  */
-export function publicStyleCss(document: PublicStyleOverrideDocument | null | undefined, scope?: string): string {
+export function publicStyleCss(document: PublicStyleOverrideDocument | null | undefined, scope?: string, eventId?: string | null): string {
   const parsed = parsePublicStyleOverrides(document);
   const root = scope && CSS_SCOPE.test(scope) ? `[data-public-style-root="${scope}"] ` : "";
   const rules: string[] = [];
   const declaration = (properties: PublicStyleProperties, kind?: PublicStyleElementDefinition["kind"]) => {
-    const style = standardStyle(properties, kind) as Record<string, string | number | undefined>;
+    const style = standardStyle(properties, kind, eventId) as Record<string, string | number | undefined>;
     const pairs = Object.entries(style).map(([key, value]) => {
       const cssKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       return `${cssKey}:${typeof value === "number" && key === "fontSize" ? `${value}px` : value}!important`;
