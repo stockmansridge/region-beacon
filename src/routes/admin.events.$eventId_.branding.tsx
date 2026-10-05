@@ -2466,6 +2466,9 @@ function VisualBrandingEditor({
     passport: [["partial", "Some stamps"], ["empty", "No stamps yet"], ["complete", "All stamps"]],
     prizes: [["unlocked", "Has passport"], ["locked", "No passport yet"]],
     offers: [["published", "Published images"], ["no_image", "No image (sample)"]],
+    terms: [["local", "Event text"], ["external", "External document"], ["missing", "Not provided"]],
+    privacy: [["local", "Event text"], ["external", "External document"], ["missing", "Not provided"]],
+    legal: [["local", "Event text"], ["external", "External document"], ["missing", "Not provided"]],
     leaderboard: [["showcase", "Ranks and badges"], ["explorer", "Explorer tier"], ["completed", "Completed badge"]],
     ...RESULT_PAGE_STATES,
   };
@@ -2525,7 +2528,7 @@ function VisualBrandingEditor({
     }
     if (previewPage === "faq") return <FaqPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, entries: faqEntries }} />;
     if (previewPage === "bookmarks") return <PublicBookmarksPage subdomain="preview" previewData={{ branding: fixtureBranding, eventId: event.id, enabled: true, rows: !populated ? [] : listVenues.slice(0, 2).filter((venue) => venue.venue_id).map((venue) => ({ kind: venue.offer_summary ? "offer" as const : "venue" as const, venue_id: venue.venue_id!, venue_name: venue.name, logo_path: venue.logo_path, cover_path: venue.cover_path, offer_summary: venue.offer_summary, created_at: new Date(0).toISOString() })) }} />;
-    if (["terms", "privacy", "legal"].includes(previewPage)) return <CombinedLegalPage subdomain="preview" initialOpen={previewPage === "terms" ? "terms" : previewPage === "privacy" ? "privacy" : "both"} previewData={{ branding: fixtureBranding, row: publicContent?.legal ?? { event_id: event.id, event_name: event.name, legal_source: "local_text", terms_title: "Terms", terms_body: "Sample terms for preview.", terms_url: null, privacy_title: "Privacy", privacy_body: "Sample privacy information for preview.", privacy_url: null, terms_version: null, privacy_version: null, effective_at: null } as LegalRow }} />;
+    if (["terms", "privacy", "legal"].includes(previewPage)) return <CombinedLegalPage subdomain="preview" initialOpen={previewPage === "terms" ? "terms" : previewPage === "privacy" ? "privacy" : "both"} previewData={{ branding: fixtureBranding, row: legalPreviewRow(publicContent?.legal ?? null, event, pageState) }} />;
     if (previewPage === "passport") {
       const passport = { passport_id: "preview-passport", event_id: event.id, status: "active", completed_at: null, leaderboard_opt_out: false, email: "preview@example.invalid", full_name: "Sample Visitor", first_name: "Sample", last_name: "Visitor", mobile: null, postcode: null, marketing_opt_in: false, checkin_count: 1 } as PassportRow;
       const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: previewLabels.singular, venue_label_plural: previewLabels.plural, total_venues: listVenues.length, stamped_count: pageState === "empty" ? 0 : pageState === "complete" ? listVenues.length : 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: pageState === "complete" || (pageState !== "empty" && index === 0), checked_in_at: pageState === "complete" || (pageState !== "empty" && index === 0) ? new Date(0).toISOString() : null })));
@@ -2654,6 +2657,17 @@ function VisualBrandingEditor({
             rename={(id, label) => updateNavigationItem(id, { label })}
             changeIcon={(id, icon) => updateNavigationItem(id, { icon })}
             move={moveNavigationItem}
+          /> : null}
+          {itemMeta?.id === "shared.backLink" ? <BackLinkLabelInspector
+            context={(PUBLIC_BACK_LINK_CONTEXTS as readonly string[]).includes(selectedRecord ?? "") ? selectedRecord as PublicBackLinkContext : null}
+            labels={form.style_overrides.backLinks?.labels ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
+            setLabel={(key, value) => updateStyleDocument((next) => {
+              const labels = { ...(next.backLinks?.labels ?? {}) };
+              const cleaned = value === null ? null : cleanPublicBackLinkLabel(value);
+              if (cleaned === null) delete labels[key]; else labels[key] = cleaned;
+              const { backLinks: _old, ...rest } = next;
+              return Object.keys(labels).length ? { ...rest, backLinks: { labels } } : rest;
+            })}
           /> : null}
           {roleMeta && panelRole ? <div className={itemMeta ? "mt-6 border-t pt-4" : ""}>
             <div className="flex items-start justify-between gap-3"><div>{itemMeta ? <div className="text-xs font-semibold uppercase text-muted-foreground">Shared settings for this area</div> : null}<h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description} {itemMeta ? "These affect every item that uses them." : ""}</p></div>{!itemMeta ? <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button> : null}</div>
@@ -4059,3 +4073,43 @@ function CoverPositioner({
 }
 
 
+
+
+/** Legal preview row for the chosen state; uses the event's real legal row and never invents body text. */
+function legalPreviewRow(real: LegalRow | null, event: { id: string; name: string }, state: string): LegalRow {
+  const base: LegalRow = real ?? { event_id: event.id, event_name: event.name, legal_source: "local_text", terms_title: "Terms", terms_body: "Sample terms for preview.", terms_url: null, privacy_title: "Privacy", privacy_body: "Sample privacy information for preview.", privacy_url: null, terms_version: null, privacy_version: null, effective_at: null };
+  if (state === "missing") return { ...base, legal_source: "local_text", terms_body: null, terms_url: null, privacy_body: null, privacy_url: null };
+  if (state === "external") return { ...base, legal_source: "external_url", terms_url: base.terms_url ?? "https://example.com/terms", privacy_url: base.privacy_url ?? "https://example.com/privacy" };
+  return base;
+}
+
+const BACK_LINK_CONTEXT_LABELS: Record<PublicBackLinkContext, string> = {
+  legal: "Terms / Privacy", faq: "FAQ", prizes: "Prizes", leaderboard: "Leaderboard", join: "Join form",
+  "join-complete": "Join — already registered", venue: "Venue detail (to venues)", "passport-missing": "Passport not found",
+};
+
+function BackLinkLabelInspector({ context, labels, disabled, setLabel }: {
+  context: PublicBackLinkContext | null;
+  labels: Partial<Record<PublicBackLinkLabelKey, string>>;
+  disabled: boolean;
+  setLabel: (key: PublicBackLinkLabelKey, value: string | null) => void;
+}) {
+  const field = (key: PublicBackLinkLabelKey, title: string, hint: string) => (
+    <div className="space-y-1.5">
+      <Label htmlFor={`back-label-${key}`}>{title}</Label>
+      <div className="flex gap-2">
+        <Input id={`back-label-${key}`} maxLength={PUBLIC_BACK_LINK_LABEL_MAX} disabled={disabled} placeholder="Original wording"
+          value={labels[key] ?? ""} onChange={(event) => setLabel(key, event.target.value.trim() ? event.target.value : null)} />
+        <Button type="button" variant="outline" size="sm" disabled={disabled || !labels[key]} onClick={() => setLabel(key, null)}>Reset</Button>
+      </div>
+      <p className="text-xs text-muted-foreground">{hint}</p>
+    </div>
+  );
+  return (
+    <div className="mt-6 space-y-4 border-t pt-4">
+      <div><h3 className="text-sm font-semibold">Back link wording</h3><p className="text-xs text-muted-foreground">Plain text only. Where the link goes never changes.</p></div>
+      {field("default", "All back links", "Shared wording for every back link without its own wording. Empty keeps each page's original text.")}
+      {context ? field(context, `This link: ${BACK_LINK_CONTEXT_LABELS[context]}`, "Overrides the shared wording on this page only.") : null}
+    </div>
+  );
+}
