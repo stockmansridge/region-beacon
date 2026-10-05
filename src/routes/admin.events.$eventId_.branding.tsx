@@ -2691,8 +2691,7 @@ function VisualBrandingEditor({
             labels={form.style_overrides.backLinks?.labels ?? {}} disabled={!canEdit || busy || comparisonReadOnly}
             setLabel={(key, value) => updateStyleDocument((next) => {
               const labels = { ...(next.backLinks?.labels ?? {}) };
-              // Keep in-progress spaces while typing; the allowlisted parser trims on save.
-              const cleaned = value === null || cleanPublicBackLinkLabel(value) === null ? null : value.replace(/[\u0000-\u001F\u007F<>]/g, "").slice(0, PUBLIC_BACK_LINK_LABEL_MAX);
+              const cleaned = value === null ? null : cleanPublicBackLinkLabel(value);
               if (cleaned === null) delete labels[key]; else labels[key] = cleaned;
               const { backLinks: _old, ...rest } = next;
               return Object.keys(labels).length ? { ...rest, backLinks: { labels } } : rest;
@@ -2765,6 +2764,7 @@ export function recordScopeCopy(item: { repeat?: string; label: string }, record
 export function NavLabelField({ value, placeholder, disabled, commit }: { value: string; placeholder: string; disabled: boolean; commit: (label: string | null) => void }) {
   const [draft, setDraft] = useState(value);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setDraft(value); setError(null); }, [value]);
   const apply = () => {
     if (!draft.trim()) { setError(null); if (value) commit(null); return; }
     const cleaned = cleanPublicNavLabel(draft);
@@ -4163,6 +4163,29 @@ const BACK_LINK_CONTEXT_LABELS: Record<PublicBackLinkContext, string> = {
   "join-complete": "Join — already registered", venue: "Venue detail (to venues)", "passport-missing": "Passport not found",
 };
 
+/** Buffers typing locally; validates and commits on blur/Enter so spaces between words survive. */
+export function BackLinkLabelField({ id, value, disabled, commit }: { id: string; value: string; disabled: boolean; commit: (label: string | null) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setDraft(value); setError(null); }, [value]);
+  const apply = () => {
+    if (!draft.trim()) { setError(null); if (value) commit(null); else setDraft(""); return; }
+    const cleaned = cleanPublicBackLinkLabel(draft);
+    if (!cleaned) { setError(`Use 1–${PUBLIC_BACK_LINK_LABEL_MAX} characters, no < or >.`); return; }
+    setError(null);
+    if (cleaned !== value) commit(cleaned); else setDraft(cleaned);
+  };
+  return <>
+    <div className="flex gap-2">
+      <BackLinkInput id={id} data-label-buffer="" maxLength={PUBLIC_BACK_LINK_LABEL_MAX + 8} disabled={disabled} placeholder="Original wording"
+        value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={apply}
+        onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); } if (event.key === "Escape") { event.stopPropagation(); setDraft(value); setError(null); } }} />
+      <Button type="button" variant="outline" size="sm" disabled={disabled || !value} onClick={() => { setDraft(""); commit(null); }}>Reset</Button>
+    </div>
+    {error ? <p className="text-xs text-destructive">{error}</p> : null}
+  </>;
+}
+
 function BackLinkLabelInspector({ context, labels, disabled, setLabel }: {
   context: PublicBackLinkContext | null;
   labels: Partial<Record<PublicBackLinkLabelKey, string>>;
@@ -4172,11 +4195,7 @@ function BackLinkLabelInspector({ context, labels, disabled, setLabel }: {
   const field = (key: PublicBackLinkLabelKey, title: string, hint: string) => (
     <div className="space-y-1.5">
       <BackLinkFieldLabel htmlFor={`back-label-${key}`}>{title}</BackLinkFieldLabel>
-      <div className="flex gap-2">
-        <BackLinkInput id={`back-label-${key}`} maxLength={PUBLIC_BACK_LINK_LABEL_MAX} disabled={disabled} placeholder="Original wording"
-          value={labels[key] ?? ""} onChange={(event) => setLabel(key, event.target.value.trim() ? event.target.value : null)} />
-        <Button type="button" variant="outline" size="sm" disabled={disabled || !labels[key]} onClick={() => setLabel(key, null)}>Reset</Button>
-      </div>
+      <BackLinkLabelField key={`${key}:${labels[key] ?? ""}`} id={`back-label-${key}`} value={labels[key] ?? ""} disabled={disabled} commit={(v) => setLabel(key, v)} />
       <p className="text-xs text-muted-foreground">{hint}</p>
     </div>
   );

@@ -626,7 +626,9 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
                 className={`${v2Cta ? "" : "mt-6 "}flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-center text-sm font-semibold text-[var(--event-primary-fg,#F6EFE2)] shadow transition hover:opacity-95`}
                 style={{ backgroundColor: "var(--event-primary,#1F3D2B)" }}
               >
-                <PublicStyleTarget id="venue.collect.icon" recordId={venueId}><span aria-hidden>📷</span></PublicStyleTarget>
+                {v2Cta ? (
+                  <PublicStyleTarget id="venue.collect.icon" recordId={venueId}><span aria-hidden className="box-border grid place-items-center rounded-full border border-transparent"><Camera className="h-4 w-4" style={{ color: "var(--item-icon-color, currentColor)" }} /></span></PublicStyleTarget>
+                ) : <span aria-hidden>📷</span>}
                 Scan venue QR to collect your stamp
               </Link></PublicStyleTarget>
             );
