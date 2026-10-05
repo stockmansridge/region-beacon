@@ -352,7 +352,11 @@ describe("PublicEventNav override precedence", () => {
   });
 
   it("renders event-scoped V2 item labels, order, icons, and active item styles", () => {
-    const configured = { ...doc, navigation: { items: [
+    const configured = { version: 1, items: {
+      "shared.navigation.surface": { normal: { backgroundColor: "#112233", borderColor: "#445566" } },
+      "shared.navigation.item": { normal: { color: "#AA0001" } },
+      "shared.navigation.activeItem": { normal: { color: "#BB0003", iconColor: "#EE00AA" } },
+    }, navigation: { items: [
       { id: "venues", label: "Stops", icon: "map" }, { id: "passport", label: "My Pass", icon: "stamp" },
       { id: "prizes", label: "Rewards", icon: "trophy" }, { id: "offers", label: "Deals", icon: "tag" },
       { id: "more", label: "Explore", icon: "more" },
