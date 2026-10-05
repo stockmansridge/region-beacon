@@ -45,6 +45,36 @@ describe("V2 theme round-trip (finding 5)", () => {
   });
 });
 
+describe("V2 bottom navigation round-trip", () => {
+  it("preserves valid labels, icon choices, order and unrelated overrides", () => {
+    const source = {
+      version: 1, items: { "passport.hero.heading": { normal: { color: "#123456" } } },
+      navigation: { items: [
+        { id: "venues", label: "Stops", icon: "pin" },
+        { id: "passport", label: "My Pass", icon: "stamp" },
+        { id: "prizes", label: "Rewards", icon: "trophy" },
+        { id: "offers", label: "Deals", icon: "tag" },
+        { id: "more", label: "More", icon: "more" },
+      ] },
+    };
+    const parsed = parsePublicStyleOverrides(source);
+    expect(parsed.navigation?.items.map((item) => item.id)).toEqual(["venues", "passport", "prizes", "offers", "more"]);
+    expect(parsed.navigation?.items[0]).toEqual({ id: "venues", label: "Stops", icon: "pin" });
+    expect(parsed.items["passport.hero.heading"]?.normal?.color).toBe("#123456");
+    expect(parsePublicStyleOverrides(JSON.parse(JSON.stringify(parsed)))).toEqual(parsed);
+  });
+
+  it("reports malformed and duplicate items while restoring safe required defaults", () => {
+    const checked = validatePublicStyleOverrides({ version: 1, items: {}, navigation: { items: [
+      { id: "passport", label: "Pass", icon: "stamp" },
+      { id: "passport", label: "Again", icon: "trophy" },
+      { id: "bad", label: "Bad", icon: "javascript" },
+    ] } });
+    expect(checked.errors.length).toBeGreaterThan(0);
+    expect(new Set(checked.document.navigation?.items.map((item) => item.id))).toEqual(new Set(["passport", "prizes", "venues", "offers", "more"]));
+  });
+});
+
 describe("independent text / icon / background (finding 6)", () => {
   const doc = { version: 1 as const, items: { "home.shareButton": { normal: { color: "#111111", iconColor: "#FF0000", backgroundColor: "#00FF00", borderColor: "#0000FF" }, states: { hover: { iconColor: "#00AAFF", color: "#222222" } } } } };
 

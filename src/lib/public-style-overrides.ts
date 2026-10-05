@@ -54,11 +54,29 @@ export type PublicStyleItemOverride = {
   states?: Partial<Record<Exclude<PublicStyleState, "normal">, PublicStyleProperties>>;
 };
 
+export const PUBLIC_NAV_ITEM_IDS = ["passport", "prizes", "venues", "offers", "more"] as const;
+export type PublicNavItemId = (typeof PUBLIC_NAV_ITEM_IDS)[number];
+export const PUBLIC_NAV_ICON_IDS = ["stamp", "trophy", "pin", "tag", "more", "home", "map", "leaderboard"] as const;
+export type PublicNavIconId = (typeof PUBLIC_NAV_ICON_IDS)[number];
+export type PublicNavigationItem = { id: PublicNavItemId; label: string; icon: PublicNavIconId };
+export type PublicNavigationConfig = { items: PublicNavigationItem[] };
+
+export const DEFAULT_PUBLIC_NAVIGATION: PublicNavigationConfig = {
+  items: [
+    { id: "passport", label: "Passport", icon: "stamp" },
+    { id: "prizes", label: "Prizes", icon: "trophy" },
+    { id: "venues", label: "Venues", icon: "pin" },
+    { id: "offers", label: "Offers", icon: "tag" },
+    { id: "more", label: "More", icon: "more" },
+  ],
+};
+
 export type PublicStyleOverrideDocument = {
   version: typeof PUBLIC_STYLE_DOCUMENT_VERSION;
   items: Record<string, PublicStyleItemOverride>;
   records?: Record<string, Record<string, PublicStyleItemOverride>>;
   theme?: PublicV2Theme;
+  navigation?: PublicNavigationConfig;
 };
 
 export const PUBLIC_V2_THEME_KEYS = [
@@ -102,6 +120,7 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "shared.navigation.surface", page: "shared", section: "Navigation", label: "Navigation bars (top header + bottom bar, all pages)", kind: "surface", properties: SURFACE },
   { id: "shared.navigation.item", page: "shared", section: "Navigation", label: "Navigation items (header buttons, event name, inactive bottom tabs)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
   { id: "shared.navigation.activeItem", page: "shared", section: "Navigation", label: "Active bottom tab (current page / open menu)", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, similarGroup: "navigation-items" },
+  { id: "shared.navigation.tabItem", page: "shared", section: "Navigation", label: "Bottom menu item", kind: "button", properties: NAVIGATION_BUTTON, states: INTERACTIVE, repeat: "template", similarGroup: "navigation-items" },
   { id: "shared.navigation.drawer", page: "shared", section: "Navigation", label: "Menu drawer", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.surface", page: "shared", section: "Announcements", label: "Announcement bar", kind: "surface", properties: SURFACE },
   { id: "shared.announcement.text", page: "shared", section: "Announcements", label: "Announcement text", kind: "text", properties: TEXT },
@@ -138,6 +157,9 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "home.stamps.label", page: "home", section: "Stamp collection", label: "Venue stamp label", kind: "text", properties: TEXT, repeat: "venue" },
 
   { id: "passport.page.surface", page: "passport", section: "Page", label: "Passport page", kind: "surface", properties: SURFACE },
+  { id: "passport.hero.image", page: "passport", section: "Hero", label: "Passport cover image", kind: "surface", properties: ["opacity"] },
+  { id: "passport.hero.overlay", page: "passport", section: "Hero", label: "Passport cover overlay", kind: "surface", properties: ["backgroundColor", "opacity", "backgroundGradient"] },
+  { id: "passport.summary.surface", page: "passport", section: "Progress", label: "Progress summary card", kind: "surface", properties: SURFACE },
   { id: "passport.progress.ring", page: "passport", section: "Progress", label: "Progress ring", kind: "progress", properties: PROGRESS },
   { id: "passport.progress.number", page: "passport", section: "Progress", label: "Progress number", kind: "text", properties: TEXT },
   { id: "passport.stamp.tile", page: "passport", section: "Stamps", label: "Venue stamp", kind: "surface", properties: SURFACE, repeat: "venue" },
@@ -146,6 +168,7 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "leaderboard.row.stamps", page: "leaderboard", section: "Leaderboard", label: "Stamps count", kind: "text", properties: TEXT, repeat: "template" },
   { id: "leaderboard.row.meta", page: "leaderboard", section: "Leaderboard", label: "Venue / bonus breakdown", kind: "text", properties: TEXT, repeat: "template" },
   { id: "passport.stamp.label", page: "passport", section: "Stamps", label: "Venue stamp label", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "passport.stamps.surface", page: "passport", section: "Stamps", label: "Stamp collection card", kind: "surface", properties: SURFACE },
 
   { id: "join.page.surface", page: "join", section: "Page", label: "Join page", kind: "surface", properties: SURFACE },
   { id: "join.form.surface", page: "join", section: "Form", label: "Registration form", kind: "surface", properties: SURFACE },
@@ -164,6 +187,11 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "venue.actions.directions", page: "venue", section: "Actions", label: "Directions button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
   { id: "venue.actions.website", page: "venue", section: "Actions", label: "Website button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
   { id: "venue.bookmark", page: "venue", section: "Actions", label: "Bookmark button", kind: "icon", properties: ICON, states: INTERACTIVE, repeat: "venue" },
+  { id: "venue.collect.surface", page: "venue", section: "Collect points", label: "Collect points panel", kind: "surface", properties: SURFACE, repeat: "venue" },
+  { id: "venue.collect.heading", page: "venue", section: "Collect points", label: "Collect points heading", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "venue.collect.body", page: "venue", section: "Collect points", label: "QR scan instruction", kind: "text", properties: TEXT, repeat: "venue" },
+  { id: "venue.collect.cta", page: "venue", section: "Collect points", label: "Scan QR button", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
+  { id: "venue.collect.icon", page: "venue", section: "Collect points", label: "Scan QR icon", kind: "icon", properties: ICON, repeat: "venue" },
 
   { id: "offers.card.surface", page: "offers", section: "Offers", label: "Offer card", kind: "surface", properties: SURFACE, repeat: "venue" },
   { id: "offers.card.badge", page: "offers", section: "Offers", label: "Offer badge", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "venue" },
@@ -267,6 +295,11 @@ export const PUBLIC_STYLE_ELEMENTS = [
   { id: "passport.rewards.heading", page: "passport", section: "Prizes", label: "Prizes heading", kind: "text", properties: TEXT },
   { id: "passport.rewards.intro", page: "passport", section: "Prizes", label: "Prizes intro", kind: "text", properties: TEXT },
   { id: "passport.award.body", page: "passport", section: "Prizes", label: "Prize description", kind: "text", properties: TEXT, repeat: "award" },
+  { id: "passport.award.surface", page: "passport", section: "Prizes", label: "Prize card", kind: "surface", properties: SURFACE, repeat: "award" },
+  { id: "passport.award.heading", page: "passport", section: "Prizes", label: "Prize name", kind: "text", properties: TEXT, repeat: "award" },
+  { id: "passport.award.status", page: "passport", section: "Prizes", label: "Prize status", kind: "button", properties: BUTTON, states: INTERACTIVE, repeat: "award" },
+  { id: "passport.award.progress", page: "passport", section: "Prizes", label: "Prize progress", kind: "progress", properties: PROGRESS, repeat: "award" },
+  { id: "passport.holder.surface", page: "passport", section: "Passport holder", label: "Passport holder card", kind: "surface", properties: SURFACE },
   { id: "checkin.result.body", page: "checkin", section: "Result", label: "Check-in result message", kind: "text", properties: TEXT },
   { id: "checkin.result.icon", page: "checkin", section: "Result", label: "Check-in result icon", kind: "icon", properties: ICON },
   { id: "checkin.result.kicker", page: "checkin", section: "Result", label: "Check-in result label", kind: "text", properties: TEXT },
@@ -358,6 +391,42 @@ function cleanTheme(raw: unknown, errors?: string[]): PublicV2Theme | undefined 
     else errors?.push(`theme.${key} has an invalid value`);
   }
   return Object.keys(theme).length > 0 ? theme : undefined;
+}
+
+function cleanNavigation(raw: unknown, errors?: string[]): PublicNavigationConfig | undefined {
+  if (raw === undefined) return undefined;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    errors?.push("navigation must be an object");
+    return undefined;
+  }
+  const values = (raw as { items?: unknown }).items;
+  if (!Array.isArray(values)) {
+    errors?.push("navigation.items must be an array");
+    return undefined;
+  }
+  const allowedIds = new Set<string>(PUBLIC_NAV_ITEM_IDS);
+  const allowedIcons = new Set<string>(PUBLIC_NAV_ICON_IDS);
+  const seen = new Set<string>();
+  const items: PublicNavigationItem[] = [];
+  for (const [index, rawItem] of values.entries()) {
+    if (!rawItem || typeof rawItem !== "object" || Array.isArray(rawItem)) {
+      errors?.push(`navigation.items.${index} is invalid`); continue;
+    }
+    const item = rawItem as Record<string, unknown>;
+    if (typeof item.id !== "string" || !allowedIds.has(item.id) || seen.has(item.id)) {
+      errors?.push(`navigation.items.${index}.id is invalid or duplicated`); continue;
+    }
+    if (typeof item.label !== "string" || !item.label.trim() || item.label.trim().length > 24) {
+      errors?.push(`navigation.items.${index}.label is invalid`); continue;
+    }
+    if (typeof item.icon !== "string" || !allowedIcons.has(item.icon)) {
+      errors?.push(`navigation.items.${index}.icon is invalid`); continue;
+    }
+    seen.add(item.id);
+    items.push({ id: item.id as PublicNavItemId, label: item.label.trim(), icon: item.icon as PublicNavIconId });
+  }
+  for (const fallback of DEFAULT_PUBLIC_NAVIGATION.items) if (!seen.has(fallback.id)) items.push(fallback);
+  return { items };
 }
 
 function cleanProperty(property: PublicStyleProperty, raw: unknown): string | number | null {
@@ -459,11 +528,13 @@ export function parsePublicStyleOverrides(raw: unknown, errors?: string[]): Publ
     }
   }
   const theme = cleanTheme(source.theme, errors);
+  const navigation = cleanNavigation(source.navigation, errors);
   return {
     version: PUBLIC_STYLE_DOCUMENT_VERSION,
     items,
     ...(Object.keys(records).length > 0 ? { records } : {}),
     ...(theme ? { theme } : {}),
+    ...(navigation ? { navigation } : {}),
   };
 }
 

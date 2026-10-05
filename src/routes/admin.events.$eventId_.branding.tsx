@@ -38,7 +38,7 @@ import { PublicBookmarksPage } from "@/routes/live.$subdomain.bookmarks";
 import { CombinedLegalPage, type LegalRow } from "@/components/public-legal";
 import { PassportPreview, type PassportRow } from "@/routes/passport.$token";
 import { normalizePassportStampRows } from "@/lib/passport-stamps";
-import { resolveEventBrandingKeys } from "@/lib/use-event-palette";
+import { brandingScopeProps, resolveEventBrandingKeys } from "@/lib/use-event-palette";
 import { PublicNavProvider } from "@/components/public-nav-context";
 import type { PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import {
@@ -86,6 +86,8 @@ import {
 } from "@/lib/event-brand-kits";
 import {
   PUBLIC_STYLE_ELEMENTS,
+  DEFAULT_PUBLIC_NAVIGATION,
+  PUBLIC_NAV_ICON_IDS,
   emptyPublicStyleOverrides,
   parsePublicStyleOverrides,
   resolvePublicTemplateVersion,
@@ -95,6 +97,7 @@ import {
   type PublicStyleElementDefinition,
   type PublicStyleOverrideDocument,
   type PublicStyleProperty,
+  type PublicNavIconId,
   type PublicV2ThemeKey,
 } from "@/lib/public-style-overrides";
 
@@ -2291,6 +2294,19 @@ function VisualBrandingEditor({
     });
   };
 
+  const navItems = form.style_overrides.navigation?.items ?? DEFAULT_PUBLIC_NAVIGATION.items;
+  const updateNavigation = (items: typeof navItems) => updateStyleDocument((next) => ({ ...next, navigation: { items: [...items] } }));
+  const updateNavigationItem = (id: string, patch: { label?: string; icon?: PublicNavIconId }) =>
+    updateNavigation(navItems.map((item) => item.id === id ? { ...item, ...patch } : item));
+  const moveNavigationItem = (id: string, direction: -1 | 1) => {
+    const index = navItems.findIndex((item) => item.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= navItems.length) return;
+    const next = [...navItems];
+    [next[index], next[target]] = [next[target], next[index]];
+    updateNavigation(next);
+  };
+
   // Keyboard: Ctrl/Cmd+Z undo, Shift+Ctrl/Cmd+Z or Ctrl+Y redo, Escape clears selection.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -2495,7 +2511,7 @@ function VisualBrandingEditor({
     if (previewPage === "passport") {
       const passport = { passport_id: "preview-passport", event_id: event.id, status: "active", completed_at: null, leaderboard_opt_out: false, email: "preview@example.invalid", full_name: "Sample Visitor", first_name: "Sample", last_name: "Visitor", mobile: null, postcode: null, marketing_opt_in: false, checkin_count: 1 } as PassportRow;
       const stamps = normalizePassportStampRows(listVenues.map((venue, index) => ({ passport_id: passport.passport_id, event_id: event.id, event_name: event.name, venue_label_singular: previewLabels.singular, venue_label_plural: previewLabels.plural, total_venues: listVenues.length, stamped_count: pageState === "empty" ? 0 : pageState === "complete" ? listVenues.length : 1, venue_id: venue.venue_id, venue_name: venue.name, venue_logo_path: venue.logo_path, venue_cover_path: venue.cover_path, order_index: venue.order_index, is_stamped: pageState === "complete" || (pageState !== "empty" && index === 0), checked_in_at: pageState === "complete" || (pageState !== "empty" && index === 0) ? new Date(0).toISOString() : null })));
-      return <PassportPreview passport={passport} eventName={event.name} stamps={stamps} token="preview" subdomain={null} branding={fixtureBranding} awards={awardEntries} preview />;
+      return <EventPaletteScope {...brandingScopeProps(fixtureBranding)} className="min-h-screen"><PassportPreview passport={passport} eventName={event.name} stamps={stamps} token="preview" subdomain="preview" branding={fixtureBranding} awards={awardEntries} preview /></EventPaletteScope>;
     }
     return <PublicEventTemplate subdomain={null} event={draftEvent} venues={venues} mode="preview" forceTemplate={previewSource === "live" ? (liveIsV2 ? "v2" : "v1") : "v2"} onPreviewNavigate={previewInteraction === "navigate" ? navigatePreview : undefined} />;
   };
@@ -2612,7 +2628,14 @@ function VisualBrandingEditor({
             inherited={inherited} state={styleState} setState={setStyleState} setProperty={(property, value) => { setItemProperty(property, value); if (typeof value === "string") rememberColour(value); }}
             reset={resetItem} undo={undoStyle} redo={redoStyle} canUndo={stylePast.length > 0} canRedo={styleFuture.length > 0}
             disabled={!canEdit || busy || comparisonReadOnly} clear={() => setSelectedRole(null)} quickColours={quickColours} customFonts={customFonts}
-            record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope } : null}
+            record={itemMeta.repeat && selectedRecord ? { id: selectedRecord, scope: recordScope, setScope: setRecordScope, label: itemMeta.id === "shared.navigation.tabItem" ? "menu item" : undefined } : null}
+          /> : null}
+          {itemMeta && ["shared.navigation.surface", "shared.navigation.item", "shared.navigation.activeItem", "shared.navigation.tabItem"].includes(itemMeta.id) ? <NavigationMenuInspector
+            items={navItems} selectedId={selectedRecord} disabled={!canEdit || busy || comparisonReadOnly}
+            select={(id) => { setSelectedRecord(id); setRecordScope("record"); }}
+            rename={(id, label) => updateNavigationItem(id, { label })}
+            changeIcon={(id, icon) => updateNavigationItem(id, { icon })}
+            move={moveNavigationItem}
           /> : null}
           {roleMeta && panelRole ? <div className={itemMeta ? "mt-6 border-t pt-4" : ""}>
             <div className="flex items-start justify-between gap-3"><div>{itemMeta ? <div className="text-xs font-semibold uppercase text-muted-foreground">Shared settings for this area</div> : null}<h2 className="text-lg font-semibold">{roleMeta.label}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{roleMeta.description} {itemMeta ? "These affect every item that uses them." : ""}</p></div>{!itemMeta ? <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedRole(null)} aria-label="Clear selection"><X className="h-4 w-4" /></Button> : null}</div>
@@ -2636,6 +2659,22 @@ function VisualBrandingEditor({
       </div>
     </div>
   );
+}
+
+function NavigationMenuInspector({ items, selectedId, disabled, select, rename, changeIcon, move }: {
+  items: typeof DEFAULT_PUBLIC_NAVIGATION.items; selectedId: string | null; disabled: boolean;
+  select: (id: string) => void; rename: (id: string, label: string) => void;
+  changeIcon: (id: string, icon: PublicNavIconId) => void; move: (id: string, direction: -1 | 1) => void;
+}) {
+  const selected = items.find((item) => item.id === selectedId) ?? items[0];
+  if (!selected) return null;
+  return <div className="mt-5 space-y-4 border-t pt-4">
+    <Field label="Bottom mobile menu item"><Select value={selected.id} onValueChange={select} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{items.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}</SelectContent></Select></Field>
+    <Field label="Display name"><input aria-label="Bottom menu display name" maxLength={24} value={selected.label} disabled={disabled} onChange={(event) => { const label = event.target.value.slice(0, 24); if (label.trim()) rename(selected.id, label); }} className="h-10 w-full rounded-md border bg-background px-3 text-sm" /></Field>
+    <Field label="Icon"><Select value={selected.icon} onValueChange={(value) => changeIcon(selected.id, value as PublicNavIconId)} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{PUBLIC_NAV_ICON_IDS.map((icon) => <SelectItem key={icon} value={icon}>{icon.replace(/(^|-)(\w)/g, (_, __, letter: string) => ` ${letter.toUpperCase()}`).trim()}</SelectItem>)}</SelectContent></Select></Field>
+    <div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={disabled || items[0]?.id === selected.id} onClick={() => move(selected.id, -1)}>Move up</Button><Button type="button" variant="outline" size="sm" disabled={disabled || items.at(-1)?.id === selected.id} onClick={() => move(selected.id, 1)}>Move down</Button></div>
+    <p className="text-xs text-muted-foreground">Order and names affect display only. Each item keeps its fixed, safe destination.</p>
+  </div>;
 }
 
 /** Item → the shared Theme panel that also controls it (shown below the item inspector). */
@@ -2819,7 +2858,7 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
   setProperty: (property: PublicStyleProperty, value: string | number | null) => void;
   reset: () => void; undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean; disabled: boolean; clear: () => void;
   quickColours: QuickColour[]; customFonts: EventCustomFont[];
-  record: { id: string; scope: "record" | "type"; setScope: (scope: "record" | "type") => void } | null;
+  record: { id: string; scope: "record" | "type"; setScope: (scope: "record" | "type") => void; label?: string } | null;
 }) {
   const colourProperties = item.properties.filter((property) => property.endsWith("Color") || property === "color");
   const hasTypography = item.properties.includes("fontFamily");
@@ -2829,7 +2868,7 @@ function ItemStyleInspector({ item, values, hasOverride, inherited, state, setSt
   const opacityPercent = typeof values.opacity === "number" ? Math.round(values.opacity * 100) : null;
   return <>
     <div className="flex items-start justify-between gap-3"><div><div className="text-xs font-semibold uppercase text-muted-foreground">{record?.scope === "type" ? "All items of this type" : "This item"}</div><h2 className="text-lg font-semibold">{item.label}</h2><p className="mt-1 text-sm text-muted-foreground">Changes only this named item{record?.scope === "record" ? " for this one record" : ""}. Theme and Brand Kit values remain the fallback.</p></div><Button type="button" size="icon" variant="ghost" onClick={clear} aria-label="Clear selection"><X className="h-4 w-4" /></Button></div>
-    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">This one only</SelectItem><SelectItem value="type">Every {item.repeat === "award" ? "prize" : "venue"} (type default)</SelectItem></SelectContent></Select></Field> : null}
+    {record ? <Field label="Apply to"><Select value={record.scope} onValueChange={(value) => record.setScope(value as "record" | "type")} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="record">This one only</SelectItem><SelectItem value="type">Every {record.label ?? (item.repeat === "award" ? "prize" : "venue")} (type default)</SelectItem></SelectContent></Select></Field> : null}
     <div className="mt-4 flex items-center justify-between"><div className="flex gap-1"><Button type="button" size="icon" variant="outline" onClick={undo} disabled={!canUndo || disabled} aria-label="Undo item style"><Undo2 className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={redo} disabled={!canRedo || disabled} aria-label="Redo item style"><Redo2 className="h-4 w-4" /></Button></div><Button type="button" variant="outline" size="sm" onClick={reset} disabled={disabled || !hasOverride}>Reset this item</Button></div>
     {item.states?.length ? <Field label="Appearance (shown in the preview)"><Select value={state} onValueChange={(value) => setState(value as PublicStyleState)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Normal</SelectItem>{item.states.map((value) => <SelectItem key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></Field> : null}
     <div className="mt-5 space-y-4">
