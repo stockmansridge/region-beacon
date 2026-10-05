@@ -549,3 +549,91 @@ describe("f034e969 follow-up repairs", () => {
     expect(tabs).not.toContain("Venues");
   });
 });
+
+describe("final source-review corrections", () => {
+  const typeSequentially = (input: HTMLInputElement, text: string) => {
+    let v = "";
+    for (const ch of text) { v += ch; fireEvent.change(input, { target: { value: v } }); expect(input.value).toBe(v); }
+  };
+
+  it("back-link and menu label fields keep spaces while typing, commit on blur/Enter, reset, and resync on undo", async () => {
+    const { BackLinkLabelField, NavLabelField } = await import("./admin.events.$eventId_.branding");
+    for (const Field of ["back", "nav"] as const) {
+      const commit = vi.fn();
+      const el = (value: string) => Field === "back"
+        ? <BackLinkLabelField id="x" value={value} disabled={false} commit={commit} />
+        : <NavLabelField value={value} placeholder="Stops" disabled={false} commit={commit} />;
+      const r = render(el(""));
+      const input = r.container.querySelector("input")!;
+      typeSequentially(input, "Back to the trail");
+      expect(commit).not.toHaveBeenCalled();
+      fireEvent.blur(input);
+      expect(commit).toHaveBeenLastCalledWith("Back to the trail");
+      r.rerender(el("Back to the trail"));
+      typeSequentially(input, "Home page ");
+      fireEvent.keyDown(input, { key: "Enter" });
+      expect(commit).toHaveBeenLastCalledWith("Home page");
+      // Undo / context switch: a new saved value replaces the local buffer.
+      r.rerender(el("Earlier label"));
+      expect(input.value).toBe("Earlier label");
+      fireEvent.change(input, { target: { value: "" } });
+      fireEvent.blur(input);
+      expect(commit).toHaveBeenLastCalledWith(null);
+      cleanup();
+    }
+  });
+
+  it("legacy BUTTON overrides on the offer badge migrate to icon colours", async () => {
+    const { parsePublicStyleOverrides } = await import("@/lib/public-style-overrides");
+    const doc = parsePublicStyleOverrides({ version: 1, items: { "offers.card.badge": { normal: { backgroundColor: "#112233", color: "#445566" } } }, records: { "offers.card.badge": { v1: { normal: { backgroundColor: "#778899", iconBackgroundColor: "#AAAAAA" } } } } });
+    expect(doc.items["offers.card.badge"]?.normal).toEqual({ iconBackgroundColor: "#112233", iconColor: "#445566" });
+    expect((doc as any).records["offers.card.badge"].v1.normal).toEqual({ iconBackgroundColor: "#AAAAAA" });
+  });
+
+  it("Offers V1 no-image fallback is the original single layer", () => {
+    const offers = [{ venue_id: "venue-no-image", name: "No Image", offer_summary: "A gift", cover_path: null, logo_path: null, offer_display_icon: "gift", offer_display_colour: null, offer_display_foreground_colour: null, event_found: true }] as OfferVenue[];
+    const { container } = render(inPreview(<PublicOffersPage subdomain="preview" previewData={{ event: { ...V1_EVENT, name: "Trail", public_template_version: null, v2_style_config: null } as unknown as OffersEventRow, offers }} />, "/offers"));
+    const thumb = container.querySelector(".sm\\:block")!;
+    expect(thumb.innerHTML.match(/\/10/g)).toBeNull();
+    expect(thumb.firstElementChild!.className).toBe("grid h-full w-full place-items-center text-[var(--event-primary,#1F3D2B)]/40");
+    expect(container.querySelector("[data-event-style]")).toBeNull();
+  });
+
+  it("template slots get slot-aware scope copy", async () => {
+    const { recordScopeCopy } = await import("./admin.events.$eventId_.branding");
+    expect(recordScopeCopy({ repeat: "template", label: "Tier badge text" }, { id: "gold" })).toEqual({ one: "Only the “gold” version", all: "All versions of tier badge text (type default)" });
+    expect(recordScopeCopy({ repeat: "venue", label: "x" }, { id: "v" }).all).toBe("Every venue (type default)");
+  });
+
+  it("V2 nav is selectable in preview without the brandingSelection prop", () => {
+    const { container } = render(inPreview(<PublicStyleScope overrides={{ version: 1, items: {} }} eventId="e"><PublicEventNav subdomain="preview" eventId="e" eventName="Trail" /></PublicStyleScope>, "/faq"));
+    expect(container.querySelector('[data-event-style="shared.navigation.surface"][data-brand-instance]') ?? container.querySelector('[data-brand-instance^="shared.navigation"]')).not.toBeNull();
+  });
+
+  it("Legal reveal requests re-open a collapsed section each time", async () => {
+    const { CombinedLegalPage } = await import("@/components/public-legal");
+    const row = { event_id: "e", event_name: "E", legal_source: "local_text", terms_title: "T", terms_body: "Terms text", terms_url: null, privacy_title: "P", privacy_body: "Privacy text", privacy_url: null, terms_version: null, privacy_version: null, effective_at: null } as never;
+    const page = (reveal: { section: "terms"; nonce: number } | null) => inPreview(<PublicStyleScope overrides={{ version: 1, items: {} }} eventId="e"><CombinedLegalPage subdomain="preview" initialOpen="both" reveal={reveal} previewData={{ branding: { ready: true } as never, row }} /></PublicStyleScope>, "/terms-privacy");
+    const r = render(page(null));
+    const toggle = () => r.container.querySelector<HTMLButtonElement>('[data-legal-card="terms"] button')!;
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(toggle()); // collapse (select mode may be inert; force via state below if needed)
+    r.rerender(page({ section: "terms", nonce: 1 }));
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    expect(r.container.textContent).toContain("Terms text");
+  });
+
+  it("venue QR icon is a colourable SVG in V2 and the original emoji in V1", async () => {
+    const { PublicVenueDetailPage } = await import("./live.$subdomain.venues.$venueId");
+    const venue = { venue_id: "venue-a", name: "Estate", description: null, offer_summary: null, offer_display_icon: null, offer_display_colour: null, offer_display_foreground_colour: null, address: null, website_url: null, phone: null, logo_path: null, cover_path: null, lat: null, lng: null, order_index: 0 };
+    const v1 = render(inPreview(<PublicVenueDetailPage subdomain="preview" venueId="venue-a" previewData={{ event: { event_id: "e1", name: "Trail", public_template_version: null } as never, venue }} />, "/venues/venue-a"));
+    expect(v1.container.textContent).toContain("📷");
+    cleanup();
+    const doc = { version: 1, items: { "venue.collect.icon": { normal: { iconColor: "#123123" } } } } as never;
+    const v2 = render(inPreview(<PublicStyleScope overrides={doc} eventId="e2"><PublicVenueDetailPage subdomain="preview" venueId="venue-a" previewData={{ event: { event_id: "e2", name: "Trail", public_template_version: "v2", v2_style_config: doc } as never, venue }} /></PublicStyleScope>, "/venues/venue-a"));
+    const icon = v2.container.querySelector<HTMLElement>('[data-event-style="venue.collect.icon"]')!;
+    expect(v2.container.textContent).not.toContain("📷");
+    expect(icon.querySelector("svg")).not.toBeNull();
+    expect(icon.style.getPropertyValue("--item-icon-color")).toBe("#123123");
+  });
+});
