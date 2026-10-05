@@ -230,10 +230,19 @@ function HeroCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Desktop: 3 cards side by side, highlight current */}
-      <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4">
+      {/* Desktop: three cards per row, highlight current */}
+      <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3">
         {SLIDES.map((s, i) => (
-          <SlideCard key={s.title} slide={s} active={i === index} />
+          <SlideCard
+            key={s.title}
+            slide={s}
+            active={i === index}
+            className={
+              SLIDES.length % 3 === 1 && i === SLIDES.length - 1
+                ? "lg:col-start-2"
+                : undefined
+            }
+          />
         ))}
       </div>
       {/* Mobile: single card */}
