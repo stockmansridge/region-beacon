@@ -25,8 +25,11 @@ export function CollectPointsSection({
   primaryColor,
   accentColor,
   canRegister,
+  preview = false,
 }: {
   eventId: string;
+  /** Editor preview: show the no-passport state; never read visitor storage or call RPCs. */
+  preview?: boolean;
   primaryColor?: string | null;
   accentColor?: string | null;
   canRegister: boolean;
@@ -40,6 +43,7 @@ export function CollectPointsSection({
 
   useEffect(() => {
     let cancelled = false;
+    if (preview) { setState({ kind: "no_passport" }); return; }
     (async () => {
       const stored = readStoredPassportForEvent(eventId);
       if (!stored?.access_token) {
@@ -66,7 +70,7 @@ export function CollectPointsSection({
     return () => {
       cancelled = true;
     };
-  }, [eventId]);
+  }, [eventId, preview]);
 
   return (
     <section {...surfaceStyle} style={surfaceStyle.style} className="mx-auto mt-8 w-full max-w-md rounded-3xl border border-[var(--event-border,#E6DCC7)] bg-[var(--event-card-bg,#FBF5E8)] p-6 shadow-sm">

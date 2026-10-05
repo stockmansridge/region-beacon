@@ -10,6 +10,7 @@ import { matchRootDomain } from "@/lib/domains";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
+import { applyV2Theme, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { loadPublicV2Branding } from "@/lib/use-event-palette";
@@ -161,10 +162,13 @@ export function ScannerView({ subdomain, event, eventId, hasPassport, err, manua
   onCopySupport: () => void;
   camera: React.ReactNode;
 }) {
-  const evt = event ?? {};
-  const g = <T,>(k: string) => (evt[k] as T | null | undefined) ?? null;
-  const templateVersion = resolvePublicTemplateVersion(g<string>("public_template_version"));
+  const raw = event ?? {};
+  const templateVersion = resolvePublicTemplateVersion(raw.public_template_version);
   const v2 = templateVersion === "v2";
+  // V1 reads the raw row (exact legacy prop bag). V2 reads the canonical event:
+  // the saved V2 theme overlaid on the row, plus parsed item overrides.
+  const evt = (v2 ? applyV2Theme(raw as PublicBrandingEvent) : raw) as Record<string, unknown>;
+  const g = <T,>(k: string) => (evt[k] as T | null | undefined) ?? null;
 
   return (
     <ResultPaletteScope
@@ -205,7 +209,7 @@ export function ScannerView({ subdomain, event, eventId, hasPassport, err, manua
       headingFontFamily={g<string>("heading_font_family")}
       eventId={eventId}
       templateVersion={templateVersion}
-      styleOverrides={v2 ? g("v2_style_config") : null}
+      styleOverrides={v2 ? g("style_overrides") : null}
       className="min-h-screen pb-12"
     >
       <div className="px-4">

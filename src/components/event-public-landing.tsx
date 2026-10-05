@@ -795,6 +795,7 @@ export function EventPublicLanding({
               title="Share button"
               type="button"
               onClick={async () => {
+                if (isEditorPreview) return; // editor preview: no share sheet / clipboard
                 const url = `https://${subdomain ?? event.public_slug}.getstampd.com.au`;
                 const subject = `Come join me at ${event.name}`;
                 const text = `Come join me at ${event.name} on GetStampd — ${url}`;
@@ -838,7 +839,7 @@ export function EventPublicLanding({
           {/* App-style stacked sections */}
           <div className="mt-5 flex flex-col gap-5">
             <PassportStampGrid
-              eventId={event.event_id}
+              eventId={isEditorPreview ? null : event.event_id}
               venueLabelPlural={venueLabels.plural}
               canRegister={canRegister}
             />
@@ -880,6 +881,7 @@ export function EventPublicLanding({
               primaryColor={event.primary_color}
               accentColor={event.accent_color}
               canRegister={canRegister}
+              preview={isEditorPreview}
             />
 
             <div className="mb-4 flex flex-col items-center gap-3 text-center">

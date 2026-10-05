@@ -1,3 +1,4 @@
+import { resolveMapMarkerStyle, type MapMarkerStyle } from "@/lib/map-marker-style";
 import { PublicStyleTarget } from "@/components/public-style-target";
 import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -354,19 +355,26 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
     }
     annotationsRef.current = new Map();
 
-    const accent = event?.accent_color ?? "#B5572A";
-    const primary = event?.primary_color ?? "#1F3D2B";
-    const muted = "#8A7E66";
+    const markerInput = (venueId: string, visited: boolean) => ({
+      templateVersion: branding.templateVersion,
+      // V1: the raw event row's colours (historic). V2: canonical theme keys.
+      primary: branding.templateVersion === "v2" ? branding.primaryColor ?? event?.primary_color : event?.primary_color,
+      accent: branding.templateVersion === "v2" ? branding.accentColor ?? event?.accent_color : event?.accent_color,
+      overrides: branding.styleOverrides,
+      venueId, visited, hasPassport,
+    });
 
     const fresh: any[] = [];
     for (const v of filteredVenues) {
       if (!v.venue_id) continue;
       const visited = hasPassport && visitedIds.has(v.venue_id);
       const coord = new mapkit.Coordinate(v.lat as number, v.lng as number);
+      const pin = resolveMapMarkerStyle(markerInput(v.venue_id, visited));
       const annotation = new mapkit.MarkerAnnotation(coord, {
         title: v.name ?? "Venue",
-        color: visited ? primary : hasPassport ? muted : accent,
-        glyphText: visited ? "✓" : "",
+        color: pin.color,
+        glyphText: pin.glyphText,
+        ...(branding.templateVersion === "v2" ? { glyphColor: pin.glyphColor, selectedGlyphColor: pin.selectedGlyphColor } : {}),
       });
       annotation.addEventListener("select", () => setSelected(v));
       fresh.push(annotation);
@@ -383,7 +391,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
         /* ignore */
       }
     }
-  }, [mapReady, filteredVenues, hasPassport, visitedIds, event?.accent_color, event?.primary_color]);
+  }, [mapReady, filteredVenues, hasPassport, visitedIds, event?.accent_color, event?.primary_color, branding.templateVersion, branding.primaryColor, branding.accentColor, branding.styleOverrides]);
 
   // Highlight the selected pin without recreating annotations.
   useEffect(() => {
@@ -541,6 +549,13 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
         ) : mapError ? (
           <MapFallbackList
             venues={geoVenues}
+            markerStyle={(venueId) => resolveMapMarkerStyle({
+              templateVersion: branding.templateVersion,
+              primary: branding.templateVersion === "v2" ? branding.primaryColor ?? event?.primary_color : event?.primary_color,
+              accent: branding.templateVersion === "v2" ? branding.accentColor ?? event?.accent_color : event?.accent_color,
+              overrides: branding.styleOverrides, venueId,
+              visited: hasPassport && visitedIds.has(venueId), hasPassport,
+            })}
             primary={primary}
             errorMessage={mapError}
             buildReport={buildSupportReport}
@@ -829,11 +844,13 @@ function SelectedVenueCard({
 
 function MapFallbackList({
   venues,
+  markerStyle,
   primary,
   errorMessage,
   buildReport,
 }: {
   venues: MapVenueRow[];
+  markerStyle: (venueId: string) => MapMarkerStyle;
   primary: string;
   errorMessage: string;
   buildReport: () => string;
@@ -886,7 +903,9 @@ function MapFallbackList({
               style={{ color: primary }}
             >
               <span className="flex items-center gap-2 font-semibold">
-                <PublicStyleTarget id="map.marker" recordId={v.venue_id}><span className="grid h-7 w-7 place-items-center rounded-full border" style={{ backgroundColor: "var(--item-icon-bg, var(--event-accent))", color: "var(--item-icon-color, var(--event-primary-fg))", borderColor: "var(--event-card-border)" }} aria-hidden>●</span></PublicStyleTarget>
+                {v.venue_id && (() => { const pin = markerStyle(v.venue_id); return (
+                  <PublicStyleTarget id="map.marker" recordId={v.venue_id}><span data-marker-color={pin.color} className="grid h-7 w-7 place-items-center rounded-full text-xs" style={{ backgroundColor: pin.color, color: pin.glyphColor }} aria-hidden>{pin.glyphText || "●"}</span></PublicStyleTarget>
+                ); })()}
                 {v.name}
               </span>
               {v.address && (

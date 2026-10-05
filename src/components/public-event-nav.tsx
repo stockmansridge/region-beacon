@@ -124,7 +124,7 @@ export function PublicEventNav({
   const pathname = previewNav.activePath ?? (navBase
     ? location.pathname.slice(navBase.length) || "/"
     : location.pathname);
-  const { passportHref: derivedPassportHref } = useCurrentEventPassport(isPreview ? null : eventId);
+  const { passportHref: derivedPassportHref } = useCurrentEventPassport(isPreview ? null : eventId, !isPreview);
   const passportHref = passportHrefOverride ?? derivedPassportHref ?? null;
   const [menuOpen, setMenuOpen] = useState(false);
   const faqState = useEventFaqByDomain(isPreview ? null : subdomain);
@@ -133,7 +133,7 @@ export function PublicEventNav({
   const { hasAwards: loadedHasAwards } = useEventHasAwards(isPreview ? null : subdomain);
   const hasMap = previewNav.previewFeatures?.hasMap ?? loadedHasMap;
   const hasAwards = previewNav.previewFeatures?.hasAwards ?? loadedHasAwards;
-  const fetchedVenueLabels = useEventVenueLabels(venueLabelsOverride || previewNav.previewFeatures?.venueLabels ? null : subdomain);
+  const fetchedVenueLabels = useEventVenueLabels(isPreview || venueLabelsOverride || previewNav.previewFeatures?.venueLabels ? null : subdomain);
   const venueLabels = venueLabelsOverride ?? previewNav.previewFeatures?.venueLabels ?? fetchedVenueLabels;
   const customLink = useEventCustomLink(isPreview ? null : subdomain);
 
@@ -229,6 +229,7 @@ export function PublicEventNav({
               {...navigationItem}
               type="button"
               onClick={async () => {
+                if (isPreview) return; // editor preview: never open the device share sheet or clipboard
                 // Share only the public event root — never the current URL,
                 // which on /passport/$token would leak the private token.
                 const url =

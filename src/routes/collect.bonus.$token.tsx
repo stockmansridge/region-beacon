@@ -1,5 +1,5 @@
 import { PublicStyleTarget } from "@/components/public-style-target";
-import { ResultLink, ResultPaletteScope, useResultPreview } from "@/components/result-preview";
+import { ResultAnchor, ResultLink, ResultPaletteScope, useResultBranding, useResultPreview } from "@/components/result-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -179,10 +179,9 @@ function BonusClaimPage() {
 
 export function BonusView({ outcome }: { outcome: Outcome }) {
   const preview = useResultPreview();
-  const inheritedV2Scope = usePublicStyleEnabled();
   const subdomain = preview ? null : getSubdomain();
-  const branding = useEventBrandingKeys(subdomain);
-  const isV2 = inheritedV2Scope || branding.templateVersion === "v2";
+  const branding = useResultBranding(subdomain);
+  const isV2 = branding.templateVersion === "v2";
   const scopeProps = branding.templateVersion === "v2"
     ? brandingScopeProps(branding)
     : { paletteKey: branding.paletteKey, backgroundKey: branding.backgroundKey };
@@ -213,7 +212,7 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
           <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
             <PublicStyleTarget id="bonus.result.surface"><div
               className="relative h-[420px] w-full"
-              style={{ background: `linear-gradient(160deg, ${resultPrimary} 0%, color-mix(in oklab, ${resultPrimary} 70%, black) 100%)` }}
+              style={{ background: isV2 ? `linear-gradient(160deg, ${resultPrimary} 0%, color-mix(in oklab, ${resultPrimary} 70%, black) 100%)` : "linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)" }}
             >
               <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-page-bg,#F6EFE2)]">
                 <PublicStyleTarget id="bonus.result.icon"><div
@@ -257,12 +256,12 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
             >
               View my passport
             </ResultLink></PublicStyleTarget>
-            <a
+            <ResultAnchor
               href="/"
               className="flex h-11 w-full items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
-            >
+              >
               Back to event
-            </a>
+            </ResultAnchor>
           </div>
         </div>
       </ResultPaletteScope>
@@ -330,12 +329,12 @@ export function FailureCard({
         </h1></PublicStyleTarget>
         <PublicStyleTarget id="bonus.failure.body"><p className="mt-3 text-sm leading-relaxed text-[var(--event-body,#3D372C)]">{body}</p></PublicStyleTarget>
         <div className="mt-6">
-          <PublicStyleTarget id="bonus.failure.button"><a
+          <PublicStyleTarget id="bonus.failure.button"><ResultAnchor
             href={actionHref}
             className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-primary,#1F3D2B)] px-6 text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
           >
             {actionLabel}
-          </a></PublicStyleTarget>
+          </ResultAnchor></PublicStyleTarget>
         </div>
       </div>
     </div>

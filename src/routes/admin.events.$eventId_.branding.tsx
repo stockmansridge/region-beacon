@@ -480,12 +480,12 @@ function brandingToForm(b: Branding | null): Form {
  * form) and for the saved baseline (brandingToV2Form(saved branding)), so the
  * saved view can never pick up unsaved edits or miss a field.
  */
-function formToPreviewEvent(
+export function formToPreviewEvent(
   event: { id: string; name: string; public_slug?: string | null; description?: string | null },
   branding: Branding | null,
   form: Form,
   publicBase?: Record<string, unknown> | null,
-): PublicEventData & { public_template_version?: string | null; v2_style_config?: PublicStyleOverrideDocument | null } {
+): PublicEventData & { public_template_version?: string | null; v2_style_config?: PublicStyleOverrideDocument | null; default_emotive_font_family?: string | null } {
   const orNullHex = (v: string) => (v.trim() ? v.trim() : null);
   return {
     ...(publicBase ?? {}),
@@ -516,6 +516,7 @@ function formToPreviewEvent(
     font_family: getEventFont(form.font_family)?.stack ?? (form.font_family.trim() || null),
     heading_font_family:
       getEventFont(form.heading_font_family)?.stack ?? (form.heading_font_family.trim() || null),
+    default_emotive_font_family: form.default_emotive_font_family.trim() || null,
     welcome_copy: form.welcome_copy.trim() || null,
     terms_url: orNullHex(form.terms_url),
     current_terms_version_id: (publicBase?.current_terms_version_id as string | null | undefined) ?? null,
@@ -2482,7 +2483,7 @@ function VisualBrandingEditor({
     if (previewPage === "venues") return <PublicVenuesListPage subdomain="preview" previewData={{ event: draftEvent as never, venues: listVenues }} />;
     if (previewPage === "offers") return <PublicOffersPage subdomain="preview" previewData={{ event: draftEvent as never, offers: listVenues.filter((venue) => venue.offer_summary).map((venue) => ({ ...venue, offer_summary: venue.offer_summary! })) as OfferVenue[] }} />;
     if (previewPage === "venue" && selectedVenue?.venue_id) return <PublicVenueDetailPage subdomain="preview" venueId={selectedVenue.venue_id} previewData={{ event: draftEvent, venue: selectedVenue as DetailVenueRow, extras: venueExtras }} />;
-    if (previewPage === "scan" || previewPage === "checkin" || previewPage === "bonus" || previewPage === "tasting") return <V2ResultPreview page={previewPage} state={pageState} event={{ ...draftEvent, event_id: event.id, name: event.name }} venueName={selectedVenue?.name ?? null} />;
+    if (previewPage === "scan" || previewPage === "checkin" || previewPage === "bonus" || previewPage === "tasting") return <V2ResultPreview page={previewPage} state={pageState} event={{ ...draftEvent, event_id: event.id, name: event.name }} branding={fixtureBranding} venueName={selectedVenue?.name ?? null} />;
     if (previewPage === "join") return <LiveJoinPage subdomain="preview" previewEvent={draftEvent as JoinPreviewEvent} previewState={pageState as JoinPreviewState} />;
     if (previewPage === "prizes") return <AwardsPage subdomain="preview" previewData={{ branding: fixtureBranding, eventInfo: { event_id: event.id, event_name: event.name }, awards: awardEntries, bonuses: [], recentCheckins: [], hasPassport: pageState !== "locked" }} />;
     if (previewPage === "map") return <PublicTrailMapPage subdomain="preview" previewData={{ branding: fixtureBranding, event: { ...draftEvent, event_id: event.id, name: event.name } as MapEventRow, venues: listVenues.map((venue) => ({ ...venue, event_found: true })) }} />;

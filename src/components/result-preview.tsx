@@ -5,23 +5,42 @@ import { createContext, useContext, type ComponentProps, type ReactNode } from "
 import { Link } from "@tanstack/react-router";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { PublicLink } from "@/components/public-nav-context";
+import { useEventBrandingKeys, type EventBrandingKeys } from "@/lib/use-event-palette";
 
-const ResultPreviewContext = createContext(false);
+const ResultPreviewContext = createContext<{ preview: boolean; branding: EventBrandingKeys | null }>({ preview: false, branding: null });
 
-/** Editor-only: the surrounding canonical V2 scope supplies branding; views must not fetch, store or claim. */
-export function ResultPreviewProvider({ children }: { children: ReactNode }) {
-  return <ResultPreviewContext.Provider value>{children}</ResultPreviewContext.Provider>;
+/**
+ * Editor-only. `branding` is the event's resolved keys (exactly what the public
+ * controller would load), injected so views never fetch, store or claim and the
+ * view applies the SAME version-specific palette profile as its public render.
+ */
+export function ResultPreviewProvider({ children, branding = null }: { children: ReactNode; branding?: EventBrandingKeys | null }) {
+  return <ResultPreviewContext.Provider value={{ preview: true, branding }}>{children}</ResultPreviewContext.Provider>;
 }
 
 export function useResultPreview() {
-  return useContext(ResultPreviewContext);
+  return useContext(ResultPreviewContext).preview;
 }
 
-/** Public: the view's original palette scope. Preview: inherit the editor's event scope (no nested provider). */
+/** Public: loads the event's keys by host. Preview: returns the injected keys and never fetches. */
+export function useResultBranding(subdomain: string | null): EventBrandingKeys {
+  const ctx = useContext(ResultPreviewContext);
+  const loaded = useEventBrandingKeys(ctx.preview ? null : subdomain);
+  return ctx.preview && ctx.branding ? ctx.branding : loaded;
+}
+
+/** Same scope in public and preview (preview injects branding, so no outer provider is needed). */
 export function ResultPaletteScope({ children, className, ...props }: ComponentProps<typeof EventPaletteScope>) {
-  const preview = useResultPreview();
-  if (preview) return <div className={className}>{children}</div>;
+  const ctx = useContext(ResultPreviewContext);
+  if (ctx.preview && !ctx.branding) return <div className={className}>{children}</div>;
   return <EventPaletteScope {...props} className={className}>{children}</EventPaletteScope>;
+}
+
+/** Plain in-event anchor: public keeps the original <a href>; preview routes through PublicLink and stays inside the preview. */
+export function ResultAnchor({ href, children, ...rest }: { href: string; className?: string; children: ReactNode; style?: React.CSSProperties } & Record<`data-${string}`, string | undefined>) {
+  const preview = useResultPreview();
+  if (preview) return <PublicLink to={href} {...rest}>{children}</PublicLink>;
+  return <a href={href} {...rest}>{children}</a>;
 }
 
 /** Public: router Link (unchanged). Preview: PublicLink, which stays inside the preview. */

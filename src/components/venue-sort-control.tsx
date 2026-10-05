@@ -72,8 +72,8 @@ export function VenueSortControl({
               onChange(next);
               setAnnounce(`Sorted by ${venueSortLabel(next)}`);
             }}
-            className="bg-transparent pr-1 text-[12px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
-            style={{ color: "inherit" }}
+            className="bg-transparent pr-1 outline-none focus-visible:ring-2 focus-visible:ring-[var(--event-primary,#1F3D2B)]"
+            style={{ color: "inherit", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", lineHeight: "inherit", textAlign: "inherit" }}
           >
             {VENUE_SORT_OPTIONS.map((o) => (
               <option

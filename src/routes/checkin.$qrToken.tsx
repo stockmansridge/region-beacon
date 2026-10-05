@@ -1,5 +1,5 @@
 import { PublicStyleTarget } from "@/components/public-style-target";
-import { ResultLink, ResultPaletteScope, useResultPreview } from "@/components/result-preview";
+import { ResultAnchor, ResultLink, ResultPaletteScope, useResultBranding, useResultPreview } from "@/components/result-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -349,7 +349,7 @@ function CheckinPage() {
 export function CheckinView({ outcome, qrToken }: { outcome: Outcome; qrToken: string }) {
   const preview = useResultPreview();
   const subdomain = preview ? null : getSubdomain();
-  const branding = useEventBrandingKeys(subdomain);
+  const branding = useResultBranding(subdomain);
   return (
     <ResultPaletteScope {...brandingScopeProps(branding)} className="min-h-screen">
       {!preview && subdomain && <LiveActivityBar subdomain={subdomain} />}
@@ -542,18 +542,18 @@ export function CheckinFailureCard({
         <div className="mt-6 flex flex-col gap-2">
           {outcome.kind === "no_passport_for_event" ? (
             <>
-              <a
+              <ResultAnchor
                 href={joinHref}
                 className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
               >
                 Create passport for this trail
-              </a>
-              <a
+              </ResultAnchor>
+              <ResultAnchor
                 href="/"
                 className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-button-secondary-border)] bg-[var(--event-button-secondary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-secondary-fg)]"
               >
                 Back to trail home
-              </a>
+              </ResultAnchor>
               {otherPassportToken && (
                 <PublicStyleTarget id="checkin.failure.button"><ResultLink
                   to="/passport/$token"
@@ -566,18 +566,18 @@ export function CheckinFailureCard({
             </>
           ) : (
             <>
-              <a
+              <ResultAnchor
                 href="/passport"
                 className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
               >
                 Open my passport
-              </a>
-              <a
+              </ResultAnchor>
+              <ResultAnchor
                 href="/"
                 className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--event-button-secondary-border)] bg-[var(--event-button-secondary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-secondary-fg)]"
               >
                 Back to home
-              </a>
+              </ResultAnchor>
             </>
           )}
           <PublicStyleTarget id="checkin.failure.button"><button
