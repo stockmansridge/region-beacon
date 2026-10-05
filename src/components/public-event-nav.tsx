@@ -155,6 +155,8 @@ export function PublicEventNav({
       )}
       {/* Sticky app-style header */}
       <header
+        data-brand-hint="Navigation background · Navigation text / icons"
+        title="Top navigation — Navigation background · Navigation text / icons"
         className={
           transparentHeader
             ? "sticky top-0 z-40 -mx-4"
@@ -301,6 +303,8 @@ export function PublicEventNav({
       >
       <nav
         aria-label="Primary"
+        data-brand-hint="Navigation background · Navigation muted text / icons · Navigation active text / icons"
+        title="Bottom navigation — Navigation background · Navigation muted text / icons · Navigation active text / icons"
         className="pointer-events-auto absolute inset-x-0 bottom-0 border-t"
         style={{
           paddingBottom: "env(safe-area-inset-bottom)",

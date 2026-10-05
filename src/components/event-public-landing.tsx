@@ -365,6 +365,8 @@ export function EventPublicLanding({
           </div>
 
           <section
+            data-brand-hint="Hero background · Cover image · Hero overlay colour · Hero overlay opacity"
+            title="Hero — Hero background · Cover image · Hero overlay colour · Hero overlay opacity"
             className="relative w-full overflow-hidden"
             style={{
               backgroundColor: "var(--event-hero-bg, var(--event-primary))",
@@ -396,8 +398,8 @@ export function EventPublicLanding({
                   used to sit in the top bar. */}
               {logoUrl ? (
                 <div
-                  data-brand-hint="logo"
-                  title="Event logo — uploaded in the Event logo section"
+                  data-brand-hint="Event logo · Logo shape · Logo backdrop · Logo backdrop colour"
+                  title="Event logo — Event logo · Logo shape · Logo backdrop · Logo backdrop colour"
                   className="mb-4 flex justify-center"
                 >
                   <div style={eventLogoBoxStyle(logoStyle, 132)}>
@@ -470,6 +472,8 @@ export function EventPublicLanding({
         </div>
 
         <main
+          data-brand-hint="Page background"
+          title="Page surface — Page background"
           className="mx-auto w-full max-w-md px-4 pb-24"
           style={{ fontFamily: "var(--event-font, inherit)" }}
         >
@@ -480,6 +484,8 @@ export function EventPublicLanding({
 
           {/* Summary card — overlaps the bottom of the hero */}
           <section
+            data-brand-hint="Card background · Card border · Card heading · Card muted text"
+            title="Progress card — Card background · Card border · Card heading · Card muted text"
             className="relative z-10 -mt-14 rounded-3xl border shadow-lg sm:-mt-16"
             style={{
               borderColor: "var(--event-card-border)",
@@ -671,6 +677,8 @@ export function EventPublicLanding({
           <div className="mt-5">
             {passportHref ? (
               <a
+                data-brand-hint="Primary button background · Primary button text"
+                title="Primary button — Primary button background · Primary button text"
                 href={passportHref}
                 className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide shadow"
                 style={{
@@ -682,6 +690,8 @@ export function EventPublicLanding({
               </a>
             ) : canRegister ? (
               <PublicLink
+                data-brand-hint="Primary button background · Primary button text"
+                title="Primary button — Primary button background · Primary button text"
                 to="/join"
                 className="grid h-12 w-full place-items-center rounded-full text-sm font-semibold tracking-wide shadow"
                 style={{
@@ -693,6 +703,7 @@ export function EventPublicLanding({
               </PublicLink>
             ) : (
               <button
+                data-brand-hint="Primary button background · Primary button text"
                 type="button"
                 disabled
                 className="h-12 w-full cursor-not-allowed rounded-full text-sm font-semibold tracking-wide opacity-70 shadow"
@@ -706,6 +717,8 @@ export function EventPublicLanding({
               </button>
             )}
             <button
+              data-brand-hint="Primary button background · Page background"
+              title="Share button — Primary button background · Page background"
               type="button"
               onClick={async () => {
                 const url = `https://${subdomain ?? event.public_slug}.getstampd.com.au`;
@@ -761,6 +774,8 @@ export function EventPublicLanding({
 
             <section className="flex flex-col gap-3">
               <PublicLink
+                data-brand-hint="Primary button background · Primary button text"
+                title="Primary button — Primary button background · Primary button text"
                 to="/prizes"
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
                 style={{
@@ -771,6 +786,8 @@ export function EventPublicLanding({
                 View prizes
               </PublicLink>
               <PublicLink
+                data-brand-hint="Primary button background · Primary button text"
+                title="Primary button — Primary button background · Primary button text"
                 to="/venues"
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-wide shadow"
                 style={{
@@ -791,6 +808,8 @@ export function EventPublicLanding({
 
             <div className="mb-4 flex flex-col items-center gap-3 text-center">
               <PublicLink
+                data-brand-hint="Link colour"
+                title="Page link — Link colour"
                 to="/venues"
                 className="text-xs font-medium uppercase tracking-[0.22em] underline-offset-4 hover:underline"
                 style={{ color: "var(--event-link)" }}
@@ -798,6 +817,8 @@ export function EventPublicLanding({
                 View {venueLabels.plural.toLowerCase()} →
               </PublicLink>
               <PublicLink
+                data-brand-hint="Link colour"
+                title="Page link — Link colour"
                 to="/leaderboard"
                 className="text-xs font-medium uppercase tracking-[0.22em] underline-offset-4 hover:underline"
                 style={{ color: "var(--event-link)" }}

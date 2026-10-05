@@ -2461,37 +2461,42 @@ function CustomFontUploader({
 function SemanticPreview({ venueLabelPlural, className = "" }: { venueLabelPlural: string; className?: string }) {
   return (
     <div className={`mt-4 space-y-3 rounded-[12px] p-3 ${className}`}
+      data-brand-hint="Page background · Page border"
       style={{ backgroundColor: "var(--event-page-bg)", border: "1px solid var(--event-border)" }}>
-      <div className="text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-page-muted)" }}>
+      <div data-brand-hint="Page muted text" className="text-[10px] font-medium uppercase tracking-[0.22em]" style={{ color: "var(--event-page-muted)" }}>
         Semantic tokens preview
       </div>
       <div>
-        <h4 className="text-base font-semibold" style={{ color: "var(--event-page-fg)" }}>Sample heading</h4>
-        <p className="text-sm" style={{ color: "var(--event-page-fg)" }}>This body paragraph uses the page text colour.</p>
-        <p className="text-xs" style={{ color: "var(--event-page-muted)" }}>This is muted helper text.</p>
+        <h4 data-brand-hint="Page heading colour" className="text-base font-semibold" style={{ color: "var(--event-page-heading)" }}>Sample heading</h4>
+        <p data-brand-hint="Page body text colour" className="text-sm" style={{ color: "var(--event-page-body)" }}>This body paragraph uses the page body text colour.</p>
+        <p data-brand-hint="Page muted text" className="text-xs" style={{ color: "var(--event-page-muted)" }}>This is muted helper text.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="inline-flex h-9 items-center rounded-[10px] px-3 text-xs font-semibold"
+          data-brand-hint="Primary button background · Primary button text"
           style={{ backgroundColor: "var(--event-button-primary-bg)", color: "var(--event-button-primary-fg)" }}>
           Primary button
         </button>
         <button type="button" className="inline-flex h-9 items-center rounded-[10px] border px-3 text-xs font-semibold"
+          data-brand-hint="Secondary button background · Secondary button text · Card border"
           style={{ backgroundColor: "var(--event-button-secondary-bg)", color: "var(--event-button-secondary-fg)", borderColor: "var(--event-card-border)" }}>
           Secondary button
         </button>
       </div>
       <div className="rounded-[10px] p-3"
+        data-brand-hint="Card background · Card border"
         style={{ backgroundColor: "var(--event-card-bg)", border: "1px solid var(--event-card-border)" }}>
-        <div className="text-sm font-semibold" style={{ color: "var(--event-card-fg)" }}>Sample card</div>
-        <div className="text-xs" style={{ color: "var(--event-card-muted)" }}>
+        <div data-brand-hint="Card heading colour" className="text-sm font-semibold" style={{ color: "var(--event-card-heading)" }}>Sample card</div>
+        <div data-brand-hint="Card muted text" className="text-xs" style={{ color: "var(--event-card-muted)" }}>
           Sample {venueLabelPlural.toLowerCase().replace(/s$/, "")} address goes here.
         </div>
       </div>
       <div className="grid grid-cols-3 gap-1 rounded-[10px] px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.12em]"
+        data-brand-hint="Navigation background · Navigation text / icons"
         style={{ background: "var(--event-nav-bg)", color: "var(--event-nav-muted)" }}>
-        <span className="text-center" style={{ color: "var(--event-nav-fg)" }}>Home</span>
-        <span className="text-center" style={{ color: "var(--event-nav-active-fg)" }}>Map</span>
-        <span className="text-center">More</span>
+        <span data-brand-hint="Navigation text / icons" className="text-center" style={{ color: "var(--event-nav-fg)" }}>Home</span>
+        <span data-brand-hint="Navigation active text / icons" className="text-center" style={{ color: "var(--event-nav-active-fg)" }}>Map</span>
+        <span data-brand-hint="Navigation muted text / icons" className="text-center">More</span>
       </div>
     </div>
   );
