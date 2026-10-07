@@ -6,7 +6,11 @@ const pdf = vi.hoisted(() => ({
   addImage: vi.fn(), addPage: vi.fn(), save: vi.fn(),
 }));
 vi.mock("jspdf", () => ({ jsPDF: vi.fn(function () { return pdf; }) }));
-vi.mock("html-to-image", () => ({ toPng: vi.fn(async () => "data:image/png;base64,sample") }));
+vi.mock("html-to-image", () => ({
+  toPng: vi.fn(async () => "data:image/png;base64,sample"),
+  toJpeg: vi.fn(async () => "data:image/jpeg;base64,sample"),
+  getFontEmbedCSS: vi.fn(async () => ""),
+}));
 
 describe("bulk poster print-safe edge", () => {
   beforeEach(() => vi.clearAllMocks());
