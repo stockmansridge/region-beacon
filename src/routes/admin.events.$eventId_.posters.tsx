@@ -125,6 +125,7 @@ function PostersPage() {
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [printSafeBorder, setPrintSafeBorder] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
   // Refs to the capture nodes (always rendered offscreen at full A4 px).
   const eventCaptureRef = useRef<HTMLDivElement | null>(null);
@@ -582,17 +583,22 @@ function PostersPage() {
       return;
     }
     setBusy("venues-all");
+    setBulkProgress({ done: 0, total: nodes.length });
     try {
       await exportPosterNodesToPdf(
         nodes,
         venuePostersBundleFilename(event?.public_slug ?? event?.slug ?? "event"),
-        { printSafeBorder },
+        {
+          printSafeBorder,
+          onProgress: (done, total) => setBulkProgress({ done, total }),
+        },
       );
     } catch (err) {
       console.error("[posters] bundle export failed", err);
-      toast.error("Could not generate the venue posters PDF.");
+      toast.error("Could not generate the venue posters PDF. Please try again.");
     } finally {
       setBusy(null);
+      setBulkProgress(null);
     }
   }, [venuePostersWithOffer, event, printSafeBorder]);
 
@@ -734,7 +740,9 @@ function PostersPage() {
               className="h-auto min-h-10 whitespace-normal text-left"
             >
               {busy === "venues-all"
-                ? "Generating…"
+                ? bulkProgress
+                  ? `Generating ${Math.min(bulkProgress.done + 1, bulkProgress.total)} of ${bulkProgress.total}…`
+                  : "Generating…"
                 : `Download all (${venuesWithQr}) as one PDF`}
             </Button>
             <label htmlFor="poster-print-safe-border" className="flex cursor-pointer items-center gap-2 text-sm">

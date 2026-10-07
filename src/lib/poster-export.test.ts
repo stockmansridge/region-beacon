@@ -6,7 +6,11 @@ const pdf = vi.hoisted(() => ({
   addImage: vi.fn(), addPage: vi.fn(), save: vi.fn(),
 }));
 vi.mock("jspdf", () => ({ jsPDF: vi.fn(function () { return pdf; }) }));
-vi.mock("html-to-image", () => ({ toPng: vi.fn(async () => "data:image/png;base64,sample") }));
+vi.mock("html-to-image", () => ({
+  toPng: vi.fn(async () => "data:image/png;base64,sample"),
+  toJpeg: vi.fn(async () => "data:image/jpeg;base64,sample"),
+  getFontEmbedCSS: vi.fn(async () => ""),
+}));
 
 describe("bulk poster print-safe edge", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -33,7 +37,7 @@ describe("bulk poster print-safe edge", () => {
   it("keeps the standard download full-size when the option is off", async () => {
     await exportPosterNodesToPdf([document.createElement("div")], "standard.pdf");
     expect(pdf.addImage).toHaveBeenCalledWith(
-      "data:image/png;base64,sample", "PNG", 0, 0, 210, 297, undefined, "FAST",
+      "data:image/jpeg;base64,sample", "JPEG", 0, 0, 210, 297, undefined, "FAST",
     );
   });
 });
