@@ -37,7 +37,7 @@ describe("bulk poster print-safe edge", () => {
   it("keeps the standard download full-size when the option is off", async () => {
     await exportPosterNodesToPdf([document.createElement("div")], "standard.pdf");
     expect(pdf.addImage).toHaveBeenCalledWith(
-      "data:image/png;base64,sample", "PNG", 0, 0, 210, 297, undefined, "FAST",
+      "data:image/jpeg;base64,sample", "JPEG", 0, 0, 210, 297, undefined, "FAST",
     );
   });
 });
