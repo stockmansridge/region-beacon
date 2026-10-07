@@ -740,7 +740,9 @@ function PostersPage() {
               className="h-auto min-h-10 whitespace-normal text-left"
             >
               {busy === "venues-all"
-                ? "Generating…"
+                ? bulkProgress
+                  ? `Generating ${Math.min(bulkProgress.done + 1, bulkProgress.total)} of ${bulkProgress.total}…`
+                  : "Generating…"
                 : `Download all (${venuesWithQr}) as one PDF`}
             </Button>
             <label htmlFor="poster-print-safe-border" className="flex cursor-pointer items-center gap-2 text-sm">
