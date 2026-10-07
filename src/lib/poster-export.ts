@@ -57,13 +57,25 @@ export async function exportPosterNodeToPdf(
 export async function exportPosterNodesToPdf(
   nodes: HTMLElement[],
   filename: string,
+  options: { printSafeBorder?: boolean } = {},
 ): Promise<void> {
   if (nodes.length === 0) return;
   const doc = await newDoc();
-  for (let i = 0; i < nodes.length; i++) {
-    const png = await snapshotToPng(nodes[i]!);
+  // Fit the entire design inside a 5 mm safe edge without stretching it.
+  // A4's aspect ratio means the centred top/bottom edge is slightly larger.
+  const margin = options.printSafeBorder ? 5 : 0;
+  const scale = Math.min(
+    (A4_MM.width - margin * 2) / A4_MM.width,
+    (A4_MM.height - margin * 2) / A4_MM.height,
+  );
+  const width = A4_MM.width * scale;
+  const height = A4_MM.height * scale;
+  const x = (A4_MM.width - width) / 2;
+  const y = (A4_MM.height - height) / 2;
+  for (const [i, node] of nodes.entries()) {
+    const png = await snapshotToPng(node);
     if (i > 0) doc.addPage("a4", "portrait");
-    doc.addImage(png, "PNG", 0, 0, A4_MM.width, A4_MM.height, undefined, "FAST");
+    doc.addImage(png, "PNG", x, y, width, height, undefined, "FAST");
   }
   doc.save(filename);
 }

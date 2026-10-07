@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/placeholder";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -31,7 +33,14 @@ import {
 import { PUBLIC_TENANT_ROOT_DOMAIN } from "@/lib/domains";
 
 export const Route = createFileRoute("/admin/events/$eventId_/posters")({
-  head: () => ({ meta: [{ title: "Event posters" }] }),
+  head: () => ({ meta: [
+    { title: "Event Posters — GetStampd" },
+    { name: "description", content: "Download branded A4 event and venue posters, with an optional print-safe border." },
+    { property: "og:title", content: "Event Posters — GetStampd" },
+    { property: "og:description", content: "Download branded A4 event and venue posters, with an optional print-safe border." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: PostersPage,
   codeSplitGroupings: [],
 });
@@ -115,6 +124,7 @@ function PostersPage() {
 
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [printSafeBorder, setPrintSafeBorder] = useState(false);
 
   // Refs to the capture nodes (always rendered offscreen at full A4 px).
   const eventCaptureRef = useRef<HTMLDivElement | null>(null);
@@ -576,6 +586,7 @@ function PostersPage() {
       await exportPosterNodesToPdf(
         nodes,
         venuePostersBundleFilename(event?.public_slug ?? event?.slug ?? "event"),
+        { printSafeBorder },
       );
     } catch (err) {
       console.error("[posters] bundle export failed", err);
@@ -583,7 +594,7 @@ function PostersPage() {
     } finally {
       setBusy(null);
     }
-  }, [venuePostersWithOffer, event]);
+  }, [venuePostersWithOffer, event, printSafeBorder]);
 
   // ---------- Render ----------
 
@@ -715,16 +726,27 @@ function PostersPage() {
               One A4 poster per venue, with that venue's active check-in QR.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={downloadAllVenuePosters}
-            disabled={busy !== null || venuesWithQr === 0}
-            className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {busy === "venues-all"
-              ? "Generating…"
-              : `Download all (${venuesWithQr}) as one PDF`}
-          </button>
+          <div className="flex max-w-full flex-col items-start gap-3">
+            <Button
+              type="button"
+              onClick={downloadAllVenuePosters}
+              disabled={busy !== null || venuesWithQr === 0}
+              className="h-auto min-h-10 whitespace-normal text-left"
+            >
+              {busy === "venues-all"
+                ? "Generating…"
+                : `Download all (${venuesWithQr}) as one PDF`}
+            </Button>
+            <label htmlFor="poster-print-safe-border" className="flex cursor-pointer items-center gap-2 text-sm">
+              <Checkbox
+                id="poster-print-safe-border"
+                checked={printSafeBorder}
+                onCheckedChange={(checked) => setPrintSafeBorder(checked === true)}
+                disabled={busy !== null}
+              />
+              Add 5 mm white outer edge for printing
+            </label>
+          </div>
         </div>
 
         {venues.length === 0 ? (
