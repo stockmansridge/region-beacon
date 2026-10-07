@@ -1,5 +1,7 @@
 # V2 public passport styling expansion
 
+- [ ] Add optional 5 mm print-safe white edge to bulk poster PDF downloads and verify export placement.
+
 - [x] Complete and document the public passport style and state audit.
 - [x] Define the typed, versioned element/property registry and safe resolver.
 - [x] Prepare review-only additive per-event V2 template/config and atomic activation migrations; none applied.

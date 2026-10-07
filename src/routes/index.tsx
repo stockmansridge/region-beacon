@@ -45,6 +45,7 @@ export const Route = createFileRoute("/")({
           "Launch beautiful, branded digital stamp trails for trails, events and destinations.",
       },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "https://getstampd.com.au/" },
       { name: "robots", content: "index, follow" },
     ],

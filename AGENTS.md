@@ -6,3 +6,4 @@
 - Branding ownership and every query/write are scoped by both `agency_id` and `event_id`; never use a slug as authoritative ownership.
 - Public page previews must render the real public components; controlled preview state may supply safe fixtures but must not duplicate page markup.
 - Repeated public records use stable database IDs for style identity; private visitor activity uses non-identifying template slots.
+- Poster print-safe margins are applied by scaling and centering artwork during PDF export, not changing poster renderers, so original designs and aspect ratios remain intact.
