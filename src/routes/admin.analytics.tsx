@@ -23,9 +23,17 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export const Route = createFileRoute("/admin/analytics")({
-  head: () => ({ meta: [{ title: "Analytics" }] }),
+  head: () => ({ meta: [
+    { title: "Event Analytics | GetStampd" },
+    { name: "description", content: "Review event registrations, venue visits and visitor engagement in GetStampd." },
+    { property: "og:title", content: "Event Analytics | GetStampd" },
+    { property: "og:description", content: "Review event registrations, venue visits and visitor engagement in GetStampd." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Analytics,
 });
 
@@ -683,7 +691,7 @@ function Analytics() {
             ) : (
               <>
                 <div className="rounded-[14px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
-                  <Sparkline data={regsByDay.map(([, n]) => n)} />
+                  <RegistrationChart days={regsByDay} />
                 </div>
                 <div className={`mt-4 max-h-64 overflow-auto ${tableWrap}`}>
                   <table className="w-full text-sm">
@@ -1313,6 +1321,42 @@ function Stat({
     );
   }
   return <div className={cls}>{inner}</div>;
+}
+
+export function RegistrationChart({ days }: { days: Array<[string, number]> }) {
+  const data = days.map(([day, registrations]) => ({
+    date: Date.parse(`${day}T00:00:00Z`),
+    registrations,
+  }));
+  const formatDate = (value: number) => new Date(value).toLocaleDateString("en-AU", {
+    day: "numeric", month: "short", timeZone: "UTC",
+  });
+  return (
+    <div className="min-w-0 text-muted-foreground" role="img" aria-label="Daily registrations chart. Horizontal axis: date. Vertical axis: number of registrations.">
+      <div className="mb-2 text-xs font-medium">Registrations</div>
+      <ResponsiveContainer width="100%" height={240} minWidth={0}>
+        <LineChart data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
+          <CartesianGrid vertical={false} stroke="var(--border)" />
+          <XAxis
+            dataKey="date" type="number" scale="time" domain={["dataMin", "dataMax"]}
+            tickFormatter={formatDate} minTickGap={24}
+            tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+            stroke="var(--border)" tickMargin={10}
+          />
+          <YAxis
+            allowDecimals={false} domain={[0, "auto"]} width={48}
+            tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+            stroke="var(--border)" tickMargin={8}
+          />
+          <Tooltip
+            labelFormatter={(value) => new Date(Number(value)).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}
+          />
+          <Line dataKey="registrations" name="Registrations" type="linear" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
+        </LineChart>
+      </ResponsiveContainer>
+      <div className="text-center text-xs font-medium">Date</div>
+    </div>
+  );
 }
 
 function Sparkline({ data }: { data: number[] }) {
