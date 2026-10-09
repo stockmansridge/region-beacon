@@ -1,7 +1,8 @@
 import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, Stamp, MapPin, Navigation } from "lucide-react";
+import { Check, Stamp, Map, MapPin, Navigation } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { resolveOfferIcon, resolveOfferBadgeStyle } from "@/lib/offer-display";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
@@ -34,7 +35,14 @@ import {
 } from "@/lib/venue-sort";
 
 export const Route = createFileRoute("/live/$subdomain/venues/")({
-  head: () => ({ meta: [{ title: "Venues" }] }),
+  head: () => ({ meta: [
+    { title: "Trail Venues — GetStampd" },
+    { name: "description", content: "Browse participating trail venues, view the map and collect your GetStampd stamps." },
+    { property: "og:title", content: "Trail Venues — GetStampd" },
+    { property: "og:description", content: "Explore participating venues and plan your stamp trail on the map." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   // Sort is display-only UI state, kept in the URL so it survives navigation
   // and browser back. Never persisted to the database.
   validateSearch: (search: Record<string, unknown>) => ({
@@ -306,6 +314,15 @@ export function PublicVenuesListPage({
           >
             Explore every stop on the trail and collect your stamps.
           </p></PublicStyleTarget>
+          <Button asChild className="mt-4" style={{
+            backgroundColor: "var(--event-button-primary-bg)",
+            color: "var(--event-button-primary-fg)",
+          }}>
+            <PublicLink to="/map">
+              <Map aria-hidden="true" />
+              Map View
+            </PublicLink>
+          </Button>
         </div>
 
         <div className="mt-4">

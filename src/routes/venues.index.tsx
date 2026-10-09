@@ -13,6 +13,8 @@ export const Route = createFileRoute("/venues/")({
       { property: "og:title", content: "Venues on GetStampd stamp trails" },
       { property: "og:description", content: "Discover venues taking part in GetStampd digital stamp trails." },
       { property: "og:url", content: "https://getstampd.com.au/venues" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "canonical", href: "https://getstampd.com.au/venues" }],
   }),

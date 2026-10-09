@@ -44,6 +44,7 @@ import { EMPTY_PASSPORT_STAMP_STATE } from "@/lib/passport-stamps";
 import { PublicOffersPage, type EventRow as OffersEventRow, type OfferVenue } from "./live.$subdomain.offers";
 import { PublicLeaderboardPage, type LeaderboardRow } from "./live.$subdomain.leaderboard";
 import { PublicTrailTabs } from "@/components/public-trail-tabs";
+import { PublicVenuesListPage } from "./live.$subdomain.venues.index";
 
 const V1_EVENT = {
   event_id: "event-v1", name: "Legacy Trail", palette_key: null, page_background_key: null,
@@ -112,6 +113,25 @@ const varOf = (root: HTMLElement, name: string) => {
 
 beforeEach(() => { rpc.mockClear(); from.mockClear(); routerNavigate.mockClear(); previewNav.mockClear(); spyDeviceApis(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+describe("Venue list Map View navigation", () => {
+  it.each([V1_EVENT, V2_EVENT])("opens the event map without visitor side effects for $event_id", (event) => {
+    const { getByRole } = render(inPreview(<PublicVenuesListPage subdomain="preview" previewData={{
+      event: { ...event, venue_label_plural: "Cellar Doors" } as never,
+      venues: [{ venue_id: "venue-a", name: "Estate", event_found: true } as never],
+    }} />, "/venues"));
+    const link = getByRole("link", { name: "Map View" });
+    expect(link.getAttribute("href")).toBe("/live/preview/map");
+    // The existing passport card reads visitor state on mount; the new link
+    // must not introduce any additional visitor activity when clicked.
+    storageCalls.length = 0;
+    rpc.mockClear();
+    from.mockClear();
+    fireEvent.click(link);
+    expect(previewNav).toHaveBeenCalledWith("/map", undefined);
+    expectNoSideEffects();
+  });
+});
 
 describe("Preview navigation (mounted)", () => {
   it("PublicEventNav in preview reads no visitor storage, calls no RPC, and keeps every link inside the preview", async () => {
