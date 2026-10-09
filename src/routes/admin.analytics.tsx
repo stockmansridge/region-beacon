@@ -741,7 +741,7 @@ function Analytics() {
             ) : (
               <>
                 <div className="rounded-[14px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
-                  <Sparkline data={pageViewStats.byDay.map(([, n]) => n)} />
+                  <PageViewsChart days={pageViewStats.byDay} />
                 </div>
                 <div className={`mt-4 max-h-72 overflow-auto ${tableWrap}`}>
                   <table className="w-full text-sm">
@@ -1324,16 +1324,24 @@ function Stat({
 }
 
 export function RegistrationChart({ days }: { days: Array<[string, number]> }) {
-  const data = days.map(([day, registrations]) => ({
+  return <DailyCountChart days={days} label="Registrations" />;
+}
+
+export function PageViewsChart({ days }: { days: Array<[string, number]> }) {
+  return <DailyCountChart days={days} label="Page views" />;
+}
+
+function DailyCountChart({ days, label }: { days: Array<[string, number]>; label: string }) {
+  const data = days.map(([day, count]) => ({
     date: Date.parse(`${day}T00:00:00Z`),
-    registrations,
+    count,
   }));
   const formatDate = (value: number) => new Date(value).toLocaleDateString("en-AU", {
     day: "numeric", month: "short", timeZone: "UTC",
   });
   return (
-    <div className="min-w-0 text-muted-foreground" role="img" aria-label="Daily registrations chart. Horizontal axis: date. Vertical axis: number of registrations.">
-      <div className="mb-2 text-xs font-medium">Registrations</div>
+    <div className="min-w-0 text-muted-foreground" role="img" aria-label={`Daily ${label.toLowerCase()} chart. Horizontal axis: date. Vertical axis: number of ${label.toLowerCase()}.`}>
+      <div className="mb-2 text-xs font-medium">{label}</div>
       <ResponsiveContainer width="100%" height={240} minWidth={0}>
         <LineChart data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--border)" />
@@ -1351,32 +1359,11 @@ export function RegistrationChart({ days }: { days: Array<[string, number]> }) {
           <Tooltip
             labelFormatter={(value) => new Date(Number(value)).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}
           />
-          <Line dataKey="registrations" name="Registrations" type="linear" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
+          <Line dataKey="count" name={label} type="linear" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
       <div className="text-center text-xs font-medium">Date</div>
     </div>
-  );
-}
-
-function Sparkline({ data }: { data: number[] }) {
-  if (data.length === 0) return null;
-  const w = 600;
-  const h = 80;
-  const max = Math.max(...data, 1);
-  const step = data.length > 1 ? w / (data.length - 1) : 0;
-  const points = data
-    .map((v, i) => `${i * step},${h - (v / max) * (h - 10) - 2}`)
-    .join(" ");
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-20 w-full text-[#2F6FE4]" preserveAspectRatio="none">
-      <polyline
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        points={points}
-      />
-    </svg>
   );
 }
 
