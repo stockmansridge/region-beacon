@@ -1,5 +1,7 @@
 # V2 public passport styling expansion
 
+- [ ] Add Map View below the venue-list introduction and above passport/sorting on both public templates; verify event-scoped navigation.
+
 - [x] Add optional 5 mm print-safe white edge to bulk poster PDF downloads; focused PDF placement checks pass. Signed-in download flow remains unverified without an admin session.
 
 - [x] Complete and document the public passport style and state audit.
