@@ -122,6 +122,11 @@ describe("Venue list Map View navigation", () => {
     }} />, "/venues"));
     const link = getByRole("link", { name: "Map View" });
     expect(link.getAttribute("href")).toBe("/live/preview/map");
+    // The existing passport card reads visitor state on mount; the new link
+    // must not introduce any additional visitor activity when clicked.
+    storageCalls.length = 0;
+    rpc.mockClear();
+    from.mockClear();
     fireEvent.click(link);
     expect(previewNav).toHaveBeenCalledWith("/map", undefined);
     expectNoSideEffects();
