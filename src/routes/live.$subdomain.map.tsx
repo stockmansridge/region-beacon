@@ -11,6 +11,7 @@ import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getMapkitToken, type MapkitDiag } from "@/lib/mapkit.functions";
 import { loadMapKitScript } from "@/lib/mapkit-loader";
 import { useMapViewportHeight } from "@/hooks/use-map-viewport-height";
+import { MapLocationControl } from "@/components/map-location-control";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
@@ -631,7 +632,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
               </div>
             )}
             {selected && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-3">
+              <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center pl-3 pr-16">
                 <div className="pointer-events-auto w-full max-w-md">
                   <SelectedVenueCard
                     venue={selected}
@@ -643,6 +644,15 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
                 </div>
               </div>
             )}
+            {!previewData && mapReady && <MapLocationControl onLocate={(latitude, longitude) => {
+              const map = mapRef.current;
+              const mapkit = window.mapkit;
+              if (!map || !mapkit) return;
+              setSelected(null);
+              map.showsUserLocation = true;
+              map.setCenterAnimated(new mapkit.Coordinate(latitude, longitude), true);
+              map.tracksUserLocation = true;
+            }} />}
           </div>
         )}
 
