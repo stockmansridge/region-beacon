@@ -1,5 +1,7 @@
 # V2 public passport styling expansion
 
+- [x] Fit the public interactive map above its own menu; two focused sizing checks pass, and real page/pin-card layout verified at four screen sizes with safe sample data and a simulated map engine (live Apple tiles not verified).
+
 - [x] Add Map View below the venue-list introduction and above passport/sorting on both public templates; two focused navigation checks pass and both layouts verified in browser with safe sample venues.
 
 - [x] Add optional 5 mm print-safe white edge to bulk poster PDF downloads; focused PDF placement checks pass. Signed-in download flow remains unverified without an admin session.

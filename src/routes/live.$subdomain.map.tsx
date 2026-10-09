@@ -10,6 +10,7 @@ import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { getMapkitToken, type MapkitDiag } from "@/lib/mapkit.functions";
 import { loadMapKitScript } from "@/lib/mapkit-loader";
+import { useMapViewportHeight } from "@/hooks/use-map-viewport-height";
 import { getVenueAssetPublicUrl } from "@/lib/venue-assets";
 import { getEventAssetPublicUrl } from "@/lib/event-assets";
 import { resolveVenueLabels } from "@/lib/venue-labels";
@@ -36,7 +37,14 @@ import {
 } from "@/lib/passport-stamps";
 
 export const Route = createFileRoute("/live/$subdomain/map")({
-  head: () => ({ meta: [{ title: "Map" }] }),
+  head: () => ({ meta: [
+    { title: "Event Trail Map — GetStampd" },
+    { name: "description", content: "Find event venues and explore your stamp trail on the interactive map." },
+    { property: "og:title", content: "Event Trail Map — GetStampd" },
+    { property: "og:description", content: "Find event venues and explore your stamp trail on the interactive map." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: function TrailMapRoute() {
     const { subdomain } = Route.useParams();
     return <PublicTrailMapPage subdomain={subdomain} />;
@@ -128,8 +136,10 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
   );
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const navigationRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const annotationsRef = useRef<Map<string, any>>(new Map());
+  useMapViewportHeight(mapContainerRef, navigationRef, !loading && !mapError);
 
   // Load event + venues
   useEffect(() => {
@@ -486,7 +496,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
       className="min-h-screen px-4 pb-6"
     >
       {!previewData && <LiveActivityBar subdomain={subdomain} />}
-      <PublicEventNav
+      <div ref={navigationRef} className="contents"><PublicEventNav
         subdomain={subdomain}
         eventName={event?.name}
         primaryColor={event?.primary_color}
@@ -494,7 +504,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
         logoUrl={getEventAssetPublicUrl(event?.logo_path ?? null)}
         activeOverride="map"
         eventId={event?.event_id ?? null}
-      />
+      /></div>
 
       <div className="mx-auto mt-4 max-w-5xl">
         <div className="mb-3">
@@ -569,7 +579,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
           <div className="relative">
             <div
               ref={mapContainerRef}
-              className="h-[70vh] min-h-[460px] w-full overflow-hidden rounded-2xl border"
+              className="h-[50dvh] w-full overflow-hidden rounded-2xl border"
               style={{
                 borderColor: "var(--event-card-border)",
                 backgroundColor:
