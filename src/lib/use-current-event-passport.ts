@@ -57,6 +57,45 @@ export function readStoredPassportForEvent(eventId: string): StoredPassport | nu
   }
 }
 
+export type PassportLookupOutcome = "valid" | "invalid" | "unknown";
+
+/**
+ * Classify a get_passport_by_token response. Only a successful response with
+ * zero rows (or a row lacking a passport id) is conclusive proof the token is
+ * invalid/replaced. Any error, thrown failure or malformed payload is
+ * "unknown" and must never cause the saved passport to be deleted.
+ */
+export function classifyPassportLookup(res: {
+  data?: unknown;
+  error?: unknown;
+} | null | undefined): PassportLookupOutcome {
+  if (!res || res.error) return "unknown";
+  if (!Array.isArray(res.data)) return res.data == null ? "unknown" : "unknown";
+  const row = res.data[0] as { passport_id?: string | null } | undefined;
+  if (res.data.length === 0) return "invalid";
+  return row?.passport_id ? "valid" : "invalid";
+}
+
+/**
+ * Remove gs.passport.<eventId> only if it still holds the exact token that the
+ * backend rejected. Protects a newer passport saved by a concurrent
+ * re-registration (or another tab) from being wiped by a stale check.
+ */
+export function clearStoredPassportIfToken(eventId: string, rejectedToken: string): boolean {
+  if (typeof localStorage === "undefined" || !eventId || !rejectedToken) return false;
+  try {
+    const key = `gs.passport.${eventId}`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as StoredPassport | null;
+    if (parsed?.access_token !== rejectedToken) return false;
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function resolveCurrentEventPassport(
   eventId: string | null | undefined,
 ): Promise<CurrentEventPassportResult> {
@@ -76,28 +115,39 @@ export async function resolveCurrentEventPassport(
   }
 
   try {
-    const { data, error } = await supabase.rpc("get_passport_by_token", {
+    const res = await supabase.rpc("get_passport_by_token", {
       _raw_token: stored.access_token,
     });
-    const row = (data?.[0] ?? null) as
+    const { data, error } = res;
+    const outcome = classifyPassportLookup(res);
+    const row = (Array.isArray(data) ? data[0] ?? null : null) as
       | { passport_id?: string | null; event_id?: string | null }
       | null;
     const matchesEvent = row?.event_id ? String(row.event_id) === String(eventId) : true;
 
-    if (error || !row?.passport_id || !matchesEvent) {
-      try {
-        localStorage.removeItem(savedPassportKey);
-      } catch {
-        // ignore storage errors
-      }
+    if (outcome === "unknown") {
+      // Transport/server/permission failure: keep the saved passport.
       return {
         ...EMPTY_CURRENT_EVENT_PASSPORT,
         eventId,
         savedPassportKey,
         savedPassportFound: true,
-        validationStatus: error ? "error" : "invalid",
-        validationError: error?.message ?? (!matchesEvent ? "saved passport belongs to another event" : null),
-        staleCleared: true,
+        validationStatus: "error",
+        validationError: error?.message ?? "passport lookup failed",
+        staleCleared: false,
+      };
+    }
+
+    if (outcome === "invalid" || !row?.passport_id || !matchesEvent) {
+      const cleared = clearStoredPassportIfToken(eventId, stored.access_token);
+      return {
+        ...EMPTY_CURRENT_EVENT_PASSPORT,
+        eventId,
+        savedPassportKey,
+        savedPassportFound: true,
+        validationStatus: "invalid",
+        validationError: !matchesEvent ? "saved passport belongs to another event" : null,
+        staleCleared: cleared,
       };
     }
 

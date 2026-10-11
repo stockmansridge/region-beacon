@@ -12,3 +12,4 @@
 - Public page previews must render the real public components; controlled preview state may supply safe fixtures but must not duplicate page markup.
 - Repeated public records use stable database IDs for style identity; private visitor activity uses non-identifying template slots.
 - Poster print-safe margins are applied by scaling and centering artwork during PDF export, not changing poster renderers, so original designs and aspect ratios remain intact.- Bulk poster PDFs embed JPEG pages with one shared font download and a per-poster timeout, because re-encoding many large PNGs in jsPDF freezes the browser.
+- Saved visitor passports (`gs.passport.<event_id>`) are cleared only on a conclusive zero-row lookup and only if the stored token matches the rejected one, so outages or races never wipe valid access.

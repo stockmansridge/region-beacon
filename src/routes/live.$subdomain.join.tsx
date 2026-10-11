@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { classifyPassportLookup, clearStoredPassportIfToken } from "@/lib/use-current-event-passport";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
@@ -378,17 +379,20 @@ function JoinForm({ event, subdomain, preview = false, previewState }: { event: 
     }
     setSavedValidating(true);
     (async () => {
-      const { data, error } = await supabase.rpc("get_passport_by_token", {
-        _raw_token: token,
-      });
+      let outcome: ReturnType<typeof classifyPassportLookup> = "unknown";
+      try {
+        const res = await supabase.rpc("get_passport_by_token", {
+          _raw_token: token,
+        });
+        outcome = classifyPassportLookup(res);
+      } catch {
+        outcome = "unknown";
+      }
       if (cancelled) return;
-      const row = (data?.[0] ?? null) as { passport_id?: string } | null;
-      if (error || !row?.passport_id) {
-        try {
-          localStorage.removeItem(`gs.passport.${event.event_id}`);
-        } catch {
-          // ignore
-        }
+      // Only a conclusive "no such passport" response clears the saved token;
+      // outages and server errors keep it so the visitor's access survives.
+      if (outcome === "invalid") {
+        clearStoredPassportIfToken(event.event_id, token);
         setSaved(null);
         setStaleNotice(
           "Your previous passport link has expired or was replaced. Please register again to continue.",
