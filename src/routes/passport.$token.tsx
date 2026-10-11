@@ -236,15 +236,10 @@ function PassportNotFound({
           (row as { event_id?: string | null } | null)?.event_id ?? null;
         if (cancelled || !eventId) return;
         setClearedEventId(eventId);
-        try {
-          const key = `gs.passport.${eventId}`;
-          const existed = localStorage.getItem(key) !== null;
-          if (existed) {
-            localStorage.removeItem(key);
-            setStorageKeyCleared(true);
-          }
-        } catch {
-          // ignore
+        // Only clear when the lookup conclusively returned zero rows, and only
+        // if the saved entry still holds this exact rejected token.
+        if (diagnostics.zero_rows && clearStoredPassportIfToken(eventId, token)) {
+          setStorageKeyCleared(true);
         }
         try {
           const pending = sessionStorage.getItem("gs.returnTo.pending");
@@ -260,7 +255,7 @@ function PassportNotFound({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [diagnostics.zero_rows, token]);
 
   async function copySupport() {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -272,8 +267,6 @@ function PassportNotFound({
       route: "/passport/$token",
       route_param_present: token.length > 0,
       token_length: token.length,
-      token_first4: token.slice(0, 4),
-      token_last4: token.slice(-4),
       token_is_url_safe: URL_SAFE_TOKEN_RE.test(token),
       rpc: diagnostics.rpc,
       zero_rows: diagnostics.zero_rows,
