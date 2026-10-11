@@ -9,6 +9,7 @@ function V2Switch({ v2, v1 }: { v2: React.ReactNode; v1: React.ReactNode }) {
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { classifyPassportLookup, clearStoredPassportIfToken } from "@/lib/use-current-event-passport";
 
 import { PublicEventNav } from "@/components/public-event-nav";
 import { PublicAnnouncementBar } from "@/components/public-announcement-bar";
@@ -113,7 +114,7 @@ function PassportPage() {
           kind: "not_found",
           diagnostics: {
             rpc: "get_passport_by_token",
-            zero_rows: !passportRes.error && !row?.passport_id,
+            zero_rows: classifyPassportLookup(passportRes) === "invalid",
             supabase_error_code: err?.code ?? null,
             supabase_error_message: err?.message ?? null,
             supabase_error_details: err?.details ?? null,
