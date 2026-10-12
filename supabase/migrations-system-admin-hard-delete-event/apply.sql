@@ -178,6 +178,11 @@ begin
   end if;
 
   if to_regclass('public.event_terms_versions') is not null then
+    -- events.current_terms_version_id FKs to event_terms_versions
+    -- (events_current_terms_fk); clear it before deleting the terms rows.
+    update public.events
+      set current_terms_version_id = null
+    where id = p_event_id;
     execute 'delete from public.event_terms_versions where event_id = $1'
       using p_event_id;
     get diagnostics v_terms = row_count;
