@@ -123,6 +123,7 @@ function Analytics() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const navigate = useNavigate();
 
   const [eventFilter, setEventFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
@@ -674,7 +675,7 @@ function Analytics() {
               value={avgVenuesPerPassport.toFixed(1)}
               icon={TrendingUp}
             />
-            <Stat label="Completed trails" value={completedCount} icon={Trophy} />
+            <Stat label="Completed trails" value={completedCount} icon={Trophy} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat label="Page views" value={pageViewStats.total} icon={Eye} />
             <Stat label="Unique devices" value={pageViewStats.uniqueDevices} icon={TrendingUp} />
           </div>
