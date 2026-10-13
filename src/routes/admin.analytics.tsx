@@ -591,8 +591,14 @@ function Analytics() {
         description="Track registrations, venue visits, check-ins and visitor engagement."
         actions={
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => setReloadKey((k) => k + 1)} className={secondaryBtn}>
-              <RefreshCw className="h-4 w-4" /> Refresh
+            <button
+              type="button"
+              onClick={() => setReloadKey((k) => k + 1)}
+              disabled={loading}
+              className={`${secondaryBtn} disabled:cursor-not-allowed disabled:opacity-60`}
+            >
+              <RefreshCw className={`h-4 w-4${loading ? " animate-spin" : ""}`} />
+              {loading ? "Refreshing…" : "Refresh"}
             </button>
             <Link to="/admin" className={secondaryBtn}>
               <LayoutDashboard className="h-4 w-4" /> Dashboard
