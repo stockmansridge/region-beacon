@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/placeholder";
 import {
@@ -123,6 +123,7 @@ function Analytics() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const navigate = useNavigate();
 
   const [eventFilter, setEventFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
@@ -661,20 +662,20 @@ function Analytics() {
         <div className="space-y-5">
           {/* Summary cards */}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Stat label="Events" value={totalEvents} icon={Calendar} />
-            <Stat label="Published events" value={publishedEvents} icon={CheckCircle2} />
-            <Stat label="Venues" value={totalVenues} icon={MapPin} />
+            <Stat label="Events" value={totalEvents} icon={Calendar} onClick={() => navigate({ to: "/admin/events" })} />
+            <Stat label="Published events" value={publishedEvents} icon={CheckCircle2} onClick={() => navigate({ to: "/admin/events" })} />
+            <Stat label="Venues" value={totalVenues} icon={MapPin} onClick={() => navigate({ to: "/admin/venues" })} />
             <Stat label="Registered visitors" value={totalPassports} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat label="Total check-ins" value={totalCheckins} icon={QrCode} onClick={() => setDrilldown("checkins")} />
             <Stat label="Bonus scans" value={totalBonusScans} icon={QrCode} />
             <Stat label="Bonus points earned" value={totalBonusPoints} icon={Trophy} />
-            <Stat label="Unique visitors checked in" value={uniqueCheckedIn} icon={Users} />
+            <Stat label="Unique visitors checked in" value={uniqueCheckedIn} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat
               label="Avg venues / passport"
               value={avgVenuesPerPassport.toFixed(1)}
               icon={TrendingUp}
             />
-            <Stat label="Completed trails" value={completedCount} icon={Trophy} />
+            <Stat label="Completed trails" value={completedCount} icon={Trophy} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat label="Page views" value={pageViewStats.total} icon={Eye} />
             <Stat label="Unique devices" value={pageViewStats.uniqueDevices} icon={TrendingUp} />
           </div>
