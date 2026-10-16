@@ -157,7 +157,7 @@ function LeaderboardPage() {
       const ev = eventRes.data as EventRow;
       setEvent(ev);
 
-      const [settingsRes, checkinsRes, venuesRes, rulesRes, priorRes] =
+      const [settingsRes, checkinsRes, venuesRes, rulesRes, priorRes, passportsRes, bonusRes] =
         await Promise.all([
           supabase
             .from("leaderboard_settings")
@@ -168,7 +168,7 @@ function LeaderboardPage() {
             .maybeSingle(),
           supabase
             .from("checkins")
-            .select("visitor_id, venue_id, entry_value")
+            .select("visitor_id, venue_id, entry_value, created_at")
             .eq("event_id", eventId),
           supabase
             .from("venues")
@@ -192,6 +192,16 @@ function LeaderboardPage() {
             .eq("event_id", eventId)
             .order("drawn_at", { ascending: false })
             .limit(20),
+          // Passport id→visitor_id map (needed to resolve bonus awards)
+          supabase
+            .from("passports")
+            .select("id, visitor_id")
+            .eq("event_id", eventId),
+          // Bonus + venue point awards from participant_point_awards
+          supabase
+            .from("participant_point_awards")
+            .select("participant_id, points_awarded, award_type, awarded_at")
+            .eq("event_id", eventId),
         ]);
       if (cancelled) return;
 
@@ -207,23 +217,51 @@ function LeaderboardPage() {
 
       const totalVenues = (venuesRes.data ?? []).length;
       const checkins = (checkinsRes.data ?? []) as CheckinRow[];
+      const passports = (passportsRes.data ?? []) as PassportRow[];
+      const bonusAwards = (bonusRes.data ?? []) as BonusAwardRow[];
 
-      // Aggregate per visitor: distinct venues (stamps) + sum entry_value (points).
+      // passport_id → visitor_id
+      const passportToVisitor = new Map(passports.map((p) => [p.id, p.visitor_id]));
+
+      // Aggregate per visitor from checkins: distinct venues (stamps) + venue_points
       const perVisitor = new Map<
         string,
-        { stamps: Set<string>; points: number }
+        { stamps: Set<string>; venue_points: number; latest_at: string }
       >();
       for (const c of checkins) {
         const agg = perVisitor.get(c.visitor_id) ?? {
           stamps: new Set<string>(),
-          points: 0,
+          venue_points: 0,
+          latest_at: c.created_at,
         };
         agg.stamps.add(c.venue_id);
-        agg.points += Math.max(1, c.entry_value ?? 1);
+        agg.venue_points += Math.max(1, c.entry_value ?? 1);
+        if (c.created_at > agg.latest_at) agg.latest_at = c.created_at;
         perVisitor.set(c.visitor_id, agg);
       }
 
-      const visitorIds = Array.from(perVisitor.keys());
+      // Aggregate bonus points per visitor from participant_point_awards
+      const bonusPerVisitor = new Map<
+        string,
+        { bonus_points: number; latest_at: string }
+      >();
+      for (const a of bonusAwards) {
+        const visitorId = passportToVisitor.get(a.participant_id);
+        if (!visitorId) continue;
+        const agg = bonusPerVisitor.get(visitorId) ?? { bonus_points: 0, latest_at: a.awarded_at };
+        agg.bonus_points += a.points_awarded;
+        if (a.awarded_at > agg.latest_at) agg.latest_at = a.awarded_at;
+        bonusPerVisitor.set(visitorId, agg);
+      }
+
+      // Union of all visitor IDs with any stamps or bonus points
+      const allVisitorIds = new Set([
+        ...perVisitor.keys(),
+        ...bonusPerVisitor.keys(),
+      ]);
+
+      // Fetch visitor display names for everyone
+      const visitorIds = Array.from(allVisitorIds);
       let visitors: Visitor[] = [];
       if (visitorIds.length > 0) {
         const vRes = await supabase
@@ -241,28 +279,46 @@ function LeaderboardPage() {
 
       const aggregated = visitorIds
         .map((id) => {
-          const a = perVisitor.get(id)!;
-          return {
-            visitor_id: id,
-            stamps: a.stamps.size,
-            points: a.points,
-          };
+          const ci = perVisitor.get(id);
+          const bo = bonusPerVisitor.get(id);
+          const stamps = ci?.stamps.size ?? 0;
+          const venue_points = ci?.venue_points ?? 0;
+          const bonus_points = bo?.bonus_points ?? 0;
+          const total = venue_points + bonus_points;
+          const latest = [ci?.latest_at ?? "", bo?.latest_at ?? ""].reduce(
+            (a, b) => (b > a ? b : a),
+            "",
+          );
+          return { visitor_id: id, stamps, venue_points, bonus_points, points: total, latest_at: latest };
         })
-        .filter((r) => r.stamps >= hideBelow)
-        .sort(
-          (a, b) => b.points - a.points || b.stamps - a.stamps,
+        // Mirror public leaderboard: hide_below_checkins is bypassed for anyone with bonus points
+        .filter((r) => r.bonus_points > 0 || r.stamps >= hideBelow)
+        // Public ranking: total_points DESC, stamps DESC, earliest activity ASC
+        .sort((a, b) =>
+          b.points - a.points ||
+          b.stamps - a.stamps ||
+          (a.latest_at < b.latest_at ? -1 : a.latest_at > b.latest_at ? 1 : 0),
         );
 
+      // Assign dense rank
+      let currentRank = 1;
       const out: Row[] = aggregated.map((r, idx) => {
+        if (idx > 0) {
+          const prev = aggregated[idx - 1]!;
+          if (r.points < prev.points || r.stamps < prev.stamps) currentRank = idx + 1;
+        }
         const v = vById.get(r.visitor_id);
         return {
           visitor_id: r.visitor_id,
           display: formatDisplay(mode, v),
           stamps: r.stamps,
+          venue_points: r.venue_points,
+          bonus_points: r.bonus_points,
           points: r.points,
           tier: defaultTier(r.stamps, totalVenues),
           is_completed: totalVenues > 0 && r.stamps >= totalVenues,
-          rank: idx + 1,
+          latest_activity_at: r.latest_at,
+          rank: currentRank,
         };
       });
 
