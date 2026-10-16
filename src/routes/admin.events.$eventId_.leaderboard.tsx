@@ -35,15 +35,31 @@ type CheckinRow = {
   visitor_id: string;
   venue_id: string;
   entry_value: number | null;
+  created_at: string;
+};
+
+type PassportRow = {
+  id: string;
+  visitor_id: string;
+};
+
+type BonusAwardRow = {
+  participant_id: string;
+  points_awarded: number;
+  award_type: string;
+  awarded_at: string;
 };
 
 type Row = {
   visitor_id: string;
   display: string;
   stamps: number;
-  points: number;
+  venue_points: number;
+  bonus_points: number;
+  points: number; // total
   tier: string | null;
   is_completed: boolean;
+  latest_activity_at: string;
   rank: number;
 };
 
