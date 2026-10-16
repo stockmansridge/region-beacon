@@ -1125,6 +1125,64 @@ function Analytics() {
   );
 }
 
+const PANEL_MIN_WIDTH = 520;
+const PANEL_MIN_HEIGHT = 340;
+
+function usePanelResize() {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = React.useState<{ w: number; h: number } | null>(null);
+  const drag = React.useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  return {
+    ref,
+    style: size ? { width: size.w, height: size.h } : undefined,
+    onHandlePointerDown: (e: React.PointerEvent) => {
+      const rect = ref.current?.getBoundingClientRect();
+      if (!rect) return;
+      drag.current = { x: e.clientX, y: e.clientY, w: rect.width, h: rect.height };
+      e.currentTarget.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    },
+    onHandlePointerMove: (e: React.PointerEvent) => {
+      const d = drag.current;
+      if (!d) return;
+      setSize({
+        w: Math.min(window.innerWidth * 0.98, Math.max(PANEL_MIN_WIDTH, d.w + e.clientX - d.x)),
+        h: Math.min(window.innerHeight * 0.94, Math.max(PANEL_MIN_HEIGHT, d.h + e.clientY - d.y)),
+      });
+    },
+    onHandlePointerUp: () => {
+      drag.current = null;
+    },
+  };
+}
+
+function PanelResizeHandle({
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+}: {
+  onPointerDown: (e: React.PointerEvent) => void;
+  onPointerMove: (e: React.PointerEvent) => void;
+  onPointerUp: (e: React.PointerEvent) => void;
+}) {
+  return (
+    <div
+      title="Drag to resize"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      className="absolute bottom-0 right-0 z-20 flex h-7 w-7 cursor-nwse-resize touch-none items-end justify-end rounded-br-[16px] p-1.5 text-[#94A3B8] hover:text-[#2F6FE4]"
+    >
+      <svg viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor" aria-hidden="true">
+        <circle cx="14" cy="14" r="1.5" />
+        <circle cx="14" cy="9" r="1.5" />
+        <circle cx="9" cy="14" r="1.5" />
+      </svg>
+    </div>
+  );
+}
+
 function DrilldownModal({
   mode,
   onClose,
@@ -1224,6 +1282,7 @@ function DrilldownModal({
     });
   }, [checkinMatrixRows, q]);
 
+  const panelResize = usePanelResize();
   const title = mode === "visitors" ? "Registered visitors" : "All check-ins";
   const desc =
     mode === "visitors"
@@ -1236,7 +1295,9 @@ function DrilldownModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-5xl rounded-[16px] bg-white shadow-2xl"
+        ref={panelResize.ref}
+        style={panelResize.style}
+        className="relative flex max-h-[94vh] w-full max-w-6xl flex-col rounded-[16px] bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex flex-col gap-3 rounded-t-[16px] border-b border-[#E6ECF4] bg-white px-6 py-4 md:flex-row md:items-center md:justify-between">
@@ -1269,7 +1330,7 @@ function DrilldownModal({
           </div>
         </div>
 
-        <div className="max-h-[75vh] overflow-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
           {mode === "visitors" ? (
             filteredVisitors.length === 0 ? (
               <p className="py-10 text-center text-sm text-[#64748B]">No visitors match.</p>
@@ -1426,6 +1487,11 @@ function DrilldownModal({
             </table>
           )}
         </div>
+        <PanelResizeHandle
+          onPointerDown={panelResize.onHandlePointerDown}
+          onPointerMove={panelResize.onHandlePointerMove}
+          onPointerUp={panelResize.onHandlePointerUp}
+        />
       </div>
     </div>
   );
@@ -1500,6 +1566,7 @@ function BonusMatrixModal({
       .sort((a, b) => b.latest.localeCompare(a.latest));
   }, [bonusScans, passportById, visitorById]);
 
+  const panelResize = usePanelResize();
   const q = query.trim().toLowerCase();
   const filteredRows = useMemo(() => {
     if (!q) return rows;
@@ -1516,7 +1583,9 @@ function BonusMatrixModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-6xl rounded-[16px] bg-white shadow-2xl"
+        ref={panelResize.ref}
+        style={panelResize.style}
+        className="relative flex max-h-[94vh] w-full max-w-7xl flex-col rounded-[16px] bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex flex-col gap-3 rounded-t-[16px] border-b border-[#E6ECF4] bg-white px-6 py-4 md:flex-row md:items-center md:justify-between">
@@ -1544,7 +1613,7 @@ function BonusMatrixModal({
           </div>
         </div>
 
-        <div className="max-h-[75vh] overflow-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
           {filteredRows.length === 0 ? (
             <p className="py-10 text-center text-sm text-[#64748B]">
               {rows.length === 0
@@ -1622,6 +1691,11 @@ function BonusMatrixModal({
             </table>
           )}
         </div>
+        <PanelResizeHandle
+          onPointerDown={panelResize.onHandlePointerDown}
+          onPointerMove={panelResize.onHandlePointerMove}
+          onPointerUp={panelResize.onHandlePointerUp}
+        />
       </div>
     </div>
   );
