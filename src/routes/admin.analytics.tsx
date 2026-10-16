@@ -89,6 +89,9 @@ type BonusScanRow = {
   metadata: { bonus_code_name?: string | null; venue_id?: string | null } | null;
 };
 
+type BonusCodeRow = { id: string; event_id: string; name: string };
+type BonusCodeVenueRow = { id: string; bonus_code_id: string; venue_id: string | null };
+
 type PageViewRow = {
   id: string;
   event_id: string;
@@ -118,6 +121,8 @@ function Analytics() {
   const [passports, setPassports] = useState<PassportRow[]>([]);
   const [prizeRules, setPrizeRules] = useState<PrizeRule[]>([]);
   const [bonusScans, setBonusScans] = useState<BonusScanRow[]>([]);
+  const [bonusCodes, setBonusCodes] = useState<BonusCodeRow[]>([]);
+  const [bonusCodeVenues, setBonusCodeVenues] = useState<BonusCodeVenueRow[]>([]);
   const [pageViews, setPageViews] = useState<PageViewRow[]>([]);
   const [pageViewsError, setPageViewsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -127,7 +132,7 @@ function Analytics() {
 
   const [eventFilter, setEventFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
-  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins">(null);
+  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus">(null);
   const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
 
   useEffect(() => {
