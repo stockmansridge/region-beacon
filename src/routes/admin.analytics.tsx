@@ -1686,6 +1686,11 @@ function BonusMatrixModal({
             </table>
           )}
         </div>
+        <PanelResizeHandle
+          onPointerDown={panelResize.onHandlePointerDown}
+          onPointerMove={panelResize.onHandlePointerMove}
+          onPointerUp={panelResize.onHandlePointerUp}
+        />
       </div>
     </div>
   );
