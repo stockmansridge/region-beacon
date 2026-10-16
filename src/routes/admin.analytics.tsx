@@ -1183,6 +1183,89 @@ function PanelResizeHandle({
   );
 }
 
+type SortDir = "asc" | "desc";
+type SortState = { key: string; dir: SortDir };
+
+function displayNameOf(v: VisitorRow | null | undefined): string {
+  return v?.full_name || `${v?.first_name ?? ""} ${v?.last_name ?? ""}`.trim() || "—";
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  align = "left",
+}: {
+  label: string;
+  sortKey: string;
+  sort: SortState;
+  onSort: (key: string) => void;
+  align?: "left" | "right" | "center";
+}) {
+  const active = sort.key === sortKey;
+  const alignCls =
+    align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
+  return (
+    <th
+      className={`bg-[#F8FAFC] px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B] ${alignCls}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        title={`Sort by ${label.toLowerCase()}`}
+        className={`inline-flex items-center gap-1 hover:text-[#2F6FE4] ${active ? "text-[#2F6FE4]" : ""}`}
+      >
+        {label}
+        <span aria-hidden="true" className="text-[9px] leading-none">
+          {active ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
+function IconSortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  children,
+}: {
+  label: string;
+  sortKey: string;
+  sort: SortState;
+  onSort: (key: string) => void;
+  children: React.ReactNode;
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <th className="w-10 bg-[#F8FAFC] px-1 py-2 text-center text-[#64748B]">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        title={`${label} — click to sort`}
+        aria-label={`Sort by ${label}`}
+        className={`relative inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full ${
+          active
+            ? "bg-[#2F6FE4] text-white"
+            : "bg-[#EAF2FF] text-[#2F6FE4] hover:bg-[#DCE9FF]"
+        }`}
+      >
+        {children}
+        {active && (
+          <span
+            aria-hidden="true"
+            className="absolute -right-1 -top-1 rounded-full bg-white px-0.5 text-[8px] leading-[10px] text-[#2F6FE4] shadow-sm"
+          >
+            {sort.dir === "asc" ? "▲" : "▼"}
+          </span>
+        )}
+      </button>
+    </th>
+  );
+}
+
 function DrilldownModal({
   mode,
   onClose,
@@ -1207,6 +1290,11 @@ function DrilldownModal({
   onExport: () => void;
 }) {
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState>({ key: "", dir: "desc" });
+  const toggleSort = (key: string) =>
+    setSort((s) =>
+      s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
+    );
 
   const checkinsByVisitor = useMemo(() => {
     const m = new Map<string, CheckinRow[]>();
@@ -1232,6 +1320,43 @@ function DrilldownModal({
       );
     });
   }, [visitors, q]);
+
+  // Column sorting for the visitors list; empty key keeps the default (newest first) order.
+  const sortedVisitors = useMemo(() => {
+    if (!sort.key) return filteredVisitors;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const rows = filteredVisitors.slice();
+    rows.sort((a, b) => {
+      let cmp = 0;
+      switch (sort.key) {
+        case "name":
+          cmp = displayNameOf(a).localeCompare(displayNameOf(b));
+          break;
+        case "email":
+          cmp = a.email.localeCompare(b.email);
+          break;
+        case "postcode":
+          cmp = (a.postcode ?? "").localeCompare(b.postcode ?? "");
+          break;
+        case "event":
+          cmp = (eventNameById.get(a.event_id) ?? "").localeCompare(
+            eventNameById.get(b.event_id) ?? "",
+          );
+          break;
+        case "checkins":
+          cmp =
+            (checkinsByVisitor.get(a.id)?.length ?? 0) -
+            (checkinsByVisitor.get(b.id)?.length ?? 0);
+          break;
+        case "registered":
+          cmp = a.created_at.localeCompare(b.created_at);
+          break;
+      }
+      if (cmp === 0) cmp = b.created_at.localeCompare(a.created_at);
+      return cmp * dir;
+    });
+    return rows;
+  }, [filteredVisitors, sort, checkinsByVisitor, eventNameById]);
 
   // Check-in matrix: one narrow column per venue, one row per visitor.
   const venueColumns = useMemo(() => {
@@ -1282,12 +1407,34 @@ function DrilldownModal({
     });
   }, [checkinMatrixRows, q]);
 
+  // Column sorting for the check-in matrix; empty key keeps the default (most recent) order.
+  const sortedCheckinRows = useMemo(() => {
+    if (!sort.key) return filteredCheckinRows;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const rows = filteredCheckinRows.slice();
+    rows.sort((a, b) => {
+      let cmp = 0;
+      if (sort.key === "name") cmp = displayNameOf(a.visitor).localeCompare(displayNameOf(b.visitor));
+      else if (sort.key === "email")
+        cmp = (a.visitor?.email ?? "").localeCompare(b.visitor?.email ?? "");
+      else if (sort.key === "total") cmp = a.total - b.total;
+      else if (sort.key.startsWith("col:")) {
+        const venueId = sort.key.slice(4);
+        cmp =
+          (a.scans.get(venueId)?.length ?? 0) - (b.scans.get(venueId)?.length ?? 0);
+      }
+      if (cmp === 0) cmp = b.latest.localeCompare(a.latest);
+      return cmp * dir;
+    });
+    return rows;
+  }, [filteredCheckinRows, sort]);
+
   const panelResize = usePanelResize();
   const title = mode === "visitors" ? "Registered visitors" : "All check-ins";
   const desc =
     mode === "visitors"
       ? "Click a visitor to see their check-in history."
-      : "Who has checked in at each venue. Hover a column icon for the venue name, and a tick for the date and time.";
+      : "Who has checked in at each venue. Click any column heading to sort; hover a column icon for the venue name and a tick for the date and time.";
 
   return (
     <div
@@ -1338,16 +1485,16 @@ function DrilldownModal({
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white">
                   <tr>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Name</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Postcode</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Event</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Check-ins</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Registered</th>
+                    <SortHeader label="Name" sortKey="name" sort={sort} onSort={toggleSort} />
+                    <SortHeader label="Email" sortKey="email" sort={sort} onSort={toggleSort} />
+                    <SortHeader label="Postcode" sortKey="postcode" sort={sort} onSort={toggleSort} />
+                    <SortHeader label="Event" sortKey="event" sort={sort} onSort={toggleSort} />
+                    <SortHeader label="Check-ins" sortKey="checkins" sort={sort} onSort={toggleSort} align="right" />
+                    <SortHeader label="Registered" sortKey="registered" sort={sort} onSort={toggleSort} />
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredVisitors.map((v) => {
+                  {sortedVisitors.map((v) => {
                     const scans = checkinsByVisitor.get(v.id) ?? [];
                     const isOpen = expandedVisitor === v.id;
                     const displayName =
@@ -1420,26 +1567,24 @@ function DrilldownModal({
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-white">
                 <tr>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Visitor</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
+                  <SortHeader label="Visitor" sortKey="name" sort={sort} onSort={toggleSort} />
+                  <SortHeader label="Email" sortKey="email" sort={sort} onSort={toggleSort} />
                   {venueColumns.map((c) => (
-                    <th
+                    <IconSortHeader
                       key={c.venueId}
-                      className="w-10 bg-[#F8FAFC] px-1 py-2 text-center text-[#64748B]"
+                      label={c.label}
+                      sortKey={`col:${c.venueId}`}
+                      sort={sort}
+                      onSort={toggleSort}
                     >
-                      <span
-                        title={c.label}
-                        className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
-                      >
-                        <MapPin className="h-3.5 w-3.5" />
-                      </span>
-                    </th>
+                      <MapPin className="h-3.5 w-3.5" />
+                    </IconSortHeader>
                   ))}
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Total</th>
+                  <SortHeader label="Total" sortKey="total" sort={sort} onSort={toggleSort} align="right" />
                 </tr>
               </thead>
               <tbody>
-                {filteredCheckinRows.map((r) => {
+                {sortedCheckinRows.map((r) => {
                   const v = r.visitor;
                   const displayName =
                     v?.full_name ||
@@ -1515,6 +1660,11 @@ function BonusMatrixModal({
   codeLabelBySourceId: Map<string, string>;
 }) {
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState>({ key: "", dir: "desc" });
+  const toggleSort = (key: string) =>
+    setSort((s) =>
+      s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
+    );
 
   // Columns: one per distinct bonus code (by source id), ordered by label.
   const columns = useMemo(() => {
@@ -1577,6 +1727,27 @@ function BonusMatrixModal({
     });
   }, [rows, q]);
 
+  // Column sorting for the bonus-scan matrix; empty key keeps the default (most recent) order.
+  const sortedRows = useMemo(() => {
+    if (!sort.key) return filteredRows;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const out = filteredRows.slice();
+    out.sort((a, b) => {
+      let cmp = 0;
+      if (sort.key === "name") cmp = displayNameOf(a.visitor).localeCompare(displayNameOf(b.visitor));
+      else if (sort.key === "email")
+        cmp = (a.visitor?.email ?? "").localeCompare(b.visitor?.email ?? "");
+      else if (sort.key === "total") cmp = a.total - b.total;
+      else if (sort.key.startsWith("col:")) {
+        const key = sort.key.slice(4);
+        cmp = (a.scans.get(key)?.length ?? 0) - (b.scans.get(key)?.length ?? 0);
+      }
+      if (cmp === 0) cmp = b.latest.localeCompare(a.latest);
+      return cmp * dir;
+    });
+    return out;
+  }, [filteredRows, sort]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 sm:p-8 overflow-y-auto"
@@ -1592,7 +1763,7 @@ function BonusMatrixModal({
           <div>
             <h3 className="text-lg font-semibold text-[#111827]">Bonus scans</h3>
             <p className="text-sm text-[#64748B]">
-              Who has scanned each bonus code. Hover a tick for the date, time and details.
+              Who has scanned each bonus code. Click any column heading to sort; hover a tick for the date, time and details.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1624,26 +1795,24 @@ function BonusMatrixModal({
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-white">
                 <tr>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Visitor</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
+                  <SortHeader label="Visitor" sortKey="name" sort={sort} onSort={toggleSort} />
+                  <SortHeader label="Email" sortKey="email" sort={sort} onSort={toggleSort} />
                   {columns.map((c) => (
-                    <th
+                    <IconSortHeader
                       key={c.sourceKey}
-                      className="w-10 bg-[#F8FAFC] px-1 py-2 text-center text-[#64748B]"
+                      label={c.label}
+                      sortKey={`col:${c.sourceKey}`}
+                      sort={sort}
+                      onSort={toggleSort}
                     >
-                      <span
-                        title={c.label}
-                        className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
-                      >
-                        <Gift className="h-3.5 w-3.5" />
-                      </span>
-                    </th>
+                      <Gift className="h-3.5 w-3.5" />
+                    </IconSortHeader>
                   ))}
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Total</th>
+                  <SortHeader label="Total" sortKey="total" sort={sort} onSort={toggleSort} align="right" />
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.map((r) => {
+                {sortedRows.map((r) => {
                   const v = r.visitor;
                   const displayName =
                     v?.full_name ||
