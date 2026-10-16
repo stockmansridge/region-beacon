@@ -375,32 +375,44 @@ function LeaderboardPage() {
             <p className="mt-6 text-sm text-destructive">{error}</p>
           ) : rows.length === 0 ? (
             <div className="mt-6 rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-6 text-center text-sm text-[#475569]">
-              No check-ins yet. The leaderboard will populate once visitors
-              start collecting stamps.
+              No activity yet. The leaderboard will populate once visitors
+              collect stamps or bonus points.
             </div>
           ) : (
-            <div className="mt-4 overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white">
+            <div className="mt-4 overflow-x-auto overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-3 py-2 w-14">Rank</th>
+                    <th className="px-3 py-2 w-12">Rank</th>
                     <th className="px-3 py-2">Display name</th>
-                    <th className="px-3 py-2 w-20 text-right">Stamps</th>
-                    <th className="px-3 py-2 w-20 text-right">Points</th>
-                    <th className="px-3 py-2 w-24">Tier</th>
-                    <th className="px-3 py-2 w-24">Completed</th>
+                    <th className="px-3 py-2 w-16 text-right">Stamps</th>
+                    <th className="px-3 py-2 w-20 text-right">Venue pts</th>
+                    <th className="px-3 py-2 w-20 text-right">Bonus pts</th>
+                    <th className="px-3 py-2 w-20 text-right font-bold text-foreground">Total</th>
+                    <th className="px-3 py-2 w-20">Tier</th>
+                    <th className="px-3 py-2 w-20">Done</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r) => (
-                    <tr key={r.visitor_id} className="border-t">
-                      <td className="px-3 py-2 font-mono">{r.rank}</td>
-                      <td className="px-3 py-2">{r.display}</td>
+                    <tr key={r.visitor_id} className="border-t hover:bg-muted/20">
+                      <td className="px-3 py-2 font-mono text-muted-foreground">{r.rank}</td>
+                      <td className="px-3 py-2 font-medium">{r.display}</td>
                       <td className="px-3 py-2 text-right font-mono">{r.stamps}</td>
-                      <td className="px-3 py-2 text-right font-mono">{r.points}</td>
+                      <td className="px-3 py-2 text-right font-mono text-muted-foreground">{r.venue_points}</td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {r.bonus_points > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
+                            +{r.bonus_points}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono font-bold">{r.points}</td>
                       <td className="px-3 py-2 text-xs">{r.tier ?? "—"}</td>
                       <td className="px-3 py-2 text-xs">
-                        {r.is_completed ? "yes" : "—"}
+                        {r.is_completed ? "✓" : "—"}
                       </td>
                     </tr>
                   ))}
@@ -410,9 +422,8 @@ function LeaderboardPage() {
           )}
 
           <p className="mt-4 text-xs text-muted-foreground">
-            Points are summed from <code>checkins.entry_value</code>
-            (snapshotted at scan time). Tier uses event reward rules with
-            the default Bronze/Silver/Gold/Complete ladder as a fallback.
+            Ranked by total points (venue stamps + bonus codes), then stamp count, then earliest activity — matching the live public leaderboard.
+            Bonus points column highlighted in amber where present.
           </p>
         </section>
       </div>
