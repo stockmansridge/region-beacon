@@ -195,6 +195,19 @@ function Analytics() {
           .eq("agency_id", agencyId)
           .eq("award_type", "bonus");
       }
+      // Bonus code names for the bonus-scan matrix: event-level codes and
+      // per-venue code rows (an award's source_id may be either). Both are
+      // readable by agency members; tolerate missing tables/policies.
+      const [bcRes, bcvRes] = await Promise.all([
+        supabase
+          .from("event_bonus_codes")
+          .select("id, event_id, name")
+          .eq("agency_id", agencyId),
+        supabase
+          .from("event_bonus_code_venues")
+          .select("id, bonus_code_id, venue_id")
+          .eq("agency_id", agencyId),
+      ]);
       // Page views — tolerate a missing table on schemas without the
       // event-page-views migration applied.
       const pvRes = await supabase
@@ -218,6 +231,10 @@ function Analytics() {
       setPassports((pRes.data ?? []) as PassportRow[]);
       setPrizeRules((prRes.data ?? []) as PrizeRule[]);
       setBonusScans((bRes.error ? [] : (bRes.data ?? [])) as BonusScanRow[]);
+      setBonusCodes((bcRes.error ? [] : (bcRes.data ?? [])) as BonusCodeRow[]);
+      setBonusCodeVenues(
+        (bcvRes.error ? [] : (bcvRes.data ?? [])) as BonusCodeVenueRow[],
+      );
       setPageViews((pvRes.error ? [] : (pvRes.data ?? [])) as PageViewRow[]);
       setPageViewsError(pvRes.error ? pvRes.error.message : null);
       setLoading(false);
