@@ -1349,33 +1349,76 @@ function DrilldownModal({
                 </tbody>
               </table>
             )
-          ) : filteredCheckins.length === 0 ? (
-            <p className="py-10 text-center text-sm text-[#64748B]">No check-ins match.</p>
+          ) : filteredCheckinRows.length === 0 ? (
+            <p className="py-10 text-center text-sm text-[#64748B]">
+              {checkinMatrixRows.length === 0
+                ? "No check-ins recorded for this selection yet."
+                : "No visitors match."}
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-white">
                 <tr>
                   <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Visitor</th>
                   <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Venue</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Event</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Date & time</th>
+                  {venueColumns.map((c) => (
+                    <th
+                      key={c.venueId}
+                      className="w-10 bg-[#F8FAFC] px-1 py-2 text-center text-[#64748B]"
+                    >
+                      <span
+                        title={c.label}
+                        className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
+                      >
+                        <MapPin className="h-3.5 w-3.5" />
+                      </span>
+                    </th>
+                  ))}
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Total</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCheckins.map((c) => {
-                  const v = visitorById.get(c.visitor_id);
+                {filteredCheckinRows.map((r) => {
+                  const v = r.visitor;
                   const displayName =
                     v?.full_name ||
                     `${v?.first_name ?? ""} ${v?.last_name ?? ""}`.trim() ||
                     "—";
                   return (
-                    <tr key={c.id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                    <tr key={r.visitorId} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
                       <td className="px-3 py-2 font-medium text-[#111827]">{displayName}</td>
                       <td className="px-3 py-2 text-[#334155]">{v?.email ?? "—"}</td>
-                      <td className="px-3 py-2 text-[#334155]">{venueNameById.get(c.venue_id) ?? "—"}</td>
-                      <td className="px-3 py-2 text-[#64748B]">{eventNameById.get(c.event_id) ?? "—"}</td>
-                      <td className="px-3 py-2 text-[#64748B]">{new Date(c.created_at).toLocaleString()}</td>
+                      {venueColumns.map((c) => {
+                        const scans = r.scans.get(c.venueId) ?? [];
+                        if (scans.length === 0) {
+                          return <td key={c.venueId} className="px-1 py-2 text-center text-[#CBD5E1]">—</td>;
+                        }
+                        const details = scans
+                          .map((s) =>
+                            [
+                              c.label,
+                              new Date(s.created_at).toLocaleString(),
+                              eventNameById.get(s.event_id) ?? "",
+                            ]
+                              .filter(Boolean)
+                              .join("\n"),
+                          )
+                          .join("\n\n");
+                        return (
+                          <td key={c.venueId} className="px-1 py-2 text-center">
+                            <span
+                              title={details}
+                              className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </span>
+                            {scans.length > 1 && (
+                              <span className="ml-1 text-xs text-[#64748B]">×{scans.length}</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2 text-right font-medium text-[#111827]">{r.total}</td>
                     </tr>
                   );
                 })}
