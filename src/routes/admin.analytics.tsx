@@ -1407,6 +1407,28 @@ function DrilldownModal({
     });
   }, [checkinMatrixRows, q]);
 
+  // Column sorting for the check-in matrix; empty key keeps the default (most recent) order.
+  const sortedCheckinRows = useMemo(() => {
+    if (!sort.key) return filteredCheckinRows;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const rows = filteredCheckinRows.slice();
+    rows.sort((a, b) => {
+      let cmp = 0;
+      if (sort.key === "name") cmp = displayNameOf(a.visitor).localeCompare(displayNameOf(b.visitor));
+      else if (sort.key === "email")
+        cmp = (a.visitor?.email ?? "").localeCompare(b.visitor?.email ?? "");
+      else if (sort.key === "total") cmp = a.total - b.total;
+      else if (sort.key.startsWith("col:")) {
+        const venueId = sort.key.slice(4);
+        cmp =
+          (a.scans.get(venueId)?.length ?? 0) - (b.scans.get(venueId)?.length ?? 0);
+      }
+      if (cmp === 0) cmp = b.latest.localeCompare(a.latest);
+      return cmp * dir;
+    });
+    return rows;
+  }, [filteredCheckinRows, sort]);
+
   const panelResize = usePanelResize();
   const title = mode === "visitors" ? "Registered visitors" : "All check-ins";
   const desc =
