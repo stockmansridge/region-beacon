@@ -89,6 +89,9 @@ type BonusScanRow = {
   metadata: { bonus_code_name?: string | null; venue_id?: string | null } | null;
 };
 
+type BonusCodeRow = { id: string; event_id: string; name: string };
+type BonusCodeVenueRow = { id: string; bonus_code_id: string; venue_id: string | null };
+
 type PageViewRow = {
   id: string;
   event_id: string;
@@ -118,6 +121,8 @@ function Analytics() {
   const [passports, setPassports] = useState<PassportRow[]>([]);
   const [prizeRules, setPrizeRules] = useState<PrizeRule[]>([]);
   const [bonusScans, setBonusScans] = useState<BonusScanRow[]>([]);
+  const [bonusCodes, setBonusCodes] = useState<BonusCodeRow[]>([]);
+  const [bonusCodeVenues, setBonusCodeVenues] = useState<BonusCodeVenueRow[]>([]);
   const [pageViews, setPageViews] = useState<PageViewRow[]>([]);
   const [pageViewsError, setPageViewsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -127,7 +132,7 @@ function Analytics() {
 
   const [eventFilter, setEventFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
-  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins">(null);
+  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus">(null);
   const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
 
   useEffect(() => {
@@ -190,6 +195,19 @@ function Analytics() {
           .eq("agency_id", agencyId)
           .eq("award_type", "bonus");
       }
+      // Bonus code names for the bonus-scan matrix: event-level codes and
+      // per-venue code rows (an award's source_id may be either). Both are
+      // readable by agency members; tolerate missing tables/policies.
+      const [bcRes, bcvRes] = await Promise.all([
+        supabase
+          .from("event_bonus_codes")
+          .select("id, event_id, name")
+          .eq("agency_id", agencyId),
+        supabase
+          .from("event_bonus_code_venues")
+          .select("id, bonus_code_id, venue_id")
+          .eq("agency_id", agencyId),
+      ]);
       // Page views — tolerate a missing table on schemas without the
       // event-page-views migration applied.
       const pvRes = await supabase
@@ -213,6 +231,10 @@ function Analytics() {
       setPassports((pRes.data ?? []) as PassportRow[]);
       setPrizeRules((prRes.data ?? []) as PrizeRule[]);
       setBonusScans((bRes.error ? [] : (bRes.data ?? [])) as BonusScanRow[]);
+      setBonusCodes((bcRes.error ? [] : (bcRes.data ?? [])) as BonusCodeRow[]);
+      setBonusCodeVenues(
+        (bcvRes.error ? [] : (bcvRes.data ?? [])) as BonusCodeVenueRow[],
+      );
       setPageViews((pvRes.error ? [] : (pvRes.data ?? [])) as PageViewRow[]);
       setPageViewsError(pvRes.error ? pvRes.error.message : null);
       setLoading(false);
@@ -461,6 +483,37 @@ function Analytics() {
     () => new Map(visitors.map((v) => [v.id, v])),
     [visitors],
   );
+  const passportById = useMemo(
+    () => new Map(passports.map((p) => [p.id, p])),
+    [passports],
+  );
+  // Resolve a bonus award's source_id to a readable code label. A source_id
+  // may be an event-level code id or a per-venue code row id.
+  const bonusCodeLabelBySourceId = useMemo(() => {
+    const codeById = new Map(bonusCodes.map((c) => [c.id, c]));
+    const venueRowById = new Map(bonusCodeVenues.map((r) => [r.id, r]));
+    const m = new Map<string, string>();
+    for (const b of bonusScans) {
+      if (!b.source_id || m.has(b.source_id)) continue;
+      const code = codeById.get(b.source_id);
+      if (code) {
+        m.set(b.source_id, code.name);
+        continue;
+      }
+      const venueRow = venueRowById.get(b.source_id);
+      if (venueRow) {
+        const parent = codeById.get(venueRow.bonus_code_id);
+        const venueName = venueRow.venue_id
+          ? venueNameById.get(venueRow.venue_id)
+          : null;
+        const base = parent?.name ?? b.metadata?.bonus_code_name ?? "Bonus code";
+        m.set(b.source_id, venueName ? `${base} — ${venueName}` : base);
+        continue;
+      }
+      if (b.metadata?.bonus_code_name) m.set(b.source_id, b.metadata.bonus_code_name);
+    }
+    return m;
+  }, [bonusScans, bonusCodes, bonusCodeVenues, venueNameById]);
 
   const downloadCsv = (filename: string, rows: Array<Record<string, unknown>>) => {
     if (rows.length === 0) {
@@ -667,7 +720,7 @@ function Analytics() {
             <Stat label="Venues" value={totalVenues} icon={MapPin} onClick={() => navigate({ to: "/admin/venues" })} />
             <Stat label="Registered visitors" value={totalPassports} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat label="Total check-ins" value={totalCheckins} icon={QrCode} onClick={() => setDrilldown("checkins")} />
-            <Stat label="Bonus scans" value={totalBonusScans} icon={QrCode} />
+            <Stat label="Bonus scans" value={totalBonusScans} icon={QrCode} onClick={() => setDrilldown("bonus")} />
             <Stat label="Bonus points earned" value={totalBonusPoints} icon={Trophy} />
             <Stat label="Unique visitors checked in" value={uniqueCheckedIn} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat
@@ -1043,7 +1096,7 @@ function Analytics() {
         </div>
       )}
 
-      {drilldown && (
+      {drilldown && drilldown !== "bonus" && (
         <DrilldownModal
           mode={drilldown}
           onClose={() => setDrilldown(null)}
@@ -1055,6 +1108,16 @@ function Analytics() {
           expandedVisitor={expandedVisitor}
           setExpandedVisitor={setExpandedVisitor}
           onExport={drilldown === "visitors" ? exportVisitors : exportCheckins}
+        />
+      )}
+      {drilldown === "bonus" && (
+        <BonusMatrixModal
+          onClose={() => setDrilldown(null)}
+          bonusScans={fBonusScans}
+          passportById={passportById}
+          visitorById={visitorById}
+          eventNameById={eventNameById}
+          codeLabelBySourceId={bonusCodeLabelBySourceId}
         />
       )}
     </>
@@ -1288,6 +1351,195 @@ function DrilldownModal({
 }
 
 
+
+function BonusMatrixModal({
+  onClose,
+  bonusScans,
+  passportById,
+  visitorById,
+  eventNameById,
+  codeLabelBySourceId,
+}: {
+  onClose: () => void;
+  bonusScans: BonusScanRow[];
+  passportById: Map<string, PassportRow>;
+  visitorById: Map<string, VisitorRow>;
+  eventNameById: Map<string, string>;
+  codeLabelBySourceId: Map<string, string>;
+}) {
+  const [query, setQuery] = useState("");
+
+  // Columns: one per distinct bonus code (by source id), ordered by label.
+  const columns = useMemo(() => {
+    const bySource = new Map<string, string>();
+    for (const b of bonusScans) {
+      const key = b.source_id ?? `unknown:${b.event_id}`;
+      if (!bySource.has(key)) {
+        bySource.set(
+          key,
+          (b.source_id && codeLabelBySourceId.get(b.source_id)) ||
+            b.metadata?.bonus_code_name ||
+            "Unknown code",
+        );
+      }
+    }
+    return Array.from(bySource.entries())
+      .map(([sourceKey, label]) => ({ sourceKey, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [bonusScans, codeLabelBySourceId]);
+
+  // Rows: one per visitor with at least one bonus scan.
+  const rows = useMemo(() => {
+    const byVisitor = new Map<
+      string,
+      { visitor: VisitorRow | null; scans: Map<string, BonusScanRow[]>; total: number; latest: string }
+    >();
+    for (const b of bonusScans) {
+      const passport = passportById.get(b.participant_id);
+      const visitorId = passport?.visitor_id ?? `passport:${b.participant_id}`;
+      let row = byVisitor.get(visitorId);
+      if (!row) {
+        row = {
+          visitor: visitorById.get(visitorId) ?? null,
+          scans: new Map(),
+          total: 0,
+          latest: b.created_at,
+        };
+        byVisitor.set(visitorId, row);
+      }
+      const key = b.source_id ?? `unknown:${b.event_id}`;
+      const arr = row.scans.get(key) ?? [];
+      arr.push(b);
+      row.scans.set(key, arr);
+      row.total += 1;
+      if (b.created_at > row.latest) row.latest = b.created_at;
+    }
+    return Array.from(byVisitor.entries())
+      .map(([visitorId, r]) => ({ visitorId, ...r }))
+      .sort((a, b) => b.latest.localeCompare(a.latest));
+  }, [bonusScans, passportById, visitorById]);
+
+  const q = query.trim().toLowerCase();
+  const filteredRows = useMemo(() => {
+    if (!q) return rows;
+    return rows.filter((r) => {
+      const v = r.visitor;
+      const name = (v?.full_name || `${v?.first_name ?? ""} ${v?.last_name ?? ""}`).toLowerCase();
+      return name.includes(q) || (v?.email ?? "").toLowerCase().includes(q);
+    });
+  }, [rows, q]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 sm:p-8 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-6xl rounded-[16px] bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 flex flex-col gap-3 rounded-t-[16px] border-b border-[#E6ECF4] bg-white px-6 py-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-[#111827]">Bonus scans</h3>
+            <p className="text-sm text-[#64748B]">
+              Who has scanned each bonus code. Hover a tick for the date, time and details.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name or email…"
+              className="h-9 w-64 rounded-[10px] border border-[#D9E2EF] bg-white px-3 text-sm focus:border-[#2F6FE4] focus:ring-2 focus:ring-[#2F6FE4]/20"
+            />
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 items-center rounded-[10px] bg-[#2F6FE4] px-3 text-sm font-semibold text-white hover:bg-[#1F56C5]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="max-h-[75vh] overflow-auto px-6 py-4">
+          {filteredRows.length === 0 ? (
+            <p className="py-10 text-center text-sm text-[#64748B]">
+              {rows.length === 0
+                ? "No bonus scans recorded for this selection yet."
+                : "No visitors match."}
+            </p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-white">
+                <tr>
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Visitor</th>
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
+                  {columns.map((c) => (
+                    <th
+                      key={c.sourceKey}
+                      className="bg-[#F8FAFC] px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]"
+                    >
+                      {c.label}
+                    </th>
+                  ))}
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.map((r) => {
+                  const v = r.visitor;
+                  const displayName =
+                    v?.full_name ||
+                    `${v?.first_name ?? ""} ${v?.last_name ?? ""}`.trim() ||
+                    "—";
+                  return (
+                    <tr key={r.visitorId} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                      <td className="px-3 py-2 font-medium text-[#111827]">{displayName}</td>
+                      <td className="px-3 py-2 text-[#334155]">{v?.email ?? "—"}</td>
+                      {columns.map((c) => {
+                        const scans = r.scans.get(c.sourceKey) ?? [];
+                        if (scans.length === 0) {
+                          return <td key={c.sourceKey} className="px-3 py-2 text-center text-[#CBD5E1]">—</td>;
+                        }
+                        const details = scans
+                          .map((s) => {
+                            const parts = [
+                              c.label,
+                              new Date(s.created_at).toLocaleString(),
+                              `+${s.points_awarded ?? 0} points`,
+                              eventNameById.get(s.event_id) ?? "",
+                            ].filter(Boolean);
+                            return parts.join("\n");
+                          })
+                          .join("\n\n");
+                        return (
+                          <td key={c.sourceKey} className="px-3 py-2 text-center">
+                            <span
+                              title={details}
+                              className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </span>
+                            {scans.length > 1 && (
+                              <span className="ml-1 text-xs text-[#64748B]">×{scans.length}</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2 text-right font-medium text-[#111827]">{r.total}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Stat({
   label,
