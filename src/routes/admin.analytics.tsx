@@ -1175,17 +1175,54 @@ function DrilldownModal({
     });
   }, [visitors, q]);
 
-  const filteredCheckins = useMemo(() => {
-    const sorted = checkins.slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
-    if (!q) return sorted;
-    return sorted.filter((c) => {
-      const v = visitorById.get(c.visitor_id);
+  // Check-in matrix: one narrow column per venue, one row per visitor.
+  const venueColumns = useMemo(() => {
+    const byVenue = new Map<string, string>();
+    for (const c of checkins) {
+      if (!byVenue.has(c.venue_id)) {
+        byVenue.set(c.venue_id, venueNameById.get(c.venue_id) ?? "Unknown venue");
+      }
+    }
+    return Array.from(byVenue.entries())
+      .map(([venueId, label]) => ({ venueId, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [checkins, venueNameById]);
+
+  const checkinMatrixRows = useMemo(() => {
+    const byVisitor = new Map<
+      string,
+      { visitor: VisitorRow | null; scans: Map<string, CheckinRow[]>; total: number; latest: string }
+    >();
+    for (const c of checkins) {
+      let row = byVisitor.get(c.visitor_id);
+      if (!row) {
+        row = {
+          visitor: visitorById.get(c.visitor_id) ?? null,
+          scans: new Map(),
+          total: 0,
+          latest: c.created_at,
+        };
+        byVisitor.set(c.visitor_id, row);
+      }
+      const arr = row.scans.get(c.venue_id) ?? [];
+      arr.push(c);
+      row.scans.set(c.venue_id, arr);
+      row.total += 1;
+      if (c.created_at > row.latest) row.latest = c.created_at;
+    }
+    return Array.from(byVisitor.entries())
+      .map(([visitorId, r]) => ({ visitorId, ...r }))
+      .sort((a, b) => b.latest.localeCompare(a.latest));
+  }, [checkins, visitorById]);
+
+  const filteredCheckinRows = useMemo(() => {
+    if (!q) return checkinMatrixRows;
+    return checkinMatrixRows.filter((r) => {
+      const v = r.visitor;
       const name = (v?.full_name || `${v?.first_name ?? ""} ${v?.last_name ?? ""}`).toLowerCase();
-      const email = (v?.email ?? "").toLowerCase();
-      const venue = (venueNameById.get(c.venue_id) ?? "").toLowerCase();
-      return name.includes(q) || email.includes(q) || venue.includes(q);
+      return name.includes(q) || (v?.email ?? "").toLowerCase().includes(q);
     });
-  }, [checkins, q, visitorById, venueNameById]);
+  }, [checkinMatrixRows, q]);
 
   const title = mode === "visitors" ? "Registered visitors" : "All check-ins";
   const desc =
