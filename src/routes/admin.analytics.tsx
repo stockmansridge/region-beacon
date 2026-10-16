@@ -1561,6 +1561,7 @@ function BonusMatrixModal({
       .sort((a, b) => b.latest.localeCompare(a.latest));
   }, [bonusScans, passportById, visitorById]);
 
+  const panelResize = usePanelResize();
   const q = query.trim().toLowerCase();
   const filteredRows = useMemo(() => {
     if (!q) return rows;
