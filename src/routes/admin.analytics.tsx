@@ -1567,26 +1567,24 @@ function DrilldownModal({
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-white">
                 <tr>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Visitor</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
+                  <SortHeader label="Visitor" sortKey="name" sort={sort} onSort={toggleSort} />
+                  <SortHeader label="Email" sortKey="email" sort={sort} onSort={toggleSort} />
                   {venueColumns.map((c) => (
-                    <th
+                    <IconSortHeader
                       key={c.venueId}
-                      className="w-10 bg-[#F8FAFC] px-1 py-2 text-center text-[#64748B]"
+                      label={c.label}
+                      sortKey={`col:${c.venueId}`}
+                      sort={sort}
+                      onSort={toggleSort}
                     >
-                      <span
-                        title={c.label}
-                        className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
-                      >
-                        <MapPin className="h-3.5 w-3.5" />
-                      </span>
-                    </th>
+                      <MapPin className="h-3.5 w-3.5" />
+                    </IconSortHeader>
                   ))}
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Total</th>
+                  <SortHeader label="Total" sortKey="total" sort={sort} onSort={toggleSort} align="right" />
                 </tr>
               </thead>
               <tbody>
-                {filteredCheckinRows.map((r) => {
+                {sortedCheckinRows.map((r) => {
                   const v = r.visitor;
                   const displayName =
                     v?.full_name ||
