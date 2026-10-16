@@ -1485,16 +1485,16 @@ function DrilldownModal({
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white">
                   <tr>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Name</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Postcode</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Event</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Check-ins</th>
-                    <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Registered</th>
+                    <SortHeader label="Name" sortKey="name" sort={sort} onSort={toggleSort} />
+                    <SortHeader label="Email" sortKey="email" sort={sort} onSort={toggleSort} />
+                    <SortHeader label="Postcode" sortKey="postcode" sort={sort} onSort={toggleSort} />
+                    <SortHeader label="Event" sortKey="event" sort={sort} onSort={toggleSort} />
+                    <SortHeader label="Check-ins" sortKey="checkins" sort={sort} onSort={toggleSort} align="right" />
+                    <SortHeader label="Registered" sortKey="registered" sort={sort} onSort={toggleSort} />
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredVisitors.map((v) => {
+                  {sortedVisitors.map((v) => {
                     const scans = checkinsByVisitor.get(v.id) ?? [];
                     const isOpen = expandedVisitor === v.id;
                     const displayName =
