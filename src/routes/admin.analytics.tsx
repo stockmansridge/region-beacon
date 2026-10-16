@@ -1228,7 +1228,7 @@ function DrilldownModal({
   const desc =
     mode === "visitors"
       ? "Click a visitor to see their check-in history."
-      : "Every scan with visitor, venue and timestamp.";
+      : "Who has checked in at each venue. Hover a column icon for the venue name, and a tick for the date and time.";
 
   return (
     <div
