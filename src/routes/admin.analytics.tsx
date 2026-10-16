@@ -1183,6 +1183,89 @@ function PanelResizeHandle({
   );
 }
 
+type SortDir = "asc" | "desc";
+type SortState = { key: string; dir: SortDir };
+
+function displayNameOf(v: VisitorRow | null | undefined): string {
+  return v?.full_name || `${v?.first_name ?? ""} ${v?.last_name ?? ""}`.trim() || "—";
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  align = "left",
+}: {
+  label: string;
+  sortKey: string;
+  sort: SortState;
+  onSort: (key: string) => void;
+  align?: "left" | "right" | "center";
+}) {
+  const active = sort.key === sortKey;
+  const alignCls =
+    align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
+  return (
+    <th
+      className={`bg-[#F8FAFC] px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B] ${alignCls}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        title={`Sort by ${label.toLowerCase()}`}
+        className={`inline-flex items-center gap-1 hover:text-[#2F6FE4] ${active ? "text-[#2F6FE4]" : ""}`}
+      >
+        {label}
+        <span aria-hidden="true" className="text-[9px] leading-none">
+          {active ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
+function IconSortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  children,
+}: {
+  label: string;
+  sortKey: string;
+  sort: SortState;
+  onSort: (key: string) => void;
+  children: React.ReactNode;
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <th className="w-10 bg-[#F8FAFC] px-1 py-2 text-center text-[#64748B]">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        title={`${label} — click to sort`}
+        aria-label={`Sort by ${label}`}
+        className={`relative inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full ${
+          active
+            ? "bg-[#2F6FE4] text-white"
+            : "bg-[#EAF2FF] text-[#2F6FE4] hover:bg-[#DCE9FF]"
+        }`}
+      >
+        {children}
+        {active && (
+          <span
+            aria-hidden="true"
+            className="absolute -right-1 -top-1 rounded-full bg-white px-0.5 text-[8px] leading-[10px] text-[#2F6FE4] shadow-sm"
+          >
+            {sort.dir === "asc" ? "▲" : "▼"}
+          </span>
+        )}
+      </button>
+    </th>
+  );
+}
+
 function DrilldownModal({
   mode,
   onClose,
