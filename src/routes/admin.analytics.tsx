@@ -1607,7 +1607,7 @@ function BonusMatrixModal({
           </div>
         </div>
 
-        <div className="max-h-[75vh] overflow-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
           {filteredRows.length === 0 ? (
             <p className="py-10 text-center text-sm text-[#64748B]">
               {rows.length === 0
