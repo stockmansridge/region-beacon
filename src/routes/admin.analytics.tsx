@@ -1507,7 +1507,7 @@ function BonusMatrixModal({
                       {columns.map((c) => {
                         const scans = r.scans.get(c.sourceKey) ?? [];
                         if (scans.length === 0) {
-                          return <td key={c.sourceKey} className="px-3 py-2 text-center text-[#CBD5E1]">—</td>;
+                          return <td key={c.sourceKey} className="px-1 py-2 text-center text-[#CBD5E1]">—</td>;
                         }
                         const details = scans
                           .map((s) => {
@@ -1521,7 +1521,7 @@ function BonusMatrixModal({
                           })
                           .join("\n\n");
                         return (
-                          <td key={c.sourceKey} className="px-3 py-2 text-center">
+                          <td key={c.sourceKey} className="px-1 py-2 text-center">
                             <span
                               title={details}
                               className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
