@@ -483,6 +483,37 @@ function Analytics() {
     () => new Map(visitors.map((v) => [v.id, v])),
     [visitors],
   );
+  const passportById = useMemo(
+    () => new Map(passports.map((p) => [p.id, p])),
+    [passports],
+  );
+  // Resolve a bonus award's source_id to a readable code label. A source_id
+  // may be an event-level code id or a per-venue code row id.
+  const bonusCodeLabelBySourceId = useMemo(() => {
+    const codeById = new Map(bonusCodes.map((c) => [c.id, c]));
+    const venueRowById = new Map(bonusCodeVenues.map((r) => [r.id, r]));
+    const m = new Map<string, string>();
+    for (const b of bonusScans) {
+      if (!b.source_id || m.has(b.source_id)) continue;
+      const code = codeById.get(b.source_id);
+      if (code) {
+        m.set(b.source_id, code.name);
+        continue;
+      }
+      const venueRow = venueRowById.get(b.source_id);
+      if (venueRow) {
+        const parent = codeById.get(venueRow.bonus_code_id);
+        const venueName = venueRow.venue_id
+          ? venueNameById.get(venueRow.venue_id)
+          : null;
+        const base = parent?.name ?? b.metadata?.bonus_code_name ?? "Bonus code";
+        m.set(b.source_id, venueName ? `${base} — ${venueName}` : base);
+        continue;
+      }
+      if (b.metadata?.bonus_code_name) m.set(b.source_id, b.metadata.bonus_code_name);
+    }
+    return m;
+  }, [bonusScans, bonusCodes, bonusCodeVenues, venueNameById]);
 
   const downloadCsv = (filename: string, rows: Array<Record<string, unknown>>) => {
     if (rows.length === 0) {
@@ -689,7 +720,7 @@ function Analytics() {
             <Stat label="Venues" value={totalVenues} icon={MapPin} onClick={() => navigate({ to: "/admin/venues" })} />
             <Stat label="Registered visitors" value={totalPassports} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat label="Total check-ins" value={totalCheckins} icon={QrCode} onClick={() => setDrilldown("checkins")} />
-            <Stat label="Bonus scans" value={totalBonusScans} icon={QrCode} />
+            <Stat label="Bonus scans" value={totalBonusScans} icon={QrCode} onClick={() => setDrilldown("bonus")} />
             <Stat label="Bonus points earned" value={totalBonusPoints} icon={Trophy} />
             <Stat label="Unique visitors checked in" value={uniqueCheckedIn} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat
