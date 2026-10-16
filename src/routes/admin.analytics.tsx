@@ -20,6 +20,7 @@ import {
   Trophy,
   CheckCircle2,
   Eye,
+  Gift,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
@@ -1479,9 +1480,14 @@ function BonusMatrixModal({
                   {columns.map((c) => (
                     <th
                       key={c.sourceKey}
-                      className="bg-[#F8FAFC] px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]"
+                      className="w-10 bg-[#F8FAFC] px-1 py-2 text-center text-[#64748B]"
                     >
-                      {c.label}
+                      <span
+                        title={c.label}
+                        className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
+                      >
+                        <Gift className="h-3.5 w-3.5" />
+                      </span>
                     </th>
                   ))}
                   <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Total</th>
