@@ -1321,6 +1321,43 @@ function DrilldownModal({
     });
   }, [visitors, q]);
 
+  // Column sorting for the visitors list; empty key keeps the default (newest first) order.
+  const sortedVisitors = useMemo(() => {
+    if (!sort.key) return filteredVisitors;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const rows = filteredVisitors.slice();
+    rows.sort((a, b) => {
+      let cmp = 0;
+      switch (sort.key) {
+        case "name":
+          cmp = displayNameOf(a).localeCompare(displayNameOf(b));
+          break;
+        case "email":
+          cmp = a.email.localeCompare(b.email);
+          break;
+        case "postcode":
+          cmp = (a.postcode ?? "").localeCompare(b.postcode ?? "");
+          break;
+        case "event":
+          cmp = (eventNameById.get(a.event_id) ?? "").localeCompare(
+            eventNameById.get(b.event_id) ?? "",
+          );
+          break;
+        case "checkins":
+          cmp =
+            (checkinsByVisitor.get(a.id)?.length ?? 0) -
+            (checkinsByVisitor.get(b.id)?.length ?? 0);
+          break;
+        case "registered":
+          cmp = a.created_at.localeCompare(b.created_at);
+          break;
+      }
+      if (cmp === 0) cmp = b.created_at.localeCompare(a.created_at);
+      return cmp * dir;
+    });
+    return rows;
+  }, [filteredVisitors, sort, checkinsByVisitor, eventNameById]);
+
   // Check-in matrix: one narrow column per venue, one row per visitor.
   const venueColumns = useMemo(() => {
     const byVenue = new Map<string, string>();
