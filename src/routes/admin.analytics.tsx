@@ -1330,7 +1330,7 @@ function DrilldownModal({
           </div>
         </div>
 
-        <div className="max-h-[75vh] overflow-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
           {mode === "visitors" ? (
             filteredVisitors.length === 0 ? (
               <p className="py-10 text-center text-sm text-[#64748B]">No visitors match.</p>
@@ -1577,7 +1577,9 @@ function BonusMatrixModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-6xl rounded-[16px] bg-white shadow-2xl"
+        ref={panelResize.ref}
+        style={panelResize.style}
+        className="relative flex max-h-[94vh] w-full max-w-7xl flex-col rounded-[16px] bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex flex-col gap-3 rounded-t-[16px] border-b border-[#E6ECF4] bg-white px-6 py-4 md:flex-row md:items-center md:justify-between">
