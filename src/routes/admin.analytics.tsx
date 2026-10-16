@@ -1290,6 +1290,11 @@ function DrilldownModal({
   onExport: () => void;
 }) {
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState>({ key: "", dir: "desc" });
+  const toggleSort = (key: string) =>
+    setSort((s) =>
+      s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
+    );
 
   const checkinsByVisitor = useMemo(() => {
     const m = new Map<string, CheckinRow[]>();
