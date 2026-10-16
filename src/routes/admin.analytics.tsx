@@ -1175,23 +1175,60 @@ function DrilldownModal({
     });
   }, [visitors, q]);
 
-  const filteredCheckins = useMemo(() => {
-    const sorted = checkins.slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
-    if (!q) return sorted;
-    return sorted.filter((c) => {
-      const v = visitorById.get(c.visitor_id);
+  // Check-in matrix: one narrow column per venue, one row per visitor.
+  const venueColumns = useMemo(() => {
+    const byVenue = new Map<string, string>();
+    for (const c of checkins) {
+      if (!byVenue.has(c.venue_id)) {
+        byVenue.set(c.venue_id, venueNameById.get(c.venue_id) ?? "Unknown venue");
+      }
+    }
+    return Array.from(byVenue.entries())
+      .map(([venueId, label]) => ({ venueId, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [checkins, venueNameById]);
+
+  const checkinMatrixRows = useMemo(() => {
+    const byVisitor = new Map<
+      string,
+      { visitor: VisitorRow | null; scans: Map<string, CheckinRow[]>; total: number; latest: string }
+    >();
+    for (const c of checkins) {
+      let row = byVisitor.get(c.visitor_id);
+      if (!row) {
+        row = {
+          visitor: visitorById.get(c.visitor_id) ?? null,
+          scans: new Map(),
+          total: 0,
+          latest: c.created_at,
+        };
+        byVisitor.set(c.visitor_id, row);
+      }
+      const arr = row.scans.get(c.venue_id) ?? [];
+      arr.push(c);
+      row.scans.set(c.venue_id, arr);
+      row.total += 1;
+      if (c.created_at > row.latest) row.latest = c.created_at;
+    }
+    return Array.from(byVisitor.entries())
+      .map(([visitorId, r]) => ({ visitorId, ...r }))
+      .sort((a, b) => b.latest.localeCompare(a.latest));
+  }, [checkins, visitorById]);
+
+  const filteredCheckinRows = useMemo(() => {
+    if (!q) return checkinMatrixRows;
+    return checkinMatrixRows.filter((r) => {
+      const v = r.visitor;
       const name = (v?.full_name || `${v?.first_name ?? ""} ${v?.last_name ?? ""}`).toLowerCase();
-      const email = (v?.email ?? "").toLowerCase();
-      const venue = (venueNameById.get(c.venue_id) ?? "").toLowerCase();
-      return name.includes(q) || email.includes(q) || venue.includes(q);
+      return name.includes(q) || (v?.email ?? "").toLowerCase().includes(q);
     });
-  }, [checkins, q, visitorById, venueNameById]);
+  }, [checkinMatrixRows, q]);
 
   const title = mode === "visitors" ? "Registered visitors" : "All check-ins";
   const desc =
     mode === "visitors"
       ? "Click a visitor to see their check-in history."
-      : "Every scan with visitor, venue and timestamp.";
+      : "Who has checked in at each venue. Hover a column icon for the venue name, and a tick for the date and time.";
 
   return (
     <div
@@ -1312,33 +1349,76 @@ function DrilldownModal({
                 </tbody>
               </table>
             )
-          ) : filteredCheckins.length === 0 ? (
-            <p className="py-10 text-center text-sm text-[#64748B]">No check-ins match.</p>
+          ) : filteredCheckinRows.length === 0 ? (
+            <p className="py-10 text-center text-sm text-[#64748B]">
+              {checkinMatrixRows.length === 0
+                ? "No check-ins recorded for this selection yet."
+                : "No visitors match."}
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-white">
                 <tr>
                   <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Visitor</th>
                   <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Email</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Venue</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Event</th>
-                  <th className="bg-[#F8FAFC] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Date & time</th>
+                  {venueColumns.map((c) => (
+                    <th
+                      key={c.venueId}
+                      className="w-10 bg-[#F8FAFC] px-1 py-2 text-center text-[#64748B]"
+                    >
+                      <span
+                        title={c.label}
+                        className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
+                      >
+                        <MapPin className="h-3.5 w-3.5" />
+                      </span>
+                    </th>
+                  ))}
+                  <th className="bg-[#F8FAFC] px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Total</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCheckins.map((c) => {
-                  const v = visitorById.get(c.visitor_id);
+                {filteredCheckinRows.map((r) => {
+                  const v = r.visitor;
                   const displayName =
                     v?.full_name ||
                     `${v?.first_name ?? ""} ${v?.last_name ?? ""}`.trim() ||
                     "—";
                   return (
-                    <tr key={c.id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                    <tr key={r.visitorId} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
                       <td className="px-3 py-2 font-medium text-[#111827]">{displayName}</td>
                       <td className="px-3 py-2 text-[#334155]">{v?.email ?? "—"}</td>
-                      <td className="px-3 py-2 text-[#334155]">{venueNameById.get(c.venue_id) ?? "—"}</td>
-                      <td className="px-3 py-2 text-[#64748B]">{eventNameById.get(c.event_id) ?? "—"}</td>
-                      <td className="px-3 py-2 text-[#64748B]">{new Date(c.created_at).toLocaleString()}</td>
+                      {venueColumns.map((c) => {
+                        const scans = r.scans.get(c.venueId) ?? [];
+                        if (scans.length === 0) {
+                          return <td key={c.venueId} className="px-1 py-2 text-center text-[#CBD5E1]">—</td>;
+                        }
+                        const details = scans
+                          .map((s) =>
+                            [
+                              c.label,
+                              new Date(s.created_at).toLocaleString(),
+                              eventNameById.get(s.event_id) ?? "",
+                            ]
+                              .filter(Boolean)
+                              .join("\n"),
+                          )
+                          .join("\n\n");
+                        return (
+                          <td key={c.venueId} className="px-1 py-2 text-center">
+                            <span
+                              title={details}
+                              className="inline-flex h-6 w-6 cursor-help items-center justify-center rounded-full bg-[#EAF2FF] text-[#2F6FE4]"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </span>
+                            {scans.length > 1 && (
+                              <span className="ml-1 text-xs text-[#64748B]">×{scans.length}</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2 text-right font-medium text-[#111827]">{r.total}</td>
                     </tr>
                   );
                 })}
