@@ -1434,7 +1434,7 @@ function DrilldownModal({
   const desc =
     mode === "visitors"
       ? "Click a visitor to see their check-in history."
-      : "Who has checked in at each venue. Hover a column icon for the venue name, and a tick for the date and time.";
+      : "Who has checked in at each venue. Click any column heading to sort; hover a column icon for the venue name and a tick for the date and time.";
 
   return (
     <div
@@ -1763,7 +1763,7 @@ function BonusMatrixModal({
           <div>
             <h3 className="text-lg font-semibold text-[#111827]">Bonus scans</h3>
             <p className="text-sm text-[#64748B]">
-              Who has scanned each bonus code. Hover a tick for the date, time and details.
+              Who has scanned each bonus code. Click any column heading to sort; hover a tick for the date, time and details.
             </p>
           </div>
           <div className="flex items-center gap-2">
