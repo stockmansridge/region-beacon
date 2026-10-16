@@ -70,6 +70,7 @@ import { Route as LiveSubdomainPrivacyRouteImport } from './routes/live.$subdoma
 import { Route as LiveSubdomainPrizesRouteImport } from './routes/live.$subdomain.prizes'
 import { Route as LiveSubdomainTermsRouteImport } from './routes/live.$subdomain.terms'
 import { Route as LiveSubdomainTermsPrivacyRouteImport } from './routes/live.$subdomain.terms-privacy'
+import { Route as PassportLoginCodeRouteImport } from './routes/passport.login.$code'
 import { Route as AdminEventsEventIdBrandingRouteImport } from './routes/admin.events.$eventId_.branding'
 import { Route as AdminEventsEventIdLeaderboardRouteImport } from './routes/admin.events.$eventId_.leaderboard'
 import { Route as AdminEventsEventIdPostersRouteImport } from './routes/admin.events.$eventId_.posters'
@@ -387,6 +388,11 @@ const LiveSubdomainTermsPrivacyRoute =
     path: '/live/$subdomain/terms-privacy',
     getParentRoute: () => rootRouteImport,
   } as any)
+const PassportLoginCodeRoute = PassportLoginCodeRouteImport.update({
+  id: '/passport/login/$code',
+  path: '/passport/login/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminEventsEventIdBrandingRoute =
   AdminEventsEventIdBrandingRouteImport.update({
     id: '/events/$eventId_/branding',
@@ -499,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/live/$subdomain/prizes': typeof LiveSubdomainPrizesRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
+  '/passport/login/$code': typeof PassportLoginCodeRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -570,6 +577,7 @@ export interface FileRoutesByTo {
   '/live/$subdomain/prizes': typeof LiveSubdomainPrizesRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
+  '/passport/login/$code': typeof PassportLoginCodeRoute
   '/admin/events': typeof AdminEventsIndexRoute
   '/live/$subdomain': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId/branding': typeof AdminEventsEventIdBrandingRoute
@@ -643,6 +651,7 @@ export interface FileRoutesById {
   '/live/$subdomain/prizes': typeof LiveSubdomainPrizesRoute
   '/live/$subdomain/terms': typeof LiveSubdomainTermsRoute
   '/live/$subdomain/terms-privacy': typeof LiveSubdomainTermsPrivacyRoute
+  '/passport/login/$code': typeof PassportLoginCodeRoute
   '/admin/events/': typeof AdminEventsIndexRoute
   '/live/$subdomain/': typeof LiveSubdomainIndexRoute
   '/admin/events/$eventId_/branding': typeof AdminEventsEventIdBrandingRoute
@@ -717,6 +726,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/prizes'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/terms-privacy'
+    | '/passport/login/$code'
     | '/admin/events/'
     | '/live/$subdomain/'
     | '/admin/events/$eventId/branding'
@@ -788,6 +798,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/prizes'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/terms-privacy'
+    | '/passport/login/$code'
     | '/admin/events'
     | '/live/$subdomain'
     | '/admin/events/$eventId/branding'
@@ -860,6 +871,7 @@ export interface FileRouteTypes {
     | '/live/$subdomain/prizes'
     | '/live/$subdomain/terms'
     | '/live/$subdomain/terms-privacy'
+    | '/passport/login/$code'
     | '/admin/events/'
     | '/live/$subdomain/'
     | '/admin/events/$eventId_/branding'
@@ -923,6 +935,7 @@ export interface RootRouteChildren {
   LiveSubdomainPrizesRoute: typeof LiveSubdomainPrizesRoute
   LiveSubdomainTermsRoute: typeof LiveSubdomainTermsRoute
   LiveSubdomainTermsPrivacyRoute: typeof LiveSubdomainTermsPrivacyRoute
+  PassportLoginCodeRoute: typeof PassportLoginCodeRoute
   LiveSubdomainIndexRoute: typeof LiveSubdomainIndexRoute
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
   ApiPublicSmsDeliveryRoute: typeof ApiPublicSmsDeliveryRoute
@@ -1360,6 +1373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveSubdomainTermsPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/passport/login/$code': {
+      id: '/passport/login/$code'
+      path: '/passport/login/$code'
+      fullPath: '/passport/login/$code'
+      preLoaderRoute: typeof PassportLoginCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/events/$eventId_/branding': {
       id: '/admin/events/$eventId_/branding'
       path: '/events/$eventId/branding'
@@ -1534,6 +1554,7 @@ const rootRouteChildren: RootRouteChildren = {
   LiveSubdomainPrizesRoute: LiveSubdomainPrizesRoute,
   LiveSubdomainTermsRoute: LiveSubdomainTermsRoute,
   LiveSubdomainTermsPrivacyRoute: LiveSubdomainTermsPrivacyRoute,
+  PassportLoginCodeRoute: PassportLoginCodeRoute,
   LiveSubdomainIndexRoute: LiveSubdomainIndexRoute,
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
   ApiPublicSmsDeliveryRoute: ApiPublicSmsDeliveryRoute,
