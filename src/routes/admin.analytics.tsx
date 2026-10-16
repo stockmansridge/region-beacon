@@ -1660,6 +1660,11 @@ function BonusMatrixModal({
   codeLabelBySourceId: Map<string, string>;
 }) {
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState>({ key: "", dir: "desc" });
+  const toggleSort = (key: string) =>
+    setSort((s) =>
+      s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
+    );
 
   // Columns: one per distinct bonus code (by source id), ordered by label.
   const columns = useMemo(() => {
