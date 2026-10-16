@@ -1096,7 +1096,7 @@ function Analytics() {
         </div>
       )}
 
-      {drilldown && (
+      {drilldown && drilldown !== "bonus" && (
         <DrilldownModal
           mode={drilldown}
           onClose={() => setDrilldown(null)}
@@ -1108,6 +1108,16 @@ function Analytics() {
           expandedVisitor={expandedVisitor}
           setExpandedVisitor={setExpandedVisitor}
           onExport={drilldown === "visitors" ? exportVisitors : exportCheckins}
+        />
+      )}
+      {drilldown === "bonus" && (
+        <BonusMatrixModal
+          onClose={() => setDrilldown(null)}
+          bonusScans={fBonusScans}
+          passportById={passportById}
+          visitorById={visitorById}
+          eventNameById={eventNameById}
+          codeLabelBySourceId={bonusCodeLabelBySourceId}
         />
       )}
     </>
