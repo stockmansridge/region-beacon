@@ -20,6 +20,7 @@ import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useDiagnosticsEnabled, formatDiagnosticReport } from "@/lib/diagnostics";
 import { DiagnosticPanel } from "@/components/diagnostic-panel";
 import { sendPassportEmail } from "@/lib/passport-email.functions";
+import { PassportEmailLogin, StorageBlockedNotice } from "@/components/passport-email-login";
 import { isSmsCapableMobile } from "@/lib/sms/phone";
 
 export const Route = createFileRoute("/live/$subdomain/join")({
@@ -730,13 +731,10 @@ function JoinForm({ event, subdomain, preview = false, previewState }: { event: 
         )}
 
         {!savedValidating && (!saved?.access_token || showRegisterAgain) && (
-          <PublicStyleTarget id="join.page.notice"><p
-            className="mb-3 text-center text-[11px]"
-            style={{ color: "var(--event-page-muted)" }}
-          >
-            Already registered? Enter the same email below — we'll issue a new
-            passport link and any older link will stop working.
-          </p></PublicStyleTarget>
+          <>
+            <StorageBlockedNotice />
+            <PassportEmailLogin eventId={event.event_id} />
+          </>
         )}
 
 
