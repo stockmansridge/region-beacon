@@ -1727,6 +1727,27 @@ function BonusMatrixModal({
     });
   }, [rows, q]);
 
+  // Column sorting for the bonus-scan matrix; empty key keeps the default (most recent) order.
+  const sortedRows = useMemo(() => {
+    if (!sort.key) return filteredRows;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const out = filteredRows.slice();
+    out.sort((a, b) => {
+      let cmp = 0;
+      if (sort.key === "name") cmp = displayNameOf(a.visitor).localeCompare(displayNameOf(b.visitor));
+      else if (sort.key === "email")
+        cmp = (a.visitor?.email ?? "").localeCompare(b.visitor?.email ?? "");
+      else if (sort.key === "total") cmp = a.total - b.total;
+      else if (sort.key.startsWith("col:")) {
+        const key = sort.key.slice(4);
+        cmp = (a.scans.get(key)?.length ?? 0) - (b.scans.get(key)?.length ?? 0);
+      }
+      if (cmp === 0) cmp = b.latest.localeCompare(a.latest);
+      return cmp * dir;
+    });
+    return out;
+  }, [filteredRows, sort]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 sm:p-8 overflow-y-auto"
