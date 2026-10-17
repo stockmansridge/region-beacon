@@ -1,6 +1,9 @@
 # Project architecture rules
 
 - Analytics daily registration and page-view charts share one date/count renderer so both retain readable date axes and integer count scales.
+- Analytics postcode areas use the bundled ABS-derived, non-overlapping lookup with an unknown bucket, so split postcodes never double-count visitors.
+- Analytics current prize qualification uses the complete agency-scoped points ledger and lifetime active-venue visits; legacy entries use the existing authorized draw-pool RPC, so bonus points and historical passports are not omitted.
+- Analytics venue engagement uses the shared metrics helper for counts and venue-attributed bonus scans, so zero-activity venues and exports stay consistent.
 
 - Interactive public maps measure the available visible viewport and the page's own bottom navigation; never impose a minimum canvas height that pushes selected venue details behind the menu.
 - Public map location is requested only by an explicit visitor click, is never persisted, and is disabled in editor fixtures to avoid permission prompts or device-location side effects.
