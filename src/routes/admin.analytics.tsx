@@ -24,6 +24,12 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
+import { analyticsDateRange, awardQualified, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
+import { regionalBreakdown } from "@/lib/analytics-regions";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export const Route = createFileRoute("/admin/analytics")({
@@ -101,15 +107,8 @@ type PageViewRow = {
   created_at: string;
 };
 
-type DateFilter = "all" | "7d" | "30d";
-
-function startDateFor(filter: DateFilter): Date | null {
-  if (filter === "all") return null;
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - (filter === "7d" ? 7 : 30));
-  return d;
-}
+type AwardRow = { id: string; event_id: string; title: string; points_required: number; requires_all_locations: boolean };
+type PointRow = { event_id: string; participant_id: string; points_awarded: number; created_at: string };
 
 function Analytics() {
   const agency = useAgencyContext();
@@ -132,8 +131,16 @@ function Analytics() {
   const navigate = useNavigate();
 
   const [eventFilter, setEventFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
-  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus">(null);
+  const [dateFilter, setDateFilter] = useState<AnalyticsDateFilter>("all");
+  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus" | "venues">(null);
+  const [customFrom, setCustomFrom] = useState<Date>();
+  const [customTo, setCustomTo] = useState<Date>();
+  const [postcodeTab, setPostcodeTab] = useState<"postcode" | "area" | "state">("postcode");
+  const [showZeroVenues, setShowZeroVenues] = useState(false);
+  const [awards, setAwards] = useState<AwardRow[]>([]);
+  const [points, setPoints] = useState<PointRow[]>([]);
+  const [legacyPools, setLegacyPools] = useState<Array<{ ruleId: string; passport_id: string; stamps: number; entries: number }>>([]);
+  const [awardError, setAwardError] = useState<string | null>(null);
   const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
 
   useEffect(() => {
@@ -178,6 +185,19 @@ function Analytics() {
           .eq("agency_id", agencyId)
           .eq("is_active", true),
       ]);
+      const [awRes, ptRes] = await Promise.all([
+        supabase.from("event_awards").select("id, event_id, title, points_required, requires_all_locations").eq("agency_id", agencyId).eq("status", "active").is("deleted_at", null),
+        (async () => {
+          const rows: PointRow[] = [];
+          for (let offset = 0; !cancelled; offset += 1000) {
+            const result = await supabase.from("participant_point_awards").select("event_id, participant_id, points_awarded, created_at:awarded_at").eq("agency_id", agencyId).order("id").range(offset, offset + 999);
+            if (result.error) return { data: null, error: result.error };
+            rows.push(...(result.data ?? []) as PointRow[]);
+            if ((result.data?.length ?? 0) < 1000) break;
+          }
+          return { data: rows, error: null };
+        })(),
+      ]);
       // Bonus scans — the ledger timestamps rows with `awarded_at`; older
       // schemas may only have `created_at`, so fall back when needed.
       let bRes = await supabase
@@ -217,7 +237,12 @@ function Analytics() {
         .eq("agency_id", agencyId)
         .order("created_at", { ascending: false })
         .limit(50000);
+      const legacyResults = await Promise.all((prRes.data ?? []).map(async r => {
+        const result = await supabase.rpc("admin_get_prize_draw_pool", { _prize_rule_id: r.id });
+        return { ruleId: r.id, ...result };
+      }));
       if (cancelled) return;
+      setLegacyPools(legacyResults.flatMap(r => (r.data ?? []).map((entry: { passport_id: string; stamps: number; entries: number }) => ({ ...entry, ruleId: r.ruleId }))));
       const anyErr =
         evRes.error || vRes.error || cRes.error || viRes.error || pRes.error;
       if (anyErr) {
@@ -225,6 +250,9 @@ function Analytics() {
         setLoading(false);
         return;
       }
+      setAwards((awRes.data ?? []) as AwardRow[]);
+      setPoints((ptRes.data ?? []) as PointRow[]);
+      setAwardError(awRes.error || ptRes.error || prRes.error || legacyResults.some(r => r.error) ? "Prize eligibility could not be fully loaded. Refresh to try again." : null);
       setEvents((evRes.data ?? []) as EventRow[]);
       setVenues((vRes.data ?? []) as VenueRow[]);
       setCheckins((cRes.data ?? []) as CheckinRow[]);
@@ -245,7 +273,8 @@ function Analytics() {
     };
   }, [agencyId, reloadKey]);
 
-  const fromDate = useMemo(() => startDateFor(dateFilter), [dateFilter]);
+  const { from: fromDate, to: toDate } = useMemo(() => analyticsDateRange(dateFilter, new Date(), { from: customFrom, to: customTo }), [dateFilter, customFrom, customTo, reloadKey]);
+  const validRange = !fromDate || !toDate || fromDate <= toDate;
 
   const filteredEvents = useMemo(
     () => (eventFilter === "all" ? events : events.filter((e) => e.id === eventFilter)),
@@ -257,15 +286,15 @@ function Analytics() {
   );
 
   const inEvent = (eid: string) => filteredEventIds.has(eid);
-  const inRange = (ts: string) => !fromDate || new Date(ts) >= fromDate;
+  const inRange = (ts: string) => validRange && (!fromDate || new Date(ts) >= fromDate) && (!toDate || new Date(ts) <= toDate);
 
   const fVisitors = useMemo(
     () => visitors.filter((v) => inEvent(v.event_id) && inRange(v.created_at)),
-    [visitors, filteredEventIds, fromDate],
+    [visitors, filteredEventIds, fromDate, toDate, validRange],
   );
   const fCheckins = useMemo(
     () => checkins.filter((c) => inEvent(c.event_id) && inRange(c.created_at)),
-    [checkins, filteredEventIds, fromDate],
+    [checkins, filteredEventIds, fromDate, toDate, validRange],
   );
   const fVenues = useMemo(
     () => venues.filter((v) => inEvent(v.event_id)),
@@ -273,11 +302,11 @@ function Analytics() {
   );
   const fPassports = useMemo(
     () => passports.filter((p) => inEvent(p.event_id) && inRange(p.created_at)),
-    [passports, filteredEventIds, fromDate],
+    [passports, filteredEventIds, fromDate, toDate, validRange],
   );
   const fBonusScans = useMemo(
     () => bonusScans.filter((b) => inEvent(b.event_id) && inRange(b.created_at)),
-    [bonusScans, filteredEventIds, fromDate],
+    [bonusScans, filteredEventIds, fromDate, toDate, validRange],
   );
 
   // Summary metrics
@@ -333,7 +362,7 @@ function Analytics() {
   // Page views — anonymous traffic on the public event pages.
   const fPageViews = useMemo(
     () => pageViews.filter((v) => inEvent(v.event_id) && inRange(v.created_at)),
-    [pageViews, filteredEventIds, fromDate],
+    [pageViews, filteredEventIds, fromDate, toDate, validRange],
   );
 
   const pageViewStats = useMemo(() => {
@@ -392,36 +421,11 @@ function Analytics() {
   }, [fVisitors]);
 
 
-  // Check-ins by venue
-  const venueStats = useMemo(() => {
-    const byVenue = new Map<
-      string,
-      { count: number; unique: Set<string>; last: string }
-    >();
-    for (const c of fCheckins) {
-      const r = byVenue.get(c.venue_id) ?? {
-        count: 0,
-        unique: new Set<string>(),
-        last: "",
-      };
-      r.count += 1;
-      r.unique.add(c.passport_id);
-      if (c.created_at > r.last) r.last = c.created_at;
-      byVenue.set(c.venue_id, r);
-    }
-    const nameById = new Map(fVenues.map((v) => [v.id, v.name]));
-    const total = fCheckins.length || 1;
-    return Array.from(byVenue.entries())
-      .map(([id, s]) => ({
-        venue_id: id,
-        name: nameById.get(id) ?? "Unknown venue",
-        count: s.count,
-        unique: s.unique.size,
-        last: s.last,
-        pct: (s.count / total) * 100,
-      }))
-      .sort((a, b) => b.count - a.count);
-  }, [fCheckins, fVenues]);
+  const regionalRows = useMemo(() => regionalBreakdown(postcodeStats.rows, postcodeTab === "state" ? "state" : "area"), [postcodeStats.rows, postcodeTab]);
+  const displayedPostcodes = postcodeTab === "postcode" ? postcodeStats.rows.map(r => ({ ...r, label: r.postcode })) : regionalRows;
+
+  const allVenueStats = useMemo(() => venueEngagement(fVenues, fCheckins, fBonusScans, bonusCodeVenues), [fVenues, fCheckins, fBonusScans, bonusCodeVenues]);
+  const venueStats = allVenueStats.filter(v => showZeroVenues || v.count > 0);
 
   // Funnel
   const funnel = useMemo(() => {
@@ -440,36 +444,36 @@ function Analytics() {
   );
 
   const prizeEntrants = useMemo(() => {
-    if (activePrizeRules.length === 0) return [];
-    const visitorById = new Map(visitors.map((v) => [v.id, v]));
-    const out: Array<{
-      rule: string;
-      visitor: VisitorRow | undefined;
-      passport_id: string;
-      stamps: number;
-      eligible: boolean;
-    }> = [];
-    for (const rule of activePrizeRules) {
-      const need = rule.threshold_checkins ?? 0;
-      const eventVenues = venuesByEvent.get(rule.event_id) ?? 0;
-      const target = rule.requires_completion ? eventVenues : need;
-      const passportsForEvent = fPassports.filter((p) => p.event_id === rule.event_id);
-      for (const p of passportsForEvent) {
-        const stamps = passportStamps.get(p.id)?.size ?? 0;
-        const eligible = target > 0 && stamps >= target;
-        if (eligible) {
-          out.push({
-            rule: rule.name,
-            visitor: visitorById.get(p.visitor_id),
-            passport_id: p.id,
-            stamps,
-            eligible,
-          });
-        }
+    const visitorMap = new Map(visitors.map(v => [v.id, v]));
+    const activeVenueIds = new Set(fVenues.map(v => v.id));
+    const visits = new Map<string, Set<string>>();
+    for (const c of checkins) {
+      if (!activeVenueIds.has(c.venue_id)) continue;
+      const set = visits.get(c.passport_id) ?? new Set<string>();
+      set.add(c.venue_id); visits.set(c.passport_id, set);
+    }
+    const totals = new Map<string, number>();
+    for (const p of points) totals.set(`${p.event_id}:${p.participant_id}`, (totals.get(`${p.event_id}:${p.participant_id}`) ?? 0) + p.points_awarded);
+    const selectedPassports = new Set(fPassports.map(p => p.id));
+    for (const c of fCheckins) selectedPassports.add(c.passport_id);
+    for (const p of points) if (inEvent(p.event_id) && inRange(p.created_at)) selectedPassports.add(p.participant_id);
+    const rules = awards.filter(a => inEvent(a.event_id));
+    const out: Array<{ ruleId: string; rule: string; event_id: string; visitor: VisitorRow | undefined; passport_id: string; stamps: number; points: number; requirement: string }> = [];
+    for (const p of passports) {
+      if (!inEvent(p.event_id) || !selectedPassports.has(p.id)) continue;
+      const stamps = visits.get(p.id)?.size ?? 0;
+      const total = totals.get(`${p.event_id}:${p.id}`) ?? 0;
+      for (const a of rules.filter(a => a.event_id === p.event_id)) {
+        if (awardQualified(total, stamps, venuesByEvent.get(p.event_id) ?? 0, a)) out.push({ ruleId: a.id, rule: a.title, event_id: p.event_id, visitor: visitorMap.get(p.visitor_id), passport_id: p.id, stamps, points: total, requirement: `${a.points_required} points${a.requires_all_locations ? " + all active venues" : ""}` });
+      }
+      // Keep older events' stamp-based prize rules, without mixing them with current points-based prizes.
+      if (!rules.some(a => a.event_id === p.event_id)) for (const r of activePrizeRules.filter(r => r.event_id === p.event_id)) {
+        const entry = legacyPools.find(e => e.ruleId === r.id && e.passport_id === p.id);
+        if (entry) out.push({ ruleId: r.id, rule: r.name, event_id: p.event_id, visitor: visitorMap.get(p.visitor_id), passport_id: p.id, stamps: entry.stamps, points: total, requirement: `${entry.entries} draw entries (legacy rule)` });
       }
     }
-    return out;
-  }, [activePrizeRules, fPassports, passportStamps, venuesByEvent, visitors]);
+    return out.sort((a, b) => a.rule.localeCompare(b.rule) || displayNameOf(a.visitor).localeCompare(displayNameOf(b.visitor)));
+  }, [awards, legacyPools, points, checkins, passports, visitors, fVenues, fPassports, fCheckins, activePrizeRules, venuesByEvent, filteredEventIds, fromDate, toDate, validRange]);
 
   // CSV
   const eventNameById = useMemo(
@@ -573,9 +577,12 @@ function Analytics() {
   const exportVenuePerf = () =>
     downloadCsv(
       `venue-performance-${Date.now()}.csv`,
-      venueStats.map((s) => ({
+      allVenueStats.map((s) => ({
         venue: s.name,
+        event: eventNameById.get(s.event_id) ?? "",
         check_ins: s.count,
+        bonus_scans: s.bonus,
+        total_scans: s.scans,
         unique_visitors: s.unique,
         share_pct: s.pct.toFixed(1),
         last_check_in: s.last,
@@ -595,6 +602,8 @@ function Analytics() {
           "",
         passport_id: e.passport_id,
         stamps: e.stamps,
+        total_points: e.points,
+        qualification: e.requirement,
       })),
     );
 
@@ -634,9 +643,9 @@ function Analytics() {
   const cardClass =
     "rounded-[16px] border border-[#D9E2EF] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.045)]";
   const tableWrap =
-    "overflow-hidden rounded-[16px] border border-[#D9E2EF] bg-white";
+    " rounded-[16px] border border-[#D9E2EF] bg-white";
   const thClass =
-    "bg-[#F8FAFC] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]";
+    "sticky top-0 z-10 bg-[#F8FAFC] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]";
   const tdClass = "px-4 py-3 text-sm text-[#334155]";
 
   return (
@@ -671,7 +680,7 @@ function Analytics() {
               <SelectTrigger className="h-10 rounded-[10px] border-[#D9E2EF] bg-white text-sm text-[#111827] focus:ring-2 focus:ring-[#2F6FE4]/20">
                 <SelectValue placeholder="All events" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-64">
                 <SelectItem value="all">All events</SelectItem>
                 {events.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
@@ -683,20 +692,28 @@ function Analytics() {
           </div>
           <div className="min-w-[180px] space-y-2">
             <label className="text-sm font-medium text-[#334155]">Date range</label>
-            <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+            <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as AnalyticsDateFilter)}>
               <SelectTrigger className="h-10 rounded-[10px] border-[#D9E2EF] bg-white text-sm text-[#111827] focus:ring-2 focus:ring-[#2F6FE4]/20">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-64">
                 <SelectItem value="all">All time</SelectItem>
+                <SelectItem value="1d">Last 1 day</SelectItem>
                 <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="14d">Last 14 days</SelectItem>
                 <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="custom">Custom range</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
 
+      {dateFilter === "custom" && <div className="mb-5 flex flex-wrap items-center gap-3">
+        <AnalyticsDatePicker label="Start date" value={customFrom} onChange={setCustomFrom} />
+        <AnalyticsDatePicker label="End date" value={customTo} onChange={setCustomTo} />
+        {!validRange && <p role="alert" className="text-sm text-destructive">End date must be on or after start date.</p>}
+      </div>}
       {error && (
         <div className="mb-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm leading-6 text-[#B91C1C]">
           {error}
@@ -718,7 +735,7 @@ function Analytics() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Events" value={totalEvents} icon={Calendar} onClick={() => navigate({ to: "/admin/events" })} />
             <Stat label="Published events" value={publishedEvents} icon={CheckCircle2} onClick={() => navigate({ to: "/admin/events" })} />
-            <Stat label="Venues" value={totalVenues} icon={MapPin} onClick={() => navigate({ to: "/admin/venues" })} />
+            <Stat label="Venues" value={totalVenues} icon={MapPin} onClick={() => setDrilldown("venues")} />
             <Stat label="Registered visitors" value={totalPassports} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat label="Total check-ins" value={totalCheckins} icon={QrCode} onClick={() => setDrilldown("checkins")} />
             <Stat label="Bonus scans" value={totalBonusScans} icon={QrCode} onClick={() => setDrilldown("bonus")} />
@@ -754,7 +771,7 @@ function Analytics() {
                 <div className="rounded-[14px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
                   <RegistrationChart days={regsByDay} />
                 </div>
-                <div className={`mt-4 max-h-64 overflow-auto ${tableWrap}`}>
+                <div role="region" aria-label="Registration dates" tabIndex={0} className={`mt-4 max-h-64 overflow-auto overscroll-contain ${tableWrap}`}>
                   <table className="w-full text-sm">
                     <thead>
                       <tr>
@@ -804,7 +821,7 @@ function Analytics() {
                 <div className="rounded-[14px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
                   <PageViewsChart days={pageViewStats.byDay} />
                 </div>
-                <div className={`mt-4 max-h-72 overflow-auto ${tableWrap}`}>
+                <div role="region" aria-label="Page view list" tabIndex={0} className={`mt-4 max-h-72 overflow-auto overscroll-contain ${tableWrap}`}>
                   <table className="w-full text-sm">
                     <thead>
                       <tr>
@@ -843,7 +860,7 @@ function Analytics() {
                 <span>{postcodeStats.withPostcode} with postcode · {postcodeStats.withoutPostcode} without</span>
                 <button
                   type="button"
-                  onClick={exportPostcodes}
+                  onClick={() => postcodeTab === "postcode" ? exportPostcodes() : downloadCsv(`${postcodeTab}-breakdown.csv`, regionalRows.map(r => ({ [postcodeTab]: r.label, visitors: r.count, share_pct: r.pct.toFixed(1) })))}
                   disabled={postcodeStats.rows.length === 0}
                   className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-medium text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-50"
                 >
@@ -851,25 +868,29 @@ function Analytics() {
                 </button>
               </div>
             </div>
+            <Tabs value={postcodeTab} onValueChange={v => { if (v === "postcode" || v === "area" || v === "state") setPostcodeTab(v); }} className="mb-4">
+              <TabsList><TabsTrigger value="postcode">Postcodes</TabsTrigger><TabsTrigger value="area">State / Area</TabsTrigger><TabsTrigger value="state">States</TabsTrigger></TabsList>
+            </Tabs>
+            {postcodeTab !== "postcode" && <p className="mb-4 text-xs leading-5 text-muted-foreground">Approximate areas from <a href="https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs/edition-3-july-2021-june-2026/non-abs-structures/postal-areas" target="_blank" rel="noreferrer" className="underline">ABS 2021 postcode geography</a>. Greater Sydney excludes the assigned Blue Mountains area. Shares are of visitors with a postcode; unknown codes remain included.</p>}
             {postcodeStats.rows.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#E5E7EB] bg-[#F9FAFB] px-4 py-6 text-center text-sm text-[#64748B]">
                 No postcode data yet for the current filters.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-[12px] border border-[#E5E7EB]">
+              <div className="max-h-96 overflow-auto overscroll-contain rounded-[12px] border border-border">
                 <table className="w-full text-sm">
                   <thead className="bg-[#F9FAFB] text-left text-xs uppercase tracking-wide text-[#64748B]">
                     <tr>
-                      <th className="px-4 py-2">Postcode</th>
+                      <th className="px-4 py-2">{postcodeTab === "postcode" ? "Postcode" : postcodeTab === "state" ? "State / Territory" : "Area · State"}</th>
                       <th className="px-4 py-2">Visitors</th>
                       <th className="px-4 py-2">Share</th>
                       <th className="px-4 py-2 w-1/2">Distribution</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {postcodeStats.rows.slice(0, 25).map((r) => (
-                      <tr key={r.postcode} className="border-t border-[#F1F5F9]">
-                        <td className="px-4 py-2 font-medium text-[#111827]">{r.postcode}</td>
+                    {displayedPostcodes.map((r) => (
+                      <tr key={r.label} className="border-t border-[#F1F5F9]">
+                        <td className="px-4 py-2 font-medium text-[#111827]">{r.label}</td>
                         <td className="px-4 py-2 text-[#111827]">{r.count}</td>
                         <td className="px-4 py-2 text-[#64748B]">{r.pct.toFixed(1)}%</td>
                         <td className="px-4 py-2">
@@ -884,11 +905,6 @@ function Analytics() {
                     ))}
                   </tbody>
                 </table>
-                {postcodeStats.rows.length > 25 && (
-                  <div className="border-t border-[#F1F5F9] bg-[#F9FAFB] px-4 py-2 text-xs text-[#64748B]">
-                    Showing top 25 of {postcodeStats.rows.length} postcodes. Export CSV for the full list.
-                  </div>
-                )}
               </div>
             )}
           </section>
@@ -938,7 +954,7 @@ function Analytics() {
                 No opt-ins yet for the current filters.
               </div>
             ) : (
-              <div className={`max-h-96 overflow-auto ${tableWrap}`}>
+              <div role="region" aria-label="Marketing opt-in list" tabIndex={0} className={`max-h-96 overflow-auto overscroll-contain ${tableWrap}`}>
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
@@ -999,9 +1015,10 @@ function Analytics() {
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <h3 className="text-base font-semibold text-[#111827]">Check-ins by venue</h3>
-                <p className="text-sm leading-6 text-[#64748B]">Top-performing venues for the selected filter.</p>
+                <p className="text-sm leading-6 text-[#64748B]">Venue check-ins for the selected event and date range.</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm text-foreground"><Switch checked={showZeroVenues} onCheckedChange={setShowZeroVenues} />Show venues with 0 check-ins</label>
                 <button type="button" onClick={exportVenuePerf} className={secondaryBtn}>
                   <Download className="h-4 w-4" /> Venues CSV
                 </button>
@@ -1015,7 +1032,7 @@ function Analytics() {
                 No check-ins yet. Venue performance will appear here once visitors start scanning.
               </div>
             ) : (
-              <div className={`overflow-auto ${tableWrap}`}>
+              <div className={`max-h-96 overflow-auto ${tableWrap}`}>
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
@@ -1049,15 +1066,15 @@ function Analytics() {
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <h3 className="text-base font-semibold text-[#111827]">Qualified prize entrants</h3>
-                <p className="text-sm leading-6 text-[#64748B]">Visitors meeting active prize-rule thresholds.</p>
+                <p className="text-sm leading-6 text-[#64748B]">Current eligibility including all venue and bonus points. Date filters select visitors registered or active in that range; qualification uses their lifetime event totals.</p>
               </div>
-              {activePrizeRules.length > 0 && (
+              {(activePrizeRules.length > 0 || awards.some(a => inEvent(a.event_id))) && (
                 <button type="button" onClick={exportEntrants} className={secondaryBtn}>
                   <Download className="h-4 w-4" /> Entrants CSV
                 </button>
               )}
             </div>
-            {activePrizeRules.length === 0 ? (
+            {awardError ? <p role="alert" className="text-sm text-destructive">{awardError}</p> : activePrizeRules.length === 0 && !awards.some(a => inEvent(a.event_id)) ? (
               <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm leading-6 text-[#334155]">
                 Prize eligibility is not configured for the selected event(s).
               </div>
@@ -1066,27 +1083,27 @@ function Analytics() {
                 No qualified entrants yet for active prize rules.
               </div>
             ) : (
-              <div className={`overflow-auto ${tableWrap}`}>
+              <div className={`max-h-96 overflow-auto ${tableWrap}`}>
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
-                      <th className={thClass}>Prize rule</th>
+                      <th className={thClass}>Prize</th><th className={thClass}>Event</th><th className={thClass}>Requirement</th>
                       <th className={thClass}>Visitor</th>
                       <th className={thClass}>Email</th>
-                      <th className={`${thClass} text-right`}>Stamps</th>
+                      <th className={`${thClass} text-right`}>Stamps</th><th className={`${thClass} text-right`}>Total points</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {prizeEntrants.map((e, i) => (
-                      <tr key={`${e.passport_id}-${i}`} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
-                        <td className={tdClass}>{e.rule}</td>
+                    {prizeEntrants.map((e) => (
+                      <tr key={`${e.passport_id}-${e.ruleId}`} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                        <td className={tdClass}>{e.rule}</td><td className={tdClass}>{eventNameById.get(e.event_id) ?? "—"}</td><td className={tdClass}>{e.requirement}</td>
                         <td className={tdClass}>
                           {e.visitor?.full_name ||
                             `${e.visitor?.first_name ?? ""} ${e.visitor?.last_name ?? ""}`.trim() ||
                             "—"}
                         </td>
                         <td className={`${tdClass} text-[#64748B]`}>{e.visitor?.email ?? "—"}</td>
-                        <td className={`${tdClass} text-right font-medium text-[#111827]`}>{e.stamps}</td>
+                        <td className={`${tdClass} text-right font-medium text-[#111827]`}>{e.stamps}</td><td className={`${tdClass} text-right`}>{e.points}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1097,7 +1114,7 @@ function Analytics() {
         </div>
       )}
 
-      {drilldown && drilldown !== "bonus" && (
+      {drilldown && drilldown !== "bonus" && drilldown !== "venues" && (
         <DrilldownModal
           mode={drilldown}
           onClose={() => setDrilldown(null)}
@@ -1111,6 +1128,7 @@ function Analytics() {
           onExport={drilldown === "visitors" ? exportVisitors : exportCheckins}
         />
       )}
+      {drilldown === "venues" && <VenueEngagementModal rows={allVenueStats} eventNames={eventNameById} onClose={() => setDrilldown(null)} onExport={exportVenuePerf} />}
       {drilldown === "bonus" && (
         <BonusMatrixModal
           onClose={() => setDrilldown(null)}
@@ -2000,4 +2018,22 @@ function EmptyState({
       </Link>
     </div>
   );
+}
+
+function VenueEngagementModal({ rows, eventNames, onClose, onExport }: { rows: ReturnType<typeof venueEngagement>; eventNames: Map<string, string>; onClose: () => void; onExport: () => void }) {
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState>({ key: "scans", dir: "desc" });
+  const sorted = rows.filter(r => `${r.name} ${eventNames.get(r.event_id) ?? ""}`.toLowerCase().includes(query.toLowerCase())).sort((a, b) => {
+    const key = sort.key;
+    const value = (r: typeof a) => key === "event" ? eventNames.get(r.event_id) ?? "" : key === "name" ? r.name : key === "last" ? r.last : key === "count" ? r.count : key === "bonus" ? r.bonus : key === "unique" ? r.unique : r.scans;
+    const av = value(a), bv = value(b);
+    return (typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv))) * (sort.dir === "asc" ? 1 : -1);
+  });
+  return <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-foreground/50 p-4 sm:p-8" onClick={onClose}>
+    <div role="dialog" aria-modal="true" aria-label="Venue engagement" className="flex max-h-[90vh] w-full max-w-6xl flex-col rounded-lg border bg-card text-card-foreground shadow-xl" onClick={e => e.stopPropagation()}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b p-5"><div><h2 className="text-lg font-semibold">Venue engagement</h2><p className="text-sm text-muted-foreground">All active venues, including zero scans. Bonus scans include only codes attributed to a venue.</p></div><div className="flex gap-2"><Button variant="outline" onClick={onExport}><Download className="size-4" />CSV</Button><Button variant="outline" onClick={onClose}>Close</Button></div></div>
+      <div className="p-4"><input aria-label="Search venues" placeholder="Search venues or events…" value={query} onChange={e => setQuery(e.target.value)} className="w-full rounded-md border bg-background px-3 py-2 text-sm" /></div>
+      <div className="min-h-0 overflow-auto"><table className="w-full text-sm"><thead><tr>{[["Venue", "name"], ["Event", "event"], ["Check-ins", "count"], ["Bonus scans", "bonus"], ["Total scans", "scans"], ["Unique visitors", "unique"], ["Last scan", "last"]].map(([label, key]) => <th key={key} className="sticky top-0 bg-muted p-3 text-left"><Button variant="ghost" size="sm" onClick={() => setSort(s => ({ key, dir: s.key === key && s.dir === "asc" ? "desc" : "asc" }))}>{label}{sort.key === key ? sort.dir === "asc" ? " ↑" : " ↓" : ""}</Button></th>)}</tr></thead><tbody>{sorted.map(r => <tr key={r.venue_id} className="border-t"><td className="p-3">{r.name}</td><td className="p-3">{eventNames.get(r.event_id)}</td><td className="p-3">{r.count}</td><td className="p-3">{r.bonus}</td><td className="p-3">{r.scans}</td><td className="p-3">{r.unique}</td><td className="p-3 whitespace-nowrap">{r.last ? new Date(r.last).toLocaleString() : "—"}</td></tr>)}</tbody></table>{!sorted.length && <p className="p-5 text-sm text-muted-foreground">No venues match this selection.</p>}</div>
+    </div>
+  </div>;
 }
