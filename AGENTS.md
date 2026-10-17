@@ -13,4 +13,4 @@
 - Repeated public records use stable database IDs for style identity; private visitor activity uses non-identifying template slots.
 - Poster print-safe margins are applied by scaling and centering artwork during PDF export, not changing poster renderers, so original designs and aspect ratios remain intact.- Bulk poster PDFs embed JPEG pages with one shared font download and a per-poster timeout, because re-encoding many large PNGs in jsPDF freezes the browser.
 - Saved visitor passports (`gs.passport.<event_id>`) are cleared only on a conclusive zero-row lookup and only if the stored token matches the rejected one, so outages or races never wipe valid access.
-- Join-page "Log in" opens the passport from the email alone (owner-approved; no emailed link or code). It rotates the passport key, so earlier links on other devices stop working.
+- Join-page "Log in" opens the passport from the email alone (owner-approved; no emailed link or code) by calling `lookup_passport_by_email` from the browser like sign-up, so it never depends on a server secret. It rotates the passport key, so earlier links on other devices stop working.

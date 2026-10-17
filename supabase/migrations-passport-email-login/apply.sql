@@ -61,5 +61,5 @@ begin
 end;
 $$;
 
-revoke all on function public.lookup_passport_by_email(uuid, citext) from public, anon, authenticated;
-grant execute on function public.lookup_passport_by_email(uuid, citext) to service_role;
+revoke all on function public.lookup_passport_by_email(uuid, citext) from public;
+grant execute on function public.lookup_passport_by_email(uuid, citext) to anon, authenticated, service_role;
