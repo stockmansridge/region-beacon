@@ -13,7 +13,7 @@ const invoke = loginWithPassportEmail as unknown as (input: {
 }) => Promise<{ ok: boolean; reason?: string }>;
 const input = { data: { eventId: "00000000-0000-4000-8000-000000000001", email: "visitor@example.test" } };
 
-beforeEach(() => rpc.mockReset());
+beforeEach(() => { rpc.mockReset(); });
 
 describe("passport lookup failure classification", () => {
   it("does not report an absent RPC as an unregistered email", async () => {
