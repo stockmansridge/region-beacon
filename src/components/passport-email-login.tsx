@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { requestPassportLoginLink } from "@/lib/passport-login.functions";
+import { loginWithPassportEmail } from "@/lib/passport-login.functions";
 import { canPersistLocally } from "@/lib/storage-check";
 
 /** Warns visitors whose browser won't keep their passport on this device. */
@@ -20,26 +21,32 @@ export function StorageBlockedNotice() {
   );
 }
 
-/** "Already registered? Log in" — emails a single-use login link. */
+/** "Already registered? Log in" — opens the passport from the email address. No email is sent. */
 export function PassportEmailLogin({ eventId }: { eventId: string }) {
-  const request = useServerFn(requestPassportLoginLink);
+  const login = useServerFn(loginWithPassportEmail);
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [state, setState] = useState<"idle" | "opening" | "invalid" | "notfound">("idle");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-      setState("error");
+    const value = email.trim();
+    if (!/^\S+@\S+\.\S+$/.test(value)) {
+      setState("invalid");
       return;
     }
-    setState("sending");
+    setState("opening");
     try {
-      await request({ data: { eventId, email: email.trim() } });
-      setState("sent");
+      const res = await login({ data: { eventId, email: value } });
+      if (res.ok) {
+        navigate({ to: "/passport/$token", params: { token: res.token } });
+        return;
+      }
     } catch {
-      setState("error");
+      /* fall through */
     }
+    setState("notfound");
   }
 
   const cardStyle = { borderColor: "var(--event-card-border)", backgroundColor: "var(--event-card-bg)", color: "var(--event-card-text)" };
@@ -60,13 +67,22 @@ export function PassportEmailLogin({ eventId }: { eventId: string }) {
   return (
     <form onSubmit={submit} className="mb-4 rounded-3xl border p-5" style={cardStyle} noValidate>
       <p className="text-sm font-semibold">Log in to your passport</p>
-      {state === "sent" ? (
-        <p className="mt-2 text-sm">
-          If that email is registered for this event, we've sent you a login link. It works once and expires in 30 minutes.
-        </p>
+      {state === "notfound" ? (
+        <>
+          <p className="mt-2 text-sm">
+            We couldn't find a passport for that email on this event. Check the spelling and try again, or sign up below.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); setState("idle"); }}
+            className="mt-3 w-full text-xs underline"
+          >
+            Back to sign up
+          </button>
+        </>
       ) : (
         <>
-          <p className="mt-1 text-xs opacity-80">Enter the email you signed up with and we'll email you a login link.</p>
+          <p className="mt-1 text-xs opacity-80">Enter the email you signed up with and we'll open your passport.</p>
           <input
             type="email"
             autoComplete="email"
@@ -76,20 +92,20 @@ export function PassportEmailLogin({ eventId }: { eventId: string }) {
             className="mt-3 h-11 w-full rounded-xl border bg-transparent px-3 text-sm"
             style={{ borderColor: "var(--event-card-border)" }}
           />
-          {state === "error" && <p className="mt-2 text-xs">Please enter a valid email and try again.</p>}
+          {state === "invalid" && <p className="mt-2 text-xs">Please enter a valid email address.</p>}
           <button
             type="submit"
-            disabled={state === "sending"}
+            disabled={state === "opening"}
             className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold disabled:opacity-60"
             style={{ backgroundColor: "var(--event-primary)", color: "var(--event-primary-foreground, #fff)" }}
           >
-            {state === "sending" ? "Sending…" : "Email me my login link"}
+            {state === "opening" ? "Opening…" : "Open my passport"}
+          </button>
+          <button type="button" onClick={() => { setOpen(false); setState("idle"); }} className="mt-2 w-full text-xs underline">
+            Back to sign up
           </button>
         </>
       )}
-      <button type="button" onClick={() => { setOpen(false); setState("idle"); }} className="mt-2 w-full text-xs underline">
-        Back to sign up
-      </button>
     </form>
   );
 }
