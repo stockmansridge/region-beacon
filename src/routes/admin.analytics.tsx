@@ -29,6 +29,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
 import { analyticsDateRange, awardQualified, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
+import { regionalBreakdown } from "@/lib/analytics-regions";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export const Route = createFileRoute("/admin/analytics")({
@@ -134,9 +135,11 @@ function Analytics() {
   const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus" | "venues">(null);
   const [customFrom, setCustomFrom] = useState<Date>();
   const [customTo, setCustomTo] = useState<Date>();
+  const [postcodeTab, setPostcodeTab] = useState<"postcode" | "area" | "state">("postcode");
   const [showZeroVenues, setShowZeroVenues] = useState(false);
   const [awards, setAwards] = useState<AwardRow[]>([]);
   const [points, setPoints] = useState<PointRow[]>([]);
+  const [legacyPools, setLegacyPools] = useState<Array<{ ruleId: string; passport_id: string; stamps: number; entries: number }>>([]);
   const [awardError, setAwardError] = useState<string | null>(null);
   const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
 
@@ -184,7 +187,16 @@ function Analytics() {
       ]);
       const [awRes, ptRes] = await Promise.all([
         supabase.from("event_awards").select("id, event_id, title, points_required, requires_all_locations").eq("agency_id", agencyId).eq("status", "active").is("deleted_at", null),
-        supabase.from("participant_point_awards").select("event_id, participant_id, points_awarded, created_at:awarded_at").eq("agency_id", agencyId),
+        (async () => {
+          const rows: PointRow[] = [];
+          for (let offset = 0; !cancelled; offset += 1000) {
+            const result = await supabase.from("participant_point_awards").select("event_id, participant_id, points_awarded, created_at:awarded_at").eq("agency_id", agencyId).order("id").range(offset, offset + 999);
+            if (result.error) return { data: null, error: result.error };
+            rows.push(...(result.data ?? []) as PointRow[]);
+            if ((result.data?.length ?? 0) < 1000) break;
+          }
+          return { data: rows, error: null };
+        })(),
       ]);
       // Bonus scans — the ledger timestamps rows with `awarded_at`; older
       // schemas may only have `created_at`, so fall back when needed.
@@ -225,7 +237,12 @@ function Analytics() {
         .eq("agency_id", agencyId)
         .order("created_at", { ascending: false })
         .limit(50000);
+      const legacyResults = await Promise.all((prRes.data ?? []).map(async r => {
+        const result = await supabase.rpc("admin_get_prize_draw_pool", { _prize_rule_id: r.id });
+        return { ruleId: r.id, ...result };
+      }));
       if (cancelled) return;
+      setLegacyPools(legacyResults.flatMap(r => (r.data ?? []).map((entry: { passport_id: string; stamps: number; entries: number }) => ({ ...entry, ruleId: r.ruleId }))));
       const anyErr =
         evRes.error || vRes.error || cRes.error || viRes.error || pRes.error;
       if (anyErr) {
@@ -235,7 +252,7 @@ function Analytics() {
       }
       setAwards((awRes.data ?? []) as AwardRow[]);
       setPoints((ptRes.data ?? []) as PointRow[]);
-      setAwardError(awRes.error || ptRes.error || prRes.error ? "Prize eligibility could not be fully loaded. Refresh to try again." : null);
+      setAwardError(awRes.error || ptRes.error || prRes.error || legacyResults.some(r => r.error) ? "Prize eligibility could not be fully loaded. Refresh to try again." : null);
       setEvents((evRes.data ?? []) as EventRow[]);
       setVenues((vRes.data ?? []) as VenueRow[]);
       setCheckins((cRes.data ?? []) as CheckinRow[]);
@@ -404,6 +421,9 @@ function Analytics() {
   }, [fVisitors]);
 
 
+  const regionalRows = useMemo(() => regionalBreakdown(postcodeStats.rows, postcodeTab === "state" ? "state" : "area"), [postcodeStats.rows, postcodeTab]);
+  const displayedPostcodes = postcodeTab === "postcode" ? postcodeStats.rows.map(r => ({ ...r, label: r.postcode })) : regionalRows;
+
   const allVenueStats = useMemo(() => venueEngagement(fVenues, fCheckins, fBonusScans, bonusCodeVenues), [fVenues, fCheckins, fBonusScans, bonusCodeVenues]);
   const venueStats = allVenueStats.filter(v => showZeroVenues || v.count > 0);
 
@@ -448,12 +468,12 @@ function Analytics() {
       }
       // Keep older events' stamp-based prize rules, without mixing them with current points-based prizes.
       if (!rules.some(a => a.event_id === p.event_id)) for (const r of activePrizeRules.filter(r => r.event_id === p.event_id)) {
-        const target = r.requires_completion ? (venuesByEvent.get(p.event_id) ?? 0) : (r.threshold_checkins ?? 0);
-        if (target > 0 && stamps >= target) out.push({ ruleId: r.id, rule: r.name, event_id: p.event_id, visitor: visitorMap.get(p.visitor_id), passport_id: p.id, stamps, points: total, requirement: `${target} stamps (legacy rule)` });
+        const entry = legacyPools.find(e => e.ruleId === r.id && e.passport_id === p.id);
+        if (entry) out.push({ ruleId: r.id, rule: r.name, event_id: p.event_id, visitor: visitorMap.get(p.visitor_id), passport_id: p.id, stamps: entry.stamps, points: total, requirement: `${entry.entries} draw entries (legacy rule)` });
       }
     }
     return out.sort((a, b) => a.rule.localeCompare(b.rule) || displayNameOf(a.visitor).localeCompare(displayNameOf(b.visitor)));
-  }, [awards, points, checkins, passports, visitors, fVenues, fPassports, fCheckins, activePrizeRules, venuesByEvent, filteredEventIds, fromDate, toDate, validRange]);
+  }, [awards, legacyPools, points, checkins, passports, visitors, fVenues, fPassports, fCheckins, activePrizeRules, venuesByEvent, filteredEventIds, fromDate, toDate, validRange]);
 
   // CSV
   const eventNameById = useMemo(
@@ -625,7 +645,7 @@ function Analytics() {
   const tableWrap =
     " rounded-[16px] border border-[#D9E2EF] bg-white";
   const thClass =
-    "bg-[#F8FAFC] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]";
+    "sticky top-0 z-10 bg-[#F8FAFC] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]";
   const tdClass = "px-4 py-3 text-sm text-[#334155]";
 
   return (
@@ -751,7 +771,7 @@ function Analytics() {
                 <div className="rounded-[14px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
                   <RegistrationChart days={regsByDay} />
                 </div>
-                <div className={`mt-4 max-h-64 overflow-auto overscroll-contain ${tableWrap}`}>
+                <div role="region" aria-label="Registration dates" tabIndex={0} className={`mt-4 max-h-64 overflow-auto overscroll-contain ${tableWrap}`}>
                   <table className="w-full text-sm">
                     <thead>
                       <tr>
@@ -801,7 +821,7 @@ function Analytics() {
                 <div className="rounded-[14px] border border-[#E6ECF4] bg-[#F8FAFC] p-4">
                   <PageViewsChart days={pageViewStats.byDay} />
                 </div>
-                <div className={`mt-4 max-h-72 overflow-auto overscroll-contain ${tableWrap}`}>
+                <div role="region" aria-label="Page view list" tabIndex={0} className={`mt-4 max-h-72 overflow-auto overscroll-contain ${tableWrap}`}>
                   <table className="w-full text-sm">
                     <thead>
                       <tr>
@@ -840,7 +860,7 @@ function Analytics() {
                 <span>{postcodeStats.withPostcode} with postcode · {postcodeStats.withoutPostcode} without</span>
                 <button
                   type="button"
-                  onClick={exportPostcodes}
+                  onClick={() => postcodeTab === "postcode" ? exportPostcodes() : downloadCsv(`${postcodeTab}-breakdown.csv`, regionalRows.map(r => ({ [postcodeTab]: r.label, visitors: r.count, share_pct: r.pct.toFixed(1) })))}
                   disabled={postcodeStats.rows.length === 0}
                   className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-medium text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-50"
                 >
@@ -848,25 +868,29 @@ function Analytics() {
                 </button>
               </div>
             </div>
+            <Tabs value={postcodeTab} onValueChange={v => { if (v === "postcode" || v === "area" || v === "state") setPostcodeTab(v); }} className="mb-4">
+              <TabsList><TabsTrigger value="postcode">Postcodes</TabsTrigger><TabsTrigger value="area">State / Area</TabsTrigger><TabsTrigger value="state">States</TabsTrigger></TabsList>
+            </Tabs>
+            {postcodeTab !== "postcode" && <p className="mb-4 text-xs leading-5 text-muted-foreground">Approximate areas from <a href="https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs/edition-3-july-2021-june-2026/non-abs-structures/postal-areas" target="_blank" rel="noreferrer" className="underline">ABS 2021 postcode geography</a>. Greater Sydney excludes the assigned Blue Mountains area. Shares are of visitors with a postcode; unknown codes remain included.</p>}
             {postcodeStats.rows.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-[#E5E7EB] bg-[#F9FAFB] px-4 py-6 text-center text-sm text-[#64748B]">
                 No postcode data yet for the current filters.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-[12px] border border-[#E5E7EB]">
+              <div className="max-h-96 overflow-auto overscroll-contain rounded-[12px] border border-border">
                 <table className="w-full text-sm">
                   <thead className="bg-[#F9FAFB] text-left text-xs uppercase tracking-wide text-[#64748B]">
                     <tr>
-                      <th className="px-4 py-2">Postcode</th>
+                      <th className="px-4 py-2">{postcodeTab === "postcode" ? "Postcode" : postcodeTab === "state" ? "State / Territory" : "Area · State"}</th>
                       <th className="px-4 py-2">Visitors</th>
                       <th className="px-4 py-2">Share</th>
                       <th className="px-4 py-2 w-1/2">Distribution</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {postcodeStats.rows.slice(0, 25).map((r) => (
-                      <tr key={r.postcode} className="border-t border-[#F1F5F9]">
-                        <td className="px-4 py-2 font-medium text-[#111827]">{r.postcode}</td>
+                    {displayedPostcodes.map((r) => (
+                      <tr key={r.label} className="border-t border-[#F1F5F9]">
+                        <td className="px-4 py-2 font-medium text-[#111827]">{r.label}</td>
                         <td className="px-4 py-2 text-[#111827]">{r.count}</td>
                         <td className="px-4 py-2 text-[#64748B]">{r.pct.toFixed(1)}%</td>
                         <td className="px-4 py-2">
@@ -881,11 +905,6 @@ function Analytics() {
                     ))}
                   </tbody>
                 </table>
-                {postcodeStats.rows.length > 25 && (
-                  <div className="border-t border-[#F1F5F9] bg-[#F9FAFB] px-4 py-2 text-xs text-[#64748B]">
-                    Showing top 25 of {postcodeStats.rows.length} postcodes. Export CSV for the full list.
-                  </div>
-                )}
               </div>
             )}
           </section>
@@ -935,7 +954,7 @@ function Analytics() {
                 No opt-ins yet for the current filters.
               </div>
             ) : (
-              <div className={`max-h-96 overflow-auto overscroll-contain ${tableWrap}`}>
+              <div role="region" aria-label="Marketing opt-in list" tabIndex={0} className={`max-h-96 overflow-auto overscroll-contain ${tableWrap}`}>
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
