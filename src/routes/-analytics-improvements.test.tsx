@@ -47,7 +47,7 @@ it("region tab counts visitors, keeps full lists and qualifies older passports w
   await screen.findByText("Ten point prize");
   expect(within(screen.getByRole("region", { name: "Marketing opt-in list" })).getAllByRole("row")).toHaveLength(41);
   expect(within(screen.getByRole("region", { name: "Page view list" })).getAllByRole("row")).toHaveLength(31);
-  fireEvent.click(screen.getByRole("tab", { name: "State / Area" }));
+  fireEvent.mouseDown(screen.getByRole("tab", { name: "State / Area" }), { button: 0, ctrlKey: false });
   expect(screen.getByText("Blue Mountains · NSW")).toBeTruthy();
   expect(screen.getByText("Greater Sydney · NSW")).toBeTruthy();
   expect(screen.getByText("2.5%")).toBeTruthy();
