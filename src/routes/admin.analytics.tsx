@@ -28,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
-import { analyticsDateRange, awardQualified, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
+import { analyticsDateRange, awardQualified, describePagePath, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
 import { regionalBreakdown } from "@/lib/analytics-regions";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
