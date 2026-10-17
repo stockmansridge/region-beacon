@@ -21,7 +21,7 @@ describe("passport lookup failure classification", () => {
     expect(await invoke(input)).toEqual({ ok: false, reason: "unavailable" });
   });
   it("does not report a network failure as an unregistered email", async () => {
-    rpc.mockRejectedValue(new TypeError("Failed to fetch"));
+    rpc.mockImplementation(() => { throw new TypeError("Failed to fetch"); });
     expect(await invoke(input)).toEqual({ ok: false, reason: "unavailable" });
   });
   it("reports a successful empty lookup separately", async () => {
