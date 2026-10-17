@@ -1,6 +1,9 @@
 -- Returning-visitor "Log in" by email — opens the passport directly from the
 -- email address. No emailed link or code is sent (owner-approved flow).
 -- Run once in the SQL editor. Safe to re-run.
+-- Uses only built-in hashing (sha256, gen_random_uuid) so it never depends on
+-- where the crypto extension is installed. sha256(text bytes) produces the
+-- same passport-key hash as the sign-up form.
 -- Replaces the earlier single-use-code design, which was never applied.
 -- Lookups are rate limited per event+email to blunt email enumeration.
 
@@ -29,7 +32,7 @@ declare
   v_email_hash bytea;
   v_raw text;
 begin
-  v_email_hash := extensions.digest(lower(_email::text), 'sha256');
+  v_email_hash := sha256(convert_to(lower(btrim(_email::text)), 'UTF8'));
 
   -- Simple rate limit: 10 lookups per event+email per hour.
   if (select count(*) from public.passport_email_logins l
@@ -41,7 +44,7 @@ begin
   select p.id into v_passport
   from public.visitors v
   join public.passports p on p.visitor_id = v.id and p.event_id = v.event_id
-  where v.event_id = _event_id and v.email = _email
+  where v.event_id = _event_id and lower(v.email::text) = lower(btrim(_email::text))
   limit 1;
   if v_passport is null then
     insert into public.passport_email_logins (event_id, email_hash) values (_event_id, v_email_hash);
@@ -50,10 +53,10 @@ begin
 
   -- Rotate the passport key so this device holds the only working link
   -- (same trade-off as re-registering: earlier links stop working).
-  v_raw := encode(extensions.gen_random_bytes(32), 'base64');
+  v_raw := encode(decode(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 'hex'), 'base64');
   v_raw := replace(replace(replace(v_raw, '+','-'), '/','_'), '=','');
   update public.passports
-    set access_token_hash = extensions.digest(v_raw, 'sha256'), updated_at = now()
+    set access_token_hash = sha256(convert_to(v_raw, 'UTF8')), updated_at = now()
   where id = v_passport;
 
   insert into public.passport_email_logins (event_id, email_hash) values (_event_id, v_email_hash);
@@ -63,3 +66,5 @@ $$;
 
 revoke all on function public.lookup_passport_by_email(uuid, citext) from public;
 grant execute on function public.lookup_passport_by_email(uuid, citext) to anon, authenticated, service_role;
+
+notify pgrst, 'reload schema';
