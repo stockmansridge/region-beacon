@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { loginWithPassportEmail } from "@/lib/passport-login.functions";
+import { loginWithPassportEmail } from "@/lib/passport-login";
 import { canPersistLocally } from "@/lib/storage-check";
 
 /** Warns visitors whose browser won't keep their passport on this device. */
@@ -23,7 +22,6 @@ export function StorageBlockedNotice() {
 
 /** "Already registered? Log in" — opens the passport from the email address. No email is sent. */
 export function PassportEmailLogin({ eventId }: { eventId: string }) {
-  const login = useServerFn(loginWithPassportEmail);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -38,7 +36,7 @@ export function PassportEmailLogin({ eventId }: { eventId: string }) {
     }
     setState("opening");
     try {
-      const res = await login({ data: { eventId, email: value } });
+      const res = await loginWithPassportEmail(eventId, value);
       if (res.ok) {
         navigate({ to: "/passport/$token", params: { token: res.token } });
         return;
