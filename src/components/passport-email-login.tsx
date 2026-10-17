@@ -27,7 +27,7 @@ export function PassportEmailLogin({ eventId }: { eventId: string }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "opening" | "invalid" | "notfound">("idle");
+  const [state, setState] = useState<"idle" | "opening" | "invalid" | "notfound" | "unavailable">("idle");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,10 +43,10 @@ export function PassportEmailLogin({ eventId }: { eventId: string }) {
         navigate({ to: "/passport/$token", params: { token: res.token } });
         return;
       }
+      setState(res.reason);
     } catch {
-      /* fall through */
+      setState("unavailable");
     }
-    setState("notfound");
   }
 
   const cardStyle = { borderColor: "var(--event-card-border)", backgroundColor: "var(--event-card-bg)", color: "var(--event-card-text)" };
@@ -83,6 +83,11 @@ export function PassportEmailLogin({ eventId }: { eventId: string }) {
       ) : (
         <>
           <p className="mt-1 text-xs opacity-80">Enter the email you signed up with and we'll open your passport.</p>
+          {state === "unavailable" && (
+            <p role="alert" className="mt-2 text-sm">
+              We couldn't check your passport right now. Please try again shortly. You don't need to sign up again.
+            </p>
+          )}
           <input
             type="email"
             autoComplete="email"
