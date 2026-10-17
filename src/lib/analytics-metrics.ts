@@ -42,3 +42,16 @@ export function venueEngagement(
 export function awardQualified(points: number, visited: number, activeVenues: number, award: { points_required: number; requires_all_locations: boolean }) {
   return points >= award.points_required && (!award.requires_all_locations || (activeVenues > 0 && visited >= activeVenues));
 }
+
+const VENUE_PATH_RE = /^\/venues\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+
+// Pages stats: show the venue's name for paths like /venues/<venue-uuid>
+// instead of the raw UUID. Falls back to the raw path when the venue is
+// unknown (e.g. deleted venue or another organisation's venue).
+export function describePagePath(path: string, venueNameById: Map<string, string>): string {
+  const match = path.match(VENUE_PATH_RE);
+  if (!match) return path;
+  const name = venueNameById.get(match[1].toLowerCase());
+  if (!name) return path;
+  return `${name} — venue details`;
+}
