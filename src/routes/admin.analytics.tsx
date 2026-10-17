@@ -836,7 +836,7 @@ function Analytics() {
                     <tbody>
                       {pageViewStats.paths.map((r) => (
                         <tr key={r.path} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
-                          <td className={tdClass}>{r.path}</td>
+                          <td className={tdClass}>{describePagePath(r.path, venueNameById)}</td>
                           <td className={`${tdClass} text-right font-medium text-[#111827]`}>{r.count}</td>
                           <td className={`${tdClass} text-right`}>{r.unique}</td>
                           <td className={`${tdClass} text-right`}>{r.pct.toFixed(1)}%</td>
