@@ -1,5 +1,8 @@
 # V2 public passport styling expansion
 
+- [x] Separate unavailable passport-email lookup errors from not-found results; focused mocked lookup checks.
+- [ ] Verify the reported returning visitor's lookup in the correct event; blocked by unavailable database access and absent runtime error evidence.
+
 - [x] Add date and count axes to the Page views analytics chart; real chart verified in browser with sample data (5–9 Oct and counts 0–32), not an authenticated analytics session.
 
 - [x] Add a bottom-right current-location arrow to the public map; two focused checks pass, and browser-granted coordinates center the simulated map with the arrow clear of the menu/card at two screen sizes (live Apple location marker remains unverified).

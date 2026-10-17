@@ -23,14 +23,14 @@ export const loginWithPassportEmail = createServerFn({ method: "POST" })
         _email: data.email,
       } as never);
       if (error) {
-        console.error("[passport-login] lookup failed", error.message);
-        return { ok: false as const };
+        console.error("[passport-login] lookup failed", { code: error.code });
+        return { ok: false as const, reason: "unavailable" as const };
       }
       const row = (Array.isArray(rows) ? rows[0] : rows) as { access_token: string } | undefined;
-      if (!row?.access_token) return { ok: false as const };
+      if (!row?.access_token) return { ok: false as const, reason: "notfound" as const };
       return { ok: true as const, token: row.access_token };
-    } catch (err) {
-      console.error("[passport-login] lookup unexpected", err);
-      return { ok: false as const };
+    } catch {
+      console.error("[passport-login] lookup unavailable");
+      return { ok: false as const, reason: "unavailable" as const };
     }
   });
