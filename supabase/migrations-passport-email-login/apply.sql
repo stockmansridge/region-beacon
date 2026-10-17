@@ -12,6 +12,7 @@ create table if not exists public.passport_email_logins (
   email_hash bytea not null,
   created_at timestamptz not null default now()
 );
+grant all on public.passport_email_logins to service_role;
 create index if not exists passport_email_logins_recent_idx
   on public.passport_email_logins (event_id, email_hash, created_at desc);
 alter table public.passport_email_logins enable row level security;
@@ -28,7 +29,7 @@ declare
   v_email_hash bytea;
   v_raw text;
 begin
-  v_email_hash := digest(lower(_email::text), 'sha256');
+  v_email_hash := extensions.digest(lower(_email::text), 'sha256');
 
   -- Simple rate limit: 10 lookups per event+email per hour.
   if (select count(*) from public.passport_email_logins l
@@ -49,10 +50,10 @@ begin
 
   -- Rotate the passport key so this device holds the only working link
   -- (same trade-off as re-registering: earlier links stop working).
-  v_raw := encode(gen_random_bytes(32), 'base64');
+  v_raw := encode(extensions.gen_random_bytes(32), 'base64');
   v_raw := replace(replace(replace(v_raw, '+','-'), '/','_'), '=','');
   update public.passports
-    set access_token_hash = digest(v_raw, 'sha256'), updated_at = now()
+    set access_token_hash = extensions.digest(v_raw, 'sha256'), updated_at = now()
   where id = v_passport;
 
   insert into public.passport_email_logins (event_id, email_hash) values (_event_id, v_email_hash);

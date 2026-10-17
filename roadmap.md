@@ -1,6 +1,7 @@
 # V2 public passport styling expansion
 
 - [x] Separate unavailable passport-email lookup errors from not-found results; focused mocked lookup checks.
+- [x] Correct the email-return SQL's pgcrypto schema references to match registration; SQL remains unapplied and live cause unverified.
 - [ ] Verify the reported returning visitor's lookup in the correct event; blocked by unavailable database access and absent runtime error evidence.
 
 - [x] Add date and count axes to the Page views analytics chart; real chart verified in browser with sample data (5–9 Oct and counts 0–32), not an authenticated analytics session.
