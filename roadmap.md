@@ -1,10 +1,11 @@
 # V2 public passport styling expansion
 
 ## Analytics improvements
-- [ ] Make marketing, pages and date lists scrollable; add 1-day, 14-day and custom date ranges.
-- [ ] Add Australian state/region postcode percentages with documented mapping coverage.
-- [ ] Add zero-activity venue toggle and venue engagement drilldown from the Venues total.
-- [ ] Complete qualified prize entrant details and verify focused analytics checks.
+- [x] Make marketing, pages and date lists scrollable; add rolling 1-day, 14-day and inclusive custom date ranges.
+- [x] Add Australian state/region postcode percentages with documented ABS mapping coverage and unknown bucket.
+- [x] Add zero-activity venue toggle and searchable/sortable venue engagement drilldown from the Venues total.
+- [x] Complete points-based prize entrant details, retain authorized legacy draw pools, and verify 11 focused checks with safe sample records.
+- [ ] Verify analytics interactions and entrant totals in an authenticated portal; blocked by unavailable managed session for this external connection. Nothing published or written to the database.
 
 - [x] Separate unavailable passport-email lookup errors from not-found results; focused mocked lookup checks.
 - [x] Correct the email-return SQL's pgcrypto schema references to match registration; SQL remains unapplied and live cause unverified.
