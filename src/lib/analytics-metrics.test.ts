@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyticsDateRange, awardQualified, venueEngagement } from "./analytics-metrics";
+import { analyticsDateRange, awardQualified, describePagePath, venueEngagement } from "./analytics-metrics";
 
 describe("analytics filters and metrics", () => {
   for (const days of [1, 14] as const) it(`includes the last ${days} days`, () => {
@@ -27,5 +27,13 @@ describe("analytics filters and metrics", () => {
     expect(awardQualified(10, 2, 2, award)).toBe(true);
     expect(awardQualified(10, 1, 2, award)).toBe(false);
     expect(awardQualified(10, 0, 0, award)).toBe(false);
+  });
+  it("resolves venue UUIDs in Pages stats paths to venue names", () => {
+    const names = new Map([["baf06f6e-7de8-4110-b6ea-c6c90091d09b", "Stockmans Ridge"]]);
+    expect(describePagePath("/venues/baf06f6e-7de8-4110-b6ea-c6c90091d09b", names)).toBe("Stockmans Ridge — venue details");
+    // Uppercase UUIDs in URLs still resolve; unknown venues keep the raw path.
+    expect(describePagePath("/venues/BAF06F6E-7DE8-4110-B6EA-C6C90091D09B", names)).toBe("Stockmans Ridge — venue details");
+    expect(describePagePath("/venues/00000000-0000-0000-0000-000000000000", names)).toBe("/venues/00000000-0000-0000-0000-000000000000");
+    expect(describePagePath("/join", names)).toBe("/join");
   });
 });

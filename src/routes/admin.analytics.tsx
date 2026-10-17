@@ -28,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
-import { analyticsDateRange, awardQualified, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
+import { analyticsDateRange, awardQualified, describePagePath, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
 import { regionalBreakdown } from "@/lib/analytics-regions";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -836,7 +836,7 @@ function Analytics() {
                     <tbody>
                       {pageViewStats.paths.map((r) => (
                         <tr key={r.path} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
-                          <td className={tdClass}>{r.path}</td>
+                          <td className={tdClass}>{describePagePath(r.path, venueNameById)}</td>
                           <td className={`${tdClass} text-right font-medium text-[#111827]`}>{r.count}</td>
                           <td className={`${tdClass} text-right`}>{r.unique}</td>
                           <td className={`${tdClass} text-right`}>{r.pct.toFixed(1)}%</td>
