@@ -107,6 +107,8 @@ type PageViewRow = {
   created_at: string;
 };
 
+import { useAnalyticsEventFilter } from "@/hooks/use-analytics-event-filter";
+
 type AwardRow = { id: string; event_id: string; title: string; points_required: number; requires_all_locations: boolean };
 type PointRow = { event_id: string; participant_id: string; points_awarded: number; created_at: string };
 
@@ -130,7 +132,7 @@ function Analytics() {
   const [reloadKey, setReloadKey] = useState(0);
   const navigate = useNavigate();
 
-  const [eventFilter, setEventFilter] = useState<string>("all");
+  const [eventFilter, setEventFilter] = useAnalyticsEventFilter(agencyId);
   const [dateFilter, setDateFilter] = useState<AnalyticsDateFilter>("all");
   const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus" | "venues">(null);
   const [customFrom, setCustomFrom] = useState<Date>();
