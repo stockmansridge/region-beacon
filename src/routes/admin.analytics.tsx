@@ -28,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
-import { analyticsDateRange, awardQualified, describePagePath, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
+import { analyticsDateRange, awardQualified, bonusItemTotals, describePagePath, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
 import { regionalBreakdown } from "@/lib/analytics-regions";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -134,7 +134,7 @@ function Analytics() {
 
   const [eventFilter, setEventFilter] = useAnalyticsEventFilter(agencyId);
   const [dateFilter, setDateFilter] = useState<AnalyticsDateFilter>("all");
-  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus" | "venues">(null);
+  const [drilldown, setDrilldown] = useState<null | "visitors" | "checkins" | "bonus" | "bonusPoints" | "venues">(null);
   const [customFrom, setCustomFrom] = useState<Date>();
   const [customTo, setCustomTo] = useState<Date>();
   const [postcodeTab, setPostcodeTab] = useState<"postcode" | "area" | "state">("postcode");
@@ -741,7 +741,7 @@ function Analytics() {
             <Stat label="Registered visitors" value={totalPassports} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat label="Total check-ins" value={totalCheckins} icon={QrCode} onClick={() => setDrilldown("checkins")} />
             <Stat label="Bonus scans" value={totalBonusScans} icon={QrCode} onClick={() => setDrilldown("bonus")} />
-            <Stat label="Bonus points earned" value={totalBonusPoints} icon={Trophy} />
+            <Stat label="Bonus points earned" value={totalBonusPoints} icon={Trophy} onClick={() => setDrilldown("bonusPoints")} />
             <Stat label="Unique visitors checked in" value={uniqueCheckedIn} icon={Users} onClick={() => { setExpandedVisitor(null); setDrilldown("visitors"); }} />
             <Stat
               label="Avg venues / passport"
@@ -1116,7 +1116,7 @@ function Analytics() {
         </div>
       )}
 
-      {drilldown && drilldown !== "bonus" && drilldown !== "venues" && (
+      {drilldown && drilldown !== "bonus" && drilldown !== "bonusPoints" && drilldown !== "venues" && (
         <DrilldownModal
           mode={drilldown}
           onClose={() => setDrilldown(null)}
@@ -1131,6 +1131,7 @@ function Analytics() {
         />
       )}
       {drilldown === "venues" && <VenueEngagementModal rows={allVenueStats} eventNames={eventNameById} onClose={() => setDrilldown(null)} onExport={exportVenuePerf} />}
+      {drilldown === "bonusPoints" && <BonusPointsModal scans={fBonusScans} labels={bonusCodeLabelBySourceId} eventNames={eventNameById} onClose={() => setDrilldown(null)} />}
       {drilldown === "bonus" && (
         <BonusMatrixModal
           onClose={() => setDrilldown(null)}
@@ -1284,6 +1285,54 @@ function IconSortHeader({
       </button>
     </th>
   );
+}
+
+function VenueSortHeader({ label, sortKey, sort, onSort }: {
+  label: string; sortKey: string; sort: SortState; onSort: (key: string) => void;
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <th scope="col" aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"} className="h-60 w-10 min-w-10 bg-muted p-0 text-muted-foreground">
+      <Button variant="ghost" onClick={() => onSort(sortKey)} title={label} aria-label={`Sort by ${label}`} className="relative h-60 w-10 rounded-none p-0">
+        <span className="absolute left-1/2 top-1/2 flex w-52 -translate-x-1/2 -translate-y-1/2 -rotate-90 items-center gap-2 text-left text-xs">
+          <span className="truncate">{label}</span>
+          <span aria-hidden="true">{active ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}</span>
+        </span>
+      </Button>
+    </th>
+  );
+}
+
+function BonusPointsModal({ scans, labels, eventNames, onClose }: {
+  scans: BonusScanRow[]; labels: Map<string, string>; eventNames: Map<string, string>; onClose: () => void;
+}) {
+  const resize = usePanelResize();
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState>({ key: "points", dir: "desc" });
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return bonusItemTotals(scans, labels)
+      .filter(r => !q || r.name.toLowerCase().includes(q) || (eventNames.get(r.event_id) ?? "").toLowerCase().includes(q))
+      .sort((a, b) => {
+        const value = (r: typeof a) => sort.key === "name" ? r.name : sort.key === "event" ? eventNames.get(r.event_id) ?? "" : sort.key === "scans" ? r.scans : r.points;
+        const av = value(a), bv = value(b);
+        const cmp = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv));
+        return (sort.dir === "asc" ? cmp : -cmp) || a.name.localeCompare(b.name);
+      });
+  }, [scans, labels, eventNames, query, sort]);
+  return <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-foreground/50 p-4 sm:p-8" onClick={onClose}>
+    <div ref={resize.ref} style={resize.style} role="dialog" aria-modal="true" aria-labelledby="bonus-points-title" className="relative flex max-h-[94vh] w-full max-w-6xl flex-col rounded-lg bg-background text-foreground shadow-xl" onClick={e => e.stopPropagation()}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b p-5">
+        <h2 id="bonus-points-title" className="text-lg font-semibold">Bonus points by item</h2>
+        <div className="flex flex-wrap items-center gap-2"><input type="search" aria-label="Search bonus items" placeholder="Search bonus items…" value={query} onChange={e => setQuery(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm" /><Button variant="outline" onClick={onClose}>Close</Button></div>
+      </div>
+      <div className="min-h-0 overflow-auto p-5"><table className="w-full text-sm"><thead><tr>{[["Bonus item", "name"], ["Event", "event"], ["Scans", "scans"], ["Total points", "points"]].map(([label, key]) => <th key={key} scope="col" className={`sticky top-0 bg-muted p-3 ${key === "scans" || key === "points" ? "text-right" : "text-left"}`}><Button variant="ghost" size="sm" onClick={() => setSort(s => ({ key, dir: s.key === key && s.dir === "asc" ? "desc" : "asc" }))}>{label}<span aria-hidden="true">{sort.key === key ? sort.dir === "asc" ? " ↑" : " ↓" : " ↕"}</span></Button></th>)}</tr></thead>
+        <tbody>{rows.map(r => <tr key={r.key} className="border-t"><td className="p-3 font-medium">{r.name}</td><td className="p-3 text-muted-foreground">{eventNames.get(r.event_id) ?? "—"}</td><td className="p-3 text-right tabular-nums">{r.scans}</td><td className="p-3 text-right tabular-nums">{r.points}</td></tr>)}</tbody>
+        {rows.length > 0 && <tfoot><tr className="border-t font-semibold"><td colSpan={2} className="p-3">Total</td><td className="p-3 text-right tabular-nums">{rows.reduce((n, r) => n + r.scans, 0)}</td><td className="p-3 text-right tabular-nums">{rows.reduce((n, r) => n + r.points, 0)}</td></tr></tfoot>}
+      </table>{!rows.length && <p className="py-6 text-center text-sm text-muted-foreground">{scans.length ? "No bonus items match." : "No bonus scans recorded for this selection yet."}</p>}</div>
+      <PanelResizeHandle onPointerDown={resize.onHandlePointerDown} onPointerMove={resize.onHandlePointerMove} onPointerUp={resize.onHandlePointerUp} />
+    </div>
+  </div>;
 }
 
 function DrilldownModal({
@@ -1590,15 +1639,13 @@ function DrilldownModal({
                   <SortHeader label="Visitor" sortKey="name" sort={sort} onSort={toggleSort} />
                   <SortHeader label="Email" sortKey="email" sort={sort} onSort={toggleSort} />
                   {venueColumns.map((c) => (
-                    <IconSortHeader
+                    <VenueSortHeader
                       key={c.venueId}
                       label={c.label}
                       sortKey={`col:${c.venueId}`}
                       sort={sort}
                       onSort={toggleSort}
-                    >
-                      <MapPin className="h-3.5 w-3.5" />
-                    </IconSortHeader>
+                    />
                   ))}
                   <SortHeader label="Total" sortKey="total" sort={sort} onSort={toggleSort} align="right" />
                 </tr>

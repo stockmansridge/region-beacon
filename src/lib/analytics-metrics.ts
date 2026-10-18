@@ -43,6 +43,25 @@ export function awardQualified(points: number, visited: number, activeVenues: nu
   return points >= award.points_required && (!award.requires_all_locations || (activeVenues > 0 && visited >= activeVenues));
 }
 
+export function bonusItemTotals(
+  scans: Array<{ event_id: string; source_id: string | null; points_awarded: number; metadata: { bonus_code_name?: string | null } | null }>,
+  labels: Map<string, string>,
+) {
+  const items = new Map<string, { key: string; event_id: string; name: string; scans: number; points: number }>();
+  for (const scan of scans) {
+    const key = `${scan.event_id}:${scan.source_id ?? "unknown"}`;
+    const item = items.get(key) ?? {
+      key, event_id: scan.event_id,
+      name: (scan.source_id ? labels.get(scan.source_id) : null) || scan.metadata?.bonus_code_name || "Unknown code",
+      scans: 0, points: 0,
+    };
+    item.scans++;
+    item.points += scan.points_awarded ?? 0;
+    items.set(key, item);
+  }
+  return Array.from(items.values()).sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+}
+
 const VENUE_PATH_RE = /^\/venues\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
 
 // Pages stats: show the venue's name for paths like /venues/<venue-uuid>

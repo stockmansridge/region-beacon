@@ -4,6 +4,7 @@
 - Analytics postcode areas use the bundled ABS-derived, non-overlapping lookup with an unknown bucket, so split postcodes never double-count visitors.
 - Analytics current prize qualification uses the complete agency-scoped points ledger and lifetime active-venue visits; legacy entries use the existing authorized draw-pool RPC, so bonus points and historical passports are not omitted.
 - Analytics venue engagement uses the shared metrics helper for counts and venue-attributed bonus scans, so zero-activity venues and exports stay consistent.
+- Analytics bonus item summaries aggregate the already event/date-filtered bonus ledger by event and source ID, so points remain distinct from scan counts and events never merge.
 - Analytics event selection is a browser UI preference keyed by agency ID, restored after hydration and written only on explicit selection, so organisation changes cannot overwrite another organisation's choice.
 
 - Interactive public maps measure the available visible viewport and the page's own bottom navigation; never impose a minimum canvas height that pushes selected venue details behind the menu.
