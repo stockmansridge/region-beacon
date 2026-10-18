@@ -1,6 +1,8 @@
 # V2 public passport styling expansion
 
 ## Analytics improvements
+- [x] Add a Bonus points item summary with scan/point totals while retaining the Bonus scans visitor matrix; focused mounted checks passed.
+- [x] Show sideways venue-name headers in Check-in details and preserve sorting; 12 focused checks passed. Signed-in visual verification remains blocked by unavailable portal session.
 - [x] Make marketing, pages and date lists scrollable; add rolling 1-day, 14-day and inclusive custom date ranges.
 - [x] Add Australian state/region postcode percentages with documented ABS mapping coverage and unknown bucket.
 - [x] Add zero-activity venue toggle and searchable/sortable venue engagement drilldown from the Venues total.

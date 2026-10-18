@@ -14,7 +14,13 @@ vi.mock("@/integrations/supabase/client", () => {
     visitors: Array.from({ length: 40 }, (_, i) => ({ id: `v${i}`, event_id: "e", full_name: `Guest ${i}`, email: `guest${i}@example.test`, postcode: i === 0 ? "2780" : "2000", created_at: now, marketing_opt_in: true })),
     passports: [{ id: "p", visitor_id: "v0", event_id: "e", created_at: "2020-01-01T00:00:00Z" }],
     checkins: [{ id: "c", event_id: "e", visitor_id: "v0", passport_id: "p", venue_id: "a", created_at: now }],
-    participant_point_awards: [{ id: "pt", event_id: "e", participant_id: "p", points_awarded: 10, created_at: now, metadata: null, source_id: null }],
+    participant_point_awards: [
+      { id: "pt", event_id: "e", participant_id: "p", points_awarded: 10, created_at: now, metadata: null, source_id: "code" },
+      { id: "pt2", event_id: "e", participant_id: "p", points_awarded: 5, created_at: now, metadata: null, source_id: "code" },
+      { id: "pt3", event_id: "e", participant_id: "p", points_awarded: 7, created_at: now, metadata: null, source_id: "venue-code" },
+    ],
+    event_bonus_codes: [{ id: "code", event_id: "e", name: "Welcome bonus" }],
+    event_bonus_code_venues: [{ id: "venue-code", bonus_code_id: "code", venue_id: "a" }],
     event_awards: [{ id: "award", event_id: "e", title: "Ten point prize", points_required: 10, requires_all_locations: false }],
     event_page_views: Array.from({ length: 30 }, (_, i) => ({ id: `pv${i}`, event_id: "e", path: `/page-${i}`, device_id: "device", created_at: now })),
   };
@@ -27,6 +33,38 @@ vi.mock("@/integrations/supabase/client", () => {
 });
 import { Route } from "./admin.analytics";
 afterEach(cleanup);
+
+it("Bonus points opens item totals while Bonus scans retains the visitor matrix", async () => {
+  const Page = Route.options.component as ComponentType;
+  render(<Page />);
+  await screen.findByText("Ten point prize");
+  fireEvent.click(screen.getByRole("button", { name: /Bonus points earned/ }));
+  const modal = screen.getByRole("dialog", { name: "Bonus points by item" });
+  const rows = within(modal).getAllByRole("row");
+  expect(within(rows[1]).getAllByRole("cell").map(c => c.textContent)).toEqual(["Welcome bonus", "Event", "2", "15"]);
+  expect(within(rows[2]).getAllByRole("cell").map(c => c.textContent)).toEqual(["Welcome bonus — Active Venue", "Event", "1", "7"]);
+  expect(within(rows[3]).getAllByRole("cell").map(c => c.textContent)).toEqual(["Total", "3", "22"]);
+  fireEvent.change(within(modal).getByRole("searchbox"), { target: { value: "Active Venue" } });
+  expect(within(modal).getAllByRole("row")).toHaveLength(3);
+  fireEvent.click(within(modal).getByRole("button", { name: "Close" }));
+  fireEvent.click(screen.getByRole("button", { name: /Bonus scans/ }));
+  const matrix = screen.getByRole("button", { name: "Sort by Welcome bonus" }).closest("table");
+  if (!matrix) throw new Error("Bonus scan matrix missing");
+  expect(within(matrix).getByText("guest0@example.test")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Sort by Welcome bonus" })).toBeTruthy();
+});
+
+it("venue-name headers retain check-in column sorting", async () => {
+  const Page = Route.options.component as ComponentType;
+  render(<Page />);
+  await screen.findByText("Ten point prize");
+  fireEvent.click(screen.getByRole("button", { name: /Total check-ins/ }));
+  const sortButton = screen.getByRole("button", { name: "Sort by Active Venue" });
+  fireEvent.click(sortButton);
+  expect(sortButton.closest("th")?.getAttribute("aria-sort")).toBe("ascending");
+  fireEvent.click(sortButton);
+  expect(sortButton.closest("th")?.getAttribute("aria-sort")).toBe("descending");
+});
 
 it("venue engagement opens with zero venues, and zero check-ins toggle includes them", async () => {
   const Page = Route.options.component as ComponentType;
