@@ -25,10 +25,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAgencyContext } from "@/hooks/use-agency-context";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
-import { analyticsDateRange, awardQualified, bonusItemTotals, describePagePath, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
+import { analyticsDateRange, awardQualified, bonusItemTotals, describePagePath, venueCheckinDays, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
 import { regionalBreakdown } from "@/lib/analytics-regions";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -139,6 +140,7 @@ function Analytics() {
   const [customTo, setCustomTo] = useState<Date>();
   const [postcodeTab, setPostcodeTab] = useState<"postcode" | "area" | "state">("postcode");
   const [showZeroVenues, setShowZeroVenues] = useState(false);
+  const [chartVenue, setChartVenue] = useState<{ id: string; agencyId: string | null } | null>(null);
   const [awards, setAwards] = useState<AwardRow[]>([]);
   const [points, setPoints] = useState<PointRow[]>([]);
   const [legacyPools, setLegacyPools] = useState<Array<{ ruleId: string; passport_id: string; stamps: number; entries: number }>>([]);
@@ -302,6 +304,7 @@ function Analytics() {
     () => venues.filter((v) => inEvent(v.event_id)),
     [venues, filteredEventIds],
   );
+  const selectedChartVenue = chartVenue?.agencyId === agencyId ? fVenues.find(v => v.id === chartVenue?.id) : undefined;
   const fPassports = useMemo(
     () => passports.filter((p) => inEvent(p.event_id) && inRange(p.created_at)),
     [passports, filteredEventIds, fromDate, toDate, validRange],
@@ -1050,7 +1053,7 @@ function Analytics() {
                     {venueStats.map((s, i) => (
                       <tr key={s.venue_id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
                         <td className={`${tdClass} text-[#64748B]`}>{i + 1}</td>
-                        <td className={`${tdClass} font-medium text-[#111827]`}>{s.name}</td>
+                        <td className={tdClass}><Button variant="link" className="h-auto justify-start whitespace-normal p-0 text-left" onClick={() => setChartVenue({ id: s.venue_id, agencyId })} aria-label={`View check-ins over time for ${s.name}`}>{s.name}</Button></td>
                         <td className={`${tdClass} text-right font-medium text-[#111827]`}>{s.count}</td>
                         <td className={`${tdClass} text-right`}>{s.unique}</td>
                         <td className={`${tdClass} text-right`}>{s.pct.toFixed(1)}%</td>
@@ -1116,6 +1119,12 @@ function Analytics() {
         </div>
       )}
 
+      <Dialog open={Boolean(selectedChartVenue)} onOpenChange={open => { if (!open) setChartVenue(null); }}>
+        {selectedChartVenue && <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto rounded-lg bg-background text-foreground">
+          <DialogHeader><DialogTitle className="text-foreground">{selectedChartVenue.name} — check-ins over time</DialogTitle><DialogDescription className="text-muted-foreground">{eventNameById.get(selectedChartVenue.event_id) ?? "Event"} · {dateFilter === "all" ? "All time" : dateFilter === "custom" ? "Custom date range" : `Last ${dateFilter.slice(0, -1)} days`} · Daily totals (UTC)</DialogDescription></DialogHeader>
+          <VenueCheckinChart checkins={fCheckins} venueId={selectedChartVenue.id} from={fromDate} to={toDate} />
+        </DialogContent>}
+      </Dialog>
       {drilldown && drilldown !== "bonus" && drilldown !== "bonusPoints" && drilldown !== "venues" && (
         <DrilldownModal
           mode={drilldown}
@@ -1984,6 +1993,14 @@ export function RegistrationChart({ days }: { days: Array<[string, number]> }) {
 
 export function PageViewsChart({ days }: { days: Array<[string, number]> }) {
   return <DailyCountChart days={days} label="Page views" />;
+}
+
+export function VenueCheckinChart({ checkins, venueId, from, to }: {
+  checkins: Array<{ venue_id: string; created_at: string }>; venueId: string; from: Date | null; to: Date | null;
+}) {
+  const days = useMemo(() => venueCheckinDays(checkins, venueId, from, to), [checkins, venueId, from, to]);
+  const total = days.reduce((sum, [, count]) => sum + count, 0);
+  return <div className="space-y-4"><p className="text-sm font-medium">{total} check-ins in this selection</p>{days.length > 0 && <DailyCountChart days={days} label="Check-ins" />}{total === 0 && <p className="text-sm text-muted-foreground">No check-ins recorded for this venue in the selected date range.</p>}</div>;
 }
 
 function DailyCountChart({ days, label }: { days: Array<[string, number]>; label: string }) {

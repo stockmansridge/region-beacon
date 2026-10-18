@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { analyticsDateRange, awardQualified, bonusItemTotals, describePagePath, venueEngagement } from "./analytics-metrics";
+import { analyticsDateRange, awardQualified, bonusItemTotals, describePagePath, venueCheckinDays, venueEngagement } from "./analytics-metrics";
 
 describe("analytics filters and metrics", () => {
+  it("graphs only the selected venue within the range and includes zero-check-in days", () => {
+    expect(venueCheckinDays([
+      { venue_id: "a", created_at: "2026-10-01T01:00:00Z" },
+      { venue_id: "a", created_at: "2026-10-01T02:00:00Z" },
+      { venue_id: "a", created_at: "2026-10-03T01:00:00Z" },
+      { venue_id: "a", created_at: "2026-09-30T01:00:00Z" },
+      { venue_id: "b", created_at: "2026-10-02T01:00:00Z" },
+    ], "a", new Date("2026-10-01T00:00:00Z"), new Date("2026-10-03T23:59:59Z"))).toEqual([["2026-10-01", 2], ["2026-10-02", 0], ["2026-10-03", 1]]);
+  });
   it("totals bonus scans and awarded points separately without merging events", () => {
     const rows = bonusItemTotals([
       { event_id: "a", source_id: "code", points_awarded: 5, metadata: null },
