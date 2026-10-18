@@ -34,6 +34,21 @@ vi.mock("@/integrations/supabase/client", () => {
 import { Route } from "./admin.analytics";
 afterEach(cleanup);
 
+it("venue check-in links open the correct graph including zero-activity venues", async () => {
+  const Page = Route.options.component as ComponentType;
+  render(<Page />);
+  await screen.findByText("Ten point prize");
+  fireEvent.click(screen.getByRole("button", { name: "View check-ins over time for Active Venue" }));
+  let modal = screen.getByRole("dialog", { name: "Active Venue — check-ins over time" });
+  expect(within(modal).getByText("1 check-ins in this selection")).toBeTruthy();
+  expect(within(modal).getByRole("img", { name: /Daily check-ins chart/ })).toBeTruthy();
+  fireEvent.click(within(modal).getByRole("button", { name: "Close" }));
+  fireEvent.click(screen.getByRole("switch"));
+  fireEvent.click(screen.getByRole("button", { name: "View check-ins over time for Zero Venue" }));
+  modal = screen.getByRole("dialog", { name: "Zero Venue — check-ins over time" });
+  expect(within(modal).getByText("0 check-ins in this selection")).toBeTruthy();
+});
+
 it("Bonus points opens item totals while Bonus scans retains the visitor matrix", async () => {
   const Page = Route.options.component as ComponentType;
   render(<Page />);

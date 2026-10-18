@@ -1,5 +1,30 @@
 export type AnalyticsDateFilter = "all" | "1d" | "7d" | "14d" | "30d" | "custom";
 
+export function venueCheckinDays(
+  checkins: Array<{ venue_id: string; created_at: string }>,
+  venueId: string,
+  from: Date | null = null,
+  to: Date | null = null,
+): Array<[string, number]> {
+  const counts = new Map<string, number>();
+  for (const c of checkins) {
+    const time = new Date(c.created_at);
+    if (c.venue_id !== venueId || !Number.isFinite(time.getTime()) || (from && time < from) || (to && time > to)) continue;
+    const day = time.toISOString().slice(0, 10);
+    counts.set(day, (counts.get(day) ?? 0) + 1);
+  }
+  const keys = Array.from(counts.keys()).sort();
+  const start = from?.toISOString().slice(0, 10) ?? keys[0];
+  const end = to?.toISOString().slice(0, 10) ?? keys.at(-1);
+  if (!start || !end || start > end) return [];
+  const days: Array<[string, number]> = [];
+  for (let time = Date.parse(start); time <= Date.parse(end); time += 86400000) {
+    const day = new Date(time).toISOString().slice(0, 10);
+    days.push([day, counts.get(day) ?? 0]);
+  }
+  return days;
+}
+
 export function analyticsDateRange(filter: AnalyticsDateFilter, now: Date, custom?: { from?: Date; to?: Date }) {
   if (filter === "all") return { from: null, to: null };
   if (filter === "custom") {
