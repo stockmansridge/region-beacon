@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { analyticsDateRange, awardQualified, bonusItemTotals, describePagePath, venueCheckinDays, venueEngagement } from "./analytics-metrics";
+import { analyticsDateRange, awardQualified, bonusItemTotals, countPassportsWithVenueVisits, describePagePath, venueCheckinDays, venueEngagement } from "./analytics-metrics";
 
 describe("analytics filters and metrics", () => {
+  const stamps = new Map([0, 1, 2, 3, 4, 5, 6].map(n => [String(n), new Set(Array.from({ length: n }, (_, i) => `venue-${i}`))]));
+  for (const [minimum, expected] of [[3, 4], [4, 3], [5, 2]]) {
+    it(`counts passports with ${minimum}+ distinct venues inclusively`, () => {
+      expect(countPassportsWithVenueVisits(stamps, minimum)).toBe(expected);
+      expect(countPassportsWithVenueVisits(new Map(), minimum)).toBe(0);
+    });
+  }
   it("graphs only the selected venue within the range and includes zero-check-in days", () => {
     expect(venueCheckinDays([
       { venue_id: "a", created_at: "2026-10-01T01:00:00Z" },
