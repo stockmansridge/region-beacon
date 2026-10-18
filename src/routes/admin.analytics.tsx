@@ -240,7 +240,7 @@ function Analytics() {
         .order("created_at", { ascending: false })
         .limit(50000);
       const legacyResults = await Promise.all((prRes.data ?? []).map(async r => {
-        const result = await supabase.rpc("admin_get_prize_draw_pool", { _prize_rule_id: r.id });
+        const result = await supabase.rpc("admin_get_prize_draw_pool", { _event_id: r.event_id, _prize_rule_id: r.id });
         return { ruleId: r.id, ...result };
       }));
       if (cancelled) return;
