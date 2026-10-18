@@ -1,5 +1,11 @@
 export type AnalyticsDateFilter = "all" | "1d" | "7d" | "14d" | "30d" | "custom";
 
+export function countPassportsWithVenueVisits(passportStamps: ReadonlyMap<string, ReadonlySet<string>>, minimum: number): number {
+  let count = 0;
+  for (const venues of passportStamps.values()) if (venues.size >= minimum) count++;
+  return count;
+}
+
 export function venueCheckinDays(
   checkins: Array<{ venue_id: string; created_at: string }>,
   venueId: string,

@@ -29,7 +29,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
-import { analyticsDateRange, awardQualified, bonusItemTotals, describePagePath, venueCheckinDays, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
+import { analyticsDateRange, awardQualified, bonusItemTotals, countPassportsWithVenueVisits, describePagePath, venueCheckinDays, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
 import { regionalBreakdown } from "@/lib/analytics-regions";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -436,10 +436,12 @@ function Analytics() {
   const funnel = useMemo(() => {
     const reg = totalPassports;
     const one = uniqueCheckedIn;
-    let two = 0;
-    for (const s of passportStamps.values()) if (s.size >= 2) two += 1;
+    const two = countPassportsWithVenueVisits(passportStamps, 2);
+    const three = countPassportsWithVenueVisits(passportStamps, 3);
+    const four = countPassportsWithVenueVisits(passportStamps, 4);
+    const five = countPassportsWithVenueVisits(passportStamps, 5);
     const completed = completedCount;
-    return { reg, one, two, completed };
+    return { reg, one, two, three, four, five, completed };
   }, [totalPassports, uniqueCheckedIn, passportStamps, completedCount]);
 
   // Prize entrants
@@ -1010,6 +1012,9 @@ function Analytics() {
                 { label: "Registered", count: funnel.reg },
                 { label: "Checked in at 1+ venue", count: funnel.one },
                 { label: "Checked in at 2+ venues", count: funnel.two },
+                { label: "Checked in at 3+ venues", count: funnel.three },
+                { label: "Checked in at 4+ venues", count: funnel.four },
+                { label: "Checked in at 5+ venues", count: funnel.five },
                 { label: "Completed trail", count: funnel.completed },
               ]}
             />
