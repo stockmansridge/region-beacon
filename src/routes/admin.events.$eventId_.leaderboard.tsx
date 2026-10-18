@@ -197,11 +197,13 @@ function LeaderboardPage() {
             .from("passports")
             .select("id, visitor_id")
             .eq("event_id", eventId),
-          // Bonus + venue point awards from participant_point_awards
+          // Bonus point awards only — the ledger also holds award_type='venue'
+          // rows (one per check-in), which are already counted via entry_value.
           supabase
             .from("participant_point_awards")
             .select("participant_id, points_awarded, award_type, awarded_at")
-            .eq("event_id", eventId),
+            .eq("event_id", eventId)
+            .eq("award_type", "bonus"),
         ]);
       if (cancelled) return;
 
