@@ -48,7 +48,9 @@ it("Bonus points opens item totals while Bonus scans retains the visitor matrix"
   expect(within(modal).getAllByRole("row")).toHaveLength(3);
   fireEvent.click(within(modal).getByRole("button", { name: "Close" }));
   fireEvent.click(screen.getByRole("button", { name: /Bonus scans/ }));
-  expect(screen.getByText("guest0@example.test")).toBeTruthy();
+  const matrix = screen.getByRole("button", { name: "Sort by Welcome bonus" }).closest("table");
+  if (!matrix) throw new Error("Bonus scan matrix missing");
+  expect(within(matrix).getByText("guest0@example.test")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Sort by Welcome bonus" })).toBeTruthy();
 });
 
