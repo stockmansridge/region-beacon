@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { analyticsDateRange, awardQualified, describePagePath, venueEngagement } from "./analytics-metrics";
+import { analyticsDateRange, awardQualified, bonusItemTotals, describePagePath, venueEngagement } from "./analytics-metrics";
 
 describe("analytics filters and metrics", () => {
+  it("totals bonus scans and awarded points separately without merging events", () => {
+    const rows = bonusItemTotals([
+      { event_id: "a", source_id: "code", points_awarded: 5, metadata: null },
+      { event_id: "a", source_id: "code", points_awarded: 10, metadata: null },
+      { event_id: "b", source_id: "code", points_awarded: 7, metadata: null },
+      { event_id: "a", source_id: null, points_awarded: 0, metadata: { bonus_code_name: "Deleted code" } },
+    ], new Map([["code", "Bonus item"]]));
+    expect(rows.map(r => [r.event_id, r.name, r.scans, r.points])).toEqual([
+      ["a", "Bonus item", 2, 15], ["b", "Bonus item", 1, 7], ["a", "Deleted code", 1, 0],
+    ]);
+  });
   for (const days of [1, 14] as const) it(`includes the last ${days} days`, () => {
     const now = new Date("2026-10-17T08:30:00Z");
     const range = analyticsDateRange(`${days}d`, now);
