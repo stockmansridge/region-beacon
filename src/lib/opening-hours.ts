@@ -74,8 +74,13 @@ export function isOpenNow(
 }
 
 /** Index into a Monday-first list for "today" at the venue. */
-export function todayIndexMonFirst(utcOffsetMinutes: number | null | undefined, now: Date = new Date()): number {
-  const day = utcOffsetMinutes == null ? now.getDay() : venueLocalClock(now, utcOffsetMinutes).getUTCDay();
+export function todayIndexMonFirst(
+  utcOffsetMinutes: number | null | undefined,
+  now: Date = new Date(),
+  timeZone?: string | null,
+): number {
+  const local = venueClock(now, timeZone, utcOffsetMinutes);
+  const day = local ? local.getUTCDay() : now.getDay();
   return (day + 6) % 7;
 }
 
