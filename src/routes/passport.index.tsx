@@ -51,8 +51,9 @@ function PassportIndex() {
           Passport not found on this device
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-[#3D372C]">
-          Your private passport link is the only way back in. Open the link
-          you saved when you registered, or re-register at the event page.
+          Open the passport link you saved when you registered, or use
+          "Already registered? Log in" on the event's join page with your
+          email to reopen your existing passport.
         </p>
 
         <div className="mt-6 flex flex-col gap-2">
