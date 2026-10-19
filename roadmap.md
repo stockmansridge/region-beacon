@@ -53,3 +53,10 @@
 - [ ] Verify production Places secret resolution and the one-venue manual refresh; blocked by separate configuration/deployment/pilot approval. Current deployed health does not report the new presence flag.
 - [x] Multi-device passport persistence: device-token table + central resolver migration (review-only, not applied), email login mints device tokens instead of rotating, client reuses valid saved token, returnTo resume after email login, re-register copy fixed.
 - [ ] Apply supabase/migrations-passport-device-tokens/apply.sql and publish — awaiting owner verification/approval.
+
+## Multi-device passport acceptance fixes
+- [x] Check-in mismatch/no-passport errors now re-validate via get_passport_by_token and clear only on conclusive invalid/other-event with exact-token compare; conclusive invalid directs to email-only recovery with the scan preserved.
+- [x] Email login fast path reuses the saved token only when the validated passport's email matches the entered email; a different email mints its own device alias.
+- [x] consumeReturnTo is exactly-once (scoped consume clears matching pending) and never replays another event's pending scan; join page now shares the helper.
+- [x] passport.index "Re-register" button replaced with "Log in with your email" → /join.
+- [ ] Publish so the fixes reach production (migration already applied by owner); awaiting approval.
