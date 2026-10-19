@@ -29,6 +29,8 @@ export type CurrentEventPassportResult = {
   validationStatus: PassportValidationStatus;
   validationError: string | null;
   staleCleared: boolean;
+  /** Email on the validated passport row, when the RPC returns it. */
+  email: string | null;
 };
 
 export const EMPTY_CURRENT_EVENT_PASSPORT: CurrentEventPassportResult = {
@@ -42,6 +44,7 @@ export const EMPTY_CURRENT_EVENT_PASSPORT: CurrentEventPassportResult = {
   validationStatus: "idle",
   validationError: null,
   staleCleared: false,
+  email: null,
 };
 
 export function readStoredPassportForEvent(eventId: string): StoredPassport | null {
@@ -121,7 +124,7 @@ export async function resolveCurrentEventPassport(
     const { data, error } = res;
     const outcome = classifyPassportLookup(res);
     const row = (Array.isArray(data) ? data[0] ?? null : null) as
-      | { passport_id?: string | null; event_id?: string | null }
+      | { passport_id?: string | null; event_id?: string | null; email?: string | null }
       | null;
     const matchesEvent = row?.event_id ? String(row.event_id) === String(eventId) : true;
 
@@ -162,6 +165,7 @@ export async function resolveCurrentEventPassport(
       validationStatus: "valid",
       validationError: null,
       staleCleared: false,
+      email: typeof row.email === "string" ? row.email : null,
     };
   } catch (e) {
     return {
