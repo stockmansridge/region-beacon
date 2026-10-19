@@ -39,6 +39,7 @@ export async function loginWithPassportEmail(eventId: string, rawEmail: string):
     }
     const row = (Array.isArray(rows) ? rows[0] : rows) as { access_token?: string } | undefined;
     if (!row?.access_token) return { ok: false, reason: "notfound" };
+    persistPassport(eventId, row.access_token);
     return { ok: true, token: row.access_token };
   } catch {
     console.error("[passport-login] lookup unavailable");
