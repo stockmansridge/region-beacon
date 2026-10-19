@@ -22,7 +22,9 @@ export class HaltSync extends Error {}
 
 function creds() {
   const lovable = readServerEnv("LOVABLE_API_KEY");
-  const maps = readServerEnv("GOOGLE_MAPS_API_KEY");
+  // Prefer the owner's dedicated server key (restricted to Places API (New));
+  // fall back to the Lovable-managed connection.
+  const maps = readServerEnv("GOOGLE_MAPS_API_KEY_1") ?? readServerEnv("GOOGLE_MAPS_API_KEY");
   if (!lovable || !maps) throw new HaltSync("Google Maps connection is not configured on this server.");
   return { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": maps };
 }
