@@ -75,6 +75,8 @@ language sql stable security definer set search_path = public as $$
   order by h.synced_at nulls first
   limit greatest(least(_limit, 200), 1);
 $$;
+revoke all on function public.venue_hours_due(int) from public, anon, authenticated;
+grant execute on function public.venue_hours_due(int) to service_role;
 
 notify pgrst, 'reload schema';
 
