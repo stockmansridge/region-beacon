@@ -2,9 +2,9 @@
 // Lovable connector gateway and store them. Never called on page views.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { readServerEnv } from "@/lib/server-env.server";
+import { choosePlace, namesMatch, type PlaceCandidate } from "@/lib/venue-hours-match";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_maps";
-const MATCH_RADIUS_M = 200;
 
 export type DueVenue = {
   venue_id: string;
@@ -41,20 +41,20 @@ async function check(res: Response): Promise<unknown> {
   throw new Error(`Google Maps request failed [${res.status}]: ${body.slice(0, 300)}`);
 }
 
-function distanceM(aLat: number, aLng: number, bLat: number, bLng: number): number {
-  const R = 6371000, r = Math.PI / 180;
-  const dLat = (bLat - aLat) * r, dLng = (bLng - aLng) * r;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
+type PlaceDetails = {
+  displayName?: { text?: string };
+  formattedAddress?: string;
+  regularOpeningHours?: { periods?: unknown[]; weekdayDescriptions?: string[] };
+  utcOffsetMinutes?: number;
+};
 
-async function findPlaceId(v: DueVenue): Promise<string | null> {
+async function searchPlaces(v: DueVenue): Promise<PlaceCandidate[]> {
   const res = await fetch(`${GATEWAY_URL}/places/v1/places:searchText`, {
     method: "POST",
     headers: {
       ...creds(),
       "Content-Type": "application/json",
-      "X-Goog-FieldMask": "places.id,places.location",
+      "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location",
     },
     body: JSON.stringify({
       textQuery: v.name,
@@ -62,45 +62,100 @@ async function findPlaceId(v: DueVenue): Promise<string | null> {
       locationBias: { circle: { center: { latitude: v.lat, longitude: v.lng }, radius: 500 } },
     }),
   });
-  const json = (await check(res)) as { places?: Array<{ id: string; location?: { latitude: number; longitude: number } }> };
-  let best: { id: string; d: number } | null = null;
-  for (const p of json.places ?? []) {
-    if (!p.location) continue;
-    const d = distanceM(v.lat, v.lng, p.location.latitude, p.location.longitude);
-    if (d <= MATCH_RADIUS_M && (!best || d < best.d)) best = { id: p.id, d };
-  }
-  return best?.id ?? null;
-}
-
-async function fetchDetails(placeId: string) {
-  const res = await fetch(`${GATEWAY_URL}/places/v1/places/${encodeURIComponent(placeId)}`, {
-    headers: { ...creds(), "X-Goog-FieldMask": "displayName,regularOpeningHours,utcOffsetMinutes" },
-  });
-  return (await check(res)) as {
-    displayName?: { text?: string };
-    regularOpeningHours?: { periods?: unknown[]; weekdayDescriptions?: string[] };
-    utcOffsetMinutes?: number;
+  const json = (await check(res)) as {
+    places?: Array<{
+      id: string;
+      displayName?: { text?: string };
+      formattedAddress?: string;
+      location?: { latitude: number; longitude: number };
+    }>;
   };
+  return (json.places ?? []).map((p) => ({
+    id: p.id,
+    name: p.displayName?.text ?? null,
+    address: p.formattedAddress ?? null,
+    lat: p.location?.latitude ?? null,
+    lng: p.location?.longitude ?? null,
+  }));
 }
 
-/** Refreshes one venue. Throws HaltSync for run-stopping errors. */
+async function fetchDetails(placeId: string): Promise<PlaceDetails> {
+  const res = await fetch(`${GATEWAY_URL}/places/v1/places/${encodeURIComponent(placeId)}`, {
+    headers: { ...creds(), "X-Goog-FieldMask": "displayName,formattedAddress,regularOpeningHours,utcOffsetMinutes" },
+  });
+  return (await check(res)) as PlaceDetails;
+}
+
+type ExistingRow = {
+  google_place_id: string | null;
+  google_place_name: string | null;
+  google_hours: unknown;
+  utc_offset_minutes: number | null;
+  hours_source: string;
+} | null;
+
+async function readExisting(admin: SupabaseClient, venueId: string): Promise<ExistingRow> {
+  const { data } = await admin
+    .from("venue_opening_hours")
+    .select("google_place_id, google_place_name, google_hours, utc_offset_minutes, hours_source")
+    .eq("venue_id", venueId)
+    .maybeSingle();
+  return (data as ExistingRow) ?? null;
+}
+
+/**
+ * Refreshes one venue. Throws HaltSync for run-stopping errors.
+ * On transient failures or no defensible match, previously stored Google
+ * hours are preserved (last-known-good) — only the status/error changes.
+ * Manual/off preferences (hours_source) are never touched here.
+ */
 export async function syncVenueHours(admin: SupabaseClient, v: DueVenue): Promise<string> {
   const base = { venue_id: v.venue_id, agency_id: v.agency_id, event_id: v.event_id, synced_at: new Date().toISOString(), updated_at: new Date().toISOString() };
   try {
-    const placeId = v.google_place_id ?? (await findPlaceId(v));
+    let placeId: string | null = null;
+    let details: PlaceDetails | null = null;
+
+    // Trust a stored place ID only while its identity still matches the venue.
+    if (v.google_place_id) {
+      const d = await fetchDetails(v.google_place_id);
+      if (namesMatch(v.name, d.displayName?.text)) {
+        placeId = v.google_place_id;
+        details = d;
+      }
+    }
     if (!placeId) {
-      await admin.from("venue_opening_hours").upsert({ ...base, sync_status: "not_found", sync_error: null });
+      const match = choosePlace(v, await searchPlaces(v));
+      if (match) {
+        placeId = match.id;
+        details = await fetchDetails(placeId);
+      }
+    }
+
+    const existing = await readExisting(admin, v.venue_id);
+
+    if (!placeId || !details) {
+      // No defensible match: keep any last-known-good hours, just record status.
+      const { error } = await admin.from("venue_opening_hours").upsert({
+        ...base,
+        google_place_id: existing?.google_place_id ?? null,
+        google_place_name: existing?.google_place_name ?? null,
+        google_hours: existing?.google_hours ?? null,
+        utc_offset_minutes: existing?.utc_offset_minutes ?? null,
+        sync_status: "not_found",
+        sync_error: null,
+      });
+      if (error) throw new Error(error.message);
       return "not_found";
     }
-    const d = await fetchDetails(placeId);
-    const hours = d.regularOpeningHours;
+
+    const hours = details.regularOpeningHours;
     const status = hours?.weekdayDescriptions?.length ? "ok" : "no_hours";
     const { error } = await admin.from("venue_opening_hours").upsert({
       ...base,
       google_place_id: placeId,
-      google_place_name: d.displayName?.text ?? null,
+      google_place_name: details.displayName?.text ?? null,
       google_hours: hours ? { periods: hours.periods ?? [], weekdayDescriptions: hours.weekdayDescriptions ?? [] } : null,
-      utc_offset_minutes: typeof d.utcOffsetMinutes === "number" ? d.utcOffsetMinutes : null,
+      utc_offset_minutes: typeof details.utcOffsetMinutes === "number" ? details.utcOffsetMinutes : null,
       sync_status: status,
       sync_error: null,
     });
@@ -109,7 +164,17 @@ export async function syncVenueHours(admin: SupabaseClient, v: DueVenue): Promis
   } catch (err) {
     if (err instanceof HaltSync) throw err;
     const msg = err instanceof Error ? err.message : String(err);
-    await admin.from("venue_opening_hours").upsert({ ...base, sync_status: "error", sync_error: msg.slice(0, 500) });
+    // Preserve last-known-good hours on transient failures; never wipe them.
+    const existing = await readExisting(admin, v.venue_id).catch(() => null);
+    await admin.from("venue_opening_hours").upsert({
+      ...base,
+      google_place_id: existing?.google_place_id ?? null,
+      google_place_name: existing?.google_place_name ?? null,
+      google_hours: existing?.google_hours ?? null,
+      utc_offset_minutes: existing?.utc_offset_minutes ?? null,
+      sync_status: "error",
+      sync_error: msg.slice(0, 500),
+    });
     return "error";
   }
 }
