@@ -1077,6 +1077,93 @@ function Analytics() {
             )}
           </section>
 
+          {/* Most engaged */}
+          <section className={cardClass}>
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Most engaged</h3>
+                <p className="text-sm leading-6 text-[#64748B]">Ranked by points-weighted activity: each check-in counts as 1 point and each bonus scan counts as its awarded points.</p>
+              </div>
+              <Tabs value={engagementTab} onValueChange={v => { if (v === "people" || v === "venues") setEngagementTab(v); }}>
+                <TabsList>
+                  <TabsTrigger value="people">People</TabsTrigger>
+                  <TabsTrigger value="venues">Venues</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            {engagementTab === "people" ? (
+              engagedPeople.length === 0 ? (
+                <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">No activity yet in this selection.</div>
+              ) : (
+                <div className={`max-h-96 overflow-auto ${tableWrap}`}>
+                  <table className="w-full text-sm" aria-label="Most engaged people">
+                    <thead>
+                      <tr>
+                        <th className={thClass}>#</th>
+                        <th className={thClass}>Visitor</th>
+                        <th className={thClass}>Event</th>
+                        <th className={`${thClass} text-right`}>Check-ins</th>
+                        <th className={`${thClass} text-right`}>Bonus scans</th>
+                        <th className={`${thClass} text-right`}>Bonus points</th>
+                        <th className={`${thClass} text-right`}>Engagement</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {engagedPeople.map((p, i) => {
+                        const passport = passportById.get(p.passport_id);
+                        const visitor = passport ? visitorById.get(passport.visitor_id) : undefined;
+                        return (
+                          <tr key={p.passport_id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                            <td className={`${tdClass} text-[#64748B]`}>{i + 1}</td>
+                            <td className={tdClass}>{displayNameOf(visitor)}</td>
+                            <td className={tdClass}>{passport ? eventNameById.get(passport.event_id) ?? "—" : "—"}</td>
+                            <td className={`${tdClass} text-right`}>{p.checkins}</td>
+                            <td className={`${tdClass} text-right`}>{p.bonusScans}</td>
+                            <td className={`${tdClass} text-right`}>{p.bonusPoints}</td>
+                            <td className={`${tdClass} text-right font-medium text-[#111827]`}>{p.score}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : (
+              engagedVenues.length === 0 ? (
+                <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-5 text-sm text-[#475569]">No venue activity yet in this selection.</div>
+              ) : (
+                <div className={`max-h-96 overflow-auto ${tableWrap}`}>
+                  <table className="w-full text-sm" aria-label="Most engaged venues">
+                    <thead>
+                      <tr>
+                        <th className={thClass}>#</th>
+                        <th className={thClass}>Venue</th>
+                        <th className={thClass}>Event</th>
+                        <th className={`${thClass} text-right`}>Check-ins</th>
+                        <th className={`${thClass} text-right`}>Bonus scans</th>
+                        <th className={`${thClass} text-right`}>Bonus points</th>
+                        <th className={`${thClass} text-right`}>Engagement</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {engagedVenues.map((v, i) => (
+                        <tr key={v.venue_id} className="border-t border-[#E6ECF4] hover:bg-[#F8FAFC]">
+                          <td className={`${tdClass} text-[#64748B]`}>{i + 1}</td>
+                          <td className={tdClass}>{v.name}</td>
+                          <td className={tdClass}>{eventNameById.get(v.event_id) ?? "—"}</td>
+                          <td className={`${tdClass} text-right`}>{v.checkins}</td>
+                          <td className={`${tdClass} text-right`}>{v.bonusScans}</td>
+                          <td className={`${tdClass} text-right`}>{v.bonusPoints}</td>
+                          <td className={`${tdClass} text-right font-medium text-[#111827]`}>{v.score}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            )}
+          </section>
+
           {/* Prize entrants */}
           <section className={cardClass}>
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
