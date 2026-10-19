@@ -70,7 +70,8 @@ function sharedLocalityTokens(venueAddress: string, placeAddress: string): strin
   const b = new Set(tokens(normalizeVenueName(placeAddress)));
   // Drop words that are just the street number or too generic to mean anything.
   const noise = new Set(["nsw", "vic", "qld", "sa", "wa", "tas", "nt", "act", "australia", "au", "road", "rd", "street", "st", "lane", "ln", "drive", "dr", "highway", "hwy"]);
-  return [...a].filter((t) => b.has(t) && !noise.has(t) && t.length >= 3);
+  // Pure numbers (street numbers, postcodes) are too weak to disambiguate.
+  return [...a].filter((t) => b.has(t) && !noise.has(t) && t.length >= 3 && !/^\d+$/.test(t));
 }
 
 /**
