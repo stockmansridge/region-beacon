@@ -73,10 +73,10 @@ function PassportIndex() {
             </a>
           )}
           <a
-            href="/"
+            href="/join"
             className="inline-flex h-11 items-center justify-center rounded-full border border-[#1F3D2B]/30 bg-transparent text-sm font-semibold tracking-wide text-[#1F3D2B]"
           >
-            Re-register if you've lost your link
+            Log in with your email
           </a>
         </div>
 
