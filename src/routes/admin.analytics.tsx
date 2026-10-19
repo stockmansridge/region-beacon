@@ -29,7 +29,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
-import { analyticsDateRange, awardQualified, bonusItemTotals, countPassportsWithVenueVisits, describePagePath, venueCheckinDays, venueEngagement, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
+import { analyticsDateRange, awardQualified, bonusItemTotals, countPassportsWithVenueVisits, describePagePath, personEngagement, venueCheckinDays, venueEngagement, venueEngagementScores, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
 import { regionalBreakdown } from "@/lib/analytics-regions";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -140,6 +140,7 @@ function Analytics() {
   const [customTo, setCustomTo] = useState<Date>();
   const [postcodeTab, setPostcodeTab] = useState<"postcode" | "area" | "state">("postcode");
   const [showZeroVenues, setShowZeroVenues] = useState(false);
+  const [engagementTab, setEngagementTab] = useState<"people" | "venues">("people");
   const [chartVenue, setChartVenue] = useState<{ id: string; agencyId: string | null } | null>(null);
   const [awards, setAwards] = useState<AwardRow[]>([]);
   const [points, setPoints] = useState<PointRow[]>([]);
@@ -431,6 +432,11 @@ function Analytics() {
 
   const allVenueStats = useMemo(() => venueEngagement(fVenues, fCheckins, fBonusScans, bonusCodeVenues), [fVenues, fCheckins, fBonusScans, bonusCodeVenues]);
   const venueStats = allVenueStats.filter(v => showZeroVenues || v.count > 0);
+
+  // Most engaged: points-weighted activity (check-in = 1 point, bonus scan =
+  // its awarded points), for people and venues within the current filters.
+  const engagedPeople = useMemo(() => personEngagement(fCheckins, fBonusScans).slice(0, 25), [fCheckins, fBonusScans]);
+  const engagedVenues = useMemo(() => venueEngagementScores(fVenues, fCheckins, fBonusScans, bonusCodeVenues).filter(v => v.score > 0).slice(0, 25), [fVenues, fCheckins, fBonusScans, bonusCodeVenues]);
 
   // Funnel
   const funnel = useMemo(() => {
