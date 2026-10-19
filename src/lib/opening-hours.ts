@@ -54,11 +54,13 @@ export function isOpenNow(
   periods: HoursPeriod[] | null | undefined,
   utcOffsetMinutes: number | null | undefined,
   now: Date = new Date(),
+  timeZone?: string | null,
 ): boolean | null {
-  if (!Array.isArray(periods) || periods.length === 0 || utcOffsetMinutes == null) return null;
+  if (!Array.isArray(periods) || periods.length === 0) return null;
   // Open 24/7: single period opening Sunday 00:00 with no close.
   if (periods.length === 1 && !periods[0].close && weekMinute(periods[0].open) === 0) return true;
-  const local = venueLocalClock(now, utcOffsetMinutes);
+  const local = venueClock(now, timeZone, utcOffsetMinutes);
+  if (!local) return null;
   const cur = local.getUTCDay() * 1440 + local.getUTCHours() * 60 + local.getUTCMinutes();
   const WEEK = 7 * 1440;
   for (const p of periods) {
