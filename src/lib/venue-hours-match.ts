@@ -64,14 +64,27 @@ export function distanceM(aLat: number, aLng: number, bLat: number, bLng: number
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-/** Locality words (suburb, postcode, state) shared between two addresses. */
+const STREET_TYPES = new Set(["road", "rd", "street", "st", "lane", "ln", "drive", "dr", "highway", "hwy", "avenue", "ave", "court", "ct", "place", "pl", "parade", "pde", "terrace", "tce", "crescent", "cres", "boulevard", "blvd", "way", "close", "circuit"]);
+
+/**
+ * Locality words (suburb/locality) shared between two addresses. The street
+ * portion — everything up to and including the street-type word — is stripped
+ * first, so a shared street NAME (e.g. two listings both on "Millthorpe Rd")
+ * can never resolve a genuinely ambiguous duplicate. Only words after the
+ * street type (suburb, region) count as locality evidence.
+ */
+function localityTokens(address: string): Set<string> {
+  const ts = tokens(normalizeVenueName(address));
+  const cut = ts.findIndex((t) => STREET_TYPES.has(t));
+  const locality = cut >= 0 ? ts.slice(cut + 1) : ts;
+  const noise = new Set(["nsw", "vic", "qld", "sa", "wa", "tas", "nt", "act", "australia", "au"]);
+  return new Set(locality.filter((t) => !noise.has(t) && t.length >= 3 && !/^\d+$/.test(t)));
+}
+
 function sharedLocalityTokens(venueAddress: string, placeAddress: string): string[] {
-  const a = new Set(tokens(normalizeVenueName(venueAddress)));
-  const b = new Set(tokens(normalizeVenueName(placeAddress)));
-  // Drop words that are just the street number or too generic to mean anything.
-  const noise = new Set(["nsw", "vic", "qld", "sa", "wa", "tas", "nt", "act", "australia", "au", "road", "rd", "street", "st", "lane", "ln", "drive", "dr", "highway", "hwy"]);
-  // Pure numbers (street numbers, postcodes) are too weak to disambiguate.
-  return [...a].filter((t) => b.has(t) && !noise.has(t) && t.length >= 3 && !/^\d+$/.test(t));
+  const a = localityTokens(venueAddress);
+  const b = localityTokens(placeAddress);
+  return [...a].filter((t) => b.has(t));
 }
 
 /**
