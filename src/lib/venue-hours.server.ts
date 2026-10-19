@@ -1,5 +1,5 @@
-// Server-only: fetch venue opening hours from Google Places (New) via the
-// Lovable connector gateway and store them. Never called on page views.
+// Server-only: Google Places (New), direct on the independent Cloudflare
+// build and via the connector on Lovable. Never called on page views.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { readServerEnv } from "@/lib/server-env.server";
 import { choosePlace, namesMatch, type PlaceCandidate } from "@/lib/venue-hours-match";
@@ -20,18 +20,31 @@ export type DueVenue = {
 /** Stops the whole run (key/quota problems) instead of failing one venue. */
 export class HaltSync extends Error {}
 
-function creds() {
+type Transport = { baseUrl: string; headers: Record<string, string>; secrets: string[] };
+
+function transport(): Transport {
+  // This is the existing CI build target, not hostname/browser detection.
+  // Fail closed on Cloudflare: connector keys are not Google API keys.
+  if (import.meta.env.VITE_DEPLOY_TARGET === "cloudflare") {
+    const key = readServerEnv("GOOGLE_PLACES_API_KEY");
+    if (!key) throw new HaltSync("Missing Cloudflare Worker secret GOOGLE_PLACES_API_KEY on region-beacon.");
+    return { baseUrl: "https://places.googleapis.com/v1", headers: { "X-Goog-Api-Key": key }, secrets: [key] };
+  }
   const lovable = readServerEnv("LOVABLE_API_KEY");
   // Prefer the owner's dedicated server key (restricted to Places API (New));
   // fall back to the Lovable-managed connection.
   const maps = readServerEnv("GOOGLE_MAPS_API_KEY_1") ?? readServerEnv("GOOGLE_MAPS_API_KEY");
   if (!lovable || !maps) throw new HaltSync("Google Maps connection is not configured on this server.");
-  return { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": maps };
+  return { baseUrl: `${GATEWAY_URL}/places/v1`, headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": maps }, secrets: [lovable, maps] };
 }
 
-async function check(res: Response): Promise<unknown> {
+async function check(res: Response, config: Transport): Promise<unknown> {
   if (res.ok) return res.json();
-  const body = await res.text();
+  let body = await res.text();
+  // Provider errors may echo credentials; never persist or return those.
+  for (const secret of config.secrets) body = body.split(secret).join("[redacted]");
+  if (body.includes("API_KEY_INVALID"))
+    throw new HaltSync(`Google Places credentials are invalid [${res.status}]: ${body.slice(0, 300)}`);
   if (res.status === 403) {
     if (body.includes("API_KEY_HTTP_REFERRER_BLOCKED"))
       throw new HaltSync('Google Maps server key is referrer-restricted. Set its application restrictions to "None" or "IP addresses".');
@@ -51,11 +64,11 @@ type PlaceDetails = {
   utcOffsetMinutes?: number;
 };
 
-async function searchPlaces(v: DueVenue): Promise<PlaceCandidate[]> {
-  const res = await fetch(`${GATEWAY_URL}/places/v1/places:searchText`, {
+async function searchPlaces(v: DueVenue, config: Transport): Promise<PlaceCandidate[]> {
+  const res = await fetch(`${config.baseUrl}/places:searchText`, {
     method: "POST",
     headers: {
-      ...creds(),
+      ...config.headers,
       "Content-Type": "application/json",
       "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location",
     },
@@ -65,7 +78,7 @@ async function searchPlaces(v: DueVenue): Promise<PlaceCandidate[]> {
       locationBias: { circle: { center: { latitude: v.lat, longitude: v.lng }, radius: 500 } },
     }),
   });
-  const json = (await check(res)) as {
+  const json = (await check(res, config)) as {
     places?: Array<{
       id: string;
       displayName?: { text?: string };
@@ -82,11 +95,11 @@ async function searchPlaces(v: DueVenue): Promise<PlaceCandidate[]> {
   }));
 }
 
-async function fetchDetails(placeId: string): Promise<PlaceDetails> {
-  const res = await fetch(`${GATEWAY_URL}/places/v1/places/${encodeURIComponent(placeId)}`, {
-    headers: { ...creds(), "X-Goog-FieldMask": "displayName,formattedAddress,regularOpeningHours,utcOffsetMinutes" },
+async function fetchDetails(placeId: string, config: Transport): Promise<PlaceDetails> {
+  const res = await fetch(`${config.baseUrl}/places/${encodeURIComponent(placeId)}`, {
+    headers: { ...config.headers, "X-Goog-FieldMask": "displayName,formattedAddress,regularOpeningHours,utcOffsetMinutes" },
   });
-  return (await check(res)) as PlaceDetails;
+  return (await check(res, config)) as PlaceDetails;
 }
 
 type ExistingRow = {
@@ -120,23 +133,24 @@ async function readExisting(admin: SupabaseClient, venueId: string): Promise<Exi
 export async function syncVenueHours(admin: SupabaseClient, v: DueVenue): Promise<string> {
   const base = { venue_id: v.venue_id, agency_id: v.agency_id, event_id: v.event_id, updated_at: new Date().toISOString() };
   try {
+    const config = transport();
     let placeId: string | null = null;
     let details: PlaceDetails | null = null;
     let ambiguousNote: string | null = null;
 
     // Trust a stored place ID only while its identity still matches the venue.
     if (v.google_place_id) {
-      const d = await fetchDetails(v.google_place_id);
+      const d = await fetchDetails(v.google_place_id, config);
       if (namesMatch(v.name, d.displayName?.text)) {
         placeId = v.google_place_id;
         details = d;
       }
     }
     if (!placeId) {
-      const result = choosePlace(v, await searchPlaces(v));
+      const result = choosePlace(v, await searchPlaces(v, config));
       if (result.kind === "match") {
         placeId = result.id;
-        details = await fetchDetails(placeId);
+        details = await fetchDetails(placeId, config);
       } else if (result.kind === "ambiguous") {
         ambiguousNote = `Ambiguous Google listings (${result.candidates.length} name matches within 200 m) — held for review, no hours assigned.`;
       }
