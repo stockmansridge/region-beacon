@@ -1,5 +1,9 @@
 import { applyMapMarkerSelection, mapMarkerAnnotationOptions, resolveMapMarkerStyle, type MapMarkerStyle } from "@/lib/map-marker-style";
 import { PublicStyleTarget } from "@/components/public-style-target";
+import { Button } from "@/components/ui/button";
+import { Clock } from "lucide-react";
+import { useMapOpeningHours } from "@/hooks/use-map-opening-hours";
+import { mapVenueIsOpen, type PublicMapHours } from "@/lib/map-opening-hours";
 import { usePublicStyleTarget } from "@/components/public-style-scope";
 import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -66,6 +70,7 @@ export type MapVenueRow = {
 
 export type MapEventRow = {
   event_id: string;
+  timezone?: string | null;
   name: string;
   primary_color: string | null;
   accent_color: string | null;
@@ -114,7 +119,7 @@ const INITIAL_DIAG: MapDiagnostics = {
   appleErrorMessage: null,
 };
 
-export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: string; previewData?: { branding: EventBrandingKeys; event: MapEventRow; venues: MapVenueRow[]; visitedIds?: Set<string> } }) {
+export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: string; previewData?: { branding: EventBrandingKeys; event: MapEventRow; venues: MapVenueRow[]; visitedIds?: Set<string>; hours?: Record<string, PublicMapHours>; now?: Date } }) {
   const loadedBranding = useEventBrandingKeys(previewData ? null : subdomain);
   const branding = previewData?.branding ?? loadedBranding;
   const fetchToken = useServerFn(getMapkitToken);
@@ -127,6 +132,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
   const [passportState, setPassportState] = useState<CurrentEventPassportResult>(EMPTY_CURRENT_EVENT_PASSPORT);
   const [stampState, setStampState] = useState<PassportStampState>(EMPTY_PASSPORT_STAMP_STATE);
   const [filter, setFilter] = useState<Filter>("all");
+  const [openNowOnly, setOpenNowOnly] = useState(false);
   const [selected, setSelected] = useState<MapVenueRow | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const hasPassport = passportState.hasPassport;
@@ -197,14 +203,27 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
   );
 
 
+  const venueIds = useMemo(() => venues.flatMap((v) => v.venue_id ? [v.venue_id] : []), [venues]);
+  const cachedHours = useMapOpeningHours(subdomain, venueIds, openNowOnly && !previewData && !loading);
+  const hours = previewData?.hours ?? cachedHours.rows;
+  const now = previewData?.now ?? cachedHours.now;
+  const isVisibleByHours = useCallback((v: MapVenueRow) => !openNowOnly || Boolean(v.venue_id && now && mapVenueIsOpen(hours[v.venue_id], now, event?.timezone)), [openNowOnly, now, hours, event?.timezone]);
+
+  useEffect(() => { setOpenNowOnly(false); setSelected(null); }, [subdomain, event?.event_id]);
+
   const filteredVenues = useMemo(() => {
-    if (!hasPassport || filter === "all") return geoVenues;
+    const openVenues = geoVenues.filter(isVisibleByHours);
+    if (!hasPassport || filter === "all") return openVenues;
     if (filter === "visited")
-      return geoVenues.filter((v) => v.venue_id && visitedIds.has(v.venue_id));
+      return openVenues.filter((v) => v.venue_id && visitedIds.has(v.venue_id));
     if (filter === "bookmarked")
-      return geoVenues.filter((v) => v.venue_id && bookmarkedVenueIds.has(v.venue_id));
-    return geoVenues.filter((v) => v.venue_id && !visitedIds.has(v.venue_id));
-  }, [geoVenues, filter, visitedIds, hasPassport, bookmarkedVenueIds]);
+      return openVenues.filter((v) => v.venue_id && bookmarkedVenueIds.has(v.venue_id));
+    return openVenues.filter((v) => v.venue_id && !visitedIds.has(v.venue_id));
+  }, [geoVenues, filter, visitedIds, hasPassport, bookmarkedVenueIds, isVisibleByHours]);
+
+  useEffect(() => {
+    if (selected && !filteredVenues.some((v) => v.venue_id === selected.venue_id)) setSelected(null);
+  }, [selected, filteredVenues]);
 
   // Init MapKit
   useEffect(() => {
@@ -434,8 +453,8 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
     [geoVenues],
   );
   const unmappedVenues = useMemo(
-    () => venues.filter((v) => !geoVenueIds.has(v.venue_id)),
-    [venues, geoVenueIds],
+    () => venues.filter((v) => !geoVenueIds.has(v.venue_id) && isVisibleByHours(v)),
+    [venues, geoVenueIds, isVisibleByHours],
   );
 
   const visitedCount = useMemo(
@@ -552,6 +571,21 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
           </div>
         )}
 
+        {geoVenues.length > 0 && <div className="mb-3 flex flex-wrap items-center gap-3">
+          <PublicStyleTarget id="map.controls.item" recordId="open-now">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-pressed={openNowOnly}
+              onClick={() => { setOpenNowOnly((value) => !value); setSelected(null); }}
+              className="rounded-full border-[var(--event-card-border)] bg-[var(--event-button-secondary-bg)] text-[var(--event-button-secondary-fg)] aria-pressed:bg-[var(--event-button-primary-bg)] aria-pressed:text-[var(--event-button-primary-fg)]"
+            ><Clock aria-hidden="true" />Open now</Button>
+          </PublicStyleTarget>
+          {openNowOnly && <p role="status" className="text-xs text-[var(--event-page-muted)]">
+            {!previewData && cachedHours.loading ? "Checking saved hours…" : !previewData && cachedHours.failed ? "Some opening hours are unavailable." : filteredVenues.length === 0 ? "No venues with confirmed open hours right now." : `${filteredVenues.length} open now`}
+          </p>}
+        </div>}
+
         {noCoords ? (
           event?.event_map_path ? (
             <UploadedEventMap
@@ -563,7 +597,7 @@ export function PublicTrailMapPage({ subdomain, previewData }: { subdomain: stri
           ) : null
         ) : mapError ? (
           <MapFallbackList
-            venues={geoVenues}
+            venues={filteredVenues}
             selectedVenueId={selected?.venue_id ?? null}
             markerStyle={(venueId) => resolveMapMarkerStyle({
               templateVersion: branding.templateVersion,

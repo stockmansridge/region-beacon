@@ -11,6 +11,7 @@
 
 - Interactive public maps measure the available visible viewport and the page's own bottom navigation; never impose a minimum canvas height that pushes selected venue details behind the menu.
 - Public map location is requested only by an explicit visitor click, is never persisted, and is disabled in editor fixtures to avoid permission prompts or device-location side effects.
+- Map Open now filtering reads the existing host-scoped public cached-hours RPC with bounded concurrency and a local minute clock; only fresh, positively open structured hours qualify, and filtering also applies to fallback lists.
 
 - Public passport item styling uses the versioned registry and allowlisted resolver in `src/lib/public-style-overrides.ts`; never add arbitrary CSS or selector persistence.
 - V1 is the unchanged default renderer. V2 uses `event_branding.v2_style_config` only when that event's `public_template_version` is explicitly `v2`.
