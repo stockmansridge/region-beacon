@@ -338,7 +338,7 @@ function PassportNotFound({
               color: "var(--event-button-primary-fg)",
             }}
           >
-            Register again for this trail
+            Log in with your email
           </a>
           <PublicBackLink context="passport-missing" to="/" label="Back to trail home" legacy="anchor" legacyArrow={false}
             legacyClassName="inline-flex h-11 items-center justify-center rounded-full border bg-transparent text-sm font-semibold tracking-wide"
