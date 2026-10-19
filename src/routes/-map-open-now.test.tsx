@@ -18,7 +18,7 @@ it.each(["v1", "v2"] as const)("filters the real %s map fallback for visitors wi
   const event = { event_id: "test-event", name: "Trail", primary_color: null, accent_color: null, timezone: "Australia/Sydney", public_template_version: version };
   const venues = ["open", "closed", "unknown", "manual"].map((name, i) => ({ venue_id: name, name, lat: -33 + i * .01, lng: 149, event_found: true })) as MapVenueRow[];
   const common = { synced_at: "2026-10-18T00:00:00Z", utc_offset_minutes: 600, hours_source: "google" };
-  const view = render(<PublicNavProvider mode="preview" subdomain="test" activePath="/map"><PublicTrailMapPage subdomain="test" previewData={{ event, venues, branding: resolveEventBrandingKeys(event), now: new Date("2026-10-19T01:00:00Z"), hours: {
+  const view = render(<PublicNavProvider mode="preview" subdomain="test" activePath="/map"><PublicTrailMapPage subdomain="test" previewData={{ event, venues, branding: resolveEventBrandingKeys(event, { public_template_version: version, v2_style_config: null }), now: new Date("2026-10-19T01:00:00Z"), hours: {
     open: { ...common, periods: [{ open: { day: 1, hour: 10 }, close: { day: 1, hour: 17 } }] },
     closed: { ...common, periods: [{ open: { day: 1, hour: 14 }, close: { day: 1, hour: 17 } }] },
     manual: { ...common, hours_source: "manual", periods: null },
