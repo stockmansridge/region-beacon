@@ -28,15 +28,30 @@ describe("passport email lookup", () => {
     expect(await loginWithPassportEmail(EVENT, "a@b.co")).toEqual({ ok: false, reason: "notfound" });
   });
   it("re-saves the reopened passport on this device", async () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("window", {
+      localStorage: {
+        setItem: (k: string, v: string) => void store.set(k, v),
+        getItem: (k: string) => store.get(k) ?? null,
+        removeItem: (k: string) => void store.delete(k),
+      },
+    });
     rpc.mockResolvedValue({ data: [{ access_token: "tok" }], error: null });
     await loginWithPassportEmail(EVENT, "a@b.co");
-    const saved = JSON.parse(window.localStorage.getItem(`gs.passport.${EVENT}`) ?? "null");
+    const saved = JSON.parse(store.get(`gs.passport.${EVENT}`) ?? "null");
     expect(saved?.access_token).toBe("tok");
+    vi.unstubAllGlobals();
   });
   it("still opens the passport when storage is blocked", async () => {
-    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked"); });
+    vi.stubGlobal("window", {
+      localStorage: {
+        setItem: () => { throw new Error("blocked"); },
+        getItem: () => null,
+        removeItem: () => undefined,
+      },
+    });
     rpc.mockResolvedValue({ data: [{ access_token: "tok" }], error: null });
     expect(await loginWithPassportEmail(EVENT, "a@b.co")).toEqual({ ok: true, token: "tok" });
-    setItem.mockRestore();
+    vi.unstubAllGlobals();
   });
 });
