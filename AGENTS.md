@@ -1,5 +1,7 @@
 # Project architecture rules
 
+- Public QR scanning uses the shared safe destination resolver for venue, bonus and tasting claim routes; other HTTP links require an explicit click and text is displayed without execution, so scanning never silently changes event ownership or executes untrusted payloads.
+
 - Analytics daily registration and page-view charts share one date/count renderer so both retain readable date axes and integer count scales.
 - Analytics postcode areas use the bundled ABS-derived, non-overlapping lookup with an unknown bucket, so split postcodes never double-count visitors.
 - Analytics current prize qualification uses the complete agency-scoped points ledger and lifetime active-venue visits; legacy entries use the existing authorized draw-pool RPC, so bonus points and historical passports are not omitted.

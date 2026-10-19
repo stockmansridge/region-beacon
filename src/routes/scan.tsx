@@ -7,7 +7,8 @@ import { useTenantSubdomain } from "@/lib/tenant-host";
 import { NonTenantNotice } from "@/components/non-tenant-notice";
 import { QrScanner } from "@/components/qr-scanner";
 import { PublicEventNav } from "@/components/public-event-nav";
-import { matchRootDomain } from "@/lib/domains";
+import { resolveScannedQr, type ScannedQr } from "@/lib/scanned-qr";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { tenantHost } from "@/lib/domains";
 import { EventPaletteScope } from "@/components/event-palette-scope";
@@ -19,7 +20,14 @@ import { resolvePublicTemplateVersion } from "@/lib/public-style-overrides";
 import { ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/scan")({
-  head: () => ({ meta: [{ title: "Scan venue QR" }] }),
+  head: () => ({ meta: [
+    { title: "QR scanner — GetStampd" },
+    { name: "description", content: "Scan venue stamps, bonus points and other QR codes with GetStampd." },
+    { property: "og:title", content: "QR scanner — GetStampd" },
+    { property: "og:description", content: "Scan venue stamps, bonus points and other QR codes with GetStampd." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ScanRoute,
 });
 
@@ -36,22 +44,6 @@ type ErrState =
   | { kind: "invalid"; message: string }
   | { kind: "error"; message: string };
 
-function parseCheckinToken(raw: string): string | null {
-  const trimmed = raw.trim();
-  // Relative path
-  const relMatch = trimmed.match(/^\/checkin\/([A-Za-z0-9_-]+)/);
-  if (relMatch) return relMatch[1];
-  try {
-    const url = new URL(trimmed);
-    const host = url.hostname.toLowerCase();
-    if (!matchRootDomain(host)) return null;
-    const m = url.pathname.match(/^\/checkin\/([A-Za-z0-9_-]+)/);
-    return m ? m[1] : null;
-  } catch {
-    return null;
-  }
-}
-
 function ScannerPage({ subdomain }: { subdomain: string }) {
   const navigate = useNavigate();
   const [err, setErr] = useState<ErrState>({ kind: "none" });
@@ -60,6 +52,8 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   const [eventId, setEventId] = useState<string | null>(null);
   const [event, setEvent] = useState<Record<string, unknown> | null>(null);
   const [copied, setCopied] = useState(false);
+  const [scanned, setScanned] = useState<ScannedQr | null>(null);
+  const [cameraSession, setCameraSession] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,12 +84,13 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   }, [subdomain]);
 
   const handleDecode = useCallback((text: string) => {
-    const token = parseCheckinToken(text);
-    if (!token) {
-      setErr({ kind: "invalid", message: "That QR code is not a GetStampd venue check-in code." });
-      return;
+    setErr({ kind: "none" });
+    const result = resolveScannedQr(text, window.location.href);
+    if (result.kind === "internal") {
+      navigate({ href: result.href });
+    } else {
+      setScanned(result);
     }
-    navigate({ to: "/checkin/$qrToken", params: { qrToken: token } });
   }, [navigate]);
 
   const handleError = useCallback((kind: "permission" | "unsupported" | "error", message: string) => {
@@ -103,12 +98,7 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
   }, []);
 
   const tryManual = () => {
-    const token = parseCheckinToken(manual);
-    if (!token) {
-      setErr({ kind: "invalid", message: "That doesn't look like a GetStampd check-in URL." });
-      return;
-    }
-    navigate({ to: "/checkin/$qrToken", params: { qrToken: token } });
+    handleDecode(manual);
   };
 
   const buildSupport = () => {
@@ -143,7 +133,23 @@ function ScannerPage({ subdomain }: { subdomain: string }) {
           setTimeout(() => setCopied(false), 1500);
         } catch { /* ignore */ }
       }}
-      camera={<QrScanner onDecode={handleDecode} onError={handleError} />}
+      camera={scanned ? (
+        <div className="space-y-3 text-sm text-[var(--event-body)]">
+          {scanned.kind === "link" ? (
+            <>
+              <p className="break-all">{scanned.href}</p>
+              <Button asChild variant="outline"><a href={scanned.href} rel="noreferrer">Open link</a></Button>
+            </>
+          ) : scanned.kind === "text" ? (
+            <p className="whitespace-pre-wrap break-words">{scanned.text}</p>
+          ) : <p>This QR code cannot be opened safely.</p>}
+          <Button variant="outline" onClick={() => {
+            setScanned(null);
+            setErr({ kind: "none" });
+            setCameraSession((value) => value + 1);
+          }}>Scan again</Button>
+        </div>
+      ) : <QrScanner key={cameraSession} onDecode={handleDecode} onError={handleError} />}
     />
   );
 }
@@ -226,10 +232,10 @@ export function ScannerView({ subdomain, event, eventId, hasPassport, err, manua
       </div>
       <div className="mx-auto max-w-md px-4 pt-4">
         <PublicStyleTarget id="scan.heading"><h1 className="font-trail-serif text-2xl font-semibold text-[var(--event-primary,#1F3D2B)]">
-          Scan venue QR
+          Scan QR code
         </h1></PublicStyleTarget>
         <PublicStyleTarget id="scan.body"><p className="mt-2 text-sm text-[var(--event-body,#3D372C)]">
-          Point your camera at the QR code on display at the venue to collect your stamp.
+          Scan a venue QR code to collect a stamp, or a bonus QR code to collect extra points.
         </p></PublicStyleTarget>
 
         {hasPassport === false && eventId && (
@@ -252,8 +258,8 @@ export function ScannerView({ subdomain, event, eventId, hasPassport, err, manua
               </p>
               <p className="mt-2">
                 {err.kind === "permission"
-                  ? "You can use your phone's Camera app to scan the venue QR code instead."
-                  : "Try opening this page in Safari or Chrome on your phone, or use your phone's Camera app to scan the venue QR code."}
+                  ? "You can use your phone's Camera app to scan the QR code instead."
+                  : "Try opening this page in Safari or Chrome on your phone, or use your phone's Camera app to scan the QR code."}
               </p>
               <ResultLink
                 to="/venues"
@@ -292,7 +298,7 @@ export function ScannerView({ subdomain, event, eventId, hasPassport, err, manua
             </summary>
           )}
           <div className="mt-3 space-y-2">
-            <p>Paste a check-in URL to test:</p>
+            <p>Paste a QR code link or text:</p>
             <input
               type="text"
               value={manual}

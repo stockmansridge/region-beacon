@@ -16,6 +16,7 @@ export function QrScanner({ onDecode, onError }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    decodedRef.current = false;
 
     const stop = () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
@@ -67,7 +68,7 @@ export function QrScanner({ onDecode, onError }: Props) {
               canvas.height = h;
               ctx.drawImage(video, 0, 0, w, h);
               const img = ctx.getImageData(0, 0, w, h);
-              const code = jsQR(img.data, w, h, { inversionAttempts: "dontInvert" });
+              const code = jsQR(img.data, w, h, { inversionAttempts: "attemptBoth" });
               if (code?.data) {
                 decodedRef.current = true;
                 stop();
