@@ -14,13 +14,13 @@ describe("passport email lookup", () => {
     const store = new Map<string, string>([
       [`gs.passport.${EVENT}`, JSON.stringify({ access_token: "saved-tok" })],
     ]);
-    vi.stubGlobal("window", {
-      localStorage: {
-        setItem: (k: string, v: string) => void store.set(k, v),
-        getItem: (k: string) => store.get(k) ?? null,
-        removeItem: (k: string) => void store.delete(k),
-      },
-    });
+    const ls = {
+      setItem: (k: string, v: string) => void store.set(k, v),
+      getItem: (k: string) => store.get(k) ?? null,
+      removeItem: (k: string) => void store.delete(k),
+    };
+    vi.stubGlobal("window", { localStorage: ls });
+    vi.stubGlobal("localStorage", ls);
     rpc.mockImplementation((name: string) =>
       name === "get_passport_by_token"
         ? Promise.resolve({ data: [{ passport_id: "p1", event_id: EVENT }], error: null })
