@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { canPersistLocally } from "@/lib/storage-check";
+import { resolveCurrentEventPassport } from "@/lib/use-current-event-passport";
 
 /** Re-save the reopened passport on this device so the visitor is not asked to log in again. */
 function persistPassport(eventId: string, token: string): void {
@@ -23,11 +24,27 @@ export type PassportLoginResult =
  * directly from the email address — no emailed link or code is sent.
  * Runs in the browser through the same public connection the sign-up form
  * uses, so it does not depend on a private server key being configured.
- * The RPC rotates the passport key (earlier links on other devices stop
- * working) and is rate limited per event+email in the database.
+ *
+ * Multi-device behaviour: the RPC issues a NEW device token that resolves to
+ * the SAME passport; it never rotates or replaces the original passport key,
+ * so existing devices and emailed links keep working. If this browser already
+ * holds a valid saved passport for the event, that token is reused instead of
+ * minting another alias, so rapid repeated logins on one device stay bounded.
+ * The RPC is rate limited per event+email in the database.
  */
 export async function loginWithPassportEmail(eventId: string, rawEmail: string): Promise<PassportLoginResult> {
   const email = rawEmail.trim().toLowerCase();
+
+  // Same-device fast path: a valid remembered passport needs no new token.
+  try {
+    const existing = await resolveCurrentEventPassport(eventId);
+    if (existing.validationStatus === "valid" && existing.token) {
+      return { ok: true, token: existing.token };
+    }
+  } catch {
+    // Fall through to the email lookup; a failed local check must not block login.
+  }
+
   try {
     const { data: rows, error } = await supabase.rpc("lookup_passport_by_email" as never, {
       _event_id: eventId,
