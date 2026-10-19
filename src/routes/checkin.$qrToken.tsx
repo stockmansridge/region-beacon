@@ -488,13 +488,17 @@ export function CheckinFailureCard({
   > = {
     no_passport_for_event: {
       title:
-        diag.saved_passport_count > 0
-          ? "You need a passport for this trail"
-          : "Passport required",
+        diag.stage === "passport_stale_cleared"
+          ? "Your saved passport link is no longer valid"
+          : diag.saved_passport_count > 0
+            ? "You need a passport for this trail"
+            : "Passport required",
       body:
-        diag.saved_passport_count > 0
-          ? "Your saved passport is for a different trail. Create one for this trail to collect this stamp — we'll bring you straight back here."
-          : "You need to join this trail before you can collect stamps. Tap below to register — we'll bring you back here to collect this stamp.",
+        diag.stage === "passport_stale_cleared"
+          ? "Log in with your email to reopen your passport — we'll bring you straight back to collect this stamp."
+          : diag.saved_passport_count > 0
+            ? "Your saved passport is for a different trail. Create one for this trail to collect this stamp — we'll bring you straight back here."
+            : "You need to join this trail before you can collect stamps. Tap below to register — we'll bring you back here to collect this stamp.",
     },
     qr_invalid: {
       title: "This QR code is not valid",
@@ -572,7 +576,9 @@ export function CheckinFailureCard({
                 href={joinHref}
                 className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
               >
-                Create passport for this trail
+                {diag.stage === "passport_stale_cleared"
+                  ? "Log in with your email"
+                  : "Create passport for this trail"}
               </ResultAnchor>
               <ResultAnchor
                 href="/"
