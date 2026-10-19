@@ -76,6 +76,7 @@ import { Route as AdminEventsEventIdPostersRouteImport } from './routes/admin.ev
 import { Route as AdminEventsEventIdPreviewRouteImport } from './routes/admin_.events.$eventId.preview'
 import { Route as ApiPublicSmsDeliveryRouteImport } from './routes/api/public/sms/delivery'
 import { Route as ApiPublicSmsInboundRouteImport } from './routes/api/public/sms/inbound'
+import { Route as ApiPublicVenueHoursSyncRouteImport } from './routes/api/public/venue-hours/sync'
 import { Route as LiveSubdomainVenuesIndexRouteImport } from './routes/live.$subdomain.venues.index'
 import { Route as LiveSubdomainVenuesVenueIdRouteImport } from './routes/live.$subdomain.venues.$venueId'
 import { Route as TAgencySlugEEventSlugRouteImport } from './routes/t.$agencySlug.e.$eventSlug'
@@ -421,6 +422,11 @@ const ApiPublicSmsInboundRoute = ApiPublicSmsInboundRouteImport.update({
   path: '/api/public/sms/inbound',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVenueHoursSyncRoute = ApiPublicVenueHoursSyncRouteImport.update({
+  id: '/api/public/venue-hours/sync',
+  path: '/api/public/venue-hours/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveSubdomainVenuesIndexRoute =
   LiveSubdomainVenuesIndexRouteImport.update({
     id: '/live/$subdomain/venues/',
@@ -507,6 +513,7 @@ export interface FileRoutesByFullPath {
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/api/public/sms/delivery': typeof ApiPublicSmsDeliveryRoute
   '/api/public/sms/inbound': typeof ApiPublicSmsInboundRoute
+  '/api/public/venue-hours/sync': typeof ApiPublicVenueHoursSyncRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
   '/live/$subdomain/venues/': typeof LiveSubdomainVenuesIndexRoute
@@ -578,6 +585,7 @@ export interface FileRoutesByTo {
   '/admin/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/api/public/sms/delivery': typeof ApiPublicSmsDeliveryRoute
   '/api/public/sms/inbound': typeof ApiPublicSmsInboundRoute
+  '/api/public/venue-hours/sync': typeof ApiPublicVenueHoursSyncRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
   '/live/$subdomain/venues': typeof LiveSubdomainVenuesIndexRoute
@@ -651,6 +659,7 @@ export interface FileRoutesById {
   '/admin_/events/$eventId/preview': typeof AdminEventsEventIdPreviewRoute
   '/api/public/sms/delivery': typeof ApiPublicSmsDeliveryRoute
   '/api/public/sms/inbound': typeof ApiPublicSmsInboundRoute
+  '/api/public/venue-hours/sync': typeof ApiPublicVenueHoursSyncRoute
   '/live/$subdomain/venues/$venueId': typeof LiveSubdomainVenuesVenueIdRoute
   '/t/$agencySlug/e/$eventSlug': typeof TAgencySlugEEventSlugRoute
   '/live/$subdomain/venues/': typeof LiveSubdomainVenuesIndexRoute
@@ -725,6 +734,7 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId/preview'
     | '/api/public/sms/delivery'
     | '/api/public/sms/inbound'
+    | '/api/public/venue-hours/sync'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
     | '/live/$subdomain/venues/'
@@ -796,6 +806,7 @@ export interface FileRouteTypes {
     | '/admin/events/$eventId/preview'
     | '/api/public/sms/delivery'
     | '/api/public/sms/inbound'
+    | '/api/public/venue-hours/sync'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
     | '/live/$subdomain/venues'
@@ -868,6 +879,7 @@ export interface FileRouteTypes {
     | '/admin_/events/$eventId/preview'
     | '/api/public/sms/delivery'
     | '/api/public/sms/inbound'
+    | '/api/public/venue-hours/sync'
     | '/live/$subdomain/venues/$venueId'
     | '/t/$agencySlug/e/$eventSlug'
     | '/live/$subdomain/venues/'
@@ -927,6 +939,7 @@ export interface RootRouteChildren {
   AdminEventsEventIdPreviewRoute: typeof AdminEventsEventIdPreviewRoute
   ApiPublicSmsDeliveryRoute: typeof ApiPublicSmsDeliveryRoute
   ApiPublicSmsInboundRoute: typeof ApiPublicSmsInboundRoute
+  ApiPublicVenueHoursSyncRoute: typeof ApiPublicVenueHoursSyncRoute
   LiveSubdomainVenuesVenueIdRoute: typeof LiveSubdomainVenuesVenueIdRoute
   LiveSubdomainVenuesIndexRoute: typeof LiveSubdomainVenuesIndexRoute
 }
@@ -1402,6 +1415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSmsInboundRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/venue-hours/sync': {
+      id: '/api/public/venue-hours/sync'
+      path: '/api/public/venue-hours/sync'
+      fullPath: '/api/public/venue-hours/sync'
+      preLoaderRoute: typeof ApiPublicVenueHoursSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live/$subdomain/venues/': {
       id: '/live/$subdomain/venues/'
       path: '/live/$subdomain/venues'
@@ -1538,6 +1558,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminEventsEventIdPreviewRoute: AdminEventsEventIdPreviewRoute,
   ApiPublicSmsDeliveryRoute: ApiPublicSmsDeliveryRoute,
   ApiPublicSmsInboundRoute: ApiPublicSmsInboundRoute,
+  ApiPublicVenueHoursSyncRoute: ApiPublicVenueHoursSyncRoute,
   LiveSubdomainVenuesVenueIdRoute: LiveSubdomainVenuesVenueIdRoute,
   LiveSubdomainVenuesIndexRoute: LiveSubdomainVenuesIndexRoute,
 }
