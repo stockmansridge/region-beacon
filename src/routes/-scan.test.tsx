@@ -7,6 +7,7 @@ const { navigate, rpc } = vi.hoisted(() => ({ navigate: vi.fn(), rpc: vi.fn() })
 vi.mock("@tanstack/react-router", async () => ({
   ...await vi.importActual<object>("@tanstack/react-router"),
   useNavigate: () => navigate,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 vi.mock("@/lib/tenant-host", () => ({ useTenantSubdomain: () => "orangewinequest" }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
