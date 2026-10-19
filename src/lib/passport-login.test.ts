@@ -27,4 +27,16 @@ describe("passport email lookup", () => {
     rpc.mockResolvedValue({ data: [], error: null });
     expect(await loginWithPassportEmail(EVENT, "a@b.co")).toEqual({ ok: false, reason: "notfound" });
   });
+  it("re-saves the reopened passport on this device", async () => {
+    rpc.mockResolvedValue({ data: [{ access_token: "tok" }], error: null });
+    await loginWithPassportEmail(EVENT, "a@b.co");
+    const saved = JSON.parse(window.localStorage.getItem(`gs.passport.${EVENT}`) ?? "null");
+    expect(saved?.access_token).toBe("tok");
+  });
+  it("still opens the passport when storage is blocked", async () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked"); });
+    rpc.mockResolvedValue({ data: [{ access_token: "tok" }], error: null });
+    expect(await loginWithPassportEmail(EVENT, "a@b.co")).toEqual({ ok: true, token: "tok" });
+    setItem.mockRestore();
+  });
 });
