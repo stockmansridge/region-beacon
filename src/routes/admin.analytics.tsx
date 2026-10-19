@@ -235,13 +235,24 @@ function Analytics() {
           .eq("agency_id", agencyId),
       ]);
       // Page views — tolerate a missing table on schemas without the
-      // event-page-views migration applied.
-      const pvRes = await supabase
-        .from("event_page_views")
-        .select("id, event_id, path, device_id, created_at")
-        .eq("agency_id", agencyId)
-        .order("created_at", { ascending: false })
-        .limit(50000);
+      // event-page-views migration applied. PostgREST caps each response
+      // (default 1000 rows), so a single limited query silently truncates the
+      // total; page through the full history in batches like the points query.
+      const pvRes = await (async () => {
+        const rows: PageViewRow[] = [];
+        for (let offset = 0; !cancelled; offset += 1000) {
+          const result = await supabase
+            .from("event_page_views")
+            .select("id, event_id, path, device_id, created_at")
+            .eq("agency_id", agencyId)
+            .order("created_at", { ascending: false })
+            .range(offset, offset + 999);
+          if (result.error) return { data: null, error: result.error };
+          rows.push(...(result.data ?? []) as PageViewRow[]);
+          if ((result.data?.length ?? 0) < 1000) break;
+        }
+        return { data: rows, error: null };
+      })();
       const legacyResults = await Promise.all((prRes.data ?? []).map(async r => {
         const result = await supabase.rpc("admin_get_prize_draw_pool", { _event_id: r.event_id, _prize_rule_id: r.id });
         return { ruleId: r.id, ...result };
