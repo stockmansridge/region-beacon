@@ -32,6 +32,13 @@ describe("opening hours", () => {
     // Sun 18 Oct 14:00 UTC is already Monday 01:00 in Sydney
     expect(todayIndexMonFirst(SYD, new Date("2026-10-18T14:00:00Z"))).toBe(0);
   });
+  it("follows the DST offset Google reports, not a fixed one", () => {
+    // Same UTC instant, Mon 06:30 UTC: 17:30 in summer (AEDT, +660) is closed,
+    // 16:30 in winter (AEST, +600) is still open.
+    const t = new Date("2026-10-19T06:30:00Z");
+    expect(isOpenNow(weekdays, 660, t)).toBe(false);
+    expect(isOpenNow(weekdays, 600, t)).toBe(true);
+  });
   it("splits Google weekday lines", () => {
     expect(splitWeekdayLine("Monday: 10:00 AM – 5:00 PM", "Monday")).toEqual({ day: "Monday", hours: "10:00 AM – 5:00 PM" });
     expect(splitWeekdayLine("Closed", "Tuesday")).toEqual({ day: "Tuesday", hours: "Closed" });
