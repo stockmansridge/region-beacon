@@ -489,6 +489,7 @@ function EventTabBar({
 type VenueEditorTabKey =
   | "basics"
   | "location"
+  | "hours"
   | "public"
   | "images"
   | "qr";
@@ -496,6 +497,7 @@ type VenueEditorTabKey =
 const VENUE_EDITOR_TABS: Array<{ key: VenueEditorTabKey; label: string; existingOnly?: boolean }> = [
   { key: "basics", label: "Basics" },
   { key: "location", label: "Location" },
+  { key: "hours", label: "Hours", existingOnly: true },
   { key: "public", label: "Public Page" },
   { key: "images", label: "Images", existingOnly: true },
   { key: "qr", label: "Venue QR", existingOnly: true },
@@ -4318,6 +4320,12 @@ function EventDetail() {
                     );
                   })()}
                 </FormSection>
+                )}
+
+                {venueEditorTab === "hours" && venueEditingId && venueEditingId !== "new" && (
+                  <FormSection title="Opening hours">
+                    <VenueOpeningHoursPanel venueId={venueEditingId} />
+                  </FormSection>
                 )}
 
                 {venueEditorTab === "qr" && venueEditingId !== "new" && (() => {

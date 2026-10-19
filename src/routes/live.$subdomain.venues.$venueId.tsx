@@ -1,3 +1,4 @@
+import { VenueOpeningHours } from "@/components/venue-opening-hours";
 import { PublicBackLink } from "@/components/public-back-link";
 import { PublicLink } from "@/components/public-nav-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
