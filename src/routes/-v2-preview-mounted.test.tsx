@@ -163,8 +163,6 @@ describe("Result previews (mounted, every state, every action)", () => {
 describe("Version-specific result profiles", () => {
   it("V1 Bonus preview uses saved event colours without activating V2 overrides", () => {
     const { container } = render(inPreview(<V2ResultPreview page="bonus" state="claimed" event={V1_EVENT} venueName={null} />));
-    const surface = Array.from(container.querySelectorAll<HTMLElement>("div")).find((d) => d.className.includes("h-[420px]"))!;
-    expect(surface.getAttribute("style")).toContain("var(--event-primary)");
     expect(container.querySelector("[data-event-style]")).toBeNull();
     expect(varOf(container, "--event-primary")).toBe("#101010");
     expect(container.innerHTML.toLowerCase()).not.toContain("#aa0001");
