@@ -1,5 +1,8 @@
 # V2 public passport styling expansion
 
+## Mobile QR scanning
+- [ ] Accept bonus codes and other QR contents safely, retain venue scanning, and verify focused scanner regressions.
+
 ## Analytics improvements
 - [x] Rank Check-ins by venue by check-ins (bonus scans no longer reorder the list) with share kept on the check-in basis; focused metric checks pass.
 - [x] Add a Bonus points item summary with scan/point totals while retaining the Bonus scans visitor matrix; focused mounted checks passed.
