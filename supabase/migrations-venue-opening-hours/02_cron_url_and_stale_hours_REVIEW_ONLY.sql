@@ -58,7 +58,10 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- C) Address for duplicate disambiguation ------------------------------------
-create or replace function public.venue_hours_due(_limit int)
+-- Return type changes, so the old function must be dropped first; the grant
+-- is re-applied below.
+drop function if exists public.venue_hours_due(int);
+create function public.venue_hours_due(_limit int)
 returns table(venue_id uuid, agency_id uuid, event_id uuid, name text, address text, lat double precision, lng double precision, google_place_id text)
 language sql stable security definer set search_path = public as $$
   select v.id, v.agency_id, v.event_id, v.name, v.address, v.lat::double precision, v.lng::double precision, h.google_place_id
