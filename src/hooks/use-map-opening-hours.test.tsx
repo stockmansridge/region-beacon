@@ -10,11 +10,12 @@ it("reads cached public hours only when enabled and does not re-fetch on minute 
   rpc.mockResolvedValue({ data: [{ hours_source: "google", periods: [], synced_at: null, utc_offset_minutes: 660 }], error: null });
   const view = renderHook(({ enabled }) => useMapOpeningHours("test", ["venue-a"], enabled), { initialProps: { enabled: false } });
   expect(rpc).not.toHaveBeenCalled();
+  vi.useFakeTimers();
   view.rerender({ enabled: true });
-  await waitFor(() => expect(view.result.current.loading).toBe(false));
+  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+  expect(view.result.current.loading).toBe(false);
   expect(rpc).toHaveBeenCalledWith("get_public_venue_hours", expect.objectContaining({ _venue_id: "venue-a" }));
   const initial = view.result.current.now?.getTime() ?? 0;
-  vi.useFakeTimers();
   vi.setSystemTime(initial + 60_000);
   act(() => vi.advanceTimersByTime(60_000));
   expect(view.result.current.now?.getTime()).toBeGreaterThan(initial);
