@@ -67,7 +67,10 @@ export function venueEngagement(
     row.people.add(b.participant_id);
     if (b.created_at > row.last) row.last = b.created_at;
   }
-  return Array.from(rows.values()).map(({ people, ...r }) => ({ ...r, unique: people.size, scans: r.count + r.bonus, pct: checkins.length ? r.count / checkins.length * 100 : 0 })).sort((a, b) => b.scans - a.scans || a.name.localeCompare(b.name));
+  // "Check-ins by venue" ranks by the Check-ins column itself, so bonus scans
+  // (shown separately) never push a venue up the list. Share stays
+  // check-ins / all venue check-ins, so the percentage follows the same basis.
+  return Array.from(rows.values()).map(({ people, ...r }) => ({ ...r, unique: people.size, scans: r.count + r.bonus, pct: checkins.length ? r.count / checkins.length * 100 : 0 })).sort((a, b) => b.count - a.count || b.bonus - a.bonus || a.name.localeCompare(b.name));
 }
 
 export function awardQualified(points: number, visited: number, activeVenues: number, award: { points_required: number; requires_all_locations: boolean }) {

@@ -45,6 +45,17 @@ describe("analytics filters and metrics", () => {
     const rows = venueEngagement([{ id: "a", name: "A", event_id: "e" }, { id: "b", name: "B", event_id: "e" }], [{ venue_id: "a", passport_id: "p", created_at: "2026-10-01" }], [{ source_id: "code", participant_id: "p", created_at: "2026-10-02", metadata: null }, { source_id: null, participant_id: "q", created_at: "2026-10-02", metadata: null }], [{ id: "code", venue_id: "a" }]);
     expect(rows.map(r => [r.venue_id, r.count, r.bonus, r.unique])).toEqual([["a", 1, 1, 1], ["b", 0, 0, 0]]);
   });
+  it("ranks venues by check-ins and shares check-ins over all check-ins, not by bonus scans or unique visitors", () => {
+    const checkins = [
+      ...Array.from({ length: 5 }, (_, i) => ({ venue_id: "a", passport_id: `p${i}`, created_at: "2026-10-01" })),
+      ...Array.from({ length: 3 }, (_, i) => ({ venue_id: "b", passport_id: `q${i}`, created_at: "2026-10-01" })),
+    ];
+    // Venue b has more bonus scans and the same unique visitor count, so an
+    // ordering by scans or unique visitors would place it first.
+    const bonus = Array.from({ length: 4 }, () => ({ source_id: "code", participant_id: "r", created_at: "2026-10-02", metadata: null }));
+    const rows = venueEngagement([{ id: "a", name: "A", event_id: "e" }, { id: "b", name: "B", event_id: "e" }], checkins, bonus, [{ id: "code", venue_id: "b" }]);
+    expect(rows.map(r => [r.venue_id, r.count, r.scans, Number(r.pct.toFixed(1))])).toEqual([["a", 5, 5, 62.5], ["b", 3, 7, 37.5]]);
+  });
   it("includes bonus-only points for current prize qualification", () => {
     expect(awardQualified(10, 0, 2, { points_required: 10, requires_all_locations: false })).toBe(true);
     expect(awardQualified(9, 0, 2, { points_required: 10, requires_all_locations: false })).toBe(false);
