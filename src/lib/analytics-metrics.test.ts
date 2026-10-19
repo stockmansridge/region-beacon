@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyticsDateRange, awardQualified, bonusItemTotals, countPassportsWithVenueVisits, describePagePath, venueCheckinDays, venueEngagement } from "./analytics-metrics";
+import { analyticsDateRange, awardQualified, bonusItemTotals, countPassportsWithVenueVisits, describePagePath, personEngagement, venueCheckinDays, venueEngagement, venueEngagementScores } from "./analytics-metrics";
 
 describe("analytics filters and metrics", () => {
   const stamps = new Map([0, 1, 2, 3, 4, 5, 6].map(n => [String(n), new Set(Array.from({ length: n }, (_, i) => `venue-${i}`))]));
@@ -55,6 +55,34 @@ describe("analytics filters and metrics", () => {
     const bonus = Array.from({ length: 4 }, () => ({ source_id: "code", participant_id: "r", created_at: "2026-10-02", metadata: null }));
     const rows = venueEngagement([{ id: "a", name: "A", event_id: "e" }, { id: "b", name: "B", event_id: "e" }], checkins, bonus, [{ id: "code", venue_id: "b" }]);
     expect(rows.map(r => [r.venue_id, r.count, r.scans, Number(r.pct.toFixed(1))])).toEqual([["a", 5, 5, 62.5], ["b", 3, 7, 37.5]]);
+  });
+  it("ranks people by points-weighted engagement: check-ins count 1, bonus scans count their points", () => {
+    const rows = personEngagement(
+      [{ passport_id: "a" }, { passport_id: "a" }, { passport_id: "b" }],
+      [{ participant_id: "b", points_awarded: 10 }, { participant_id: "b", points_awarded: 5 }, { participant_id: "a", points_awarded: 1 }],
+    );
+    expect(rows.map(r => [r.passport_id, r.checkins, r.bonusScans, r.bonusPoints, r.score])).toEqual([
+      ["b", 1, 2, 15, 16],
+      ["a", 2, 1, 1, 3],
+    ]);
+    expect(personEngagement([], [])).toEqual([]);
+  });
+  it("ranks venues by points-weighted engagement and attributes bonus points to their venue", () => {
+    const rows = venueEngagementScores(
+      [{ id: "a", name: "A", event_id: "e" }, { id: "b", name: "B", event_id: "e" }, { id: "c", name: "C", event_id: "e" }],
+      [{ venue_id: "a" }, { venue_id: "a" }, { venue_id: "b" }],
+      [
+        { source_id: "code", points_awarded: 10, metadata: null },
+        { source_id: null, points_awarded: 5, metadata: { venue_id: "b" } },
+        { source_id: null, points_awarded: 7, metadata: null },
+      ],
+      [{ id: "code", venue_id: "a" }],
+    );
+    expect(rows.map(r => [r.venue_id, r.checkins, r.bonusScans, r.bonusPoints, r.score])).toEqual([
+      ["a", 2, 1, 10, 12],
+      ["b", 1, 1, 5, 6],
+      ["c", 0, 0, 0, 0],
+    ]);
   });
   it("includes bonus-only points for current prize qualification", () => {
     expect(awardQualified(10, 0, 2, { points_required: 10, requires_all_locations: false })).toBe(true);
