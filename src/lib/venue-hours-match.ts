@@ -103,7 +103,8 @@ export function choosePlace(
   // Genuinely close duplicates: try address/locality evidence.
   if (venue.address) {
     const withEvidence = rivals.filter(
-      (h) => h.address && sharedLocalityTokens(venue.address, h.address!).length > 0,
+      (h): h is typeof h & { address: string } =>
+        typeof h.address === "string" && sharedLocalityTokens(venue.address!, h.address).length > 0,
     );
     if (withEvidence.length === 1) {
       const only = withEvidence[0];
