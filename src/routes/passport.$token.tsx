@@ -325,9 +325,9 @@ function PassportNotFound({
           className="mt-3 text-sm leading-relaxed"
           style={{ color: "var(--event-card-text)" }}
         >
-          This passport link is no longer valid. If you re-registered, the
-          newest link is the only working one. You can register again for this
-          trail to get a fresh passport.
+          This passport link is no longer valid. If you registered before, use
+          "Already registered? Log in" on the join page with your email to
+          reopen your existing passport — your stamps and points are kept.
         </p>
         <div className="mt-6 flex flex-col gap-2">
           <a
