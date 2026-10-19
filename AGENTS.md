@@ -14,6 +14,7 @@
 
 - Public passport item styling uses the versioned registry and allowlisted resolver in `src/lib/public-style-overrides.ts`; never add arbitrary CSS or selector persistence.
 - V1 is the unchanged default renderer. V2 uses `event_branding.v2_style_config` only when that event's `public_template_version` is explicitly `v2`.
+- Bonus result screens apply saved event-wide branding in both templates, preserving the legacy appearance only when no branding is supplied; per-item overrides remain V2-only, so bonus pages match the event without activating a template.
 - Editor mode and the V2 document's schema version are not template selection. Opening or saving a V2 draft must never activate it.
 - Branding ownership and every query/write are scoped by both `agency_id` and `event_id`; never use a slug as authoritative ownership.
 - Public page previews must render the real public components; controlled preview state may supply safe fixtures but must not duplicate page markup.

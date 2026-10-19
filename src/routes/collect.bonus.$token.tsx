@@ -13,7 +13,14 @@ import { sendScanEmail } from "@/lib/passport-email.functions";
 import { usePublicStyleEnabled } from "@/components/public-style-scope";
 
 export const Route = createFileRoute("/collect/bonus/$token")({
-  head: () => ({ meta: [{ title: "Bonus points — GetStampd" }] }),
+  head: () => ({ meta: [
+    { title: "Bonus points — GetStampd" },
+    { name: "description", content: "Collect event bonus points and return to your GetStampd passport." },
+    { property: "og:title", content: "Bonus points — GetStampd" },
+    { property: "og:description", content: "Collect event bonus points and return to your GetStampd passport." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: BonusClaimPage,
 });
 
@@ -183,17 +190,19 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
   const subdomain = preview ? null : getSubdomain();
   const branding = useResultBranding(subdomain);
   const isV2 = branding.templateVersion === "v2";
-  const scopeProps = branding.templateVersion === "v2"
-    ? brandingScopeProps(branding)
-    : { paletteKey: branding.paletteKey, backgroundKey: branding.backgroundKey };
-  const resultPrimary = isV2 ? "var(--event-primary)" : PRIMARY;
-  const resultAccent = isV2 ? "var(--event-accent)" : GOLD;
+  const scopeProps = brandingScopeProps(branding);
+  // Saved event branding applies to both templates; only V2 enables item overrides.
+  const branded = isV2 || Object.entries(scopeProps).some(([key, value]) =>
+    !["eventId", "templateVersion", "styleOverrides"].includes(key) && value != null,
+  );
+  const resultPrimary = branded ? "var(--event-primary)" : PRIMARY;
+  const resultAccent = branded ? "var(--event-accent)" : GOLD;
 
   if (outcome.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--event-page-bg,#F6EFE2)] text-sm text-[var(--event-muted,#8A7E66)]">
+      <ResultPaletteScope {...scopeProps} className="flex min-h-screen items-center justify-center text-sm text-[var(--event-muted,#8A7E66)]">
         Checking bonus code…
-      </div>
+      </ResultPaletteScope>
     );
   }
 
@@ -213,15 +222,15 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
           <section className="relative overflow-hidden rounded-[28px] shadow-[0_24px_60px_-30px_rgba(31,61,43,0.45)]">
             <PublicStyleTarget id="bonus.result.surface"><div
               className="relative h-[420px] w-full"
-              style={{ background: isV2 ? `linear-gradient(160deg, ${resultPrimary} 0%, color-mix(in oklab, ${resultPrimary} 70%, black) 100%)` : "linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)" }}
+              style={{ background: branded ? `linear-gradient(160deg, ${resultPrimary} 0%, color-mix(in oklab, ${resultPrimary} 70%, black) 100%)` : "linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)" }}
             >
-              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-page-bg,#F6EFE2)]">
+              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center text-[var(--event-primary-fg,var(--event-page-bg,#F6EFE2))]">
                 <PublicStyleTarget id="bonus.result.icon"><div
                   className="flex h-20 w-20 items-center justify-center rounded-full border-2"
                   style={{
                     borderColor: resultAccent,
-                    backgroundColor: isV2 ? "color-mix(in oklab, var(--event-primary) 88%, transparent)" : `${PRIMARY}E6`,
-                    boxShadow: isV2 ? "0 0 0 6px color-mix(in oklab, var(--event-accent) 18%, transparent)" : `0 0 0 6px ${GOLD}22`,
+                    backgroundColor: branded ? "color-mix(in oklab, var(--event-primary) 88%, transparent)" : `${PRIMARY}E6`,
+                    boxShadow: branded ? "0 0 0 6px color-mix(in oklab, var(--event-accent) 18%, transparent)" : `0 0 0 6px ${GOLD}22`,
                   }}
                 >
                   <Sparkles className="h-9 w-9" style={{ color: resultAccent }} />
@@ -232,15 +241,15 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
                 >
                   {kicker}
                 </div></PublicStyleTarget>
-                <PublicStyleTarget id="bonus.result.heading"><h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-font, inherit)" }}>
+                <PublicStyleTarget id="bonus.result.heading"><h1 className="mt-2 text-[34px] font-semibold leading-tight" style={{ fontFamily: "var(--event-heading-font, var(--event-font, inherit))" }}>
                   {title}
                 </h1></PublicStyleTarget>
                 {outcome.row.bonus_code_name && (
-                  <p className="mt-1 text-base text-[var(--event-page-bg,#F6EFE2)]/90">
+                  <p className="mt-1 text-base text-[var(--event-primary-fg,var(--event-page-bg,#F6EFE2))]/90">
                     {outcome.row.bonus_code_name}
                   </p>
                 )}
-                <PublicStyleTarget id="bonus.result.body"><p className="mt-3 text-sm text-[var(--event-page-bg,#F6EFE2)]/85">{body}</p></PublicStyleTarget>
+                <PublicStyleTarget id="bonus.result.body"><p className="mt-3 text-sm text-[var(--event-primary-fg,var(--event-page-bg,#F6EFE2))]/85">{body}</p></PublicStyleTarget>
                 <PublicStyleTarget id="bonus.result.status"><p className="mt-2 text-sm font-semibold" style={{ color: resultAccent }}>
                   Your total points: {outcome.row.total_points}
                 </p></PublicStyleTarget>
@@ -252,14 +261,14 @@ export function BonusView({ outcome }: { outcome: Outcome }) {
             <PublicStyleTarget id="bonus.result.button"><ResultLink
               to="/passport/$token"
               params={{ token: outcome.passportToken }}
-              className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-page-bg,#F6EFE2)] shadow"
-              style={{ backgroundColor: resultPrimary }}
+              className="flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg,var(--event-page-bg,#F6EFE2))] shadow"
+              style={{ backgroundColor: branded ? "var(--event-button-primary-bg)" : resultPrimary }}
             >
               <ResultCopy k="bonus.result.button" />
             </ResultLink></PublicStyleTarget>
             <PublicStyleTarget id="bonus.result.backButton"><ResultAnchor
               href="/"
-              className="flex h-11 w-full items-center justify-center rounded-full border border-[var(--event-primary,#1F3D2B)]/30 text-sm font-semibold tracking-wide text-[var(--event-primary,#1F3D2B)]"
+              className="flex h-11 w-full items-center justify-center rounded-full border border-[var(--event-button-secondary-border,var(--event-border))] bg-[var(--event-button-secondary-bg,transparent)] text-sm font-semibold tracking-wide text-[var(--event-button-secondary-fg,var(--event-primary,#1F3D2B))]"
               >
               <ResultCopy k="bonus.result.backButton" />
             </ResultAnchor></PublicStyleTarget>

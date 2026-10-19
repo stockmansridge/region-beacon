@@ -1,6 +1,7 @@
 # V2 public passport styling expansion
 
 ## Mobile QR scanning
+- [x] Make bonus results inherit the event's saved branding while retaining unbranded defaults and existing points behavior; 95 focused preview checks pass, automatic build is clean, and real bonus presentation verified on mobile with safe sample branding. Live event read-back remains unverified; nothing deployed.
 - [x] Accept bonus codes and other QR contents safely, retain venue scanning, and verify focused scanner regressions; 102 focused checks pass and automatic build is clean. Physical phone scanning and live bonus redemption remain unverified; nothing deployed.
 
 ## Analytics improvements
