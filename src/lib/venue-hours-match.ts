@@ -10,6 +10,13 @@ export type PlaceCandidate = {
 };
 
 export const MATCH_RADIUS_M = 200;
+/** Two name matches closer together than this are treated as ambiguous. */
+export const AMBIGUITY_GAP_M = 50;
+
+export type MatchResult =
+  | { kind: "match"; id: string; name: string | null; distanceM: number }
+  | { kind: "ambiguous"; candidates: Array<{ id: string; name: string | null; distanceM: number }> }
+  | { kind: "none" };
 
 /** Lowercase, strip diacritics and punctuation, collapse spaces. */
 export function normalizeVenueName(s: string | null | undefined): string {
@@ -57,24 +64,54 @@ export function distanceM(aLat: number, aLng: number, bLat: number, bLng: number
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+/** Locality words (suburb, postcode, state) shared between two addresses. */
+function sharedLocalityTokens(venueAddress: string, placeAddress: string): string[] {
+  const a = new Set(tokens(normalizeVenueName(venueAddress)));
+  const b = new Set(tokens(normalizeVenueName(placeAddress)));
+  // Drop words that are just the street number or too generic to mean anything.
+  const noise = new Set(["nsw", "vic", "qld", "sa", "wa", "tas", "nt", "act", "australia", "au", "road", "rd", "street", "st", "lane", "ln", "drive", "dr", "highway", "hwy"]);
+  return [...a].filter((t) => b.has(t) && !noise.has(t) && t.length >= 3);
+}
+
 /**
  * Pick the Google listing for a venue. A candidate must (a) match the venue
- * name and (b) sit within MATCH_RADIUS_M of the venue's position. Among
- * name-matching candidates the nearest wins. Returns null when nothing is
- * defensible — never guesses another business's listing.
+ * name and (b) sit within MATCH_RADIUS_M of the venue's position. When two
+ * name-matching listings sit close together (within AMBIGUITY_GAP_M of each
+ * other), the result is "ambiguous" and held for review — unless exactly one
+ * of them shares address/locality evidence with the venue's own address.
+ * Never guesses another business's listing.
  */
 export function choosePlace(
-  venue: { name: string; lat: number; lng: number },
+  venue: { name: string; lat: number; lng: number; address?: string | null },
   candidates: PlaceCandidate[],
-): { id: string; name: string | null; distanceM: number } | null {
-  if (!Number.isFinite(venue.lat) || !Number.isFinite(venue.lng)) return null;
-  let best: { id: string; name: string | null; distanceM: number } | null = null;
+): MatchResult {
+  if (!Number.isFinite(venue.lat) || !Number.isFinite(venue.lng)) return { kind: "none" };
+  const hits: Array<{ id: string; name: string | null; address: string | null; distanceM: number }> = [];
   for (const c of candidates) {
     if (!c.id || c.lat == null || c.lng == null) continue;
     if (!namesMatch(venue.name, c.name)) continue;
     const d = distanceM(venue.lat, venue.lng, c.lat, c.lng);
     if (d > MATCH_RADIUS_M) continue;
-    if (!best || d < best.distanceM) best = { id: c.id, name: c.name ?? null, distanceM: d };
+    hits.push({ id: c.id, name: c.name ?? null, address: c.address ?? null, distanceM: d });
   }
-  return best;
+  if (hits.length === 0) return { kind: "none" };
+  hits.sort((x, y) => x.distanceM - y.distanceM);
+  const best = hits[0];
+  const rivals = hits.filter((h) => h.distanceM - best.distanceM <= AMBIGUITY_GAP_M);
+  if (rivals.length === 1) return { kind: "match", id: best.id, name: best.name, distanceM: best.distanceM };
+
+  // Genuinely close duplicates: try address/locality evidence.
+  if (venue.address) {
+    const withEvidence = rivals.filter(
+      (h) => h.address && sharedLocalityTokens(venue.address, h.address!).length > 0,
+    );
+    if (withEvidence.length === 1) {
+      const only = withEvidence[0];
+      return { kind: "match", id: only.id, name: only.name, distanceM: only.distanceM };
+    }
+  }
+  return {
+    kind: "ambiguous",
+    candidates: rivals.map(({ id, name, distanceM }) => ({ id, name, distanceM })),
+  };
 }
