@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { loginWithPassportEmail } from "@/lib/passport-login";
 import { canPersistLocally } from "@/lib/storage-check";
+import { consumeReturnTo } from "@/lib/return-to";
 
 /** Warns visitors whose browser won't keep their passport on this device. */
 export function StorageBlockedNotice() {
@@ -38,6 +39,13 @@ export function PassportEmailLogin({ eventId }: { eventId: string }) {
     try {
       const res = await loginWithPassportEmail(eventId, value);
       if (res.ok) {
+        // If the visitor arrived from a QR scan, resume that scan once
+        // instead of landing on the passport page.
+        const returnTo = consumeReturnTo(eventId);
+        if (returnTo) {
+          window.location.replace(returnTo);
+          return;
+        }
         navigate({ to: "/passport/$token", params: { token: res.token } });
         return;
       }

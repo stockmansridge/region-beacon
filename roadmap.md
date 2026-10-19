@@ -51,3 +51,5 @@
 - [x] Reconciled Google Maps server credential: venue-hours server code prefers GOOGLE_MAPS_API_KEY_1 (owner dedicated server key), falls back to managed GOOGLE_MAPS_API_KEY. No paid Google calls made.
 - [x] Add Cloudflare-only direct Places transport and presence-only health flag; 47 focused mocked/helper tests pass and automatic build is clean. No deployment or live refresh.
 - [ ] Verify production Places secret resolution and the one-venue manual refresh; blocked by separate configuration/deployment/pilot approval. Current deployed health does not report the new presence flag.
+- [x] Multi-device passport persistence: device-token table + central resolver migration (review-only, not applied), email login mints device tokens instead of rotating, client reuses valid saved token, returnTo resume after email login, re-register copy fixed.
+- [ ] Apply supabase/migrations-passport-device-tokens/apply.sql and publish — awaiting owner verification/approval.
