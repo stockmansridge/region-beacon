@@ -74,6 +74,15 @@ describe("choosePlace", () => {
     ]);
     expect(hit.kind).toBe("ambiguous");
   });
+  it("stays ambiguous when duplicates share only a street name, not a locality", () => {
+    const venue = { ...V, address: "21 Boree Lane, Lidster NSW 2800" };
+    const hit = choosePlace(venue, [
+      { id: "a", name: "Stockman's Ridge Wines", address: "21 Boree Ln, Lidster NSW 2800", lat: -33.3501, lng: 149.0501 },
+      { id: "b", name: "Stockman's Ridge Wines", address: "8 Boree Ln, Canobolas NSW 2800", lat: -33.3502, lng: 149.0502 },
+    ]);
+    // "Boree" is a shared street-name word and must not resolve the duplicate.
+    expect(hit.kind).toBe("ambiguous");
+  });
   it("ignores candidates without a position", () => {
     expect(choosePlace(V, [{ id: "a", name: "Stockmans Ridge Wines" }])).toEqual({ kind: "none" });
   });
