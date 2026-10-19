@@ -1,3 +1,4 @@
+import { VenueOpeningHoursPanel } from "@/components/venue-opening-hours-panel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
