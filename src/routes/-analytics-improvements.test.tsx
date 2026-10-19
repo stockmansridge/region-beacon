@@ -85,7 +85,7 @@ it("venue engagement opens with zero venues, and zero check-ins toggle includes 
   const Page = Route.options.component as ComponentType;
   render(<Page />);
   await screen.findByText("Ten point prize");
-  fireEvent.click(screen.getByText("Venues", { exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: /^Venues .*View details/ }));
   const modal = screen.getByRole("dialog", { name: "Venue engagement" });
   expect(within(modal).getByText("Zero Venue")).toBeTruthy();
   expect(within(modal).getByText("Active Venue")).toBeTruthy();
