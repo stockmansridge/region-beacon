@@ -10,6 +10,27 @@ const EVENT = "00000000-0000-4000-8000-000000000001";
 beforeEach(() => { rpc.mockReset(); });
 
 describe("passport email lookup", () => {
+  it("reuses the valid passport already saved on this device instead of minting a new alias", async () => {
+    const store = new Map<string, string>([
+      [`gs.passport.${EVENT}`, JSON.stringify({ access_token: "saved-tok" })],
+    ]);
+    vi.stubGlobal("window", {
+      localStorage: {
+        setItem: (k: string, v: string) => void store.set(k, v),
+        getItem: (k: string) => store.get(k) ?? null,
+        removeItem: (k: string) => void store.delete(k),
+      },
+    });
+    rpc.mockImplementation((name: string) =>
+      name === "get_passport_by_token"
+        ? Promise.resolve({ data: [{ passport_id: "p1", event_id: EVENT }], error: null })
+        : Promise.resolve({ data: [], error: null }),
+    );
+    expect(await loginWithPassportEmail(EVENT, "a@b.co")).toEqual({ ok: true, token: "saved-tok" });
+    expect(rpc).toHaveBeenCalledWith("get_passport_by_token", { _raw_token: "saved-tok" });
+    expect(rpc).not.toHaveBeenCalledWith("lookup_passport_by_email", expect.anything());
+    vi.unstubAllGlobals();
+  });
   it("opens the existing passport for a registered email", async () => {
     rpc.mockResolvedValue({ data: [{ access_token: "tok" }], error: null });
     expect(await loginWithPassportEmail(EVENT, " Visitor@Example.test ")).toEqual({ ok: true, token: "tok" });
