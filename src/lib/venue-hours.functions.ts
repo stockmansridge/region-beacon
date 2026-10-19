@@ -28,7 +28,7 @@ export const refreshVenueHoursNow = createServerFn({ method: "POST" })
     try {
       const status = await syncVenueHours(admin, {
         venue_id: v.id, agency_id: v.agency_id, event_id: v.event_id, name: v.name,
-        lat: Number(v.lat), lng: Number(v.lng), google_place_id: null,
+        lat: Number(v.lat), lng: Number(v.lng), address: v.address ?? null, google_place_id: null,
       });
       return { ok: true as const, status };
     } catch (err) {
