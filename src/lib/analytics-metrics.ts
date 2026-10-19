@@ -77,6 +77,41 @@ export function awardQualified(points: number, visited: number, activeVenues: nu
   return points >= award.points_required && (!award.requires_all_locations || (activeVenues > 0 && visited >= activeVenues));
 }
 
+// "Most engaged" ranks people and venues by points-weighted activity: each
+// check-in is worth its point value (1 per scan) and each bonus scan is worth
+// its awarded points, so a high-value bonus counts more than a plain scan.
+export function personEngagement(
+  checkins: Array<{ passport_id: string }>,
+  bonus: Array<{ participant_id: string; points_awarded: number }>,
+) {
+  const rows = new Map<string, { passport_id: string; checkins: number; bonusScans: number; bonusPoints: number; score: number }>();
+  const row = (id: string) => {
+    const r = rows.get(id) ?? { passport_id: id, checkins: 0, bonusScans: 0, bonusPoints: 0, score: 0 };
+    rows.set(id, r);
+    return r;
+  };
+  for (const c of checkins) { const r = row(c.passport_id); r.checkins++; r.score++; }
+  for (const b of bonus) { const r = row(b.participant_id); r.bonusScans++; r.bonusPoints += b.points_awarded ?? 0; r.score += b.points_awarded ?? 0; }
+  return Array.from(rows.values()).sort((a, b) => b.score - a.score || b.checkins - a.checkins || a.passport_id.localeCompare(b.passport_id));
+}
+
+export function venueEngagementScores(
+  venues: Array<{ id: string; name: string; event_id: string }>,
+  checkins: Array<{ venue_id: string }>,
+  bonus: Array<{ source_id: string | null; points_awarded: number; metadata: { venue_id?: string | null } | null }>,
+  bonusVenues: Array<{ id: string; venue_id: string | null }>,
+) {
+  const sourceVenue = new Map(bonusVenues.map(v => [v.id, v.venue_id]));
+  const rows = new Map(venues.map(v => [v.id, { venue_id: v.id, name: v.name, event_id: v.event_id, checkins: 0, bonusScans: 0, bonusPoints: 0, score: 0 }]));
+  for (const c of checkins) { const r = rows.get(c.venue_id); if (r) { r.checkins++; r.score++; } }
+  for (const b of bonus) {
+    const id = b.metadata?.venue_id ?? (b.source_id ? sourceVenue.get(b.source_id) : null);
+    const r = id ? rows.get(id) : undefined;
+    if (r) { r.bonusScans++; r.bonusPoints += b.points_awarded ?? 0; r.score += b.points_awarded ?? 0; }
+  }
+  return Array.from(rows.values()).sort((a, b) => b.score - a.score || b.checkins - a.checkins || a.name.localeCompare(b.name));
+}
+
 export function bonusItemTotals(
   scans: Array<{ event_id: string; source_id: string | null; points_awarded: number; metadata: { bonus_code_name?: string | null } | null }>,
   labels: Map<string, string>,
