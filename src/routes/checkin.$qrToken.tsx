@@ -13,6 +13,7 @@ import { PoweredByGetStampd } from "@/components/brand";
 import { classifyHost } from "@/components/host-router";
 import { brandingScopeProps, useEventBrandingKeys } from "@/lib/use-event-palette";
 import { sendScanEmail } from "@/lib/passport-email.functions";
+import { resolveStaleSavedPassport } from "@/lib/checkin-passport-recovery";
 
 export const Route = createFileRoute("/checkin/$qrToken")({
   head: () => ({ meta: [{ title: "Check in — GetStampd" }] }),
@@ -234,30 +235,42 @@ function CheckinPage() {
           details: (error as { details?: string }).details ?? null,
           hint: (error as { hint?: string }).hint ?? null,
         };
-        // passport_event_mismatch shouldn't happen now (we picked matching passport)
-        // but handle defensively as "no passport for event".
+        // passport_event_mismatch / passport_not_found from redeem_checkin is
+        // NOT proof the saved credential is dead — the same message can come
+        // from a business-rule or transient server mismatch. Do an
+        // authoritative get_passport_by_token readback and clear ONLY on a
+        // conclusive invalid/other-event result, with exact-token conditional
+        // removal so a concurrent fresh login is never wiped.
         if ((error.message ?? "").toLowerCase().includes("passport_event_mismatch") ||
             (error.message ?? "").toLowerCase().includes("passport_not_found")) {
-          // Saved passport is stale/replaced — clear only this event's entry
-          // so the visitor can register fresh. Other events' passports remain.
-          if (currentEventId) {
-            try {
-              localStorage.removeItem(`gs.passport.${currentEventId}`);
-            } catch {
-              // ignore
-            }
+          const resolution = await resolveStaleSavedPassport(currentEventId);
+          if (cancelled) return;
+          if (resolution === "invalid_cleared") {
+            // Conclusively invalid — send the visitor to email-only recovery
+            // (not re-registration) and preserve this scan for afterwards.
+            storeReturnTo(currentEventId);
+            const remaining = allPassports.filter(
+              (p) => !currentEventId || p.event_id !== currentEventId,
+            );
+            setOutcome({
+              kind: "no_passport_for_event",
+              subdomain,
+              otherPassports: remaining,
+              diag: baseDiag({
+                stage: "passport_stale_cleared",
+                return_to_stored: true,
+                passport_attempted: true,
+                error: supaErr,
+              }),
+            });
+            return;
           }
-          storeReturnTo(currentEventId);
-          const remaining = allPassports.filter(
-            (p) => !currentEventId || p.event_id !== currentEventId,
-          );
+          // Token still valid, or the readback was inconclusive — keep the
+          // credential and show a recoverable scan error.
           setOutcome({
-            kind: "no_passport_for_event",
-            subdomain,
-            otherPassports: remaining,
+            kind: "error",
             diag: baseDiag({
-              stage: "passport_stale_cleared",
-              return_to_stored: true,
+              stage: "redeem_checkin_error",
               passport_attempted: true,
               error: supaErr,
             }),
@@ -475,13 +488,17 @@ export function CheckinFailureCard({
   > = {
     no_passport_for_event: {
       title:
-        diag.saved_passport_count > 0
-          ? "You need a passport for this trail"
-          : "Passport required",
+        diag.stage === "passport_stale_cleared"
+          ? "Your saved passport link is no longer valid"
+          : diag.saved_passport_count > 0
+            ? "You need a passport for this trail"
+            : "Passport required",
       body:
-        diag.saved_passport_count > 0
-          ? "Your saved passport is for a different trail. Create one for this trail to collect this stamp — we'll bring you straight back here."
-          : "You need to join this trail before you can collect stamps. Tap below to register — we'll bring you back here to collect this stamp.",
+        diag.stage === "passport_stale_cleared"
+          ? "Log in with your email to reopen your passport — we'll bring you straight back to collect this stamp."
+          : diag.saved_passport_count > 0
+            ? "Your saved passport is for a different trail. Create one for this trail to collect this stamp — we'll bring you straight back here."
+            : "You need to join this trail before you can collect stamps. Tap below to register — we'll bring you back here to collect this stamp.",
     },
     qr_invalid: {
       title: "This QR code is not valid",
@@ -559,7 +576,9 @@ export function CheckinFailureCard({
                 href={joinHref}
                 className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--event-button-primary-bg)] text-sm font-semibold tracking-wide text-[var(--event-button-primary-fg)] shadow"
               >
-                Create passport for this trail
+                {diag.stage === "passport_stale_cleared"
+                  ? "Log in with your email"
+                  : "Create passport for this trail"}
               </ResultAnchor>
               <ResultAnchor
                 href="/"

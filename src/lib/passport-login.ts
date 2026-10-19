@@ -28,17 +28,27 @@ export type PassportLoginResult =
  * Multi-device behaviour: the RPC issues a NEW device token that resolves to
  * the SAME passport; it never rotates or replaces the original passport key,
  * so existing devices and emailed links keep working. If this browser already
- * holds a valid saved passport for the event, that token is reused instead of
- * minting another alias, so rapid repeated logins on one device stay bounded.
+ * holds a valid saved passport for the event AND it belongs to the same email
+ * being entered, that token is reused instead of minting another alias, so
+ * rapid repeated logins on one device stay bounded. A saved passport for a
+ * DIFFERENT email is never reused — on a shared device, entering person B's
+ * email must open person B's passport, not person A's.
  * The RPC is rate limited per event+email in the database.
  */
 export async function loginWithPassportEmail(eventId: string, rawEmail: string): Promise<PassportLoginResult> {
   const email = rawEmail.trim().toLowerCase();
 
-  // Same-device fast path: a valid remembered passport needs no new token.
+  // Same-device fast path: a valid remembered passport for the SAME email
+  // needs no new token. If the saved row carries no email we cannot prove
+  // ownership, so we fall through to the authoritative email lookup.
   try {
     const existing = await resolveCurrentEventPassport(eventId);
-    if (existing.validationStatus === "valid" && existing.token) {
+    if (
+      existing.validationStatus === "valid" &&
+      existing.token &&
+      existing.email &&
+      existing.email.trim().toLowerCase() === email
+    ) {
       return { ok: true, token: existing.token };
     }
   } catch {

@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { classifyPassportLookup, clearStoredPassportIfToken } from "@/lib/use-current-event-passport";
+import { consumeReturnTo } from "@/lib/return-to";
 import { applyPaletteToEvent } from "@/lib/event-palettes";
 import { EventPaletteScope } from "@/components/event-palette-scope";
 import { publicEventScopeProps, type PublicBrandingEvent } from "@/components/public-event-branding-scope";
@@ -316,22 +317,6 @@ function readSavedPassport(eventId: string): SavedPassport | null {
   }
 }
 
-function consumeReturnTo(eventId: string): string | null {
-  if (typeof sessionStorage === "undefined") return null;
-  try {
-    const scopedKey = `gs.returnTo.${eventId}`;
-    const scoped = sessionStorage.getItem(scopedKey);
-    if (scoped) {
-      sessionStorage.removeItem(scopedKey);
-      return scoped;
-    }
-    const pending = sessionStorage.getItem("gs.returnTo.pending");
-    if (pending) sessionStorage.removeItem("gs.returnTo.pending");
-    return pending;
-  } catch {
-    return null;
-  }
-}
 
 function JoinForm({ event, subdomain, preview = false, previewState }: { event: JoinPreviewEvent; subdomain: string; preview?: boolean; previewState?: JoinPreviewState }) {
   const sendPassportEmailFn = useServerFn(sendPassportEmail);
