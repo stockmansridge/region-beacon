@@ -571,7 +571,7 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
 
 
 
-          <VenueOpeningHours subdomain={subdomain} venueId={venueId} disabled={Boolean(previewData)} />
+          <VenueOpeningHours subdomain={subdomain} venueId={venueId} disabled={Boolean(previewData)} timeZone={(state.brand as { timezone?: string | null } | null)?.timezone ?? null} />
 
           <div className="mt-6 space-y-2">
             {(() => {
