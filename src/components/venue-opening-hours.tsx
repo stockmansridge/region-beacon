@@ -14,7 +14,7 @@ type Row = {
 };
 
 /** Public venue opening hours. Reads stored hours only — never calls Google. */
-export function VenueOpeningHours({ subdomain, venueId, disabled }: { subdomain: string; venueId: string; disabled?: boolean }) {
+export function VenueOpeningHours({ subdomain, venueId, disabled, timeZone }: { subdomain: string; venueId: string; disabled?: boolean; timeZone?: string | null }) {
   const [row, setRow] = useState<Row | null>(null);
   const [now, setNow] = useState<Date | null>(null);
 
@@ -28,11 +28,19 @@ export function VenueOpeningHours({ subdomain, venueId, disabled }: { subdomain:
     return () => { cancelled = true; };
   }, [subdomain, venueId, disabled]);
 
+  // Keep "Open now / Closed now" and today's bold row live on a page left
+  // open — purely local clock, no further queries. Recomputed each minute.
+  useEffect(() => {
+    if (!row) return;
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, [row]);
+
   const lines = Array.isArray(row?.weekday_text) ? row!.weekday_text.filter((l) => typeof l === "string") : [];
   if (!row || lines.length === 0 || !now) return null;
 
-  const open = row.hours_source === "google" ? isOpenNow(row.periods, row.utc_offset_minutes, now) : null;
-  const today = todayIndexMonFirst(row.hours_source === "google" ? row.utc_offset_minutes : null, now);
+  const open = row.hours_source === "google" ? isOpenNow(row.periods, row.utc_offset_minutes, now, timeZone) : null;
+  const today = todayIndexMonFirst(row.hours_source === "google" ? row.utc_offset_minutes : null, now, timeZone);
 
   return (
     <section className="mt-6 rounded-2xl border border-[var(--event-primary,#1F3D2B)]/15 bg-[var(--event-surface,#FFFFFF)] p-4">
