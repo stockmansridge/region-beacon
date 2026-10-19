@@ -45,3 +45,5 @@
 - [x] Header title target/text/wrap; remove join spacers; passport bold words inherit
 - [x] Add V2 styling and safe labels for the shared Venues / Offers segmented toggle.
 - [x] Reconciled Google Maps server credential: venue-hours server code prefers GOOGLE_MAPS_API_KEY_1 (owner dedicated server key), falls back to managed GOOGLE_MAPS_API_KEY. No paid Google calls made.
+- [x] Add Cloudflare-only direct Places transport and presence-only health flag; 47 focused mocked/helper tests pass and automatic build is clean. No deployment or live refresh.
+- [ ] Verify production Places secret resolution and the one-venue manual refresh; blocked by separate configuration/deployment/pilot approval. Current deployed health does not report the new presence flag.
