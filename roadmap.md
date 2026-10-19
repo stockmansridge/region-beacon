@@ -1,6 +1,7 @@
 # V2 public passport styling expansion
 
 ## Analytics improvements
+- [x] Rank Check-ins by venue by check-ins (bonus scans no longer reorder the list) with share kept on the check-in basis; focused metric checks pass.
 - [x] Add a Bonus points item summary with scan/point totals while retaining the Bonus scans visitor matrix; focused mounted checks passed.
 - [x] Show sideways venue-name headers in Check-in details and preserve sorting; 12 focused checks passed. Signed-in visual verification remains blocked by unavailable portal session.
 - [x] Make marketing, pages and date lists scrollable; add rolling 1-day, 14-day and inclusive custom date ranges.
