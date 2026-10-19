@@ -20,7 +20,7 @@ export const refreshVenueHoursNow = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
     const { data: v, error } = await admin
       .from("venues")
-      .select("id, agency_id, event_id, name, lat, lng")
+      .select("id, agency_id, event_id, name, lat, lng, address")
       .eq("id", data.venue_id)
       .maybeSingle();
     if (error || !v) return { ok: false as const, error: "Venue not found." };
