@@ -1,4 +1,18 @@
 import { supabase } from "@/integrations/supabase/client";
+import { canPersistLocally } from "@/lib/storage-check";
+
+/** Re-save the reopened passport on this device so the visitor is not asked to log in again. */
+function persistPassport(eventId: string, token: string): void {
+  try {
+    if (!canPersistLocally()) return;
+    window.localStorage.setItem(
+      `gs.passport.${eventId}`,
+      JSON.stringify({ access_token: token, saved_at: new Date().toISOString() }),
+    );
+  } catch {
+    // Storage blocked — the passport still opens; the visitor can log in by email again.
+  }
+}
 
 export type PassportLoginResult =
   | { ok: true; token: string }
