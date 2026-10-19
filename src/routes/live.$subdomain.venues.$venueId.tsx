@@ -571,6 +571,8 @@ export function PublicVenueDetailPage({ subdomain, venueId, previewData }: { sub
 
 
 
+          <VenueOpeningHours subdomain={subdomain} venueId={venueId} disabled={Boolean(previewData)} />
+
           <div className="mt-6 space-y-2">
             {(() => {
               const directionsUrl = buildGoogleMapsDirectionsUrl({
