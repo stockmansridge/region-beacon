@@ -35,34 +35,58 @@ describe("choosePlace", () => {
       { id: "a", name: "Stockmans Ridge Wines", ...near },
       { id: "b", name: "Stockmans Ridge Wines", ...far },
     ]);
-    expect(hit?.id).toBe("a");
+    expect(hit).toMatchObject({ kind: "match", id: "a" });
   });
   it("rejects a nearby business with a different name", () => {
-    expect(choosePlace(V, [{ id: "a", name: "Ridge View Hotel", ...near }])).toBeNull();
+    expect(choosePlace(V, [{ id: "a", name: "Ridge View Hotel", ...near }])).toEqual({ kind: "none" });
   });
   it("rejects a same-name listing that is too far away", () => {
-    expect(choosePlace(V, [{ id: "a", name: "Stockmans Ridge Wines", ...far }])).toBeNull();
+    expect(choosePlace(V, [{ id: "a", name: "Stockmans Ridge Wines", ...far }])).toEqual({ kind: "none" });
   });
-  it("chooses the nearest of two same-name duplicates", () => {
+  it("holds two same-name listings close together as ambiguous", () => {
     const hit = choosePlace(V, [
-      { id: "far-dup", name: "Stockman's Ridge Wines", lat: -33.351, lng: 149.051 },
-      { id: "near-dup", name: "Stockman's Ridge Wines", ...near },
+      { id: "dup-a", name: "Stockman's Ridge Wines", lat: -33.3501, lng: 149.0501 },
+      { id: "dup-b", name: "Stockman's Ridge Wines", lat: -33.3502, lng: 149.0502 }, // ~28 m away
     ]);
-    expect(hit?.id).toBe("near-dup");
+    expect(hit.kind).toBe("ambiguous");
+    if (hit.kind === "ambiguous") expect(hit.candidates).toHaveLength(2);
+  });
+  it("still picks a clearly dominant match when the rival is much further", () => {
+    const hit = choosePlace(V, [
+      { id: "near-dup", name: "Stockman's Ridge Wines", ...near },
+      { id: "far-dup", name: "Stockman's Ridge Wines", lat: -33.3515, lng: 149.0515 }, // ~210 m away, outside gap
+    ]);
+    expect(hit).toMatchObject({ kind: "match", id: "near-dup" });
+  });
+  it("uses address locality evidence to resolve close duplicates", () => {
+    const venue = { ...V, address: "21 Boree Lane, Lidster NSW 2800" };
+    const hit = choosePlace(venue, [
+      { id: "right", name: "Stockman's Ridge Wines", address: "21 Boree Ln, Lidster NSW 2800", lat: -33.3501, lng: 149.0501 },
+      { id: "wrong", name: "Stockman's Ridge Wines", address: "5 Main St, Orange NSW 2800", lat: -33.3502, lng: 149.0502 },
+    ]);
+    expect(hit).toMatchObject({ kind: "match", id: "right" });
+  });
+  it("stays ambiguous when both duplicates share the same locality", () => {
+    const venue = { ...V, address: "21 Boree Lane, Lidster NSW 2800" };
+    const hit = choosePlace(venue, [
+      { id: "a", name: "Stockman's Ridge Wines", address: "21 Boree Ln, Lidster NSW 2800", lat: -33.3501, lng: 149.0501 },
+      { id: "b", name: "Stockman's Ridge Wines", address: "19 Boree Ln, Lidster NSW 2800", lat: -33.3502, lng: 149.0502 },
+    ]);
+    expect(hit.kind).toBe("ambiguous");
   });
   it("ignores candidates without a position", () => {
-    expect(choosePlace(V, [{ id: "a", name: "Stockmans Ridge Wines" }])).toBeNull();
+    expect(choosePlace(V, [{ id: "a", name: "Stockmans Ridge Wines" }])).toEqual({ kind: "none" });
   });
-  it("returns null for a venue with an invalid position", () => {
+  it("returns none for a venue with an invalid position", () => {
     expect(
       choosePlace({ name: V.name, lat: NaN, lng: 149.05 }, [{ id: "a", name: "Stockmans Ridge Wines", ...near }]),
-    ).toBeNull();
+    ).toEqual({ kind: "none" });
   });
   it("enforces the 200 m radius boundary", () => {
     const at190 = { id: "in", name: "Stockmans Ridge Wines", lat: V.lat + 0.0017, lng: V.lng }; // ~189 m
     const at260 = { id: "out", name: "Stockmans Ridge Wines", lat: V.lat + 0.0024, lng: V.lng }; // ~267 m
-    expect(choosePlace(V, [at190])?.id).toBe("in");
-    expect(choosePlace(V, [at260])).toBeNull();
+    expect(choosePlace(V, [at190])).toMatchObject({ kind: "match", id: "in" });
+    expect(choosePlace(V, [at260])).toEqual({ kind: "none" });
     expect(MATCH_RADIUS_M).toBe(200);
   });
 });

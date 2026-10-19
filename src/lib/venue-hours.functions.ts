@@ -20,7 +20,7 @@ export const refreshVenueHoursNow = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
     const { data: v, error } = await admin
       .from("venues")
-      .select("id, agency_id, event_id, name, lat, lng")
+      .select("id, agency_id, event_id, name, lat, lng, address")
       .eq("id", data.venue_id)
       .maybeSingle();
     if (error || !v) return { ok: false as const, error: "Venue not found." };
@@ -28,7 +28,7 @@ export const refreshVenueHoursNow = createServerFn({ method: "POST" })
     try {
       const status = await syncVenueHours(admin, {
         venue_id: v.id, agency_id: v.agency_id, event_id: v.event_id, name: v.name,
-        lat: Number(v.lat), lng: Number(v.lng), google_place_id: null,
+        lat: Number(v.lat), lng: Number(v.lng), address: v.address ?? null, google_place_id: null,
       });
       return { ok: true as const, status };
     } catch (err) {
