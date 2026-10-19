@@ -161,12 +161,12 @@ describe("Result previews (mounted, every state, every action)", () => {
 });
 
 describe("Version-specific result profiles", () => {
-  it("V1 Bonus preview: exact legacy gradient, palette-only scope (raw event primary NOT applied), no V2 markers", () => {
+  it("V1 Bonus preview uses saved event colours without activating V2 overrides", () => {
     const { container } = render(inPreview(<V2ResultPreview page="bonus" state="claimed" event={V1_EVENT} venueName={null} />));
     const surface = Array.from(container.querySelectorAll<HTMLElement>("div")).find((d) => d.className.includes("h-[420px]"))!;
-    expect(surface.getAttribute("style")).toContain("linear-gradient(160deg, #1F3D2B 0%, #14271C 100%)");
+    expect(surface.getAttribute("style")).toContain("var(--event-primary)");
     expect(container.querySelector("[data-event-style]")).toBeNull();
-    expect(container.innerHTML.toLowerCase()).not.toContain("#101010");
+    expect(varOf(container, "--event-primary")).toBe("#101010");
     expect(container.innerHTML.toLowerCase()).not.toContain("#aa0001");
   });
   it("V1 Check-in preview keeps its historic full prop bag (raw primary applied, V2 theme ignored)", () => {
