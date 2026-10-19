@@ -44,4 +44,4 @@
 - [x] Final review: offers V1 fallback, badge legacy migration, nav selection via preview context, template-aware record copy, venue QR svg, back-link label buffering, legal reveal on repeat.
 - [x] Header title target/text/wrap; remove join spacers; passport bold words inherit
 - [x] Add V2 styling and safe labels for the shared Venues / Offers segmented toggle.
-- [ ] Reconcile Google Maps server credential: confirm dedicated server key connection supplies GOOGLE_MAPS_API_KEY used by venue-hours server code; keep managed connection intact; no paid Google calls.
+- [x] Reconciled Google Maps server credential: venue-hours server code prefers GOOGLE_MAPS_API_KEY_1 (owner dedicated server key), falls back to managed GOOGLE_MAPS_API_KEY. No paid Google calls made.
