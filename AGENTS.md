@@ -1,5 +1,7 @@
 # Project architecture rules
 
+- Device and bonus-repair migrations must share the same claim function: parent/child QR sources, central token resolver and conflict-safe inserts; executable SQL tests prevent overwrite regressions.
+
 - Public QR scanning uses the shared safe destination resolver for venue, bonus and tasting claim routes; other HTTP links require an explicit click and text is displayed without execution, so scanning never silently changes event ownership or executes untrusted payloads.
 
 - Analytics daily registration and page-view charts share one date/count renderer so both retain readable date axes and integer count scales.
