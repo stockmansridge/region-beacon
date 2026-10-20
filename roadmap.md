@@ -1,7 +1,7 @@
 # V2 public passport styling expansion
 
 ## P0 printed bonus QR repair
-- [ ] Restore event-wide and per-venue bonus token resolution with device-token support; correct the device migration and add executable SQL regression tests.
+- [x] Restore event-wide and per-venue bonus token resolution with device-token support; corrected device migration and function-only repair at supabase/migrations-prod-bonus-device-token-repair/apply.sql; executable PostgreSQL regression tests pass, full suite 288/288 and automatic build OK.
 - [ ] Apply and verify the repair in GetStampd-Prod, including rollback-only scenarios; blocked because this session has no production database connection or SQL write capability.
 
 ## Mobile QR scanning
