@@ -422,6 +422,8 @@ as $$
 declare
   b record;
   p record;
+  v_source_id uuid;
+  v_venue_id uuid := null;
   v_awarded int := 0;
   v_already boolean := false;
   v_inserted bigint := 0;
@@ -435,8 +437,25 @@ begin
          e.status as event_status
     into b
   from public.event_bonus_codes bc
-  join public.events e on e.id = bc.event_id
+  join public.events e on e.id = bc.event_id and e.agency_id = bc.agency_id
   where bc.qr_code_token = _token;
+
+  if b.bonus_id is not null then
+    v_source_id := b.bonus_id;
+  else
+    select bc.id as bonus_id, bc.agency_id, bc.event_id as b_event_id, bc.name,
+           bc.points_value, (bc.is_active and ebv.is_active) as is_active,
+           e.status as event_status, ebv.id as source_id, ebv.venue_id
+      into b
+    from public.event_bonus_code_venues ebv
+    join public.event_bonus_codes bc
+      on bc.id = ebv.bonus_code_id
+     and bc.agency_id = ebv.agency_id and bc.event_id = ebv.event_id
+    join public.events e on e.id = bc.event_id and e.agency_id = bc.agency_id
+    where ebv.qr_code_token = _token;
+    v_source_id := b.source_id;
+    v_venue_id := b.venue_id;
+  end if;
 
   if b.bonus_id is null then
     return query select
@@ -446,7 +465,7 @@ begin
     return;
   end if;
 
-  if not b.is_active then
+  if b.is_active is not true then
     return query select
       false, false, b.b_event_id, b.bonus_id, b.name,
       0, 0, 0, 0,
@@ -454,7 +473,7 @@ begin
     return;
   end if;
 
-  if b.event_status <> 'published' then
+  if b.event_status is distinct from 'published' then
     return query select
       false, false, b.b_event_id, b.bonus_id, b.name,
       0, 0, 0, 0,
@@ -485,31 +504,21 @@ begin
     return;
   end if;
 
-  -- 4. Insert points award. Avoid bare ON CONFLICT column names because this
-  -- function has an OUT column called event_id.
-  begin
-    insert into public.participant_point_awards (
-      agency_id, event_id, participant_id,
-      award_type, source_id, points_awarded, metadata
-    )
-    select
-      p.agency_id, p.p_event_id, p.passport_id,
-      'bonus', b.bonus_id, coalesce(b.points_value, 0),
-      jsonb_build_object('bonus_code_id', b.bonus_id, 'bonus_code_name', b.name)
-    where not exists (
-      select 1
-      from public.participant_point_awards ppa
-      where ppa.event_id = b.b_event_id
-        and ppa.participant_id = p.passport_id
-        and ppa.award_type = 'bonus'
-        and ppa.source_id = b.bonus_id
-    );
-
-    get diagnostics v_inserted = row_count;
-  exception
-    when unique_violation then
-      v_inserted := 0;
-  end;
+  -- The qualified source is the parent for event tokens and child for venue tokens.
+  -- variable_conflict use_column disambiguates the OUT event_id column.
+  insert into public.participant_point_awards (
+    agency_id, event_id, participant_id,
+    award_type, source_id, points_awarded, metadata
+  ) values (
+    p.agency_id, p.p_event_id, p.passport_id,
+    'bonus', v_source_id, coalesce(b.points_value, 0),
+    jsonb_build_object('bonus_code_id', b.bonus_id, 'bonus_code_name', b.name,
+                       'venue_id', v_venue_id)
+  )
+  on conflict (event_id, participant_id, award_type, source_id)
+    where source_id is not null
+    do nothing;
+  get diagnostics v_inserted = row_count;
 
   if v_inserted > 0 then
     v_awarded := coalesce(b.points_value, 0);
