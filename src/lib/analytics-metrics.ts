@@ -83,6 +83,7 @@ export function awardQualified(points: number, visited: number, activeVenues: nu
 export function personEngagement(
   checkins: Array<{ passport_id: string }>,
   bonus: Array<{ participant_id: string; points_awarded: number }>,
+  points?: Array<{ participant_id: string; points_awarded: number }>,
 ) {
   const rows = new Map<string, { passport_id: string; checkins: number; bonusScans: number; bonusPoints: number; score: number }>();
   const row = (id: string) => {
@@ -92,6 +93,12 @@ export function personEngagement(
   };
   for (const c of checkins) { const r = row(c.passport_id); r.checkins++; r.score++; }
   for (const b of bonus) { const r = row(b.participant_id); r.bonusScans++; r.bonusPoints += b.points_awarded ?? 0; r.score += b.points_awarded ?? 0; }
+  // When the authoritative ledger is supplied, use the same total-points
+  // basis as the public leaderboard, without adding check-ins a second time.
+  if (points) {
+    for (const r of rows.values()) r.score = 0;
+    for (const p of points) row(p.participant_id).score += p.points_awarded ?? 0;
+  }
   return Array.from(rows.values()).sort((a, b) => b.score - a.score || b.checkins - a.checkins || a.passport_id.localeCompare(b.passport_id));
 }
 

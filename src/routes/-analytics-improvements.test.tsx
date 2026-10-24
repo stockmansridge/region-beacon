@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { ComponentType } from "react";
+
+const refreshFixture = vi.hoisted(() => ({ extraPoints: 0, fail: false }));
 
 vi.mock("@tanstack/react-router", () => ({ createFileRoute: () => (options: unknown) => ({ options }), useNavigate: () => vi.fn(), Link: ({ children }: { children: React.ReactNode }) => <span>{children}</span> }));
 vi.mock("@/hooks/use-agency-context", () => ({ useAgencyContext: () => ({ selected: { id: "agency" } }) }));
@@ -26,13 +28,35 @@ vi.mock("@/integrations/supabase/client", () => {
   };
   return { supabase: { from: (table: string) => {
     const q: Record<string, unknown> = {};
+    let from = 0;
+    let to = 999;
     for (const method of ["select", "eq", "is", "order", "limit", "range"]) q[method] = () => q;
-    q.then = (resolve: (result: unknown) => unknown) => Promise.resolve(resolve({ data: tables[table] ?? [], error: null }));
+    q.range = (start: number, end: number) => { from = start; to = end; return q; };
+    q.then = (resolve: (result: unknown) => unknown) => {
+      const rows = [...(tables[table] ?? [])];
+      if (table === "participant_point_awards" && refreshFixture.extraPoints) rows.push({ id: "new", event_id: "e", participant_id: "p", points_awarded: refreshFixture.extraPoints, created_at: now, metadata: null, source_id: "code" });
+      return Promise.resolve(resolve({ data: rows.slice(from, to + 1), error: refreshFixture.fail && table === "participant_point_awards" ? { message: "Unavailable" } : null }));
+    };
     return q;
   }, rpc: async () => ({ data: [], error: null }) } };
 });
 import { Route } from "./admin.analytics";
-afterEach(cleanup);
+afterEach(() => { cleanup(); refreshFixture.extraPoints = 0; refreshFixture.fail = false; });
+
+it("refresh reads newly awarded points and retains totals on an unavailable ledger", async () => {
+  const Page = Route.options.component as ComponentType;
+  render(<Page />);
+  await screen.findByText("Ten point prize");
+  const score = () => within(screen.getByRole("table", { name: "Most engaged people" })).getAllByRole("row")[1].lastElementChild?.textContent;
+  expect(score()).toBe("22");
+  refreshFixture.extraPoints = 50;
+  fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+  await waitFor(() => expect(score()).toBe("72"));
+  refreshFixture.fail = true;
+  fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+  await screen.findByText(/Could not refresh all analytics data/);
+  expect(score()).toBe("72");
+});
 
 it("venue check-in links open the correct graph including zero-activity venues", async () => {
   const Page = Route.options.component as ComponentType;

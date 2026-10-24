@@ -84,6 +84,16 @@ describe("analytics filters and metrics", () => {
       ["c", 0, 0, 0, 0],
     ]);
   });
+  it("uses all awarded points like the leaderboard without counting check-ins twice", () => {
+    const rows = personEngagement(
+      [{ passport_id: "a" }, { passport_id: "b" }, { passport_id: "b" }],
+      [{ participant_id: "b", points_awarded: 10 }],
+      [{ participant_id: "a", points_awarded: 50 }, { participant_id: "b", points_awarded: 2 }, { participant_id: "b", points_awarded: 10 }, { participant_id: "c", points_awarded: 7 }],
+    );
+    expect(rows.map(r => [r.passport_id, r.score])).toEqual([["a", 50], ["b", 12], ["c", 7]]);
+    expect(rows[1].bonusPoints).toBe(10);
+    expect(rows[0].checkins).toBe(1);
+  });
   it("includes bonus-only points for current prize qualification", () => {
     expect(awardQualified(10, 0, 2, { points_required: 10, requires_all_locations: false })).toBe(true);
     expect(awardQualified(9, 0, 2, { points_required: 10, requires_all_locations: false })).toBe(false);

@@ -9,6 +9,7 @@
 - [x] Accept bonus codes and other QR contents safely, retain venue scanning, and verify focused scanner regressions; 102 focused checks pass and automatic build is clean. Physical phone scanning and live bonus redemption remain unverified; nothing deployed.
 
 ## Analytics improvements
+- [x] Correct Most engaged refresh truncation: page through check-ins, visitors, passports and bonus awards; people use the complete points ledger like the leaderboard, keeping analytics filters. 28 focused tests pass and automatic build OK; live authenticated comparison unavailable for this external connection. No production writes or deployment.
 - [x] Rank Check-ins by venue by check-ins (bonus scans no longer reorder the list) with share kept on the check-in basis; focused metric checks pass.
 - [x] Add a Bonus points item summary with scan/point totals while retaining the Bonus scans visitor matrix; focused mounted checks passed.
 - [x] Show sideways venue-name headers in Check-in details and preserve sorting; 12 focused checks passed. Signed-in visual verification remains blocked by unavailable portal session.
