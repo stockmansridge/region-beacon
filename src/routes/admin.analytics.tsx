@@ -31,6 +31,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDatePicker } from "@/components/analytics-date-picker";
 import { analyticsDateRange, awardQualified, bonusItemTotals, countPassportsWithVenueVisits, describePagePath, personEngagement, venueCheckinDays, venueEngagement, venueEngagementScores, type AnalyticsDateFilter } from "@/lib/analytics-metrics";
 import { regionalBreakdown } from "@/lib/analytics-regions";
+import { readAnalyticsPages } from "@/lib/analytics-pagination";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export const Route = createFileRoute("/admin/analytics")({
@@ -167,21 +168,21 @@ function Analytics() {
           .eq("agency_id", agencyId)
           .eq("status", "active")
           .is("deleted_at", null),
-        supabase
+        readAnalyticsPages<CheckinRow>((from, to) => supabase
           .from("checkins")
           .select("id, event_id, visitor_id, venue_id, passport_id, created_at")
-          .eq("agency_id", agencyId),
-        supabase
+          .eq("agency_id", agencyId).order("id").range(from, to), () => cancelled),
+        readAnalyticsPages<VisitorRow>((from, to) => supabase
           .from("visitors")
           .select(
             "id, event_id, email, first_name, last_name, full_name, postcode, marketing_opt_in, created_at",
           )
           .eq("agency_id", agencyId)
-          .is("deleted_at", null),
-        supabase
+          .is("deleted_at", null).order("id").range(from, to), () => cancelled),
+        readAnalyticsPages<PassportRow>((from, to) => supabase
           .from("passports")
           .select("id, event_id, visitor_id, status, completed_at, created_at")
-          .eq("agency_id", agencyId),
+          .eq("agency_id", agencyId).order("id").range(from, to), () => cancelled),
         supabase
           .from("prize_rules")
           .select(
@@ -192,34 +193,25 @@ function Analytics() {
       ]);
       const [awRes, ptRes] = await Promise.all([
         supabase.from("event_awards").select("id, event_id, title, points_required, requires_all_locations").eq("agency_id", agencyId).eq("status", "active").is("deleted_at", null),
-        (async () => {
-          const rows: PointRow[] = [];
-          for (let offset = 0; !cancelled; offset += 1000) {
-            const result = await supabase.from("participant_point_awards").select("event_id, participant_id, points_awarded, created_at:awarded_at").eq("agency_id", agencyId).order("id").range(offset, offset + 999);
-            if (result.error) return { data: null, error: result.error };
-            rows.push(...(result.data ?? []) as PointRow[]);
-            if ((result.data?.length ?? 0) < 1000) break;
-          }
-          return { data: rows, error: null };
-        })(),
+        readAnalyticsPages<PointRow>((from, to) => supabase.from("participant_point_awards").select("event_id, participant_id, points_awarded, created_at:awarded_at").eq("agency_id", agencyId).order("id").range(from, to), () => cancelled),
       ]);
       // Bonus scans — the ledger timestamps rows with `awarded_at`; older
       // schemas may only have `created_at`, so fall back when needed.
-      let bRes = await supabase
+      let bRes = await readAnalyticsPages<BonusScanRow>((from, to) => supabase
         .from("participant_point_awards")
         .select(
           "id, event_id, participant_id, source_id, points_awarded, created_at:awarded_at, metadata",
         )
         .eq("agency_id", agencyId)
-        .eq("award_type", "bonus");
+        .eq("award_type", "bonus").order("id").range(from, to), () => cancelled);
       if (bRes.error) {
-        bRes = await supabase
+        bRes = await readAnalyticsPages<BonusScanRow>((from, to) => supabase
           .from("participant_point_awards")
           .select(
             "id, event_id, participant_id, source_id, points_awarded, created_at, metadata",
           )
           .eq("agency_id", agencyId)
-          .eq("award_type", "bonus");
+          .eq("award_type", "bonus").order("id").range(from, to), () => cancelled);
       }
       // Bonus code names for the bonus-scan matrix: event-level codes and
       // per-venue code rows (an award's source_id may be either). Both are
@@ -260,9 +252,9 @@ function Analytics() {
       if (cancelled) return;
       setLegacyPools(legacyResults.flatMap(r => (r.data ?? []).map((entry: { passport_id: string; stamps: number; entries: number }) => ({ ...entry, ruleId: r.ruleId }))));
       const anyErr =
-        evRes.error || vRes.error || cRes.error || viRes.error || pRes.error;
+        evRes.error || vRes.error || cRes.error || viRes.error || pRes.error || ptRes.error || bRes.error;
       if (anyErr) {
-        setError("Could not load analytics data.");
+        setError("Could not refresh all analytics data. Previous totals have been kept; try Refresh again.");
         setLoading(false);
         return;
       }
@@ -283,7 +275,11 @@ function Analytics() {
       setPageViews((pvRes.error ? [] : (pvRes.data ?? [])) as PageViewRow[]);
       setPageViewsError(pvRes.error ? pvRes.error.message : null);
       setLoading(false);
-    })();
+    })().catch(() => {
+      if (cancelled) return;
+      setError("Could not refresh all analytics data. Previous totals have been kept; try Refresh again.");
+      setLoading(false);
+    });
     return () => {
       cancelled = true;
     };
@@ -444,9 +440,9 @@ function Analytics() {
   const allVenueStats = useMemo(() => venueEngagement(fVenues, fCheckins, fBonusScans, bonusCodeVenues), [fVenues, fCheckins, fBonusScans, bonusCodeVenues]);
   const venueStats = allVenueStats.filter(v => showZeroVenues || v.count > 0);
 
-  // Most engaged: points-weighted activity (check-in = 1 point, bonus scan =
-  // its awarded points), for people and venues within the current filters.
-  const engagedPeople = useMemo(() => personEngagement(fCheckins, fBonusScans).slice(0, 25), [fCheckins, fBonusScans]);
+  // People use the leaderboard's complete points ledger, with analytics filters.
+  const fPoints = useMemo(() => points.filter(p => inEvent(p.event_id) && inRange(p.created_at)), [points, filteredEventIds, fromDate, toDate, validRange]);
+  const engagedPeople = useMemo(() => personEngagement(fCheckins, fBonusScans, fPoints).slice(0, 25), [fCheckins, fBonusScans, fPoints]);
   const engagedVenues = useMemo(() => venueEngagementScores(fVenues, fCheckins, fBonusScans, bonusCodeVenues).filter(v => v.score > 0).slice(0, 25), [fVenues, fCheckins, fBonusScans, bonusCodeVenues]);
 
   // Funnel
@@ -679,7 +675,7 @@ function Analytics() {
         description="Track registrations, venue visits, check-ins and visitor engagement."
         actions={
           <div className="flex flex-wrap gap-3">
-            <button
+            <Button
               type="button"
               onClick={() => setReloadKey((k) => k + 1)}
               disabled={loading}
@@ -687,7 +683,7 @@ function Analytics() {
             >
               <RefreshCw className={`h-4 w-4${loading ? " animate-spin" : ""}`} />
               {loading ? "Refreshing…" : "Refresh"}
-            </button>
+            </Button>
             <Link to="/admin" className={secondaryBtn}>
               <LayoutDashboard className="h-4 w-4" /> Dashboard
             </Link>
@@ -1093,7 +1089,7 @@ function Analytics() {
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <h3 className="text-base font-semibold text-[#111827]">Most engaged</h3>
-                <p className="text-sm leading-6 text-[#64748B]">Ranked by points-weighted activity: each check-in counts as 1 point and each bonus scan counts as its awarded points.</p>
+                <p className="text-sm text-muted-foreground">{engagementTab === "people" ? "Ranked by total points for the selected event and dates." : "Ranked by points-weighted activity: each check-in counts as 1 point and each bonus scan counts as its awarded points."}</p>
               </div>
               <Tabs value={engagementTab} onValueChange={v => { if (v === "people" || v === "venues") setEngagementTab(v); }}>
                 <TabsList>
